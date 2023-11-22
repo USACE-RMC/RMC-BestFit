@@ -8,7 +8,7 @@ RMC-BestFit is a menu-driven software package, which performs distribution fitti
 ## Downloads
 * [Download Version 1.0](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/blob/285a821d3a6678fd50a486fdfeb1c797513fee28/RMC-BestFit%20Version%201.0.zip)
 
-Version 2.0 is currently under development. A beta version will be available for dowload later in 2023. New features will include:
+Version 2.0 is currently under development. A beta version will be available for dowload in 2024. New features will include:
 * The ability to import time series data from USGS
 * Hypothesis testing on time series data for trends and nonstationarity
 * Additional probability distributions
