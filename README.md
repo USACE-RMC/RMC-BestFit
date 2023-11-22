@@ -16,9 +16,7 @@ Version 2.0 is currently under development. A beta version will be available for
 * Mixture models
 * Model averaging
 * Bivariate copulas
-* Time series forecasting
-* Rating curve analysis
-
+  
 ## Documentation
 * [RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751843/RMC-TR-2020-02.-.Verification.of.the.Bayesian.Estimation.and.Fitting.Software.pdf)
 * [RMC-TR-2020-03 - RMC-BestFit - Quick Start Guide](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751838/RMC-TR-2020-03.-.RMC-BestFit.-.Quick.Start.Guide.pdf)
