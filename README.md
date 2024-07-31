@@ -5,7 +5,7 @@ This user-friendly, menu-driven tool offers a comprehensive platform for distrib
 
 ![BestFit](https://user-images.githubusercontent.com/123974306/232252850-cc900b2c-108a-4c93-81a4-50cfe5f1d5a9.png)
 
-## Version 2.0
+## Version 2.0 (Coming Soon!)
 Version 2.0 is currently under development and is scheduled for beta release later in 2024. This major update introduces a suite of new features designed to enhance time series analysis and modeling capabilities.
 Key enhancements include:
 
