@@ -8,13 +8,13 @@ RMC-BestFit is a menu-driven software package, which performs distribution fitti
 ## Version 2.0
 Version 2.0 is currently under development and is scheduled for beta release later in 2024. This major update introduces a suite of new features designed to enhance time series analysis and modeling capabilities.
 Key enhancements include:
-•	**Expanded Data Import**: Import time series data directly from USGS and GHCN platforms, facilitating the creation of block maximum or peaks-over-threshold series for comprehensive analysis.
-•	**Advanced Hypothesis Testing**: Conduct rigorous hypothesis tests on time series data to identify trends, nonstationarity, and other statistical patterns.
-•	**Improved Error Handling**: Incorporate measurement error into analyses for more accurate and reliable results.
-•	**Enhanced Probability Distributions**: Access a wider range of probability distributions to better fit diverse datasets and hydrological conditions.
-•	**Nonstationary Flood Frequency Analysis**: Model the evolving nature of flood frequency over time, providing valuable insights for risk assessment and management.
-•	**Complex Modeling Techniques**: Utilize mixture models, competing risks, and model averaging to address complex hydrological phenomena and improve model performance.
-•	**Dependency Modeling**: Employ bivariate copulas to capture the dependence structure between hydrological variables.
+*	**Expanded Data Import**: Import time series data directly from USGS and GHCN platforms, facilitating the creation of block maximum or peaks-over-threshold series for comprehensive analysis.
+*	**Advanced Hypothesis Testing**: Conduct rigorous hypothesis tests on time series data to identify trends, nonstationarity, and other statistical patterns.
+*	**Improved Error Handling**: Incorporate measurement error into analyses for more accurate and reliable results.
+*	**Enhanced Probability Distributions**: Access a wider range of probability distributions to better fit diverse datasets and hydrological conditions.
+*	**Nonstationary Flood Frequency Analysis**: Model the evolving nature of flood frequency over time, providing valuable insights for risk assessment and management.
+*	**Complex Modeling Techniques**: Utilize mixture models, competing risks, and model averaging to address complex hydrological phenomena and improve model performance.
+*	**Dependency Modeling**: Employ bivariate copulas to capture the dependence structure between hydrological variables.
 These advancements significantly expand the software's functionality, empowering users to tackle a broader range of hydrological challenges with greater precision and confidence.
 
 ## Downloads
