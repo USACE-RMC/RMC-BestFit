@@ -5,18 +5,21 @@ RMC-BestFit is a menu-driven software package, which performs distribution fitti
 
 ![BestFit](https://user-images.githubusercontent.com/123974306/232252850-cc900b2c-108a-4c93-81a4-50cfe5f1d5a9.png)
 
+## Version 2.0
+Version 2.0 is currently under development and is scheduled for beta release later in 2024. This major update introduces a suite of new features designed to enhance time series analysis and modeling capabilities.
+Key enhancements include:
+•	**Expanded Data Import**: Import time series data directly from USGS and GHCN platforms, facilitating the creation of block maximum or peaks-over-threshold series for comprehensive analysis.
+•	**Advanced Hypothesis Testing**: Conduct rigorous hypothesis tests on time series data to identify trends, nonstationarity, and other statistical patterns.
+•	**Improved Error Handling**: Incorporate measurement error into analyses for more accurate and reliable results.
+•	**Enhanced Probability Distributions**: Access a wider range of probability distributions to better fit diverse datasets and hydrological conditions.
+•	**Nonstationary Flood Frequency Analysis**: Model the evolving nature of flood frequency over time, providing valuable insights for risk assessment and management.
+•	**Complex Modeling Techniques**: Utilize mixture models, competing risks, and model averaging to address complex hydrological phenomena and improve model performance.
+•	**Dependency Modeling**: Employ bivariate copulas to capture the dependence structure between hydrological variables.
+These advancements significantly expand the software's functionality, empowering users to tackle a broader range of hydrological challenges with greater precision and confidence.
+
 ## Downloads
 * [Download Version 1.0](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/blob/285a821d3a6678fd50a486fdfeb1c797513fee28/RMC-BestFit%20Version%201.0.zip)
 
-Version 2.0 is currently under development. A beta version will be available for dowload in 2024. New features will include:
-* The ability to import time series data from USGS
-* Hypothesis testing on time series data for trends and nonstationarity
-* Additional probability distributions
-* Nonstationary flood frequency analysis
-* Mixture models
-* Model averaging
-* Bivariate copulas
-  
 ## Documentation
 * [RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751843/RMC-TR-2020-02.-.Verification.of.the.Bayesian.Estimation.and.Fitting.Software.pdf)
 * [RMC-TR-2020-03 - RMC-BestFit - Quick Start Guide](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751838/RMC-TR-2020-03.-.RMC-BestFit.-.Quick.Start.Guide.pdf)
