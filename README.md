@@ -1,13 +1,14 @@
 # RMC-BestFit
-The U.S. Army Corps of Engineers (USACE) Risk Management Center (RMC), in collaboration with the Engineer Research and Development Center (ERDC) Coastal and Hydraulics Laboratory (CHL), developed the Bayesian estimation and fitting software (RMC-BestFit) to enhance and expedite flood hazard assessments within the Flood Risk Management, Planning, and Dam and Levee Safety communities of practice.
+RMC-BestFit is a cutting-edge Bayesian estimation and fitting software developed jointly by the U.S. Army Corps of Engineers’ Risk Management Center (RMC) and Engineer Research and Development Center’s Coastal and Hydraulics Laboratory (CHL). Designed to streamline flood hazard assessments for the Flood Risk Management, Planning, and Dam and Levee Safety communities, the software leverages a Bayesian approach to incorporate diverse data sources, including historical records, paleoflood evidence, regional rainfall-runoff models, and expert knowledge.
 
-RMC-BestFit is a menu-driven software package, which performs distribution fitting and Bayesian estimation from a choice of thirteen probability distributions. The software features a fully integrated modeling platform, including a modern graphical user interface, data entry capabilities, distribution fitting analysis, Bayesian estimation analysis, and report quality charts.
+This user-friendly, menu-driven tool offers a comprehensive platform for distribution fitting and Bayesian estimation. Its modern graphical interface, coupled with robust data input, analysis, and reporting capabilities, empowers users to efficiently conduct flood frequency analyses and generate high-quality visualizations.
 
 ![BestFit](https://user-images.githubusercontent.com/123974306/232252850-cc900b2c-108a-4c93-81a4-50cfe5f1d5a9.png)
 
 ## Version 2.0
 Version 2.0 is currently under development and is scheduled for beta release later in 2024. This major update introduces a suite of new features designed to enhance time series analysis and modeling capabilities.
 Key enhancements include:
+
 *	**Expanded Data Import**: Import time series data directly from USGS and GHCN platforms, facilitating the creation of block maximum or peaks-over-threshold series for comprehensive analysis.
 *	**Advanced Hypothesis Testing**: Conduct rigorous hypothesis tests on time series data to identify trends, nonstationarity, and other statistical patterns.
 *	**Improved Error Handling**: Incorporate measurement error into analyses for more accurate and reliable results.
@@ -15,6 +16,7 @@ Key enhancements include:
 *	**Nonstationary Flood Frequency Analysis**: Model the evolving nature of flood frequency over time, providing valuable insights for risk assessment and management.
 *	**Complex Modeling Techniques**: Utilize mixture models, competing risks, and model averaging to address complex hydrological phenomena and improve model performance.
 *	**Dependency Modeling**: Employ bivariate copulas to capture the dependence structure between hydrological variables.
+
 These advancements significantly expand the software's functionality, empowering users to tackle a broader range of hydrological challenges with greater precision and confidence.
 
 ## Downloads
