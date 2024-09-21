@@ -1,12 +1,12 @@
 # RMC-BestFit
-RMC-BestFit is a cutting-edge Bayesian estimation and fitting software developed jointly by the U.S. Army Corps of Engineers’ Risk Management Center (RMC) and Engineer Research and Development Center’s Coastal and Hydraulics Laboratory (CHL). Designed to streamline flood hazard assessments for the Flood Risk Management, Planning, and Dam and Levee Safety communities, the software leverages a Bayesian approach to incorporate diverse data sources, including historical records, paleoflood evidence, regional rainfall-runoff models, and expert knowledge.
+**RMC-BestFit** is a state-of-the-art Bayesian estimation and fitting software developed collaboratively by the U.S. Army Corps of Engineers' Risk Management Center (RMC) and Engineer Research and Development Center's Coastal and Hydraulics Laboratory (CHL). Tailored to expedite flood hazard assessments for the Flood Risk Management, Planning, and Dam and Levee Safety communities, the software employs a Bayesian framework to integrate a variety of data sources, including historical records, paleoflood evidence, regional data, rainfall-runoff models, and expert judgment.
 
-This user-friendly, menu-driven tool offers a comprehensive platform for distribution fitting and Bayesian estimation. Its modern graphical interface, coupled with robust data input, analysis, and reporting capabilities, empowers users to efficiently conduct flood frequency analyses and generate high-quality visualizations.
+This intuitive, menu-driven application provides a comprehensive environment for distribution fitting and Bayesian estimation. Its modern graphical interface, combined with robust data input, analysis, and reporting functionalities, enables users to effectively conduct flood frequency analyses and produce high-quality visualizations.
 
 ![BestFit](https://user-images.githubusercontent.com/123974306/232252850-cc900b2c-108a-4c93-81a4-50cfe5f1d5a9.png)
 
 ## Version 2.0 (Coming Soon!)
-Version 2.0 is currently under development and is scheduled for beta release later in 2024. This major update introduces a suite of new features designed to enhance time series analysis and modeling capabilities.
+**Version 2.0** is currently in development and is slated for official release in 2025. This major update introduces a suite of new features designed to enhance time series analysis and modeling capabilities.
 Key enhancements include:
 
 *	**Expanded Data Import**: Import time series data directly from USGS and GHCN platforms, facilitating the creation of block maximum or peaks-over-threshold series for comprehensive analysis.
