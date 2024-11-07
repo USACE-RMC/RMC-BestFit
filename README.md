@@ -20,7 +20,7 @@ With these powerful enhancements, RMC-BestFit 2.0 significantly broadens its cap
 
 ## Downloads
 * [Download Version 1.0](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/blob/285a821d3a6678fd50a486fdfeb1c797513fee28/RMC-BestFit%20Version%201.0.zip)
-* [Download Version 2.0 Beta]()
+* [Download Version 2.0 Beta](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/blob/ffa8f33f815f5f358d1240fd42494ee80edd8efb/RMC-BestFit%20Version%202.0%20(Beta).zip)
 
 ## Documentation
 * [RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751843/RMC-TR-2020-02.-.Verification.of.the.Bayesian.Estimation.and.Fitting.Software.pdf)
