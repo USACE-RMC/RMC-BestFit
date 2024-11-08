@@ -6,7 +6,7 @@ This intuitive, menu-driven application provides a comprehensive environment for
 ![BestFit](https://user-images.githubusercontent.com/123974306/232252850-cc900b2c-108a-4c93-81a4-50cfe5f1d5a9.png)
 
 ## Downloads
-* [Download Version 1.0](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/blob/285a821d3a6678fd50a486fdfeb1c797513fee28/RMC-BestFit%20Version%201.0.zip)
+* [Download Version 1.0](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/releases/download/v1.0/RMC-BestFit.v1.0.zip)
 * [Download Version 2.0 Beta](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/releases/latest/download/RMC-BestFit.Version.2.0.Beta.zip)
   
 ## Documentation
