@@ -14,6 +14,7 @@ This intuitive, menu-driven application provides a comprehensive environment for
 * [RMC-TR-2020-03 - RMC-BestFit - Quick Start Guide](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751838/RMC-TR-2020-03.-.RMC-BestFit.-.Quick.Start.Guide.pdf)
 * [ANCOLD 2019 - Estimating Design Floods with a Specified Return Period Using Bayesian Analysis](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751836/ANCOLD.2019.-.Bayesian.Analysis.-.HadenSmith.6-27-19.pdf)
 * [ASDSO 2021 - Incorporating Regional Rainfall-Frequency into Flood Frequency using RMC-RRFT and RMC-BestFit](https://github.com/USArmy-Corps-of-Engineers-RMC/RMC-BestFit/files/12751831/ASDSO.RRFT.Paper_Avance.pdf)
+* [ANCOLD 2024 - Nonstationary Flood Frequency with RMC-BestFit](https://github.com/user-attachments/files/17683765/2024.-.ANCOLD.-.Smith.-.Nonstationary.Flood.Frequency.with.RMC-BestFit.pdf)
 
 ## Training
 * [2021 RMC-BestFit and RMC-RFA Training Videos](https://www.youtube.com/playlist?list=PLEIlpoX-ZknTLKrNq7qeVrCIxT_QtLLSF)
