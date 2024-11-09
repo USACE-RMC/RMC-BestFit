@@ -6,54 +6,122 @@
     <meta name="description" content="Landing page for the RMC-BestFit GitHub repository.">
     <meta name="google-site-verification" content="uAiIkmbtJeRf-vDf-t9p44sSTZBXEEYvuL0VdIzlPf8" >
     <title>RMC-BestFit</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        h1 { color: #333; }
-        p { font-size: 1.2em; color: #666; }
-        a { color: #007acc; text-decoration: none; font-weight: bold; }
-        a:hover { text-decoration: underline; }
+<style>
+        /* Basic styles */
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header styles */
+        header {
+            text-align: left;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+        header h1 {
+            font-size: 2em;
+            color: #007acc;
+            margin-bottom: 0;
+        }
+
+        /* Section and headings */
+        section {
+            padding: 20px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        h2 {
+            font-size: 1.5em;
+            color: #555;
+            margin-top: 0;
+        }
+
+        /* Paragraph and list styles */
+        p {
+            font-size: 1.1em;
+            color: #666;
+            margin: 10px 0;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        strong {
+            color: #333;
+        }
+
+        /* Link styles */
+        a {
+            color: #007acc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer styles */
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            color: #777;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <h1>RMC-BestFit</h1>
-    </header>
+    <div class="container">
+        <header>
+            <h1>RMC-BestFit</h1>
+        </header>
 
-    <main>
-        <section>
-            <h2>About RMC-BestFit</h2>
-            <p>RMC-BestFit is a state-of-the-art Bayesian estimation and fitting software developed collaboratively by the U.S. Army Corps of Engineers' Risk Management Center (RMC) and Engineer Research and Development Center's Coastal and Hydraulics Laboratory (CHL). Tailored to expedite flood hazard assessments for the Flood Risk Management, Planning, and Dam and Levee Safety communities, the software employs a Bayesian framework to integrate a variety of data sources, including historical records, paleoflood evidence, regional data, rainfall-runoff models, and expert judgment.</p>
-            <p>This intuitive, menu-driven application provides a comprehensive environment for distribution fitting and Bayesian estimation. Its modern graphical interface, combined with robust data input, analysis, and reporting functionalities, enables users to effectively conduct flood frequency analyses and produce high-quality visualizations.</p>
-        </section>
+        <main>
+            <section>
+                <h2>About RMC-BestFit</h2>
+                <p>RMC-BestFit is a state-of-the-art Bayesian estimation and fitting software developed collaboratively by the U.S. Army Corps of Engineers' Risk Management Center (RMC) and Engineer Research and Development Center's Coastal and Hydraulics Laboratory (CHL). Tailored to expedite flood hazard assessments for the Flood Risk Management, Planning, and Dam and Levee Safety communities, the software employs a Bayesian framework to integrate a variety of data sources, including historical records, paleoflood evidence, regional data, rainfall-runoff models, and expert judgment.</p>
+                <p>This intuitive, menu-driven application provides a comprehensive environment for distribution fitting and Bayesian estimation. Its modern graphical interface, combined with robust data input, analysis, and reporting functionalities, enables users to effectively conduct flood frequency analyses and produce high-quality visualizations.</p>
+            </section>
 
-        <section>
-            <h2>Version 2.0 Beta Release</h2>
-            <p>We are thrilled to announce the release of RMC-BestFit Version 2.0 Beta! This major update brings powerful new features designed to enhance time series analysis and modeling capabilities. Key enhancements include:</p>
-            <ul>
-                <li><strong>Expanded Data Import</strong>: Import time series data directly from USGS and GHCN platforms, streamlining the creation of block maximum or peaks-over-threshold series for comprehensive analysis.</li>
-                <li><strong>Advanced Hypothesis Testing</strong>: Conduct rigorous hypothesis tests on time series data to identify trends, nonstationarity, and other statistical patterns.</li>
-                <li><strong>Measurement Error Integration</strong>: Incorporate measurement error into analyses for enhanced accuracy and reliability in results.</li>
-                <li><strong>Additional Probability Distributions</strong>: Access a wider selection of probability distributions to better fit diverse datasets and hydrological conditions.</li>
-                <li><strong>Nonstationary Flood Frequency Analysis</strong>: Model evolving flood frequency patterns over time to gain valuable insights for risk assessment and management.</li>
-                <li><strong>Improved Prior Distributions</strong>: Set parameter and quantile priors from 10 distribution options. Users can also apply Jeffreys’ Rule for Scale parameters, providing a superior noninformative prior and enabling compatibility with other Bayesian software, such as FLIKE®.</li>
-                <li><strong>Complex Modeling Techniques</strong>: Utilize mixture models, competing risks, and model averaging to address complex hydrological phenomena and improve model performance.</li>
-                <li><strong>Dependency Modeling with Bivariate Copulas</strong>: Capture the dependence structure between hydrological variables for a deeper understanding of your data.</li>
-            </ul>
-            <p>With these powerful enhancements, RMC-BestFit 2.0 significantly broadens its capabilities, equipping users to tackle a wider array of hydrological challenges with greater precision and confidence.</p>
-        </section>
+            <section>
+                <h2>Version 2.0 Beta Release</h2>
+                <p>We are thrilled to announce the release of RMC-BestFit Version 2.0 Beta! This major update brings powerful new features designed to enhance time series analysis and modeling capabilities. Key enhancements include:</p>
+                <ul>
+                    <li><strong>Expanded Data Import</strong>: Import time series data directly from USGS and GHCN platforms, streamlining the creation of block maximum or peaks-over-threshold series for comprehensive analysis.</li>
+                    <li><strong>Advanced Hypothesis Testing</strong>: Conduct rigorous hypothesis tests on time series data to identify trends, nonstationarity, and other statistical patterns.</li>
+                    <li><strong>Measurement Error Integration</strong>: Incorporate measurement error into analyses for enhanced accuracy and reliability in results.</li>
+                    <li><strong>Additional Probability Distributions</strong>: Access a wider selection of probability distributions to better fit diverse datasets and hydrological conditions.</li>
+                    <li><strong>Nonstationary Flood Frequency Analysis</strong>: Model evolving flood frequency patterns over time to gain valuable insights for risk assessment and management.</li>
+                    <li><strong>Improved Prior Distributions</strong>: Set parameter and quantile priors from 10 distribution options. Users can also apply Jeffreys’ Rule for Scale parameters, providing a superior noninformative prior and enabling compatibility with other Bayesian software, such as FLIKE®.</li>
+                    <li><strong>Complex Modeling Techniques</strong>: Utilize mixture models, competing risks, and model averaging to address complex hydrological phenomena and improve model performance.</li>
+                    <li><strong>Dependency Modeling with Bivariate Copulas</strong>: Capture the dependence structure between hydrological variables for a deeper understanding of your data.</li>
+                </ul>
+                <p>With these powerful enhancements, RMC-BestFit 2.0 significantly broadens its capabilities, equipping users to tackle a wider array of hydrological challenges with greater precision and confidence.</p>
+            </section>
 
-        <section>
-            <h2>Get Started Today!</h2>
-            <p>Download RMC-BestFit Version 2.0 Beta and example projects at GitHub.</p>
-            <ul>
-                <li><a href="https://github.com/username/repository-name/releases/tag/v1.0" target="_blank">Version 1.0</a></li>
-                <li><a href="https://github.com/username/repository-name/releases/tag/v2.0-beta" target="_blank">Version 2.0 Beta</a></li>
-            </ul>
-        </section>
-    </main>
+            <section>
+                <h2>Get Started Today!</h2>
+                <p>Download RMC-BestFit Version 2.0 Beta and example projects at GitHub.</p>
+                <ul>
+                    <li><a href="https://github.com/username/repository-name/releases/tag/v1.0" target="_blank">Version 1.0</a></li>
+                    <li><a href="https://github.com/username/repository-name/releases/tag/v2.0-beta" target="_blank">Version 2.0 Beta</a></li>
+                </ul>
+            </section>
+        </main>
 
-    <footer>
-        <p>&copy; 2024 Your Name. All rights reserved.</p>
-    </footer>
+    </div>
 </body>
 </html>
