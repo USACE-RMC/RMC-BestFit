@@ -17,5 +17,10 @@ This intuitive, menu-driven application provides a comprehensive environment for
 * [ANCOLD 2024 - Nonstationary Flood Frequency with RMC-BestFit](https://github.com/user-attachments/files/17683765/2024.-.ANCOLD.-.Smith.-.Nonstationary.Flood.Frequency.with.RMC-BestFit.pdf)
 
 ## Training
-* [2021 RMC-BestFit and RMC-RFA Training Videos](https://www.youtube.com/playlist?list=PLEIlpoX-ZknTLKrNq7qeVrCIxT_QtLLSF)
 * [Risk Management Center Training Center](https://www.rmc.usace.army.mil/Training/)
+* [2021 RMC-BestFit and RMC-RFA Training Videos](https://www.youtube.com/playlist?list=PLEIlpoX-ZknTLKrNq7qeVrCIxT_QtLLSF)
+* [2022 Fitting the Curve - Australian Water School](https://www.youtube.com/watch?v=ekduoQrOU2o&t=22s)
+* [2024 RMC-BestFit New Release! - Australian Water School](https://www.youtube.com/watch?v=GPMfnkdGxqQ&t=2319s)
+
+
+
