@@ -8,6 +8,7 @@ This intuitive, menu-driven application provides a comprehensive environment for
 ## Downloads
 * [Download Version 1.0](https://github.com/USACE-RMC/RMC-BestFit/releases/download/v1.0/RMC-BestFit.v1.0.zip)
 * [Download Version 2.0 Beta](https://github.com/USACE-RMC/RMC-BestFit/releases/latest/download/RMC-BestFit.Version.2.0.Beta.zip)
+* [Download Version 2.0 Beta-2](https://github.com/USACE-RMC/RMC-BestFit/releases/latest/download/RMC-BestFit.Version.2.0.Beta-2.zip)
   
 ## Documentation
 * [RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software](https://github.com/USACE-RMC/RMC-BestFit/files/12751843/RMC-TR-2020-02.-.Verification.of.the.Bayesian.Estimation.and.Fitting.Software.pdf)
