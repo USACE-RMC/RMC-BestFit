@@ -26,7 +26,14 @@ This project demonstrates how to incorporate measurement errors (or prediction e
 This project demonstrates fitting a mixture of distributions, including a 2-component Normal mixture, a 3-component Normal mixture, and a zero-inflated 2-component Normal mixture. The datasets used are synthetic with known properties for controlled analysis. 
 
 ## 7. Composite Distribution Examples
-This project demonstrates various scenarios, including competing failure modes, different flood types, mixtures of flood types, and model averaging. Synthetic datasets with known properties are used to allow for controlled analysis.
+This project demonstrates various scenarios, including competing failure modes, competing flood types, mixtures of flood types, and model averaging. Synthetic datasets with known properties are used to allow for controlled analysis.
 
 ## 8. Bivariate Distribution Examples
 This project demonstrates fitting bivariate copulas for various copula types. Each dataset is synthetic, with marginal normal distributions and differing copula dependencies.
+
+## 9. Point Process Example
+This example demonstrates a point process workflow using GHCN precipitation gages in California. Daily GHCN precipitation time series are imported and processed to create both Annual Maximum Series (AMS) and Peaks-Over-Threshold (POT) datasets. A point process model is fit to the POT data, estimating GEV parameters based on the full exceedance record. Results can be compared to traditional GEV fits to the AMS data, with the point process approach typically resulting in reduced uncertainty in the upper tail. In addition, a seasonal point process model is fit by dividing the year into two seasons and combining the results. These results can be compared to a composite distribution of GEVs fit separately to seasonal AMS data. 
+
+## 10. Rating Curve Examples
+This project demonstrates fitting rating curves to both synthetic and real-world datasets. A synthetic dataset is generated with known rating curve parameters, and 1-, 2-, and 3-segment rating curves are fit to recover the original relationships. BestFit is able to accurately recover the true parameters for each case. Additional examples include fitting a 1-segment rating curve to data from the Mississippi River at New Madrid and the Middle Fork Willamette River. These examples demonstrate the flexibility of BestFit’s rating curve fitting capabilities across simple and complex flow-stage relationships.
+
