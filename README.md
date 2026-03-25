@@ -10,8 +10,8 @@ This intuitive, menu-driven application provides a comprehensive environment for
 * [Download Version 2.0 Beta](https://github.com/USACE-RMC/RMC-BestFit/releases/latest/download/RMC-BestFit.Version.2.0.Beta-3.zip)
 
 ## Documentation
-* [RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software](https://github.com/USACE-RMC/RMC-BestFit/files/12751843/RMC-TR-2020-02.-.Verification.of.the.Bayesian.Estimation.and.Fitting.Software.pdf)
-* [RMC-TR-2020-03 - RMC-BestFit - Quick Start Guide](https://github.com/USACE-RMC/RMC-BestFit/files/12751838/RMC-TR-2020-03.-.RMC-BestFit.-.Quick.Start.Guide.pdf)
+* [RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software](https://usace-rmc.github.io/RMC-Software-Documentation/source-documents/desktop-applications/rmc-bestfit/verification-report/RMC-BestFit-Verification-Report.pdf)
+* [RMC-TR-2020-03 - RMC-BestFit - User's Guide](https://usace-rmc.github.io/RMC-Software-Documentation/docs/desktop-applications/rmc-bestfit/users-guide/v1.0/preface/)
 * [ANCOLD 2019 - Estimating Design Floods with a Specified Return Period Using Bayesian Analysis](https://github.com/USACE-RMC/RMC-BestFit/files/12751836/ANCOLD.2019.-.Bayesian.Analysis.-.HadenSmith.6-27-19.pdf)
 * [ASDSO 2021 - Incorporating Regional Rainfall-Frequency into Flood Frequency using RMC-RRFT and RMC-BestFit](https://github.com/USACE-RMC/RMC-BestFit/files/12751831/ASDSO.RRFT.Paper_Avance.pdf)
 
