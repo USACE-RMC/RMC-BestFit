@@ -1,0 +1,3 @@
+Rating Curve Examples:
+
+This project demonstrates fitting rating curves to both synthetic and real-world datasets. A synthetic dataset is generated with known rating curve parameters, and 1-, 2-, and 3-segment rating curves are fit to recover the original relationships. BestFit is able to accurately recover the true parameters for each case. Additional examples include fitting a 1-segment rating curve to data from the Mississippi River at New Madrid and the Middle Fork Willamette River. These examples demonstrate the flexibility of BestFit’s rating curve fitting capabilities across simple and complex flow-stage relationships.

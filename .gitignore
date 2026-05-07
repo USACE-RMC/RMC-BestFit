@@ -1,6 +1,54 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+# Build outputs
+**/bin/
+**/obj/
 
-/.vs/RMC-BestFit
-/.vs
+# NuGet packages
+**/packages/
+
+# Visual Studio
+.vs/
+**/.vs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+/nul
+
+# Local .NET CLI home used by sandboxed build/test runs
+/.dotnet-home/.dotnet/TelemetryStorageService/
+/.dotnet-home/.dotnet/sdk-advertising/
+/.codex-tmp
+
+# Test results / coverage (anticipated for incoming test projects)
+TestResults/
+*.coverage
+*.coveragexml
+coverage/
+
+# JetBrains / VS Code (anticipated for incoming devs)
+.idea/
+.vscode/
+
+# OS / filesystem cruft
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor swap / backup files
+*.swp
+*~
