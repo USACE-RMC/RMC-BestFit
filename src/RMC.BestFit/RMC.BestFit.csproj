@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>RMC.BestFit</AssemblyTitle>
+    <Description>Model library for the Bayesian estimation and fitting software (RMC-BestFit).</Description>
+    <Company>U.S. Army Corps of Engineers</Company>
+    <Product>RMC-BestFit</Product>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+  </PropertyGroup>
+  
+    <!-- Otherwise targets C# 7.3 which doesn't have global usings and some other syntactic sugar utilized here.  -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net481'">
+	<LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Analyses\TimeSeries\Support\**" />
+    <Compile Remove="Analyses\Univariate\Support\**" />
+    <EmbeddedResource Remove="Analyses\TimeSeries\Support\**" />
+    <EmbeddedResource Remove="Analyses\Univariate\Support\**" />
+    <None Remove="Analyses\TimeSeries\Support\**" />
+    <None Remove="Analyses\Univariate\Support\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Numerics">
+      <HintPath>..\..\..\numerics\Numerics\bin\Debug\net10.0\Numerics.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
