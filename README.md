@@ -3,6 +3,9 @@
 
 This intuitive, menu-driven application provides a comprehensive environment for distribution fitting and Bayesian estimation. Its modern graphical interface, combined with robust data input, analysis, and reporting functionalities, enables users to effectively conduct flood frequency analyses and produce high-quality visualizations.
 
+[!NOTE]
+**Going fully open source.** We are in the process of making all RMC-BestFit source code publicly available. This effort will be complete before the official release of Version 2.0 in July.
+
 ![BestFit](https://user-images.githubusercontent.com/123974306/232252850-cc900b2c-108a-4c93-81a4-50cfe5f1d5a9.png)
 
 ## Downloads
