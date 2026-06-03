@@ -1,0 +1,2406 @@
+﻿using Numerics.Distributions;
+using Numerics.Data;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using Numerics;
+using Numerics.Data.Statistics;
+using System.Xml.Linq;
+using System.Collections.Specialized;
+using System.Globalization;
+
+namespace RMC.BestFit.Models
+{
+    /// <summary>
+    /// Autoregressive Moving Average with Exogenous Variables (ARIMAX) time series model.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The ARIMAX model extends ARIMA by incorporating exogenous (external) variables as predictors.
+    /// Model structure: Y(t) = μ + γ(t) + ψ(t) + β*X(t) + φ*Y(t-p) + θ*ε(t-q) + ε(t)
+    /// where:
+    /// - μ is the intercept
+    /// - γ(t) is the trend component (linear, quadratic, or cubic)
+    /// - ψ(t) is the seasonal component (Fourier series)
+    /// - β*X(t) represents exogenous covariates
+    /// - φ*Y(t-p) is the autoregressive component of order p
+    /// - θ*ε(t-q) is the moving average component of order q
+    /// - ε(t) is white noise error
+    /// </para>
+    /// <para>
+    /// The model supports:
+    /// - ARMA (p,q): Autoregressive Moving Average
+    /// - ARIMA (p,d,q): Integrated ARMA with differencing of order d
+    /// - ARIMAX (p,q,b): ARMA with exogenous variables of order b
+    /// - Box-Cox and Yeo-Johnson power transformations
+    /// - Multiple trend types and seasonal patterns
+    /// </para>
+    /// <para>
+    ///     <b>Authors:</b>
+    ///     Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil
+    /// </para>
+    /// </remarks>
+    public class ARIMAX : ModelBase, ISimulatable<double[]>
+    {
+        #region Construction
+
+        /// <summary>
+        /// Constructs a new ARIMAX model with default parameters.
+        /// </summary>
+        public ARIMAX()
+        {
+            SetDefaultParameters();
+        }
+
+        /// <summary>
+        /// Constructs a new ARIMAX model with time-series data.
+        /// </summary>
+        /// <param name="timeSeries">The time-series data to model.</param>
+        public ARIMAX(TimeSeries timeSeries)
+        {
+            TimeSeries = timeSeries;
+            SetTrainingData();
+            SetDefaultParameters();
+        }
+
+        /// <summary>
+        /// Constructs a new ARIMAX model by deserializing from XML.
+        /// </summary>
+        /// <param name="timeSeries">The time-series data to model.</param>
+        /// <param name="xElement">The XElement containing serialized model configuration.</param>
+        public ARIMAX(TimeSeries timeSeries, XElement xElement)
+        {
+            TimeSeries = timeSeries;
+
+            var transformAttr = xElement.Attribute(nameof(TransformType));
+            if (transformAttr != null)
+                Enum.TryParse(transformAttr.Value, out _transformType);
+            var covExtAttr = xElement.Attribute(nameof(CovariateExtension));
+            if (covExtAttr != null)
+                Enum.TryParse(covExtAttr.Value, out _covariateExtension);
+            var interceptAttr = xElement.Attribute(nameof(IncludeIntercept));
+            if (interceptAttr != null)
+                bool.TryParse(interceptAttr.Value, out _includeIntercept);
+            var seasonalityAttr = xElement.Attribute(nameof(IncludeSeasonality));
+            if (seasonalityAttr != null)
+                bool.TryParse(seasonalityAttr.Value, out _includeSeasonality);
+            var trendAttr = xElement.Attribute(nameof(TrendType));
+            if (trendAttr != null)
+                Enum.TryParse(trendAttr.Value, out _trendType);
+            var arOrderAttr = xElement.Attribute(nameof(AROrderP));
+            if (arOrderAttr != null)
+                int.TryParse(arOrderAttr.Value, out _arOrderP);
+            var diffOrderAttr = xElement.Attribute(nameof(DiffOrderD));
+            if (diffOrderAttr != null)
+                int.TryParse(diffOrderAttr.Value, out _diffOrderD);
+            var maOrderAttr = xElement.Attribute(nameof(MAOrderQ));
+            if (maOrderAttr != null)
+                int.TryParse(maOrderAttr.Value, out _maOrderQ);
+            var xOrderAttr = xElement.Attribute(nameof(XOrderB));
+            if (xOrderAttr != null)
+                int.TryParse(xOrderAttr.Value, out _xOrderB);
+            var trainingStepsAttr = xElement.Attribute(nameof(TrainingTimeSteps));
+            if (trainingStepsAttr != null)
+                int.TryParse(trainingStepsAttr.Value, out _trainingTimeSteps);
+            var defaultTrainingAttr = xElement.Attribute(nameof(UseDefaultTrainingSteps));
+            if (defaultTrainingAttr != null)
+                bool.TryParse(defaultTrainingAttr.Value, out _useDefaultTrainingSteps);
+
+            // Parameters
+            var flatPriorsAttr = xElement.Attribute(nameof(UseDefaultFlatPriors));
+            if (flatPriorsAttr != null)
+                bool.TryParse(flatPriorsAttr.Value, out _useDefaultFlatPriors);
+            var jeffreysAttr = xElement.Attribute(nameof(UseJeffreysRuleForScale));
+            if (jeffreysAttr != null)
+                bool.TryParse(jeffreysAttr.Value, out _useJeffreysRuleForScale);
+
+            var parms = new List<ModelParameter>();
+            var parmsElement = xElement.Element(nameof(Parameters));
+            if (parmsElement != null)
+            {
+                foreach (XElement p in parmsElement.Elements(nameof(ModelParameter)))
+                    parms.Add(new ModelParameter(p));
+            }
+            Parameters = parms;
+
+            SetTrainingData();
+        }
+
+        #endregion
+
+        #region Members
+
+        private TimeSeries _timeSeries = null!;
+        private TimeSeries _transformedTimeSeries = null!;
+        private TimeSeries _diffSeries = null!;
+        private TimeSeries _trainingTimeSeries = null!;
+        private Transform _transformType = Transform.None;
+        private double _lambda = 0;
+        private double _lambda2 = 0;
+        private double _logJacobian = 0;
+        private bool _includeIntercept = true;
+        private bool _includeSeasonality = false;
+        private int _seasonalPeriod = 12;
+        private Trend _trendType = Trend.None;
+        private List<TimeSeries> _covariates = null!;
+        private int _arOrderP = 1;
+        private int _diffOrderD = 0;
+        private int _maOrderQ = 0;
+        private int _xOrderB = 0;
+        private bool _useJeffreysRuleForScale = true;
+        private int _trainingTimeSteps;
+        private bool _useDefaultTrainingSteps = true;
+
+        /// <summary>
+        /// Enumeration of trend types for the time series model.
+        /// </summary>
+        public enum Trend
+        {
+            /// <summary>No trend component.</summary>
+            None,
+            /// <summary>Linear trend: γ*t</summary>
+            Linear,
+            /// <summary>Quadratic trend: γ1*t + γ2*t²</summary>
+            Quadratic,
+            /// <summary>Cubic trend: γ1*t + γ2*t² + γ3*t³</summary>
+            Cubic,
+        }
+
+        /// <summary>
+        /// Enumeration of methods for extending covariate data beyond available observations.
+        /// Used in <see cref="Predict"/> and <see cref="GenerateRandomValues"/> when covariates
+        /// are required but not available for all time steps.
+        /// </summary>
+        public enum CovariateExtensionMethod
+        {
+            /// <summary>
+            /// No extension. Covariates must be provided for all required time steps.
+            /// An exception will be thrown if covariates are insufficient.
+            /// </summary>
+            None,
+
+            /// <summary>
+            /// Extend covariates using block bootstrap resampling.
+            /// Preserves temporal autocorrelation within blocks.
+            /// Block size is automatically set to min(10, N/4) where N is the covariate length.
+            /// </summary>
+            BlockBootstrap,
+
+            /// <summary>
+            /// Extend covariates using k-Nearest Neighbors resampling.
+            /// Preserves local covariate structure by sampling from similar historical values.
+            /// k is automatically set to max(3, N/10) where N is the covariate length.
+            /// </summary>
+            KNN,
+        }
+
+        private CovariateExtensionMethod _covariateExtension = CovariateExtensionMethod.BlockBootstrap;
+
+        /// <summary>
+        /// Gets or sets the time series data to be modeled.
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Time Series Data")]
+        [Description("The time series data to model.")]
+        [Browsable(true)]
+        public TimeSeries TimeSeries
+        {
+            get { return _timeSeries; }
+            set
+            {
+                if (_timeSeries != null)
+                    _timeSeries.CollectionChanged -= TimeSeries_CollectionChanged;
+
+                _timeSeries = value;
+
+                if (_timeSeries != null)
+                {
+                    _timeSeries.CollectionChanged += TimeSeries_CollectionChanged;
+                    _seasonalPeriod = InferSeasonalPeriod();
+
+                    if (_useDefaultTrainingSteps)
+                        SetDefaultTrainingSteps();
+                    SetTrainingData();
+                }
+
+                RaisePropertyChange(nameof(TimeSeries));
+                if (_timeSeries != null && UseDefaultFlatPriors)
+                    SetDefaultParameters();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the data transformation type applied before modeling.
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Transform Type")]
+        [Description("Specifies the data transform type (None, Logarithmic, Box-Cox, or Yeo-Johnson).")]
+        [Browsable(true)]
+        public Transform TransformType
+        {
+            get { return _transformType; }
+            set
+            {
+                if (_transformType != value)
+                {
+                    _transformType = value;
+                    SetTrainingData();
+                    RaisePropertyChange(nameof(TransformType));
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the transformed and differenced time series used for model calibration.
+        /// </summary>
+        public TimeSeries TrainingTimeSeries => _trainingTimeSeries;
+
+        /// <summary>
+        /// Gets the differenced (but not transformed) time series.
+        /// </summary>
+        public TimeSeries DifferencedSeries => _diffSeries;
+
+        /// <summary>
+        /// Gets the list of exogenous regression covariates.
+        /// </summary>
+        public List<TimeSeries> Covariates => _covariates;
+
+        /// <summary>
+        /// Gets or sets the method used to extend covariate data when forecasting or generating
+        /// values beyond the available covariate observations.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This property controls how <see cref="Predict"/> and <see cref="GenerateRandomValues"/>
+        /// handle cases where covariates are needed but not available for all time steps:
+        /// </para>
+        /// <list type="bullet">
+        /// <item><description><see cref="CovariateExtensionMethod.None"/>: No extension is performed.
+        /// An exception is thrown if covariates are insufficient.</description></item>
+        /// <item><description><see cref="CovariateExtensionMethod.BlockBootstrap"/>: Extends covariates
+        /// using block bootstrap resampling, preserving temporal autocorrelation.</description></item>
+        /// <item><description><see cref="CovariateExtensionMethod.KNN"/>: Extends covariates using
+        /// k-Nearest Neighbors, preserving local covariate structure.</description></item>
+        /// </list>
+        /// <para>Default is <see cref="CovariateExtensionMethod.BlockBootstrap"/>.</para>
+        /// </remarks>
+        [Category("Inputs")]
+        [DisplayName("Covariate Extension")]
+        [Description("Method used to extend covariate data when forecasting beyond available observations.")]
+        [Browsable(true)]
+        public CovariateExtensionMethod CovariateExtension
+        {
+            get { return _covariateExtension; }
+            set
+            {
+                if (_covariateExtension != value)
+                {
+                    _covariateExtension = value;
+                    RaisePropertyChange(nameof(CovariateExtension));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the seasonal period inferred from the time series interval.
+        /// </summary>
+        [Category("General")]
+        [DisplayName("Seasonal Period")]
+        [Description("The number of time steps in one seasonal cycle (automatically inferred from time interval).")]
+        [Browsable(true)]
+        public int SeasonalPeriod => _seasonalPeriod;
+
+        /// <summary>
+        /// Gets or sets whether to include an intercept term (μ) in the model.
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Include Intercept")]
+        [Description("Determines whether to include an intercept term in the model.")]
+        [Browsable(true)]
+        public bool IncludeIntercept
+        {
+            get { return _includeIntercept; }
+            set
+            {
+                if (_includeIntercept != value)
+                {
+                    _includeIntercept = value;
+                    RaisePropertyChange(nameof(IncludeIntercept));
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether to include a Fourier series seasonal component.
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Include Seasonality")]
+        [Description("Determines whether to include a Fourier series seasonal component: ψ1*sin(2π*t/S) + ψ2*cos(2π*t/S), where S is the seasonal period.")]
+        [Browsable(true)]
+        public bool IncludeSeasonality
+        {
+            get { return _includeSeasonality; }
+            set
+            {
+                if (_includeSeasonality != value)
+                {
+                    _includeSeasonality = value;
+                    RaisePropertyChange(nameof(IncludeSeasonality));
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the trend type (None, Linear, Quadratic, or Cubic).
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Trend Type")]
+        [Description("Specifies the deterministic trend type.")]
+        [Browsable(true)]
+        public Trend TrendType
+        {
+            get { return _trendType; }
+            set
+            {
+                if (_trendType != value)
+                {
+                    _trendType = value;
+                    RaisePropertyChange(nameof(TrendType));
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the autoregressive order (p).
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("AR Order (p)")]
+        [Description("The order (p) of the Autoregressive component: φ1*Y(t-1) + ... + φp*Y(t-p).")]
+        [Browsable(true)]
+        public int AROrderP
+        {
+            get { return _arOrderP; }
+            set
+            {
+                if (_arOrderP != value)
+                {
+                    _arOrderP = value;
+                    RaisePropertyChange(nameof(AROrderP));
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the differencing order (d) for achieving stationarity.
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Diff Order (d)")]
+        [Description("The order (d) of differencing applied to achieve stationarity (ARIMA models).")]
+        [Browsable(true)]
+        public int DiffOrderD
+        {
+            get { return _diffOrderD; }
+            set
+            {
+                if (_diffOrderD != value)
+                {
+                    _diffOrderD = value;
+                    RaisePropertyChange(nameof(DiffOrderD));
+                    SetTrainingData();
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the moving average order (q).
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("MA Order (q)")]
+        [Description("The order (q) of the Moving Average component: θ1*ε(t-1) + ... + θq*ε(t-q).")]
+        [Browsable(true)]
+        public int MAOrderQ
+        {
+            get { return _maOrderQ; }
+            set
+            {
+                if (_maOrderQ != value)
+                {
+                    _maOrderQ = value;
+                    RaisePropertyChange(nameof(MAOrderQ));
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the exogenous variable lag order (b).
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("X Order (b)")]
+        [Description("The lag order (b) for exogenous variables. If b=0, current values are used; if b>0, lagged values X(t-b) are used.")]
+        [Browsable(true)]
+        public int XOrderB
+        {
+            get { return _xOrderB; }
+            set
+            {
+                if (_xOrderB != value)
+                {
+                    _xOrderB = value;
+                    RaisePropertyChange(nameof(XOrderB));
+                    SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether to use Jeffreys' rule prior (1/σ) for the scale parameter.
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Use Jeffreys' Rule for Scale")]
+        [Description("Determines whether to use Jeffreys' rule for the scale (σ) parameter: P(σ) ∝ 1/σ.")]
+        [Browsable(true)]
+        public bool UseJeffreysRuleForScale
+        {
+            get { return _useJeffreysRuleForScale; }
+            set
+            {
+                if (_useJeffreysRuleForScale != value)
+                {
+                    _useJeffreysRuleForScale = value;
+                    RaisePropertyChange(nameof(UseJeffreysRuleForScale));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the number of time steps used for model training.
+        /// </summary>
+        [Category("General")]
+        [DisplayName("Training Time Steps")]
+        [Description("The number of time steps used for training. Training begins at the start of the time series.")]
+        [Browsable(true)]
+        public int TrainingTimeSteps
+        {
+            get { return _trainingTimeSteps; }
+            set
+            {
+                if (_trainingTimeSteps != value)
+                {
+                    _trainingTimeSteps = value;
+                    SetTrainingData();
+                    RaisePropertyChange(nameof(TrainingTimeSteps));
+                    if (UseDefaultFlatPriors)
+                        SetDefaultParameters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether to automatically set training steps to 80% of available data.
+        /// </summary>
+        [Category("Inputs")]
+        [DisplayName("Use Default Training Steps")]
+        [Description("Determines whether to automatically set training steps to 80% of the time series length (minimum 30 or parameter count).")]
+        [Browsable(true)]
+        public bool UseDefaultTrainingSteps
+        {
+            get { return _useDefaultTrainingSteps; }
+            set
+            {
+                if (_useDefaultTrainingSteps != value)
+                {
+                    _useDefaultTrainingSteps = value;
+                    RaisePropertyChange(nameof(UseDefaultTrainingSteps));
+                    if (_useDefaultTrainingSteps)
+                        SetDefaultTrainingSteps();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Handles changes to the time series collection.
+        /// </summary>
+        private void TimeSeries_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            // Set negative value offset for transforms
+            _lambda2 = 0;
+            double min = _timeSeries.MinValue();
+            if (min <= 0)
+                _lambda2 = 0 - min + 1;
+
+            _seasonalPeriod = InferSeasonalPeriod();
+
+            if (_useDefaultTrainingSteps)
+                SetDefaultTrainingSteps();
+
+            SetTrainingData();
+            RaisePropertyChange(nameof(TimeSeries));
+
+            if (UseDefaultFlatPriors)
+                SetDefaultParameters();
+        }
+
+        /// <summary>
+        /// Sets the list of exogenous covariate time series.
+        /// </summary>
+        /// <param name="covariates">List of time series to use as exogenous predictors.</param>
+        public void SetCovariates(List<TimeSeries> covariates)
+        {
+            _covariates = covariates;
+            RaisePropertyChange(nameof(Covariates));
+            SetDefaultParameters();
+        }
+
+        /// <summary>
+        /// Sets the default number of training time steps to 80% of the series length.
+        /// </summary>
+        private void SetDefaultTrainingSteps()
+        {
+            if (_timeSeries == null || _timeSeries.Count == 0) return;
+
+            // Use 80% for training, with minimum of 30 or parameter count
+            int minSteps = Math.Max(30, Parameters?.Count ?? 0);
+            TrainingTimeSteps = Math.Max(minSteps, (int)Math.Floor(0.8 * _timeSeries.Count));
+        }
+
+        /// <summary>
+        /// Creates the training data by applying transformation then differencing.
+        /// </summary>
+        /// <remarks>
+        /// Processing order: (1) Transformation, (2) Differencing. Transform-first matches
+        /// ARIMA in this library and R's forecast::forecast.Arima. Variance stabilization on
+        /// the raw scale is well-defined; differencing log-values produces log-ratios which
+        /// is what the AR/MA structure is intended to model. Box-Cox refuses non-positive
+        /// inputs; the raw series must be positive (Validate() enforces this).
+        /// </remarks>
+        private void SetTrainingData()
+        {
+            if (TimeSeries == null || TrainingTimeSteps == 0) return;
+
+            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+
+            // Step 1: Transform the raw time series (whole length).
+            _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+
+            if (TransformType == Transform.None)
+            {
+                _lambda = 0;
+                for (int i = 0; i < TimeSeries.Count; i++)
+                    _transformedTimeSeries.Add(TimeSeries[i].Clone());
+            }
+            else if (TransformType == Transform.Logarithmic)
+            {
+                _lambda = 0;
+                for (int i = 0; i < TimeSeries.Count; i++)
+                {
+                    var ord = TimeSeries[i].Clone();
+                    ord.Value = BoxCox.Transform(TimeSeries[i].Value, _lambda);
+                    _transformedTimeSeries.Add(ord);
+                }
+            }
+            else if (TransformType == Transform.BoxCox)
+            {
+                BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                for (int i = 0; i < TimeSeries.Count; i++)
+                {
+                    var ord = TimeSeries[i].Clone();
+                    ord.Value = BoxCox.Transform(TimeSeries[i].Value, _lambda);
+                    _transformedTimeSeries.Add(ord);
+                }
+            }
+            else if (TransformType == Transform.YeoJohnson)
+            {
+                YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                for (int i = 0; i < TimeSeries.Count; i++)
+                {
+                    var ord = TimeSeries[i].Clone();
+                    ord.Value = YeoJohnson.Transform(TimeSeries[i].Value, _lambda);
+                    _transformedTimeSeries.Add(ord);
+                }
+            }
+
+            // Step 2: Difference the transformed series.
+            _diffSeries = DiffOrderD > 0
+                ? _transformedTimeSeries.Difference(1, DiffOrderD)
+                : _transformedTimeSeries.Clone();
+
+            int effectiveTrainingSteps = Math.Min(TrainingTimeSteps, _diffSeries.Count);
+
+            // Step 3: Training series is the first effectiveTrainingSteps entries of _diffSeries.
+            _trainingTimeSeries = new TimeSeries(_diffSeries.TimeInterval);
+            for (int i = 0; i < effectiveTrainingSteps; i++)
+                _trainingTimeSeries.Add(_diffSeries[i].Clone());
+
+            // Step 4: Jacobian correction for the likelihood, computed on the RAW values
+            // whose densities the likelihood is evaluating (t = maxOrder + DiffOrderD .. TrainingTimeSteps - 1).
+            // Differencing is a linear operator so adds no Jacobian term.
+            if (TransformType == Transform.None)
+            {
+                _logJacobian = 0;
+            }
+            else
+            {
+                int startRawIdx = DiffOrderD + maxOrder;
+                int endRawIdx = TrainingTimeSteps - 1;
+                if (endRawIdx >= startRawIdx && endRawIdx < TimeSeries.Count)
+                {
+                    var rawSubset = TimeSeries.ValuesToArray().Subset(startRawIdx, endRawIdx);
+                    _logJacobian = TransformType == Transform.YeoJohnson
+                        ? YeoJohnson.LogJacobian(rawSubset, _lambda)
+                        : BoxCox.LogJacobian(rawSubset, _lambda);
+                }
+                else
+                {
+                    _logJacobian = 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the transformation parameters manually.
+        /// </summary>
+        /// <param name="lambda1">The primary transformation parameter (λ for Box-Cox/Yeo-Johnson).</param>
+        /// <param name="lambda2">The offset for handling non-positive values (default = 0).</param>
+        public void SetTransformParameters(double lambda1 = 0, double lambda2 = 0)
+        {
+            _lambda = lambda1;
+            _lambda2 = lambda2;
+        }
+
+        /// <summary>
+        /// Infers the seasonal period from the time series time interval.
+        /// </summary>
+        /// <returns>The number of time steps in one seasonal cycle.</returns>
+        /// <summary>
+        /// Clones <paramref name="observed"/> and appends <paramref name="tail"/> values using
+        /// the observed series' time interval to advance timestamps. Used by covariate
+        /// extension to preserve observed covariate values across posterior realizations.
+        /// </summary>
+        private static TimeSeries AppendTail(TimeSeries observed, TimeSeries tail)
+        {
+            var extended = observed.Clone();
+            DateTime next = extended.Count > 0
+                ? TimeSeries.AddTimeInterval(extended[extended.Count - 1].Index, extended.TimeInterval)
+                : observed.StartDate;
+            for (int j = 0; j < tail.Count; j++)
+            {
+                extended.Add(new SeriesOrdinate<DateTime, double>(next, tail[j].Value));
+                next = TimeSeries.AddTimeInterval(next, extended.TimeInterval);
+            }
+            return extended;
+        }
+
+        /// <summary>
+        /// Clones <paramref name="observed"/> and appends a constant-valued tail of length
+        /// <paramref name="tailLength"/>. Used by Predict's deterministic mode (seed == -1)
+        /// so the "deterministic forecast" trace does not depend on a particular bootstrap
+        /// or KNN realization.
+        /// </summary>
+        private static TimeSeries AppendConstantTail(TimeSeries observed, double constant, int tailLength)
+        {
+            var extended = observed.Clone();
+            DateTime next = extended.Count > 0
+                ? TimeSeries.AddTimeInterval(extended[extended.Count - 1].Index, extended.TimeInterval)
+                : observed.StartDate;
+            for (int j = 0; j < tailLength; j++)
+            {
+                extended.Add(new SeriesOrdinate<DateTime, double>(next, constant));
+                next = TimeSeries.AddTimeInterval(next, extended.TimeInterval);
+            }
+            return extended;
+        }
+
+        private int InferSeasonalPeriod()
+        {
+            if (TimeSeries == null) return 12; // Default fallback
+
+            switch (TimeSeries.TimeInterval)
+            {
+                case TimeInterval.OneMinute:
+                    return 1440; // Daily cycle (minutes per day)
+
+                case TimeInterval.FiveMinute:
+                    return 288; // Daily cycle
+
+                case TimeInterval.FifteenMinute:
+                    return 96; // Daily cycle
+
+                case TimeInterval.ThirtyMinute:
+                    return 48; // Daily cycle
+
+                case TimeInterval.OneHour:
+                    return 24; // Daily cycle
+
+                case TimeInterval.SixHour:
+                    return 4; // Daily cycle
+
+                case TimeInterval.TwelveHour:
+                    return 2; // Daily cycle
+
+                case TimeInterval.OneDay:
+                    return 365; // Annual cycle
+
+                case TimeInterval.SevenDay:
+                    return 52; // Annual cycle
+
+                case TimeInterval.OneMonth:
+                    return 12; // Annual cycle
+
+                case TimeInterval.OneQuarter:
+                    return 4; // Annual cycle
+
+                case TimeInterval.OneYear:
+                    return 1; // No sub-annual seasonality
+
+                default:
+                    return 12;
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void SetDefaultParameters()
+        {
+            // Remove old handlers
+            if (Parameters.Count > 0)
+            {
+                for (int i = 0; i < NumberOfParameters; i++)
+                    Parameters[i].PropertyChanged -= Parameter_PropertyChanged;
+            }
+
+            int N = 0;
+            double mean = 0;
+            double min = -10;
+            double max = 10;
+            double range = max - min;
+            double delta1 = 0, delta2 = 0, delta3 = 0;
+            double sigma = 1;
+            double sigmaLB = Tools.DoubleMachineEpsilon;
+            double sigmaUB = 10;
+
+            // Get data statistics from differenced series (original scale)
+            // Parameters are interpreted on original scale, transformation only affects residuals
+            // Match ARIMA's approach for min/max bounds and sigmaUB calculation
+            if (_diffSeries != null && _diffSeries.Count > 0)
+            {
+                N = TrainingTimeSteps;
+                mean = _diffSeries.MeanValue();
+                sigma = _diffSeries.StandardDeviation();
+
+                // Match ARIMA's min/max calculation based on mean
+                double tempMin = Math.Sign(mean) * Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(mean)) - 1));
+                double tempMax = Math.Sign(mean) * Math.Pow(10, Math.Ceiling(Math.Log10(Math.Abs(mean)) + 1));
+                min = Math.Min(tempMin, tempMax);
+                max = Math.Max(tempMin, tempMax);
+
+                if (double.IsNaN(min) || double.IsInfinity(min)) min = -1000;
+                if (double.IsNaN(max) || double.IsInfinity(max)) max = 1000;
+                if (min >= max) { min = mean - 100; max = mean + 100; }
+
+                range = max - min;
+
+                // Trend parameter scales
+                delta1 = (_diffSeries[Math.Min(TrainingTimeSteps - 1, _diffSeries.Count - 1)].Value - _diffSeries.First().Value) / N;
+                delta2 = delta1 / N;
+                delta3 = delta2 / N;
+                delta1 = Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(delta1)) + 1));
+                delta2 = Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(delta2)) + 1));
+                delta3 = Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(delta3)) + 1));
+
+                // Match ARIMA's sigmaUB calculation using Ceiling
+                sigmaUB = Math.Pow(10, Math.Ceiling(Math.Log10(sigma) + 1));
+                if (double.IsNaN(sigmaUB) || double.IsInfinity(sigmaUB)) sigmaUB = 100;
+            }
+
+            _parameters = new List<ModelParameter>();
+
+            // Initial estimates for trend parameters
+            // Use polynomial regression for intercept (good starting point)
+            // Keep gamma2/gamma3 at 0 to ensure they stay within bounds
+            double interceptInit = mean;
+            double gamma1Init = 0, gamma2Init = 0, gamma3Init = 0;
+
+            if (TrendType != Trend.None && _diffSeries != null && _diffSeries.Count > 1)
+            {
+                int n = Math.Min(_diffSeries.Count, TrainingTimeSteps);
+                var y = new double[n];
+                for (int i = 0; i < n; i++)
+                    y[i] = _diffSeries[i].Value;
+
+                if (TrendType == Trend.Linear)
+                {
+                    // Linear regression: Y = a + b*t
+                    double sumT = 0, sumT2 = 0, sumY = 0, sumTY = 0;
+                    for (int t = 0; t < n; t++)
+                    {
+                        sumT += t;
+                        sumT2 += (double)t * t;
+                        sumY += y[t];
+                        sumTY += t * y[t];
+                    }
+                    double denom = n * sumT2 - sumT * sumT;
+                    if (Math.Abs(denom) > 1e-10)
+                    {
+                        gamma1Init = (n * sumTY - sumT * sumY) / denom;
+                        interceptInit = (sumY - gamma1Init * sumT) / n;
+                    }
+                }
+                else if (TrendType == Trend.Quadratic)
+                {
+                    // Quadratic regression: Y = a + b*t + c*t² for intercept only
+                    double s0 = n, s1 = 0, s2 = 0, s3 = 0, s4 = 0;
+                    double sy = 0, sty = 0, st2y = 0;
+                    for (int t = 0; t < n; t++)
+                    {
+                        double t2 = (double)t * t;
+                        s1 += t;
+                        s2 += t2;
+                        s3 += t * t2;
+                        s4 += t2 * t2;
+                        sy += y[t];
+                        sty += t * y[t];
+                        st2y += t2 * y[t];
+                    }
+                    double det = s0 * (s2 * s4 - s3 * s3) - s1 * (s1 * s4 - s2 * s3) + s2 * (s1 * s3 - s2 * s2);
+                    if (Math.Abs(det) > 1e-10)
+                    {
+                        interceptInit = (sy * (s2 * s4 - s3 * s3) - s1 * (sty * s4 - st2y * s3) + s2 * (sty * s3 - st2y * s2)) / det;
+                        // gamma1Init and gamma2Init stay at 0 to ensure within bounds
+                    }
+                }
+                else if (TrendType == Trend.Cubic)
+                {
+                    // Use first observation as intercept for cubic
+                    interceptInit = y[0];
+                    // gamma1Init, gamma2Init, gamma3Init stay at 0 to ensure within bounds
+                }
+            }
+
+            // Intercept
+            if (IncludeIntercept)
+            {
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Intercept (μ)",
+                    Value = interceptInit,
+                    LowerBound = min,
+                    UpperBound = max,
+                    PriorDistribution = new Uniform(min, max)
+                });
+            }
+
+            // Trend parameters
+            if (TrendType == Trend.Linear)
+            {
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Trend (γ)",
+                    Value = gamma1Init,
+                    LowerBound = -delta1,
+                    UpperBound = delta1,
+                    PriorDistribution = new Uniform(-delta1, delta1)
+                });
+            }
+            else if (TrendType == Trend.Quadratic)
+            {
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Trend (γ₁)",
+                    Value = gamma1Init,
+                    LowerBound = -delta1,
+                    UpperBound = delta1,
+                    PriorDistribution = new Uniform(-delta1, delta1)
+                });
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Trend (γ₂)",
+                    Value = gamma2Init,
+                    LowerBound = -delta2,
+                    UpperBound = delta2,
+                    PriorDistribution = new Uniform(-delta2, delta2)
+                });
+            }
+            else if (TrendType == Trend.Cubic)
+            {
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Trend (γ₁)",
+                    Value = gamma1Init,
+                    LowerBound = -delta1,
+                    UpperBound = delta1,
+                    PriorDistribution = new Uniform(-delta1, delta1)
+                });
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Trend (γ₂)",
+                    Value = gamma2Init,
+                    LowerBound = -delta2,
+                    UpperBound = delta2,
+                    PriorDistribution = new Uniform(-delta2, delta2)
+                });
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Trend (γ₃)",
+                    Value = gamma3Init,
+                    LowerBound = -delta3,
+                    UpperBound = delta3,
+                    PriorDistribution = new Uniform(-delta3, delta3)
+                });
+            }
+
+            // Seasonality parameters - Fourier series approach
+            if (IncludeSeasonality)
+            {
+                // Amplitude bounds based on data range
+                double amplitude = range / 4;
+
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Seasonality Sin (ψ₁)",
+                    Value = 0,
+                    LowerBound = -amplitude,
+                    UpperBound = amplitude,
+                    PriorDistribution = new Uniform(-amplitude, amplitude)
+                });
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "Seasonality Cos (ψ₂)",
+                    Value = 0,
+                    LowerBound = -amplitude,
+                    UpperBound = amplitude,
+                    PriorDistribution = new Uniform(-amplitude, amplitude)
+                });
+            }
+
+            // Covariate parameters
+            if (Covariates != null && Covariates.Count > 0)
+            {
+                for (int i = 1; i <= Covariates.Count; i++)
+                {
+                    // Number of covariate parameters: 1 for current + XOrderB for lags
+                    int numCovParams = XOrderB + 1;
+
+                    if (XOrderB == 0)
+                    {
+                        // Only current value
+                        Parameters.Add(new ModelParameter()
+                        {
+                            Name = "Covariate (β" + SubscriptFormatter.ToSubscript(i) + ")",
+                            Value = 0,
+                            LowerBound = -10,
+                            UpperBound = 10,
+                            PriorDistribution = new Uniform(-10, 10)
+                        });
+                    }
+                    else
+                    {
+                        // Current value + lags: β_i0*X[t] + β_i1*X[t-1] + ... + β_ib*X[t-b]
+                        for (int j = 0; j <= XOrderB; j++)
+                        {
+                            string lagLabel = j == 0 ? "" : ",-" + j;
+                            Parameters.Add(new ModelParameter()
+                            {
+                                Name = "Covariate (β" + SubscriptFormatter.ToSubscript(i) + lagLabel + ")",
+                                Value = 0,
+                                LowerBound = -10,
+                                UpperBound = 10,
+                                PriorDistribution = new Uniform(-10, 10)
+                            });
+                        }
+                    }
+                }
+            }
+
+            // AR parameters
+            for (int i = 1; i <= AROrderP; i++)
+            {
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "AR (φ" + SubscriptFormatter.ToSubscript(i) + ")",
+                    Value = 0,
+                    LowerBound = -2,
+                    UpperBound = 2,
+                    PriorDistribution = new Uniform(-2, 2)
+                });
+            }
+
+            // MA parameters
+            for (int i = 1; i <= MAOrderQ; i++)
+            {
+                Parameters.Add(new ModelParameter()
+                {
+                    Name = "MA (θ" + SubscriptFormatter.ToSubscript(i) + ")",
+                    Value = 0,
+                    LowerBound = -2,
+                    UpperBound = 2,
+                    PriorDistribution = new Uniform(-2, 2)
+                });
+            }
+
+            // Scale (standard error) parameter
+            Parameters.Add(new ModelParameter()
+            {
+                Name = "Scale (σ)",
+                Value = sigma,
+                LowerBound = sigmaLB,
+                UpperBound = sigmaUB,
+                IsPositive = true,
+                PriorDistribution = new Uniform(sigmaLB, sigmaUB)
+            });
+
+            // Add handlers
+            for (int i = 0; i < NumberOfParameters; i++)
+                Parameters[i].PropertyChanged += Parameter_PropertyChanged;
+
+            RaisePropertyChange(nameof(SetDefaultParameters));
+        }
+
+        /// <inheritdoc/>
+        public override void SetParameterValues(IList<double> parameters)
+        {
+            if (parameters == null)
+                throw new ArgumentNullException(nameof(parameters));
+            if (parameters.Count != Parameters.Count)
+                throw new ArgumentException("Parameter list length does not match model parameter count.", nameof(parameters));
+
+            for (int i = 0; i < Parameters.Count; i++)
+                Parameters[i].Value = parameters[i];
+        }
+
+        /// <inheritdoc/>
+        public override double DataLogLikelihood(double[] parameters)
+        {
+            // Validate parameters
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (double.IsNaN(parameters[i]))
+                    return double.NegativeInfinity;
+            }
+
+            double sigma = parameters.Last();
+            // Guard against non-positive sigma — Numerics.Distributions.Normal throws on
+            // sigma <= 0, which would crash the sampler instead of being rejected as a
+            // boundary move. User-defined priors with non-positive support trigger this.
+            if (sigma <= 0) return double.NegativeInfinity;
+            var normDist = new Normal(0, sigma);
+            var residuals = Residuals(parameters);
+            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+            double logLH = 0;
+
+            // Compute conditional log-likelihood (use residuals.Length to account for differencing)
+            for (int t = maxOrder; t < residuals.Length; t++)
+            {
+                logLH += normDist.LogPDF(residuals[t]);
+            }
+
+            return logLH + _logJacobian;
+        }
+
+        /// <inheritdoc/>
+        public override double[] PointwiseDataLogLikelihood(double[] parameters)
+        {
+            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+
+            // Account for differencing reducing the series length
+            int effectiveTrainingSteps = _diffSeries != null ? Math.Min(TrainingTimeSteps, _diffSeries.Count) : TrainingTimeSteps;
+            int n = effectiveTrainingSteps - maxOrder;
+            if (n <= 0)
+                return Array.Empty<double>();
+
+            // Validate parameters
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (double.IsNaN(parameters[i]))
+                {
+                    var invalid = new double[n];
+                    for (int j = 0; j < n; j++) invalid[j] = double.NegativeInfinity;
+                    return invalid;
+                }
+            }
+
+            double sigma = parameters.Last();
+            var normDist = new Normal(0, sigma);
+            var residuals = Residuals(parameters);
+            var result = new double[n];
+
+            // Distribute log Jacobian uniformly across observations
+            double jacobianPerObs = _logJacobian / n;
+
+            // Compute pointwise conditional log-likelihood
+            int idx = 0;
+            for (int t = maxOrder; t < residuals.Length; t++)
+            {
+                result[idx++] = normDist.LogPDF(residuals[t]) + jacobianPerObs;
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override List<DataComponent> PointwiseDataLogLikelihoodComponents(double[] parameters)
+        {
+            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+
+            // Account for differencing reducing the series length
+            int effectiveTrainingSteps = _diffSeries != null ? Math.Min(TrainingTimeSteps, _diffSeries.Count) : TrainingTimeSteps;
+            int n = effectiveTrainingSteps - maxOrder;
+            if (n <= 0)
+                return new List<DataComponent>();
+
+            var result = new List<DataComponent>(n);
+            var responseValues = _trainingTimeSeries?.ValuesToArray();
+
+            // Validate parameters
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (double.IsNaN(parameters[i]))
+                {
+                    for (int j = 0; j < n; j++)
+                    {
+                        int tIdx = maxOrder + j;
+                        double value = responseValues != null && tIdx < responseValues.Length ? responseValues[tIdx] : 0;
+                        result.Add(new DataComponent(j, double.NegativeInfinity, value, DataComponentType.Exact, 1, $"t={tIdx}"));
+                    }
+                    return result;
+                }
+            }
+
+            double sigma = parameters.Last();
+            var normDist = new Normal(0, sigma);
+            var residuals = Residuals(parameters);
+
+            // Distribute log Jacobian uniformly across observations
+            double jacobianPerObs = _logJacobian / n;
+
+            // Compute pointwise conditional log-likelihood components
+            int idx = 0;
+            for (int t = maxOrder; t < residuals.Length; t++)
+            {
+                double logLH = normDist.LogPDF(residuals[t]) + jacobianPerObs;
+                double value = responseValues != null && t < responseValues.Length ? responseValues[t] : 0;
+                result.Add(new DataComponent(idx++, logLH, value, DataComponentType.Exact, 1, $"t={t}"));
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override double PriorLogLikelihood(double[] parameters)
+        {
+            if (parameters == null || Parameters is null || parameters.Length < Parameters.Count)
+                return double.NegativeInfinity;
+
+            double sigma = parameters.Last();
+            double logLH = 0;
+
+            for (int i = 0; i < Parameters.Count; i++)
+            {
+                logLH += Parameters[i].PriorDistribution.LogPDF(parameters[i]);
+            }
+
+            if (UseJeffreysRuleForScale)
+            {
+                logLH -= sigma > 0 ? Math.Log(sigma) : double.PositiveInfinity;
+            }
+
+            // Collapse NaN / +Inf — Bayesian samplers require -Inf as the "impossible" sentinel.
+            // Without this, +Inf − Inf = NaN can corrupt the MCMC arithmetic. Mirrors ModelBase default.
+            if (!Tools.IsFinite(logLH)) return double.NegativeInfinity;
+            return logLH;
+        }
+
+        /// <inheritdoc/>
+        public override List<PriorComponent> PointwisePriorLogLikelihood(double[] parameters)
+        {
+            var result = new List<PriorComponent>();
+
+            // Parameter priors
+            for (int i = 0; i < Parameters.Count; i++)
+            {
+                double ll = Parameters[i].PriorDistribution.LogPDF(parameters[i]);
+                string paramName = string.IsNullOrEmpty(Parameters[i].OwnerName) ? Parameters[i].Name : Parameters[i].OwnerName;
+                result.Add(new PriorComponent($"Parameter Prior: {paramName}", ll, PriorComponentType.ParameterPrior));
+            }
+
+            // Jeffreys rule for sigma (scale)
+            if (UseJeffreysRuleForScale)
+            {
+                double sigma = parameters.Last();
+                double ll = sigma > 0 ? -Math.Log(sigma) : double.NegativeInfinity;
+                result.Add(new PriorComponent("Jeffreys Scale: σ", ll, PriorComponentType.JeffreysScalePrior));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Computes the model residuals (prediction errors) for given parameters.
+        /// </summary>
+        /// <param name="parameters">The parameter vector for the model.</param>
+        /// <returns>Array of residuals on the transformed scale.</returns>
+        public double[] Residuals(double[] parameters)
+        {
+            // Use effective training steps to account for differencing reducing the series length
+            int effectiveTrainingSteps = _diffSeries != null ? Math.Min(TrainingTimeSteps, _diffSeries.Count) : TrainingTimeSteps;
+
+            var y = new double[effectiveTrainingSteps];
+            var mean = new double[effectiveTrainingSteps];
+            var epsilon = new double[effectiveTrainingSteps];
+            var residuals = new double[effectiveTrainingSteps];
+            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+
+            // Extract parameters
+            int k = 0;
+            double mu = 0;
+            double[]? gamma = null;
+            double[]? psi = null;
+            double[,]? beta = null;
+            var phi = new double[AROrderP];
+            var theta = new double[MAOrderQ];
+
+            if (IncludeIntercept)
+            {
+                mu = parameters[k++];
+            }
+
+            if (TrendType == Trend.Linear)
+            {
+                gamma = new[] { parameters[k++] };
+            }
+            else if (TrendType == Trend.Quadratic)
+            {
+                gamma = new[] { parameters[k++], parameters[k++] };
+            }
+            else if (TrendType == Trend.Cubic)
+            {
+                gamma = new[] { parameters[k++], parameters[k++], parameters[k++] };
+            }
+
+            if (IncludeSeasonality)
+            {
+                psi = new[] { parameters[k++], parameters[k++] };
+            }
+
+            if (Covariates != null && Covariates.Count > 0)
+            {
+                beta = new double[Covariates.Count, XOrderB + 1];
+                for (int i = 0; i < Covariates.Count; i++)
+                {
+                    for (int j = 0; j <= XOrderB; j++)
+                    {
+                        beta[i, j] = parameters[k++];
+                    }
+                }
+            }
+
+            for (int i = 0; i < AROrderP; i++)
+                phi[i] = parameters[k++];
+
+            for (int i = 0; i < MAOrderQ; i++)
+                theta[i] = parameters[k++];
+
+            // Compute predictions and residuals
+            for (int t = 0; t < effectiveTrainingSteps; t++)
+            {
+                mean[t] = mu;
+
+                // Trend component
+                if (gamma != null)
+                {
+                    if (TrendType == Trend.Linear)
+                        mean[t] += gamma[0] * t;
+                    else if (TrendType == Trend.Quadratic)
+                        mean[t] += gamma[0] * t + gamma[1] * t * t;
+                    else if (TrendType == Trend.Cubic)
+                        mean[t] += gamma[0] * t + gamma[1] * t * t + gamma[2] * t * t * t;
+                }
+
+                // Seasonal component - Fourier series
+                if (psi != null)
+                {
+                    double angle = 2.0 * Math.PI * t / _seasonalPeriod;
+                    mean[t] += psi[0] * Math.Sin(angle) + psi[1] * Math.Cos(angle);
+                }
+
+                // Covariate component (includes current and lagged values if XOrderB > 0)
+                if (beta != null && Covariates != null && t >= 0)
+                {
+                    for (int i = 0; i < Covariates.Count; i++)
+                    {
+                        if (XOrderB == 0)
+                        {
+                            // Use current value only
+                            mean[t] += beta[i, 0] * _covariates[i][t].Value;
+                        }
+                        else
+                        {
+                            // Use current value X[t]
+                            if (t < _covariates[i].Count)
+                                mean[t] += beta[i, 0] * _covariates[i][t].Value;
+
+                            // Use lagged values X[t-1], ..., X[t-b]
+                            for (int j = 1; j <= XOrderB && t - j >= 0; j++)
+                            {
+                                if (t - j < _covariates[i].Count)
+                                    mean[t] += beta[i, j] * _covariates[i][t - j].Value;
+                            }
+                        }
+                    }
+                }
+
+                // AR component
+                double ar = 0;
+                if (t >= AROrderP)
+                {
+                    for (int p = 1; p <= AROrderP; p++)
+                    {
+                        ar += phi[p - 1] * (_diffSeries![t - p].Value - mean[t - p]);
+                    }
+                }
+
+                // MA component
+                double ma = 0;
+                for (int q = 1; q <= Math.Min(t, MAOrderQ); q++)
+                {
+                    ma += theta[q - 1] * epsilon[t - q];
+                }
+
+                // Complete prediction
+                if (t < maxOrder)
+                {
+                    y[t] = _diffSeries![t].Value;
+                }
+                else
+                {
+                    y[t] = mean[t] + ar + ma;
+                }
+
+                // Update epsilon for MA. _diffSeries, y, and residuals are all on the
+                // transformed + differenced scale (the parameter scale), so subtraction is
+                // well-defined without per-transform branches.
+                epsilon[t] = _diffSeries![t].Value - y[t];
+                residuals[t] = epsilon[t];
+            }
+
+            return residuals;
+        }
+
+        /// <summary>
+        /// Predicts time series values using the specified parameters.
+        /// </summary>
+        /// <param name="parameters">The parameter vector for the model.</param>
+        /// <param name="forecastSteps">Number of time steps to forecast beyond the training period (default = 0).</param>
+        /// <param name="seed">Random seed for stochastic predictions. If -1, returns the deterministic mean
+        /// prediction without random AR/MA noise; covariates that need extending are filled with each covariate's
+        /// empirical mean (rather than a single bootstrap/KNN realization), so the deterministic trace is
+        /// independent of <see cref="CovariateExtension"/>.</param>
+        /// <param name="forecastCovariates">Optional covariates for the forecast period. If null and covariates exist,
+        /// the <see cref="CovariateExtension"/> property determines how covariates are extended (in stochastic mode);
+        /// in deterministic mode (seed == -1) the forecast tail is filled with each covariate's empirical mean.</param>
+        /// <returns>
+        /// A tuple containing:
+        /// - Y: Predicted values on the original (undifferenced, untransformed) scale
+        /// - Component decomposition: Intercept, Trend, Seasonality, Covariate, AR, and MA contributions
+        /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when <see cref="CovariateExtension"/> is
+        /// <see cref="CovariateExtensionMethod.None"/> and covariates are insufficient for the forecast period.</exception>
+        public (double[] Y,
+            double[] InterceptPart,
+            double[] TrendPart,
+            double[] SeasonalityPart,
+            double[] CovariatePart,
+            double[] ARPart,
+            double[] MAPart)
+            Predict(double[] parameters, int forecastSteps = 0, int seed = -1, List<TimeSeries>? forecastCovariates = null)
+        {
+            int totalSteps = TrainingTimeSteps + forecastSteps;
+
+            var y = new double[totalSteps];
+            var interceptPart = new double[totalSteps];
+            var trendPart = new double[totalSteps];
+            var seasonalityPart = new double[totalSteps];
+            var covariatePart = new double[totalSteps];
+            var arPart = new double[totalSteps];
+            var maPart = new double[totalSteps];
+            var mean = new double[totalSteps];
+            var epsilon = new double[totalSteps];
+
+            int maxOrder = Math.Max(DiffOrderD, Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB)));
+            Random? prng = seed >= 0 ? new Random(seed) : null;
+            Normal? errDist = seed >= 0 ? new Normal(0, parameters.Last()) : null;
+
+            // Prepare forecast covariates if needed
+            List<TimeSeries> useCovariates = _covariates;
+            if (forecastSteps > 0 && _covariates != null && _covariates.Count > 0)
+            {
+                if (forecastCovariates != null)
+                {
+                    // Use provided forecast covariates
+                    useCovariates = new List<TimeSeries>();
+                    for (int i = 0; i < _covariates.Count; i++)
+                    {
+                        var combined = _covariates[i].Clone();
+                        for (int j = 0; j < forecastCovariates[i].Count; j++)
+                        {
+                            combined.Add(forecastCovariates[i][j].Clone());
+                        }
+                        useCovariates.Add(combined);
+                    }
+                }
+                else
+                {
+                    // Extend covariates based on the CovariateExtension setting. Observed
+                    // covariate values must be preserved exactly across posterior realizations
+                    // (otherwise the training-period CI inflates because beta*X[t] varies
+                    // randomly for every draw). We always keep [0..Count) as observed and
+                    // only resample the forecast tail of length forecastSteps.
+                    //
+                    // For deterministic predictions (seed == -1) the bootstrap/KNN resamplers
+                    // would inject a single arbitrary covariate path into the forecast tail,
+                    // making the "deterministic" forecast depend on the CovariateExtension
+                    // choice and on a fixed-but-arbitrary seed. Use the empirical mean of
+                    // each covariate instead — the maximum-entropy choice that yields a
+                    // smooth AR(I)MA decay toward steady state independent of method.
+                    bool deterministic = seed < 0;
+                    int resampleSeed = seed >= 0 ? seed + 1000 : 12345;
+
+                    switch (CovariateExtension)
+                    {
+                        case CovariateExtensionMethod.None:
+                            // Validate that covariates are long enough for the whole horizon.
+                            int requiredLength = TrainingTimeSteps + forecastSteps;
+                            for (int i = 0; i < _covariates.Count; i++)
+                            {
+                                if (_covariates[i].Count < requiredLength)
+                                {
+                                    throw new InvalidOperationException(
+                                        $"Covariate {i} has {_covariates[i].Count} observations but {requiredLength} are required " +
+                                        $"for {forecastSteps} forecast steps. Either provide forecastCovariates or set " +
+                                        "CovariateExtension to BlockBootstrap or KNN.");
+                                }
+                            }
+                            break;
+
+                        case CovariateExtensionMethod.BlockBootstrap:
+                            useCovariates = new List<TimeSeries>();
+                            for (int i = 0; i < _covariates.Count; i++)
+                            {
+                                if (deterministic)
+                                {
+                                    useCovariates.Add(AppendConstantTail(_covariates[i], _covariates[i].MeanValue(), forecastSteps));
+                                }
+                                else
+                                {
+                                    int blockSize = Math.Max(1, Math.Min(10, _covariates[i].Count / 4));
+                                    var tail = _covariates[i].ResampleWithBlockBootstrap(
+                                        forecastSteps,
+                                        blockSize,
+                                        resampleSeed + i);
+                                    useCovariates.Add(AppendTail(_covariates[i], tail));
+                                }
+                            }
+                            break;
+
+                        case CovariateExtensionMethod.KNN:
+                            useCovariates = new List<TimeSeries>();
+                            for (int i = 0; i < _covariates.Count; i++)
+                            {
+                                if (deterministic)
+                                {
+                                    useCovariates.Add(AppendConstantTail(_covariates[i], _covariates[i].MeanValue(), forecastSteps));
+                                }
+                                else
+                                {
+                                    int knn = Math.Max(3, _covariates[i].Count / 10);
+                                    var tail = _covariates[i].ResampleWithKNN(
+                                        forecastSteps,
+                                        knn,
+                                        resampleSeed + i);
+                                    useCovariates.Add(AppendTail(_covariates[i], tail));
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+
+            // Extract parameters
+            int k = 0;
+            double mu = 0;
+            double[]? gamma = null;
+            double[]? psi = null;
+            double[,]? beta = null;
+            var phi = new double[AROrderP];
+            var theta = new double[MAOrderQ];
+
+            if (IncludeIntercept)
+                mu = parameters[k++];
+
+            if (TrendType == Trend.Linear)
+                gamma = new[] { parameters[k++] };
+            else if (TrendType == Trend.Quadratic)
+                gamma = new[] { parameters[k++], parameters[k++] };
+            else if (TrendType == Trend.Cubic)
+                gamma = new[] { parameters[k++], parameters[k++], parameters[k++] };
+
+            if (IncludeSeasonality)
+                psi = new[] { parameters[k++], parameters[k++] };
+
+            if (useCovariates != null && useCovariates.Count > 0)
+            {
+                beta = new double[useCovariates.Count, XOrderB + 1];
+                for (int i = 0; i < useCovariates.Count; i++)
+                {
+                    for (int j = 0; j <= XOrderB; j++)
+                    {
+                        beta[i, j] = parameters[k++];
+                    }
+                }
+            }
+
+            for (int i = 0; i < AROrderP; i++)
+                phi[i] = parameters[k++];
+
+            for (int i = 0; i < MAOrderQ; i++)
+                theta[i] = parameters[k++];
+
+            // Generate predictions
+            for (int t = 0; t < totalSteps; t++)
+            {
+                // Intercept
+                mean[t] = mu;
+                interceptPart[t] = mu;
+
+                // Trend
+                double trend = 0;
+                if (gamma != null)
+                {
+                    if (TrendType == Trend.Linear)
+                        trend = gamma[0] * t;
+                    else if (TrendType == Trend.Quadratic)
+                        trend = gamma[0] * t + gamma[1] * t * t;
+                    else if (TrendType == Trend.Cubic)
+                        trend = gamma[0] * t + gamma[1] * t * t + gamma[2] * t * t * t;
+                }
+                mean[t] += trend;
+                trendPart[t] = trend;
+
+                // Seasonality - Fourier series
+                double seasonality = 0;
+                if (psi != null)
+                {
+                    double angle = 2.0 * Math.PI * t / _seasonalPeriod;
+                    seasonality = psi[0] * Math.Sin(angle) + psi[1] * Math.Cos(angle);
+                }
+                mean[t] += seasonality;
+                seasonalityPart[t] = seasonality;
+
+                // Covariates (includes current and lagged values if XOrderB > 0)
+                double covariate = 0;
+                if (beta != null && useCovariates != null && useCovariates.Count > 0 && t < useCovariates[0].Count)
+                {
+                    for (int i = 0; i < useCovariates.Count; i++)
+                    {
+                        if (XOrderB == 0)
+                        {
+                            // Use current value only
+                            covariate += beta[i, 0] * useCovariates[i][t].Value;
+                        }
+                        else
+                        {
+                            // Use current value X[t]
+                            covariate += beta[i, 0] * useCovariates[i][t].Value;
+
+                            // Use lagged values X[t-1], ..., X[t-b]
+                            for (int j = 1; j <= XOrderB && t - j >= 0 && t - j < useCovariates[i].Count; j++)
+                            {
+                                covariate += beta[i, j] * useCovariates[i][t - j].Value;
+                            }
+                        }
+                    }
+                }
+                mean[t] += covariate;
+                covariatePart[t] = covariate;
+
+                // AR lags: inside the fit window (t - p < TrainingTimeSteps) use observed
+                // _diffSeries for one-step-ahead residual structure. Outside the fit window
+                // (validation + future forecast) propagate via predicted y[t-p] so the
+                // model's own uncertainty compounds — the model never saw holdout data.
+                double ar = 0;
+                if (t >= AROrderP)
+                {
+                    for (int p = 1; p <= AROrderP; p++)
+                    {
+                        if (_diffSeries != null && t - p < TrainingTimeSteps && t - p < _diffSeries.Count)
+                        {
+                            ar += phi[p - 1] * (_diffSeries[t - p].Value - mean[t - p]);
+                        }
+                        else
+                        {
+                            ar += phi[p - 1] * (y[t - p] - mean[t - p]);
+                        }
+                    }
+                }
+                arPart[t] = ar;
+
+                // MA
+                double ma = 0;
+                for (int q = 1; q <= Math.Min(t, MAOrderQ); q++)
+                {
+                    ma += theta[q - 1] * epsilon[t - q];
+                }
+                maPart[t] = ma;
+
+                // Complete prediction on the transformed + differenced scale. Parameters
+                // were fit on this scale (via _trainingTimeSeries), and _diffSeries now
+                // lives on the same scale after SetTrainingData's reorder, so no mixing.
+                if (t < maxOrder && _diffSeries != null && t < _diffSeries.Count)
+                {
+                    y[t] = _diffSeries[t].Value;
+                }
+                else
+                {
+                    y[t] = mean[t] + ar + ma;
+                }
+
+                // Pre-noise epsilon inside the fit window = observed - model prediction.
+                // Keeps MA recursion anchored to true residuals through training.
+                if (_diffSeries != null && t < TrainingTimeSteps && t < _diffSeries.Count)
+                {
+                    epsilon[t] = _diffSeries[t].Value - y[t];
+                }
+
+                // Residual noise for the posterior predictive distribution. Draw every step
+                // once the AR/MA buffer is seeded (t >= maxOrder), on the model scale — the
+                // integration and inverse-transform after the loop propagate it correctly.
+                if (prng != null && t >= maxOrder)
+                {
+                    double mt = y[t];
+                    double error = errDist!.InverseCDF(prng.NextDouble());
+                    y[t] += error;
+
+                    // Outside the fit window the model never saw observations; overwrite
+                    // epsilon with the injected noise so MA fans out from injected error.
+                    if (t >= TrainingTimeSteps)
+                        epsilon[t] = y[t] - mt;
+                }
+            }
+
+            // Post-processing: y is on the transformed + differenced scale.
+            //
+            // Step A — Integrate (reverse differencing) to the transformed + undifferenced
+            // scale. Inside the fit window anchor each integrated value to the OBSERVED lag
+            // on the transformed scale (_transformedTimeSeries). This yields a one-step-ahead
+            // CI that wraps observations with roughly constant width ≈ ±1.96σ rather than a
+            // random-walk cone. Outside the fit window use standard cumsum so per-step noise
+            // compounds and the CI fans out.
+            //
+            // For DiffOrderD >= 2 we precompute intermediate-difference anchor series so
+            // each integration level is anchored to the observed (DiffOrderD - 1 - d)-th
+            // difference of the transformed series, not just the original (d == 0). The
+            // previous implementation only anchored at d == 0 and used plain cumsum for
+            // d >= 1, producing biased forecasts whenever DiffOrderD >= 2.
+            if (DiffOrderD > 0)
+            {
+                var integrated = new double[totalSteps];
+                Array.Copy(y, integrated, totalSteps);
+
+                // anchorSeries[k] = k-th difference of _transformedTimeSeries.
+                List<TimeSeries>? anchorSeries = null;
+                if (_transformedTimeSeries != null && _transformedTimeSeries.Count > 0)
+                {
+                    anchorSeries = new List<TimeSeries> { _transformedTimeSeries };
+                    for (int level = 1; level < DiffOrderD; level++)
+                        anchorSeries.Add(anchorSeries[level - 1].Difference(1, 1));
+                }
+
+                for (int d = 0; d < DiffOrderD; d++)
+                {
+                    int anchorLevel = DiffOrderD - 1 - d;
+                    TimeSeries? anchor = anchorSeries != null && anchorLevel < anchorSeries.Count
+                        ? anchorSeries[anchorLevel]
+                        : null;
+                    bool useObservedAnchor = anchor != null && anchor.Count > 0;
+
+                    if (useObservedAnchor)
+                    {
+                        integrated[0] = anchor![0].Value;
+
+                        int anchorEnd = Math.Min(TrainingTimeSteps, totalSteps);
+                        for (int i = 1; i < anchorEnd; i++)
+                        {
+                            int obsIdx = i - 1;
+                            if (obsIdx < anchor.Count)
+                                integrated[i] = anchor[obsIdx].Value + integrated[i];
+                            else
+                                integrated[i] = integrated[i - 1] + integrated[i];
+                        }
+
+                        for (int i = Math.Max(1, anchorEnd); i < totalSteps; i++)
+                        {
+                            integrated[i] = integrated[i - 1] + integrated[i];
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 1; i < totalSteps; i++)
+                        {
+                            integrated[i] = integrated[i - 1] + integrated[i];
+                        }
+                    }
+                }
+
+                y = integrated;
+            }
+
+            // Step B — Inverse transform back to the original (user-facing) scale. Applied
+            // uniformly to every step. No bias correction for the ModeCurve (seed < 0): the
+            // back-transformed mean is the posterior-median point forecast, matching R's
+            // forecast::forecast.Arima convention. MeanCurve, computed from averaged draws
+            // in the analysis layer, gives the true posterior mean on the original scale.
+            if (TransformType == Transform.Logarithmic || TransformType == Transform.BoxCox)
+            {
+                for (int t = 0; t < totalSteps; t++)
+                    y[t] = BoxCox.InverseTransform(y[t], _lambda);
+            }
+            else if (TransformType == Transform.YeoJohnson)
+            {
+                for (int t = 0; t < totalSteps; t++)
+                    y[t] = YeoJohnson.InverseTransform(y[t], _lambda);
+            }
+
+            return (y, interceptPart, trendPart, seasonalityPart, covariatePart, arPart, maPart);
+        }
+
+        /// <summary>
+        /// Generates a synthetic random time series using the current parameter values.
+        /// </summary>
+        /// <param name="timeSteps">The number of time steps to simulate.</param>
+        /// <param name="seed">Random seed for reproducibility (default = 12345).</param>
+        /// <returns>A simulated time series.</returns>
+        public TimeSeries GenerateRandomSeries(int timeSteps, int seed = 12345)
+        {
+            if (TimeSeries == null)
+                throw new InvalidOperationException("TimeSeries must be set before generating random series.");
+
+            DateTime startDate = TimeSeries.StartDate;
+            DateTime endDate = startDate;
+            for (int i = 0; i < timeSteps - 1; i++)
+            {
+                endDate = Numerics.Data.TimeSeries.AddTimeInterval(endDate, TimeSeries.TimeInterval);
+            }
+
+            var result = new TimeSeries(TimeSeries.TimeInterval, startDate, endDate);
+            var parameters = Parameters.Select(x => x.Value).ToArray();
+
+            // Use predict method with stochastic errors
+            var prediction = Predict(parameters, timeSteps - TrainingTimeSteps, seed);
+
+            for (int i = 0; i < timeSteps; i++)
+            {
+                result[i].Value = prediction.Y[i];
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override IModel Clone()
+        {
+            var parms = new List<ModelParameter>();
+            for (int i = 0; i < NumberOfParameters; i++)
+                parms.Add(Parameters[i].Clone());
+
+            var result = new ARIMAX()
+            {
+                _transformType = TransformType,
+                _includeIntercept = IncludeIntercept,
+                _includeSeasonality = IncludeSeasonality,
+                _trendType = TrendType,
+                _arOrderP = AROrderP,
+                _diffOrderD = DiffOrderD,
+                _maOrderQ = MAOrderQ,
+                _xOrderB = XOrderB,
+                _useDefaultFlatPriors = UseDefaultFlatPriors,
+                _useJeffreysRuleForScale = UseJeffreysRuleForScale,
+                _trainingTimeSteps = TrainingTimeSteps,
+                _useDefaultTrainingSteps = UseDefaultTrainingSteps,
+                Parameters = parms
+            };
+
+            result.TimeSeries = TimeSeries?.Clone()!;
+            if (_covariates != null)
+            {
+                result.SetCovariates(_covariates.Select(c => c.Clone()).ToList());
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override XElement ToXElement()
+        {
+            var result = new XElement(nameof(ARIMAX));
+            result.SetAttributeValue(nameof(TransformType), TransformType.ToString());
+            result.SetAttributeValue(nameof(CovariateExtension), CovariateExtension.ToString());
+            result.SetAttributeValue(nameof(IncludeIntercept), IncludeIntercept.ToString());
+            result.SetAttributeValue(nameof(IncludeSeasonality), IncludeSeasonality.ToString());
+            result.SetAttributeValue(nameof(TrendType), TrendType.ToString());
+            result.SetAttributeValue(nameof(AROrderP), AROrderP.ToString(CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(DiffOrderD), DiffOrderD.ToString(CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(MAOrderQ), MAOrderQ.ToString(CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(XOrderB), XOrderB.ToString(CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(TrainingTimeSteps), TrainingTimeSteps.ToString(CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(UseDefaultTrainingSteps), UseDefaultTrainingSteps.ToString());
+
+            // Parameters
+            var parms = new XElement(nameof(Parameters));
+            foreach (var p in Parameters)
+                parms.Add(p.ToXElement());
+            result.Add(parms);
+            result.SetAttributeValue(nameof(UseDefaultFlatPriors), UseDefaultFlatPriors.ToString());
+            result.SetAttributeValue(nameof(UseJeffreysRuleForScale), UseJeffreysRuleForScale.ToString());
+
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public override (bool IsValid, List<string> ValidationMessages) Validate()
+        {
+            bool isValid = true;
+            var messages = new List<string>();
+
+            // Check time series
+            if (TimeSeries == null)
+            {
+                isValid = false;
+                messages.Add("Error: Time series data is null.");
+                return (isValid, messages);
+            }
+
+            if (TimeSeries.Count < 10)
+            {
+                isValid = false;
+                messages.Add("Error: Time series must have at least 10 observations.");
+            }
+
+            // Check training steps
+            if (TrainingTimeSteps < NumberOfParameters)
+            {
+                isValid = false;
+                messages.Add($"Error: Training time steps ({TrainingTimeSteps}) must be at least equal to the number of parameters ({NumberOfParameters}).");
+            }
+
+            if (TrainingTimeSteps > TimeSeries.Count)
+            {
+                isValid = false;
+                messages.Add("Error: Training time steps cannot exceed time series length.");
+            }
+
+            // Warn if training time steps exceeds differenced series length
+            if (DiffOrderD > 0 && TrainingTimeSteps > TimeSeries.Count - DiffOrderD)
+            {
+                messages.Add($"Warning: TrainingTimeSteps ({TrainingTimeSteps}) exceeds the differenced series length " +
+                    $"({TimeSeries.Count - DiffOrderD}). Effective training will use {TimeSeries.Count - DiffOrderD} time steps. " +
+                    "Consider setting TrainingTimeSteps = TimeSeries.Count - DiffOrderD for clarity.");
+            }
+
+            // Check orders
+            if (AROrderP < 0 || AROrderP > 10)
+            {
+                isValid = false;
+                messages.Add("Error: AR order (p) must be between 0 and 10.");
+            }
+
+            if (DiffOrderD < 0 || DiffOrderD > 2)
+            {
+                isValid = false;
+                messages.Add("Error: Differencing order (d) must be 0, 1, or 2.");
+            }
+
+            if (MAOrderQ < 0 || MAOrderQ > 10)
+            {
+                isValid = false;
+                messages.Add("Error: MA order (q) must be between 0 and 10.");
+            }
+
+            if (XOrderB < 0 || XOrderB > 10)
+            {
+                isValid = false;
+                messages.Add("Error: Exogenous lag order (b) must be between 0 and 10.");
+            }
+
+            // Check for at least one component
+            if (AROrderP == 0 && MAOrderQ == 0 && !IncludeIntercept && TrendType == Trend.None &&
+                !IncludeSeasonality && (Covariates == null || Covariates.Count == 0))
+            {
+                isValid = false;
+                messages.Add("Error: Model must have at least one component (AR, MA, intercept, trend, seasonality, or covariates).");
+            }
+
+            // Warn about redundant configuration: differencing removes trends, so fitting trend parameters
+            // to differenced data is generally not meaningful
+            if (DiffOrderD > 0 && TrendType != Trend.None)
+            {
+                messages.Add("Warning: Using both differencing and trend parameters is typically redundant. " +
+                    "Differencing removes trends from the data, so trend parameters on differenced data may not be meaningful. " +
+                    "Consider using either differencing (d > 0) OR trend parameters, but not both.");
+            }
+
+            // Warn about differencing with Fourier seasonality: differencing changes seasonal amplitude/phase
+            if (DiffOrderD > 0 && IncludeSeasonality)
+            {
+                messages.Add("Warning: Using both differencing and Fourier seasonality can cause parameter identification issues. " +
+                    "Differencing alters the amplitude and phase of seasonal components. " +
+                    "Consider using either differencing (d > 0) OR explicit Fourier seasonality, but not both.");
+            }
+
+            // Check covariates
+            if (Covariates != null && Covariates.Count > 0)
+            {
+                for (int i = 0; i < Covariates.Count; i++)
+                {
+                    if (Covariates[i].Count != TimeSeries.Count)
+                    {
+                        isValid = false;
+                        messages.Add($"Error: Covariate {i + 1} length ({Covariates[i].Count}) does not match time series length ({TimeSeries.Count}).");
+                    }
+                }
+            }
+
+            // Validate parameters
+            if (Parameters != null)
+            {
+                for (int i = 0; i < Parameters.Count; i++)
+                {
+                    var valid = Parameters[i].Validate();
+                    if (!valid.IsValid)
+                    {
+                        isValid = false;
+                        messages.AddRange(valid.ValidationMessages);
+                    }
+                }
+            }
+
+            // Check for non-positive values with log-based transforms. Box-Cox (including
+            // the Logarithmic special case λ = 0) is only defined for strictly positive inputs.
+            // Validation is on the raw time series — differencing happens after transformation
+            // now, so negative differences on the log scale are expected and fine.
+            if (TransformType == Transform.Logarithmic || TransformType == Transform.BoxCox)
+            {
+                if (TimeSeries != null && TimeSeries.Count > 0 && TimeSeries.MinValue() <= 0)
+                {
+                    isValid = false;
+                    messages.Add("Error: Log-based transformations require all time series values to be strictly positive. Use Yeo-Johnson for series with non-positive values.");
+                }
+            }
+
+            // Check AR stationarity condition (roots outside unit circle)
+            if (AROrderP > 0 && Parameters != null)
+            {
+                // Extract AR coefficients
+                int arStart = GetARParameterStartIndex();
+                if (arStart >= 0 && arStart + AROrderP <= Parameters.Count)
+                {
+                    var arCoeffs = new double[AROrderP];
+                    for (int i = 0; i < AROrderP; i++)
+                    {
+                        arCoeffs[i] = Parameters[arStart + i].Value;
+                    }
+
+                    // Simple check: sum of absolute values < 1 (sufficient but not necessary)
+                    double sumAbsAR = 0;
+                    for (int i = 0; i < AROrderP; i++)
+                    {
+                        sumAbsAR += Math.Abs(arCoeffs[i]);
+                    }
+
+                    if (sumAbsAR >= 1.0)
+                    {
+                        // This is a warning, not an error - model may still be stationary
+                        messages.Add($"Warning: AR coefficients may violate stationarity (sum of absolute values = {sumAbsAR:F3} >= 1). Consider checking characteristic equation roots.");
+                    }
+                }
+            }
+
+            // Check MA invertibility condition (roots outside unit circle)
+            if (MAOrderQ > 0 && Parameters != null)
+            {
+                // Extract MA coefficients
+                int maStart = GetMAParameterStartIndex();
+                if (maStart >= 0 && maStart + MAOrderQ <= Parameters.Count)
+                {
+                    var maCoeffs = new double[MAOrderQ];
+                    for (int i = 0; i < MAOrderQ; i++)
+                    {
+                        maCoeffs[i] = Parameters[maStart + i].Value;
+                    }
+
+                    // Simple check: sum of absolute values < 1 (sufficient but not necessary)
+                    double sumAbsMA = 0;
+                    for (int i = 0; i < MAOrderQ; i++)
+                    {
+                        sumAbsMA += Math.Abs(maCoeffs[i]);
+                    }
+
+                    if (sumAbsMA >= 1.0)
+                    {
+                        // This is a warning, not an error - model may still be invertible
+                        messages.Add($"Warning: MA coefficients may violate invertibility (sum of absolute values = {sumAbsMA:F3} >= 1). Consider checking characteristic equation roots.");
+                    }
+                }
+            }
+
+            return (isValid, messages);
+        }
+
+        /// <summary>
+        /// Gets the starting index of AR parameters in the parameter list.
+        /// Returns the index where AR parameters would start, even if AROrderP is 0.
+        /// </summary>
+        /// <returns>The index where AR parameters begin, or -1 if Parameters is null.</returns>
+        private int GetARParameterStartIndex()
+        {
+            if (Parameters == null) return -1;
+
+            int idx = 0;
+            if (IncludeIntercept) idx++;
+
+            if (TrendType == Trend.Linear) idx += 1;
+            else if (TrendType == Trend.Quadratic) idx += 2;
+            else if (TrendType == Trend.Cubic) idx += 3;
+
+            if (IncludeSeasonality) idx += 2;
+
+            if (Covariates != null && Covariates.Count > 0)
+                idx += Covariates.Count * (XOrderB + 1);
+
+            return idx;
+        }
+
+        /// <summary>
+        /// Gets the starting index of MA parameters in the parameter list.
+        /// Returns the index where MA parameters would start, even if MAOrderQ is 0.
+        /// </summary>
+        /// <returns>The index where MA parameters begin, or -1 if Parameters is null.</returns>
+        private int GetMAParameterStartIndex()
+        {
+            if (Parameters == null) return -1;
+            return GetARParameterStartIndex() + AROrderP;
+        }
+
+        /// <inheritdoc/>
+        double[] ISimulatable<double[]>.GenerateRandomValues(int sampleSize, int seed)
+        {
+            return GenerateRandomValues(sampleSize, seed, null);
+        }
+
+        /// <summary>
+        /// Generates random samples from the ARIMAX model including intercept, trend, seasonality,
+        /// covariate effects, and ARMA components.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Generates random samples from the ARIMAX model including intercept, trend, seasonality,
+        /// covariate effects, and ARMA components.
+        /// </para>
+        /// <para>
+        /// The generated values represent the ARIMAX process:
+        /// y_t = μ + γ(t) + ψ(t) + β*X(t) + φ₁(y_{t-1} - μ_t₋₁) + ... + φₚ(y_{t-p} - μ_t₋ₚ) + ε_t + θ₁ε_{t-1} + ... + θₚε_{t-q}
+        /// </para>
+        /// <para>
+        /// where γ(t) is the trend component (Linear: γ₁t, Quadratic: γ₁t + γ₂t², Cubic: γ₁t + γ₂t² + γ₃t³),
+        /// ψ(t) is the seasonal component: ψ₁sin(2πt/S) + ψ₂cos(2πt/S), and β*X(t) is the covariate effect.
+        /// </para>
+        /// <para>
+        /// <b>Covariate handling:</b> When covariates are present and <paramref name="sampleSize"/> exceeds
+        /// the available covariate observations, the <see cref="CovariateExtension"/> property determines
+        /// how covariates are extended:
+        /// <list type="bullet">
+        /// <item><description><see cref="CovariateExtensionMethod.None"/>: Throws an exception if insufficient covariates.</description></item>
+        /// <item><description><see cref="CovariateExtensionMethod.BlockBootstrap"/>: Extends using block bootstrap (default).</description></item>
+        /// <item><description><see cref="CovariateExtensionMethod.KNN"/>: Extends using k-Nearest Neighbors.</description></item>
+        /// </list>
+        /// Alternatively, provide pre-extended covariates via the <paramref name="generateCovariates"/> parameter.
+        /// </para>
+        /// </remarks>
+        /// <param name="sampleSize">The number of random values to generate.</param>
+        /// <param name="seed">Random seed for reproducibility. If -1, uses system time.</param>
+        /// <param name="generateCovariates">Optional covariates for the generation period. If null and covariates
+        /// exist, the <see cref="CovariateExtension"/> property determines how they are extended.</param>
+        /// <returns>Array of generated random values.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when sampleSize is not positive.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when <see cref="CovariateExtension"/> is
+        /// <see cref="CovariateExtensionMethod.None"/> and covariates are insufficient.</exception>
+        public double[] GenerateRandomValues(int sampleSize, int seed = -1, List<TimeSeries>? generateCovariates = null)
+        {
+            if (sampleSize <= 0)
+                throw new ArgumentOutOfRangeException(nameof(sampleSize), "Sample size must be positive.");
+
+            var rng = seed >= 0 ? new Numerics.Sampling.MersenneTwister(seed) : new Numerics.Sampling.MersenneTwister();
+
+            // Extract parameters in order: intercept, trend, seasonality, covariates, AR, MA, sigma
+            int k = 0;
+            double mu = 0;
+            double[]? gamma = null;
+            double[]? psi = null;
+            double[,]? beta = null;
+
+            // Extract intercept if present
+            if (IncludeIntercept)
+            {
+                mu = Parameters[k++].Value;
+            }
+
+            // Extract trend parameters
+            if (TrendType == Trend.Linear)
+            {
+                gamma = new[] { Parameters[k++].Value };
+            }
+            else if (TrendType == Trend.Quadratic)
+            {
+                gamma = new[] { Parameters[k++].Value, Parameters[k++].Value };
+            }
+            else if (TrendType == Trend.Cubic)
+            {
+                gamma = new[] { Parameters[k++].Value, Parameters[k++].Value, Parameters[k++].Value };
+            }
+
+            // Extract seasonality parameters (Fourier coefficients)
+            if (IncludeSeasonality)
+            {
+                psi = new[] { Parameters[k++].Value, Parameters[k++].Value };
+            }
+
+            // Extract covariate parameters and prepare covariate data
+            List<TimeSeries>? useCovariates = null;
+            if (Covariates != null && Covariates.Count > 0)
+            {
+                // Extract beta coefficients
+                beta = new double[Covariates.Count, XOrderB + 1];
+                for (int i = 0; i < Covariates.Count; i++)
+                {
+                    for (int j = 0; j <= XOrderB; j++)
+                    {
+                        beta[i, j] = Parameters[k++].Value;
+                    }
+                }
+
+                // Prepare covariates for generation
+                if (generateCovariates != null)
+                {
+                    useCovariates = generateCovariates;
+                }
+                else if (sampleSize > Covariates[0].Count)
+                {
+                    // Need to extend covariates
+                    int resampleSeed = seed > 0 ? seed + 2000 : 54321;
+
+                    switch (CovariateExtension)
+                    {
+                        case CovariateExtensionMethod.None:
+                            throw new InvalidOperationException(
+                                $"Covariates have {Covariates[0].Count} observations but {sampleSize} are required. " +
+                                "Either provide generateCovariates or set CovariateExtension to BlockBootstrap or KNN.");
+
+                        case CovariateExtensionMethod.BlockBootstrap:
+                            useCovariates = new List<TimeSeries>();
+                            for (int i = 0; i < Covariates.Count; i++)
+                            {
+                                int blockSize = Math.Max(1, Math.Min(10, Covariates[i].Count / 4));
+                                int tailSize = sampleSize - Covariates[i].Count;
+                                var tail = Covariates[i].ResampleWithBlockBootstrap(
+                                    tailSize,
+                                    blockSize,
+                                    resampleSeed + i);
+                                useCovariates.Add(AppendTail(Covariates[i], tail));
+                            }
+                            break;
+
+                        case CovariateExtensionMethod.KNN:
+                            useCovariates = new List<TimeSeries>();
+                            for (int i = 0; i < Covariates.Count; i++)
+                            {
+                                int knn = Math.Max(3, Covariates[i].Count / 10);
+                                int tailSize = sampleSize - Covariates[i].Count;
+                                var tail = Covariates[i].ResampleWithKNN(
+                                    tailSize,
+                                    knn,
+                                    resampleSeed + i);
+                                useCovariates.Add(AppendTail(Covariates[i], tail));
+                            }
+                            break;
+                    }
+                }
+                else
+                {
+                    // Covariates are sufficient, use original
+                    useCovariates = Covariates;
+                }
+            }
+
+            // Extract AR coefficients
+            double[] phi = new double[AROrderP];
+            for (int i = 0; i < AROrderP; i++)
+            {
+                phi[i] = Parameters[k++].Value;
+            }
+
+            // Extract MA coefficients
+            double[] theta = new double[MAOrderQ];
+            for (int i = 0; i < MAOrderQ; i++)
+            {
+                theta[i] = Parameters[k++].Value;
+            }
+
+            double sigma = Parameters[k].Value;
+            var normal = new Numerics.Distributions.Normal(0, sigma);
+
+            // Arrays for generated series and innovations
+            var series = new double[sampleSize];
+            var mean = new double[sampleSize];
+            var epsilon = new double[sampleSize];  // Residuals on original scale (for MA)
+
+            // Pre-generate Gaussian noise for adding on transformed scale
+            var noise = new double[sampleSize];
+            for (int t = 0; t < sampleSize; t++)
+            {
+                noise[t] = normal.InverseCDF(rng.NextDouble());
+            }
+
+            // Pre-compute mean at each time step (matches Residuals method)
+            for (int t = 0; t < sampleSize; t++)
+            {
+                mean[t] = mu;
+
+                // Trend component
+                if (gamma != null)
+                {
+                    if (TrendType == Trend.Linear)
+                        mean[t] += gamma[0] * t;
+                    else if (TrendType == Trend.Quadratic)
+                        mean[t] += gamma[0] * t + gamma[1] * t * t;
+                    else if (TrendType == Trend.Cubic)
+                        mean[t] += gamma[0] * t + gamma[1] * t * t + gamma[2] * t * t * t;
+                }
+
+                // Seasonal component
+                if (psi != null)
+                {
+                    double angle = 2.0 * Math.PI * t / _seasonalPeriod;
+                    mean[t] += psi[0] * Math.Sin(angle) + psi[1] * Math.Cos(angle);
+                }
+
+                // Covariate component (includes current and lagged values if XOrderB > 0)
+                if (beta != null && useCovariates != null && t < useCovariates[0].Count)
+                {
+                    for (int i = 0; i < useCovariates.Count; i++)
+                    {
+                        if (XOrderB == 0)
+                        {
+                            // Use current value only
+                            mean[t] += beta[i, 0] * useCovariates[i][t].Value;
+                        }
+                        else
+                        {
+                            // Use current value X[t]
+                            mean[t] += beta[i, 0] * useCovariates[i][t].Value;
+
+                            // Use lagged values X[t-1], ..., X[t-b]
+                            for (int j = 1; j <= XOrderB && t - j >= 0; j++)
+                            {
+                                mean[t] += beta[i, j] * useCovariates[i][t - j].Value;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Generate series (matches structure in Residuals/Predict methods)
+            for (int t = 0; t < sampleSize; t++)
+            {
+                // AR component (mean-centered, only for t >= AROrderP)
+                double ar = 0;
+                if (t >= AROrderP)
+                {
+                    for (int p = 1; p <= AROrderP; p++)
+                    {
+                        ar += phi[p - 1] * (series[t - p] - mean[t - p]);
+                    }
+                }
+
+                // MA component uses epsilon (residuals on original scale)
+                double ma = 0;
+                for (int q = 1; q <= Math.Min(t, MAOrderQ); q++)
+                {
+                    ma += theta[q - 1] * epsilon[t - q];
+                }
+
+                // Compute deterministic part: mean[t] + ar + ma
+                double deterministic = mean[t] + ar + ma;
+
+                // Add stochastic error following same pattern as Predict():
+                // - Transform.None: additive error on original scale
+                // - BoxCox/YeoJohnson: additive error on transformed scale, then inverse transform
+                if (TransformType == Transform.None)
+                {
+                    series[t] = deterministic + noise[t];
+                }
+                else if (TransformType == Transform.Logarithmic || TransformType == Transform.BoxCox)
+                {
+                    // Add error on transformed scale, then inverse transform back
+                    // This matches Predict() behavior for stochastic forecasting
+                    series[t] = BoxCox.InverseTransform(BoxCox.Transform(deterministic, _lambda) + noise[t], _lambda);
+                }
+                else if (TransformType == Transform.YeoJohnson)
+                {
+                    series[t] = YeoJohnson.InverseTransform(YeoJohnson.Transform(deterministic, _lambda) + noise[t], _lambda);
+                }
+
+                // Compute epsilon (residual on original scale) for MA at future time steps
+                // This matches how Residuals/Predict compute epsilon
+                epsilon[t] = series[t] - deterministic;
+            }
+
+            // If differencing was applied, integrate back to original scale.
+            // Synthetic data has no observed series to anchor against, so each
+            // integration level is seeded with mu (a stable anchor for stationary
+            // synthetic generation). Without per-level seeding, level-d integration
+            // for d >= 2 produced cumsum-of-cumsum sequences whose mean drifted
+            // unbounded; seeding each level keeps the synthetic series stationary
+            // around mu.
+            if (DiffOrderD > 0)
+            {
+                var integrated = new double[sampleSize];
+                Array.Copy(series, integrated, sampleSize);
+
+                for (int d = 0; d < DiffOrderD; d++)
+                {
+                    integrated[0] = mu + integrated[0];
+
+                    for (int i = 1; i < sampleSize; i++)
+                    {
+                        integrated[i] = integrated[i - 1] + integrated[i];
+                    }
+                }
+
+                return integrated;
+            }
+
+            return series;
+        }
+
+        #endregion
+    }
+}
