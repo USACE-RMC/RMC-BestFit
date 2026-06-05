@@ -1,10 +1,11 @@
 # RMC-BestFit
+
+> [!IMPORTANT]
+> **Going fully open source.** We are in the process of making all RMC-BestFit source code publicly available. This effort will be complete before the official release of Version 2.0 in July 2026.
+
 **RMC-BestFit** is a state-of-the-art Bayesian estimation and fitting software developed collaboratively by the U.S. Army Corps of Engineers' Risk Management Center (RMC) and Engineer Research and Development Center's Coastal and Hydraulics Laboratory (CHL). Tailored to expedite flood hazard assessments for the Flood Risk Management, Planning, and Dam and Levee Safety communities, the software employs a Bayesian framework to integrate a variety of data sources, including historical records, paleoflood evidence, regional data, rainfall-runoff models, and expert judgment.
 
 This intuitive, menu-driven application provides a comprehensive environment for distribution fitting and Bayesian estimation. Its modern graphical interface, combined with robust data input, analysis, and reporting functionalities, enables users to effectively conduct flood frequency analyses and produce high-quality visualizations.
-
-[!NOTE]
-**Going fully open source.** We are in the process of making all RMC-BestFit source code publicly available. This effort will be complete before the official release of Version 2.0 in July.
 
 ![BestFit](https://user-images.githubusercontent.com/123974306/232252850-cc900b2c-108a-4c93-81a4-50cfe5f1d5a9.png)
 
