@@ -21,9 +21,9 @@
 	  <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Link shared MSTest parallelization settings from the Verification project.
+    <!-- Link shared MSTest parallelization settings for public unit tests.
          Applies [assembly: Parallelize(...)] to this assembly too. -->
-    <Compile Include="..\RMC.BestFit.Verification\MSTestSettings.cs" Link="MSTestSettings.cs" />
+    <Compile Include="..\TestCommon\MSTestSettings.cs" Link="MSTestSettings.cs" />
   </ItemGroup>
 
   <ItemGroup>

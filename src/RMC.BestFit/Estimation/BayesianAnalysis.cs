@@ -142,7 +142,7 @@ namespace RMC.BestFit.Estimation
                 // PointEstimator XML attribute did not exist. Defaulting to
                 // PosteriorMode here keeps loaded legacy results faithful to what
                 // those projects actually contain. New analyses (constructor at
-                // line ~217) default to PosteriorMean — the asymmetry is intentional.
+                // line ~217) default to PosteriorMean ï¿½ the asymmetry is intentional.
                 _pointEstimator = PointEstimateType.PosteriorMode;
             }
             var isEstimatedAttr = xElement.Attribute(nameof(IsEstimated));
@@ -411,7 +411,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// <para>
-        /// WAIC is computed as -2 × lppd + 2 × p_WAIC, where lppd is the log pointwise predictive density
+        /// WAIC is computed as -2 ï¿½ lppd + 2 ï¿½ p_WAIC, where lppd is the log pointwise predictive density
         /// and p_WAIC is the effective number of parameters.
         /// </para>
         /// <para>
@@ -438,7 +438,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// <para>
-        /// LOOIC is computed as -2 × elpd_loo, where elpd_loo is the expected log pointwise predictive
+        /// LOOIC is computed as -2 ï¿½ elpd_loo, where elpd_loo is the expected log pointwise predictive
         /// density for a new dataset estimated using leave-one-out cross-validation.
         /// </para>
         /// <para>
@@ -831,7 +831,7 @@ namespace RMC.BestFit.Estimation
 
                     // Alpha = 1 - CIWidth only affects the LowerCI/UpperCI percentiles in
                     // ParameterResults[i].SummaryStatistics. The MCMC chain itself is
-                    // independent of alpha — preserve Results and recompute summaries in place.
+                    // independent of alpha ï¿½ preserve Results and recompute summaries in place.
                     if (IsEstimated && Results != null)
                     {
                         Results.RecomputeParameterResults(1.0 - value);
@@ -1295,7 +1295,7 @@ namespace RMC.BestFit.Estimation
 
                 // Post-await: now back on the dispatcher (or whichever SynchronizationContext
                 // was captured at await). Property setters here fire PropertyChanged on the
-                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results — assign Results
+                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results ï¿½ assign Results
                 // first so they see the new chains, and they internally use Parallel.For which
                 // dispatches its own worker threads (no dispatcher block on the math itself).
                 ElapsedTime = capturedElapsed;
@@ -1317,7 +1317,7 @@ namespace RMC.BestFit.Estimation
             }
             catch (OperationCanceledException)
             {
-                // Cancellation is normal — re-throw so wrapper analyses' OperationCanceledException
+                // Cancellation is normal ï¿½ re-throw so wrapper analyses' OperationCanceledException
                 // handlers see it as a cancel rather than a generic failure. Without this branch
                 // the catch (Exception) below would swallow OCE into LastError and the user would
                 // see "TaskCanceledException" reported as a run failure.
@@ -1349,7 +1349,7 @@ namespace RMC.BestFit.Estimation
         /// Cancels the Bayesian analysis if it is currently running.
         /// </summary>
         /// <remarks>
-        /// One-shot per <c>RunAsync(SafeProgressReporter?, bool)</c> invocation —
+        /// One-shot per <c>RunAsync(SafeProgressReporter?, bool)</c> invocation ï¿½
         /// after the run completes (success, fault, or cancellation) the underlying
         /// <see cref="System.Threading.CancellationTokenSource"/> is disposed in the
         /// finally block of <c>RunAsync</c>. Subsequent calls to <c>CancelSimulation</c>
@@ -1414,7 +1414,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// <para>
-        /// WAIC is computed as -2 × lppd + 2 × p_WAIC using the correct pointwise formulation:
+        /// WAIC is computed as -2 ï¿½ lppd + 2 ï¿½ p_WAIC using the correct pointwise formulation:
         /// </para>
         /// <para>
         /// <b>lppd</b> (log pointwise predictive density):
@@ -1480,7 +1480,7 @@ namespace RMC.BestFit.Estimation
                 {
                     // Extract log-likelihoods for observation i across all samples
                     // Find max for log-sum-exp stability. Use NegativeInfinity (not MinValue)
-                    // per CLAUDE.md "Numerical patterns" — when every per-sample LL is -Inf
+                    // per the numerical robustness guidelines ï¿½ when every per-sample LL is -Inf
                     // (a fully invalid posterior sample for this obs), the log-sum-exp must
                     // collapse to -Inf, not MinValue.
                     double maxLogLik = double.NegativeInfinity;
@@ -1720,7 +1720,7 @@ namespace RMC.BestFit.Estimation
             //
             // Numerics uses Hosking's parameterization where the shape Kappa has the
             // OPPOSITE sign of the PSIS k convention. If GPD CDF is
-            //   F(x) = 1 - (1 + k_psis · x/s)^(-1/k_psis)
+            //   F(x) = 1 - (1 + k_psis ï¿½ x/s)^(-1/k_psis)
             // then Numerics Kappa = -k_psis. We flip the sign on the way out so the
             // downstream smoothing formulas (which use the PSIS k convention) are
             // unchanged.
@@ -1736,7 +1736,7 @@ namespace RMC.BestFit.Estimation
             }
             catch (Exception ex)
             {
-                // MLE failed (rare — happens when the tail is degenerate).
+                // MLE failed (rare ï¿½ happens when the tail is degenerate).
                 // Fall back to method-of-moments.
                 Debug.WriteLine($"BayesianAnalysis.FitGPD: MLE failed, falling back to MOM: {ex.Message}");
                 double mean = 0.0;
@@ -1782,7 +1782,7 @@ namespace RMC.BestFit.Estimation
 
                     if (Math.Abs(k) < 1e-8)
                     {
-                        // k ˜ 0: Exponential distribution, Q(p) = -s * log(1-p)
+                        // k ï¿½ 0: Exponential distribution, Q(p) = -s * log(1-p)
                         quantile = -sigma * Math.Log(1.0 - p);
                     }
                     else
@@ -1953,7 +1953,7 @@ namespace RMC.BestFit.Estimation
         /// </para>
         /// <para>
         /// This is the Bayesian analogue of Cook's distance. The leverage of each component (observation or prior)
-        /// measures its share of the total information: l? = g?? H?¹ g?. All leverages sum approximately
+        /// measures its share of the total information: l? = g?? H?ï¿½ g?. All leverages sum approximately
         /// to p (the number of parameters), providing a unified ranking across observations and priors.
         /// </para>
         /// </remarks>
@@ -1994,7 +1994,7 @@ namespace RMC.BestFit.Estimation
                     pointwiseLogLik[i, s] = logLiks[i];
             });
 
-            // PSIS tail size — Vehtari et al. (2017). Match the floor used in
+            // PSIS tail size ï¿½ Vehtari et al. (2017). Match the floor used in
             // ComputePSISLOO so per-observation diagnostics agree across calls.
             int M = (int)Math.Min(S / 5.0, 3.0 * Math.Sqrt(S));
             M = Math.Max(M, 3);
@@ -2915,7 +2915,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// The <see cref="Model"/> reference is shared by design (consistent with
-        /// the rest of the project — the model is the single source of truth and
+        /// the rest of the project ï¿½ the model is the single source of truth and
         /// is not deep-copied). <see cref="Results"/> (the <c>MCMCResults</c>
         /// containing posterior samples) is also shared by reference. Callers who
         /// intend to re-fit the clone should call <c>ClearResults()</c> on it

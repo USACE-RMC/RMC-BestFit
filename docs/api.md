@@ -124,7 +124,7 @@ state lives in the app-singleton resource store, so ids remain valid across MCP 
 REST/MCP boundary). Tools call the same service layer as the controllers and return the same JSON
 DTOs.
 
-Connect from Claude Code:
+Connect from an MCP client:
 
 ```bash
 claude mcp add --transport http bestfit http://localhost:5210/mcp

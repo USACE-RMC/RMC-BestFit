@@ -420,12 +420,12 @@ namespace RMC_BestFit
                 UpdateTrainingSteps();
                 UpdateStepSplitDisplay();
             }
-            // Model object replaced (e.g., during undo) — push to sub-controls
+            // Model object replaced (e.g., during undo) ï¿½ push to sub-controls
             if (e.PropertyName == nameof(Element.ARIMAX))
             {
                 ParameterPriorsControl.Model = Element.ARIMAX;
             }
-            // BayesianAnalysis replaced — push to sub-controls
+            // BayesianAnalysis replaced ï¿½ push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;
@@ -616,7 +616,7 @@ namespace RMC_BestFit
         /// <param name="e">The event data.</param>
         private void TimeSeriesDataComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // First-load NRE guard (CLAUDE.md "WPF DataContext Pattern").
+            // First-load NRE guard (the WPF DataContext pattern).
             if (Element == null) return;
             if (Element.TimeSeriesData == null || Element.TimeSeriesData.Name == null)
             {

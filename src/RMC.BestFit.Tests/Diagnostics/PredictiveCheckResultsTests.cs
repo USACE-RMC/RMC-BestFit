@@ -22,7 +22,7 @@ public class PredictiveCheckResultsTests
 
     /// <summary>
     /// Default constructor initializes all p-values to NaN, matching the pattern
-    /// described in CLAUDE.md for diagnostics classes.
+    /// described in the project coding standards for diagnostics classes.
     /// </summary>
     [TestMethod]
     public void Constructor_Default_AllPValuesAreNaN()

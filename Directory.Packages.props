@@ -2,17 +2,20 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+    <DotNetReproducibleBuildsVersion>1.2.39</DotNetReproducibleBuildsVersion>
+    <MicrosoftSourceLinkGitHubVersion>10.0.102</MicrosoftSourceLinkGitHubVersion>
+    <RmcNumericsVersion>[2.1.2,3.0.0)</RmcNumericsVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="DotNet.ReproducibleBuilds" Version="$(DotNetReproducibleBuildsVersion)" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.*" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.*" />
-    <!-- Direct pin lifting the transitive Microsoft.OpenApi above 2.0.0 (NU1903, GHSA-v5pm-xwqc-g5wc). -->
     <PackageVersion Include="Microsoft.OpenApi" Version="2.*" />
-    <!-- Official MCP C# SDK. Exact pin: prerelease protocol SDKs must never float. -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubVersion)" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.0.0-preview.1" />
-    <PackageVersion Include="RMC.Numerics" Version="2.*" />
+    <PackageVersion Include="RMC.Numerics" Version="$(RmcNumericsVersion)" />
     <PackageVersion Include="RMC.Wpf.Framework.Core" Version="1.0.*" />
     <PackageVersion Include="RMC.Wpf.Framework.Models" Version="1.0.*" />
     <PackageVersion Include="RMC.Wpf.Framework.Controls" Version="1.0.*" />

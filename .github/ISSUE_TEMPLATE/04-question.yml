@@ -1,0 +1,17 @@
+name: Question
+description: Ask a usage, modeling, or development question
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to understand?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Include the analysis type, data type, code snippet, or documentation link if relevant.

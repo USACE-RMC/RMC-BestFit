@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "RMC-BestFit: Bayesian Estimation and Fitting Software for Flood Frequency Analysis"
+version: "2.0.0"
+date-released: "2026-07-10"
+license: 0BSD
+repository-code: "https://github.com/USACE-RMC/RMC-BestFit"
+url: "https://github.com/USACE-RMC/RMC-BestFit"
+abstract: >-
+  RMC-BestFit is a free and open-source .NET codebase for Bayesian estimation,
+  distribution fitting, and frequency analysis in flood risk and water resources
+  engineering. The first public package target is the portable RMC.BestFit model
+  library.
+keywords:
+  - Bayesian inference
+  - flood frequency analysis
+  - hydrology
+  - probability distributions
+  - MCMC
+  - risk assessment
+  - water resources engineering
+  - .NET
+  - C#
+authors:
+  - family-names: "Smith"
+    given-names: "C. Haden"
+    email: "cole.h.smith@usace.army.mil"
+    affiliation: "U.S. Army Corps of Engineers, Risk Management Center, Lakewood, Colorado, USA"
+    orcid: "https://orcid.org/0000-0002-4651-9890"
+  - family-names: "Fields"
+    given-names: "Woodrow L."
+    affiliation: "U.S. Army Corps of Engineers, Risk Management Center, Lakewood, Colorado, USA"
+    orcid: "https://orcid.org/0009-0008-7454-5552"
+  - family-names: "Skahill"
+    given-names: "Brian"
+    affiliation: "Fariborz Maseeh Department of Mathematics and Statistics, Portland State University, Portland, Oregon, USA"
+    orcid: "https://orcid.org/0000-0002-2164-0301"
+contact:
+  - family-names: "Smith"
+    given-names: "C. Haden"
+    email: "cole.h.smith@usace.army.mil"
+    orcid: "https://orcid.org/0000-0002-4651-9890"

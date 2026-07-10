@@ -402,7 +402,7 @@ public class CachedMultivariateNormalTests
 
     /// <summary>
     /// Tests LogPDF returns <c>double.NegativeInfinity</c> for
-    /// non-positive-definite covariance, per the CLAUDE.md numerical-pattern
+    /// non-positive-definite covariance, per the the numerical robustness pattern
     /// rule for impossible log-likelihood.
     /// </summary>
     [TestMethod]
@@ -539,7 +539,7 @@ public class CachedMultivariateNormalTests
 
     /// <summary>
     /// Tests GetLogDeterminant returns <c>double.NegativeInfinity</c>
-    /// for non-positive-definite covariance, per CLAUDE.md numerical pattern.
+    /// for non-positive-definite covariance, per the numerical robustness pattern.
     /// </summary>
     [TestMethod]
     public void GetLogDeterminant_NonPositiveDefinite_ReturnsNegativeInfinity()
@@ -844,7 +844,7 @@ public class CachedMultivariateNormalTests
 
     /// <summary>
     /// Tests that truly singular covariance is handled (returns
-    /// <c>double.NegativeInfinity</c> per CLAUDE.md numerical pattern).
+    /// <c>double.NegativeInfinity</c> per the numerical robustness pattern).
     /// </summary>
     [TestMethod]
     public void Singular_ReturnsNegativeInfinity()
@@ -861,7 +861,7 @@ public class CachedMultivariateNormalTests
         // Act
         double logPdf = mvn.LogPDF(new double[] { 0, 0 });
 
-        // Assert - Should return NegativeInfinity for singular matrix per CLAUDE.md
+        // Assert - Should return NegativeInfinity for singular matrix per the project coding standards
         Assert.AreEqual(double.NegativeInfinity, logPdf,
             "Singular covariance should return NegativeInfinity.");
     }

@@ -226,7 +226,7 @@ public class BivariateDistributionStudentTTests
     /// <c>Copula.NumberOfCopulaParameters</c> (2 for StudentT). Passing a 1-element
     /// array mimics the old hardcoded shape and must return <c>double.MinValue</c>
     /// without crashing. Returns <c>double.NegativeInfinity</c> per the
-    /// CLAUDE.md numerical pattern for impossible log-likelihood.
+    /// the numerical robustness pattern for impossible log-likelihood.
     /// </summary>
     [TestMethod]
     public void DataLogLikelihood_StudentT_WrongParameterCount_ReturnsNegativeInfinity()

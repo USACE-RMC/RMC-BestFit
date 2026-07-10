@@ -1,0 +1,67 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "RMC-BestFit: Bayesian Estimation and Fitting Software for Flood Frequency Analysis",
+  "alternateName": "RMC-BestFit",
+  "description": "A free and open-source .NET codebase for Bayesian estimation, distribution fitting, and frequency analysis in flood risk and water resources engineering. The first public package target is the portable RMC.BestFit model library.",
+  "version": "2.0.0",
+  "dateModified": "2026-07-10",
+  "license": "https://spdx.org/licenses/0BSD",
+  "codeRepository": "https://github.com/USACE-RMC/RMC-BestFit",
+  "issueTracker": "https://github.com/USACE-RMC/RMC-BestFit/issues",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "C#",
+    "url": "https://learn.microsoft.com/en-us/dotnet/csharp/"
+  },
+  "runtimePlatform": ".NET 10.0",
+  "operatingSystem": "Windows, Linux, macOS for the model library; Windows for WPF UI projects",
+  "keywords": [
+    "Bayesian inference",
+    "flood frequency analysis",
+    "hydrology",
+    "probability distributions",
+    "MCMC",
+    "risk assessment",
+    "water resources engineering",
+    ".NET",
+    "C#"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "C. Haden",
+      "familyName": "Smith",
+      "@id": "https://orcid.org/0000-0002-4651-9890",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "U.S. Army Corps of Engineers, Risk Management Center, Lakewood, Colorado, USA"
+      }
+    },
+    {
+      "@type": "Person",
+      "givenName": "Woodrow L.",
+      "familyName": "Fields",
+      "@id": "https://orcid.org/0009-0008-7454-5552",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "U.S. Army Corps of Engineers, Risk Management Center, Lakewood, Colorado, USA"
+      }
+    },
+    {
+      "@type": "Person",
+      "givenName": "Brian",
+      "familyName": "Skahill",
+      "@id": "https://orcid.org/0000-0002-2164-0301",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Fariborz Maseeh Department of Mathematics and Statistics, Portland State University, Portland, Oregon, USA"
+      }
+    }
+  ],
+  "funder": {
+    "@type": "Organization",
+    "name": "U.S. Army Corps of Engineers"
+  },
+  "developmentStatus": "active"
+}

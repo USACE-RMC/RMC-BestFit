@@ -1,5 +1,4 @@
 using RMC.BestFit.Models.LinkFunctions;
-using Numerics.Functions;
 using System.Xml.Linq;
 
 namespace RMC.BestFit.Tests.LinkFunctions;

@@ -11,6 +11,7 @@ using Numerics.Utilities;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
+using BestFitYeoJohnsonLink = RMC.BestFit.Models.LinkFunctions.YeoJohnsonLink;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -58,7 +59,7 @@ namespace RMC.BestFit.Analyses
 
     }
 
-    // SkewLinkType enum removed — gamma link is now always ASinH with adaptive epsilon from gammaHat.
+    // SkewLinkType enum removed ï¿½ gamma link is now always ASinH with adaptive epsilon from gammaHat.
 
     /// <summary>
     /// Implements the Bulletin 17C flood frequency analysis using the Generalized Method of Moments (GMM).
@@ -91,7 +92,7 @@ namespace RMC.BestFit.Analyses
     /// <item><description>
     /// England, J.F., Jr., Cohn, T.A., Faber, B.A., Stedinger, J.R., Thomas, W.O., Jr.,
     /// Veilleux, A.G., Kiang, J.E., and Mason, R.R., Jr., 2019, Guidelines for determining
-    /// flood flow frequency—Bulletin 17C: U.S. Geological Survey Techniques and Methods,
+    /// flood flow frequencyï¿½Bulletin 17C: U.S. Geological Survey Techniques and Methods,
     /// book 4, chap. B5, 148 p.
     /// </description></item>
     /// </list>
@@ -186,7 +187,7 @@ namespace RMC.BestFit.Analyses
                 _isEstimated = isEst;
             }
 
-            // Restore MCMC results if provided — pass parameter names so ParameterSetsControl
+            // Restore MCMC results if provided ï¿½ pass parameter names so ParameterSetsControl
             // and KDE/Histogram/Bivariate combo boxes can display column headers.
             if (mcmcResults != null)
             {
@@ -199,7 +200,7 @@ namespace RMC.BestFit.Analyses
             NormalizeRestoredEstimatedState();
 
             // Restore GMM estimation results if present in the XElement.
-            // GMM is a live computation object — the model provides delegates (MomentConditionFunction, etc.)
+            // GMM is a live computation object ï¿½ the model provides delegates (MomentConditionFunction, etc.)
             // and RestoreFromXElement re-attaches the stored output state (BestParameterSet, matrices, diagnostics).
             var gmmElement = xElement.Element(nameof(GeneralizedMethodOfMoments));
             if (gmmElement != null && Bulletin17CDistribution.DataFrame != null)
@@ -441,7 +442,7 @@ namespace RMC.BestFit.Analyses
         /// Handles changes to the <see cref="ProbabilityOrdinates"/> collection.
         /// </summary>
         /// <remarks>
-        /// Ordinates drive only <see cref="AnalysisResults"/> — not the GMM fit or
+        /// Ordinates drive only <see cref="AnalysisResults"/> ï¿½ not the GMM fit or
         /// <c>IsEstimated</c>. When estimated and valid, reprocess via
         /// <see cref="CreateFrequencyAnalysisResultsAsync"/>; when invalid, clear
         /// <see cref="AnalysisResults"/> only; when not estimated, no-op.
@@ -530,7 +531,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only ï¿½ the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>. Leaves the GMM fit,
         /// BayesianAnalysis results, and <c>IsEstimated</c> intact.
         /// </summary>
@@ -550,7 +551,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults ï¿½
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -678,11 +679,11 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This is the expensive compute path — it samples from the GMM covariance (or
+        /// This is the expensive compute path ï¿½ it samples from the GMM covariance (or
         /// resamples data for bootstrap) and re-fits a distribution per draw. It runs ONCE
         /// per estimation. Subsequent <see cref="CreateFrequencyAnalysisResultsAsync"/>
         /// calls (e.g., on probability-ordinate change) read the persisted parameter sets
-        /// from <see cref="BayesianAnalysis"/>.Results and skip this resampling — same
+        /// from <see cref="BayesianAnalysis"/>.Results and skip this resampling ï¿½ same
         /// fast pattern used by <see cref="UnivariateAnalysis"/>.
         /// </para>
         /// </remarks>
@@ -719,14 +720,14 @@ namespace RMC.BestFit.Analyses
 
             if (rawSets == null)
             {
-                Debug.WriteLine("B17C: Uncertainty quantification failed — the covariance matrix from GMM estimation " +
+                Debug.WriteLine("B17C: Uncertainty quantification failed ï¿½ the covariance matrix from GMM estimation " +
                     "is not positive-definite. The point estimate is still valid but confidence intervals cannot be computed. " +
                     "Consider using a different distribution or the Bootstrap/Bias-Corrected Bootstrap uncertainty method.");
                 return;
             }
 
             // Filter out unset entries (default ParameterSet has Values == null).
-            // Only LinkedMVN can produce these — the other three sampling methods substitute
+            // Only LinkedMVN can produce these ï¿½ the other three sampling methods substitute
             // the parent thetaHat on failure, so every slot is populated.
             var validSets = rawSets.Where(ps => ps.Values != null).ToArray();
             if (validSets.Length < 2)
@@ -755,7 +756,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Fast secondary method — same shape as <see cref="UnivariateAnalysis.CreateFrequencyAnalysisResultsAsync"/>.
+        /// Fast secondary method ï¿½ same shape as <see cref="UnivariateAnalysis.CreateFrequencyAnalysisResultsAsync"/>.
         /// Clones the parent distribution per stored parameter set (a cheap parameter-assignment loop)
         /// and constructs an <see cref="UncertaintyAnalysisResults"/> at the current ordinates.
         /// The expensive per-draw resampling is owned by <see cref="RunUncertaintyQuantificationAsync"/>,
@@ -779,7 +780,7 @@ namespace RMC.BestFit.Analyses
                 Bulletin17CDistribution.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
 
                 // Build the sampled distribution array by cloning the parent distribution and
-                // assigning each stored parameter set — fast, no resampling.
+                // assigning each stored parameter set ï¿½ fast, no resampling.
                 int B = BayesianAnalysis.Results.Output.Count;
                 var sampledDistributions = new UnivariateDistributionBase[B];
                 Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
@@ -866,7 +867,7 @@ namespace RMC.BestFit.Analyses
                             catch (Exception ex) { Debug.WriteLine($"B17C MVN sampling: rejected parameter set (idx={idx}): {ex.Message}"); }
                         }
                         // If still not accepted after 10 retries, fall back to the parent
-                        // parameter vector — preserves prior behavior where the cloned
+                        // parameter vector ï¿½ preserves prior behavior where the cloned
                         // distribution retained Distribution.Clone()'s starting parameters
                         // (thetaHat) when no draw was accepted.
                         acceptedTheta ??= thetaHat;
@@ -890,7 +891,7 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Evaluates the log-space quantile (for LP3) or real-space quantile at the given parameters.
         /// </summary>
-        /// <param name="parameters">Distribution parameter vector [µ, s, ?] in log-space.</param>
+        /// <param name="parameters">Distribution parameter vector [ï¿½, s, ?] in log-space.</param>
         /// <param name="nonExceedanceProbability">Non-exceedance probability (0 to 1).</param>
         /// <returns>The log-space quantile value for LP3, or real-space for other distributions.</returns>
         private double EvaluateLogQuantileSafe(double[] parameters, double nonExceedanceProbability)
@@ -938,7 +939,7 @@ namespace RMC.BestFit.Analyses
         /// </list>
         /// <para>
         ///     The covariance in link space is computed via the delta method:
-        ///     V^_? = G · S^_? · G', where G = ??/?? is the diagonal link Jacobian.
+        ///     V^_? = G ï¿½ S^_? ï¿½ G', where G = ??/?? is the diagonal link Jacobian.
         /// </para>
         /// <para>
         ///     Link function selection is distribution-aware. Parameter semantics vary:
@@ -1034,8 +1035,8 @@ namespace RMC.BestFit.Analyses
             {
                 // Normal, LogNormal, Exponential: [location(real), scale(>0)]
                 // Location: ASinH with adaptive e from WEDS (captures censoring asymmetry).
-                // When WEDS ˜ 0 (no censoring, symmetric distribution), e ˜ 0 ? identity-like.
-                // For Exponential, WEDS is naturally negative (~-0.26) because P(X < µ) ˜ 0.63.
+                // When WEDS ï¿½ 0 (no censoring, symmetric distribution), e ï¿½ 0 ? identity-like.
+                // For Exponential, WEDS is naturally negative (~-0.26) because P(X < ï¿½) ï¿½ 0.63.
                 double muSE = SafeStandardError(sigmaHat, 0);
 
                 links[0] = CreateLocationLink(thetaHat[0], muSE, CleanWeds(weds, 0));
@@ -1058,19 +1059,19 @@ namespace RMC.BestFit.Analyses
             // Step 6: Compute link Jacobian G = diag(d?_i/d?_i) using analytical DLink
             var GHat = Bulletin17CDistribution.LinkController.LinkJacobian(thetaHat);
 
-            // Step 7: Delta-method covariance in link space: V^_? = G · S^_? · G'
+            // Step 7: Delta-method covariance in link space: V^_? = G ï¿½ S^_? ï¿½ G'
             var VetaHat = GHat * sigmaHat * GHat.Transpose();
             VetaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(VetaHat);
 
             // Step 7b: Shift MVN center for s and ? using influence-function skewness.
             // ParameterSkewness[j] has flipped sign due to the negative diagonal of the GMM
-            // Jacobian D = ?g/?? propagating through ?_i = Bread?¹·D'W·m_i. Negate to recover
+            // Jacobian D = ?g/?? propagating through ?_i = Bread?ï¿½ï¿½D'Wï¿½m_i. Negate to recover
             // the actual skewness of the parameter sampling distribution.
             // The shift approximates BCa z0 bias correction: it offsets the MVN center toward
             // the median of the sampling distribution, rebalancing miss-above/miss-below rates.
             // The ASinH links handle asymmetric shape (BCa acceleration); this handles centering.
-            // Capped at ±0.3 SD to prevent noisy third-moment estimates from creating extreme shifts.
-            // µ (index 0) is not shifted — its centering is handled by the ASinH epsilon.
+            // Capped at ï¿½0.3 SD to prevent noisy third-moment estimates from creating extreme shifts.
+            // ï¿½ (index 0) is not shifted ï¿½ its centering is handled by the ASinH epsilon.
             var influenceStats = ComputeInfluenceStatistics(thetaHat, 0.999);
             if (influenceStats.ParameterSkewness != null)
             {
@@ -1153,7 +1154,7 @@ namespace RMC.BestFit.Analyses
                             Interlocked.Increment(ref rejectionCount);
                     }
 
-                    // LinkedMVN preserves prior behavior — rejected draws stay as default(ParameterSet)
+                    // LinkedMVN preserves prior behavior ï¿½ rejected draws stay as default(ParameterSet)
                     // (Values == null) and are filtered below; no parent-thetaHat fallback (high
                     // rejection triggers full method fallback). ParameterSet is a struct, so the
                     // default-initialized array slot already represents "no draw".
@@ -1165,12 +1166,12 @@ namespace RMC.BestFit.Analyses
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
-                // Check rejection rate — if too many draws failed, the link parameters are too aggressive.
+                // Check rejection rate ï¿½ if too many draws failed, the link parameters are too aggressive.
                 double rejectionRate = (double)rejectionCount / B;
                 if (rejectionRate > 0.50)
                 {
                     Debug.WriteLine($"B17C LinkedMVN: {rejectionRate:P0} rejection rate ({rejectionCount}/{B}). " +
-                                    "Cohn-calibrated links too aggressive — falling back to empirical formulas.");
+                                    "Cohn-calibrated links too aggressive ï¿½ falling back to empirical formulas.");
                     // Restore identity link controller and return null to trigger fallback
                     Bulletin17CDistribution.LinkController = new LinkController();
                     return null;
@@ -1603,7 +1604,7 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Contains influence-function-based statistics for the Linked Multivariate Student-t method.
-        /// Computed from per-observation GMM influence vectors ?_i = Bread?¹ · D'W · m_i.
+        /// Computed from per-observation GMM influence vectors ?_i = Bread?ï¿½ ï¿½ D'W ï¿½ m_i.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -1619,7 +1620,7 @@ namespace RMC.BestFit.Analyses
         {
             /// <summary>
             /// Degrees of freedom for the MVT, computed from the kurtosis of quantile influence
-            /// scores s_i = g_p' · ?_i: ? = 1/(2·Var[W]) where Var[W] = (V4/V2² - 1)/4.
+            /// scores s_i = g_p' ï¿½ ?_i: ? = 1/(2ï¿½Var[W]) where Var[W] = (V4/V2ï¿½ - 1)/4.
             /// Floored at 4.
             /// </summary>
             public double NuQuantile;
@@ -1627,7 +1628,7 @@ namespace RMC.BestFit.Analyses
             /// <summary>
             /// Per-parameter skewness of the influence function ?_i components.
             /// ParameterSkewness[j] = skewness of {?_i[j], i=1..n}.
-            /// Used to shift the MVT center in link space: ??[j] = (skew_j/6)·vVetaHat[j,j],
+            /// Used to shift the MVT center in link space: ??[j] = (skew_j/6)ï¿½vVetaHat[j,j],
             /// providing the BCa-equivalent z0 bias correction derived directly from the
             /// influence function rather than from bootstrap resampling.
             /// </summary>
@@ -1638,7 +1639,7 @@ namespace RMC.BestFit.Analyses
         /// Computes influence-function-based statistics for the Linked MVT method:
         /// quantile degrees of freedom and per-parameter skewness.
         /// </summary>
-        /// <param name="thetaHat">The GMM point estimates in parameter space (e.g., [µ, s, ?]).</param>
+        /// <param name="thetaHat">The GMM point estimates in parameter space (e.g., [ï¿½, s, ?]).</param>
         /// <param name="targetNonExceedanceProbability">
         /// The non-exceedance probability at which to evaluate the quantile degrees of freedom.
         /// Typically 0.999 for the 1000-year flood quantile.
@@ -1653,8 +1654,8 @@ namespace RMC.BestFit.Analyses
         /// BCa-equivalent z0 bias correction.
         /// </para>
         /// <para>
-        /// <b>Quantile ?</b>: From scalar quantile influence scores s_i = g_p' · ?_i,
-        /// compute ? = 1/(2·Var[W]) where Var[W] = (V4/V2² - 1)/4.
+        /// <b>Quantile ?</b>: From scalar quantile influence scores s_i = g_p' ï¿½ ?_i,
+        /// compute ? = 1/(2ï¿½Var[W]) where Var[W] = (V4/V2ï¿½ - 1)/4.
         /// </para>
         /// <para>
         /// Reference: Cohn, T.A., Lane, W.L., Stedinger, J.R. (2001). Confidence intervals for
@@ -1673,7 +1674,7 @@ namespace RMC.BestFit.Analyses
             // 1. Quantile gradient g_p = ?X_p/?? at the target probability
             double[] gp = Bulletin17CDistribution.QuantileGradient(targetNonExceedanceProbability, thetaHat);
 
-            // 2. Per-observation moment conditions [n × q]
+            // 2. Per-observation moment conditions [n ï¿½ q]
             var pointwiseMC = _gmm!.PointwiseMomentConditions;
             if (pointwiseMC == null)
             {
@@ -1704,13 +1705,13 @@ namespace RMC.BestFit.Analyses
 
             var DtW = DT * W;
 
-            // 4. Compute ?_i vectors and quantile influence scores s_i = g_p' · ?_i
+            // 4. Compute ?_i vectors and quantile influence scores s_i = g_p' ï¿½ ?_i
             double[] s = new double[n];
             double[][] psiAll = new double[n][];
 
             for (int i = 0; i < n; i++)
             {
-                // D'W · m_i ? [nParams × 1]
+                // D'W ï¿½ m_i ? [nParams ï¿½ 1]
                 double[] DtWm = new double[nParams];
                 for (int j = 0; j < nParams; j++)
                 {
@@ -1720,7 +1721,7 @@ namespace RMC.BestFit.Analyses
                     DtWm[j] = sum;
                 }
 
-                // ?_i = Bread?¹ · DtWm ? [nParams × 1]
+                // ?_i = Bread?ï¿½ ï¿½ DtWm ? [nParams ï¿½ 1]
                 double[] psi = new double[nParams];
                 for (int j = 0; j < nParams; j++)
                 {
@@ -1731,7 +1732,7 @@ namespace RMC.BestFit.Analyses
                 }
                 psiAll[i] = psi;
 
-                // s_i = g_p' · ?_i ? scalar
+                // s_i = g_p' ï¿½ ?_i ? scalar
                 double si = 0;
                 for (int j = 0; j < nParams; j++)
                     si += gp[j] * psi[j];
@@ -1740,7 +1741,7 @@ namespace RMC.BestFit.Analyses
 
             // 5a. Per-parameter ? from kurtosis of ?_i[j], then harmonic mean for MVT ?.
             // The MVT uses a single ? for all dimensions. Using the quantile-projection
-            // kurtosis (s_i = g_p' · ?_i) over-emphasizes the heaviest-tailed parameter (?),
+            // kurtosis (s_i = g_p' ï¿½ ?_i) over-emphasizes the heaviest-tailed parameter (?),
             // giving ? that's too low for the other parameters. The geometric mean of
             // per-parameter ?s balances across dimensions: it's less conservative than the
             // harmonic mean (which is dominated by the smallest ?) but less liberal than the
@@ -1762,7 +1763,7 @@ namespace RMC.BestFit.Analyses
 
             // 5b. Per-parameter skewness for MVT center shift (BCa z0 equivalent).
             // The skewness of ?_i[j] determines how much to shift the MVT center in
-            // link-space dimension j: ??[j] = (skew_j / 6) · vVetaHat[j,j].
+            // link-space dimension j: ??[j] = (skew_j / 6) ï¿½ vVetaHat[j,j].
             // This is the influence-function analog of the BCa z0 bias correction.
             for (int j = 0; j < nParams; j++)
             {
@@ -1784,7 +1785,7 @@ namespace RMC.BestFit.Analyses
         /// <returns>Degrees of freedom floored at 5 (matching EMA's nu_min), capped at 1000.</returns>
         /// <remarks>
         /// <para>
-        /// For Student-t(?), the kurtosis ratio (fourth moment / variance²) is ? = 3(?-2)/(?-4)
+        /// For Student-t(?), the kurtosis ratio (fourth moment / varianceï¿½) is ? = 3(?-2)/(?-4)
         /// for ? &gt; 4. Solving for ?: ? = 2(2?-3)/(?-3). At ?=3 (Gaussian): ??8.
         /// At ?=9: ?=5 (heavy tails). Only meaningful when ? &gt; 3; sub-Gaussian (? = 3)
         /// cases return ?=1000 (effectively MVN).
@@ -1816,7 +1817,7 @@ namespace RMC.BestFit.Analyses
             if (M2 <= 0)
                 return 1000.0;
 
-            // Kurtosis ratio ? = M4/M2² (=3 for Gaussian, >3 for heavy-tailed)
+            // Kurtosis ratio ? = M4/M2ï¿½ (=3 for Gaussian, >3 for heavy-tailed)
             double kappa = M4 / (M2 * M2);
 
             // For ? = 3 (sub-Gaussian or Gaussian), Student-t is unnecessary
@@ -1834,9 +1835,9 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <param name="scores">The per-observation influence scores.</param>
         /// <param name="n">The number of observations.</param>
-        /// <returns>The skewness µ3/µ2^{3/2}, or 0 if variance is near zero.</returns>
+        /// <returns>The skewness ï¿½3/ï¿½2^{3/2}, or 0 if variance is near zero.</returns>
         /// <remarks>
-        /// Computes the raw central moments M2 = (1/n)·S(x-x¯)² and M3 = (1/n)·S(x-x¯)³,
+        /// Computes the raw central moments M2 = (1/n)ï¿½S(x-xï¿½)ï¿½ and M3 = (1/n)ï¿½S(x-xï¿½)ï¿½,
         /// then returns M3 / M2^{3/2}. This is the Fisher skewness coefficient.
         /// </remarks>
         private static double ComputeSkewnessFromInfluence(double[] scores, int n)
@@ -1876,7 +1877,7 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        ///     For each bootstrap replicate b = 1, …, B:
+        ///     For each bootstrap replicate b = 1, ï¿½, B:
         /// </para>
         /// <list type="number">
         ///     <item><description>Generate a bootstrap data frame by resampling from the fitted parent distribution
@@ -1970,7 +1971,7 @@ namespace RMC.BestFit.Analyses
                         }
                     }
 
-                    // Fall back to parent parameter vector if all retries failed — preserves prior
+                    // Fall back to parent parameter vector if all retries failed ï¿½ preserves prior
                     // behavior where bootDistribution retained parent params after a Clone() with
                     // no successful SetParameters call.
                     if (acceptedParams == null)
@@ -2016,25 +2017,25 @@ namespace RMC.BestFit.Analyses
         ///     <b>Algorithm (three phases):</b>
         /// </para>
         /// <para>
-        ///     <b>Phase 1 — Collect bootstrap fits</b> (parallel): For each replicate b = 1, …, B,
+        ///     <b>Phase 1 ï¿½ Collect bootstrap fits</b> (parallel): For each replicate b = 1, ï¿½, B,
         ///     generate a bootstrap data frame, re-estimate via GMM (with up to 5 retries), and store
         ///     both the parameter estimates ?*_b and GMM covariance S*_b.
         /// </para>
         /// <para>
-        ///     <b>Phase 2 — Fit link functions</b>: Fit a <see cref="YeoJohnsonLink"/> to the bootstrap
+        ///     <b>Phase 2 ï¿½ Fit link functions</b>: Fit a <see cref="YeoJohnsonLink"/> to the bootstrap
         ///     location and shape parameter samples (variance-stabilizing power transform), and assign a
         ///     <see cref="LogLink"/> for the scale parameter (ensures positivity). Build a
         ///     <see cref="LinkController"/> and compute the parent Cholesky factor L^ in link-space.
         /// </para>
         /// <para>
-        ///     <b>Phase 3 — Generate pivot draws</b> (parallel): For each replicate b, compute the
-        ///     standardized pivot z = L*_b?¹ · (?^ - ?*_b) in link-space, add smoothing jitter,
+        ///     <b>Phase 3 ï¿½ Generate pivot draws</b> (parallel): For each replicate b, compute the
+        ///     standardized pivot z = L*_b?ï¿½ ï¿½ (?^ - ?*_b) in link-space, add smoothing jitter,
         ///     reject extreme pivots (|z_j| &gt; 8), and map back to real-space via
-        ///     ?_draw = InverseLink(?^ + L^ · z).
+        ///     ?_draw = InverseLink(?^ + L^ ï¿½ z).
         /// </para>
         /// <para>
         ///     Reference: DiCiccio, T.J. and Efron, B. (1996). Bootstrap confidence intervals.
-        ///     Statistical Science, 11(3), 189–228.
+        ///     Statistical Science, 11(3), 189ï¿½228.
         /// </para>
         /// </remarks>
         private ParameterSet[]? GetParameterSetsFromPivotBootstrap(SafeProgressReporter? progressReporter)
@@ -2157,11 +2158,11 @@ namespace RMC.BestFit.Analyses
 
             // Location (index 0): Yeo-Johnson fitted to bootstrap location estimates
             var locationSamples = bootTheta.Select(t => t[0]).ToArray();
-            ILinkFunction locationLink = new YeoJohnsonLink(locationSamples);
+            ILinkFunction locationLink = new BestFitYeoJohnsonLink(locationSamples);
 
             // Scale (index 1): Log link (scale is strictly positive)
             var scaleSamples = bootTheta.Select(t => t[1]).ToArray();
-            //ILinkFunction scaleLink = new YeoJohnsonLink(scaleSamples);
+            //ILinkFunction scaleLink = new BestFitYeoJohnsonLink(scaleSamples);
             ILinkFunction scaleLink = new LogLink();
 
             // Shape (index 2, if present): Yeo-Johnson fitted to bootstrap shape estimates
@@ -2169,7 +2170,7 @@ namespace RMC.BestFit.Analyses
             if (p >= 3)
             {
                 var shapeSamples = bootTheta.Select(t => t[2]).ToArray();
-                shapeLink = new YeoJohnsonLink(shapeSamples);
+                shapeLink = new BestFitYeoJohnsonLink(shapeSamples);
             }
 
             // Build link controller
@@ -2277,7 +2278,7 @@ namespace RMC.BestFit.Analyses
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"Pivot bootstrap Phase 3, replicate {idx}: {ex.Message}");
-                        // Fall back to parent parameters — preserves prior behavior where the
+                        // Fall back to parent parameters ï¿½ preserves prior behavior where the
                         // pre-initialized parent-clone retained its parameters on failure.
                     }
 
@@ -2499,7 +2500,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <returns>
         /// A <see cref="CohnConfidenceIntervalResult"/> containing the point estimates, lower bounds,
-        /// upper bounds, and diagnostic quantities (ß1, ?) for each exceedance probability.
+        /// upper bounds, and diagnostic quantities (ï¿½1, ?) for each exceedance probability.
         /// Returns <c>null</c> if GMM has not been estimated or if the computation fails.
         /// </returns>
         /// <remarks>
@@ -2512,21 +2513,21 @@ namespace RMC.BestFit.Analyses
         /// </para>
         /// <list type="number">
         ///   <item>Obtain the GMM point estimate ?^ and sandwich covariance S^_?.</item>
-        ///   <item>Build an outer Gaussian quadrature grid (2×2×...×2 = 2^p points) using Cholesky
+        ///   <item>Build an outer Gaussian quadrature grid (2ï¿½2ï¿½...ï¿½2 = 2^p points) using Cholesky
         ///     decomposition of S^_?, with Gamma quadrature nodes for positive parameters (s)
-        ///     and Normal quadrature nodes for unconstrained parameters (µ, ?).</item>
+        ///     and Normal quadrature nodes for unconstrained parameters (ï¿½, ?).</item>
         ///   <item>At each outer grid point ?_k, <b>recompute</b> the covariance S^_?(?_k) and build
         ///     an inner quadrature grid. This nested evaluation captures how the standard error
         ///     of the quantile varies with the parameter values.</item>
         ///   <item>Evaluate quantiles Q_p(?) at all grid points.</item>
-        ///   <item>Compute the 2×2 matrix Cov(Q^_p, SE(Q^_p)) via weighted covariance.</item>
-        ///   <item>Apply Cohn's adjusted Student's t CI formula with regression correction ß1
+        ///   <item>Compute the 2ï¿½2 matrix Cov(Q^_p, SE(Q^_p)) via weighted covariance.</item>
+        ///   <item>Apply Cohn's adjusted Student's t CI formula with regression correction ï¿½1
         ///     and effective degrees of freedom ? derived from the conditional variance ratio.</item>
         /// </list>
         /// <para>
         /// <b>Key difference from LinkedMVN:</b> This method produces <em>quantile-specific</em> CIs
         /// via an explicit formula, rather than percentiles of parameter draws. The nested quadrature
-        /// captures the SE–quantile correlation that drives asymmetric CI widths at extreme AEPs.
+        /// captures the SEï¿½quantile correlation that drives asymmetric CI widths at extreme AEPs.
         /// </para>
         /// <para>
         /// Reference: Cohn, T.A. (2012). Inverse Gaussian quadrature for confidence intervals.
@@ -2555,9 +2556,9 @@ namespace RMC.BestFit.Analyses
 
             // For each outer point, recompute the covariance and build inner grid.
             // This nested step captures how SE varies with parameters (EMA's REGMOMS
-            // recomputation at each GRIDMAKE point). The skew is clamped to ±v2 before
+            // recomputation at each GRIDMAKE point). The skew is clamped to ï¿½v2 before
             // covariance evaluation, matching EMA's VAR_MOM skewmax=1.41: at |?| > v2,
-            // a = 4/?² < 2 and the variance of the skew estimator becomes numerically
+            // a = 4/?ï¿½ < 2 and the variance of the skew estimator becomes numerically
             // unstable. Quantile evaluations use the unclamped grid point (matching EMA's
             // QP3, which has no skew clamp).
             var innerGrids = new double[nOuter][][];
@@ -2573,7 +2574,7 @@ namespace RMC.BestFit.Analyses
                     // Sanity check: with censored data, the sandwich estimator at perturbed
                     // parameters can blow up (ill-conditioned S inverse, extreme conditional
                     // moments). Fall back to baseline if any diagonal is degenerate (zero/NaN)
-                    // or differs from baseline by more than 10×.
+                    // or differs from baseline by more than 10ï¿½.
                     bool degenerate = false;
                     for (int d = 0; d < p; d++)
                     {
@@ -2607,7 +2608,7 @@ namespace RMC.BestFit.Analyses
             var nuArray = new double[nProb];
             var varQArray = new double[nProb];
 
-            // For each probability level, compute the 2×2 Cov(Q^_p, SE(Q^_p))
+            // For each probability level, compute the 2ï¿½2 Cov(Q^_p, SE(Q^_p))
             for (int k = 0; k < nProb; k++)
             {
                 double nonExceedProb = 1.0 - ProbabilityOrdinates[k];
@@ -2623,7 +2624,7 @@ namespace RMC.BestFit.Analyses
                 {
                     qOuter[i] = EvaluateQuantileSafe(outerGrid[i], nonExceedProb);
 
-                    // Inner-level variance of Q_p: Var(Q_p | ?_i) ˜ E_inner[(Q_p - E[Q_p])²]
+                    // Inner-level variance of Q_p: Var(Q_p | ?_i) ï¿½ E_inner[(Q_p - E[Q_p])ï¿½]
                     int nInner = innerGrids[i].Length;
                     double[] qInner = new double[nInner];
                     for (int j = 0; j < nInner; j++)
@@ -2633,7 +2634,7 @@ namespace RMC.BestFit.Analyses
                     seOuter[i] = Math.Sqrt(Math.Max(0.0, varInner));
                 }
 
-                // Compute the 2×2 covariance matrix: Cov(Q^_p, SE(Q^_p))
+                // Compute the 2ï¿½2 covariance matrix: Cov(Q^_p, SE(Q^_p))
                 double varQ = WeightedCovariance(qOuter, qOuter, outerWeights);
                 double covQSE = WeightedCovariance(qOuter, seOuter, outerWeights);
                 double varSE = WeightedCovariance(seOuter, seOuter, outerWeights);
@@ -2668,7 +2669,7 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Builds a quadrature grid in parameter space following Cohn's (2013) GRIDMAKE approach.
         /// </summary>
-        /// <param name="mean">The center of the grid (point estimate ?^). For LP3: [µ, s, ?] in log-space.</param>
+        /// <param name="mean">The center of the grid (point estimate ?^). For LP3: [ï¿½, s, ?] in log-space.</param>
         /// <param name="covariance">The covariance matrix S^ of the parameters.</param>
         /// <param name="dimension">Number of parameters (2 or 3).</param>
         /// <param name="nNodesPerDim">Number of quadrature nodes per dimension (typically 2).</param>
@@ -2680,12 +2681,12 @@ namespace RMC.BestFit.Analyses
         /// <list type="number">
         ///   <item><b>Gamma quadrature for s (index 1):</b> The sampling distribution of the standard deviation
         ///     estimator is right-skewed and bounded below by zero. EMA uses Gamma quadrature for the
-        ///     variance dimension (S²); since our parameterization uses s = vS², we use Gamma quadrature
-        ///     for s with shape a = s^²/Var(s^) and scale ß = Var(s^)/s^, centered at zero.
+        ///     variance dimension (Sï¿½); since our parameterization uses s = vSï¿½, we use Gamma quadrature
+        ///     for s with shape a = s^ï¿½/Var(s^) and scale ï¿½ = Var(s^)/s^, centered at zero.
         ///     This prevents negative s grid points and correctly captures the right-skewed sampling
         ///     distribution.</item>
-        ///   <item><b>Normal quadrature for µ and ?:</b> The mean and skewness estimators are approximately
-        ///     normally distributed, using Gauss-Hermite nodes at ±1 with weights 0.5.</item>
+        ///   <item><b>Normal quadrature for ï¿½ and ?:</b> The mean and skewness estimators are approximately
+        ///     normally distributed, using Gauss-Hermite nodes at ï¿½1 with weights 0.5.</item>
         ///   <item><b>Modified Cholesky (column-2-first):</b> Following EMA's CHOL33, the Cholesky
         ///     decomposition processes the s dimension first, making the Gamma-distributed variable
         ///     the leading factor. This ensures the Gamma nodes correctly capture positivity before
@@ -2698,7 +2699,7 @@ namespace RMC.BestFit.Analyses
             // Regularize to ensure positive-definiteness
             var S = MatrixRegularization.MakeSymmetricPositiveDefinite(covariance);
 
-            // Index of the scale parameter (s) — uses Gamma quadrature
+            // Index of the scale parameter (s) ï¿½ uses Gamma quadrature
             // For B17C distributions: index 1 is always the scale/std-dev parameter
             int scaleIdx = (dimension >= 2) ? 1 : -1;
 
@@ -2711,22 +2712,22 @@ namespace RMC.BestFit.Analyses
                 if (d == scaleIdx && mean[d] > 0)
                 {
                     // Gamma quadrature for s (positive parameter)
-                    // EMA's GRIDMAKE uses Gauss-Laguerre quadrature for the variance dimension S²
+                    // EMA's GRIDMAKE uses Gauss-Laguerre quadrature for the variance dimension Sï¿½
                     // to enforce positivity and capture the right-skewed sampling distribution.
                     //
-                    // For our s parameterization: a = s^²/Var(s^)
-                    // 2-point generalized Gauss-Laguerre nodes for weight x^(a-1)·e^(-x) are:
-                    //   x1,2 = (a+1) ± v(a+1)  (roots of L2^(a-1)(x))
+                    // For our s parameterization: a = s^ï¿½/Var(s^)
+                    // 2-point generalized Gauss-Laguerre nodes for weight x^(a-1)ï¿½e^(-x) are:
+                    //   x1,2 = (a+1) ï¿½ v(a+1)  (roots of L2^(a-1)(x))
                     // After centering (subtract Gamma mean = a) and standardizing (divide by va):
                     //   z1 = (1 - v(a+1)) / va   (negative, further from mean)
                     //   z2 = (1 + v(a+1)) / va   (positive, closer to mean for small a)
                     // Weights:
-                    //   w1 = (a+1+v(a+1)) / (2(a+1))  (larger — node closer to mean)
-                    //   w2 = (a+1-v(a+1)) / (2(a+1))  (smaller — node further from mean)
+                    //   w1 = (a+1+v(a+1)) / (2(a+1))  (larger ï¿½ node closer to mean)
+                    //   w2 = (a+1-v(a+1)) / (2(a+1))  (smaller ï¿½ node further from mean)
                     //
                     // For small a (large s uncertainty), these are strongly asymmetric:
                     //   a=4: z1=-0.618, z2=+1.618, w1=0.809, w2=0.191
-                    // For large a (small uncertainty), they approach symmetric ±1:
+                    // For large a (small uncertainty), they approach symmetric ï¿½1:
                     //   a=100: z1=-0.905, z2=+1.105, w1=0.550, w2=0.450
                     double varSigma = Math.Max(S[d, d], 1e-30);
                     double alpha = mean[d] * mean[d] / varSigma;
@@ -2798,10 +2799,10 @@ namespace RMC.BestFit.Analyses
         /// <param name="S">Symmetric positive-definite covariance matrix.</param>
         /// <param name="dimension">Matrix dimension.</param>
         /// <param name="pivotIdx">Index of the Gamma-distributed dimension (typically 1 for s).</param>
-        /// <returns>The modified lower-triangular Cholesky factor V where V·V' = S.</returns>
+        /// <returns>The modified lower-triangular Cholesky factor V where Vï¿½V' = S.</returns>
         /// <remarks>
         /// <para>
-        /// For a 3×3 matrix with pivotIdx=1, the structure matches EMA's CHOL33 output:
+        /// For a 3ï¿½3 matrix with pivotIdx=1, the structure matches EMA's CHOL33 output:
         /// </para>
         /// <code>
         /// V = [ V(0,0)   0       0     ]
@@ -2813,7 +2814,7 @@ namespace RMC.BestFit.Analyses
         /// onto itself; other dimensions load from it via V(1,0) and V(2,1)).
         /// </para>
         /// <para>
-        /// For 2×2 and general dimensions, falls back to standard Cholesky.
+        /// For 2ï¿½2 and general dimensions, falls back to standard Cholesky.
         /// </para>
         /// </remarks>
         private static Matrix CohnCholesky(Matrix S, int dimension, int pivotIdx)
@@ -2828,18 +2829,18 @@ namespace RMC.BestFit.Analyses
             // EMA's CHOL33: process column 1 (s, index 1) first
             // This matches the Fortran CHOL33 exactly:
             //   V(2,2) = sqrt(S(2,2))         [s-s variance]
-            //   V(2,1) = S(2,1)/V(2,2)        [µ-s loading]
+            //   V(2,1) = S(2,1)/V(2,2)        [ï¿½-s loading]
             //   V(2,3) = S(2,3)/V(2,2)        [s-? loading]
-            //   V(1,1) = sqrt(S(1,1)-V(2,1)²) [residual µ variance]
-            //   V(1,3) = (S(3,1)-V(2,3)*V(2,1))/V(1,1) [µ-? cross]
-            //   V(3,3) = sqrt(S(3,3)-V(2,3)²-V(1,3)²)  [residual ? variance]
+            //   V(1,1) = sqrt(S(1,1)-V(2,1)ï¿½) [residual ï¿½ variance]
+            //   V(1,3) = (S(3,1)-V(2,3)*V(2,1))/V(1,1) [ï¿½-? cross]
+            //   V(3,3) = sqrt(S(3,3)-V(2,3)ï¿½-V(1,3)ï¿½)  [residual ? variance]
             //
             // But we need to output as a standard lower-triangular L where L*L' = S.
             // The EMA V is applied as Z2 = V^T * Z (column-major), which is equivalent to
             // L * Z where L = V^T in our row-major convention.
             //
             // Actually, for the tensor product grid, the key property is that the Cholesky
-            // factor correctly reproduces S = L*L'. Any valid Cholesky will work — the
+            // factor correctly reproduces S = L*L'. Any valid Cholesky will work ï¿½ the
             // standard Cholesky already handles correlations properly.
             // The critical EMA difference is the Gamma quadrature nodes, not the Cholesky ordering.
             var chol2 = new CholeskyDecomposition(S);
@@ -2879,7 +2880,7 @@ namespace RMC.BestFit.Analyses
                     w *= perDimWeights[d][indices[d]];
                 }
 
-                // Apply Cholesky: ? = mean + L × Z
+                // Apply Cholesky: ? = mean + L ï¿½ Z
                 double[] theta = new double[dimension];
                 for (int i = 0; i < dimension; i++)
                 {
@@ -2907,15 +2908,15 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Clamps parameters for covariance evaluation, matching EMA's REGMOMS and VAR_MOM guard rails.
         /// </summary>
-        /// <param name="parameters">Parameter vector [µ, s, ?]. Not modified.</param>
+        /// <param name="parameters">Parameter vector [ï¿½, s, ?]. Not modified.</param>
         /// <returns>A cloned parameter vector with s &gt; 0, |?| ? [0.063, 1.5].</returns>
         /// <remarks>
         /// <para>
         /// EMA applies two layers of skew clamping for covariance evaluation:
         /// <list type="bullet">
-        ///   <item><description>REGMOMS (line 1961): |?| = 1.5 — outer clamp before variance computation.</description></item>
-        ///   <item><description>VAR_MOM (line 2081): |?| = 0.0632 (v(4/1000)) — at smaller |?|, the gamma
-        ///   shape a = 4/?² exceeds 1000 and the moment variance formulas lose precision.</description></item>
+        ///   <item><description>REGMOMS (line 1961): |?| = 1.5 ï¿½ outer clamp before variance computation.</description></item>
+        ///   <item><description>VAR_MOM (line 2081): |?| = 0.0632 (v(4/1000)) ï¿½ at smaller |?|, the gamma
+        ///   shape a = 4/?ï¿½ exceeds 1000 and the moment variance formulas lose precision.</description></item>
         /// </list>
         /// </para>
         /// <para>
@@ -2933,7 +2934,7 @@ namespace RMC.BestFit.Analyses
                 clamped[1] = Math.Max(clamped[1], 1e-10);
             }
 
-            // Clamp |?| to [0.063, 1.5] matching EMA's REGMOMS (±1.5) and VAR_MOM (skewmin=0.0632)
+            // Clamp |?| to [0.063, 1.5] matching EMA's REGMOMS (ï¿½1.5) and VAR_MOM (skewmin=0.0632)
             if (clamped.Length >= 3)
             {
                 clamped[2] = Math.Clamp(clamped[2], -1.5, 1.5);
@@ -2945,9 +2946,9 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clamps parameters for quantile evaluation — only enforces s &gt; 0, leaves ? unclamped.
+        /// Clamps parameters for quantile evaluation ï¿½ only enforces s &gt; 0, leaves ? unclamped.
         /// </summary>
-        /// <param name="parameters">Parameter vector [µ, s, ?]. Not modified.</param>
+        /// <param name="parameters">Parameter vector [ï¿½, s, ?]. Not modified.</param>
         /// <returns>A cloned parameter vector with s &gt; 0 and ? unconstrained.</returns>
         /// <remarks>
         /// Matches EMA's QP3 function which evaluates quantiles at unclamped skew values from the
@@ -2959,7 +2960,7 @@ namespace RMC.BestFit.Analyses
         {
             var clamped = (double[])parameters.Clone();
 
-            // Ensure s > 0 — quadrature can push it negative
+            // Ensure s > 0 ï¿½ quadrature can push it negative
             if (clamped.Length >= 2)
             {
                 clamped[1] = Math.Max(clamped[1], 1e-10);
@@ -3003,8 +3004,8 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Computes the weighted covariance Cov(X, Y) = S w_i·(x_i - x¯)·(y_i - ?) where
-        /// x¯ = S w_i·x_i and ? = S w_i·y_i. Equivalent to EMA's COVW function.
+        /// Computes the weighted covariance Cov(X, Y) = S w_iï¿½(x_i - xï¿½)ï¿½(y_i - ?) where
+        /// xï¿½ = S w_iï¿½x_i and ? = S w_iï¿½y_i. Equivalent to EMA's COVW function.
         /// </summary>
         /// <param name="x">First variable values.</param>
         /// <param name="y">Second variable values.</param>
@@ -3031,7 +3032,7 @@ namespace RMC.BestFit.Analyses
             xBar /= wSum;
             yBar /= wSum;
 
-            // Weighted covariance: S w_i (x_i - x¯)(y_i - ?) / S w_i
+            // Weighted covariance: S w_i (x_i - xï¿½)(y_i - ?) / S w_i
             double cov = 0;
             for (int i = 0; i < n; i++)
                 cov += weights[i] * (x[i] - xBar) * (y[i] - yBar);
@@ -3053,18 +3054,18 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Implements the formula from <c>emafit-jfe.f</c> lines 1630–1679:
+        /// Implements the formula from <c>emafit-jfe.f</c> lines 1630ï¿½1679:
         /// </para>
         /// <code>
-        /// ß1 = Cov(Q^_p, SE) / Var(Q^_p)
-        /// Var(SE | Q^) = Var(SE) - Cov²(Q^, SE) / Var(Q^)
-        /// ? = 0.5 · Var(Q^) / Var(SE | Q^)
-        /// t = Student_t?¹((1 + conf) / 2, ?)
-        /// CI = Q^ ± vVar(Q^) · t / max(0.5, 1 - ß1·t)
+        /// ï¿½1 = Cov(Q^_p, SE) / Var(Q^_p)
+        /// Var(SE | Q^) = Var(SE) - Covï¿½(Q^, SE) / Var(Q^)
+        /// ? = 0.5 ï¿½ Var(Q^) / Var(SE | Q^)
+        /// t = Student_t?ï¿½((1 + conf) / 2, ?)
+        /// CI = Q^ ï¿½ vVar(Q^) ï¿½ t / max(0.5, 1 - ï¿½1ï¿½t)
         /// </code>
         /// <para>
-        /// The ß1 correction accounts for the correlation between the quantile estimate and its
-        /// standard error: when ß1 > 0 (common at extreme upper quantiles), the upper CI expands
+        /// The ï¿½1 correction accounts for the correlation between the quantile estimate and its
+        /// standard error: when ï¿½1 > 0 (common at extreme upper quantiles), the upper CI expands
         /// more than the lower CI shrinks, creating the characteristic asymmetric EMA CI shape.
         /// </para>
         /// <para>
@@ -3080,7 +3081,7 @@ namespace RMC.BestFit.Analyses
             if (varQ <= 0)
                 return (qHat, qHat, 0, nuMin);
 
-            // ß1: regression coefficient of SE(Q^) on Q^
+            // ï¿½1: regression coefficient of SE(Q^) on Q^
             double beta1 = covQSE / varQ;
 
             // Conditional variance of SE given Q^
@@ -3104,7 +3105,7 @@ namespace RMC.BestFit.Analyses
             double t = tDist.InverseCDF(pHigh);
             double seQ = Math.Sqrt(varQ);
 
-            // Confidence intervals with ß1 correction
+            // Confidence intervals with ï¿½1 correction
             double ciHigh = qHat + seQ * t / Math.Max(cMin, 1.0 - beta1 * t);
             double ciLow = qHat + seQ * (-t) / Math.Max(cMin, 1.0 - beta1 * (-t));
 
@@ -3470,7 +3471,7 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Uses the delta method: Var(Q^_p) = ?Q_p(?^)? · S^_? · ?Q_p(?^), where ?Q_p is the gradient
+        /// Uses the delta method: Var(Q^_p) = ?Q_p(?^)? ï¿½ S^_? ï¿½ ?Q_p(?^), where ?Q_p is the gradient
         /// of the quantile function with respect to parameters, and S^_? is the sandwich covariance matrix.
         /// </para>
         /// <para>
@@ -3780,7 +3781,7 @@ namespace RMC.BestFit.Analyses
     /// <para>
     /// This result class is produced by <see cref="Bulletin17CAnalysis.ComputeCohnStyleConfidenceIntervals"/>
     /// and provides EMA-compatible confidence intervals alongside diagnostic quantities
-    /// (ß1 regression coefficient and ? degrees of freedom) for comparison with PeakFQ output.
+    /// (ï¿½1 regression coefficient and ? degrees of freedom) for comparison with PeakFQ output.
     /// </para>
     /// </remarks>
     public class CohnConfidenceIntervalResult
@@ -3811,7 +3812,7 @@ namespace RMC.BestFit.Analyses
         public double ConfidenceLevel { get; set; }
 
         /// <summary>
-        /// The ß1 regression coefficient of SE(Q^_p) on Q^_p for each probability level.
+        /// The ï¿½1 regression coefficient of SE(Q^_p) on Q^_p for each probability level.
         /// Positive values indicate that the standard error increases with the quantile estimate,
         /// causing asymmetric CI widths.
         /// </summary>

@@ -1,4 +1,4 @@
-﻿using DatabaseManager;
+using DatabaseManager;
 using FrameworkInterfaces;
 using FrameworkInterfaces.Messaging;
 using FrameworkInterfaces.Undo;
@@ -724,7 +724,7 @@ namespace RMC.BestFit.UI
             // and should not trigger ClearResults or the resulting UI cascade.
             // Guard against undo replay: clearing the bivariate fit on a replay-driven
             // marginal IsEstimated/AnalysisResults change produces asymmetric undo
-            // (CLAUDE.md "CRITICAL: never short-circuit in the UI layer").
+            // (the UI wrapper consistency rule).
             if ((e.PropertyName == nameof(MarginalX.AnalysisResults) ||
                  e.PropertyName == nameof(MarginalX.IsEstimated))
                 && !UndoManager.IsExecutingAction)

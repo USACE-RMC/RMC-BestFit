@@ -1276,7 +1276,7 @@ public class PointProcessModelTests
     /// <c>PointProcessModel.PriorLogLikelihood</c>. Non-seasonal configuration.
     /// </summary>
     /// <remarks>
-    /// Per CLAUDE.md "LogLikelihood vs DataLogLikelihood (CRITICAL)" the canonical contract is
+    /// Per the project coding standards "LogLikelihood vs DataLogLikelihood (CRITICAL)" the canonical contract is
     /// pointwise.Sum(c =&gt; c.LogLikelihood) == scalar prior. Disable Jeffreys-rule scaling so
     /// the two methods evaluate identical prior contributions (PointwisePriorLogLikelihood
     /// excludes the Jeffreys term to match ModelBase.PriorLogLikelihood semantics).

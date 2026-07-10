@@ -121,7 +121,7 @@ namespace RMC_BestFit
         /// evaluations on the univariate Student's t), and ? is only weakly identified at
         /// typical hydrologic sample sizes. The copula itself (<c>CopulaType.StudentT</c>)
         /// remains fully supported in the model library and is exercised by the verification
-        /// suite — it can be re-enabled here once either a better prior is plumbed through
+        /// suite ï¿½ it can be re-enabled here once either a better prior is plumbed through
         /// or runtime costs are reduced.
         /// </remarks>
         public ObservableCollection<CopulaItem> CopulaList { get; private set; } = new ObservableCollection<CopulaItem>()
@@ -368,12 +368,12 @@ namespace RMC_BestFit
         /// <param name="e">The property changed event arguments.</param>
         private void Element_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Model object replaced (e.g., during undo) — push to sub-controls
+            // Model object replaced (e.g., during undo) ï¿½ push to sub-controls
             if (e.PropertyName == nameof(Element.BivariateDistribution))
             {
                 ParameterPriorsControl.Model = Element.BivariateDistribution;
             }
-            // BayesianAnalysis replaced — push to sub-controls
+            // BayesianAnalysis replaced ï¿½ push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;
@@ -384,7 +384,7 @@ namespace RMC_BestFit
         /// <summary>
         /// Loads all univariate analyses from the project into the <see cref="UnivariateAnalysisList"/>
         /// collection. Subscribes to element added/removed events via NAMED handlers (not anonymous
-        /// lambdas) so they can be unsubscribed deterministically — see Convention 8 in CLAUDE.md.
+        /// lambdas) so they can be unsubscribed deterministically ï¿½ see Convention 8 in the project coding standards.
         /// Calls <see cref="UnsubscribeUnivariateAnalysisCollection"/> first so repeated invocations
         /// (re-loads after Element change, or after a transient Unload/Reload cycle) cannot
         /// double-subscribe.
@@ -415,7 +415,7 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Handles a new IUnivariate being added to the project. Accept any IUnivariate that
-        /// exposes a marginal model — CompositeAnalysis returns null from GetMarginalModel
+        /// exposes a marginal model ï¿½ CompositeAnalysis returns null from GetMarginalModel
         /// because it does not own paired input data, so it is filtered out.
         /// </summary>
         private void OnUnivariateAnalysisAdded(IElement x)
@@ -457,7 +457,7 @@ namespace RMC_BestFit
         private void MarginalXComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // First-load NRE guard: WPF can fire SelectionChanged during DataContext
-            // resolution before Element is assigned (CLAUDE.md "WPF DataContext Pattern").
+            // resolution before Element is assigned (the WPF DataContext pattern).
             if (Element == null) return;
             if (Element.MarginalX == null || Element.MarginalX.Name == null)
             {
@@ -479,7 +479,7 @@ namespace RMC_BestFit
         /// <param name="e">The selection changed event arguments.</param>
         private void MarginalYComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // First-load NRE guard (CLAUDE.md "WPF DataContext Pattern").
+            // First-load NRE guard (the WPF DataContext pattern).
             if (Element == null) return;
             if (Element.MarginalY == null || Element.MarginalY.Name == null)
             {

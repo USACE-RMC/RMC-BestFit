@@ -33,7 +33,7 @@ namespace RMC_BestFit
             InitializeComponent();
             // Hook IsVisibleChanged so the plot is only (re)built when the trace tab is actually
             // visible. When the tab is hidden, updates are marked dirty and deferred until the user
-            // switches back — matching the canonical "lazy tab-gated rendering" pattern in CLAUDE.md.
+            // switches back — matching the canonical "lazy tab-gated rendering" pattern in the project coding standards.
             this.IsVisibleChanged += UserControl_IsVisibleChanged;
         }
 

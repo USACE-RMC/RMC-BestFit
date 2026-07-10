@@ -36,7 +36,7 @@ public class UnivariateDistributionExpandedTests
 
     /// <summary>
     /// IsSupportedDistributionType returns true for every value in the
-    /// 15-distribution canonical list documented in CLAUDE.md.
+    /// 15-distribution canonical list documented in the project coding standards.
     /// </summary>
     [TestMethod]
     public void IsSupportedDistributionType_AllSupportedValues_ReturnTrue()

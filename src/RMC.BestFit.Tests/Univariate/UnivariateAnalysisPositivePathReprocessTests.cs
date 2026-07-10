@@ -12,7 +12,7 @@ namespace RMC.BestFit.Tests.Univariate;
 /// Positive-path tests for the reprocess-don't-clear contract on
 /// <c>UnivariateAnalysis</c>. These tests inject a synthetic <c>MCMCResults</c>
 /// via <c>BayesianAnalysis.SetCustomMCMCResults</c> to flip the analysis into the
-/// estimated state without running an actual MCMC chain (per CLAUDE.md: MCMC-running tests
+/// estimated state without running an actual MCMC chain (per the test classification policy: MCMC-running tests
 /// live in the Verification project). They then exercise the actual reprocess code path
 /// — the half of the contract that the negative-path preservation tests cannot reach.
 /// </summary>

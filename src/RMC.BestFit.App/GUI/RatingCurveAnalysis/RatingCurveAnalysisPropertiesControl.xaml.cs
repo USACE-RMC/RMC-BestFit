@@ -429,7 +429,7 @@ namespace RMC_BestFit
         /// <param name="e">The selection changed event arguments.</param>
         private void StageDataComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // First-load NRE guard (CLAUDE.md "WPF DataContext Pattern").
+            // First-load NRE guard (the WPF DataContext pattern).
             if (Element == null) return;
             if (Element.StageData == null || Element.StageData.Name == null)
             {
@@ -451,7 +451,7 @@ namespace RMC_BestFit
         /// <param name="e">The selection changed event arguments.</param>
         private void DischargeDataComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // First-load NRE guard (CLAUDE.md "WPF DataContext Pattern").
+            // First-load NRE guard (the WPF DataContext pattern).
             if (Element == null) return;
             if (Element.DischargeData == null || Element.DischargeData.Name == null)
             {

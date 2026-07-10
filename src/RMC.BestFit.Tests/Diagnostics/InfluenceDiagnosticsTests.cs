@@ -39,7 +39,7 @@ public class InfluenceDiagnosticsTests
 
     /// <summary>
     /// Empty constructor leaves rollups as NaN (not zero) so a downstream "no observations"
-    /// branch can be detected unambiguously — the design invariant is documented in CLAUDE.md.
+    /// branch can be detected unambiguously — the design invariant is documented in the project coding standards.
     /// </summary>
     [TestMethod]
     public void DefaultConstructor_RollupsAreNaN_AndCountIsZero()

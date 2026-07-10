@@ -1,4 +1,4 @@
-﻿using DatabaseManager;
+using DatabaseManager;
 using FrameworkInterfaces;
 using FrameworkInterfaces.Messaging;
 using FrameworkInterfaces.Undo;
@@ -749,7 +749,7 @@ namespace RMC.BestFit.UI
             _innerAnalysis.ARIMAX.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList());
             SetIsValid();
             // Guard against undo replay: clearing the fit on replay-driven CollectionChanged
-            // produces asymmetric undo (CLAUDE.md "CRITICAL: never short-circuit in the UI layer").
+            // produces asymmetric undo (the UI wrapper consistency rule).
             if (!UndoManager.IsExecutingAction)
                 ClearResults();
             RaisePropertyChange(nameof(Covariates));

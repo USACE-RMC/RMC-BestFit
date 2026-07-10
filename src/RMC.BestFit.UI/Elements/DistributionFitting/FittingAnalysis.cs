@@ -1,4 +1,4 @@
-﻿using DatabaseManager;
+using DatabaseManager;
 using Numerics.Data;
 using Numerics.Distributions;
 using Numerics.Utilities;
@@ -1096,7 +1096,7 @@ namespace RMC.BestFit.UI
             SetIsValid();
 
             // Check if we need to clear results. Guard against undo replay: clearing the
-            // fit on a replay-driven InputData event produces asymmetric undo (CLAUDE.md
+            // fit on a replay-driven InputData event produces asymmetric undo (the project coding standards
             // "CRITICAL: never short-circuit in the UI layer").
             if (e.PropertyName != nameof(InputData.Name) &&
                 e.PropertyName != nameof(InputData.DisplayName) &&
