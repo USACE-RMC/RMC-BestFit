@@ -1,0 +1,263 @@
+﻿<UserControl x:Class="RMC_BestFit.TimeSeriesAnalysisControl" x:Name="TSAControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:oxyCntrls="clr-namespace:OxyPlotControls;assembly=OxyPlotControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             Loaded="UserControl_Loaded"
+             Unloaded="UserControl_Unloaded"
+             PreviewMouseDown="UserControl_PreviewMouseDown"
+             LostFocus="UserControl_LostFocus"
+             Background="{DynamicResource EnvironmentWindowBackground}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+            >
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <cntrls:DoubleToNAConverter x:Key="NAConverter"/>
+                    <cntrls:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <TabControl Grid.Row="0" Margin="4" TabStripPlacement="Left" Background="Transparent">
+            <TabItem x:Name="ResultsTabItem" Header="Time Series Results" Style="{DynamicResource VerticalTabItemStyle}">
+                <TabControl Grid.Row="0" Margin="4" TabStripPlacement="Top" Background="Transparent">
+                    <TabItem x:Name="PlotTabItem"  Header="Time Series Plot" Style="{DynamicResource HorizontalTabItemStyle}" >
+                        <Grid>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel 
+                                    Orientation="Horizontal" 
+                                    Grid.Row="0" 
+                                    Margin="5,0,0,0"
+                                    Height="22"
+                                    VerticalAlignment="Center" 
+                                    HorizontalAlignment="Left"
+                                    ToolTip="Show options for viewing alternative results.">
+
+                                <ToggleButton 
+                                        x:Name="ShowFilterToggleButton" 
+                                        SnapsToDevicePixels="True" 
+                                        VerticalAlignment="Center" 
+                                        HorizontalAlignment="Left"
+                                        IsChecked="False"
+                                        Style="{DynamicResource PlusMinusToggleStyle}"/>
+
+                                <TextBlock Text="Alternative Results" VerticalAlignment="Center" Margin="2,0,0,0" Foreground="{DynamicResource EnvironmentWindowText}" MouseLeftButtonUp="TextBlock_MouseLeftButtonUp"/>
+                            </StackPanel>
+
+                            <Grid x:Name="PlotGrid"  Grid.Row="1" Grid.ColumnSpan="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!--Alternatives-->
+                                <local:AlternativeControl x:Name="AlternativeSelector" 
+                                                                        Grid.Column="0"
+                                                                        HorizontalAlignment="Left" 
+                                                                        Margin="0,0,5,0" 
+                                                                        Element="{Binding ElementName=TSAControl, Path=Element}"
+                                                                        Visibility="{Binding ElementName=ShowFilterToggleButton, Path=IsChecked, Converter={StaticResource BoolToVisConverter}}"
+                                                                        AnalysisAdded="AlternativeSelector_AnalysisAdded" AnalysisRemoved="AlternativeSelector_AnalysisRemoved"/>
+
+
+                                <!--Plot-->
+                                <ContentControl x:Name="TimeSeriesPlotHost" Grid.Column="1" Margin="6,2,0,0" />
+                                <!--Plot Toolbar-->
+                                <oxyCntrls:OxyPlotToolbar x:Name="PlotToolbar" Grid.Column="2" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" PropertiesCalled="PlotToolbar_PropertiesCalled"/>
+                            </Grid>
+
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Tabular Results" Style="{DynamicResource HorizontalTabItemStyle}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.7*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="0.3*" MinWidth="200" MaxWidth="500"/>
+                            </Grid.ColumnDefinitions>
+
+                            <cntrls:SeparatorWithHeader Header="Time Series Results" Grid.Column="0" Grid.Row="0" Margin="5" />
+
+                            <cntrls:CopyPasteDataGrid x:Name="TimeSeriesTable" Grid.Column="0" Grid.Row="1" Margin="0,0,2,0"  Style="{DynamicResource CopyPasteDataGridStyle}"  
+                                                    AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="Cell" HeadersVisibility="Column" IsReadOnly="True"
+                                                    CanUserAddInsertDeleteRows="False" CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeRows="False" 
+                                                    CanUserResizeColumns="True" CanUserSortColumns="True" CanUserReorderColumns="False"  >
+
+                                <cntrls:CopyPasteDataGrid.Columns>
+                                    <DataGridTextColumn x:Name="DateTimeColumn" Header="Date Time" IsReadOnly="True"  MinWidth="30"  Width="0.14286*"
+                                                    Binding="{Binding Path=DateTime}"
+                                                    HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" 
+                                                    CellStyle="{DynamicResource Right_CellStyle}" />
+                                    <DataGridTextColumn x:Name="UpperColumn" Header="Upper" IsReadOnly="True" MinWidth="30"  Width="0.14286*" 
+                                                    Binding="{Binding Path=Upper}"
+                                                    HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" 
+                                                    CellStyle="{DynamicResource Right_CellStyle}"/>
+                                    <DataGridTextColumn x:Name="LowerColumn" Header="Lower" IsReadOnly="True" MinWidth="30"  Width="0.14286*"
+                                                    Binding="{Binding Path=Lower}"
+                                                    HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" 
+                                                    CellStyle="{DynamicResource Right_CellStyle}"/>
+                                    <DataGridTextColumn x:Name="PredictiveColumn" Header="Posterior Predictive" IsReadOnly="True" MinWidth="30"  Width="0.14286*"
+                                                    Binding="{Binding Path=Predictive}"
+                                                    HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" 
+                                                    CellStyle="{DynamicResource Right_CellStyle}"/>
+                                    <DataGridTextColumn x:Name="ModeColumn" Header="Posterior Mode" IsReadOnly="True" MinWidth="30"  Width="0.14286*" 
+                                                    Binding="{Binding Path=Mode}"
+                                                    HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" 
+                                                    CellStyle="{DynamicResource Right_CellStyle}"/>
+                                </cntrls:CopyPasteDataGrid.Columns>
+                            </cntrls:CopyPasteDataGrid>
+
+
+                            <GridSplitter  Grid.Column="1" Grid.Row="1" ResizeBehavior="PreviousAndNext" HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="Transparent" Style="{DynamicResource VerticalGridSplitterStyle}"/>
+
+                            <cntrls:SeparatorWithHeader Header="Summary Statistics" Grid.Column="2" Grid.Row="0" Margin="5"/>
+
+                            <Grid Grid.Column="2" Grid.Row="1" Margin="2,0,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <cntrls:CopyPasteDataGrid Name="SummaryStatisticsTable" Grid.Row="0" Margin="4,0,0,0" HeadersVisibility="Column" Style="{DynamicResource CopyPasteDataGridStyle}"
+                                                AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="Cell" IsReadOnly="True" 
+                                                CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeColumns="True" 
+                                                CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False"
+                                                LoadingRow="SummaryStatisticsTable_LoadingRow">
+
+                                    <cntrls:CopyPasteDataGrid.Columns>
+                                        <DataGridTextColumn x:Name="StatNameColumn" Header="Measure" IsReadOnly="True" MinWidth="50" Width="0.5*"
+                                                        Binding="{Binding Path=Name}" 
+                                                        HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}"
+                                                        CellStyle="{DynamicResource Left_CellStyle}"/>
+                                        <DataGridTextColumn x:Name="StatValueColumn" Header="Posterior Mode" IsReadOnly="True"  MinWidth="50" Width="0.5*"
+                                                        Binding="{Binding Path=Value, StringFormat='F4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" 
+                                                        HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}"
+                                                        CellStyle="{DynamicResource Right_CellStyle}"/>
+                                        <DataGridTextColumn x:Name="SignficanceColumn" Header="Signif." IsReadOnly="True" Width="50" 
+                                                        Binding="{Binding Path=Significance}" 
+                                                        HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}"
+                                                        CellStyle="{DynamicResource Center_CellStyle}"/>
+                                    </cntrls:CopyPasteDataGrid.Columns>
+                                </cntrls:CopyPasteDataGrid>
+                                <TextBlock Grid.Row="1" Margin="4,0,0,0" Text="Significance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1" 
+                                           TextWrapping ="WrapWithOverflow" Style="{DynamicResource BasicTextBlockStyle}"/>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+            <TabItem x:Name="ResidualsTabItem" Header="Residual Diagnostics" Style="{DynamicResource VerticalTabItemStyle}">
+                <TabControl Margin="4" TabStripPlacement="Top" Background="Transparent">
+                    <TabItem x:Name="ResidualsPlotTab"  Header="Residuals Plot" Style="{DynamicResource HorizontalTabItemStyle}" >
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ContentControl x:Name="ResidualPlotHost" Grid.Column="0" />
+
+                            <oxyCntrls:OxyPlotToolbar x:Name="ResidualsPlotToolbar" Grid.Column="1" IconSize="20" Margin="0,2,2,0" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" PropertiesCalled="PlotToolbar_PropertiesCalled"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="ResidualHistogramTab" Header="Histogram Plot" Style="{DynamicResource HorizontalTabItemStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ContentControl x:Name="ResidualHistogramPlotHost" Grid.Column="0" />
+
+                            <oxyCntrls:OxyPlotToolbar x:Name="HistogramPlotToolbar" Grid.Column="1" IconSize="20" Margin="0,2,2,0" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" PropertiesCalled="PlotToolbar_PropertiesCalled"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="ResidualQQTab" Header="Normal Q-Q Plot" Style="{DynamicResource HorizontalTabItemStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentControl x:Name="ResidualQQPlotHost" Grid.Column="0" />
+                            <oxyCntrls:OxyPlotToolbar x:Name="QQPlotToolbar" Grid.Column="1" IconSize="20" Margin="0,2,2,0" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" PropertiesCalled="PlotToolbar_PropertiesCalled"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="ResidualACFTab" Header="ACF Plot" Style="{DynamicResource HorizontalTabItemStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentControl x:Name="ResidualACFPlotHost" Grid.Column="0" />
+                            <oxyCntrls:OxyPlotToolbar x:Name="ACFPlotToolbar" Grid.Column="1" IconSize="20" Margin="0,2,2,0" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" PropertiesCalled="PlotToolbar_PropertiesCalled"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="ResidualPACFTab" Header="PACF Plot" Style="{DynamicResource HorizontalTabItemStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentControl x:Name="ResidualPACFPlotHost" Grid.Column="0" />
+                            <oxyCntrls:OxyPlotToolbar x:Name="PACFPlotToolbar" Grid.Column="1" IconSize="20" Margin="0,2,2,0" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" PropertiesCalled="PlotToolbar_PropertiesCalled"/>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </TabItem>
+            <TabItem x:Name="ParameterSetsTabItem" Header="Parameter Sets" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:ParameterSetsControl x:Name ="ParameterSetsControl" Grid.Row="1" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"/>
+            </TabItem>
+            <TabItem x:Name="InfluenceDiagnosticsTabItem" Header="Influence" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:InfluenceDiagnosticsControl x:Name="InfluenceDiagnosticsControl" Grid.Row="1"
+                    Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                    PlotPropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </TabItem>
+            <TabItem x:Name="KernelDensityTabItem" Header="Kernel Density" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:KernelDensityControl x:Name ="KernelDensityControl" Grid.Row="1" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                            PlotPropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </TabItem>
+            <TabItem x:Name="HistogramTabItem" Header="Histogram" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:HistogramControl x:Name ="HistogramControl" Grid.Row="1" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                        PlotPropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </TabItem>
+            <TabItem x:Name="BivariateTabItem" Header="Bivariate" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:BivariateHeatMapControl x:Name ="BivariateHeatMapControl" Grid.Row="1" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                               PlotPropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </TabItem>
+            <TabItem x:Name="MeanLikelihoodTabItem" Header="Mean Likelihood" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:MeanLikelihoodControl x:Name ="MeanLikelihoodControl" Grid.Row="1" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                             PlotPropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </TabItem>
+            <TabItem x:Name="AutocorrelationTabItem" Header="Autocorrelation" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:AutocorrelationControl x:Name ="AutocorrelationControl" Grid.Row="1" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                              PlotPropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </TabItem>
+            <TabItem x:Name="MarkovChainTabItem" Header="Markov Chain Traces" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:MarkovChainTraceControl x:Name ="MarkovChainTraceControl" Grid.Row="1" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                               PlotPropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </TabItem>
+            <TabItem x:Name="MCMCReportTabItem" Header="MCMC Report" Style="{DynamicResource VerticalTabItemStyle}">
+                <local:MCMCReportControl x:Name="MCMCReportControl" Analysis="{Binding ElementName=TSAControl, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"/>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

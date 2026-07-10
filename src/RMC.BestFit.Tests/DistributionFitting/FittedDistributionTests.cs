@@ -4,7 +4,7 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Tests.DistributionFitting;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="FittedDistribution"/> result class —
+/// Programmatic unit tests for the <c>FittedDistribution</c> result class —
 /// the immutable record produced by <c>FittingAnalysis</c> for each distribution it tries.
 /// </summary>
 /// <remarks>

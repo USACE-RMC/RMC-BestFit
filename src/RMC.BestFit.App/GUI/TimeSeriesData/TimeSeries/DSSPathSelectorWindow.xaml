@@ -1,0 +1,96 @@
+﻿<cntrls:MetroWindow x:Class="RMC_BestFit.DSSPathSelectorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RMC_BestFit"
+        xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+        mc:Ignorable="d" Width="800" Height="500"
+        Title="HEC-DSS Pathname Selector"
+        Icon="{DynamicResource BestFit}"
+        ResizeMode="CanResize"
+        ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen"
+        Style="{DynamicResource MetroWindowStyle}"
+        Background="{DynamicResource EnvironmentWindowBackground}"
+        Foreground="{DynamicResource EnvironmentWindowText}"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <Grid Background="{DynamicResource EnvironmentWindowBackground}">
+        <!--Add Rows-->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!--Add Columns-->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="30"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="30"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock x:Name="FileNameLabel" Text="File Name:" Grid.Row="0" Grid.Column="0" Margin="6,0,0,0" TextAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox x:Name="FileNameTextBox" IsReadOnly="True" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan ="5" Height="22" Margin="4,6,6,3"/>
+        <TextBlock x:Name="PathNameLabel" Height="22" Text="Pathname:" Grid.Row="1" Grid.Column="0" Margin="6,0,0,0" TextAlignment="Right" VerticalAlignment="Center"/>
+        <TextBox x:Name="PathNameTextBox" IsReadOnly="True" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan ="5" Height="22" Margin="4,3,6,2"/>
+        
+        <cntrls:SeparatorWithHeader Header="Search By Parts" Grid.ColumnSpan="6" Grid.Row="2" Margin="6,4,6,4" />
+        
+        <TextBlock x:Name="APartTextBlock" Text="Part A:" Grid.Row="3" Grid.Column="0" TextAlignment="Right" VerticalAlignment="Center"/>
+        <ComboBox x:Name="APartComboBox" Grid.Row="3" Grid.Column="1" Height="22" Margin="4, 4, 4, 3" SelectionChanged="ComboBox_SelectionChanged"/>
+
+        <TextBlock x:Name="BPartTextBlock" Text=" Part B:" Grid.Row="4" Grid.Column="0" TextAlignment="Right" VerticalAlignment="Center"/>
+        <ComboBox x:Name="BPartComboBox" Grid.Row="4" Grid.Column="1" Height="22" Margin="4, 3, 4, 3" SelectionChanged="ComboBox_SelectionChanged"/>
+
+        <TextBlock x:Name="CPartTextBlock" Text="C:" Grid.Row="3" Grid.Column="2" TextAlignment="Right" VerticalAlignment="Center"/>
+        <ComboBox x:Name="CPartComboBox" Grid.Row="3" Grid.Column="3" Height="22" Margin="4, 3, 4, 3" SelectionChanged="ComboBox_SelectionChanged"/>
+
+        <TextBlock x:Name="DPartTextBlock" Text="D:" Grid.Row="4" Grid.Column="2" TextAlignment="Right" VerticalAlignment="Center"/>
+        <ComboBox x:Name="DPartComboBox" Grid.Row="4" Grid.Column="3" Height="22" Margin="4, 3, 4, 3" SelectionChanged="ComboBox_SelectionChanged"/>
+
+        <TextBlock x:Name="EPartTextBlock" Text="E:" Grid.Row="3" Grid.Column="4" TextAlignment="Right" VerticalAlignment="Center"/>
+        <ComboBox x:Name="EPartComboBox" Grid.Row="3" Grid.Column="5" Height="22" Margin="4, 3, 6, 3" SelectionChanged="ComboBox_SelectionChanged"/>
+
+        <TextBlock x:Name="FPartTextBlock" Text="F:" Grid.Row="4" Grid.Column="4" TextAlignment="Right" VerticalAlignment="Center"/>
+        <ComboBox x:Name="FPartComboBox" Grid.Row="4" Grid.Column="5" Height="22" Margin="4, 3, 6, 3" SelectionChanged="ComboBox_SelectionChanged"/>
+
+        <cntrls:CopyPasteDataGrid x:Name="MyDataGrid" Grid.Row="5" Grid.ColumnSpan="6" Margin="6,3,6,3" SelectionMode="Single" SelectionUnit="FullRow"
+                  AutoGenerateColumns="False" IsReadOnly="True" Style="{DynamicResource CopyPasteDataGridStyle}" HeadersVisibility="Column" SelectionChanged="MyDataGrid_SelectionChanged" >
+            <cntrls:CopyPasteDataGrid.Columns>
+                <DataGridTextColumn HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" MinWidth="30" Width="*" Header="Part A" Binding="{Binding Apart}" CanUserSort="True" CanUserReorder="False"/>
+                <DataGridTextColumn HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" MinWidth="30" Width="*" Header="Part B" Binding="{Binding Bpart}" CanUserSort="True" CanUserReorder="False"/>
+                <DataGridTextColumn HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" MinWidth="30" Width="*" Header="Part C" Binding="{Binding Cpart}" CanUserSort="True" CanUserReorder="False"/>
+                <DataGridTextColumn HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" MinWidth="30" Width="*" Header="Part D" Binding="{Binding DisplayDpart}" CanUserSort="True" CanUserReorder="False">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}">
+                            <Setter Property="ToolTip" Value="{Binding RangeResolutionMessage}"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" MinWidth="30" Width="*" Header="Part E" Binding="{Binding Epart}" CanUserSort="True" CanUserReorder="False"/>
+                <DataGridTextColumn HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" MinWidth="30" Width="*" Header="Part F" Binding="{Binding Fpart}" CanUserSort="True" CanUserReorder="False"/>
+            </cntrls:CopyPasteDataGrid.Columns>
+        </cntrls:CopyPasteDataGrid>
+
+        <!--<Button Name="SetPathButton" IsDefault="True" IsEnabled="False" Click="SetPathButton_Click" Content="Set Path" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" HorizontalAlignment="Right" Height="28" Width="83" Margin="4" Grid.Row="6" Grid.Column="5"/>-->
+
+        <!--Ok and Cancel buttons-->
+        <Grid Grid.Row="6" Grid.ColumnSpan="6" HorizontalAlignment="Right">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Name="SetPathButton" IsDefault="True" IsEnabled="False" Click="SetPathButton_Click" Content="Set Path" Grid.Column="0" Width="83" Height="24" Margin="6,3,0,6" Cursor="Hand"/>
+            <Button Name="CancelButton" IsCancel="True" Click="CancelButton_Click" Content="Cancel" Grid.Column="1" Width="83" Height="24" Margin="6,3,6,6" Cursor="Hand"/>
+        </Grid>
+
+    </Grid>
+</cntrls:MetroWindow>

@@ -1,4 +1,4 @@
-﻿using Numerics.Distributions;
+using Numerics.Distributions;
 using Numerics.Data;
 using System;
 using System.Collections.Generic;
@@ -209,6 +209,8 @@ namespace RMC.BestFit.Models
             get { return _timeSeries; }
             set
             {
+                if (ReferenceEquals(_timeSeries, value)) return;
+
                 if (_timeSeries != null)
                     _timeSeries.CollectionChanged -= TimeSeries_CollectionChanged;
 
@@ -217,11 +219,13 @@ namespace RMC.BestFit.Models
                 if (_timeSeries != null)
                 {
                     _timeSeries.CollectionChanged += TimeSeries_CollectionChanged;
-                    _seasonalPeriod = InferSeasonalPeriod();
-
-                    if (_useDefaultTrainingSteps)
-                        SetDefaultTrainingSteps();
+                    UpdateSeasonalPeriod();
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                     SetTrainingData();
+                }
+                else
+                {
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                 }
 
                 RaisePropertyChange(nameof(TimeSeries));
@@ -540,7 +544,7 @@ namespace RMC.BestFit.Models
             if (min <= 0)
                 _lambda2 = 0 - min + 1;
 
-            _seasonalPeriod = InferSeasonalPeriod();
+            UpdateSeasonalPeriod();
 
             if (_useDefaultTrainingSteps)
                 SetDefaultTrainingSteps();
@@ -573,6 +577,50 @@ namespace RMC.BestFit.Models
             // Use 80% for training, with minimum of 30 or parameter count
             int minSteps = Math.Max(30, Parameters?.Count ?? 0);
             TrainingTimeSteps = Math.Max(minSteps, (int)Math.Floor(0.8 * _timeSeries.Count));
+        }
+
+        /// <summary>
+        /// Restores the default training split when the model is attached to a different input series.
+        /// </summary>
+        /// <remarks>
+        /// A new response series represents a new calibration problem. Manual training-window edits from
+        /// the previous series are therefore discarded, while analysis-layer forecast settings remain
+        /// outside this model and are preserved by their owning analysis.
+        /// </remarks>
+        private void ResetDefaultTrainingStepsForNewTimeSeries()
+        {
+            if (!_useDefaultTrainingSteps)
+            {
+                _useDefaultTrainingSteps = true;
+                RaisePropertyChange(nameof(UseDefaultTrainingSteps));
+            }
+
+            if (_timeSeries == null || _timeSeries.Count == 0)
+            {
+                if (_trainingTimeSteps != 0)
+                {
+                    _trainingTimeSteps = 0;
+                    RaisePropertyChange(nameof(TrainingTimeSteps));
+                }
+                return;
+            }
+
+            SetDefaultTrainingSteps();
+        }
+
+        /// <summary>
+        /// Updates the inferred seasonal period and notifies bindings when the interval scale changes.
+        /// </summary>
+        /// <remarks>
+        /// The period is derived from <see cref="TimeSeries.TimeInterval"/> rather than user input, so
+        /// assigning or replacing the response series is the authoritative trigger.
+        /// </remarks>
+        private void UpdateSeasonalPeriod()
+        {
+            int oldSeasonalPeriod = _seasonalPeriod;
+            _seasonalPeriod = InferSeasonalPeriod();
+            if (_seasonalPeriod != oldSeasonalPeriod)
+                RaisePropertyChange(nameof(SeasonalPeriod));
         }
 
         /// <summary>
@@ -722,6 +770,13 @@ namespace RMC.BestFit.Models
             return extended;
         }
 
+        /// <summary>
+        /// Supports the <c>InferSeasonalPeriod</c> helper.
+        /// </summary>
+        /// <returns>The result.</returns>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private int InferSeasonalPeriod()
         {
             if (TimeSeries == null) return 12; // Default fallback
@@ -762,7 +817,7 @@ namespace RMC.BestFit.Models
                     return 4; // Annual cycle
 
                 case TimeInterval.OneYear:
-                    return 1; // No sub-annual seasonality
+                    return 10; // Decadal cycle for annual records
 
                 default:
                     return 12;
@@ -1840,6 +1895,9 @@ namespace RMC.BestFit.Models
             };
 
             result.TimeSeries = TimeSeries?.Clone()!;
+            result._trainingTimeSteps = TrainingTimeSteps;
+            result._useDefaultTrainingSteps = UseDefaultTrainingSteps;
+            result.SetTrainingData();
             if (_covariates != null)
             {
                 result.SetCovariates(_covariates.Select(c => c.Clone()).ToList());
@@ -1893,6 +1951,12 @@ namespace RMC.BestFit.Models
             {
                 isValid = false;
                 messages.Add("Error: Time series must have at least 10 observations.");
+            }
+
+            if (TimeSeries.TimeInterval == TimeInterval.Irregular)
+            {
+                isValid = false;
+                messages.Add("Error: Time series analysis requires a regular time interval. Resample or convert the series to a regular interval before estimating.");
             }
 
             // Check training steps

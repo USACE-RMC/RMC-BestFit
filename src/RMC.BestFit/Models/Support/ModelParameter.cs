@@ -83,6 +83,9 @@ namespace RMC.BestFit.Models
                 _priorDistribution = UnivariateDistributionFactory.CreateDistribution(distElement);
         }
 
+        /// <summary>
+        /// Occurs when a model parameter property changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
         private string _ownerName = "";
         private string _name = "Parameter";

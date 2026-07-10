@@ -1,10 +1,10 @@
-﻿using Numerics.Data;
+using Numerics.Data;
 using RMC.BestFit.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
     /// <summary>
     /// Uncertain data series class.

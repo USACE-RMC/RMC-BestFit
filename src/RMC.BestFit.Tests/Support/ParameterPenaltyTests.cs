@@ -5,12 +5,12 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.Support;
 
 /// <summary>
-/// Unit tests for the <see cref="ParameterPenalty"/> class.
+/// Unit tests for the <c>ParameterPenalty</c> class.
 /// </summary>
 /// <remarks>
 /// Covers: default construction, XML round-trip, <c>IsValid</c>, <c>Validate()</c>,
 /// <c>Function()</c> in real and log space, <c>Clone()</c>, <c>UpperValue</c>/<c>LowerValue</c>,
-/// and <see cref="INotifyPropertyChanged"/> event firing.
+/// and <c>INotifyPropertyChanged</c> event firing.
 /// </remarks>
 [TestClass]
 public class ParameterPenaltyTests

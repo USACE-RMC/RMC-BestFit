@@ -6,28 +6,28 @@ using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Tests that <see cref="CompositeAnalysis.RunAsync"/> honours cancellation requests
+/// Tests that <c>CompositeAnalysis.RunAsync</c> honours cancellation requests
 /// promptly via the new <c>ParallelOptions.CancellationToken</c> +
 /// <c>ThrowIfCancellationRequested</c> wiring inside
-/// <see cref="CompositeAnalysis.CreateFrequencyAnalysisResultsAsync"/>.
+/// <c>CompositeAnalysis.CreateFrequencyAnalysisResultsAsync</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Pre-fix: clicking the App's Cancel button flipped the
-/// <see cref="System.Threading.CancellationTokenSource"/> to canceled, but the two
+/// <c>System.Threading.CancellationTokenSource</c> to canceled, but the two
 /// <c>Parallel.For</c> loops inside <c>CreateFrequencyAnalysisResultsAsync</c> did
-/// not pass <see cref="System.Threading.Tasks.ParallelOptions"/> with the token and
+/// not pass <c>System.Threading.Tasks.ParallelOptions</c> with the token and
 /// did not call <c>ThrowIfCancellationRequested</c> in the loop body. The cancel
 /// became a no-op until the loop naturally finished — for large posterior outputs
 /// this could be many seconds.
 /// </para>
 /// <para>
-/// The fixtures inject synthetic <see cref="MCMCResults"/> on each child so MCMC
+/// The fixtures inject synthetic <c>MCMCResults</c> on each child so MCMC
 /// itself doesn't run; the only meaningful work in <c>RunAsync</c> is the
 /// <c>Parallel.For</c> loop the cancellation wiring targets.
 /// </para>
@@ -42,9 +42,16 @@ public class CompositeAnalysisCancellationTests
     private static readonly double[] InlineFloodData = new Normal(15000.0, 5000.0)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateDataFrame()
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, InlineFloodData[i]));
         df.CalculatePlottingPositions();
@@ -52,8 +59,8 @@ public class CompositeAnalysisCancellationTests
     }
 
     /// <summary>
-    /// Builds a <see cref="UnivariateAnalysis"/> already marked as estimated, with
-    /// an injected <see cref="MCMCResults"/> output of the requested length so the
+    /// Builds a <c>UnivariateAnalysis</c> already marked as estimated, with
+    /// an injected <c>MCMCResults</c> output of the requested length so the
     /// composite's <c>OutputLength</c> minimum across children is large enough to
     /// give the parallel loop measurable wall-clock work.
     /// </summary>
@@ -91,6 +98,14 @@ public class CompositeAnalysisCancellationTests
         return analysis;
     }
 
+    /// <summary>
+    /// Creates mixture Composite With Fit Children.
+    /// </summary>
+    /// <param name="outputLengthPerChild">The number of output values assigned to each child analysis.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static CompositeAnalysis CreateMixtureCompositeWithFitChildren(int outputLengthPerChild)
     {
         var childA = CreateFitChildWithOutput(outputLengthPerChild, new[] { 15000.0, 5000.0 });
@@ -129,6 +144,17 @@ public class CompositeAnalysisCancellationTests
         return (tcs, handler);
     }
 
+    /// <summary>
+    /// Waits for completion Async.
+    /// </summary>
+    /// <param name="composite">The composite value.</param>
+    /// <param name="tcs">The tcs value.</param>
+    /// <param name="handler">The handler value.</param>
+    /// <param name="timeout">The timeout value.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static async Task<AnalysisRunCompletedEventArgs?> AwaitCompletionAsync(
         CompositeAnalysis composite,
         TaskCompletionSource<AnalysisRunCompletedEventArgs> tcs,
@@ -146,9 +172,9 @@ public class CompositeAnalysisCancellationTests
     #region Cancellation behaviour
 
     /// <summary>
-    /// Calling <see cref="AnalysisBase.CancelAnalysis"/> before <c>RunAsync</c>'s
+    /// Calling <c>AnalysisBase.CancelAnalysis</c> before <c>RunAsync</c>'s
     /// parallel loop dispatches any iterations causes the run to surface as
-    /// cancelled with no <see cref="CompositeAnalysis.AnalysisResults"/> populated.
+    /// cancelled with no <c>CompositeAnalysis.AnalysisResults</c> populated.
     /// </summary>
     /// <remarks>
     /// We don't pre-cancel before <c>RunAsync</c> is called because the setup steps
@@ -195,7 +221,7 @@ public class CompositeAnalysisCancellationTests
 
     /// <summary>
     /// CancelAnalysis on a freshly-constructed composite (no run in flight) sets the
-    /// inherited <see cref="System.Threading.CancellationTokenSource"/>'s token to
+    /// inherited <c>System.Threading.CancellationTokenSource</c>'s token to
     /// canceled. The next <c>RunAsync</c> replaces the token with a fresh one (see
     /// CompositeAnalysis.cs:683-684), so the prior cancel does not poison subsequent
     /// runs. This is a low-risk side-channel check that the AnalysisBase

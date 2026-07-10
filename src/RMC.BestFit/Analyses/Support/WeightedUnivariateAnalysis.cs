@@ -14,11 +14,11 @@ namespace RMC.BestFit.Analyses
     ///     Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil
     /// </para>
     /// <para>
-    /// This class is used by <see cref="CompositeAnalysis"/> to combine multiple univariate
+    /// This class is used by <c>CompositeAnalysis</c> to combine multiple univariate
     /// analyses with specified weights for mixture models or model averaging.
     /// The wrapped analysis is typed as <see cref="IUnivariateAnalysis"/> so any sibling
     /// type (<see cref="UnivariateAnalysis"/>, <see cref="Bulletin17CAnalysis"/>, etc.)
-    /// can serve as a composite component, EXCEPT another <see cref="CompositeAnalysis"/>
+    /// can serve as a composite component, EXCEPT another <c>CompositeAnalysis</c>
     /// — that is rejected at the setter to avoid circular references and the
     /// undefined behavior of nesting composites.
     /// </para>
@@ -41,7 +41,7 @@ namespace RMC.BestFit.Analyses
         /// <param name="analysis">The univariate analysis.</param>
         /// <param name="weight">The weight for this analysis (typically between 0 and 1).</param>
         /// <exception cref="ArgumentException">
-        /// Thrown when <paramref name="analysis"/> is itself a <see cref="CompositeAnalysis"/>;
+        /// Thrown when <paramref name="analysis"/> is itself a <c>CompositeAnalysis</c>;
         /// composites cannot be nested.
         /// </exception>
         public WeightedUnivariateAnalysis(IUnivariateAnalysis analysis, double weight)
@@ -86,7 +86,7 @@ namespace RMC.BestFit.Analyses
         /// Gets or sets the univariate analysis associated with this weighted entry.
         /// </summary>
         /// <exception cref="ArgumentException">
-        /// Thrown when the assigned value is itself a <see cref="CompositeAnalysis"/>;
+        /// Thrown when the assigned value is itself a <c>CompositeAnalysis</c>;
         /// composite-of-composite is not supported and would risk circular references.
         /// </exception>
         public IUnivariateAnalysis UnivariateAnalysis
@@ -119,13 +119,21 @@ namespace RMC.BestFit.Analyses
 
         #region Methods
 
+        /// <summary>
+        /// Supports the <c>UnivariateAnalysis_PropertyChanged</c> helper.
+        /// </summary>
+        /// <param name="sender">The event source.</param>
+        /// <param name="e">The event data.</param>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private void UnivariateAnalysis_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             RaisePropertyChange(e.PropertyName);
         }
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for the specified property.
+        /// Raises the <c>PropertyChanged</c> event for the specified property.
         /// </summary>
         /// <param name="propertyName">The name of the property that changed.</param>
         protected virtual void RaisePropertyChange(string? propertyName)

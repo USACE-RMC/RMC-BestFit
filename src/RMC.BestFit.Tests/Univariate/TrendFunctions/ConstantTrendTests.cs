@@ -1,10 +1,10 @@
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="ConstantTrend"/> class.
+/// Unit tests for the <c>ConstantTrend</c> class.
 /// Tests the constant trend model y(t) = α.
 /// </summary>
 [TestClass]

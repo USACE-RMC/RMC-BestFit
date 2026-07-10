@@ -4,12 +4,13 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using System.Xml.Linq;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Bivariate;
 
 /// <summary>
 /// Programmatic unit tests for the model-layer
-/// <see cref="CoincidentFrequencyAnalysis"/>: constructors, property round-trips,
+/// <c>CoincidentFrequencyAnalysis</c>: constructors, property round-trips,
 /// validation, XML serialization, and a deterministic point-estimate-only run with no
 /// MCMC chains attached. Computational verification against closed-form answers
 /// (sum of correlated normals) lives in
@@ -27,20 +28,20 @@ public class CoincidentFrequencyAnalysisTests
 
     /// <summary>
     /// Builds a bivariate Normal-marginal Normal-copula model with seeded parameter values
-    /// (no MLE / MCMC needed) so <see cref="CoincidentFrequencyAnalysis"/> can run at the
+    /// (no MLE / MCMC needed) so <c>CoincidentFrequencyAnalysis</c> can run at the
     /// point estimate. Setting <paramref name="markEstimated"/> = true reconstructs the
     /// analysis through the XElement constructor with <c>IsEstimated="true"</c> so it
     /// passes CFA's hard-fail validation gate (which requires upstream IsEstimated == true).
     /// </summary>
     private static BivariateAnalysis CreateBivariateAnalysisAtPointEstimate(double rho = 0.5, bool markEstimated = true)
     {
-        // Marginal X: Normal(0, 1) — small inline DataFrame just to satisfy IUnivariateModel.
-        var dfX = new DataFrame { ExactSeries = new ExactSeries(new[] { -1.0, 0.0, 1.0, -0.5, 0.5 }) };
+        // Marginal X: Normal(0, 1) — small inline BestFitDataFrame just to satisfy IUnivariateModel.
+        var dfX = new BestFitDataFrame { ExactSeries = new ExactSeries(new[] { -1.0, 0.0, 1.0, -0.5, 0.5 }) };
         var marginalX = new UnivariateDistribution(dfX, UnivariateDistributionType.Normal);
         marginalX.SetParameterValues(new[] { 0.0, 1.0 });
 
         // Marginal Y: Normal(0, 1).
-        var dfY = new DataFrame { ExactSeries = new ExactSeries(new[] { -1.0, 0.0, 1.0, -0.5, 0.5 }) };
+        var dfY = new BestFitDataFrame { ExactSeries = new ExactSeries(new[] { -1.0, 0.0, 1.0, -0.5, 0.5 }) };
         var marginalY = new UnivariateDistribution(dfY, UnivariateDistributionType.Normal);
         marginalY.SetParameterValues(new[] { 0.0, 1.0 });
 
@@ -570,6 +571,17 @@ public class CoincidentFrequencyAnalysisTests
         return (tcs, handler);
     }
 
+    /// <summary>
+    /// Waits for completion Async.
+    /// </summary>
+    /// <param name="cfa">The cfa value.</param>
+    /// <param name="tcs">The tcs value.</param>
+    /// <param name="handler">The handler value.</param>
+    /// <param name="timeout">The timeout value.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static async Task<AnalysisRunCompletedEventArgs?> AwaitCompletionAsync(
         CoincidentFrequencyAnalysis cfa,
         TaskCompletionSource<AnalysisRunCompletedEventArgs> tcs,
@@ -612,8 +624,8 @@ public class CoincidentFrequencyAnalysisTests
     }
 
     /// <summary>
-    /// Calling <see cref="AnalysisBase.CancelAnalysis"/> mid-loop must terminate the
-    /// CFA run promptly with <c>Cancelled = true</c> and no <see cref="CoincidentFrequencyAnalysis.AnalysisResults"/>
+    /// Calling <c>AnalysisBase.CancelAnalysis</c> mid-loop must terminate the
+    /// CFA run promptly with <c>Cancelled = true</c> and no <c>CoincidentFrequencyAnalysis.AnalysisResults</c>
     /// populated. Regression test for the worker-throw vs. silent-return cancellation
     /// observation: with the silent-return pattern, Parallel.For's dispatch-level token
     /// poll is what surfaces the OperationCanceledException upstream.
@@ -658,8 +670,8 @@ public class CoincidentFrequencyAnalysisTests
     }
 
     /// <summary>
-    /// Calling <see cref="AnalysisBase.CancelAnalysis"/> on a freshly-constructed CFA
-    /// flips the inherited <see cref="System.Threading.CancellationTokenSource"/>'s
+    /// Calling <c>AnalysisBase.CancelAnalysis</c> on a freshly-constructed CFA
+    /// flips the inherited <c>System.Threading.CancellationTokenSource</c>'s
     /// token to canceled. Locks the model-layer <c>CancelAnalysis</c> path that the
     /// UI wrapper delegates to.
     /// </summary>
@@ -676,8 +688,8 @@ public class CoincidentFrequencyAnalysisTests
     }
 
     /// <summary>
-    /// CFA whose upstream <see cref="BivariateAnalysis"/> is not estimated must throw
-    /// <see cref="InvalidOperationException"/> on <see cref="CoincidentFrequencyAnalysis.RunAsync"/>
+    /// CFA whose upstream <c>BivariateAnalysis</c> is not estimated must throw
+    /// <c>InvalidOperationException</c> on <c>CoincidentFrequencyAnalysis.RunAsync</c>
     /// before reaching the parallel loop. Documents the existing pre-flight check so
     /// the cancellation refactor doesn't regress it.
     /// </summary>

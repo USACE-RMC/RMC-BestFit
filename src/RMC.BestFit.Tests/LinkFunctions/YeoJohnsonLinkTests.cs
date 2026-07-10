@@ -1,10 +1,11 @@
 using RMC.BestFit.Models.LinkFunctions;
+using Numerics.Functions;
 using System.Xml.Linq;
 
 namespace RMC.BestFit.Tests.LinkFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="YeoJohnsonLink"/> class.
+/// Unit tests for the <c>YeoJohnsonLink</c> class.
 /// </summary>
 /// <remarks>
 /// Tests cover: default and parameterized construction, XML round-trip,

@@ -2,10 +2,10 @@ using Numerics.Distributions;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="GeneralLinearFunction"/> class.
+/// Unit tests for the <c>GeneralLinearFunction</c> class.
 /// Tests the general linear model f(x) = β₀ + β₁x₁ + β₂x₂ + ... + βₚxₚ.
 /// </summary>
 [TestClass]

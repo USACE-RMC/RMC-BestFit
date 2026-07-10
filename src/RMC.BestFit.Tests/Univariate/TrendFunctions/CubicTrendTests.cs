@@ -1,10 +1,10 @@
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="CubicTrend"/> class.
+/// Unit tests for the <c>CubicTrend</c> class.
 /// Tests the cubic trend model y(t) = α + β(t-s) + γ(t-s)² + δ(t-s)³.
 /// </summary>
 [TestClass]

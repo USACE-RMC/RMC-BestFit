@@ -2,11 +2,12 @@ using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Phase 2 unit tests for the <see cref="BayesianAnalysis.CredibleIntervalWidth"/>
+/// Phase 2 unit tests for the <c>BayesianAnalysis.CredibleIntervalWidth</c>
 /// setter. Verifies that changing the CI width on an analysis does not wipe the
 /// MCMC fit and produces only the expected PropertyChanged signals. These are
 /// programmatic event-wiring tests — no MCMC chain is run. Chain-running parity
@@ -26,15 +27,29 @@ namespace RMC.BestFit.Tests.Estimation;
 [TestClass]
 public class BayesianAnalysisCredibleIntervalWidthTests
 {
-    private static DataFrame CreateExactDataFrame()
+    /// <summary>
+    /// Creates exact Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateExactDataFrame()
     {
         var values = new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 };
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < values.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
         return df;
     }
 
+    /// <summary>
+    /// Creates fresh Bayesian.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static BayesianAnalysis CreateFreshBayesian()
     {
         var df = CreateExactDataFrame();

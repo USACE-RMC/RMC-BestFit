@@ -4,16 +4,16 @@ using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
 using System.Reflection;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="Bulletin17CAnalysis"/> class.
+/// Programmatic unit tests for the <c>Bulletin17CAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// Covers construction, property round-trip, validation, XElement serialization, and the
-/// supporting <see cref="UncertaintyMethod"/> enum + <see cref="CohnConfidenceIntervalResult"/>
+/// supporting <c>UncertaintyMethod</c> enum + <c>CohnConfidenceIntervalResult</c>
 /// DTO. GMM estimation, bootstrap, and Cohn-style CI computations are computationally
 /// expensive and live in <c>RMC.BestFit.Verification</c>.
 /// </remarks>
@@ -29,9 +29,16 @@ public class Bulletin17CAnalysisTests
     private static readonly double[] InlineFloodData = new LogNormal(8.0, 0.4)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateFloodDataFrame()
+    /// <summary>
+    /// Creates flood Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateFloodDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(1970 + i, InlineFloodData[i]));
@@ -39,6 +46,13 @@ public class Bulletin17CAnalysisTests
         return df;
     }
 
+    /// <summary>
+    /// Creates lP3 Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Bulletin17CDistribution CreateLP3Model()
     {
         var df = CreateFloodDataFrame();
@@ -129,7 +143,7 @@ public class Bulletin17CAnalysisTests
     #region UncertaintyMethod property
 
     /// <summary>
-    /// Setting <see cref="Bulletin17CAnalysis.UncertaintyMethod"/> to a new value clears
+    /// Setting <c>Bulletin17CAnalysis.UncertaintyMethod</c> to a new value clears
     /// existing results: the prior CIs no longer reflect the chosen method.
     /// </summary>
     [TestMethod]
@@ -150,7 +164,7 @@ public class Bulletin17CAnalysisTests
     }
 
     /// <summary>
-    /// Setting <see cref="Bulletin17CAnalysis.UncertaintyMethod"/> to the same value is a no-op:
+    /// Setting <c>Bulletin17CAnalysis.UncertaintyMethod</c> to the same value is a no-op:
     /// no PropertyChanged event, no result clearing — protects against unnecessary recomputes.
     /// </summary>
     [TestMethod]
@@ -212,12 +226,12 @@ public class Bulletin17CAnalysisTests
 
     /// <summary>
     /// Validate must propagate failures from the underlying distribution: if the model is
-    /// invalid (e.g., null DataFrame) the analysis is invalid too.
+    /// invalid (e.g., null BestFitDataFrame) the analysis is invalid too.
     /// </summary>
     [TestMethod]
     public void Validate_InvalidModel_PropagatesFailure()
     {
-        // Default constructor has no DataFrame, which the distribution's Validate flags.
+        // Default constructor has no BestFitDataFrame, which the distribution's Validate flags.
         var modelWithoutData = new Bulletin17CDistribution();
         var analysis = new Bulletin17CAnalysis(modelWithoutData);
 

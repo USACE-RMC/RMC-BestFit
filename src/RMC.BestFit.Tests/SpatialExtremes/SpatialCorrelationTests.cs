@@ -4,8 +4,8 @@ namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
 /// Unit tests for the three spatial correlation kernels:
-/// <see cref="BasicExponential"/>, <see cref="PoweredExponential"/>, and <see cref="Spherical"/>.
-/// Each implements <see cref="ICorrelationModel"/> with an <c>Evaluate(distance)</c> method
+/// <c>BasicExponential</c>, <c>PoweredExponential</c>, and <c>Spherical</c>.
+/// Each implements <c>ICorrelationModel</c> with an <c>Evaluate(distance)</c> method
 /// returning a correlation value in <c>[0, 1]</c>.
 /// </summary>
 [TestClass]

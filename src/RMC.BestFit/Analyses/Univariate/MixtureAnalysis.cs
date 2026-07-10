@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -69,6 +69,8 @@ namespace RMC.BestFit.Analyses
         /// <param name="xElement">
         /// The XML element from which to restore the analysis configuration and results.
         /// </param>
+        /// <param name="mcmcResults">Optional persisted MCMC results to restore.</param>
+        /// <param name="analysisResults">Optional persisted uncertainty analysis results to restore.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="mixtureDistribution"/> or <paramref name="xElement"/> is <c>null</c>.
         /// </exception>
@@ -113,6 +115,7 @@ namespace RMC.BestFit.Analyses
 
             // Restore analysis results
             AnalysisResults = analysisResults;
+            NormalizeRestoredEstimatedState();
         }
 
         #endregion
@@ -130,7 +133,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// When the distribution changes, the analysis subscribes to its
-        /// <see cref="MixtureModel.PropertyChanged"/> event and updates
+        /// <c>PropertyChanged</c> event and updates
         /// the associated <see cref="BayesianAnalysis"/> model reference.
         /// </para>
         /// </remarks>
@@ -222,10 +225,36 @@ namespace RMC.BestFit.Analyses
         #region Methods
 
         /// <summary>
+        /// Repairs the persisted estimated flag when older saves contain complete Bayesian artifacts
+        /// but the outer analysis-level flag was left false.
+        /// </summary>
+        /// <remarks>
+        /// Point-estimate-only setting changes are routed through <see cref="AnalysisBase.ReprocessIfEstimated"/>.
+        /// Some persisted projects can have an estimated <see cref="BayesianAnalysis"/>, serialized
+        /// <see cref="MCMCResults"/>, and serialized <see cref="AnalysisResults"/> while the outer
+        /// <see cref="AnalysisBase.IsEstimated"/> flag is false. Treating those artifacts as authoritative
+        /// restores the intended post-processing path without rerunning MCMC.
+        /// </remarks>
+        private void NormalizeRestoredEstimatedState()
+        {
+            if (_isEstimated)
+            {
+                return;
+            }
+
+            if (BayesianAnalysis?.IsEstimated == true &&
+                BayesianAnalysis.Results != null &&
+                AnalysisResults != null)
+            {
+                _isEstimated = true;
+            }
+        }
+
+        /// <summary>
         /// Handles changes to the <see cref="ProbabilityOrdinates"/> collection.
         /// </summary>
         /// <remarks>
-        /// Ordinates drive only <see cref="AnalysisResults"/> â€” not MCMC or <see cref="IsEstimated"/>.
+        /// Ordinates drive only <see cref="AnalysisResults"/> — not MCMC or <c>IsEstimated</c>.
         /// When estimated and ordinates are valid, reprocess via <see cref="CreateFrequencyAnalysisResultsAsync"/>;
         /// when invalid, clear <see cref="AnalysisResults"/> only; when not estimated, no-op.
         /// </remarks>
@@ -243,9 +272,8 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Handles property changes on the <see cref="MixtureDistribution"/> model.
-        /// Only structurally destructive changes (data, mixture composition, parameters,
-        /// zero-inflation toggle) clear results. All other notifications are propagated for
-        /// UI binding without invalidating the fit.
+        /// Structural changes and prior-configuration changes clear results. All other
+        /// notifications are propagated for UI binding without invalidating the fit.
         /// </summary>
         private void Model_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -261,6 +289,15 @@ namespace RMC.BestFit.Analyses
                 if (BayesianAnalysis.UseAdvancedSimulationDefaults)
                     BayesianAnalysis.SetDefaultAdvancedSimulationOptions();
 
+                ClearResults();
+            }
+            else if (e.PropertyName == nameof(MixtureDistribution.SetDefaultQuantilePriors) ||
+                     e.PropertyName == nameof(MixtureDistribution.QuantilePriors) ||
+                     e.PropertyName == nameof(MixtureDistribution.EnableQuantilePriors) ||
+                     e.PropertyName == nameof(MixtureDistribution.UseSingleQuantile) ||
+                     e.PropertyName == nameof(MixtureDistribution.UseJeffreysRuleForScale) ||
+                     e.PropertyName == nameof(MixtureDistribution.UseDefaultFlatPriors))
+            {
                 ClearResults();
             }
 
@@ -300,7 +337,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears all analysis results and resets the <see cref="IsEstimated"/> flag.
+        /// Clears all analysis results and resets the <c>IsEstimated</c> flag.
         /// </summary>
         public void ClearResults()
         {
@@ -311,9 +348,9 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only â€” the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>. Leaves MCMC output and
-        /// <see cref="IsEstimated"/> intact.
+        /// <c>IsEstimated</c> intact.
         /// </summary>
         public void ClearFrequencyAnalysisResults()
         {
@@ -346,13 +383,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -401,7 +439,7 @@ namespace RMC.BestFit.Analyses
                             }
 
                             // Component parameters sampled from a multivariate normal using the
-                            // Fisher information sub-block of the EM covariance, inflated by 1.5Ã—.
+                            // Fisher information sub-block of the EM covariance, inflated by 1.5×.
                             var emComponents = new double[Np];
                             var componentCovar = new double[Np, Np];
                             for (int i = 0; i < Np; i++)
@@ -426,7 +464,7 @@ namespace RMC.BestFit.Analyses
                                 }
                                 else
                                 {
-                                    // Single component â€” weight is always 1.0
+                                    // Single component — weight is always 1.0
                                     weights = new double[] { 1.0 };
                                 }
 
@@ -485,18 +523,22 @@ namespace RMC.BestFit.Analyses
                     }, token);
 
                     // Run Bayesian analysis
-                    await BayesianAnalysis.RunAsync(progressReporter, false);
+                    await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process
                     if (BayesianAnalysis.IsEstimated == true)
                     {
-                        progressReporter?.ReportProgress(100);
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
                         await CreateFrequencyAnalysisResultsAsync();
                     }
 
                     // Mirror the inner Bayesian fit's success state so a silently-failed
                     // MCMC is reported correctly to AnalysisCompleted.
                     IsEstimated = BayesianAnalysis.IsEstimated;
+                    if (IsEstimated)
+                    {
+                        AnalysisProgress.ReportComplete(progressReporter);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -654,7 +696,7 @@ namespace RMC.BestFit.Analyses
                 // Get sampled distributions for each MCMC output
                 int B = BayesianAnalysis.OutputLength;
                 var sampledDistributions = new UnivariateDistributionBase[B];
-                Parallel.For(0, B, idx =>
+                Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
                     var d = (Mixture)MixtureDistribution.Mixture!.Clone();
                     var parms = BayesianAnalysis.Results!.Output[idx].Values;

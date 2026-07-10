@@ -1,22 +1,36 @@
 using System.Collections.Specialized;
 using Numerics.Data;
+using BestFitThresholdSeries = RMC.BestFit.Models.ThresholdSeries;
+using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
+using RMC.BestFit.Models;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="ThresholdSeries"/> class.
+/// Unit tests for the <c>ThresholdSeries</c> class.
 /// Tests construction, sorting, validation, and serialization.
 /// </summary>
 /// <remarks>
-/// ThresholdSeries holds historical perception-threshold periods. <c>MinimumIndex</c> /
+/// BestFitThresholdSeries holds historical perception-threshold periods. <c>MinimumIndex</c> /
 /// <c>MaximumIndex</c> reflect the period span (StartIndex / EndIndex) rather than a
 /// single observation index — different from the other series classes.
 /// </remarks>
 [TestClass]
 public class ThresholdSeriesTests
 {
-    private static ThresholdData MakeThreshold(int start, int end, double threshold, int numberAbove = 0)
-        => new ThresholdData(start, end, threshold) { NumberAbove = numberAbove };
+    /// <summary>
+    /// Creates threshold.
+    /// </summary>
+    /// <param name="start">The start value.</param>
+    /// <param name="end">The end value.</param>
+    /// <param name="threshold">The threshold value.</param>
+    /// <param name="numberAbove">The number of threshold exceedances.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitThresholdData MakeThreshold(int start, int end, double threshold, int numberAbove = 0)
+        => new BestFitThresholdData(start, end, threshold) { NumberAbove = numberAbove };
 
     #region Construction
 
@@ -24,7 +38,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Constructor_Empty_HasZeroCount()
     {
-        var series = new ThresholdSeries();
+        var series = new BestFitThresholdSeries();
 
         Assert.AreEqual(0, series.Count);
     }
@@ -33,14 +47,14 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Constructor_FromList_ClonesEntries()
     {
-        var source = new List<ThresholdData> { MakeThreshold(1850, 1920, 40_000, 5) };
+        var source = new List<BestFitThresholdData> { MakeThreshold(1850, 1920, 40_000, 5) };
 
-        var series = new ThresholdSeries(source);
+        var series = new BestFitThresholdSeries(source);
 
         Assert.AreEqual(1, series.Count);
         // Replace source: series should still hold its own clone.
         source[0] = MakeThreshold(0, 1, 0);
-        var stored = (ThresholdData)series[0];
+        var stored = (BestFitThresholdData)series[0];
         Assert.AreEqual(1850, stored.StartIndex);
         Assert.AreEqual(1920, stored.EndIndex);
         Assert.AreEqual(40_000, stored.Value, 1e-12);
@@ -51,12 +65,12 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Constructor_FromXElement_RoundTripsValues()
     {
-        var original = new ThresholdSeries([MakeThreshold(1850, 1920, 40_000, 5)]);
+        var original = new BestFitThresholdSeries([MakeThreshold(1850, 1920, 40_000, 5)]);
 
-        var restored = new ThresholdSeries(original.ToXElement());
+        var restored = new BestFitThresholdSeries(original.ToXElement());
 
         Assert.AreEqual(1, restored.Count);
-        var stored = (ThresholdData)restored[0];
+        var stored = (BestFitThresholdData)restored[0];
         Assert.AreEqual(1850, stored.StartIndex);
         Assert.AreEqual(1920, stored.EndIndex);
         Assert.AreEqual(40_000, stored.Value, 1e-12);
@@ -70,7 +84,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_MinimumValue_Empty_ReturnsMaxSentinel()
     {
-        var series = new ThresholdSeries();
+        var series = new BestFitThresholdSeries();
 
         Assert.AreEqual(double.MaxValue, series.MinimumValue());
     }
@@ -79,7 +93,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_MaximumValue_Empty_ReturnsMinSentinel()
     {
-        var series = new ThresholdSeries();
+        var series = new BestFitThresholdSeries();
 
         Assert.AreEqual(double.MinValue, series.MaximumValue());
     }
@@ -88,7 +102,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_MinMaxValue_Populated_ReturnsCorrectExtremes()
     {
-        var series = new ThresholdSeries([
+        var series = new BestFitThresholdSeries([
             MakeThreshold(1800, 1850, 30_000),
             MakeThreshold(1851, 1900, 50_000),  // largest
             MakeThreshold(1901, 1950, 40_000)
@@ -102,7 +116,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_MinIndex_UsesStartIndex()
     {
-        var series = new ThresholdSeries([
+        var series = new BestFitThresholdSeries([
             MakeThreshold(1851, 1900, 50_000),
             MakeThreshold(1800, 1850, 30_000)   // earliest StartIndex
         ]);
@@ -114,7 +128,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_MaxIndex_UsesEndIndex()
     {
-        var series = new ThresholdSeries([
+        var series = new BestFitThresholdSeries([
             MakeThreshold(1800, 1850, 30_000),
             MakeThreshold(1851, 1900, 50_000)   // latest EndIndex
         ]);
@@ -126,7 +140,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_MinMaxIndex_Empty_ReturnsSentinels()
     {
-        var series = new ThresholdSeries();
+        var series = new BestFitThresholdSeries();
 
         Assert.AreEqual(-100000, series.MinimumIndex());
         Assert.AreEqual(100000, series.MaximumIndex());
@@ -140,7 +154,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_SortByIndex_Ascending_OrdersByStartIndex()
     {
-        var series = new ThresholdSeries([
+        var series = new BestFitThresholdSeries([
             MakeThreshold(1900, 1950, 1.0),
             MakeThreshold(1800, 1850, 1.0),
             MakeThreshold(1851, 1899, 1.0)
@@ -148,16 +162,16 @@ public class ThresholdSeriesTests
 
         series.SortByIndex(SortOrder.Ascending);
 
-        Assert.AreEqual(1800, ((ThresholdData)series[0]).StartIndex);
-        Assert.AreEqual(1851, ((ThresholdData)series[1]).StartIndex);
-        Assert.AreEqual(1900, ((ThresholdData)series[2]).StartIndex);
+        Assert.AreEqual(1800, ((BestFitThresholdData)series[0]).StartIndex);
+        Assert.AreEqual(1851, ((BestFitThresholdData)series[1]).StartIndex);
+        Assert.AreEqual(1900, ((BestFitThresholdData)series[2]).StartIndex);
     }
 
     /// <summary>Verifies that sort descending orders by value descending.</summary>
     [TestMethod]
     public void Test_Sort_Descending_OrdersByValueDescending()
     {
-        var series = new ThresholdSeries([
+        var series = new BestFitThresholdSeries([
             MakeThreshold(1800, 1850, 30_000),
             MakeThreshold(1851, 1900, 50_000),
             MakeThreshold(1901, 1950, 40_000)
@@ -178,7 +192,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Validate_EmptySeries_ReturnsValid()
     {
-        var series = new ThresholdSeries();
+        var series = new BestFitThresholdSeries();
 
         var (isValid, messages) = series.Validate();
 
@@ -190,7 +204,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Validate_NonOverlappingPeriods_ReturnsValid()
     {
-        var series = new ThresholdSeries([
+        var series = new BestFitThresholdSeries([
             MakeThreshold(1800, 1850, 30_000, 1),
             MakeThreshold(1851, 1900, 40_000, 2)
         ]);
@@ -204,7 +218,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Validate_OverlappingPeriods_FailsValidation()
     {
-        var series = new ThresholdSeries([
+        var series = new BestFitThresholdSeries([
             MakeThreshold(1800, 1900, 30_000, 1),
             MakeThreshold(1850, 1950, 40_000, 2)   // overlaps 1850–1900
         ]);
@@ -223,7 +237,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Clone_ProducesIndependentCopy()
     {
-        var original = new ThresholdSeries([MakeThreshold(1800, 1850, 30_000)]);
+        var original = new BestFitThresholdSeries([MakeThreshold(1800, 1850, 30_000)]);
 
         var clone = original.Clone();
         clone.Add(MakeThreshold(1851, 1900, 40_000));
@@ -236,23 +250,23 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_ToList_ReturnsClonedItems()
     {
-        var series = new ThresholdSeries([MakeThreshold(1800, 1850, 30_000)]);
+        var series = new BestFitThresholdSeries([MakeThreshold(1800, 1850, 30_000)]);
 
         var list = series.ToList();
         list[0] = MakeThreshold(0, 1, 999);
 
-        Assert.AreEqual(1800, ((ThresholdData)series[0]).StartIndex);
+        Assert.AreEqual(1800, ((BestFitThresholdData)series[0]).StartIndex);
     }
 
     /// <summary>Verifies that to X element preserves number above for round trip.</summary>
     [TestMethod]
     public void Test_ToXElement_RoundTrip_PreservesNumberAbove()
     {
-        var original = new ThresholdSeries([MakeThreshold(1850, 1920, 40_000, 5)]);
+        var original = new BestFitThresholdSeries([MakeThreshold(1850, 1920, 40_000, 5)]);
 
-        var restored = new ThresholdSeries(original.ToXElement());
+        var restored = new BestFitThresholdSeries(original.ToXElement());
 
-        Assert.AreEqual(5, ((ThresholdData)restored[0]).NumberAbove);
+        Assert.AreEqual(5, ((BestFitThresholdData)restored[0]).NumberAbove);
     }
 
     #endregion
@@ -263,7 +277,7 @@ public class ThresholdSeriesTests
     [TestMethod]
     public void Test_Add_RaisesCollectionChangedEvent()
     {
-        var series = new ThresholdSeries();
+        var series = new BestFitThresholdSeries();
         NotifyCollectionChangedEventArgs? captured = null;
         series.CollectionChanged += (_, e) => captured = e;
 

@@ -2,10 +2,10 @@ using Numerics.Distributions;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="ReciprocalTrend"/> class.
+/// Unit tests for the <c>ReciprocalTrend</c> class.
 /// Tests the reciprocal trend model y(t) = 1 / (α + β(t - StartIndex)).
 /// </summary>
 [TestClass]

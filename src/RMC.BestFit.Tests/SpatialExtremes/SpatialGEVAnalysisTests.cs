@@ -10,7 +10,7 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="SpatialGEVAnalysis"/> wrapper class.
+/// Programmatic unit tests for the <c>SpatialGEVAnalysis</c> wrapper class.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -109,7 +109,7 @@ public class SpatialGEVAnalysisTests
     }
 
     /// <summary>
-    /// Creates a default-configured <see cref="SpatialGEV"/> with intercept-only trends and 5 sites.
+    /// Creates a default-configured <c>SpatialGEV</c> with intercept-only trends and 5 sites.
     /// </summary>
     private static SpatialGEV CreateTestSpatialGEV()
     {
@@ -176,7 +176,7 @@ public class SpatialGEVAnalysisTests
     }
 
     /// <summary>
-    /// Tests that the constructor throws <see cref="ArgumentNullException"/> when spatial GEV model is null.
+    /// Tests that the constructor throws <c>ArgumentNullException</c> when spatial GEV model is null.
     /// </summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]

@@ -1,10 +1,10 @@
 using RMC.BestFit.Models.SpatialExtremes;
 
-namespace RMC.BestFit.Tests.SpatialExtremesModels;
+namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
-/// Unit tests for spatial correlation function classes: <see cref="BasicExponential"/>,
-/// <see cref="PoweredExponential"/>, and <see cref="Spherical"/>.
+/// Unit tests for spatial correlation function classes: <c>BasicExponential</c>,
+/// <c>PoweredExponential</c>, and <c>Spherical</c>.
 /// </summary>
 /// <remarks>
 /// <para>

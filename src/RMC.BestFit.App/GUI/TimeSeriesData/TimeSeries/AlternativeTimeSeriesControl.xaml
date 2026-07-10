@@ -1,0 +1,25 @@
+<UserControl x:Class="RMC_BestFit.AlternativeTimeSeriesControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:RMC_BestFit"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="200"
+             Background="{DynamicResource EnvironmentWindowBackground}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+>
+    <Grid>
+        <ListView x:Name="AlternativeListBox" Loaded="AlternativeListBox_Loaded" Width="200" Background="Transparent">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel>
+                        <CheckBox IsChecked="{Binding IsChecked}" IsEnabled="{Binding HasData}">
+                            <TextBlock Text="{Binding Alternative.Name, UpdateSourceTrigger=PropertyChanged}"/>
+                        </CheckBox>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</UserControl>

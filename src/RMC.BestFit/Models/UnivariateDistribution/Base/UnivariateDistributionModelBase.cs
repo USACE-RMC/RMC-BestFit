@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace RMC.BestFit.Models
 {
@@ -86,7 +86,7 @@ namespace RMC.BestFit.Models
         /// <see cref="DataFrame_PropertyChanged"/>.
         /// </description></item>
         /// <item><description>
-        /// Optionally calls <see cref="SetDefaultParameters"/> (defined in a derived
+        /// Optionally calls <c>SetDefaultParameters</c> (defined in a derived
         /// class) when <c>UseDefaultFlatPriors</c> is true.
         /// </description></item>
         /// </list>
@@ -119,13 +119,13 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <remarks>
         /// <para>
-        /// When true, the prior on the scale parameter σ is proportional to 1/σ,
+        /// When true, the prior on the scale parameter s is proportional to 1/s,
         /// which is the Jeffreys noninformative prior for a pure scale parameter.
         /// </para>
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("Use Jeffreys' Rule for Scale")]
-        [Description("If true, applies Jeffreys' rule to the scale (σ) parameter, setting the prior P(σ) proportional to 1/σ.")]
+        [Description("If true, applies Jeffreys' rule to the scale (s) parameter, setting the prior P(s) proportional to 1/s.")]
         [Browsable(true)]
         public bool UseJeffreysRuleForScale
         {
@@ -224,7 +224,7 @@ namespace RMC.BestFit.Models
         /// <para>
         /// The base implementation reprocesses threshold series and, when
         /// <see cref="ModelBase.UseDefaultFlatPriors"/> is true, calls
-        /// <see cref="SetDefaultParameters"/> in the derived class.
+        /// <c>SetDefaultParameters</c> in the derived class.
         /// </para>
         /// <para>
         /// Changes to plotting parameter properties are ignored because they

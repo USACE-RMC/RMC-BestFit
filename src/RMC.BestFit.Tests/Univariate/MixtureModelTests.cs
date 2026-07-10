@@ -1,10 +1,11 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.UnivariateAnalyses;
+namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Unit tests for the <see cref="MixtureModel"/> class.
+/// Unit tests for the <c>MixtureModel</c> class.
 /// Tests mixture distribution models with multiple components and optional zero inflation.
 /// </summary>
 /// <remarks>
@@ -25,9 +26,9 @@ public class MixtureModelTests
     /// <summary>
     /// Creates a sample data frame with positive exact observations.
     /// </summary>
-    private static DataFrame CreateSampleDataFrame()
+    private static BestFitDataFrame CreateSampleDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>
         {
             new ExactData { Index = 1990, Value = 1200 },
@@ -48,9 +49,9 @@ public class MixtureModelTests
     /// <summary>
     /// Creates a bimodal data frame typical of mixed flood populations.
     /// </summary>
-    private static DataFrame CreateBimodalDataFrame()
+    private static BestFitDataFrame CreateBimodalDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
 
         // Low flow population (e.g., baseflow floods)
@@ -73,9 +74,9 @@ public class MixtureModelTests
     /// <summary>
     /// Creates a data frame with zero values for zero-inflation testing.
     /// </summary>
-    private static DataFrame CreateZeroInflatedDataFrame()
+    private static BestFitDataFrame CreateZeroInflatedDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>
         {
             new ExactData { Index = 1990, Value = 0 },
@@ -1057,7 +1058,7 @@ public class MixtureModelTests
     [TestMethod]
     public void Test_MixtureModel_SingleDataPoint()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(new List<ExactData>
         {
             new ExactData { Index = 2000, Value = 1000 }
@@ -1073,8 +1074,8 @@ public class MixtureModelTests
     /// <summary>
     /// When input data is constant (zero-width sample range), the MixtureModel's
     /// auto-fit Uniform prior collapses to <c>Uniform(a, a)</c>, which
-    /// <see cref="Numerics.Distributions.Uniform"/> correctly rejects with
-    /// <see cref="ArgumentOutOfRangeException"/> during PDF evaluation. This is the
+    /// <c>Numerics.Distributions.Uniform</c> correctly rejects with
+    /// <c>ArgumentOutOfRangeException</c> during PDF evaluation. This is the
     /// intended contract: degenerate data surfaces as an exception rather than a
     /// silent NaN / −∞, so the caller cannot mistakenly proceed with meaningless
     /// posterior inference.
@@ -1088,7 +1089,7 @@ public class MixtureModelTests
     [TestMethod]
     public void Test_MixtureModel_AllSameValue_ThrowsOnDegenerateData()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {
@@ -1111,7 +1112,7 @@ public class MixtureModelTests
     [TestMethod]
     public void Test_MixtureModel_LargeValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {
@@ -1130,7 +1131,7 @@ public class MixtureModelTests
     [TestMethod]
     public void Test_MixtureModel_SmallValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {

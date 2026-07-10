@@ -52,6 +52,9 @@ namespace RMC.BestFit.Models
                 _distribution = UnivariateDistributionFactory.CreateDistribution(distElement);
         }
 
+        /// <summary>
+        /// Occurs when a quantile prior property changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
         private double _alpha;
         private UnivariateDistributionBase _distribution = null!;

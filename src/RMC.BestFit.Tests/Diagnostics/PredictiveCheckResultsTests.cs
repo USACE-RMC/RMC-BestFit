@@ -3,15 +3,15 @@ using RMC.BestFit.Diagnostics;
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Unit tests for the <see cref="PredictiveCheckResults"/> class and
-/// the <see cref="PredictiveSummary"/> class.
+/// Unit tests for the <c>PredictiveCheckResults</c> class and
+/// the <c>PredictiveSummary</c> class.
 /// </summary>
 /// <remarks>
-/// <see cref="PredictiveCheckResults"/> is a POCO that stores posterior predictive p-values.
+/// <c>PredictiveCheckResults</c> is a POCO that stores posterior predictive p-values.
 /// Tests cover: default NaN properties, property setters, HasPotentialMisfit logic,
 /// and boundary conditions.
 /// <para>
-/// <see cref="PredictiveSummary"/> is a POCO storing quantile arrays for predictive distributions.
+/// <c>PredictiveSummary</c> is a POCO storing quantile arrays for predictive distributions.
 /// Tests cover property initialization and round-trip assignment.
 /// </para>
 /// </remarks>
@@ -209,10 +209,10 @@ public class PredictiveCheckResultsTests
 }
 
 /// <summary>
-/// Unit tests for the <see cref="PredictiveSummary"/> class.
+/// Unit tests for the <c>PredictiveSummary</c> class.
 /// </summary>
 /// <remarks>
-/// <see cref="PredictiveSummary"/> is a POCO that stores quantile arrays [2.5%, 25%, 50%, 75%, 97.5%]
+/// <c>PredictiveSummary</c> is a POCO that stores quantile arrays [2.5%, 25%, 50%, 75%, 97.5%]
 /// for key summary statistics of the predictive distribution.
 /// </remarks>
 [TestClass]

@@ -1,10 +1,11 @@
 using Numerics.Data;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesModels;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="MovingAverage"/> time-series model.
+/// Programmatic unit tests for the <c>MovingAverage</c> time-series model.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,9 +33,9 @@ public class MovingAverageTests
     /// Deterministic MA(1)-like fixture (50 annual observations) generated with a
     /// fixed seed so this file does not depend on the Verification project.
     /// </summary>
-    private static TimeSeries CreateSampleTimeSeries()
+    private static NumericsTimeSeries CreateSampleTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
 
         const double mean = 500.0;
@@ -63,9 +64,9 @@ public class MovingAverageTests
     /// <summary>
     /// Deterministic short fixture (15 annual observations) for edge-case validation.
     /// </summary>
-    private static TimeSeries CreateShortTimeSeries()
+    private static NumericsTimeSeries CreateShortTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
         for (int i = 0; i < ts.Count; i++)
         {
             ts[i].Value = 100.0 + i * 5.0;
@@ -76,9 +77,9 @@ public class MovingAverageTests
     /// <summary>
     /// Deterministic monthly fixture (240 monthly observations) with seasonal pattern + trend + noise.
     /// </summary>
-    private static TimeSeries CreateMonthlyTimeSeries()
+    private static NumericsTimeSeries CreateMonthlyTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), new DateTime(2019, 12, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), new DateTime(2019, 12, 1));
         var rng = new Random(54321);
 
         for (int i = 0; i < ts.Count; i++)
@@ -171,7 +172,7 @@ public class MovingAverageTests
     #region Property Tests
 
     /// <summary>
-    /// Tests that the TimeSeries property can be set and retrieved correctly.
+    /// Tests that the NumericsTimeSeries property can be set and retrieved correctly.
     /// </summary>
     [TestMethod]
     public void Test_TimeSeries_SetAndGet()
@@ -881,7 +882,7 @@ public class MovingAverageTests
     [TestMethod]
     public void Test_Validate_TooShortTimeSeries_ReturnsFalse()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
         for (int i = 0; i < ts.Count; i++) ts[i].Value = i;
         var model = new MovingAverage(ts);
 
@@ -889,6 +890,24 @@ public class MovingAverageTests
 
         Assert.IsFalse(isValid);
         Assert.IsTrue(messages.Any(m => m.Contains("10 observations")));
+    }
+
+    /// <summary>
+    /// Tests that validation rejects irregular time intervals.
+    /// </summary>
+    [TestMethod]
+    public void Test_Validate_IrregularTimeSeries_ReturnsFalse()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.Irregular);
+        var start = new DateTime(2000, 1, 1);
+        for (int i = 0; i < 50; i++)
+            ts.Add(new SeriesOrdinate<DateTime, double>(start.AddDays(i * i + 1), i + 1.0));
+        var model = new MovingAverage(ts);
+
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("regular time interval")));
     }
 
     /// <summary>
@@ -1074,7 +1093,7 @@ public class MovingAverageTests
     public void Test_MA_NoInterceptWithZeroMean()
     {
         // Create zero-mean time series
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
         for (int i = 0; i < ts.Count; i++)
         {
@@ -1172,7 +1191,7 @@ public class MovingAverageTests
     }
 
     /// <summary>
-    /// Tests that ForecastingTimeSteps is computed correctly from TimeSeries length and TrainingTimeSteps.
+    /// Tests that ForecastingTimeSteps is computed correctly from NumericsTimeSeries length and TrainingTimeSteps.
     /// </summary>
     [TestMethod]
     public void Test_ForecastingTimeSteps_ComputedCorrectly()
@@ -1182,7 +1201,7 @@ public class MovingAverageTests
         model.UseDefaultTrainingSteps = false;
         model.TrainingTimeSteps = 40;
 
-        // ForecastingTimeSteps = TimeSeries.Count - TrainingTimeSteps
+        // ForecastingTimeSteps = NumericsTimeSeries.Count - TrainingTimeSteps
         Assert.AreEqual(ts.Count - 40, model.ForecastingTimeSteps);
     }
 

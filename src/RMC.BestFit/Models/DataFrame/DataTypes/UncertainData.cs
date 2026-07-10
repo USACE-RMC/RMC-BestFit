@@ -1,10 +1,10 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Distributions;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
     /// <summary>
     /// Uncertain data ordinate.

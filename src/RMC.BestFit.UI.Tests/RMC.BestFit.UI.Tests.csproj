@@ -1,0 +1,43 @@
+<Project Sdk="MSTest.Sdk/3.6.4">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>RMC.BestFit.UI.Tests</AssemblyTitle>
+    <Description>Unit tests for RMC.BestFit.UI.dll. Fast, runs on every build. Target ~70% line coverage.</Description>
+    <Company>U.S. Army Corps of Engineers</Company>
+    <Product>RMC-BestFit</Product>
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Link shared MSTest parallelization settings from the Verification project. -->
+    <Compile Include="..\RMC.BestFit.Verification\MSTestSettings.cs" Link="MSTestSettings.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Wpf.Framework.Core" />
+    <PackageReference Include="RMC.Wpf.Framework.Models" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
+    <ProjectReference Include="..\RMC.BestFit.UI\RMC.BestFit.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Hec.Dss remains an explicit binary reference because its project pre-build downloads native assets. -->
+    <Reference Include="Hec.Dss">
+      <HintPath>$(HecDssAssemblyPath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using Numerics.Distributions;
 using System.Xml.Linq;
@@ -41,7 +41,7 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Constructs a new fitted distribution. 
         /// </summary>
-        /// <param name="xElement">The XElement that will be deserialized.<</param>
+        /// <param name="xElement">The XElement that will be deserialized.</param>
         public FittedDistribution(XElement xElement)
         {
             var distributionElement = xElement.Element("Distribution");
@@ -94,7 +94,7 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets a brief description of the failure when <see cref="FitSucceeded"/>
         /// is <c>false</c>. Empty string when the fit succeeded or no diagnostic was
-        /// captured. Set by <see cref="FittingAnalysis"/> when an MLE attempt throws.
+        /// captured. Set by <c>FittingAnalysis</c> when an MLE attempt throws.
         /// </summary>
         public string ErrorMessage { get; set; } = string.Empty;
 

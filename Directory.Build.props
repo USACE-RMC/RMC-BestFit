@@ -1,0 +1,19 @@
+<Project>
+
+  <PropertyGroup>
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <HecDssRoot>$(RepositoryRoot)..\hec-dss\dotnet\Hec.Dss\</HecDssRoot>
+    <HecDssAssemblyPath>$(HecDssRoot)bin\Debug\net10.0\Hec.Dss.dll</HecDssAssemblyPath>
+    <HecDssNativeWin>$(HecDssRoot)native-lib\win\hecdss.dll</HecDssNativeWin>
+    <HecDssNativeLinux>$(HecDssRoot)native-lib\linux\libhecdss.so</HecDssNativeLinux>
+    <Version>2.0.0-beta.5</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(EnforceXmlDocumentation)' == 'true'">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1570;CS1571;CS1572;CS1573;CS1574;CS1584;CS1587;CS1589;CS1591</WarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

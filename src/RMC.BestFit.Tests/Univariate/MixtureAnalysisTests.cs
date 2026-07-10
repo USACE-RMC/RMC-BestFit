@@ -1,12 +1,13 @@
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using System.Xml.Linq;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="MixtureAnalysis"/> class.
+/// Programmatic unit tests for the <c>MixtureAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// Configuration, validation, and serialization tests live here.
@@ -31,9 +32,16 @@ public class MixtureAnalysisTests
     private static readonly double[] InlineHighComponent = new Normal(20000.0, 3000.0)
         .GenerateRandomValues(HighSize, 67890);
 
-    private static DataFrame CreateBimodalTestDataFrame()
+    /// <summary>
+    /// Creates bimodal Test Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateBimodalTestDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         int year = 1980;
         for (int i = 0; i < InlineLowComponent.Length; i++)
             df.ExactSeries.Add(new ExactData(year++, InlineLowComponent[i]));
@@ -42,6 +50,13 @@ public class MixtureAnalysisTests
         return df;
     }
 
+    /// <summary>
+    /// Creates test Mixture Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static MixtureModel CreateTestMixtureModel()
     {
         var df = CreateBimodalTestDataFrame();
@@ -53,6 +68,13 @@ public class MixtureAnalysisTests
         return new MixtureModel(df, distributionTypes);
     }
 
+    /// <summary>
+    /// Creates gEV Mixture Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static MixtureModel CreateGEVMixtureModel()
     {
         var df = CreateBimodalTestDataFrame();
@@ -62,6 +84,20 @@ public class MixtureAnalysisTests
             UnivariateDistributionType.GeneralizedExtremeValue
         };
         return new MixtureModel(df, distributionTypes);
+    }
+
+    /// <summary>
+    /// Creates an estimated mixture analysis with stub uncertainty results.
+    /// </summary>
+    /// <param name="model">The mixture model to attach to the analysis.</param>
+    /// <returns>An analysis whose stale estimated state can be invalidated without running MCMC.</returns>
+    /// <remarks>
+    /// The helper uses the XML constructor so tests stay fast and avoid computational verification.
+    /// </remarks>
+    private static MixtureAnalysis CreateEstimatedAnalysis(MixtureModel model)
+    {
+        var xElement = new XElement("MixtureAnalysis", new XAttribute("IsEstimated", true));
+        return new MixtureAnalysis(model, xElement, analysisResults: new UncertaintyAnalysisResults());
     }
 
     #endregion
@@ -245,6 +281,68 @@ public class MixtureAnalysisTests
 
         Assert.IsTrue(resultsCleared || analysis.AnalysisResults == null,
             "Results should be cleared when model changes.");
+    }
+
+    /// <summary>Verifies that enabling quantile priors clears stale analysis results.</summary>
+    [TestMethod]
+    public void EnableQuantilePriors_ClearsResults()
+    {
+        var model = CreateTestMixtureModel();
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(MixtureAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.EnableQuantilePriors = true;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when quantile priors are enabled.");
+        Assert.IsNull(analysis.AnalysisResults, "Quantile prior changes should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Quantile prior changes should invalidate the estimated state.");
+        Assert.IsTrue(model.QuantilePriors.Count > 0, "Enabling quantile priors should create default prior rows.");
+    }
+
+    /// <summary>Verifies that editing an existing quantile prior clears stale analysis results.</summary>
+    [TestMethod]
+    public void QuantilePriorEdit_ClearsResults()
+    {
+        var model = CreateTestMixtureModel();
+        model.EnableQuantilePriors = true;
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(MixtureAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.QuantilePriors[0].Alpha = 0.02;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when a quantile prior is edited.");
+        Assert.IsNull(analysis.AnalysisResults, "Quantile prior edits should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Quantile prior edits should invalidate the estimated state.");
+    }
+
+    /// <summary>Verifies that prior-related option changes clear stale analysis results.</summary>
+    [TestMethod]
+    public void PriorOptionChange_ClearsResults()
+    {
+        var model = CreateTestMixtureModel();
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(MixtureAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.UseJeffreysRuleForScale = !model.UseJeffreysRuleForScale;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when prior options change.");
+        Assert.IsNull(analysis.AnalysisResults, "Prior option changes should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Prior option changes should invalidate the estimated state.");
     }
 
     #endregion

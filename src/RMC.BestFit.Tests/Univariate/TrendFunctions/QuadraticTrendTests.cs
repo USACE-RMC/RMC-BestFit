@@ -1,10 +1,10 @@
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="QuadraticTrend"/> class.
+/// Unit tests for the <c>QuadraticTrend</c> class.
 /// Tests the quadratic trend model y(t) = α + β(t - StartIndex) + γ(t - StartIndex)².
 /// </summary>
 [TestClass]

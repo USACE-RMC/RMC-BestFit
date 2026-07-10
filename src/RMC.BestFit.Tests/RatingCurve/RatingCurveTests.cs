@@ -1,10 +1,11 @@
 using Numerics.Data;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.RatingCurve;
 
 /// <summary>
-/// Structural and smoke unit tests for the <see cref="RMC.BestFit.Models.RatingCurve"/> class.
+/// Structural and smoke unit tests for the <c>RMC.BestFit.Models.RatingCurve</c> class.
 /// </summary>
 /// <remarks>
 /// Tests cover: default and multi-segment construction, parameter counts, parameter names,
@@ -21,16 +22,29 @@ public class RatingCurveTests
     private static readonly double[] s_discharge = { 110.0, 300.0, 600.0, 1200.0, 2000.0, 3500.0, 5100.0 };
 
     /// <summary>
-    /// Creates a small stage TimeSeries fixture.
+    /// Creates a small stage NumericsTimeSeries fixture.
     /// </summary>
     private static Numerics.Data.TimeSeries MakeStage() =>
         new(TimeInterval.OneDay, new DateTime(2000, 1, 1), s_stage);
 
     /// <summary>
-    /// Creates a small discharge TimeSeries fixture.
+    /// Creates a small discharge NumericsTimeSeries fixture.
     /// </summary>
     private static Numerics.Data.TimeSeries MakeDischarge() =>
         new(TimeInterval.OneDay, new DateTime(2000, 1, 1), s_discharge);
+
+    /// <summary>
+    /// Creates a daily time series with deterministic positive values.
+    /// </summary>
+    /// <param name="startDate">The first date in the generated time series.</param>
+    /// <param name="count">The number of observations to generate.</param>
+    /// <param name="offset">The value added to each generated observation.</param>
+    /// <returns>A daily time series with <paramref name="count"/> observations.</returns>
+    private static NumericsTimeSeries MakeDailySeries(DateTime startDate, int count, double offset = 1.0)
+    {
+        var values = Enumerable.Range(0, count).Select(i => offset + i).ToArray();
+        return new NumericsTimeSeries(TimeInterval.OneDay, startDate, values);
+    }
 
     #region Default Constructor
 
@@ -176,6 +190,160 @@ public class RatingCurveTests
             $"Index 4 should be α₂, got '{model.Parameters[4].Name}'.");
         Assert.IsTrue(model.Parameters[7].Name.Contains("α3") || model.Parameters[7].Name.Contains("Coefficient"),
             $"Index 7 should be α₃, got '{model.Parameters[7].Name}'.");
+    }
+
+    #endregion
+
+    #region Default Flat Priors
+
+    /// <summary>
+    /// Default flat priors for log10(alpha) are wide enough for major-river rating curves.
+    /// </summary>
+    [TestMethod]
+    public void DefaultFlatPriors_AlphaBounds_AreWideForAllSegments()
+    {
+        for (int segmentCount = 1; segmentCount <= 3; segmentCount++)
+        {
+            var model = new RMC.BestFit.Models.RatingCurve(MakeStage(), MakeDischarge(), segmentCount);
+            int[] alphaIndexes = segmentCount switch
+            {
+                1 => new[] { 1 },
+                2 => new[] { 1, 4 },
+                _ => new[] { 1, 4, 7 }
+            };
+
+            foreach (int index in alphaIndexes)
+            {
+                var parameter = model.Parameters[index];
+                Assert.AreEqual(-10.0, parameter.LowerBound, 1e-12,
+                    $"Alpha parameter {index} lower bound should be -10.");
+                Assert.AreEqual(10.0, parameter.UpperBound, 1e-12,
+                    $"Alpha parameter {index} upper bound should be 10.");
+                Assert.IsFalse(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(0.0)),
+                    $"Alpha parameter {index} prior should include log10(alpha)=0.");
+                Assert.IsTrue(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(10.1)),
+                    $"Alpha parameter {index} prior should exclude values above 10.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Default flat priors for beta allow near-zero exponents and are not strictly positive.
+    /// </summary>
+    [TestMethod]
+    public void DefaultFlatPriors_BetaBounds_AllowZeroForAllSegments()
+    {
+        for (int segmentCount = 1; segmentCount <= 3; segmentCount++)
+        {
+            var model = new RMC.BestFit.Models.RatingCurve(MakeStage(), MakeDischarge(), segmentCount);
+            int[] betaIndexes = segmentCount switch
+            {
+                1 => new[] { 2 },
+                2 => new[] { 2, 5 },
+                _ => new[] { 2, 5, 8 }
+            };
+
+            foreach (int index in betaIndexes)
+            {
+                var parameter = model.Parameters[index];
+                Assert.AreEqual(0.0, parameter.LowerBound, 1e-12,
+                    $"Beta parameter {index} lower bound should be 0.");
+                Assert.AreEqual(5.0, parameter.UpperBound, 1e-12,
+                    $"Beta parameter {index} upper bound should be 5.");
+                Assert.IsFalse(parameter.IsPositive,
+                    $"Beta parameter {index} should be nonnegative, not strictly positive.");
+                Assert.IsFalse(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(0.0)),
+                    $"Beta parameter {index} prior should include beta=0.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Default parameter values are finite and lie inside their default bounds.
+    /// </summary>
+    [TestMethod]
+    public void DefaultFlatPriors_DefaultValues_AreFiniteAndInsideBounds()
+    {
+        for (int segmentCount = 1; segmentCount <= 3; segmentCount++)
+        {
+            var model = new RMC.BestFit.Models.RatingCurve(MakeStage(), MakeDischarge(), segmentCount);
+
+            foreach (var parameter in model.Parameters)
+            {
+                Assert.IsFalse(double.IsNaN(parameter.Value), $"{parameter.Name} value should not be NaN.");
+                Assert.IsFalse(double.IsInfinity(parameter.Value), $"{parameter.Name} value should be finite.");
+                Assert.IsTrue(parameter.LowerBound < parameter.UpperBound,
+                    $"{parameter.Name} bounds should not collapse.");
+                Assert.IsTrue(parameter.Value >= parameter.LowerBound && parameter.Value <= parameter.UpperBound,
+                    $"{parameter.Name} value should be inside its bounds.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Constant stage data uses a finite span fallback instead of collapsing stage priors.
+    /// </summary>
+    [TestMethod]
+    public void DefaultFlatPriors_ConstantStageData_DoesNotCollapseStagePriors()
+    {
+        var stage = MakeSeries(new DateTime(2000, 1, 1), Enumerable.Repeat(10.0, 20).ToArray());
+        var discharge = MakeSeries(new DateTime(2000, 1, 1),
+            Enumerable.Range(0, 20).Select(i => 100.0 + 5.0 * i).ToArray());
+        var model = new RMC.BestFit.Models.RatingCurve(stage, discharge, numberOfSegments: 3);
+
+        foreach (int index in new[] { 0, 3, 6 })
+        {
+            var parameter = model.Parameters[index];
+            Assert.IsTrue(parameter.LowerBound < parameter.UpperBound,
+                $"{parameter.Name} should have non-collapsed bounds.");
+            Assert.IsTrue(parameter.Value >= parameter.LowerBound && parameter.Value <= parameter.UpperBound,
+                $"{parameter.Name} value should be inside its bounds.");
+        }
+
+        Assert.IsTrue(model.Parameters[0].Value < model.Parameters[3].Value);
+        Assert.IsTrue(model.Parameters[3].Value < model.Parameters[6].Value);
+    }
+
+    /// <summary>
+    /// Constant positive discharge data uses a positive sigma fallback instead of collapsing the scale prior.
+    /// </summary>
+    [TestMethod]
+    public void DefaultFlatPriors_ConstantPositiveDischarge_DoesNotCollapseSigmaPrior()
+    {
+        var stage = MakeSeries(new DateTime(2000, 1, 1),
+            Enumerable.Range(0, 20).Select(i => 1.0 + i).ToArray());
+        var discharge = MakeSeries(new DateTime(2000, 1, 1), Enumerable.Repeat(1000.0, 20).ToArray());
+        var model = new RMC.BestFit.Models.RatingCurve(stage, discharge, numberOfSegments: 1);
+        var sigma = model.Parameters.Last();
+
+        Assert.IsTrue(sigma.LowerBound > 0.0, "Sigma lower bound should be positive.");
+        Assert.IsTrue(sigma.UpperBound > sigma.LowerBound, "Sigma bounds should not collapse.");
+        Assert.IsTrue(sigma.Value > sigma.LowerBound && sigma.Value < sigma.UpperBound,
+            "Sigma default value should be strictly inside its bounds.");
+    }
+
+    /// <summary>
+    /// Date-aligned observations drive default prior calibration; unpaired outliers are ignored.
+    /// </summary>
+    [TestMethod]
+    public void DefaultFlatPriors_UseAlignedObservations_NotUnpairedOutliers()
+    {
+        var start = new DateTime(2000, 1, 1);
+        var stageValues = Enumerable.Range(0, 20).Select(i => 1.0 + i).Concat(new[] { 10000.0 }).ToArray();
+        var dischargeValues = Enumerable.Range(0, 20).Select(i => 100.0 + i).Concat(new[] { 1e30 }).ToArray();
+        var stage = MakeSeries(start, stageValues);
+        var discharge = MakeSeries(start, dischargeValues);
+        stage[20] = new Numerics.Data.SeriesOrdinate<DateTime, double>(new DateTime(2050, 1, 1), 10000.0);
+        discharge[20] = new Numerics.Data.SeriesOrdinate<DateTime, double>(new DateTime(2060, 1, 1), 1e30);
+
+        var model = new RMC.BestFit.Models.RatingCurve(stage, discharge, numberOfSegments: 3);
+
+        Assert.AreEqual(-18.0, model.Parameters[0].LowerBound, 1e-12,
+            "h1 lower bound should use the aligned stage range 1..20.");
+        Assert.AreEqual(20.0, model.Parameters[6].UpperBound, 1e-12,
+            "h3 upper bound should use the aligned stage range 1..20.");
+        Assert.AreEqual(1.0, model.Parameters.Last().UpperBound, 1e-12,
+            "Sigma upper bound should ignore the unpaired discharge outlier.");
     }
 
     #endregion
@@ -444,7 +612,7 @@ public class RatingCurveTests
     }
 
     /// <summary>
-    /// Regression: incrementing <see cref="RMC.BestFit.Models.RatingCurve.NumberOfSegments"/> from 1 to 2
+    /// Regression: incrementing <c>RMC.BestFit.Models.RatingCurve.NumberOfSegments</c> from 1 to 2
     /// must not throw. Earlier builds raised <c>PropertyChanged</c> before rebuilding the parameter
     /// list, causing downstream handlers (<c>ClearResults</c> → <c>SetIsValid</c> → <c>Validate</c>
     /// → <c>ValidateSegmentOrdering</c>) to index past the end of a stale 4-element array.
@@ -547,7 +715,7 @@ public class RatingCurveTests
     #region GenerateSyntheticData
 
     /// <summary>
-    /// GenerateSyntheticData returns two TimeSeries of the requested sample size.
+    /// GenerateSyntheticData returns two NumericsTimeSeries of the requested sample size.
     /// </summary>
     [TestMethod]
     public void GenerateSyntheticData_ReturnsTwoSeriesOfRequestedSize()
@@ -697,7 +865,7 @@ public class RatingCurveTests
     #region Stage / Discharge date-alignment (inner-join) behavior
 
     /// <summary>
-    /// Builds a TimeSeries whose ordinate at index i has Index = startDate + i days
+    /// Builds a NumericsTimeSeries whose ordinate at index i has Index = startDate + i days
     /// and Value = values[i].
     /// </summary>
     private static Numerics.Data.TimeSeries MakeSeries(DateTime startDate, double[] values)
@@ -832,6 +1000,42 @@ public class RatingCurveTests
         var (isValid, messages) = model.Validate();
 
         Assert.IsTrue(isValid, $"Expected valid. Messages: {string.Join(";", messages)}");
+    }
+
+    /// <summary>
+    /// Matching stage and discharge dates report all observations as aligned pairs.
+    /// </summary>
+    [TestMethod]
+    public void GetDataAlignmentCounts_FullOverlap_ReturnsAllCounts()
+    {
+        var startDate = new DateTime(2000, 1, 1);
+        var model = new RMC.BestFit.Models.RatingCurve(
+            MakeDailySeries(startDate, 100, 1.0),
+            MakeDailySeries(startDate, 100, 100.0));
+
+        var counts = model.GetDataAlignmentCounts();
+
+        Assert.AreEqual(100, counts.StageCount);
+        Assert.AreEqual(100, counts.DischargeCount);
+        Assert.AreEqual(100, counts.PairedCount);
+    }
+
+    /// <summary>
+    /// Equal-length time series with staggered dates report only common dates as aligned pairs.
+    /// </summary>
+    [TestMethod]
+    public void GetDataAlignmentCounts_PartialOverlap_ReturnsPairedCount()
+    {
+        var startDate = new DateTime(2000, 1, 1);
+        var model = new RMC.BestFit.Models.RatingCurve(
+            MakeDailySeries(startDate, 100, 1.0),
+            MakeDailySeries(startDate.AddDays(60), 100, 100.0));
+
+        var counts = model.GetDataAlignmentCounts();
+
+        Assert.AreEqual(100, counts.StageCount);
+        Assert.AreEqual(100, counts.DischargeCount);
+        Assert.AreEqual(40, counts.PairedCount);
     }
 
     #endregion

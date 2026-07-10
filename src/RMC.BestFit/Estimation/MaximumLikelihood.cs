@@ -1,4 +1,4 @@
-﻿using Numerics.Data.Statistics;
+using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
@@ -80,7 +80,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// Defaults to <c>false</c>, so most callers can inspect <see cref="Status"/> and the
-        /// <see cref="Estimate"/> return value. Set to <c>true</c> for callers that need the
+        /// <c>Estimate</c> return value. Set to <c>true</c> for callers that need the
         /// optimizer to stop immediately on failure conditions such as maximum function evaluations.
         /// </remarks>
         public bool ReportFailure
@@ -116,7 +116,7 @@ namespace RMC.BestFit.Estimation
         /// Gets the final <see cref="OptimizationStatus"/> from the most recent estimation run.
         /// </summary>
         /// <remarks>
-        /// Captured from the inner <see cref="Optimizer"/>.Status at the end of <see cref="Estimate"/>
+        /// Captured from the inner <see cref="Optimizer"/>.Status at the end of <c>Estimate</c>
         /// so it remains valid after the transient optimizer is discarded. Returns
         /// <see cref="OptimizationStatus.None"/> before any estimation has run, and after
         /// <see cref="ClearResults"/>. Set to <see cref="OptimizationStatus.Failure"/> if the
@@ -151,7 +151,7 @@ namespace RMC.BestFit.Estimation
 
         /// <summary>
         /// Gets the optimal parameter set from the estimation. Initialized to an empty
-        /// <see cref="ParameterSet"/> so consumers that bypass the <see cref="IsEstimated"/>
+        /// <see cref="ParameterSet"/> so consumers that bypass the <c>IsEstimated</c>
         /// guard (e.g. <see cref="ProfileLikelihood"/>, <see cref="ParameterConfidenceIntervals"/>,
         /// <see cref="GetCovarianceMatrix"/>) get a deterministic empty parameter set rather
         /// than an <see cref="NullReferenceException"/>.
@@ -404,7 +404,7 @@ namespace RMC.BestFit.Estimation
                     for (int j = 0; j < n; j++)
                         maxAbsDelta = Math.Max(maxAbsDelta, Math.Abs(regularized[i, j] - covariance[i, j]));
                 if (maxAbsDelta > 0.0)
-                    Debug.WriteLine($"MaximumLikelihood.GetCovarianceMatrix: matrix regularized to ensure positive-definiteness (max |Δ| = {maxAbsDelta:G6}).");
+                    Debug.WriteLine($"MaximumLikelihood.GetCovarianceMatrix: matrix regularized to ensure positive-definiteness (max |?| = {maxAbsDelta:G6}).");
                 return regularized;
             }
             catch (Exception ex)
@@ -460,11 +460,11 @@ namespace RMC.BestFit.Estimation
         /// <returns>The robust covariance matrix using the sandwich estimator.</returns>
         /// <remarks>
         /// <para>
-        /// The sandwich estimator is: Var(θ̂) = H⁻¹ J H⁻¹
+        /// The sandwich estimator is: Var(?^) = H?� J H?�
         /// </para>
         /// <para>
         /// Where H is the negative Hessian (Fisher Information Matrix) and J is the "meat" matrix:
-        /// J = Σᵢ ∇log p(yᵢ|θ) ∇log p(yᵢ|θ)ᵀ
+        /// J = S? ?log p(y?|?) ?log p(y?|?)?
         /// </para>
         /// <para>
         /// This estimator provides consistent standard errors even when the model is misspecified
@@ -488,14 +488,14 @@ namespace RMC.BestFit.Estimation
 
             try
             {
-                // "Bread": H⁻¹ = inverse of negative Hessian (Fisher Information Matrix)
+                // "Bread": H?� = inverse of negative Hessian (Fisher Information Matrix)
                 Matrix fisher = _hessian * -1d;
                 Matrix fisherInv = fisher.Inverse();
 
-                // "Meat": J = Σᵢ gᵢ gᵢᵀ (outer product of gradients)
+                // "Meat": J = S? g? g?? (outer product of gradients)
                 Matrix meat = ComputeMeatMatrix(BestParameterSet.Values);
 
-                // Sandwich: H⁻¹ J H⁻¹
+                // Sandwich: H?� J H?�
                 Matrix sandwich = fisherInv * meat * fisherInv;
 
                 // Regularize to ensure positive definiteness
@@ -531,7 +531,7 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
-        /// Computes the "meat" matrix J = Σᵢ gᵢ gᵢᵀ for the sandwich estimator.
+        /// Computes the "meat" matrix J = S? g? g?? for the sandwich estimator.
         /// </summary>
         /// <param name="parameters">The parameter values at which to evaluate gradients.</param>
         /// <returns>The meat matrix.</returns>
@@ -544,7 +544,7 @@ namespace RMC.BestFit.Estimation
             // Compute numerical gradients for each observation
             double[][] gradients = ComputePointwiseGradients(parameters, n);
 
-            // Compute J = Σᵢ gᵢ gᵢᵀ
+            // Compute J = S? g? g??
             var meat = new Matrix(NumberOfParameters, NumberOfParameters);
 
             for (int i = 0; i < n; i++)
@@ -568,13 +568,13 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <param name="parameters">The parameter values at which to evaluate gradients.</param>
         /// <param name="n">The number of observations (length of pointwise log-likelihood array).</param>
-        /// <returns>A jagged array where gradients[i][j] is ∂log f(yᵢ|θ)/∂θⱼ.</returns>
+        /// <returns>A jagged array where gradients[i][j] is ?log f(y?|?)/???.</returns>
         /// <remarks>
         /// <para>
-        /// Uses the central difference formula: ∂f/∂θⱼ ≈ [f(θ+hⱼeⱼ) − f(θ−hⱼeⱼ)] / (2hⱼ),
-        /// where hⱼ = max(|θⱼ| × 1e-4, 1e-3). The 1e-3 minimum step size is critical for
+        /// Uses the central difference formula: ?f/??? � [f(?+h?e?) - f(?-h?e?)] / (2h?),
+        /// where h? = max(|??| � 1e-4, 1e-3). The 1e-3 minimum step size is critical for
         /// distributions that use Normal approximations near zero (e.g., LP3 switches to Normal
-        /// when |γ| &lt; 1e-4).
+        /// when |?| &lt; 1e-4).
         /// </para>
         /// </remarks>
         private double[][] ComputePointwiseGradients(double[] parameters, int n)
@@ -588,16 +588,16 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <returns>
         /// A matrix where element [i,j] represents the scaled influence of observation i on parameter j.
-        /// Values greater than 2/√n are often considered influential.
+        /// Values greater than 2/vn are often considered influential.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Computes influence[i,j] = (H⁻¹ gᵢ)ⱼ / SEⱼ, where:
+        /// Computes influence[i,j] = (H?� g?)? / SE?, where:
         /// </para>
         /// <list type="bullet">
-        /// <item><description>gᵢ is the score vector (gradient of log f(yᵢ|θ)) for observation i</description></item>
-        /// <item><description>H⁻¹ is the inverse Fisher information matrix (−Hessian)⁻¹, using data-only Hessian</description></item>
-        /// <item><description>SEⱼ is the standard error of parameter j</description></item>
+        /// <item><description>g? is the score vector (gradient of log f(y?|?)) for observation i</description></item>
+        /// <item><description>H?� is the inverse Fisher information matrix (-Hessian)?�, using data-only Hessian</description></item>
+        /// <item><description>SE? is the standard error of parameter j</description></item>
         /// </list>
         /// <para>
         /// Unlike <see cref="MaximumAPosteriori.GetObservationInfluence"/>, this uses the data-only
@@ -632,13 +632,13 @@ namespace RMC.BestFit.Estimation
                 return new double[n, NumberOfParameters];
             }
 
-            // Compute influence: I_ij = (H⁻¹ gᵢ)_j / SE_j
+            // Compute influence: I_ij = (H?� g?)_j / SE_j
             var influence = new double[n, NumberOfParameters];
             var se = GetStandardErrors();
 
             for (int i = 0; i < n; i++)
             {
-                // Compute H⁻¹ gᵢ
+                // Compute H?� g?
                 for (int j = 0; j < NumberOfParameters; j++)
                 {
                     double inflJ = 0;
@@ -663,11 +663,11 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Computes D_i = gᵢᵀ H⁻¹ gᵢ / p, where:
+        /// Computes D_i = g?? H?� g? / p, where:
         /// </para>
         /// <list type="bullet">
-        /// <item><description>gᵢ is the score vector (gradient of log f(yᵢ|θ)) for observation i</description></item>
-        /// <item><description>H⁻¹ is the inverse Fisher information matrix (−Hessian)⁻¹, using data-only Hessian</description></item>
+        /// <item><description>g? is the score vector (gradient of log f(y?|?)) for observation i</description></item>
+        /// <item><description>H?� is the inverse Fisher information matrix (-Hessian)?�, using data-only Hessian</description></item>
         /// <item><description>p is the number of parameters</description></item>
         /// </list>
         /// <para>
@@ -711,7 +711,7 @@ namespace RMC.BestFit.Estimation
 
             for (int i = 0; i < n; i++)
             {
-                // Compute gᵢᵀ H⁻¹ gᵢ
+                // Compute g?? H?� g?
                 double quadForm = 0;
                 for (int j = 0; j < NumberOfParameters; j++)
                 {

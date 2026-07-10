@@ -1,0 +1,54 @@
+﻿<UserControl x:Class="RMC_BestFit.MarkovChainTraceControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:oxyCntrls="clr-namespace:OxyPlotControls;assembly=OxyPlotControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="600" 
+             d:DesignWidth="1000" 
+             Loaded="UserControl_Loaded"
+             PreviewMouseDown="UserControl_PreviewMouseDown"
+             LostFocus="UserControl_LostFocus"
+             Background="{DynamicResource EnvironmentWindowBackground}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <ScrollViewer x:Name="Viewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Label Content="Select Parameter" Margin="0" Grid.Row="0" Grid.Column="0" ToolTip="Select a model parameter."/>
+            <ComboBox Name="ParameterComboBox" Margin="4" Width="200" Grid.Row="1" Grid.Column="0" SelectionChanged="ParameterComboBox_SelectionChanged"/>
+
+            <Label Content="Select Chain" Margin="0" Grid.Row="0" Grid.Column="1" ToolTip="Select the Markov Chain(s)."/>
+            <ComboBox Name="ChainComboBox" Margin="4" Width="200" Grid.Row="1" Grid.Column="1" SelectionChanged="ChainComboBox_SelectionChanged"/>
+
+            <CheckBox x:Name="IncludeWarmUpCheckBox" Content="Include Warm Up" IsChecked="False" VerticalAlignment="Center" Margin="4" Grid.Row="1" Grid.Column="2" Checked="IncludeWarmUpCheckBox_Checked" Unchecked="IncludeWarmUpCheckBox_Unchecked"/>
+
+            <Grid Grid.Row="2" Grid.ColumnSpan="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <!--Plot-->
+                <ContentControl x:Name="PlotHost" Grid.Column="0" Margin="2,2,0,0" />
+                <!-- Plot Toolbar-->
+                <oxyCntrls:OxyPlotToolbar x:Name="PlotToolbar" Grid.Row="0" Grid.Column="1" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" PropertiesCalled="PlotToolbar_PropertiesCalled" />
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -120,7 +120,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// When the distribution changes, the analysis subscribes to its
-        /// <see cref="CompetingRisksModel.PropertyChanged"/> event and updates
+        /// <c>PropertyChanged</c> event and updates
         /// the associated <see cref="BayesianAnalysis"/> model reference.
         /// </para>
         /// </remarks>
@@ -214,7 +214,7 @@ namespace RMC.BestFit.Analyses
         /// Handles changes to the <see cref="ProbabilityOrdinates"/> collection.
         /// </summary>
         /// <remarks>
-        /// Ordinates drive only <see cref="AnalysisResults"/> â€” not MCMC or <see cref="IsEstimated"/>.
+        /// Ordinates drive only <see cref="AnalysisResults"/> — not MCMC or <c>IsEstimated</c>.
         /// When estimated and ordinates are valid, reprocess via <see cref="CreateFrequencyAnalysisResultsAsync"/>;
         /// when invalid, clear <see cref="AnalysisResults"/> only; when not estimated, no-op.
         /// </remarks>
@@ -232,9 +232,8 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Handles property changes on the <see cref="CompetingRisksDistribution"/> model.
-        /// Only structurally destructive changes (data, competing-risks composition, parameters)
-        /// clear results. All other notifications are propagated for UI binding without
-        /// invalidating the fit.
+        /// Structural changes and prior-configuration changes clear results. All other
+        /// notifications are propagated for UI binding without invalidating the fit.
         /// </summary>
         private void Model_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -249,6 +248,15 @@ namespace RMC.BestFit.Analyses
                 if (BayesianAnalysis.UseAdvancedSimulationDefaults)
                     BayesianAnalysis.SetDefaultAdvancedSimulationOptions();
 
+                ClearResults();
+            }
+            else if (e.PropertyName == nameof(CompetingRisksDistribution.SetDefaultQuantilePriors) ||
+                     e.PropertyName == nameof(CompetingRisksDistribution.QuantilePriors) ||
+                     e.PropertyName == nameof(CompetingRisksDistribution.EnableQuantilePriors) ||
+                     e.PropertyName == nameof(CompetingRisksDistribution.UseSingleQuantile) ||
+                     e.PropertyName == nameof(CompetingRisksDistribution.UseJeffreysRuleForScale) ||
+                     e.PropertyName == nameof(CompetingRisksDistribution.UseDefaultFlatPriors))
+            {
                 ClearResults();
             }
 
@@ -288,7 +296,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears all analysis results and resets the <see cref="IsEstimated"/> flag.
+        /// Clears all analysis results and resets the <c>IsEstimated</c> flag.
         /// </summary>
         public void ClearResults()
         {
@@ -299,9 +307,9 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only â€” the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>. Leaves MCMC output and
-        /// <see cref="IsEstimated"/> intact.
+        /// <c>IsEstimated</c> intact.
         /// </summary>
         public void ClearFrequencyAnalysisResults()
         {
@@ -333,13 +341,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -351,18 +360,22 @@ namespace RMC.BestFit.Analyses
                     CompetingRisksDistribution.ProcessQuantilePriors();
 
                     // Run Bayesian analysis
-                    await BayesianAnalysis.RunAsync(progressReporter);
+                    await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process
                     if (BayesianAnalysis.IsEstimated == true)
                     {
-                        progressReporter?.ReportProgress(100);
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
                         await CreateFrequencyAnalysisResultsAsync();
                     }
 
                     // Mirror the inner Bayesian fit's success state so a silently-failed
                     // MCMC is reported correctly to AnalysisCompleted.
                     IsEstimated = BayesianAnalysis.IsEstimated;
+                    if (IsEstimated)
+                    {
+                        AnalysisProgress.ReportComplete(progressReporter);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -519,7 +532,7 @@ namespace RMC.BestFit.Analyses
                 // Get sampled distributions for each MCMC output
                 int B = BayesianAnalysis.OutputLength;
                 var sampledDistributions = new UnivariateDistributionBase[B];
-                Parallel.For(0, B, idx =>
+                Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
                     var d = (CompetingRisks)CompetingRisksDistribution.CompetingRisks!.Clone();
                     d.SetParameters(BayesianAnalysis.Results.Output[idx].Values);

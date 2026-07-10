@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Xml.Linq;
 
@@ -21,7 +21,7 @@ namespace RMC.BestFit.Models.TrendFunctions.Support
         /// <summary>
         /// Initializes a new instance of the <see cref="TrendModelBase"/> class
         /// with default settings and parameters created by
-        /// <see cref="SetDefaultParameters"/>.
+        /// <c>SetDefaultParameters</c>.
         /// </summary>
         protected TrendModelBase()
         {
@@ -71,9 +71,24 @@ namespace RMC.BestFit.Models.TrendFunctions.Support
 
         #region Members
 
+        /// <summary>
+        /// Backing value for the owning parameter name.
+        /// </summary>
         protected string _ownerName = string.Empty;
+
+        /// <summary>
+        /// Backing value indicating whether default flat priors are applied.
+        /// </summary>
         protected bool _useDefaultFlatPriors = true;
+
+        /// <summary>
+        /// Backing value for the first coefficient index.
+        /// </summary>
         protected int _startIndex;
+
+        /// <summary>
+        /// Backing collection of trend model parameters.
+        /// </summary>
         protected List<ModelParameter> _parameters = new List<ModelParameter>();
 
         /// <inheritdoc/>
@@ -144,6 +159,9 @@ namespace RMC.BestFit.Models.TrendFunctions.Support
         }
 
         /// <inheritdoc/>
+        /// <summary>
+        /// Occurs when a trend model property changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
 
         #endregion
@@ -151,7 +169,7 @@ namespace RMC.BestFit.Models.TrendFunctions.Support
         #region Methods
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for the specified
+        /// Raises the <c>PropertyChanged</c> event for the specified
         /// property name.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed.</param>

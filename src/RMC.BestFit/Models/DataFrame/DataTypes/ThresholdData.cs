@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
 
     /// <summary>
@@ -98,9 +98,9 @@ namespace RMC.BestFit
         /// The number of data points below the threshold during the threshold window.
         /// </summary>
         /// <remarks>
-        /// <b>Derived value — not user-settable.</b>
+        /// <b>Derived value � not user-settable.</b>
         /// Automatically computed by <see cref="DataFrame.ProcessThresholdSeries"/> as
-        /// <c>Duration − NumberAbove − (overlapping exact / interval / uncertain data points)</c>
+        /// <c>Duration - NumberAbove - (overlapping exact / interval / uncertain data points)</c>
         /// whenever a threshold is added to <see cref="DataFrame.ThresholdSeries"/> or any
         /// data series changes. Users should only set <see cref="NumberAbove"/>; this
         /// property refreshes on the next <c>CalculatePlottingPositions</c> pass.

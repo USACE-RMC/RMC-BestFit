@@ -3,21 +3,21 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Tests for the type-widening of <see cref="WeightedUnivariateAnalysis.UnivariateAnalysis"/>
-/// from concrete <see cref="UnivariateAnalysis"/> to <see cref="IUnivariateAnalysis"/>,
+/// Tests for the type-widening of <c>WeightedUnivariateAnalysis.UnivariateAnalysis</c>
+/// from concrete <c>UnivariateAnalysis</c> to <c>IUnivariateAnalysis</c>,
 /// and the composite-of-composite guards added at the setter, the
-/// <see cref="CompositeAnalysis.Validate"/> entry point, and the XElement deserializer.
+/// <c>CompositeAnalysis.Validate</c> entry point, and the XElement deserializer.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Issue 3 of the bug-fixes-and-enhancements plan: BMA / Composite analyses must accept
-/// any <see cref="IUnivariateAnalysis"/> sibling — most importantly
-/// <see cref="Bulletin17CAnalysis"/> — but <see cref="CompositeAnalysis"/> itself is
+/// any <c>IUnivariateAnalysis</c> sibling — most importantly
+/// <c>Bulletin17CAnalysis</c> — but <c>CompositeAnalysis</c> itself is
 /// rejected to avoid circular references and undefined nested-weighting behavior.
 /// </para>
 /// </remarks>
@@ -31,20 +31,41 @@ public class CompositeChildTypeWideningTests
     private static readonly double[] InlineFloodData = new Normal(15000.0, 5000.0)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateDataFrame()
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, InlineFloodData[i]));
         return df;
     }
 
+    /// <summary>
+    /// Creates univariate Analysis.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UnivariateAnalysis CreateUnivariateAnalysis()
     {
         var dist = new UnivariateDistribution(CreateDataFrame(), UnivariateDistributionType.Normal);
         return new UnivariateAnalysis(dist);
     }
 
+    /// <summary>
+    /// Creates b17 C Analysis.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Bulletin17CAnalysis CreateB17CAnalysis()
     {
         var model = new Bulletin17CDistribution(CreateDataFrame(), UnivariateDistributionType.LogPearsonTypeIII);
@@ -56,7 +77,7 @@ public class CompositeChildTypeWideningTests
     #region WeightedUnivariateAnalysis type widening
 
     /// <summary>
-    /// The setter accepts a <see cref="UnivariateAnalysis"/> instance — the canonical
+    /// The setter accepts a <c>UnivariateAnalysis</c> instance — the canonical
     /// composite child type that has always been allowed.
     /// </summary>
     [TestMethod]
@@ -72,9 +93,9 @@ public class CompositeChildTypeWideningTests
     }
 
     /// <summary>
-    /// The setter accepts a <see cref="Bulletin17CAnalysis"/> instance — Issue 3's
+    /// The setter accepts a <c>Bulletin17CAnalysis</c> instance — Issue 3's
     /// primary motivation. Previously this would have failed at the cast site or, worse,
-    /// thrown <see cref="System.InvalidCastException"/> on Open.
+    /// thrown <c>System.InvalidCastException</c> on Open.
     /// </summary>
     [TestMethod]
     public void WeightedUnivariateAnalysis_AcceptsBulletin17CAnalysis()
@@ -89,7 +110,7 @@ public class CompositeChildTypeWideningTests
     }
 
     /// <summary>
-    /// The constructor overload also accepts <see cref="IUnivariateAnalysis"/>.
+    /// The constructor overload also accepts <c>IUnivariateAnalysis</c>.
     /// </summary>
     [TestMethod]
     public void WeightedUnivariateAnalysis_Constructor_AcceptsBulletin17CAnalysis()
@@ -107,8 +128,8 @@ public class CompositeChildTypeWideningTests
     #region Composite-of-composite guards
 
     /// <summary>
-    /// Assigning a <see cref="CompositeAnalysis"/> to the setter throws
-    /// <see cref="System.ArgumentException"/>. This is the primary defense against
+    /// Assigning a <c>CompositeAnalysis</c> to the setter throws
+    /// <c>System.ArgumentException</c>. This is the primary defense against
     /// circular references from a composite that ends up containing itself.
     /// </summary>
     [TestMethod]
@@ -127,7 +148,7 @@ public class CompositeChildTypeWideningTests
     }
 
     /// <summary>
-    /// The two-arg constructor also rejects a <see cref="CompositeAnalysis"/> argument,
+    /// The two-arg constructor also rejects a <c>CompositeAnalysis</c> argument,
     /// since it routes through the same setter.
     /// </summary>
     [TestMethod]
@@ -142,7 +163,7 @@ public class CompositeChildTypeWideningTests
     }
 
     /// <summary>
-    /// Assigning a non-composite, non-null <see cref="IUnivariateAnalysis"/> after a
+    /// Assigning a non-composite, non-null <c>IUnivariateAnalysis</c> after a
     /// previous composite-rejection still works — the rejection path doesn't leave the
     /// wrapper in a broken state.
     /// </summary>
@@ -161,7 +182,7 @@ public class CompositeChildTypeWideningTests
     }
 
     /// <summary>
-    /// <see cref="CompositeAnalysis.Validate"/> reports an error if a child slips through
+    /// <c>CompositeAnalysis.Validate</c> reports an error if a child slips through
     /// (e.g. via reflection / deserialization race) and is itself a CompositeAnalysis.
     /// Force-injects via reflection on the private backing field to bypass the setter.
     /// </summary>
@@ -198,13 +219,13 @@ public class CompositeChildTypeWideningTests
     #region Validate() with B17C child (regression)
 
     /// <summary>
-    /// A composite with a Bulletin17CAnalysis child does not crash <see cref="CompositeAnalysis.Validate"/>.
+    /// A composite with a Bulletin17CAnalysis child does not crash <c>CompositeAnalysis.Validate</c>.
     /// (Both Validate paths through the wrapper and the per-child cast are now interface-typed.)
     /// </summary>
     /// <remarks>
     /// The child is unestimated, so Validate is expected to report an "invalid or requires
     /// estimation" message — but it must report it cleanly via the IUnivariateAnalysis
-    /// path, not throw <see cref="System.InvalidCastException"/>.
+    /// path, not throw <c>System.InvalidCastException</c>.
     /// </remarks>
     [TestMethod]
     public void CompositeAnalysis_Validate_AcceptsBulletin17CChildWithoutCast()

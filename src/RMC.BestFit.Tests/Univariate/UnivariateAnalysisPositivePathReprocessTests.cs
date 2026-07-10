@@ -4,13 +4,14 @@ using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.UnivariateAnalyses;
+namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
 /// Positive-path tests for the reprocess-don't-clear contract on
-/// <see cref="UnivariateAnalysis"/>. These tests inject a synthetic <see cref="MCMCResults"/>
-/// via <see cref="BayesianAnalysis.SetCustomMCMCResults"/> to flip the analysis into the
+/// <c>UnivariateAnalysis</c>. These tests inject a synthetic <c>MCMCResults</c>
+/// via <c>BayesianAnalysis.SetCustomMCMCResults</c> to flip the analysis into the
 /// estimated state without running an actual MCMC chain (per CLAUDE.md: MCMC-running tests
 /// live in the Verification project). They then exercise the actual reprocess code path
 /// — the half of the contract that the negative-path preservation tests cannot reach.
@@ -27,10 +28,17 @@ namespace RMC.BestFit.Tests.UnivariateAnalyses;
 [TestClass]
 public class UnivariateAnalysisPositivePathReprocessTests
 {
-    private static DataFrame CreateExactDataFrame()
+    /// <summary>
+    /// Creates exact Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateExactDataFrame()
     {
         var values = new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 };
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < values.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
         return df;
@@ -131,6 +139,39 @@ public class UnivariateAnalysisPositivePathReprocessTests
             "MCMC Results reference must be preserved across an ordinate change — the chain itself is unchanged.");
         Assert.IsTrue(analysis.BayesianAnalysis.IsEstimated,
             "BayesianAnalysis.IsEstimated must remain true.");
+    }
+
+    /// <summary>Verifies persisted Bayesian artifacts restore the analysis-level estimated state.</summary>
+    [TestMethod]
+    public async Task Constructor_RestoredResultsWithFalseOuterEstimatedFlag_ReprocessesPointEstimatorChange()
+    {
+        var analysis = CreateInjectedAnalysis();
+        await analysis.CreateFrequencyAnalysisResultsAsync();
+        Assert.IsNotNull(analysis.AnalysisResults, "Pre-condition: injected analysis must have persisted analysis results.");
+
+        var xElement = analysis.ToXElement();
+        xElement.SetAttributeValue("IsEstimated", false);
+
+        var restored = new UnivariateAnalysis(
+            analysis.UnivariateDistribution,
+            xElement,
+            analysis.BayesianAnalysis.Results,
+            analysis.AnalysisResults);
+
+        Assert.IsTrue(restored.IsEstimated,
+            "Complete persisted Bayesian artifacts must repair a false outer IsEstimated flag.");
+        Assert.IsTrue(restored.BayesianAnalysis.IsEstimated,
+            "Nested BayesianAnalysis estimated state should survive restore.");
+
+        double modeCurveBefore = restored.AnalysisResults!.ModeCurve![0];
+        restored.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMode;
+
+        bool updated = await WaitFor(() =>
+            restored.AnalysisResults?.ModeCurve != null &&
+            Math.Abs(restored.AnalysisResults.ModeCurve[0] - modeCurveBefore) > 1e-9);
+
+        Assert.IsTrue(updated,
+            "Changing PointEstimator must reprocess restored results instead of returning through the unestimated gate.");
     }
 
     /// <summary>Verifies that credible interval width change preserves results reference for estimated analysis.</summary>

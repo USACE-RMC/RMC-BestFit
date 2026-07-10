@@ -1,9 +1,9 @@
 using RMC.BestFit.Models.SpatialExtremes;
 
-namespace RMC.BestFit.Tests.SpatialExtremesModels;
+namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
-/// Unit tests for the <see cref="SpatialRegressionErrors"/> class.
+/// Unit tests for the <c>SpatialRegressionErrors</c> class.
 /// Tests the Gaussian Process model for spatially correlated regression errors.
 /// </summary>
 /// <remarks>
@@ -14,7 +14,7 @@ namespace RMC.BestFit.Tests.SpatialExtremesModels;
 ///     <item>Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil</item>
 /// </list>
 /// <para>
-///     The <see cref="SpatialRegressionErrors"/> class models spatially correlated errors in
+///     The <c>SpatialRegressionErrors</c> class models spatially correlated errors in
 ///     regression parameters following Renard's BHM framework. The errors follow a multivariate
 ///     normal distribution: ε ~ MVN(0, Σ) where Σ_ij = σ² * ρ(h_ij).
 /// </para>

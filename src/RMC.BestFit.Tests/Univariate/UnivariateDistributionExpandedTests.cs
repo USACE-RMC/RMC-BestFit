@@ -2,12 +2,12 @@ using Numerics.Distributions;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Expanded programmatic unit tests for <see cref="UnivariateDistribution"/> targeting
+/// Expanded programmatic unit tests for <c>UnivariateDistribution</c> targeting
 /// nonstationary configuration, the <c>GenerateRandomValues</c> simulation surface,
 /// validation edge cases, Clone deep-copy contract, and the static type-support
 /// helpers — none of which require running an estimator.
@@ -24,7 +24,7 @@ public class UnivariateDistributionExpandedTests
     /// </summary>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(
                 new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 })
@@ -446,7 +446,7 @@ public class UnivariateDistributionExpandedTests
     public void Validate_LogDistributionWithNegativeData_IsInvalid()
     {
         // Arrange
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(new double[] { -1.0, 5.0, 10.0, 20.0, 100.0 })
         };

@@ -1,21 +1,33 @@
 using System.Collections.Specialized;
 using Numerics.Data;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="IntervalSeries"/> class.
+/// Unit tests for the <c>IntervalSeries</c> class.
 /// Tests construction, mutation, querying, sorting, validation, and serialization.
 /// </summary>
 /// <remarks>
 /// IntervalSeries holds interval-censored observations (e.g., paleoflood estimates) where the
 /// true value lies in <c>[LowerValue, UpperValue]</c>. Validate accepts a parent
-/// <see cref="DataFrame"/> so it can detect overlap with exact / uncertain series.
+/// <c>DataFrame</c> so it can detect overlap with exact / uncertain series.
 /// </remarks>
 [TestClass]
 public class IntervalSeriesTests
 {
+    /// <summary>
+    /// Creates interval.
+    /// </summary>
+    /// <param name="index">The zero-based observation index.</param>
+    /// <param name="lower">The lower bound.</param>
+    /// <param name="value">The value to evaluate.</param>
+    /// <param name="upper">The upper bound.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static IntervalData MakeInterval(int index, double lower, double value, double upper)
         => new IntervalData(index, lower, value, upper);
 
@@ -174,7 +186,7 @@ public class IntervalSeriesTests
     [TestMethod]
     public void Test_Validate_OverlapsWithExactSeries_FailsValidation()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries([new ExactData(1500, 70_000)])
         };

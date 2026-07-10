@@ -5,12 +5,14 @@ using Numerics.Distributions.Copulas;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.SpatialExtremes;
 using RMC.BestFit.Models.TrendFunctions;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitRatingCurve = RMC.BestFit.Models.RatingCurve;
 
 namespace RMC.BestFit.Tests.Models;
 
 /// <summary>
 /// Locks in the <c>SetDefaultParameters</c> / <c>SetDefaultQuantilePriors</c> property-change
-/// contract: every compliant model raises its method name as the <see cref="INotifyPropertyChanged"/>
+/// contract: every compliant model raises its method name as the <c>INotifyPropertyChanged</c>
 /// signal. App XAML controls (<c>ParameterPriorsControl</c>, <c>QuantilePriorsControl</c>,
 /// <c>B17CAnalysisPropertiesControl</c>) subscribe to those method-name events and rely on the
 /// raise firing AFTER the parameter / quantile-prior list is fully populated.
@@ -27,7 +29,7 @@ public class SetDefaultRaiseTests
     #region Helpers
 
     /// <summary>
-    /// Captures every <see cref="PropertyChangedEventArgs.PropertyName"/> the subject raises
+    /// Captures every <c>PropertyChangedEventArgs.PropertyName</c> the subject raises
     /// and returns the capture list. Caller invokes the operation to exercise after subscribing.
     /// </summary>
     private static List<string?> CapturePropertyNames(INotifyPropertyChanged subject, Action invoke)
@@ -61,9 +63,17 @@ public class SetDefaultRaiseTests
         74.1, 87.6, 82.8, 76.3, 91.5, 69.2, 86.0, 80.4, 73.5, 89.1
     };
 
-    private static DataFrame BuildExactDataFrame(double[] values)
+    /// <summary>
+    /// Builds exact Data Frame.
+    /// </summary>
+    /// <param name="values">The input values.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame BuildExactDataFrame(double[] values)
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < values.Length; i++)
             data.Add(new ExactData { Index = 1980 + i, Value = values[i] });
@@ -278,7 +288,7 @@ public class SetDefaultRaiseTests
 
     #endregion
 
-    #region RatingCurve
+    #region BestFitRatingCurve
 
     /// <summary>Verifies that rating curve set default parameters raises method name.</summary>
     [TestMethod]
@@ -376,7 +386,7 @@ public class SetDefaultRaiseTests
     /// <summary>
     /// Regression for the reported bug: changing <c>NumberOfSegments</c> on the rating-curve model
     /// rebuilds the parameter list via <c>SetDefaultParameters</c>, and the wrapping
-    /// <see cref="RatingCurveAnalysis"/> must re-run <c>SetDefaultSimulationOptions</c> so the DEMCzs
+    /// <c>RatingCurveAnalysis</c> must re-run <c>SetDefaultSimulationOptions</c> so the DEMCzs
     /// <c>NumberOfChains</c> reflects the new parameter count. Prior to widening the listener to also
     /// match <c>nameof(SetDefaultParameters)</c>, the model-layer raise was silently dropped.
     /// </summary>
@@ -405,8 +415,8 @@ public class SetDefaultRaiseTests
 
     /// <summary>
     /// Regression coverage for the canonical path: changing <c>Distribution</c> on a
-    /// <see cref="UnivariateDistribution"/> rebuilds parameters via <c>SetDefaultParameters</c>,
-    /// and <see cref="UnivariateAnalysis"/> must re-run <c>SetDefaultSimulationOptions</c>.
+    /// <c>UnivariateDistribution</c> rebuilds parameters via <c>SetDefaultParameters</c>,
+    /// and <c>UnivariateAnalysis</c> must re-run <c>SetDefaultSimulationOptions</c>.
     /// </summary>
     [TestMethod]
     public void UnivariateAnalysis_DistributionTypeChange_UpdatesBayesianDefaults()

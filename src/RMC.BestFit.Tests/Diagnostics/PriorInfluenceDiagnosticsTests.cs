@@ -6,8 +6,8 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Unit tests for <see cref="PriorInfluenceDiagnostics"/> and the nested
-/// <see cref="PriorComponentSummary"/> struct.
+/// Unit tests for <c>PriorInfluenceDiagnostics</c> and the nested
+/// <c>PriorComponentSummary</c> struct.
 /// </summary>
 /// <remarks>
 /// Tests cover: empty constructor, components constructor, XML serialization,
@@ -21,14 +21,14 @@ public class PriorInfluenceDiagnosticsTests
     #region Helpers
 
     /// <summary>
-    /// Creates a <see cref="PriorComponentSummary"/> with the given type and mean LL.
+    /// Creates a <c>PriorComponentSummary</c> with the given type and mean LL.
     /// </summary>
     private static PriorComponentSummary MakeSummary(
         string name, PriorComponentType type, double mean, double sd = 0.1, double min = -5.0, double max = 0.0)
         => new PriorComponentSummary(name, type, mean, sd, min, max);
 
     /// <summary>
-    /// Constructs a <see cref="PriorInfluenceDiagnostics"/> with specific
+    /// Constructs a <c>PriorInfluenceDiagnostics</c> with specific
     /// <c>TotalPriorLogLikelihood</c>, <c>TotalDataLogLikelihood</c>, and derived
     /// <c>PriorToDataRatio</c> by building an XElement and round-tripping through
     /// the XML constructor.
@@ -50,7 +50,7 @@ public class PriorInfluenceDiagnosticsTests
     /// <param name="totalPriorLL">Total prior log-likelihood to inject.</param>
     /// <param name="totalDataLL">Total data log-likelihood to inject.</param>
     /// <param name="components">Optional component summaries to serialize as child elements.</param>
-    /// <returns>A <see cref="PriorInfluenceDiagnostics"/> instance with the specified Total* values and a ratio computed from the same formula the production code uses: |prior| / (|prior| + |data|).</returns>
+    /// <returns>A <c>PriorInfluenceDiagnostics</c> instance with the specified Total* values and a ratio computed from the same formula the production code uses: |prior| / (|prior| + |data|).</returns>
     private static PriorInfluenceDiagnostics CreateDiagnosticsForTesting(
         double totalPriorLL, double totalDataLL,
         PriorComponentSummary[]? components = null)
@@ -112,14 +112,14 @@ public class PriorInfluenceDiagnosticsTests
     /// </summary>
     /// <remarks>
     /// The canonical production path is
-    /// <see cref="BayesianAnalysis.ComputePriorInfluenceDiagnostics"/> →
+    /// <c>BayesianAnalysis.ComputePriorInfluenceDiagnostics</c> →
     /// <c>new PriorInfluenceDiagnostics(Model, Results, thinEvery)</c>, which invokes
     /// <c>ComputeFromPosterior</c> to populate Total* from MCMC posterior samples.
     /// The <c>(components)</c> constructor is a partial constructor intended for
-    /// exercising the component-array APIs (<see cref="PriorInfluenceDiagnostics.GetComponentsByType"/>,
-    /// <see cref="PriorInfluenceDiagnostics.GetMostConstrainingComponents"/>, etc.)
+    /// exercising the component-array APIs (<c>PriorInfluenceDiagnostics.GetComponentsByType</c>,
+    /// <c>PriorInfluenceDiagnostics.GetMostConstrainingComponents</c>, etc.)
     /// in isolation. Tests requiring specific ratio / influence scenarios should use
-    /// <see cref="CreateDiagnosticsForTesting"/>.
+    /// <c>CreateDiagnosticsForTesting</c>.
     /// </remarks>
     [TestMethod]
     public void Constructor_Components_StoresArray_TotalsRemainDefault()
@@ -161,13 +161,13 @@ public class PriorInfluenceDiagnosticsTests
     #region PriorToDataRatio / IsPriorInfluential Tests
 
     /// <summary>
-    /// <see cref="PriorInfluenceDiagnostics.IsPriorInfluential"/> returns false when
+    /// <c>PriorInfluenceDiagnostics.IsPriorInfluential</c> returns false when
     /// the data dominates the prior (<c>PriorToDataRatio &lt; 0.20</c>).
     /// </summary>
     /// <remarks>
     /// Constructs the diagnostic via XML so specific Total* values can be injected —
     /// the <c>(components)</c> constructor does not populate these fields
-    /// (see <see cref="Constructor_Components_StoresArray_TotalsRemainDefault"/>).
+    /// (see <c>Constructor_Components_StoresArray_TotalsRemainDefault</c>).
     /// With prior LL = −0.1 and data LL = −10.0, the ratio is 0.1 / 10.1 ≈ 0.0099,
     /// well below the 0.20 influence threshold.
     /// </remarks>
@@ -182,7 +182,7 @@ public class PriorInfluenceDiagnosticsTests
     }
 
     /// <summary>
-    /// <see cref="PriorInfluenceDiagnostics.IsPriorInfluential"/> returns true when
+    /// <c>PriorInfluenceDiagnostics.IsPriorInfluential</c> returns true when
     /// the prior dominates the data (<c>PriorToDataRatio &gt; 0.20</c>).
     /// </summary>
     /// <remarks>
@@ -200,7 +200,7 @@ public class PriorInfluenceDiagnosticsTests
     }
 
     /// <summary>
-    /// <see cref="PriorInfluenceDiagnostics.IsPriorInfluential"/> sits right at the
+    /// <c>PriorInfluenceDiagnostics.IsPriorInfluential</c> sits right at the
     /// 0.20 boundary — only strictly greater than 0.20 is considered influential.
     /// </summary>
     /// <remarks>
@@ -412,7 +412,7 @@ public class PriorInfluenceDiagnosticsTests
     /// summary statistics (non-zero Total* and derived ratio).
     /// </summary>
     /// <remarks>
-    /// Uses <see cref="CreateDiagnosticsForTesting"/> so the "original" has meaningful
+    /// Uses <c>CreateDiagnosticsForTesting</c> so the "original" has meaningful
     /// (non-zero) Total* values; otherwise the round-trip assertions would trivially
     /// compare 0 == 0 and miss serializer defects.
     /// </remarks>

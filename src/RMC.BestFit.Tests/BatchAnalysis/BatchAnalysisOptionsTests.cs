@@ -3,7 +3,7 @@ using RMC.BestFit.Analyses;
 namespace RMC.BestFit.Tests.BatchAnalysis;
 
 /// <summary>
-/// Unit tests for the <see cref="BatchAnalysisOptions"/> configuration class.
+/// Unit tests for the <c>BatchAnalysisOptions</c> configuration class.
 /// </summary>
 [TestClass]
 public class BatchAnalysisOptionsTests

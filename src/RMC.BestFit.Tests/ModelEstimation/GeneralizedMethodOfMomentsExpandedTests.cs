@@ -2,10 +2,10 @@ using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Expanded programmatic unit tests for <see cref="GeneralizedMethodOfMoments"/>.
+/// Expanded programmatic unit tests for <c>GeneralizedMethodOfMoments</c>.
 /// Exercises configuration round-trip on every public property setter and
 /// pre-estimation invariants on the read-only outputs.
 /// </summary>

@@ -2,11 +2,12 @@ using System.Collections.Specialized;
 using Numerics.Data;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="UncertainSeries"/> class.
+/// Unit tests for the <c>UncertainSeries</c> class.
 /// Tests construction, sorting, validation, and serialization.
 /// </summary>
 /// <remarks>
@@ -17,6 +18,16 @@ namespace RMC.BestFit.Tests.InputDataFrame;
 [TestClass]
 public class UncertainSeriesTests
 {
+    /// <summary>
+    /// Creates uncertain.
+    /// </summary>
+    /// <param name="index">The zero-based observation index.</param>
+    /// <param name="mean">The mean value.</param>
+    /// <param name="stdev">The standard deviation value.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UncertainData MakeUncertain(int index, double mean, double stdev)
         => new UncertainData(index, new Normal(mean, stdev));
 
@@ -162,7 +173,7 @@ public class UncertainSeriesTests
     [TestMethod]
     public void Test_Validate_OverlapsWithExactSeries_FailsValidation()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries([new ExactData(1889, 50_000)])
         };

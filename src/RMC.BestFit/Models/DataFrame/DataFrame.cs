@@ -99,6 +99,9 @@ namespace RMC.BestFit.Models
 
         #region Members
 
+        /// <summary>
+        /// Occurs when a data-frame property changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
         private ExactSeries _exactSeries = new ExactSeries();
         private UncertainSeries _uncertainSeries = new UncertainSeries();
@@ -188,7 +191,7 @@ namespace RMC.BestFit.Models
         /// <remarks>
         /// <para>
         /// Thread-safe for concurrent readers. The getter uses a double-checked-locking pattern
-        /// with <see cref="Volatile.Read{T}(ref T)"/> on the fast path so MCMC hot loops that
+        /// with <c>Volatile.Read</c> on the fast path so MCMC hot loops that
         /// iterate <see cref="FullTimeSeries"/> do not take a lock. The rebuild branch acquires
         /// <c>_syncRoot</c>, which is also taken by <see cref="CreateFullTimeSeries"/> and
         /// <see cref="ProcessThresholdSeries"/>.
@@ -2035,13 +2038,14 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="siteNumber">The USGS site number.</param>
         /// <param name="timeSeriesType">The type of time series to download. Default = PeakDischarge.</param>
+        /// <param name="cancellationToken">Token used to cancel the USGS download.</param>
         /// <exception cref="ArgumentException">Thrown when time series type is not peak discharge or peak stage.</exception>
-        public async Task CreateFromUSGS(string siteNumber, TimeSeriesDownload.TimeSeriesType timeSeriesType = TimeSeriesDownload.TimeSeriesType.PeakDischarge)
+        public async Task CreateFromUSGS(string siteNumber, TimeSeriesDownload.TimeSeriesType timeSeriesType = TimeSeriesDownload.TimeSeriesType.PeakDischarge, CancellationToken cancellationToken = default)
         {
             if (timeSeriesType != TimeSeriesDownload.TimeSeriesType.PeakDischarge && timeSeriesType != TimeSeriesDownload.TimeSeriesType.PeakStage)
                 throw new ArgumentException("The time series type must be peak discharge or peak stage", nameof(timeSeriesType));
 
-            var result = await TimeSeriesDownload.FromUSGS(siteNumber, timeSeriesType);
+            var result = await TimeSeriesDownload.FromUSGS(siteNumber, timeSeriesType, cancellationToken);
             var timeSeries = result.TimeSeries;
             _usgsRawText = result.RawText;
 

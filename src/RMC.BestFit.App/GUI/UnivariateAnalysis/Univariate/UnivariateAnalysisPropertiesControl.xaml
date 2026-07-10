@@ -1,0 +1,266 @@
+﻿<UserControl x:Class="RMC_BestFit.UnivariateAnalysisPropertiesControl" x:Name="UnivariateAnalysisProperties"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             xmlns:numcntrls="clr-namespace:NumericControls;assembly=NumericControls"
+             mc:Ignorable="d" 
+             MinWidth="100"
+             MinHeight="100"
+             d:DesignHeight="450" d:DesignWidth="800"
+             KeyDown="UnivariateAnalysisProperties_KeyDown"
+             Background="{DynamicResource PropertyGrid.Content.Background}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/GenericControls;Component/Resources/ResourceDictionary.xaml"/>
+                <ResourceDictionary>
+                    <cntrls:DoubleToGridLengthConverter x:Key="ActualToLengthConverter" />
+                    <cntrls:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+                    <cntrls:ReverseBooleanConverter x:Key="ReverseBoolConverter"/>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10000000*" MinHeight="200"/>
+            <RowDefinition Height="*" MinHeight="1"/>
+            <RowDefinition Height="Auto" MinHeight="50" MaxHeight="200" />
+        </Grid.RowDefinitions>
+        <ScrollViewer x:Name="Viewer" Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Grid x:Name="MainGrid" Width="{Binding ElementName=Viewer, Path=ViewportWidth}" MinWidth="200" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TabControl Background="Transparent" DockPanel.Dock="Top" BorderBrush="Transparent" BorderThickness="0" Padding="0" Margin="0,5,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                    <TabControl.Resources>
+                        <Style TargetType="{x:Type TabPanel}">
+                            <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        </Style>
+                    </TabControl.Resources>
+                    <TabItem x:Name="General_TabItem" Header="General" Style="{StaticResource PropertiesTabItemStyle}" PreviewMouseLeftButtonDown="TabItem_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Function Properties-->
+                            <Expander x:Name="PropertiesExpander" Grid.Row="0" 
+                            Margin="0,4,4,8" 
+                            Header="UNIVARIATE ANALYSIS PROPERTIES" 
+                            IsExpanded="True" 
+                            Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel>
+
+                                    <cntrls:NameTextPropertyControl x:Name="ElementName" Margin="0 2" CharacterLimit="50" DockPanel.Dock="Top" Title="Name" MaxPropertyWidth="200"
+                                                        Text="{Binding Element.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="Name_PreviewMouseLeftButtonDown"
+                                                        PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"
+                                                        GotFocus="Name_GotFocus" LostFocus="Name_LostFocus"/>
+
+                                    <cntrls:ResizeableTextPropertyControl x:Name="Description" Margin="0 2" DockPanel.Dock="Top" Title="Description" MaxPropertyWidth="200" 
+                                                                Text="{Binding Element.Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="Description_PreviewMouseLeftButtonDown"
+                                                                PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                                    <cntrls:TextPropertyControl x:Name="CreationDate" Margin="0 2" DockPanel.Dock="Top" Title="Created On" MaxPropertyWidth="200" IsReadOnly="True"
+                                                    Text="{Binding Element.CreationDate, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="CreationDate_PreviewMouseLeftButtonDown"
+                                                    PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                                    <cntrls:TextPropertyControl x:Name="LastModified" Margin="0 2" DockPanel.Dock="Top" Title="Last Modified" MaxPropertyWidth="200" IsReadOnly="True" 
+                                                    Text="{Binding Element.LastModified, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="LastModified_PreviewMouseLeftButtonDown"/>
+
+                                    <!--Input Data-->
+                                    <cntrls:ContentPropertyControl x:Name="InputDataComboBox" Margin="0 2" DockPanel.Dock="Top" Title="Input Data" MaxPropertyWidth="200"
+                                                PreviewMouseLeftButtonDown="InputData_PreviewMouseLeftButtonDown" ToolTip="Please select a valid input data."
+                                                PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                                        <cntrls:ContentPropertyControl.InnerContent>
+                                            <Border BorderBrush="Red" BorderThickness="1" Visibility="Visible">
+                                                <ComboBox HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Loaded="ComboBox_Loaded"
+                                            SelectedValue="{Binding Element.InputData, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            DisplayMemberPath="Name" SelectionChanged="InputDataComboBox_SelectionChanged">
+                                                </ComboBox>
+                                            </Border>
+                                        </cntrls:ContentPropertyControl.InnerContent>
+                                    </cntrls:ContentPropertyControl>
+
+                                    <!--Distribution-->
+                                    <cntrls:ContentPropertyControl x:Name="Distribution" Margin="0 2" DockPanel.Dock="Top" Title="Distribution" MaxPropertyWidth="200"
+                                        PreviewMouseLeftButtonDown="Distribution_PreviewMouseLeftButtonDown"
+                                        PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"  >
+                                        <cntrls:ContentPropertyControl.InnerContent>
+                                            <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            ItemsSource="{Binding DistributionList, UpdateSourceTrigger=PropertyChanged}"
+                                            SelectedValue="{Binding Element.UnivariateDistribution.DistributionType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            DisplayMemberPath="DisplayName" SelectedValuePath="Value" SelectionChanged="DistributionComboBox_SelectionChanged"
+                                            Loaded="DistributionComboBox_Loaded">
+                                            </ComboBox>
+                                        </cntrls:ContentPropertyControl.InnerContent>
+                                    </cntrls:ContentPropertyControl>
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Parameter Priors-->
+                            <Expander x:Name="ParameterPriorsExpander" Grid.Row="1" 
+                            Margin="0,4,4,8" 
+                            Header="PARAMETER PRIORS" 
+                            IsExpanded="True" 
+                            Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel >
+                                    <local:ParameterPriorsControl x:Name="ParameterPriorsControl" DockPanel.Dock="Top" Model="{Binding ElementName=UnivariateAnalysisProperties, Path=Element.UnivariateDistribution, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                                        ShowPropertyAttributes="ParameterPriorsControl_ShowPropertyAttributes"/>
+
+                                    <!--Use Default Flat Priors-->
+                                    <cntrls:BooleanPropertyControl x:Name="UseJeffreysRule" Margin="0 2" Grid.Row="1" Title="Use Jeffreys' Rule for Scale"
+                                       PreviewMouseLeftButtonDown="UseJeffreysRule_PreviewMouseLeftButtonDown"
+                                       IsSelected="{Binding Element.UnivariateDistribution.UseJeffreysRuleForScale, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  />
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Quantile Priors-->
+                            <Expander x:Name="QuantilePriorsExpander" Grid.Row="2" 
+                            Margin="0,4,4,8" 
+                            Header="QUANTILE PRIORS" 
+                            IsExpanded="True" 
+                            Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel >
+
+                                    <local:QuantilePriorsControl x:Name="QuantilePriorsControl" DockPanel.Dock="Top" Model="{Binding ElementName=UnivariateAnalysisProperties, Path=Element.UnivariateDistribution, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                                        ShowPropertyAttributes="QuantilePriorsControl_ShowPropertyAttributes"/>
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Estimate Button-->
+                            <Grid Grid.Row="3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ProgressBar x:Name="ProgressBar" Minimum="0" Maximum="100" Value="0" Height="24" Margin="2,5,4,0" Grid.Column="0" Visibility="Hidden" Background="{DynamicResource ProgressBar.Static.Background}" Foreground="{DynamicResource ProgressBar.Static.Foreground}" BorderBrush="{DynamicResource ProgressBar.Static.Border}"/>
+                                <TextBlock x:Name="ProgressTextBlock" Text="0%" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="2,5,4,0" Grid.Column="0" Visibility="Hidden" Foreground="{DynamicResource EnvironmentWindowText}"/>
+                                <Button Name="EstimateButton" ToolTip="Click to run the analysis" Grid.Row="0" Grid.Column="1"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                            Width="83" Height="24" Margin="0,5,5,0" Cursor="Hand" Click="EstimateButton_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ContentControl Content="{DynamicResource RunIcon}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Estimate" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="CancelButton" ToolTip="Click to cancel the analysis" Grid.Row="0" Grid.Column="1"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                                Visibility="Hidden" Width="83" Height="24" Margin="0,5,5,0" Cursor="Hand" Click="CancelButton_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ContentControl Content="{DynamicResource StopIcon}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Cancel" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="Options_TabItem" Header="Options" Style="{StaticResource PropertiesTabItemStyle}" PreviewMouseLeftButtonDown="TabItem_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Quantile Priors-->
+                            <Expander Grid.Row="0" 
+                        Margin="0,4,4,8" 
+                        Header="MODEL OPTIONS" 
+                        IsExpanded="True" 
+                        Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel >
+
+                                    <!--Is Nonstationary-->
+                                    <cntrls:BooleanPropertyControl x:Name="IsNonstationary" Margin="0 2" DockPanel.Dock="Top" Title="Nonstationary" PreviewMouseLeftButtonDown="IsNonstationary_PreviewMouseLeftButtonDown" Checked="IsNonstationary_Checked" Unchecked="IsNonstationary_Unchecked"
+                                    IsSelected="{Binding Element.UnivariateDistribution.IsNonstationary, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+
+                                    <!--Time Step-->
+                                    <cntrls:NumericPropertyControl x:Name="ParameterTimeStep" Margin="0 2" DockPanel.Dock="Top" Title="Time Index" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="ParameterTimeStep_PreviewMouseLeftButtonDown" 
+                                    CanHaveNegative="True" Number="{Binding Element.UnivariateDistribution.ParameterTimeIndex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                    IsTextBoxEnabled="{Binding IsSelected, ElementName=IsNonstationary, UpdateSourceTrigger=PropertyChanged }"
+                                    PropertyWidth="{Binding ElementName=BayesianOptionsControl, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                                    <!--Alpha-->
+                                    <cntrls:NumericPropertyControl x:Name="Alpha" Margin="0 2" DockPanel.Dock="Top" Title="Alpha" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="Alpha_PreviewMouseLeftButtonDown"
+                                    CanHaveNegative="False" IncludeBounds="True" MinValue="0" MaxValue="1" Number="{Binding Element.UnivariateDistribution.Alpha, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                    IsTextBoxEnabled="{Binding IsSelected, ElementName=IsNonstationary, UpdateSourceTrigger=PropertyChanged }"
+                                    PropertyWidth="{Binding ElementName=BayesianOptionsControl, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+
+                                    <!--Trend Model Data Grid Visibility="{Binding ElementName=IsNonstationary, Path=IsSelected, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource BoolToVisConverter}}"-->
+                                    <cntrls:CopyPasteDataGrid Name="TrendModelDataGrid" Margin="0,4,0,0" Grid.Row="0" HeadersVisibility="Column" Style="{DynamicResource CopyPasteDataGridStyle}"
+                                                    SelectionMode="Extended" SelectionUnit="Cell" IsReadOnly="True" AutoGenerateColumns="False"
+                                                    CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeColumns="True" CanUserAddInsertDeleteRows="False"
+                                                    CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False" 
+                                                    PreviewMouseLeftButtonDown="TrendModelDataGrid_PreviewMouseLeftButtonDown" >
+                                        <cntrls:CopyPasteDataGrid.Columns>
+                                            <DataGridTextColumn x:Name="ParameterNameColumn" Header="Parameter" IsReadOnly="True" Width="0.5*" Binding="{Binding Path=Name}"
+                                                HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" CellStyle="{DynamicResource Left_CellStyle}"/>
+                                            <DataGridTemplateColumn x:Name="TrendModelColumn" Header="Trend Model Type" IsReadOnly="False" Width="0.5*" HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}"  >
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <ComboBox x:Name="TrendModelComboBox" SelectionChanged="TrendModelComboBox_SelectionChanged" Height="22"
+                                                    IsEnabled="{Binding IsSelected, ElementName=IsNonstationary, UpdateSourceTrigger=PropertyChanged}"
+                                                    ItemsSource="{Binding ElementName=UnivariateAnalysisProperties, Path=TrendFunctionItems}" 
+                                                    SelectedValue="{Binding Value, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                    DisplayMemberPath="DisplayName" SelectedValuePath="Value" />
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </cntrls:CopyPasteDataGrid.Columns>
+                                    </cntrls:CopyPasteDataGrid>
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Bayesian Options Control-->
+                            <local:BayesianOptionsControl x:Name="BayesianOptionsControl" Grid.Row="1" Analysis="{Binding ElementName=UnivariateAnalysisProperties, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                ShowPropertyAttributes="BayesianOptionsControl_ShowPropertyAttributes"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="Output_TabItem" Header="Output" Style="{StaticResource PropertiesTabItemStyle}" PreviewMouseLeftButtonDown="TabItem_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Bayesian Output Control-->
+                            <local:BayesianOutputControl x:Name="BayesianOutputControl" Grid.Row="0" Analysis="{Binding ElementName=UnivariateAnalysisProperties, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                ShowPropertyAttributes="BayesianOutputControl_ShowPropertyAttributes"/>
+
+                            <!--Probability Ordinates-->
+                            <Expander Grid.Row="1" 
+                                Margin="0,4,4,8" 
+                                Header="PROBABILITY ORDINATES" 
+                                IsExpanded="True" 
+                                Grid.ColumnSpan="2"
+                                Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel >
+                                    <!--Probability Ordinates-->
+                                    <numcntrls:ProbabilityOrdinatesControl ProbabilityOrdinates="{Binding ElementName=UnivariateAnalysisProperties, Path=Element.ProbabilityOrdinates, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="ProbabilityOrdinatesControl_PreviewMouseLeftButtonDown"/>
+                                </DockPanel>
+                            </Expander>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </ScrollViewer>
+        <!--Property Attributes-->
+        <GridSplitter Grid.Row="1" Height="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Background="{DynamicResource SeparatorBorder}"/>
+        <cntrls:PropertyAttributes x:Name="PropertyAttributes" Grid.Row="2"/>
+    </Grid>
+</UserControl>

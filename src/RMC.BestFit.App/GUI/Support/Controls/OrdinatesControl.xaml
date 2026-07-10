@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="RMC_BestFit.OrdinatesControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="{DynamicResource PropertyGrid.Content.Background}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <!--Ordinates-->
+        <cntrls:DataGridToolbar Grid.Row="0" Name="DataGridToolBar" DataGrid="{Binding ElementName=DataGrid, Mode=OneTime}" ToolOrientation="Horizontal"/>
+        <cntrls:ValidationDataGrid Grid.Row="1" Name="DataGrid" AutoGenerateColumns="True" SelectionMode="Extended" SelectionUnit="CellOrRowHeader" IsReadOnly="False"
+                                      CanUserAddInsertDeleteRows="True" CanUserDeleteRows="True" CanUserAddRows="False" CanUserResizeRows="False" 
+                                      CanUserResizeColumns="True" CanUserSortColumns="False" CanUserReorderColumns="False" PasteAddsRows="True" MaxHeight="650"
+                                      AutoGeneratingColumn="DataGrid_AutoGeneratingColumn" RowsAdded="DataGrid_RowsAdded" RowsDeleted="DataGrid_RowsDeleted"   
+                                      ColumnHeaderStyle="{DynamicResource Center_ColumnHeaderStyle}">
+        </cntrls:ValidationDataGrid>
+    </Grid>
+</UserControl>

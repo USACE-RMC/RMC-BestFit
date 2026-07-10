@@ -5,21 +5,21 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Tests for the nonstationary <see cref="UnivariateDistribution.NonstationaryData_LogLikelihood"/>
+/// Tests for the nonstationary <c>UnivariateDistribution.NonstationaryData_LogLikelihood</c>
 /// hot path — both correctness (the value is unchanged after the FullTimeSeries-caching
 /// optimization) and a coarse performance smoke test.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Pre-fix, every iteration of the inner loop accessed
-/// <see cref="DataFrame.FullTimeSeries"/> twice (once for the loop condition, once for
+/// <c>DataFrame.FullTimeSeries</c> twice (once for the loop condition, once for
 /// the indexer). The property getter performs a <c>Volatile.Read</c> plus a call to
-/// <see cref="DataFrame.TotalRecordLength"/> on each access, producing 2N+1 getter calls
+/// <c>DataFrame.TotalRecordLength</c> on each access, producing 2N+1 getter calls
 /// per MCMC iteration in addition to N array allocations for the per-time-step
 /// <c>values</c> buffer. The fix caches the reference once outside the loop and reuses
 /// a single <c>values</c> buffer.
@@ -32,9 +32,16 @@ public class NonstationaryLogLikelihoodHotPathTests
     private static readonly double[] InlineFloodData = new Normal(15000.0, 5000.0)
         .GenerateRandomValues(FixtureSize, 42);
 
-    private static DataFrame CreateDataFrame()
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
             df.ExactSeries.Add(new ExactData(1960 + i, InlineFloodData[i]));
         return df;
@@ -55,6 +62,15 @@ public class NonstationaryLogLikelihoodHotPathTests
         return dist;
     }
 
+    /// <summary>
+    /// Supports the <c>CallNonstationaryDataLogLikelihood</c> helper.
+    /// </summary>
+    /// <param name="dist">The dist value.</param>
+    /// <param name="parameters">The parameter values.</param>
+    /// <returns>The numeric data.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static double CallNonstationaryDataLogLikelihood(UnivariateDistribution dist, double[] parameters)
     {
         // The NS data log-likelihood is public; call it via the same path BayesianAnalysis uses.
@@ -88,7 +104,7 @@ public class NonstationaryLogLikelihoodHotPathTests
     }
 
     /// <summary>
-    /// Repeated calls to <see cref="UnivariateDistribution.NonstationaryData_LogLikelihood"/>
+    /// Repeated calls to <c>UnivariateDistribution.NonstationaryData_LogLikelihood</c>
     /// at the same parameters return the same value bit-for-bit. The reusable values
     /// buffer introduced by Fix B must not leak state across calls.
     /// </summary>

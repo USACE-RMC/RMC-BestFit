@@ -1,10 +1,11 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.UnivariateAnalyses;
+namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Unit tests for the <see cref="CompetingRisksModel"/> class.
+/// Unit tests for the <c>CompetingRisksModel</c> class.
 /// Tests competing risks models for multiple flood-generating processes.
 /// </summary>
 /// <remarks>
@@ -28,9 +29,9 @@ public class CompetingRisksModelTests
     /// <summary>
     /// Creates a sample data frame with positive exact observations.
     /// </summary>
-    private static DataFrame CreateSampleDataFrame()
+    private static BestFitDataFrame CreateSampleDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>
         {
             new ExactData { Index = 1990, Value = 1500 },
@@ -51,9 +52,9 @@ public class CompetingRisksModelTests
     /// <summary>
     /// Creates a data frame with extreme event characteristics.
     /// </summary>
-    private static DataFrame CreateExtremeEventDataFrame()
+    private static BestFitDataFrame CreateExtremeEventDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
 
         // Regular events
@@ -76,21 +77,21 @@ public class CompetingRisksModelTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <see cref="IntervalData"/> requires a most-likely <c>Value</c> strictly between
+    /// <c>IntervalData</c> requires a most-likely <c>Value</c> strictly between
     /// <c>LowerValue</c> and <c>UpperValue</c>; the object-initializer syntax
     /// <c>new IntervalData { Index = ..., LowerValue = ..., UpperValue = ... }</c> leaves
-    /// <c>Value = 0</c>, which fails <see cref="IntervalData.Validate"/> and cascades to
-    /// an invalid <see cref="DataFrame"/>. Use the 4-argument constructor
+    /// <c>Value = 0</c>, which fails <c>IntervalData.Validate</c> and cascades to
+    /// an invalid <c>DataFrame</c>. Use the 4-argument constructor
     /// <c>new IntervalData(index, lower, value, upper)</c> with a mid-point value so the
-    /// frame validates and <see cref="CompetingRisksModel.SetDefaultParameters"/> populates
-    /// <see cref="CompetingRisksModel.Parameters"/>.
+    /// frame validates and <c>CompetingRisksModel.SetDefaultParameters</c> populates
+    /// <c>CompetingRisksModel.Parameters</c>.
     /// </para>
     /// </remarks>
-    private static DataFrame CreateIntervalDataFrame()
+    private static BestFitDataFrame CreateIntervalDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         // At least 4 exact data points are required because
-        // <see cref="Numerics.Data.Statistics.Statistics.ProductMoments"/> returns
+        // <c>Numerics.Data.Statistics.Statistics.ProductMoments</c> returns
         // all-NaN when N &lt; 4 (see Statistics.cs ~line 481) — and NaN initial values
         // later cause Normal.ValidateParameters to throw "The mean must be a number".
         df.ExactSeries = new ExactSeries(new List<ExactData>
@@ -980,7 +981,7 @@ public class CompetingRisksModelTests
     [TestMethod]
     public void Test_CompetingRisks_SingleDataPoint()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(new List<ExactData>
         {
             new ExactData { Index = 2000, Value = 1000 }
@@ -996,7 +997,7 @@ public class CompetingRisksModelTests
     [TestMethod]
     public void Test_CompetingRisks_LargeValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {
@@ -1015,7 +1016,7 @@ public class CompetingRisksModelTests
     [TestMethod]
     public void Test_CompetingRisks_SmallValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {

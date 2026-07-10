@@ -413,7 +413,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// This is a transient computation object — it is rebuilt each time
-        /// <see cref="Estimate"/> runs and is <c>null</c> after <see cref="RestoreFromXElement"/>
+        /// <c>Estimate</c> runs and is <c>null</c> after <see cref="RestoreFromXElement"/>
         /// (which restores only the persistent output state). Read <see cref="Status"/> instead
         /// of <c>Optimizer.Status</c> for any post-estimation logic that must survive Save/Open.
         /// </remarks>
@@ -458,7 +458,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// Valid only after <see cref="PostProcess"/> completes. Returns <c>null</c>
-        /// while <see cref="Estimate"/> is mid-iteration or before it is called;
+        /// while <c>Estimate</c> is mid-iteration or before it is called;
         /// callers examining <c>Sigma</c> between <c>Estimate()</c> and
         /// <c>PostProcess()</c> see the previous run's value (or null).
         /// </remarks>
@@ -466,7 +466,7 @@ namespace RMC.BestFit.Estimation
 
         /// <summary>
         /// Gets the best parameter set found during estimation. Initialized to an empty
-        /// <see cref="ParameterSet"/> so consumers that bypass <see cref="IsEstimated"/>
+        /// <see cref="ParameterSet"/> so consumers that bypass <c>IsEstimated</c>
         /// get a deterministic empty parameter set rather than an
         /// <see cref="NullReferenceException"/>.
         /// </summary>
@@ -488,13 +488,13 @@ namespace RMC.BestFit.Estimation
         public int GMMIterations { get; private set; }
 
         /// <summary>
-        /// Returns <c>true</c> only when the most recent <see cref="Estimate"/> run
+        /// Returns <c>true</c> only when the most recent <c>Estimate</c> run
         /// reached the convergence tolerance before <see cref="MaxGMMIterations"/>.
         /// </summary>
         /// <remarks>
         /// Useful for callers that want to gate downstream reporting on
         /// tolerance-convergence rather than on best-effort termination. A run that
-        /// hits <see cref="MaxGMMIterations"/> still has <see cref="IsEstimated"/>
+        /// hits <see cref="MaxGMMIterations"/> still has <c>IsEstimated</c>
         /// set to <c>true</c> (the parameter values are valid and "close enough"
         /// per the iterative GMM design) but is reported here as
         /// <c>ConvergedWithinTolerance == false</c>.
@@ -2501,7 +2501,7 @@ namespace RMC.BestFit.Estimation
         /// </para>
         /// <para>
         /// The model's parameter values are set to the restored BestParameterSet values,
-        /// and <see cref="IsEstimated"/> is set to <c>true</c>.
+        /// and <c>IsEstimated</c> is set to <c>true</c>.
         /// </para>
         /// </remarks>
         public void RestoreFromXElement(XElement xElement)

@@ -1668,7 +1668,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// <para>
         /// The prediction includes uncertainty from the kriging variance, which can be used
         /// to construct prediction intervals. For full Bayesian uncertainty propagation,
-        /// use <see cref="SpatialGEVAnalysis.PredictAtUngaugedLocation"/>.
+        /// use <c>PredictAtUngaugedLocation</c>.
         /// </para>
         /// </remarks>
         public (double[] GEVParams, double[] ErrorVariances) PredictAtUngauged(double[] coordinates, double[]? covariates = null)

@@ -1,7 +1,9 @@
-namespace RMC.BestFit.Tests.InputDataFrame;
+using RMC.BestFit.Models;
+
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="ExactData"/> class.
+/// Unit tests for the <c>ExactData</c> class.
 /// Tests exact data observations used in flood frequency analysis.
 /// </summary>
 /// <remarks>

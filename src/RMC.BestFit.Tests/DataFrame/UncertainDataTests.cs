@@ -1,9 +1,10 @@
 using Numerics.Distributions;
+using RMC.BestFit.Models;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="UncertainData"/> class.
+/// Unit tests for the <c>UncertainData</c> class.
 /// Tests uncertain data observations represented by probability distributions.
 /// </summary>
 /// <remarks>

@@ -4,7 +4,7 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.LinkFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="ASinHLink"/> class.
+/// Unit tests for the <c>ASinHLink</c> class.
 /// Verifies round-trip consistency, derivative correctness, centering, monotonicity,
 /// asymmetry behavior, adaptive epsilon, serialization, and edge cases.
 /// </summary>
@@ -414,7 +414,6 @@ public class ASinHLinkTests
     }
 
     /// <summary>
-    /// <summary>
     /// Verifies that δ &gt; 1 ("heavier tails" on the forward link) compresses the inverse
     /// link — a given η maps to a γ closer to γ₀ than under δ = 1.
     /// </summary>
@@ -610,8 +609,8 @@ public class ASinHLinkTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <see cref="Test_RoundTrip_Symmetric_DefaultParams"/> (line ~165) establishes
-    /// round-trip at <see cref="RoundTripTol"/> (1e-10 relative) for |γ| up to 100.
+    /// <c>Test_RoundTrip_Symmetric_DefaultParams</c> (line ~165) establishes
+    /// round-trip at <c>RoundTripTol</c> (1e-10 relative) for |γ| up to 100.
     /// This test extends coverage by one order of magnitude (|γ| up to 1e3). Values
     /// much beyond this drift past the 1e-10 tolerance because the
     /// <c>sinh ∘ asinh ∘ sinh ∘ asinh</c> chain loses ULP resolution as its arguments
@@ -619,7 +618,7 @@ public class ASinHLinkTests
     /// 1e-10 bound but is still orders of magnitude smaller than any physically
     /// meaningful skewness value (real-world |γ| &lt; 10 typically). Larger-γ coverage
     /// at looser tolerance is tracked by separate tests in the
-    /// <see cref="Test_RoundTrip_Symmetric_DefaultParams"/> family.
+    /// <c>Test_RoundTrip_Symmetric_DefaultParams</c> family.
     /// </para>
     /// </remarks>
     [TestMethod]

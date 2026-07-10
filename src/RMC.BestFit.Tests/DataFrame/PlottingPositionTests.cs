@@ -1,12 +1,13 @@
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
-using RMC.BestFit;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for <see cref="DataFrame"/> plotting position calculation methods.
+/// Unit tests for <c>DataFrame</c> plotting position calculation methods.
 /// Validates implementations against HEC-SSP software and the Numerics library.
 /// </summary>
 /// <remarks>
@@ -29,7 +30,7 @@ public class PlottingPositionTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> using Bulletin 17C Example 4, which
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> using Bulletin 17C Example 4, which
     /// demonstrates a real flood frequency analysis with systematic record, historical flood intervals,
     /// and multiple perception thresholds spanning different time periods.
     /// </para>
@@ -55,7 +56,7 @@ public class PlottingPositionTests
         var intPP = new double[] { 0.0091324200913242, 0.0507219548315439, 0.0211032950758978, 0.0045662100456621 };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
 
         // Add exact data
         for (int i = 0; i < sysValues.Length; i++)
@@ -70,10 +71,10 @@ public class PlottingPositionTests
         df.IntervalSeries.Add(new IntervalData(1921, 80000, 90774.44574, 103000));
 
         // Add thresholds
-        df.ThresholdSeries.Add(new ThresholdData(1165, 1858, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1859, 1892, 40000));
-        df.ThresholdSeries.Add(new ThresholdData(1893, 1894, 19900));
-        df.ThresholdSeries.Add(new ThresholdData(1977, 2004, 20000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1165, 1858, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1859, 1892, 40000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1893, 1894, 19900));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1977, 2004, 20000));
 
         // Process thresholds
         df.ProcessThresholdSeries();
@@ -100,7 +101,7 @@ public class PlottingPositionTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> using Bulletin 17C Example 7, which
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> using Bulletin 17C Example 7, which
     /// demonstrates extreme historical record length with paleoflood data. This example includes a systematic
     /// record from 1905-1997 plus 5 historical interval floods dating back to 605 AD, spanning nearly 1,400 years.
     /// </para>
@@ -124,7 +125,7 @@ public class PlottingPositionTests
         var intPP = new double[] { 0.00025, 0.0013043186695279, 0.00264484978540773, 0.00398538090128755, 0.0142509977329467 };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
 
         // Add exact data
         for (int i = 0; i < sysValues.Length; i++)
@@ -140,16 +141,16 @@ public class PlottingPositionTests
         df.IntervalSeries.Add(new IntervalData(1862, 262000, 280356.9154, 300000));
 
         // Add thresholds
-        df.ThresholdSeries.Add(new ThresholdData(1, 1301, 599000));
-        df.ThresholdSeries.Add(new ThresholdData(1302, 1847, 399000));
-        df.ThresholdSeries.Add(new ThresholdData(1848, 1904, 261000));
-        df.ThresholdSeries.Add(new ThresholdData(1910, 1910, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1912, 1913, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1918, 1918, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1929, 1929, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1977, 1977, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1987, 1996, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1998, 2000, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1, 1301, 599000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1302, 1847, 399000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1848, 1904, 261000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1910, 1910, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1912, 1913, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1918, 1918, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1929, 1929, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1977, 1977, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1987, 1996, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1998, 2000, 150000));
 
         // Process thresholds
         df.ProcessThresholdSeries();
@@ -176,8 +177,8 @@ public class PlottingPositionTests
     /// Tests Blom plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Blom parameter (α = 0.375) against
-    /// <see cref="PlottingPositions.Blom"/> from the Numerics library. The Blom formula is approximately
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Blom parameter (α = 0.375) against
+    /// <c>PlottingPositions.Blom</c> from the Numerics library. The Blom formula is approximately
     /// unbiased for the Normal distribution and provides plotting positions: p = (i - 0.375)/(n + 0.25).
     /// This formula is widely used and provides reasonable results for most distribution families.
     /// </remarks>
@@ -192,7 +193,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -214,8 +215,8 @@ public class PlottingPositionTests
     /// Tests Cunnane plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Cunnane parameter (α = 0.4) against
-    /// <see cref="PlottingPositions.Cunnane"/> from the Numerics library. The Cunnane formula provides
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Cunnane parameter (α = 0.4) against
+    /// <c>PlottingPositions.Cunnane</c> from the Numerics library. The Cunnane formula provides
     /// plotting positions: p = (i - 0.4)/(n + 0.2) and is approximately unbiased for the Gumbel and
     /// Generalized Extreme Value (GEV) distributions. This is the recommended formula in USGS Bulletin 17C
     /// for flood frequency analysis.
@@ -231,7 +232,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -253,8 +254,8 @@ public class PlottingPositionTests
     /// Tests Gringorten plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Gringorten parameter (α = 0.44) against
-    /// <see cref="PlottingPositions.Gringorten"/> from the Numerics library. The Gringorten formula provides
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Gringorten parameter (α = 0.44) against
+    /// <c>PlottingPositions.Gringorten</c> from the Numerics library. The Gringorten formula provides
     /// plotting positions: p = (i - 0.44)/(n + 0.12) and is approximately unbiased for the Weibull distribution.
     /// This formula is commonly used in extreme value analysis and provides slightly more conservative
     /// (higher probability) estimates for extreme events compared to Cunnane.
@@ -270,7 +271,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -292,8 +293,8 @@ public class PlottingPositionTests
     /// Tests Hazen plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Hazen parameter (α = 0.5) against
-    /// <see cref="PlottingPositions.Hazen"/> from the Numerics library. The Hazen formula provides plotting
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Hazen parameter (α = 0.5) against
+    /// <c>PlottingPositions.Hazen</c> from the Numerics library. The Hazen formula provides plotting
     /// positions: p = (i - 0.5)/n and is one of the oldest plotting position formulas. It provides the
     /// median plotting position and is symmetric, making it appropriate when no specific distribution
     /// is assumed. The formula is simple but can be biased for some distributions.
@@ -309,7 +310,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -331,8 +332,8 @@ public class PlottingPositionTests
     /// Tests median (APL) plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with median parameter (α = 0.3175) against
-    /// <see cref="PlottingPositions.Median"/> from the Numerics library. The median formula, also known as
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with median parameter (α = 0.3175) against
+    /// <c>PlottingPositions.Median</c> from the Numerics library. The median formula, also known as
     /// the APL (Approximate Probability for Large samples) formula, provides plotting positions:
     /// p = (i - 0.3175)/(n + 0.365) and is approximately median-unbiased for a wide range of distributions.
     /// This formula balances performance across multiple distribution families.
@@ -348,7 +349,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -370,8 +371,8 @@ public class PlottingPositionTests
     /// Tests Weibull plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Weibull parameter (α = 0.0) against
-    /// <see cref="PlottingPositions.Weibull"/> from the Numerics library. The Weibull formula provides the
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Weibull parameter (α = 0.0) against
+    /// <c>PlottingPositions.Weibull</c> from the Numerics library. The Weibull formula provides the
     /// simplest plotting positions: p = i/(n + 1) and is also known as the California formula. While simple,
     /// this formula can be biased for most distributions and tends to underestimate extreme probabilities.
     /// It remains popular due to its intuitive interpretation and historical usage.
@@ -387,7 +388,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));

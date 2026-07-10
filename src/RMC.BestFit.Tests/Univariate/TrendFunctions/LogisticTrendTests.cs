@@ -1,10 +1,10 @@
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="LogisticTrend"/> class.
+/// Unit tests for the <c>LogisticTrend</c> class.
 /// Tests the logistic (sigmoid) trend model y(t) = α / (1 + exp(-β(t - StartIndex))).
 /// </summary>
 [TestClass]

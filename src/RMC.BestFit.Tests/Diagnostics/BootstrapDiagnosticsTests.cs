@@ -3,7 +3,7 @@ using RMC.BestFit.Analyses;
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Unit tests for the <see cref="BootstrapDiagnostics"/> class — the diagnostic
+/// Unit tests for the <c>BootstrapDiagnostics</c> class — the diagnostic
 /// counters collected during parametric / pivot bootstrap runs.
 /// </summary>
 [TestClass]

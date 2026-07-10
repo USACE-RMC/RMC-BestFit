@@ -5,7 +5,7 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="InfluenceDiagnostics"/> class — the PSIS-LOO
+/// Programmatic unit tests for the <c>InfluenceDiagnostics</c> class — the PSIS-LOO
 /// diagnostic container exposing per-observation Pareto k values plus rolled-up summaries.
 /// </summary>
 /// <remarks>
@@ -20,6 +20,16 @@ public class InfluenceDiagnosticsTests
 {
     #region Helpers
 
+    /// <summary>
+    /// Supports the <c>Obs</c> helper.
+    /// </summary>
+    /// <param name="index">The zero-based observation index.</param>
+    /// <param name="k">The k value.</param>
+    /// <param name="elpd">The elpd value.</param>
+    /// <returns>The result.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static ObservationInfluence Obs(int index, double k, double elpd = -2.0)
         => new(index: index, paretoK: k, elpdLoo: elpd, value: index, dataType: DataComponentType.Exact, count: 1);
 

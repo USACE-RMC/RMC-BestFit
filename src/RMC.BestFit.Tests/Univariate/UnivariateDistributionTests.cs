@@ -1,11 +1,11 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="UnivariateDistribution"/> wrapper class.
+/// Programmatic unit tests for the <c>UnivariateDistribution</c> wrapper class.
 /// Construction, parameter management, log-likelihood at fixed parameters, prior evaluation,
 /// serialization, and validation. Estimation-driven tests live in <c>RMC.BestFit.Verification</c>.
 /// </summary>
@@ -36,9 +36,17 @@ public class UnivariateDistributionTests
     /// </summary>
     private static readonly double[] InlineNormalTrueParams = [100.0, 15.0];
 
-    private static DataFrame MakeDataFrame(double[] data)
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <param name="data">The input data.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame MakeDataFrame(double[] data)
     {
-        var df = new DataFrame { ExactSeries = new ExactSeries(data) };
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(data) };
         return df;
     }
 
@@ -64,20 +72,30 @@ public class UnivariateDistributionTests
     public void Test_Constructor_AllDistributionTypes()
     {
         var df = MakeDataFrame(InlineNormalData);
-        var distributionTypes = Enum.GetValues<UnivariateDistributionType>();
+        var distributionTypes = new[]
+        {
+            UnivariateDistributionType.Exponential,
+            UnivariateDistributionType.GammaDistribution,
+            UnivariateDistributionType.GeneralizedExtremeValue,
+            UnivariateDistributionType.GeneralizedLogistic,
+            UnivariateDistributionType.GeneralizedNormal,
+            UnivariateDistributionType.GeneralizedPareto,
+            UnivariateDistributionType.Gumbel,
+            UnivariateDistributionType.KappaFour,
+            UnivariateDistributionType.LnNormal,
+            UnivariateDistributionType.Logistic,
+            UnivariateDistributionType.LogNormal,
+            UnivariateDistributionType.LogPearsonTypeIII,
+            UnivariateDistributionType.Normal,
+            UnivariateDistributionType.PearsonTypeIII,
+            UnivariateDistributionType.Weibull
+        };
 
         foreach (var distType in distributionTypes)
         {
-            try
-            {
-                var model = new UnivariateDistribution(df, distType);
-                Assert.IsNotNull(model.Distribution, $"{distType}: Distribution should not be null.");
-                Assert.IsNotNull(model.Parameters, $"{distType}: Parameters should not be null.");
-            }
-            catch (Exception ex) when (ex is not AssertFailedException)
-            {
-                Assert.Inconclusive($"{distType}: {ex.Message}");
-            }
+            var model = new UnivariateDistribution(df, distType);
+            Assert.IsNotNull(model.Distribution, $"{distType}: Distribution should not be null.");
+            Assert.IsNotNull(model.Parameters, $"{distType}: Parameters should not be null.");
         }
     }
 
@@ -316,7 +334,7 @@ public class UnivariateDistributionTests
         Assert.IsTrue(isValid, $"Validation failed: {string.Join(", ", messages)}");
     }
 
-    // Note: An empty DataFrame currently passes validation in the model layer
+    // Note: An empty BestFitDataFrame currently passes validation in the model layer
     // (empty series and zero data points are not flagged as errors). The "model with
     // no data should fail validation" expectation lives at the UI / analysis layer,
     // not in UnivariateDistribution itself. Keep this contract documented here so

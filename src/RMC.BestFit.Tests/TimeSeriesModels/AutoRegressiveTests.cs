@@ -1,10 +1,11 @@
 using Numerics.Data;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesModels;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="AutoRegressive"/> time-series model.
+/// Programmatic unit tests for the <c>AutoRegressive</c> time-series model.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,9 +31,9 @@ public class AutoRegressiveTests
     /// shared <c>TestData</c>. The seed and structure match the original
     /// Verification helper so behaviour matches.
     /// </summary>
-    private static TimeSeries CreateSampleTimeSeries()
+    private static NumericsTimeSeries CreateSampleTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
 
         // Generate AR(1)-like data
@@ -55,9 +56,9 @@ public class AutoRegressiveTests
     /// <summary>
     /// Deterministic short fixture (15 annual observations) for edge-case validation.
     /// </summary>
-    private static TimeSeries CreateShortTimeSeries()
+    private static NumericsTimeSeries CreateShortTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
         for (int i = 0; i < ts.Count; i++)
         {
             ts[i].Value = 100.0 + i * 5.0;
@@ -68,9 +69,9 @@ public class AutoRegressiveTests
     /// <summary>
     /// Linear-trend fixture used by validation tests that require well-behaved data.
     /// </summary>
-    private static TimeSeries CreateTrendTimeSeries()
+    private static NumericsTimeSeries CreateTrendTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         for (int i = 0; i < ts.Count; i++)
         {
             ts[i].Value = 100.0 + i * 2.0; // Linear trend
@@ -157,7 +158,7 @@ public class AutoRegressiveTests
     #region Property Tests
 
     /// <summary>
-    /// Tests that the TimeSeries property can be set and retrieved correctly.
+    /// Tests that the NumericsTimeSeries property can be set and retrieved correctly.
     /// </summary>
     [TestMethod]
     public void Test_TimeSeries_SetAndGet()
@@ -900,7 +901,7 @@ public class AutoRegressiveTests
     [TestMethod]
     public void Test_Validate_TooShortTimeSeries_ReturnsFalse()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
         for (int i = 0; i < ts.Count; i++) ts[i].Value = i;
         var model = new AutoRegressive(ts);
 
@@ -908,6 +909,24 @@ public class AutoRegressiveTests
 
         Assert.IsFalse(isValid);
         Assert.IsTrue(messages.Any(m => m.Contains("10 observations")));
+    }
+
+    /// <summary>
+    /// Tests that validation rejects irregular time intervals.
+    /// </summary>
+    [TestMethod]
+    public void Test_Validate_IrregularTimeSeries_ReturnsFalse()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.Irregular);
+        var start = new DateTime(2000, 1, 1);
+        for (int i = 0; i < 50; i++)
+            ts.Add(new SeriesOrdinate<DateTime, double>(start.AddDays(i * i + 1), i + 1.0));
+        var model = new AutoRegressive(ts);
+
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("regular time interval")));
     }
 
     /// <summary>
@@ -1115,7 +1134,7 @@ public class AutoRegressiveTests
     public void Test_AR_NoInterceptWithZeroMean()
     {
         // Create zero-mean time series
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
         for (int i = 0; i < ts.Count; i++)
         {
@@ -1213,7 +1232,7 @@ public class AutoRegressiveTests
     }
 
     /// <summary>
-    /// Tests that ForecastingTimeSteps is computed correctly from TimeSeries length and TrainingTimeSteps.
+    /// Tests that ForecastingTimeSteps is computed correctly from NumericsTimeSeries length and TrainingTimeSteps.
     /// </summary>
     [TestMethod]
     public void Test_ForecastingTimeSteps_ComputedCorrectly()
@@ -1223,7 +1242,7 @@ public class AutoRegressiveTests
         model.UseDefaultTrainingSteps = false;
         model.TrainingTimeSteps = 40;
 
-        // ForecastingTimeSteps = TimeSeries.Count - TrainingTimeSteps
+        // ForecastingTimeSteps = NumericsTimeSeries.Count - TrainingTimeSteps
         Assert.AreEqual(ts.Count - 40, model.ForecastingTimeSteps);
     }
 

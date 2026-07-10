@@ -4,13 +4,14 @@ using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.SpatialExtremes;
 using RMC.BestFit.Models.TrendFunctions;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.UnivariateAnalyses;
+namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
 /// Phase 1 backfill tests for the Bayesian univariate analyses. Verifies the contract
 /// established by the ProbabilityOrdinates reprocess pattern: an ordinate change must
-/// not cascade into <see cref="BayesianAnalysis.ClearResults"/> side-effects on the
+/// not cascade into <c>BayesianAnalysis.ClearResults</c> side-effects on the
 /// inner MCMC fit. These are programmatic event-wiring tests — no MCMC chain is run.
 /// MCMC-running parity tests live in RMC.BestFit.Verification.
 /// </summary>
@@ -31,10 +32,17 @@ public class ProbabilityOrdinatesPreservationTests
 {
     #region Test Data
 
-    private static DataFrame CreateExactDataFrame()
+    /// <summary>
+    /// Creates exact Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateExactDataFrame()
     {
         var values = new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 };
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < values.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
         return df;
@@ -42,7 +50,7 @@ public class ProbabilityOrdinatesPreservationTests
 
     /// <summary>
     /// Subscribes PropertyChanged listeners on both the analysis and its inner
-    /// <see cref="BayesianAnalysis"/>, returning out-params that are flipped to
+    /// <c>BayesianAnalysis</c>, returning out-params that are flipped to
     /// <c>true</c> if a clear-side-effect event is observed.
     /// </summary>
     private static void TrackClearSideEffects(
@@ -126,7 +134,7 @@ public class ProbabilityOrdinatesPreservationTests
     [TestMethod]
     public void PointProcessAnalysis_OrdinateChange_DoesNotClearMcmcResults()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>
         {
             new ExactData(new DateTime(1990, 3, 15), 1500),

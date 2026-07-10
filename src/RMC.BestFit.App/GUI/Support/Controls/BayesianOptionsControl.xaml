@@ -1,0 +1,161 @@
+<UserControl x:Class="RMC_BestFit.BayesianOptionsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="{DynamicResource PropertyGrid.Content.Background}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/GenericControls;Component/Resources/ResourceDictionary.xaml"/>
+                <ResourceDictionary>
+                    <cntrls:DoubleToGridLengthConverter x:Key="ActualToLengthConverter" />
+                    <cntrls:ReverseBooleanConverter x:Key="ReverseBoolConverter" />
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--Simulation Options-->
+        <Expander Grid.Row="0"
+            Margin="0,4,4,8"
+            Header="SIMULATION OPTIONS"
+            IsExpanded="True"
+            Grid.ColumnSpan="2"
+            Style="{DynamicResource PropertyExpanderStyle}">
+            <DockPanel >
+
+                <!--Number of Chains-->
+                <cntrls:NumericPropertyControl x:Name="NumberOfChains" Margin="0 2" DockPanel.Dock="Top" Title="Number of Chains" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="NumberOfChains_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="1" MaxValue="20" Number="{Binding Analysis.NumberOfChains, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--Thinning Interval-->
+                <cntrls:NumericPropertyControl x:Name="ThinningInterval" Margin="0 2" DockPanel.Dock="Top" Title="Thinning Interval" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="ThinningInterval_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="1" MaxValue="100" Number="{Binding Analysis.ThinningInterval, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--Initial Iterations-->
+                <cntrls:NumericPropertyControl x:Name="InitialIterations" Margin="0 2" DockPanel.Dock="Top" Title="Initial Iterations" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="InitialIterations_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="{Binding Analysis.NumberOfChains, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" MaxValue="1000" Number="{Binding Analysis.InitialIterations, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+          
+                <!--Warm Up Iterations-->
+                <cntrls:NumericPropertyControl x:Name="WarmupIterations" Margin="0 2" DockPanel.Dock="Top" Title="Warm Up Iterations" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="WarmupIterations_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="50" MaxValue="100000" Number="{Binding Analysis.WarmupIterations, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyChanged="WarmupIterations_PropertyChanged"/>
+
+                <!--Iterations-->
+                <cntrls:NumericPropertyControl x:Name="Iterations" Margin="0 2" DockPanel.Dock="Top" Title="Iterations" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="Iterations_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="100" MaxValue="1000000" Number="{Binding Analysis.Iterations, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--PRNG Seed-->
+                <cntrls:NumericPropertyControl x:Name="PRNGSeed" Margin="0 2" DockPanel.Dock="Top" Title="PRNG Seed" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="PRNGSeed_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" Number="{Binding Analysis.PRNGSeed, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+
+                <!--Use Simulation Defaults-->
+                <cntrls:BooleanPropertyControl x:Name="UseSimulationDefaults" Margin="0 2" DockPanel.Dock="Top" Title="Use Defaults" PreviewMouseLeftButtonDown="UseSimulationDefaults_PreviewMouseLeftButtonDown"
+                                               IsSelected="{Binding Analysis.UseSimulationDefaults, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+
+            </DockPanel>
+        </Expander>
+
+        <!--Advanced Options-->
+        <Expander Grid.Row="1"
+            Margin="0,4,4,8"
+            Header="ADVANCED OPTIONS"
+            IsExpanded="False"
+            Grid.ColumnSpan="2"
+            Style="{DynamicResource PropertyExpanderStyle}">
+            <DockPanel >
+
+                <!--Sampler Type-->
+                <cntrls:ContentPropertyControl x:Name="SamplerType" Margin="0 2" DockPanel.Dock="Top" Title="Sampler Type" MaxPropertyWidth="200" Visibility="Collapsed"
+                                            PreviewMouseLeftButtonDown="SamplerType_PreviewMouseLeftButtonDown" PropertyChanged="SamplerType_PropertyChanged" >
+                    <cntrls:ContentPropertyControl.InnerContent>
+                        <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                                ItemsSource="{Binding SamplerTypeItems, UpdateSourceTrigger=PropertyChanged}"
+                                                SelectedValue="{Binding Analysis.Type, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                DisplayMemberPath="DisplayName" SelectedValuePath="Value">
+                            <ComboBox.ItemContainerStyle>
+                                <Style>
+                                    <Setter Property="Control.ToolTip" Value="{Binding ToolTip}" />
+                                </Style>
+                            </ComboBox.ItemContainerStyle>
+                        </ComboBox>
+                    </cntrls:ContentPropertyControl.InnerContent>
+                </cntrls:ContentPropertyControl>
+                
+                <!--DEMCz/DEMCzs: Jump Parameter-->
+                <cntrls:NumericPropertyControl x:Name="JumpParameter" Margin="0 2" DockPanel.Dock="Top" Title="Jump Parameter" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="JumpParameter_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" BoundsAreExclusive="True" MinValue="0" MaxValue="2" Number="{Binding Analysis.Jump, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseAdvancedSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--DEMCz/DEMCzs: Jump Threshold-->
+                <cntrls:NumericPropertyControl x:Name="JumpThreshold" Margin="0 2" DockPanel.Dock="Top" Title="Jump Threshold" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="JumpThreshold_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="0" MaxValue="1" Number="{Binding Analysis.JumpThreshold, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseAdvancedSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--DEMCzs: Snooker Threshold-->
+                <cntrls:NumericPropertyControl x:Name="SnookerThreshold" Margin="0 2" DockPanel.Dock="Top" Title="Snooker Threshold" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="SnookerThreshold_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="0" MaxValue="0.5" Number="{Binding Analysis.SnookerThreshold, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseAdvancedSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--DEMCz/DEMCzs: Noise Parameter-->
+                <cntrls:NumericPropertyControl x:Name="NoiseParameter" Margin="0 2" DockPanel.Dock="Top" Title="Noise Parameter" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="NoiseParameter_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="0" MaxValue="0.1" Number="{Binding Analysis.Noise, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseAdvancedSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--ARWMH: Scale Parameter-->
+                <cntrls:NumericPropertyControl x:Name="ScaleParameter" Margin="0 2" DockPanel.Dock="Top" Title="Scale Parameter" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="ScaleParameter_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" BoundsAreExclusive="True" MinValue="0" Number="{Binding Analysis.Scale, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseAdvancedSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"
+                                               Visibility="Collapsed"/>
+
+                <!--ARWMH: Beta Parameter-->
+                <cntrls:NumericPropertyControl x:Name="BetaParameter" Margin="0 2" DockPanel.Dock="Top" Title="Beta Parameter" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="BetaParameter_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="0" MaxValue="1" Number="{Binding Analysis.Beta, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseAdvancedSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"
+                                               Visibility="Collapsed"/>
+
+                <!--NUTS: Max Tree Depth-->
+                <cntrls:NumericPropertyControl x:Name="MaxTreeDepth" Margin="0 2" DockPanel.Dock="Top" Title="Max Tree Depth" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="MaxTreeDepth_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="False" MinValue="1" MaxValue="15" Number="{Binding Analysis.MaxTreeDepth, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               IsTextBoxEnabled="{Binding IsSelected, ElementName=UseAdvancedSimulationDefaults, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=WarmupIterations, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"
+                                               Visibility="Collapsed"/>
+
+                <!--Use Advanced Simulation Defaults-->
+                <cntrls:BooleanPropertyControl x:Name="UseAdvancedSimulationDefaults" Margin="0 2" DockPanel.Dock="Top" Title="Use Defaults" PreviewMouseLeftButtonDown="UseAdvancedSimulationDefaults_PreviewMouseLeftButtonDown"
+                                               IsSelected="{Binding Analysis.UseAdvancedSimulationDefaults, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+
+            </DockPanel>
+        </Expander>
+    </Grid>
+</UserControl>

@@ -4,8 +4,8 @@ namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
 /// Programmatic unit tests for the small DTO-style result classes produced by
-/// <see cref="SpatialGEVAnalysis"/>: <see cref="SpatialGEVSiteResults"/> and
-/// <see cref="SpatialGEVCrossValidationResults"/>.
+/// <c>SpatialGEVAnalysis</c>: <c>SpatialGEVSiteResults</c> and
+/// <c>SpatialGEVCrossValidationResults</c>.
 /// </summary>
 /// <remarks>
 /// These classes are pure result-holders. The contract worth pinning is that array

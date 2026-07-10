@@ -1,10 +1,13 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
+    /// <summary>
+    /// Base collection for flood-frequency data ordinates.
+    /// </summary>
     public abstract class DataSeries : IList<Data>, INotifyCollectionChanged
     {
 
@@ -12,6 +15,10 @@ namespace RMC.BestFit
         /// Internal list.
         /// </summary>
         protected List<Data> _seriesOrdinates = new List<Data>();
+
+        /// <summary>
+        /// Occurs when the series collection changes.
+        /// </summary>
         public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
         /// <summary>
@@ -142,6 +149,10 @@ namespace RMC.BestFit
             return _seriesOrdinates.IndexOf(item);
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the data ordinates.
+        /// </summary>
+        /// <returns>An enumerator for the data series.</returns>
         public IEnumerator<Data> GetEnumerator()
         {
             return _seriesOrdinates.GetEnumerator();

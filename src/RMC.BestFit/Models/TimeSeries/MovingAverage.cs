@@ -92,6 +92,11 @@ namespace RMC.BestFit.Models
 
             // Set TimeSeries first (this may trigger SetDefaultParameters)
             TimeSeries = timeSeries;
+            if (trainingStepsAttr != null)
+                int.TryParse(trainingStepsAttr.Value, out _trainingTimeSteps);
+            if (useDefaultTrainingAttr != null)
+                bool.TryParse(useDefaultTrainingAttr.Value, out _useDefaultTrainingSteps);
+            SetTrainingData();
 
             // Then restore parameters from XElement to override defaults
             var parmsElement = xElement.Element(nameof(Parameters));
@@ -136,6 +141,8 @@ namespace RMC.BestFit.Models
             get { return _timeSeries; }
             set
             {
+                if (ReferenceEquals(_timeSeries, value)) return;
+
                 if (_timeSeries != null)
                     _timeSeries.CollectionChanged -= TimeSeries_CollectionChanged;
 
@@ -144,10 +151,12 @@ namespace RMC.BestFit.Models
                 if (_timeSeries != null)
                 {
                     _timeSeries.CollectionChanged += TimeSeries_CollectionChanged;
-
-                    if (_useDefaultTrainingSteps)
-                        SetDefaultTrainingSteps();
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                     SetTrainingData();
+                }
+                else
+                {
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                 }
 
                 RaisePropertyChange(nameof(TimeSeries));
@@ -325,6 +334,34 @@ namespace RMC.BestFit.Models
             // Use 80% for training, with minimum of 30 or parameter count
             int minSteps = Math.Max(30, Parameters?.Count ?? 0);
             TrainingTimeSteps = Math.Max(minSteps, (int)Math.Floor(0.8 * _timeSeries.Count));
+        }
+
+        /// <summary>
+        /// Restores the default training split when the model is attached to a different input series.
+        /// </summary>
+        /// <remarks>
+        /// A new response series represents a new calibration problem, so manual training-window edits
+        /// from the previous series are discarded.
+        /// </remarks>
+        private void ResetDefaultTrainingStepsForNewTimeSeries()
+        {
+            if (!_useDefaultTrainingSteps)
+            {
+                _useDefaultTrainingSteps = true;
+                RaisePropertyChange(nameof(UseDefaultTrainingSteps));
+            }
+
+            if (_timeSeries == null || _timeSeries.Count == 0)
+            {
+                if (_trainingTimeSteps != 0)
+                {
+                    _trainingTimeSteps = 0;
+                    RaisePropertyChange(nameof(TrainingTimeSteps));
+                }
+                return;
+            }
+
+            SetDefaultTrainingSteps();
         }
 
         /// <summary>
@@ -822,6 +859,9 @@ namespace RMC.BestFit.Models
             };
 
             result.TimeSeries = TimeSeries?.Clone()!;
+            result._trainingTimeSteps = TrainingTimeSteps;
+            result._useDefaultTrainingSteps = UseDefaultTrainingSteps;
+            result.SetTrainingData();
             return result;
         }
 
@@ -888,6 +928,12 @@ namespace RMC.BestFit.Models
             {
                 isValid = false;
                 messages.Add("Error: Time series must have at least 10 observations.");
+            }
+
+            if (TimeSeries.TimeInterval == TimeInterval.Irregular)
+            {
+                isValid = false;
+                messages.Add("Error: Time series analysis requires a regular time interval. Resample or convert the series to a regular interval before estimating.");
             }
 
             if (Order < 1 || Order > 10)

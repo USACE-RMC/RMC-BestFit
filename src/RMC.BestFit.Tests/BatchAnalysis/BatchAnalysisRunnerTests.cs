@@ -4,12 +4,13 @@ using Numerics.Distributions;
 using Numerics.Utilities;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.BatchAnalysis;
 
 /// <summary>
-/// Unit tests for the <see cref="BatchAnalysisRunner"/> class.
-/// Uses a lightweight <see cref="MockAnalysis"/> to test batch execution
+/// Unit tests for the <c>BatchAnalysisRunner</c> class.
+/// Uses a lightweight <c>MockAnalysis</c> to test batch execution
 /// behavior without requiring actual MCMC sampling.
 /// </summary>
 [TestClass]
@@ -18,7 +19,7 @@ public class BatchAnalysisRunnerTests
     #region Mock Analysis
 
     /// <summary>
-    /// A minimal <see cref="IAnalysis"/> implementation for testing.
+    /// A minimal <c>IAnalysis</c> implementation for testing.
     /// Configurable to succeed, fail, or delay to simulate real analyses.
     /// </summary>
     private class MockAnalysis : IAnalysis
@@ -53,7 +54,7 @@ public class BatchAnalysisRunnerTests
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event. Reserved for future use.
+        /// Raises the <c>PropertyChanged</c> event. Reserved for future use.
         /// </summary>
         private void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
@@ -111,6 +112,70 @@ public class BatchAnalysisRunnerTests
         public (bool IsValid, List<string> ValidationMessages) Validate()
         {
             return (true, new List<string>());
+        }
+    }
+
+    /// <summary>
+    /// Minimal analysis that reports progress synchronously for synchronization-context tests.
+    /// </summary>
+    private sealed class SynchronousProgressAnalysis : IAnalysis
+    {
+        /// <inheritdoc/>
+        public event PropertyChangedEventHandler? PropertyChanged { add { } remove { } }
+
+        /// <inheritdoc/>
+        public event EventHandler<CancelEventArgs>? AnalysisStarting { add { } remove { } }
+
+        /// <inheritdoc/>
+        public event EventHandler<AnalysisRunCompletedEventArgs>? AnalysisCompleted { add { } remove { } }
+
+        /// <inheritdoc/>
+        public bool IsEstimated { get; private set; }
+
+        /// <inheritdoc/>
+        public Task RunAsync(SafeProgressReporter? progressReporter = null)
+        {
+            progressReporter?.IndicateTaskStart();
+            progressReporter?.ReportProgress(0);
+            progressReporter?.ReportProgress(25);
+            progressReporter?.ReportProgress(99);
+            IsEstimated = true;
+            progressReporter?.ReportProgress(100);
+            progressReporter?.IndicateTaskEnded();
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public void CancelAnalysis()
+        {
+        }
+
+        /// <inheritdoc/>
+        public (bool IsValid, List<string> ValidationMessages) Validate()
+        {
+            return (true, new List<string>());
+        }
+    }
+
+    /// <summary>
+    /// Synchronization context that records posted callbacks without executing them.
+    /// </summary>
+    private sealed class QueuingSynchronizationContext : SynchronizationContext
+    {
+        /// <summary>
+        /// The number of callbacks posted to this context.
+        /// </summary>
+        private int _postCount;
+
+        /// <summary>
+        /// Gets the number of callbacks posted to this context.
+        /// </summary>
+        public int PostCount => _postCount;
+
+        /// <inheritdoc/>
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+            Interlocked.Increment(ref _postCount);
         }
     }
 
@@ -435,6 +500,42 @@ public class BatchAnalysisRunnerTests
     }
 
     /// <summary>
+    /// Verifies per-analysis progress is delivered without posting through the caller's synchronization context.
+    /// </summary>
+    [TestMethod]
+    public async Task Events_AnalysisProgressChanged_UsesInlineProgressDelivery()
+    {
+        var runner = new BatchAnalysisRunner();
+        var analysis = new SynchronousProgressAnalysis();
+        var progressValues = new List<double>();
+        var queuingContext = new QueuingSynchronizationContext();
+
+        runner.AnalysisProgressChanged += (sender, progress) => progressValues.Add(progress.Progress);
+
+        SynchronizationContext? previousContext = SynchronizationContext.Current;
+        Task<List<BatchAnalysisResult>> runTask;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(queuingContext);
+            runTask = runner.RunAsync(
+                new List<IAnalysis> { analysis },
+                new BatchAnalysisOptions { MaxDegreeOfParallelism = 1, OrderByDependency = false });
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
+        }
+
+        Assert.IsTrue(runTask.IsCompleted, "Synchronous progress should not depend on queued context callbacks.");
+        List<BatchAnalysisResult> results = await runTask;
+
+        Assert.AreEqual(1, results.Count);
+        Assert.IsTrue(results[0].Succeeded);
+        CollectionAssert.AreEqual(new double[] { 0, 25, 99, 100 }, progressValues);
+        Assert.AreEqual(0, queuingContext.PostCount, "Progress delivery should use the runner's inline context.");
+    }
+
+    /// <summary>
     /// Verifies that AnalysisStarting fires before each analysis runs.
     /// </summary>
     [TestMethod]
@@ -486,7 +587,7 @@ public class BatchAnalysisRunnerTests
     #region Dependency Ordering Tests
 
     /// <summary>
-    /// A lightweight <see cref="CompositeAnalysis"/> subclass for testing dependency ordering.
+    /// A lightweight <c>CompositeAnalysis</c> subclass for testing dependency ordering.
     /// Passes <c>is CompositeAnalysis</c> checks so the runner places it in the composite phase.
     /// </summary>
     private class MockCompositeAnalysis : CompositeAnalysis
@@ -629,12 +730,12 @@ public class BatchAnalysisRunnerTests
     }
 
     /// <summary>
-    /// A lightweight <see cref="CoincidentFrequencyAnalysis"/> subclass for testing three-phase
+    /// A lightweight <c>CoincidentFrequencyAnalysis</c> subclass for testing three-phase
     /// dependency ordering. Passes <c>is CoincidentFrequencyAnalysis</c> checks so the runner
     /// places it in the final CFA phase (after independent and composite).
     /// </summary>
     /// <summary>
-    /// Minimal BivariateAnalysis subclass that exposes <see cref="IsEstimated"/> = true at
+    /// Minimal BivariateAnalysis subclass that exposes <c>IsEstimated</c> = true at
     /// construction so a mock CFA can satisfy the runner's pre-flight dependency check
     /// without spinning up real MCMC. The protected <c>IsEstimated</c> setter on
     /// <c>AnalysisBase</c> is reachable from this derived class.
@@ -646,6 +747,14 @@ public class BatchAnalysisRunnerTests
             IsEstimated = true;
         }
 
+        /// <summary>
+        /// Runs the stub analysis asynchronously.
+        /// </summary>
+        /// <param name="progressReporter">The optional progress reporter.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// This helper keeps fixture setup local to the tests that use it.
+        /// </remarks>
         public override async Task RunAsync(SafeProgressReporter? progressReporter = null)
         {
             await Task.CompletedTask;
@@ -675,6 +784,14 @@ public class BatchAnalysisRunnerTests
             // ba.IsEstimated stays false → runner pre-flight should reject this CFA.
         }
 
+        /// <summary>
+        /// Runs the stub analysis asynchronously.
+        /// </summary>
+        /// <param name="progressReporter">The optional progress reporter.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// This helper keeps fixture setup local to the tests that use it.
+        /// </remarks>
         public override async Task RunAsync(SafeProgressReporter? progressReporter = null)
         {
             // Recording StartedAt lets the test assert that RunAsync was NEVER called.
@@ -702,10 +819,18 @@ public class BatchAnalysisRunnerTests
             // Add a single child whose IsEstimated is false. We construct it via the
             // model-layer UnivariateAnalysis with a default Normal distribution; nothing
             // sets IsEstimated, so the dependency check will reject the parent composite.
-            var child = new UnivariateAnalysis(new UnivariateDistribution(new DataFrame(), UnivariateDistributionType.Normal));
+            var child = new UnivariateAnalysis(new UnivariateDistribution(new BestFitDataFrame(), UnivariateDistributionType.Normal));
             Analyses.Add(new WeightedUnivariateAnalysis(child, 1.0));
         }
 
+        /// <summary>
+        /// Runs the stub analysis asynchronously.
+        /// </summary>
+        /// <param name="progressReporter">The optional progress reporter.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// This helper keeps fixture setup local to the tests that use it.
+        /// </remarks>
         public override async Task RunAsync(SafeProgressReporter? progressReporter = null)
         {
             StartedAt = DateTime.UtcNow;
@@ -719,6 +844,12 @@ public class BatchAnalysisRunnerTests
         }
     }
 
+    /// <summary>
+    /// Provides a helper class used by the containing fixture or implementation.
+    /// </summary>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private class MockCoincidentFrequencyAnalysis : CoincidentFrequencyAnalysis
     {
         private readonly int _delayMs;
@@ -733,6 +864,14 @@ public class BatchAnalysisRunnerTests
             BivariateAnalysis = new EstimatedBivariateAnalysis();
         }
 
+        /// <summary>
+        /// Runs the stub analysis asynchronously.
+        /// </summary>
+        /// <param name="progressReporter">The optional progress reporter.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// This helper keeps fixture setup local to the tests that use it.
+        /// </remarks>
         public override async Task RunAsync(SafeProgressReporter? progressReporter = null)
         {
             StartedAt = DateTime.UtcNow;
@@ -757,9 +896,9 @@ public class BatchAnalysisRunnerTests
 
     /// <summary>
     /// Verifies the three-phase dependency order produced by
-    /// <see cref="BatchAnalysisRunner"/> when <see cref="BatchAnalysisOptions.OrderByDependency"/>
-    /// is true: independent analyses first, then <see cref="CompositeAnalysis"/> instances,
-    /// then <see cref="CoincidentFrequencyAnalysis"/> instances. Composite depends on Phase 1
+    /// <c>BatchAnalysisRunner</c> when <c>BatchAnalysisOptions.OrderByDependency</c>
+    /// is true: independent analyses first, then <c>CompositeAnalysis</c> instances,
+    /// then <c>CoincidentFrequencyAnalysis</c> instances. Composite depends on Phase 1
     /// univariate fits and CFA depends on Phase 1 bivariate fits, so both consumers must run
     /// after Phase 1; their relative order (Composite before CFA) is fixed by convention.
     /// </summary>
@@ -802,8 +941,8 @@ public class BatchAnalysisRunnerTests
 
     /// <summary>
     /// Verifies that the runner records a clean dependency failure (without invoking
-    /// <c>RunAsync</c>) when a <see cref="CoincidentFrequencyAnalysis"/> reaches its phase
-    /// with the upstream <see cref="BivariateAnalysis"/> still un-estimated. The result
+    /// <c>RunAsync</c>) when a <c>CoincidentFrequencyAnalysis</c> reaches its phase
+    /// with the upstream <c>BivariateAnalysis</c> still un-estimated. The result
     /// must be non-succeeded with a descriptive error message; <c>StartedAt</c> on the
     /// mock CFA must remain null because <c>RunAsync</c> is never reached.
     /// </summary>
@@ -830,8 +969,8 @@ public class BatchAnalysisRunnerTests
     }
 
     /// <summary>
-    /// Symmetric test for <see cref="CompositeAnalysis"/>: an un-estimated child univariate
-    /// in <see cref="CompositeAnalysis.Analyses"/> must cause a clean dependency failure
+    /// Symmetric test for <c>CompositeAnalysis</c>: an un-estimated child univariate
+    /// in <c>CompositeAnalysis.Analyses</c> must cause a clean dependency failure
     /// without invoking <c>RunAsync</c>.
     /// </summary>
     [TestMethod]

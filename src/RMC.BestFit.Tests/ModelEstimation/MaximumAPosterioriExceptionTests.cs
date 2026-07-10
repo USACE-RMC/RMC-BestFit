@@ -2,11 +2,12 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Tests the documented exception contracts of <see cref="MaximumAPosteriori"/> methods
+/// Tests the documented exception contracts of <c>MaximumAPosteriori</c> methods
 /// that require a successful Estimate() run before returning meaningful values.
 /// All tests verify the throw path without ever running the optimizer.
 /// </summary>
@@ -18,7 +19,7 @@ public class MaximumAPosterioriExceptionTests
     /// </summary>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(
                 new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 })

@@ -2,11 +2,12 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Tests the documented exception contracts of <see cref="MaximumLikelihood"/> methods
+/// Tests the documented exception contracts of <c>MaximumLikelihood</c> methods
 /// that require a successful Estimate() run before returning meaningful values.
 /// All tests verify the throw path without ever running the optimizer.
 /// </summary>
@@ -18,7 +19,7 @@ public class MaximumLikelihoodExceptionTests
     /// </summary>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(
                 new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 })
@@ -32,7 +33,7 @@ public class MaximumLikelihoodExceptionTests
     /// </summary>
     private static UnivariateDistribution MakeExponentialModel()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(
                 new double[] { 12.5, 15.3, 8.9, 22.1, 18.7, 14.2, 9.8, 28.5, 17.4, 11.6 })

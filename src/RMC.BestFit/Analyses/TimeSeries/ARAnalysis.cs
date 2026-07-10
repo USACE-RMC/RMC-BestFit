@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -22,8 +22,8 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// The AR(p) model uses lagged values of the series to predict the current value:
-    /// Y(t) = μ + φ1*(Y(t-1) - μ) + ... + φp*(Y(t-p) - μ) + ε(t)
-    /// where ε(t) ~ N(0, σ²).
+    /// Y(t) = � + f1*(Y(t-1) - �) + ... + fp*(Y(t-p) - �) + e(t)
+    /// where e(t) ~ N(0, s�).
     /// </para>
     /// <para>
     /// This analysis uses Bayesian Markov Chain Monte Carlo (MCMC) methods to estimate the model parameters
@@ -109,7 +109,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// When the AutoRegressive model changes, the analysis subscribes to its
-        /// <see cref="AutoRegressive.PropertyChanged"/> event and updates
+        /// <c>PropertyChanged</c> event and updates
         /// the associated <see cref="BayesianAnalysis"/> model reference.
         /// </para>
         /// </remarks>
@@ -282,7 +282,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears all analysis results and resets the <see cref="IsEstimated"/> flag.
+        /// Clears all analysis results and resets the <c>IsEstimated</c> flag.
         /// </summary>
         public void ClearResults()
         {
@@ -293,13 +293,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the uncertainty/forecast output
+        /// Clears <see cref="AnalysisResults"/> only � the uncertainty/forecast output
         /// whose horizon is <see cref="ForecastingTimeSteps"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results) and
-        /// <see cref="IsEstimated"/> intact. Called when the horizon is set to a value
-        /// that would produce no derived output (e.g., a defensive fallback) — the fit
+        /// <c>IsEstimated</c> intact. Called when the horizon is set to a value
+        /// that would produce no derived output (e.g., a defensive fallback) � the fit
         /// survives and reprocesses on the next valid horizon change.
         /// </remarks>
         public void ClearUncertaintyAnalysisResults()
@@ -315,15 +315,15 @@ namespace RMC.BestFit.Analyses
         /// the underlying MCMC fit in either case.
         /// </summary>
         /// <remarks>
-        /// Validity matches the setter clamp (0 ≤ horizon ≤ 100). Reprocess is
-        /// fire-and-forget on the default task scheduler — exceptions are logged
+        /// Validity matches the setter clamp (0 = horizon = 100). Reprocess is
+        /// fire-and-forget on the default task scheduler � exceptions are logged
         /// via <see cref="Debug"/> and do not propagate to the setter.
         /// </remarks>
         private void ReprocessOrClearForecast()
         {
             if (!IsEstimated) return;
 
-            // Clamping in the setter guarantees 0 ≤ _forecastingTimeSteps ≤ 100,
+            // Clamping in the setter guarantees 0 = _forecastingTimeSteps = 100,
             // which is always a valid evaluation domain. Defensive check kept for
             // future-proofing if the clamp is loosened.
             if (_forecastingTimeSteps >= 0 && _forecastingTimeSteps <= 100)
@@ -358,13 +358,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change) can be inside its parallel loop
-            // when ClearResults() nulls AnalysisResults — producing an NRE on the next
+            // when ClearResults() nulls AnalysisResults � producing an NRE on the next
             // AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -372,21 +373,25 @@ namespace RMC.BestFit.Analyses
                 try
                 {
                     // Run Bayesian analysis
-                    await BayesianAnalysis.RunAsync(progressReporter, false);
+                    await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process. The base-class gate is held throughout RunAsync, so
-                    // CreateUncertaintyAnalysisResultsAsync runs without contention here —
+                    // CreateUncertaintyAnalysisResultsAsync runs without contention here �
                     // its body (and the UpdatePointEstimateResultsAsync it chains to) does
                     // not itself acquire the gate, so there is no re-entrant deadlock.
                     if (BayesianAnalysis.IsEstimated == true)
                     {
-                        progressReporter?.ReportProgress(100);
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
                         await CreateUncertaintyAnalysisResultsAsync();
                     }
 
                     // Mirror the inner Bayesian fit's success state so a silently-failed
                     // MCMC is reported correctly to AnalysisCompleted.
                     IsEstimated = BayesianAnalysis.IsEstimated;
+                    if (IsEstimated)
+                    {
+                        AnalysisProgress.ReportComplete(progressReporter);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -531,7 +536,7 @@ namespace RMC.BestFit.Analyses
 
                 var prng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
                 // Bind realz to the actual posterior length, not the configured
-                // OutputLength — guards against a partial run / restore where
+                // OutputLength � guards against a partial run / restore where
                 // OutputLength > Output.Count.
                 var realz = Math.Min(BayesianAnalysis.OutputLength, posterior.Count);
                 double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
@@ -539,7 +544,7 @@ namespace RMC.BestFit.Analyses
 
                 // Generate realizations from posterior
                 var series = new double[n, realz];
-                Parallel.For(0, realz, idx =>
+                Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
                     // Temporarily set parameters for prediction
                     var tempAR = (AutoRegressive)AutoRegressive.Clone();
@@ -549,7 +554,7 @@ namespace RMC.BestFit.Analyses
                 });
 
                 // Compute summary statistics
-                Parallel.For(0, n, idx =>
+                Parallel.For(0, n, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
                     var y = series.GetRow(idx);
                     Array.Sort(y);

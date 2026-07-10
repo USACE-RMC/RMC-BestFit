@@ -2,12 +2,12 @@ using Numerics.Distributions;
 using Numerics.Functions;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="Bulletin17CDistribution"/> class.
+/// Programmatic unit tests for the <c>Bulletin17CDistribution</c> class.
 /// </summary>
 /// <remarks>
 /// Covers construction, supported-distribution gating, parameter management, validation,
@@ -27,9 +27,16 @@ public class Bulletin17CDistributionTests
     private static readonly double[] InlineFloodData = new LogNormal(8.0, 0.4)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateFloodDataFrame()
+    /// <summary>
+    /// Creates flood Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateFloodDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
         {
             // Add as exact systematic record (simulated water years).
@@ -44,7 +51,7 @@ public class Bulletin17CDistributionTests
 
     /// <summary>
     /// Default constructor falls back to LogPearsonTypeIII (the canonical B17C distribution)
-    /// even with no DataFrame attached. Quantile penalty list is initialized non-empty so
+    /// even with no BestFitDataFrame attached. Quantile penalty list is initialized non-empty so
     /// the UI grid binds correctly before InputData is selected.
     /// </summary>
     [TestMethod]
@@ -59,8 +66,8 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Verifies that the (DataFrame, type) constructor sets the distribution type and
-    /// triggers <see cref="Bulletin17CDistribution.SetDefaultParameters"/>, which seeds
+    /// Verifies that the (BestFitDataFrame, type) constructor sets the distribution type and
+    /// triggers <c>Bulletin17CDistribution.SetDefaultParameters</c>, which seeds
     /// the parameter list from the distribution.
     /// </summary>
     [TestMethod]
@@ -77,7 +84,7 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// The (DataFrame, distribution) overload clones the supplied distribution to avoid aliasing.
+    /// The (BestFitDataFrame, distribution) overload clones the supplied distribution to avoid aliasing.
     /// </summary>
     [TestMethod]
     public void Constructor_WithDistributionInstance_ClonesDistribution()
@@ -243,7 +250,7 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Sample size derives from <see cref="DataFrame.TotalRecordLength"/>; with no DataFrame it falls back to zero.
+    /// Sample size derives from <c>DataFrame.TotalRecordLength</c>; with no BestFitDataFrame it falls back to zero.
     /// </summary>
     [TestMethod]
     public void SampleSize_NullDataFrame_IsZero()
@@ -271,14 +278,14 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Validate must reject a null DataFrame with a clear message — otherwise the GMM
+    /// Validate must reject a null BestFitDataFrame with a clear message — otherwise the GMM
     /// estimation path would dereference null and surface a NullReferenceException to the user.
     /// </summary>
     [TestMethod]
     public void Validate_NullDataFrame_IsInvalid()
     {
         var model = new Bulletin17CDistribution();
-        // Default constructor does not set a DataFrame.
+        // Default constructor does not set a BestFitDataFrame.
 
         var (isValid, messages) = model.Validate();
 
@@ -293,7 +300,7 @@ public class Bulletin17CDistributionTests
     [TestMethod]
     public void Validate_LogDistribution_NonPositiveData_IsInvalid()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries.Add(new ExactData(1990, 1000.0));
         df.ExactSeries.Add(new ExactData(1991, 0.0));     // disallowed for log distributions
         df.ExactSeries.Add(new ExactData(1992, -5.0));    // disallowed
@@ -343,7 +350,7 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// The DataFrame-less XElement constructor exists to support the undo path where InputData
+    /// The BestFitDataFrame-less XElement constructor exists to support the undo path where InputData
     /// has been undone back to null. It must still rehydrate the model state without throwing.
     /// </summary>
     [TestMethod]
@@ -503,7 +510,7 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Same invariant as <see cref="PointwiseMomentConditions_ColumnMeans_MatchMomentConditionsG_LP3"/>,
+    /// Same invariant as <c>PointwiseMomentConditions_ColumnMeans_MatchMomentConditionsG_LP3</c>,
     /// exercised against a Normal distribution to cover a different supported-distribution
     /// branch in the moment-condition setup.
     /// </summary>

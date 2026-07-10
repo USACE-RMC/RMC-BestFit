@@ -1,20 +1,22 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Concurrency stress tests for <see cref="DataFrame.CreateFullTimeSeries"/>,
-/// <see cref="DataFrame.ProcessThresholdSeries"/>, the <see cref="DataFrame.FullTimeSeries"/>
-/// getter, and <see cref="DataFrame.JackKnife"/>.
+/// Concurrency stress tests for <c>DataFrame.CreateFullTimeSeries</c>,
+/// <c>DataFrame.ProcessThresholdSeries</c>, the <c>DataFrame.FullTimeSeries</c>
+/// getter, and <c>DataFrame.JackKnife</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// These tests protect the parallel batch-run scenario where multiple
-/// <c>UnivariateAnalysis</c> instances share a single <see cref="DataFrame"/> and call
+/// <c>UnivariateAnalysis</c> instances share a single <c>DataFrame</c> and call
 /// the above members concurrently. Pre-fix, the shared <c>_fullTimeSeries</c> list was
-/// mutated in-place (Clear → Add → Sort), which crashed <see cref="List{Data}.Sort"/>
-/// with <see cref="ArgumentException"/> / <see cref="InvalidOperationException"/>
+/// mutated in-place (Clear → Add → Sort), which crashed <c>List{Data}.Sort</c>
+/// with <c>ArgumentException</c> / <c>InvalidOperationException</c>
 /// when two threads raced on it.
 /// </para>
 /// <para>
@@ -29,12 +31,12 @@ public class DataFrameConcurrencyTests
     #region Fixtures
 
     /// <summary>
-    /// Builds a mixed-series DataFrame exercising every branch of <see cref="DataFrame.CreateFullTimeSeries"/>:
+    /// Builds a mixed-series BestFitDataFrame exercising every branch of <c>DataFrame.CreateFullTimeSeries</c>:
     /// exact, uncertain, interval, and threshold data with non-overlapping index ranges.
     /// </summary>
-    private static DataFrame CreateMixedFixture()
+    private static BestFitDataFrame CreateMixedFixture()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(
         [
             45000, 38000, 52000, 61000, 33000, 49000, 55000, 42000, 67000, 39000
@@ -46,7 +48,7 @@ public class DataFrameConcurrencyTests
         df.IntervalSeries.Add(new IntervalData(1500, 60000, 80000, 100000));
         df.IntervalSeries.Add(new IntervalData(1700, 50000, 70000, 90000));
         // Threshold data — historical perception threshold (distinct range)
-        df.ThresholdSeries.Add(new ThresholdData(1850, 1870, 40000) { NumberAbove = 3 });
+        df.ThresholdSeries.Add(new BestFitThresholdData(1850, 1870, 40000) { NumberAbove = 3 });
         return df;
     }
 
@@ -76,8 +78,8 @@ public class DataFrameConcurrencyTests
     #region CreateFullTimeSeries
 
     /// <summary>
-    /// Many threads hammer <see cref="DataFrame.CreateFullTimeSeries"/> on the same instance.
-    /// Pre-fix this reliably throws from <see cref="List{Data}.Sort"/> or enumeration.
+    /// Many threads hammer <c>DataFrame.CreateFullTimeSeries</c> on the same instance.
+    /// Pre-fix this reliably throws from <c>List{Data}.Sort</c> or enumeration.
     /// </summary>
     [TestMethod]
     public void CreateFullTimeSeries_ParallelCalls_DoesNotThrow()
@@ -93,7 +95,7 @@ public class DataFrameConcurrencyTests
 
     /// <summary>
     /// After concurrent rebuilds, the published snapshot must contain every expected index
-    /// exactly once and be strictly sorted by <see cref="Data.Index"/>.
+    /// exactly once and be strictly sorted by <c>Data.Index</c>.
     /// </summary>
     [TestMethod]
     public void CreateFullTimeSeries_ParallelCalls_ListContentsDeterministic()
@@ -123,7 +125,7 @@ public class DataFrameConcurrencyTests
     #region ProcessThresholdSeries
 
     /// <summary>
-    /// <see cref="DataFrame.ProcessThresholdSeries"/> is deterministic given fixed input series,
+    /// <c>DataFrame.ProcessThresholdSeries</c> is deterministic given fixed input series,
     /// so concurrent calls must converge on the same <c>NumberAbove</c>/<c>NumberBelow</c> as a
     /// single-threaded control call.
     /// </summary>
@@ -133,7 +135,7 @@ public class DataFrameConcurrencyTests
         // Control
         var control = CreateMixedFixture();
         control.ProcessThresholdSeries();
-        var controlThreshold = (ThresholdData)control.ThresholdSeries[0];
+        var controlThreshold = (BestFitThresholdData)control.ThresholdSeries[0];
         int expectedAbove = controlThreshold.NumberAbove;
         int expectedBelow = controlThreshold.NumberBelow;
 
@@ -141,7 +143,7 @@ public class DataFrameConcurrencyTests
         var df = CreateMixedFixture();
         RunParallel(500, _ => df.ProcessThresholdSeries());
 
-        var actualThreshold = (ThresholdData)df.ThresholdSeries[0];
+        var actualThreshold = (BestFitThresholdData)df.ThresholdSeries[0];
         Assert.AreEqual(expectedAbove, actualThreshold.NumberAbove);
         Assert.AreEqual(expectedBelow, actualThreshold.NumberBelow);
     }
@@ -151,8 +153,8 @@ public class DataFrameConcurrencyTests
     #region Interleaved
 
     /// <summary>
-    /// Interleaves <see cref="DataFrame.ProcessThresholdSeries"/> and
-    /// <see cref="DataFrame.CreateFullTimeSeries"/> across threads. The shared
+    /// Interleaves <c>DataFrame.ProcessThresholdSeries</c> and
+    /// <c>DataFrame.CreateFullTimeSeries</c> across threads. The shared
     /// <c>_syncRoot</c> must give <c>CreateFullTimeSeries</c> a fully-processed threshold
     /// state (no torn <c>NumberAbove</c>/<c>NumberBelow</c> reads).
     /// </summary>
@@ -185,7 +187,7 @@ public class DataFrameConcurrencyTests
     #region FullTimeSeries Getter
 
     /// <summary>
-    /// Many readers call <see cref="DataFrame.FullTimeSeries"/> concurrently while a writer
+    /// Many readers call <c>DataFrame.FullTimeSeries</c> concurrently while a writer
     /// thread toggles the ExactSeries count to force <c>TotalRecordLength()</c> shifts that
     /// trigger lazy rebuilds. Each reader must see a self-consistent snapshot (sorted; count
     /// matches one of the valid states).
@@ -239,15 +241,15 @@ public class DataFrameConcurrencyTests
     #region JackKnife (Clone regression)
 
     /// <summary>
-    /// <see cref="DataFrame.JackKnife"/> used to share <c>_fullTimeSeries</c> with the parent
-    /// via <see cref="DataFrame.Clone"/>, so calling <c>Clear</c> on the clone's full time series
+    /// <c>DataFrame.JackKnife</c> used to share <c>_fullTimeSeries</c> with the parent
+    /// via <c>DataFrame.Clone</c>, so calling <c>Clear</c> on the clone's full time series
     /// corrupted the parent. This regression test runs many parallel jackknifes and asserts the
-    /// original DataFrame's <see cref="DataFrame.FullTimeSeries"/> is unchanged.
+    /// original BestFitDataFrame's <c>DataFrame.FullTimeSeries</c> is unchanged.
     /// </summary>
     [TestMethod]
     public void JackKnife_ParallelCalls_DoesNotCorruptOriginal()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(
         [
             45000, 38000, 52000, 61000, 33000, 49000, 55000, 42000, 67000, 39000,

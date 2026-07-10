@@ -248,7 +248,7 @@ namespace RMC.BestFit.Models.TrendFunctions
         #region Methods
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for the specified property.
+        /// Raises the <c>PropertyChanged</c> event for the specified property.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed.</param>
         private void RaisePropertyChanged(string propertyName)

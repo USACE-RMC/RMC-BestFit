@@ -1,9 +1,9 @@
-﻿using Numerics;
+using Numerics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
 
     /// <summary>

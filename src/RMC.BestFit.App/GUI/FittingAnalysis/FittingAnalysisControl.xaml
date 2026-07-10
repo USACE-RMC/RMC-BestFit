@@ -1,0 +1,568 @@
+﻿<UserControl x:Class="RMC_BestFit.FittingAnalysisControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             xmlns:oxyCntrls="clr-namespace:OxyPlotControls;assembly=OxyPlotControls"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Loaded="UserControl_Loaded"
+             Unloaded="UserControl_Unloaded"
+             PreviewMouseDown="UserControl_PreviewMouseDown"
+             LostFocus="UserControl_LostFocus"
+             Background="{DynamicResource EnvironmentWindowBackground}"
+             Foreground="{DynamicResource EnvironmentWindowText}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary>
+                    <cntrls:DoubleToNAConverter x:Key="NAConverter"/>
+                    <cntrls:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <!--Main Tab Control-->
+        <TabControl x:Name="TabControl" TabStripPlacement="Top" Grid.Column="0" Margin="4" >
+            <!--Graphical Results-->
+            <TabItem Header="Graphical Results" Style="{DynamicResource HorizontalTabItemStyle}">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="375" MinWidth="175" MaxWidth="500"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <CheckBox x:Name="SelectAllCheckBox" Grid.Row="0" Grid.Column="0" Margin="4" MinWidth="30" Content="Select All" VerticalAlignment="Center" VerticalContentAlignment="Bottom" IsChecked="True" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                            <Label Grid.Row="0" Grid.Column="2" Margin="4, 4, 0, 4" MinWidth="20" Content="Type:" VerticalAlignment="Bottom" VerticalContentAlignment="Center" HorizontalContentAlignment="Right"/>
+                            <ComboBox x:Name="TypeComboBox" Grid.Row="0"  Grid.Column="3" Height="22" Margin="4, 4, 2, 4" MaxWidth="300" MinWidth="50" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" SelectedIndex="0" SelectionChanged="TypeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="All"/>
+                                <ComboBoxItem Content="2-Parameter"/>
+                                <ComboBoxItem Content="3-Parameter"/>
+                                <ComboBoxItem Content="4-Parameter"/>
+                            </ComboBox>
+
+                            <!--Copy/Paste Data Grid for AIC/BIC Results-->
+                            <cntrls:CopyPasteDataGrid x:Name="AICBICTable" Grid.Row="1" Grid.ColumnSpan="4" Style="{DynamicResource CopyPasteDataGridStyle}" IsReadOnly="True"
+                                                      AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="Cell" HeadersVisibility="Column" 
+                                                      CanUserAddInsertDeleteRows="False" CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeRows="False" 
+                                                      CanUserResizeColumns="True" CanUserSortColumns="True" CanUserReorderColumns="False" ShowSortContextMenu="True" >
+                                <cntrls:CopyPasteDataGrid.Columns>
+                                    <DataGridTemplateColumn x:Name="CheckBoxColumn" IsReadOnly="False" Width="22" MinWidth="22" MaxWidth="22"
+                                                            HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding Path=ShowResults, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn x:Name="DistributionNameColumn" Header="Distribution" IsReadOnly="True" Width="150" MinWidth="50" 
+                                                        HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" Binding="{Binding Path=Distribution.DisplayName}">
+                                        <DataGridTextColumn.CellStyle>
+                                            <Style TargetType="DataGridCell" BasedOn="{StaticResource Left_CellStyle}">
+                                                <Setter Property="ToolTip">
+                                                    <Setter.Value>
+                                                        <ToolTip>
+                                                            <TextBlock Text="{Binding Path=ToolTip}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                                        </ToolTip>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="TextBlock.TextAlignment"  Value="Left"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                            <Grid Background="{TemplateBinding Background}">
+                                                                <ContentPresenter VerticalAlignment="Center" />
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </DataGridTextColumn.CellStyle>
+                                    </DataGridTextColumn>
+
+                                    <DataGridTextColumn x:Name="AICColumn" Header="AIC" IsReadOnly="True" Width="0.2*" MinWidth="30" 
+                                                        HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" CellStyle="{DynamicResource Center_CellStyle}"
+                                                        Binding="{Binding Path=AIC, StringFormat='F2', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}"/>
+                                    <DataGridTextColumn x:Name="BICColumn" Header="BIC" IsReadOnly="True" Width="0.2*" MinWidth="30" 
+                                                        HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" CellStyle="{StaticResource Center_CellStyle}" 
+                                                        Binding="{Binding Path=BIC, StringFormat='F2', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}"/>
+                                    <DataGridTextColumn x:Name="RMSEColumn" Header="RMSE" IsReadOnly="True" Width="0.2*" MinWidth="30" 
+                                                        HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" CellStyle="{StaticResource Center_CellStyle}"
+                                                        Binding="{Binding Path=RMSE, StringFormat='F2', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}"/>
+                                </cntrls:CopyPasteDataGrid.Columns>
+                                <cntrls:CopyPasteDataGrid.RowStyle>
+                                    <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource CopyPasteDataGridRowStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Path=FitSucceeded}" Value="False">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </cntrls:CopyPasteDataGrid.RowStyle>
+                            </cntrls:CopyPasteDataGrid>
+                        </Grid>
+
+                        <GridSplitter  Grid.Column="1" ResizeBehavior="PreviousAndNext"  HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="Transparent" Style="{DynamicResource VerticalGridSplitterStyle}"/>
+
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="24"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!--Frequency Plot Host-->
+                                <ContentControl x:Name="FrequencyPlotHost" Grid.Column="0" Margin="2,2,0,0" />
+
+                                <oxyCntrls:OxyPlotToolbar x:Name="PlotToolbar" Grid.Column="1" Background="Transparent" VerticalAlignment="Stretch" ToolBarOrientation="Vertical" />
+
+                                <!--PDF Plot Host-->
+                                <ContentControl x:Name="PDFPlotHost" Grid.Column="0" Margin="2,2,0,0" Visibility="Hidden" />
+
+                                <!--CDF Plot Host-->
+                                <ContentControl x:Name="CDFPlotHost" Grid.Column="0" Margin="2,2,0,0" Visibility="Hidden" />
+
+                                <!--P-P Plot Host-->
+                                <ContentControl x:Name="PPPlotHost" Grid.Column="0" Margin="2,2,0,0" Visibility="Hidden" />
+
+                                <!--Q-Q Plot Host-->
+                                <ContentControl x:Name="QQPlotHost" Grid.Column="0" Margin="2,2,0,0" Visibility="Hidden" />
+
+                            </Grid>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton x:Name="FrequencyPlotRadioButton" Content="Frequency Plot" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="1" IsChecked="True" Checked="FrequencyPlotRadioButton_Checked"
+                                             ToolTip="Click to display a comparison of the frequency curves."/>
+                                <RadioButton x:Name="PDFPlotRadioButton" Content="PDF Plot" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="3" IsChecked="False" Checked="PDFPlotRadioButton_Checked"
+                                             ToolTip="Click to display a comparison of the probability density functions (PDF)."/>
+                                <RadioButton x:Name="CDFPlotRadioButton" Content="CDF Plot" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="5" IsChecked="False" Checked="CDFPlotRadioButton_Checked"
+                                             ToolTip="Click to display a comparison of the cumulative distribution functions (CDF)."/>
+                                <RadioButton x:Name="PPPlotRadioButton" Content="P-P Plot" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="7" IsChecked="False" Checked="PPPlotRadioButton_Checked"
+                                             ToolTip="Click to display the probability-vs-probability plot. The better the fit, the closer this plot resembles a straight line."/>
+                                <RadioButton x:Name="QQPlotRadioButton" Content="Q-Q Plot" VerticalAlignment="Center" HorizontalAlignment="Center" Grid.Column="9" IsChecked="False" Checked="QQPlotRadioButton_Checked"
+                                             ToolTip="Click to display the quantile-vs-quantile plot. The better the fit, the closer this plot resembles a straight line." />
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+
+            <TabItem x:Name="TabularResultsTab" Header="Tabular Results" Style="{DynamicResource HorizontalTabItemStyle}" >
+                <!--Copy/Paste Data Grid for Distribution Statistics-->
+                <cntrls:CopyPasteDataGrid Name="SummaryStatisticsDataGrid" HeadersVisibility="Column" Style="{DynamicResource CopyPasteDataGridStyle}" 
+                                        AutoGenerateColumns="False" SelectionMode="Extended" SelectionUnit="Cell" IsReadOnly="True"
+                                        CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeColumns="True" ShowSortContextMenu="False"
+                                        CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False" LoadingRow="SummaryStatisticsDataGrid_LoadingRow">
+
+                    <cntrls:CopyPasteDataGrid.Columns>
+                        <DataGridTextColumn x:Name="StatNameColumn" Header="Measure" IsReadOnly="True" Width="100"
+                                        Binding="{Binding Path=Name}" HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}" CellStyle="{DynamicResource Left_CellStyle}">
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn x:Name="ExpColumn" Header="Exponential" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[0], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[0]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="GammaColumn" Header="Gamma" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[1], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[1]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="GeneralizedExtremeValueColumn" Header="Generalized Extreme Value" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[2], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[2]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment" Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="GeneralizedLogisticColumn" Header="Generalized Logistic" IsReadOnly="True" Width="100" MinWidth="50" 
+                                        Binding="{Binding Path=Value[3], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[3]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment" Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="GeneralizedNormalColumn" Header="Generalized Normal" IsReadOnly="True" Width="100" MinWidth="50" 
+                                        Binding="{Binding Path=Value[4], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[4]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment" Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="GeneralizedParetoColumn" Header="Generalized Pareto" IsReadOnly="True" Width="100" MinWidth="50" 
+                                        Binding="{Binding Path=Value[5], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[5]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment" Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="GumbelColumn" Header="Gumbel (EVI)" IsReadOnly="True" Width="100" MinWidth="50" 
+                                        Binding="{Binding Path=Value[6], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[6]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="KappaColumn" Header="Kappa-4" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[7], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[7]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="LnNormalColumn" Header="Ln-Normal" IsReadOnly="True" Width="100" MinWidth="50" 
+                                        Binding="{Binding Path=Value[8], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[8]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="LogisticColumn" Header="Logistic" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[9], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[9]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="LogNormalColumn" Header="Log-Normal" IsReadOnly="True" Width="100" MinWidth="50" 
+                                        Binding="{Binding Path=Value[10], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[10]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="LogPearsonTypeIIIColumn" Header="Log-Pearson Type III" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[11], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[11]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="NormalColumn" Header="Normal" IsReadOnly="True" Width="100" MinWidth="50"
+                                        Binding="{Binding Path=Value[12], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[12]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="PearsonTypeIIIColumn" Header="Pearson Type III" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[13], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[13]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn x:Name="WeibullColumn" Header="Weibull" IsReadOnly="True" Width="100" MinWidth="50"  
+                                        Binding="{Binding Path=Value[14], StringFormat='N4', FallbackValue=N/A, TargetNullValue=N/A, Converter={StaticResource NAConverter}}" HeaderStyle="{DynamicResource Right_ColumnHeaderStyle}">
+                            <DataGridTextColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource Right_CellStyle}">
+                                    <Setter Property="ToolTip">
+                                        <Setter.Value>
+                                            <ToolTip>
+                                                <TextBlock Text="{Binding Path=ToolTip[14]}" TextAlignment="Left" TextWrapping="Wrap" MaxWidth="300"/>
+                                            </ToolTip>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="TextBlock.TextAlignment"  Value="Right"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type DataGridCell}">
+                                                <Grid Background="{TemplateBinding Background}">
+                                                    <ContentPresenter VerticalAlignment="Center" />
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTextColumn.CellStyle>
+                        </DataGridTextColumn>
+                    </cntrls:CopyPasteDataGrid.Columns>
+                </cntrls:CopyPasteDataGrid>
+
+            </TabItem>
+
+        </TabControl>
+
+    </Grid>
+
+</UserControl>

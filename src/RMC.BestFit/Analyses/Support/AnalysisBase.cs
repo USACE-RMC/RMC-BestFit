@@ -1,4 +1,4 @@
-ï»¿using Numerics.Utilities;
+using Numerics.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -8,7 +8,7 @@ namespace RMC.BestFit.Analyses
     /// <summary>
     /// Provides a common base implementation for analysis classes, including
     /// property change notification, run lifecycle events, cancellation support,
-    /// and a standard <see cref="IsEstimated"/> flag.
+    /// and a standard <c>IsEstimated</c> flag.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -31,7 +31,7 @@ namespace RMC.BestFit.Analyses
     /// long-running operations.
     /// </description></item>
     /// <item><description>
-    /// Provides a common <see cref="IsEstimated"/> flag indicating whether the
+    /// Provides a common <c>IsEstimated</c> flag indicating whether the
     /// analysis currently has valid results.
     /// </description></item>
     /// </list>
@@ -39,7 +39,7 @@ namespace RMC.BestFit.Analyses
     public abstract class AnalysisBase : IAnalysis
     {
         /// <summary>
-        /// Backing field for <see cref="IsEstimated"/>.
+        /// Backing field for <c>IsEstimated</c>.
         /// </summary>
         protected bool _isEstimated = false;
 
@@ -55,7 +55,7 @@ namespace RMC.BestFit.Analyses
         /// reprocess body (running on the thread pool inside its own
         /// <c>Parallel.For</c> writing to <c>AnalysisResults.*</c>) can be live when
         /// <see cref="RunAsync"/> calls a derived <c>ClearResults</c> that nulls
-        /// <c>AnalysisResults</c> â€” producing an NRE on the next dereference inside
+        /// <c>AnalysisResults</c> — producing an NRE on the next dereference inside
         /// the loop body. Reprocess scheduling and Run both go through the same
         /// gate, so the new MCMC waits for any in-flight reprocess to complete
         /// before clearing results, and concurrent reprocesses queue rather than
@@ -95,7 +95,7 @@ namespace RMC.BestFit.Analyses
         public CancellationTokenSource CancellationTokenSource => _cancellationTokenSource ??= new CancellationTokenSource();
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for the specified
+        /// Raises the <c>PropertyChanged</c> event for the specified
         /// property name.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed.</param>
@@ -175,15 +175,15 @@ namespace RMC.BestFit.Analyses
         /// or <c>CreateUncertaintyAnalysisResultsAsync</c>).
         /// </param>
         /// <param name="callerName">
-        /// Captured automatically by the compiler â€” used to label exceptions in the
+        /// Captured automatically by the compiler — used to label exceptions in the
         /// background task continuation. Callers should not pass this explicitly.
         /// </param>
         /// <remarks>
         /// <para>
-        /// Returns immediately if <see cref="IsEstimated"/> is <c>false</c> â€” fresh
+        /// Returns immediately if <c>IsEstimated</c> is <c>false</c> — fresh
         /// (un-fit) analyses have nothing to reprocess. Otherwise schedules
         /// <paramref name="reprocessor"/> on the default task scheduler and logs any
-        /// exception via <see cref="Debug.WriteLine"/> without propagating to the
+        /// exception via <c>Debug.WriteLine</c> without propagating to the
         /// caller. The continuation runs on the default scheduler so it does not
         /// require a synchronization context.
         /// </para>

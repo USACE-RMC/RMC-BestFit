@@ -1,9 +1,9 @@
-﻿using Numerics.Data;
+using Numerics.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
     /// <summary>
     /// Threshold data series class.

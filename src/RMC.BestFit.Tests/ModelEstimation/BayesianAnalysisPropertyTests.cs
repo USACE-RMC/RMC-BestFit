@@ -2,12 +2,13 @@ using System.ComponentModel;
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
 /// Programmatic property-round-trip and configuration unit tests for the
-/// <see cref="BayesianAnalysis"/> class. These tests do NOT run any MCMC sampler —
+/// <c>BayesianAnalysis</c> class. These tests do NOT run any MCMC sampler —
 /// they only exercise the property setters/getters, default-options helpers,
 /// validation, and the SamplerType / PointEstimateType enums.
 /// </summary>
@@ -22,7 +23,7 @@ public class BayesianAnalysisPropertyTests
     /// </summary>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var values = new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 };
         for (int i = 0; i < values.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));

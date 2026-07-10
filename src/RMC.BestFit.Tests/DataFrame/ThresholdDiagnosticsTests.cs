@@ -1,10 +1,10 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="ThresholdDiagnostics"/> class.
+/// Unit tests for the <c>ThresholdDiagnostics</c> class.
 /// Validates the Mean Residual Life and Parameter Stability computations against known
 /// theoretical results and edge cases.
 /// </summary>

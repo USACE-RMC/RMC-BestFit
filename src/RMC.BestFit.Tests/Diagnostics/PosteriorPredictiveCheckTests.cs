@@ -2,23 +2,39 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Diagnostics;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Fast structural unit tests for the <see cref="PosteriorPredictiveCheck"/> class.
+/// Fast structural unit tests for the <c>PosteriorPredictiveCheck</c> class.
 /// Replicate-generation and p-value tests live in <c>RMC.BestFit.Verification</c>.
 /// </summary>
 [TestClass]
 public class PosteriorPredictiveCheckTests
 {
+    /// <summary>
+    /// Creates normal Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame { ExactSeries = new ExactSeries(
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(
             new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 }) };
         return new UnivariateDistribution(df, UnivariateDistributionType.Normal);
     }
 
+    /// <summary>
+    /// Creates posterior Samples.
+    /// </summary>
+    /// <param name="count">The number of values to create.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static IList<ParameterSet> MakePosteriorSamples(int count)
     {
         var samples = new List<ParameterSet>();

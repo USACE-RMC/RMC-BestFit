@@ -5,14 +5,14 @@ using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Tests that the model-average weights inside a <see cref="CompositeAnalysis"/>
+/// Tests that the model-average weights inside a <c>CompositeAnalysis</c>
 /// auto-refresh when a sub-analysis re-runs, without the user having to toggle
-/// the <see cref="CompositeAnalysis.ModelAverageMethod"/> setter.
+/// the <c>CompositeAnalysis.ModelAverageMethod</c> setter.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -36,17 +36,24 @@ public class CompositeWeightAutoUpdateTests
     private static readonly double[] InlineFloodData = new Normal(15000.0, 5000.0)
         .GenerateRandomValues(40, 12345);
 
-    private static DataFrame CreateDataFrame()
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, InlineFloodData[i]));
         return df;
     }
 
     /// <summary>
-    /// Builds a <see cref="UnivariateAnalysis"/> already marked as estimated, with an
-    /// injected <see cref="MCMCResults"/> + a populated <see cref="UncertaintyAnalysisResults"/>.
+    /// Builds a <c>UnivariateAnalysis</c> already marked as estimated, with an
+    /// injected <c>MCMCResults</c> + a populated <c>UncertaintyAnalysisResults</c>.
     /// AIC and DIC are stored on AnalysisResults / BayesianAnalysis respectively at the
     /// supplied values so the composite's weight calculation has deterministic inputs.
     /// </summary>
@@ -82,6 +89,18 @@ public class CompositeWeightAutoUpdateTests
         return analysis;
     }
 
+    /// <summary>
+    /// Creates model Average Composite.
+    /// </summary>
+    /// <param name="childA">The childA value.</param>
+    /// <param name="weightA">The weightA value.</param>
+    /// <param name="childB">The childB value.</param>
+    /// <param name="weightB">The weightB value.</param>
+    /// <param name="method">The method value.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static CompositeAnalysis CreateModelAverageComposite(
         UnivariateAnalysis childA, double weightA,
         UnivariateAnalysis childB, double weightB,
@@ -177,7 +196,7 @@ public class CompositeWeightAutoUpdateTests
 
     /// <summary>
     /// Auto-update also fires when the averaging method is DIC and a child's
-    /// <see cref="BayesianAnalysis.DIC"/> changes via re-fit.
+    /// <c>BayesianAnalysis.DIC</c> changes via re-fit.
     /// </summary>
     [TestMethod]
     public void ModelAverage_DIC_WeightsAutoUpdateAfterChildReFit()

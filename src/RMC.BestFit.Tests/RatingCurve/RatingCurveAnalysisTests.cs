@@ -1,11 +1,13 @@
 using Numerics.Data;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
+using BestFitRatingCurve = RMC.BestFit.Models.RatingCurve;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.RatingCurve;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="RatingCurveAnalysis"/> class.
+/// Programmatic unit tests for the <c>RatingCurveAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -25,17 +27,17 @@ public class RatingCurveAnalysisTests
 {
     #region Inline Test Data
 
-    // Synthetic stage values (1-10 ft) generated via RatingCurve.GenerateSyntheticData
+    // Synthetic stage values (1-10 ft) generated via BestFitRatingCurve.GenerateSyntheticData
     // produce a moderate-range fixture suitable for property-level testing.
     private static readonly double[] s_trueParams = { 0.5, 1.0, 2.0, 0.05 }; // [ξ, log10(α), β, σ]
 
     /// <summary>
     /// Builds a single-segment synthetic stage/discharge dataset using the model's
-    /// <see cref="RMC.BestFit.Models.RatingCurve.GenerateSyntheticData"/> method.
+    /// <c>RMC.BestFit.Models.RatingCurve.GenerateSyntheticData</c> method.
     /// True parameters: [ξ, log10(α), β, σ] = [0.5, log10(10), 2.0, 0.05].
     /// </summary>
     /// <param name="sampleSize">Number of observations. Default = 200.</param>
-    /// <returns>A tuple of (stage, discharge) TimeSeries.</returns>
+    /// <returns>A tuple of (stage, discharge) NumericsTimeSeries.</returns>
     private static (Numerics.Data.TimeSeries Stage, Numerics.Data.TimeSeries Discharge)
         MakeSingleSegmentData(int sampleSize = 200)
     {
@@ -45,7 +47,7 @@ public class RatingCurveAnalysisTests
     }
 
     /// <summary>
-    /// Creates a configured <see cref="RMC.BestFit.Models.RatingCurve"/> with default settings.
+    /// Creates a configured <c>RMC.BestFit.Models.RatingCurve</c> with default settings.
     /// </summary>
     private static RMC.BestFit.Models.RatingCurve CreateTestRatingCurve(int numberOfSegments = 1)
     {
@@ -54,7 +56,7 @@ public class RatingCurveAnalysisTests
     }
 
     /// <summary>
-    /// Creates a configured <see cref="RatingCurveAnalysis"/> wrapping a fresh model.
+    /// Creates a configured <c>RatingCurveAnalysis</c> wrapping a fresh model.
     /// </summary>
     private static RatingCurveAnalysis CreateTestAnalysis(int numberOfSegments = 1)
     {
@@ -82,7 +84,7 @@ public class RatingCurveAnalysisTests
     }
 
     /// <summary>
-    /// Constructor throws <see cref="ArgumentNullException"/> when rating curve is null.
+    /// Constructor throws <c>ArgumentNullException</c> when rating curve is null.
     /// </summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]

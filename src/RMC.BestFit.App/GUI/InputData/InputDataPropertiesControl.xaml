@@ -1,0 +1,289 @@
+﻿<UserControl x:Class="RMC_BestFit.InputDataPropertiesControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             mc:Ignorable="d"
+             MinWidth="100"
+             MinHeight="100"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="{DynamicResource PropertyGrid.Content.Background}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+             Unloaded="UserControl_Unloaded">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <cntrls:DoubleToGridLengthConverter x:Key="ActualToLengthConverter" />
+            <cntrls:ReverseBooleanConverter x:Key="ReverseBoolConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10000000*" MinHeight="200"/>
+            <RowDefinition Height="*" MinHeight="1"/>
+            <RowDefinition Height="Auto" MinHeight="50" MaxHeight="200" />
+        </Grid.RowDefinitions>
+        <ScrollViewer x:Name="Viewer" Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Grid x:Name="MainGrid" Width="{Binding ElementName=Viewer, Path=ViewportWidth}" MinWidth="200">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+            <!--Element Properties-->
+            <Expander Grid.Row="0" 
+                          Margin="0,4,4,8" 
+                          Header="INPUT DATA PROPERTIES" 
+                          IsExpanded="True" 
+                          Grid.ColumnSpan="2"
+                          Style="{DynamicResource PropertyExpanderStyle}">
+                <DockPanel>
+
+                    <cntrls:NameTextPropertyControl x:Name="ElementName" Margin="0 2" CharacterLimit="50" DockPanel.Dock="Top" Title="Name" MaxPropertyWidth="200"
+                                                Text="{Binding Element.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="Name_PreviewMouseLeftButtonDown"
+                                                ExistingNames="{Binding ExistingNames, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"
+                                                GotFocus="Name_GotFocus"
+                                                LostFocus="Name_LostFocus"/>
+
+                    <cntrls:ResizeableTextPropertyControl x:Name="Description" Margin="0 2" DockPanel.Dock="Top" Title="Description" MaxPropertyWidth="200" TextBoxHeight="88"
+                                                      Text="{Binding Element.Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="Description_PreviewMouseLeftButtonDown"
+                                                      PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                    <cntrls:TextPropertyControl x:Name="CreationDate" Margin="0 2" DockPanel.Dock="Top" Title="Created On" MaxPropertyWidth="200" IsReadOnly="True"
+                                            Text="{Binding Element.CreationDate, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="CreationDate_PreviewMouseLeftButtonDown"
+                                            PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                    <cntrls:TextPropertyControl x:Name="LastModified" Margin="0 2" DockPanel.Dock="Top" Title="Last Modified" MaxPropertyWidth="200" IsReadOnly="True" 
+                                            Text="{Binding Element.LastModified, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="LastModified_PreviewMouseLeftButtonDown" 
+                                            PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                    <cntrls:TextPropertyControl x:Name="UnitLabel" Margin="0 2" DockPanel.Dock="Top" Title="Unit Label" MaxPropertyWidth="200" 
+                                            Text="{Binding Element.UnitLabel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="UnitLabel_PreviewMouseLeftButtonDown"
+                                            PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                    <cntrls:TextPropertyControl x:Name="IndexLabel" Margin="0 2" DockPanel.Dock="Top" Title="Index Label" MaxPropertyWidth="200" 
+                                            Text="{Binding Element.IndexLabel, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="IndexLabel_PreviewMouseLeftButtonDown"
+                                            PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                </DockPanel>
+            </Expander>
+
+            <!--Time Series Options-->
+            <Expander x:Name="TimeSeriesExpander"
+                    Grid.Row="1" 
+                    Margin="0,4,4,8" 
+                    Header="EXACT DATA OPTIONS" 
+                    IsExpanded="True" 
+                    Grid.ColumnSpan="2"
+                    Style="{DynamicResource PropertyExpanderStyle}">
+                <DockPanel>
+
+                    <cntrls:ContentPropertyControl x:Name="ExactDateMethod" Margin="0 2" DockPanel.Dock="Top" Title="Data Entry Method" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="ExactDataMethod_PreviewMouseLeftButtonDown">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      ItemsSource="{Binding ExactDataMethodOptions}" 
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Element.ExactDataMethod, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      SelectionChanged="ExactDateMethodComboBox_SelectionChanged"/>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                    <!--USGS Site Number -->
+                    <cntrls:TextPropertyControl x:Name="USGSSiteNumber" Title="Site Number" DockPanel.Dock="Top" Margin="0,2,0,2" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="USGSSiteNumber_PreviewMouseLeftButtonDown"
+                                               Text="{Binding Element.USGSSiteNumber, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                    <!--Time Series Element-->
+                    <cntrls:ContentPropertyControl x:Name="TimeSeriesElement" Margin="0 2" DockPanel.Dock="Top" Title="Time Series" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="TimeSeriesElement_PreviewMouseLeftButtonDown"
+                                                   ToolTip="Select a valid time series."
+                                                   PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <Border BorderBrush="Red" BorderThickness="1" Visibility="Visible">
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      Loaded="ComboBox_Loaded"
+                                      DisplayMemberPath="Name"
+                                      SelectedValue="{Binding Element.TimeSeriesElement, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      SelectionChanged="TimeSeriesElementComboBox_SelectionChanged"/>
+                            </Border>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                    <!--Block Function-->
+                    <cntrls:ContentPropertyControl x:Name="BlockFunction" Margin="0 2" DockPanel.Dock="Top" Title="Block Function" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="BlockFunction_PreviewMouseLeftButtonDown"
+                                                   PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      ItemsSource="{Binding BlockFunctionOptions}" 
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Element.BlockFunction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                    <!--Time Block Window-->
+                    <cntrls:ContentPropertyControl x:Name="TimeBlock" Margin="0 2" DockPanel.Dock="Top" Title="Time Block" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="TimeBlock_PreviewMouseLeftButtonDown"
+                                                   PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      ItemsSource="{Binding TimeBlockOptions}" 
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Element.TimeBlock, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      SelectionChanged="TimeBlockComboBox_SelectionChanged"/>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                    <!--Start Month-->
+                    <cntrls:ContentPropertyControl x:Name="StartMonth" Margin="0 2" DockPanel.Dock="Top" Title="Start Month" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="StartMonth_PreviewMouseLeftButtonDown"
+                                                   PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      ItemsSource="{Binding MonthOptions}" 
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Element.StartMonth, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                    <!--End Month-->
+                    <cntrls:ContentPropertyControl x:Name="EndMonth" Margin="0 2" DockPanel.Dock="Top" Title="End Month" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="EndMonth_PreviewMouseLeftButtonDown"
+                                                   PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      ItemsSource="{Binding MonthOptions}" 
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Element.EndMonth, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                    <!--Threshold-->
+                    <cntrls:NumericPropertyControl x:Name="POTThresholdValue" Title="Threshold" DockPanel.Dock="Top" Margin="0,2,0,2" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="POTThresholdValue_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="True" Number="{Binding Element.Threshold, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                               PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                    <!--Min Steps Between Peaks-->
+                    <cntrls:NumericPropertyControl x:Name="MinStepsBetweenPeaks" Title="Minimum Steps" DockPanel.Dock="Top" Margin="0,2,0,2" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="MinStepsBetweenPeaks_PreviewMouseLeftButtonDown"
+                                               IsWholeNumber="True" CanHaveNegative="False" MinValue="1" MaxValue="{Binding Element.TimeSeriesElement.TimeSeries.Count, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                               Number="{Binding Element.MinStepsBetweenPeaks, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                               PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                    <!--Smoothing Function-->
+                    <cntrls:ContentPropertyControl x:Name="SmoothingFunction" Margin="0 2" DockPanel.Dock="Top" Title="Smoothing" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="SmoothingFunction_PreviewMouseLeftButtonDown"
+                                                   PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      ItemsSource="{Binding SmoothingFunctionOptions}" 
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Element.SmoothingFunction, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                      SelectionChanged="SmoothingFunction_SelectionChanged"/>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                    <!--Period-->
+                    <cntrls:NumericPropertyControl x:Name="Period" Title="Period" DockPanel.Dock="Top" Margin="0,2,0,2" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="Period_PreviewMouseLeftButtonDown"
+                                               IsWholeNumber="True" CanHaveNegative="False" MinValue="1" MaxValue="{Binding Element.TimeSeriesElement.TimeSeries.Count, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                               Number="{Binding Element.Period, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                               PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+
+                    <!--Process Data Button-->
+                    <Grid DockPanel.Dock="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                            <Button Name="ProcessDataButton" ToolTip="Click to process the time series data." Grid.Column="1"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                                Width="83" Height="24" Margin="0,5,0,0" Cursor="Hand" Click="ProcessDataButton_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <ContentControl Content="{DynamicResource DownloadIcon}" Margin="0,0,4,0"/>
+                                <TextBlock Name="ProcessDataButtonText"  Text="Process" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                </DockPanel>
+            </Expander>
+            
+            <!--Plotting Positions-->
+            <Expander Grid.Row="2" 
+                          Margin="0,4,4,8" 
+                          Header="PLOTTING POSITIONS" 
+                          IsExpanded="True" 
+                          Grid.ColumnSpan="2"
+                          Style="{DynamicResource PropertyExpanderStyle}">
+                <DockPanel>
+
+                    <cntrls:ContentPropertyControl x:Name="PlottingParameter" Margin="0 2" DockPanel.Dock="Top" Title="Parameter" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="PlottingParameter_PreviewMouseLeftButtonDown"
+                                                   PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                        <cntrls:ContentPropertyControl.InnerContent>
+                            <ComboBox Grid.Column="2"
+                                      HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                      ItemsSource="{Binding ParameterOptions}" 
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding Element.DataFrame.PlottingParameter, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style>
+                                        <Setter Property="Control.ToolTip" Value="{Binding ToolTip}" />
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
+                            </ComboBox>
+                        </cntrls:ContentPropertyControl.InnerContent>
+                    </cntrls:ContentPropertyControl>
+
+                </DockPanel>
+            </Expander>
+
+            <!--Low Outlier Test-->
+                <Expander Grid.Row="3" 
+                          Margin="0,4,4,8" 
+                          Header="LOW OUTLIER TEST" 
+                          IsExpanded="True" 
+                          Grid.ColumnSpan="2"
+                          Style="{DynamicResource PropertyExpanderStyle}">
+                    <DockPanel>
+
+                        <cntrls:BooleanPropertyControl x:Name="MGBTButton" Title="Multiple Grubbs-Beck Test" IsSelected="{Binding Element.UseMultipleGrubbsBeckTest, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" DockPanel.Dock="Top" Margin="0,2,0,2" PreviewMouseLeftButtonDown="MGBTButton_PreviewMouseLeftButtonDown" />
+
+                        <cntrls:NumericPropertyControl x:Name="LOThresholdValue" Title="Threshold Value" DockPanel.Dock="Top" Margin="0,2,0,2" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="LOThresholdValue_PreviewMouseLeftButtonDown"
+                                               CanHaveNegative="True" MinValue="0" MaxValue="{Binding Element.DataFrame.ExactSeries.UpperMiddleValue, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                               Number="{Binding Element.DataFrame.LowOutlierThreshold, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" IsEnabled="{Binding IsSelected, ElementName=MGBTButton, Converter={StaticResource ReverseBoolConverter}}"
+                                               PropertyWidth="{Binding ElementName=ExactDateMethod, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                        <!--Run Test Button-->
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Name="RunTestButton" ToolTip="Click to run the low outlier test." Grid.Column="1"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                            Width="83" Height="24" Margin="0,5,0,0" Cursor="Hand" Click="RunTestButton_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <ContentControl Content="{DynamicResource RunIcon}" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Run Test" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                    </DockPanel>
+                </Expander>
+            </Grid>
+        </ScrollViewer>
+        <GridSplitter Grid.Row="1" Height="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Background="{DynamicResource SeparatorBorder}"/>
+        <cntrls:PropertyAttributes x:Name="PropertyAttributes" Grid.Row="2"/>
+    </Grid>
+</UserControl>

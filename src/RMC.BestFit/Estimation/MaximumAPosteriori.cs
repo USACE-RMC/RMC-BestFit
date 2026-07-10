@@ -1,4 +1,4 @@
-﻿using Numerics.Data.Statistics;
+using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
@@ -83,7 +83,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// Defaults to <c>false</c>, so most callers can inspect <see cref="Status"/> and the
-        /// <see cref="Estimate"/> return value. Set to <c>true</c> for callers that need the
+        /// <c>Estimate</c> return value. Set to <c>true</c> for callers that need the
         /// optimizer to stop immediately on failure conditions such as maximum function evaluations.
         /// </remarks>
         public bool ReportFailure
@@ -119,7 +119,7 @@ namespace RMC.BestFit.Estimation
         /// Gets the final <see cref="OptimizationStatus"/> from the most recent estimation run.
         /// </summary>
         /// <remarks>
-        /// Captured from the inner <see cref="Optimizer"/>.Status at the end of <see cref="Estimate"/>
+        /// Captured from the inner <see cref="Optimizer"/>.Status at the end of <c>Estimate</c>
         /// so it remains valid after the transient optimizer is discarded. Returns
         /// <see cref="OptimizationStatus.None"/> before any estimation has run, and after
         /// <see cref="ClearResults"/>. Set to <see cref="OptimizationStatus.Failure"/> if the
@@ -154,7 +154,7 @@ namespace RMC.BestFit.Estimation
 
         /// <summary>
         /// Gets the optimal parameter set from the estimation. Initialized to an empty
-        /// <see cref="ParameterSet"/> so consumers that bypass the <see cref="IsEstimated"/>
+        /// <see cref="ParameterSet"/> so consumers that bypass the <c>IsEstimated</c>
         /// guard get a deterministic empty parameter set rather than an
         /// <see cref="NullReferenceException"/>.
         /// </summary>
@@ -457,7 +457,7 @@ namespace RMC.BestFit.Estimation
         /// convention used elsewhere in the framework (UnivariateAnalysis, BivariateAnalysis,
         /// CompetingRiskAnalysis, MixtureAnalysis, PointProcessAnalysis, RatingCurveAnalysis,
         /// SpatialGEVAnalysis, the time-series analyses, B17C). With **uniform / improper-flat
-        /// priors** the prior contribution is constant in θ, and the value reduces to the
+        /// priors** the prior contribution is constant in ?, and the value reduces to the
         /// conventional MLE-based AIC.
         /// </para>
         /// <para>
@@ -495,19 +495,19 @@ namespace RMC.BestFit.Estimation
         /// <para>
         /// Uses <see cref="IModel.LogLikelihood(double[])"/> (data + prior), matching the
         /// convention used elsewhere in the framework. With **uniform / improper-flat priors**
-        /// the prior contribution is constant in θ and the value reduces to the conventional
+        /// the prior contribution is constant in ? and the value reduces to the conventional
         /// MLE-based BIC.
         /// </para>
         /// <para>
         /// **Caveat for informative priors.** BIC was derived as a Laplace approximation to
-        /// the marginal likelihood under uniform priors, so its `k·ln(n)` penalty does not
+        /// the marginal likelihood under uniform priors, so its `k�ln(n)` penalty does not
         /// adjust for prior information. With informative priors the value still rank-orders
         /// candidate models at fixed prior, but absolute values and cross-prior comparisons
         /// can be misleading.
         /// </para>
         /// <para>
         /// **Recommended alternatives with informative priors:** prefer DIC, WAIC, or LOO-CV
-        /// with PSIS — all are produced by <see cref="BayesianAnalysis"/> after MCMC and
+        /// with PSIS � all are produced by <see cref="BayesianAnalysis"/> after MCMC and
         /// properly account for effective parameter count under the prior.
         /// </para>
         /// </remarks>
@@ -527,11 +527,11 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <param name="parameters">The parameter values at which to evaluate gradients.</param>
         /// <param name="n">The number of observations (length of pointwise log-likelihood array).</param>
-        /// <returns>A jagged array where gradients[i][j] is ∂log f(yᵢ|θ)/∂θⱼ.</returns>
+        /// <returns>A jagged array where gradients[i][j] is ?log f(y?|?)/???.</returns>
         /// <remarks>
         /// <para>
-        /// Uses the central difference formula: ∂f/∂θⱼ ≈ [f(θ+hⱼeⱼ) − f(θ−hⱼeⱼ)] / (2hⱼ),
-        /// where hⱼ = max(|θⱼ| × 1e-4, 1e-3). Same step size strategy as
+        /// Uses the central difference formula: ?f/??? � [f(?+h?e?) - f(?-h?e?)] / (2h?),
+        /// where h? = max(|??| � 1e-4, 1e-3). Same step size strategy as
         /// <see cref="MaximumLikelihood.GetCooksDistance"/> and
         /// <see cref="LeverageDiagnostics.ComputeNumericalHessianPublic"/>.
         /// </para>
@@ -547,7 +547,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <returns>
         /// A matrix where element [i,j] represents the scaled influence of observation i on parameter j.
-        /// Values greater than 2/√n are often considered influential.
+        /// Values greater than 2/vn are often considered influential.
         /// </returns>
         /// <remarks>
         /// <para>
@@ -583,7 +583,7 @@ namespace RMC.BestFit.Estimation
                 return new double[n, NumberOfParameters];
             }
 
-            // Compute influence: I_ij = (H⁻¹ gᵢ)_j / SE_j
+            // Compute influence: I_ij = (H?� g?)_j / SE_j
             var influence = new double[n, NumberOfParameters];
             var se = GetStandardErrors();
 
@@ -612,7 +612,7 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Cook's D_i = gᵢᵀ H⁻¹ gᵢ / p where H is the full posterior Hessian (data + prior)
+        /// Cook's D_i = g?? H?� g? / p where H is the full posterior Hessian (data + prior)
         /// and p is the number of parameters.
         /// </para>
         /// <para>
@@ -652,7 +652,7 @@ namespace RMC.BestFit.Estimation
 
             for (int i = 0; i < n; i++)
             {
-                // Compute gᵢᵀ H⁻¹ gᵢ
+                // Compute g?? H?� g?
                 double quadForm = 0;
                 for (int j = 0; j < NumberOfParameters; j++)
                 {

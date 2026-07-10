@@ -1,0 +1,94 @@
+﻿<UserControl x:Class="RMC_BestFit.QuantilePriorsControl" x:Name="QuantilePriors"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             xmlns:oxycntrls="clr-namespace:OxyPlotControls;assembly=OxyPlotControls"
+             xmlns:numcntrls="clr-namespace:NumericControls.Distributions.Univariate;assembly=NumericControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="{DynamicResource PropertyGrid.Content.Background}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/GenericControls;Component/Resources/ResourceDictionary.xaml"/>
+                <ResourceDictionary>
+                    <cntrls:BooleanToVisibilityConverter x:Key="BoolVisibilityConverter"/>
+                    <cntrls:ReverseBooleanConverter x:Key="ReverseBoolConverter"/>
+                    <cntrls:DoubleToGridLengthConverter x:Key="ActualToLengthConverter" />
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <!--Prior Distribution Grid-->
+        <cntrls:CopyPasteDataGrid Name="PriorDistributionsDataGrid" Grid.Row="0" HeadersVisibility="Column" Style="{DynamicResource CopyPasteDataGridStyle}"
+                                    SelectionMode="Extended" SelectionUnit="Cell" IsReadOnly="True" AutoGenerateColumns="False"
+                                    CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeColumns="True" CanUserAddInsertDeleteRows="False"
+                                    CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False" 
+                                    PreviewMouseLeftButtonDown="PriorDistributionsDataGrid_PreviewMouseLeftButtonDown"
+                                    IsEnabled="{Binding ElementName=EnablePriorQuantileDistributions, Path=IsSelected}">
+            <DataGrid.Resources>
+                <DataTemplate x:Key="DistributionSelector">
+                    <Grid>
+                        <ToggleButton Name="PopupToggleButton" Margin="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" ToolTip="Click to edit the distribution."
+                                      IsHitTestVisible="{Binding ElementName=DistributionPopup, Path=IsOpen, Converter={StaticResource ReverseBoolConverter}}">
+                            <TextBlock Name="DistributionTextBlock" Text="{Binding Path=Distribution.DisplayLabel}" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="3,0,0,0"/>
+                        </ToggleButton>
+
+                        <Popup Name="DistributionPopup" IsOpen="{Binding ElementName=PopupToggleButton, Path=IsChecked, Mode=TwoWay}" 
+                                                        Placement="Right" PlacementTarget="{Binding ElementName=PopupToggleButton}"
+                                                        PopupAnimation="Slide" AllowsTransparency="True" StaysOpen="False"
+                                                        Opened="DistributionPopup_Opened"
+                                                        Closed="DistributionPopup_Closed"
+                                                        >
+                            <Border Background="{DynamicResource EnvironmentWindowBackground}" BorderBrush="{DynamicResource Button.Static.Border}" BorderThickness="1" >
+                                <numcntrls:DistributionSelectorControl x:Name="SelectorControl" Margin="5" Width="300"
+                                                               BackgroundColor="{DynamicResource EnvironmentWindowBackground}" 
+                                                               ShowAxisTitle="True"                                                               
+                                                               ShowTickLines="True"
+                                                               ShowAxisLabel="True"
+                                                               ExpandPlot="False"                                                          
+                                                               ShowPlot="True"
+                                                               ShowStatistics="True"
+                                                               DistributionTitle="{Binding Path=QuantileLabel}">
+                                </numcntrls:DistributionSelectorControl>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </DataTemplate>
+            </DataGrid.Resources>
+            <cntrls:CopyPasteDataGrid.Columns>
+                <DataGridTemplateColumn x:Name="QuantileColumn" Header="Probability" IsReadOnly="False" Width="0.5*" HeaderStyle="{DynamicResource Left_ColumnHeaderStyle}">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox x:Name="QuantileComboBox" ItemsSource="{Binding ElementName=QuantilePriors, Path=QuantileOptions}" SelectedValue="{Binding Alpha, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn x:Name="QuantileDistributionColumn" Header="Distribution"  
+                                        HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}" CellTemplate="{StaticResource DistributionSelector}"
+                                        Width="0.5*"  MaxWidth="200" MinWidth="10"
+                                        />
+            </cntrls:CopyPasteDataGrid.Columns>
+        </cntrls:CopyPasteDataGrid>
+        <!--Enable Prior Quantile Distributions-->
+        <cntrls:BooleanPropertyControl x:Name="EnablePriorQuantileDistributions" Margin="0 2" Grid.Row="1" Title="Enable Priors on Quantiles"
+                                       PreviewMouseLeftButtonDown="EnablePriorQuantileDistributions_PreviewMouseLeftButtonDown"
+                                       IsSelected="{Binding Model.EnableQuantilePriors, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  />
+        <!--Single Quantile-->
+        <cntrls:BooleanPropertyControl x:Name="UseSingleQuantile" Margin="0 2" Grid.Row="2" Title="Use Single Quantile" PreviewMouseLeftButtonDown="UseSingleQuantile_PreviewMouseLeftButtonDown"
+                                       IsSelected="{Binding Model.UseSingleQuantile, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" 
+                                       Visibility="{Binding ShowSingleQuantileCheckBox, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay, Converter={StaticResource BoolVisibilityConverter}}"
+                                       IsEnabled="{Binding ElementName=EnablePriorQuantileDistributions, Path=IsSelected}"/>
+    </Grid>
+</UserControl>

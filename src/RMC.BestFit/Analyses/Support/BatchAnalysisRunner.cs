@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Numerics.Utilities;
 
 namespace RMC.BestFit.Analyses
@@ -31,9 +31,9 @@ namespace RMC.BestFit.Analyses
     /// <b>Execution ordering:</b> When <see cref="BatchAnalysisOptions.OrderByDependency"/>
     /// is <c>true</c> (the default), analyses are partitioned into three sequential phases:
     /// (1) independent analyses (Univariate, Bivariate, B17C, etc.);
-    /// (2) <see cref="CompositeAnalysis"/> instances, which depend on Phase 1 univariate fits;
+    /// (2) <c>CompositeAnalysis</c> instances, which depend on Phase 1 univariate fits;
     /// (3) <see cref="CoincidentFrequencyAnalysis"/> instances, which depend on Phase 1 bivariate fits.
-    /// Composite and CFA are in different phases purely by convention â€” they have no
+    /// Composite and CFA are in different phases purely by convention — they have no
     /// cross-dependency on each other.
     /// </para>
     /// </remarks>
@@ -43,6 +43,11 @@ namespace RMC.BestFit.Analyses
         /// The cancellation token source used to cancel the current batch run.
         /// </summary>
         private CancellationTokenSource? _cancellationTokenSource;
+
+        /// <summary>
+        /// Serializes per-analysis progress event delivery from inline reporter callbacks.
+        /// </summary>
+        private readonly object _progressEventGate = new object();
 
         /// <summary>
         /// Occurs immediately before an individual analysis begins executing
@@ -101,7 +106,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// The event argument is a tuple of the <see cref="IAnalysis"/> that reported
-        /// progress and the progress percentage (0â€“100). Each analysis receives its own
+        /// progress and the progress percentage (0–100). Each analysis receives its own
         /// <see cref="SafeProgressReporter"/>, so this event correctly identifies which
         /// analysis is reporting even in parallel mode.
         /// </para>
@@ -183,6 +188,9 @@ namespace RMC.BestFit.Analyses
                     }
                     else
                     {
+                        using var innerParallelismScope = AnalysisProgress.UseMaxDegreeOfParallelism(
+                            CalculateInnerMaxDegreeOfParallelism(options.MaxDegreeOfParallelism));
+
                         phaseResults = await RunParallelAsync(phase, options,
                             linkedToken, total, completed);
                     }
@@ -275,7 +283,7 @@ namespace RMC.BestFit.Analyses
         /// <returns>A list of results for analyses executed in this phase.</returns>
         /// <remarks>
         /// <para>
-        /// Tasks are started without <see cref="Task.Run"/> so that analysis completions
+        /// Tasks are started without <c>Task.Run</c> so that analysis completions
         /// (which fire <see cref="System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/>)
         /// resume on the caller's <see cref="SynchronizationContext"/> (the UI thread in WPF).
         /// The CPU-heavy MCMC work still runs on thread-pool threads because each
@@ -380,11 +388,16 @@ namespace RMC.BestFit.Analyses
             bool wasCanceled = false;
             Exception? error = null;
 
-            // Create a per-analysis progress reporter so parallel runs don't collide
-            var progressReporter = new SafeProgressReporter(analysis.GetType().Name);
+            // Create a per-analysis progress reporter so parallel runs don't collide.
+            // Use an inline context so progress delivery is not first posted to WPF's
+            // SynchronizationContext and then posted again by the batch window.
+            var progressReporter = CreateInlineProgressReporter(analysis.GetType().Name);
             progressReporter.ProgressReported += (reporter, progress, delta) =>
             {
-                AnalysisProgressChanged?.Invoke(this, (analysis, progress));
+                lock (_progressEventGate)
+                {
+                    AnalysisProgressChanged?.Invoke(this, (analysis, progress));
+                }
             };
 
             try
@@ -400,7 +413,7 @@ namespace RMC.BestFit.Analyses
                     // CoincidentFrequencyAnalysis with un-estimated upstream BivariateAnalysis)
                     // are batch-eligible BEFORE Phase 1 has run their dependencies. Phase
                     // ordering normally fits the dependency first, but if it failed in
-                    // Phase 1 we must not let RunAsync throw deeper in the stack — instead
+                    // Phase 1 we must not let RunAsync throw deeper in the stack � instead
                     // we record a clear, type-specific failure here and skip the run.
                     var dependencyFailure = CheckDependencies(analysis);
                     if (dependencyFailure != null)
@@ -444,6 +457,56 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Calculates the maximum degree of inner loop parallelism during parallel batch runs.
+        /// </summary>
+        /// <param name="outerMaxDegreeOfParallelism">The number of analyses allowed to run concurrently.</param>
+        /// <returns>The maximum degree of parallelism to use inside an individual analysis.</returns>
+        private static int CalculateInnerMaxDegreeOfParallelism(int outerMaxDegreeOfParallelism)
+        {
+            int outer = Math.Max(1, outerMaxDegreeOfParallelism);
+            return Math.Max(1, Environment.ProcessorCount / outer);
+        }
+
+        /// <summary>
+        /// Creates a progress reporter whose synchronization context invokes callbacks inline.
+        /// </summary>
+        /// <param name="taskName">The task name assigned to the progress reporter.</param>
+        /// <returns>A progress reporter that does not marshal through the caller's synchronization context.</returns>
+        private static SafeProgressReporter CreateInlineProgressReporter(string taskName)
+        {
+            SynchronizationContext? previousContext = SynchronizationContext.Current;
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(InlineProgressSynchronizationContext.Instance);
+                return new SafeProgressReporter(taskName);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+        }
+
+        /// <summary>
+        /// Synchronization context that invokes posted callbacks immediately on the calling thread.
+        /// </summary>
+        private sealed class InlineProgressSynchronizationContext : SynchronizationContext
+        {
+            /// <summary>
+            /// Shared instance of the inline progress synchronization context.
+            /// </summary>
+            internal static readonly InlineProgressSynchronizationContext Instance = new InlineProgressSynchronizationContext();
+
+            /// <summary>
+            /// Posts a callback by executing it immediately.
+            /// </summary>
+            /// <param name="d">The callback to execute.</param>
+            /// <param name="state">The callback state.</param>
+            public override void Post(SendOrPostCallback d, object? state)
+            {
+                d(state);
+            }
+        }
+        /// <summary>
         /// Verifies that the cross-batch dependencies of dependent analyses are satisfied
         /// by the time the dependent's phase runs. Returns null when the analysis is safe
         /// to invoke, or an <see cref="InvalidOperationException"/> describing the missing
@@ -454,16 +517,16 @@ namespace RMC.BestFit.Analyses
         /// Two dependent analysis types are guarded:
         /// </para>
         /// <list type="bullet">
-        /// <item><description><see cref="CompositeAnalysis"/> requires every child
+        /// <item><description><c>CompositeAnalysis</c> requires every child
         /// <see cref="WeightedUnivariateAnalysis.UnivariateAnalysis"/> to satisfy
-        /// <see cref="UnivariateAnalysis.IsEstimated"/>.</description></item>
+        /// <c>IsEstimated</c>.</description></item>
         /// <item><description><see cref="CoincidentFrequencyAnalysis"/> requires its
         /// upstream <see cref="CoincidentFrequencyAnalysis.BivariateAnalysis"/> to be
-        /// non-null and satisfy <see cref="BivariateAnalysis.IsEstimated"/>.</description></item>
+        /// non-null and satisfy <c>IsEstimated</c>.</description></item>
         /// </list>
         /// <para>
         /// Other analysis types pass through unchanged. The check is intentionally narrower
-        /// than the analysis's own <c>Validate()</c> — it guards the cross-batch dependency
+        /// than the analysis's own <c>Validate()</c> � it guards the cross-batch dependency
         /// only; all other failure modes (shape, bin count, etc.) surface from
         /// <c>RunAsync</c>'s own validation as before.
         /// </para>
@@ -514,21 +577,21 @@ namespace RMC.BestFit.Analyses
         /// </param>
         /// <returns>
         /// A list of phases, where each phase is a list of analyses that can run concurrently.
-        /// Phases execute sequentially â€” all analyses in a phase must complete before the
+        /// Phases execute sequentially — all analyses in a phase must complete before the
         /// next phase begins.
         /// </returns>
         /// <remarks>
         /// <para>
         /// Two analysis types depend on results produced by sibling analyses run in the same batch:
-        /// <see cref="CompositeAnalysis"/> aggregates the posterior fits of its child univariate analyses;
+        /// <c>CompositeAnalysis</c> aggregates the posterior fits of its child univariate analyses;
         /// <see cref="CoincidentFrequencyAnalysis"/> consumes the upstream <see cref="BivariateAnalysis"/>'s
         /// posterior copula and marginal MCMC chains. This method partitions runs into three
         /// dependency phases so the upstream fits are guaranteed to be complete before the consumers run:
         /// </para>
         /// <list type="number">
-        /// <item><description>Phase 1 â€” independent analyses (Univariate, Bivariate, etc.)</description></item>
-        /// <item><description>Phase 2 â€” <see cref="CompositeAnalysis"/> instances (depend on Phase 1 univariate fits)</description></item>
-        /// <item><description>Phase 3 â€” <see cref="CoincidentFrequencyAnalysis"/> instances (depend on Phase 1 bivariate fits)</description></item>
+        /// <item><description>Phase 1 — independent analyses (Univariate, Bivariate, etc.)</description></item>
+        /// <item><description>Phase 2 — <c>CompositeAnalysis</c> instances (depend on Phase 1 univariate fits)</description></item>
+        /// <item><description>Phase 3 — <see cref="CoincidentFrequencyAnalysis"/> instances (depend on Phase 1 bivariate fits)</description></item>
         /// </list>
         /// <para>
         /// Composite (univariate) and CFA (bivariate) live in different phases by convention only;

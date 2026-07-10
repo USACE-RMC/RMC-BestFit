@@ -1,0 +1,72 @@
+﻿<UserControl x:Class="RMC_BestFit.BayesianOutputControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="{DynamicResource PropertyGrid.Content.Background}"
+             Foreground="{DynamicResource EnvironmentWindowText}"
+             DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/GenericControls;Component/Resources/ResourceDictionary.xaml"/>
+                <ResourceDictionary>
+                    <cntrls:DoubleToGridLengthConverter x:Key="ActualToLengthConverter" />
+                    <cntrls:ReverseBooleanConverter x:Key="ReverseBoolConverter" />
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--Output Options-->
+        <Expander Grid.Row="0" 
+            Margin="0,4,4,8" 
+            Header="OUTPUT OPTIONS" 
+            IsExpanded="True" 
+            Grid.ColumnSpan="2"
+            Style="{DynamicResource PropertyExpanderStyle}">
+            <DockPanel >
+
+                <!--Credible Interval-->
+                <cntrls:ContentPropertyControl x:Name="CredibleInterval" Margin="0 2" DockPanel.Dock="Top" Title="Credible Interval" MaxPropertyWidth="200"
+                                            PreviewMouseLeftButtonDown="CredibleInterval_PreviewMouseLeftButtonDown" PropertyChanged="CredibleInterval_PropertyChanged" >
+                    <cntrls:ContentPropertyControl.InnerContent>
+                        <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                                ItemsSource="{Binding CredibleIntervalItems, UpdateSourceTrigger=PropertyChanged}"
+                                                SelectedValue="{Binding Analysis.CredibleIntervalWidth, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                DisplayMemberPath="DisplayName" SelectedValuePath="Value">
+                        </ComboBox>
+                    </cntrls:ContentPropertyControl.InnerContent>
+                </cntrls:ContentPropertyControl>
+
+                <!--Output Length-->
+                <cntrls:NumericPropertyControl x:Name="OutputLength" Margin="0 2" DockPanel.Dock="Top" Title="Output Length" MaxPropertyWidth="200" PreviewMouseLeftButtonDown="OutputLength_PreviewMouseLeftButtonDown"
+                                                        CanHaveNegative="False" MinValue="100" MaxValue="1000000" Number="{Binding Analysis.OutputLength, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"                                                             
+                                                        PropertyWidth="{Binding ElementName=CredibleInterval, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                <!--Point Estimator-->
+                <cntrls:ContentPropertyControl x:Name="PointEstimator" Margin="0 2" DockPanel.Dock="Top" Title="Point Estimator" MaxPropertyWidth="200"
+                                               PropertyWidth="{Binding ElementName=CredibleInterval, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"
+                                               PreviewMouseLeftButtonDown="PointEstimator_PreviewMouseLeftButtonDown" >
+                    <cntrls:ContentPropertyControl.InnerContent>
+                        <ComboBox Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                                ItemsSource="{Binding PointEstimatorItems, UpdateSourceTrigger=PropertyChanged}"
+                                                SelectedValue="{Binding Analysis.PointEstimator, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                DisplayMemberPath="DisplayName" SelectedValuePath="Value">
+                        </ComboBox>
+                    </cntrls:ContentPropertyControl.InnerContent>
+                </cntrls:ContentPropertyControl>
+                
+            </DockPanel>
+        </Expander>
+
+    </Grid>
+</UserControl>

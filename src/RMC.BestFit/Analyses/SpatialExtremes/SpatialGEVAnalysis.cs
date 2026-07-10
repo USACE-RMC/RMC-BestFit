@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -158,7 +158,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// When the model changes, the analysis subscribes to its
-        /// <see cref="SpatialGEV.PropertyChanged"/> event and updates
+        /// <c>PropertyChanged</c> event and updates
         /// the associated <see cref="BayesianAnalysis"/> model reference.
         /// </para>
         /// </remarks>
@@ -394,7 +394,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears all analysis results and resets the <see cref="IsEstimated"/> flag.
+        /// Clears all analysis results and resets the <c>IsEstimated</c> flag.
         /// </summary>
         public void ClearResults()
         {
@@ -409,9 +409,9 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> and <see cref="SiteResults"/> only — the outputs
+        /// Clears <see cref="AnalysisResults"/> and <see cref="SiteResults"/> only � the outputs
         /// whose quantile arrays are keyed on <see cref="ProbabilityOrdinates"/>. Leaves the
-        /// Bayesian MCMC output and <see cref="IsEstimated"/> intact so the fit can be reused
+        /// Bayesian MCMC output and <c>IsEstimated</c> intact so the fit can be reused
         /// once valid ordinates are restored.
         /// </summary>
         public void ClearUncertaintyAnalysisResults()
@@ -428,7 +428,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// Ordinates drive the quantile arrays in <see cref="SiteResults"/> and the aggregated
         /// curves in <see cref="AnalysisResults"/>. They do not affect the Bayesian MCMC output
-        /// or <see cref="IsEstimated"/>. See <see cref="HandleOrdinatesChanged"/> for the
+        /// or <c>IsEstimated</c>. See <see cref="HandleOrdinatesChanged"/> for the
         /// reprocess-or-clear logic shared with the property setter.
         /// </remarks>
         private void ProbabilityOrdinates_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -443,7 +443,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// SpatialGEV's reprocess chains two awaits (per-site results then aggregated
-        /// uncertainty) — wraps them in an async lambda passed to the shared
+        /// uncertainty) � wraps them in an async lambda passed to the shared
         /// <see cref="AnalysisBase.ReprocessIfEstimated"/> helper for consistent
         /// fire-and-forget exception logging.
         /// </remarks>
@@ -489,13 +489,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -503,20 +504,24 @@ namespace RMC.BestFit.Analyses
                 try
                 {
                     // Run Bayesian analysis
-                    await BayesianAnalysis.RunAsync(progressReporter, false);
+                    await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process
                     if (BayesianAnalysis.IsEstimated == true)
                     {
-                        progressReporter?.ReportProgress(100);
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
                         await CreateSiteResultsAsync();
                         await CreateUncertaintyAnalysisResultsAsync();
                     }
 
-                    // Conditional set — BayesianAnalysis.IsEstimated is false on soft-failure paths
+                    // Conditional set � BayesianAnalysis.IsEstimated is false on soft-failure paths
                     // (sampler returns without setting IsEstimated). Setting unconditionally would
                     // silently report success even when the chain failed.
                     IsEstimated = BayesianAnalysis.IsEstimated;
+                    if (IsEstimated)
+                    {
+                        AnalysisProgress.ReportComplete(progressReporter);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -591,7 +596,7 @@ namespace RMC.BestFit.Analyses
                     var quantiles = new double[nProbs, realz];
 
                     // Compute for each posterior sample
-                    Parallel.For(0, realz, idx =>
+                    Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
                     {
                         var tempModel = (SpatialGEV)SpatialGEV.Clone();
                         tempModel.SetParameterValues(BayesianAnalysis.Results.Output[idx].Values);
@@ -785,7 +790,7 @@ namespace RMC.BestFit.Analyses
 
             var quantiles = new double[nProbs, realz];
 
-            Parallel.For(0, realz, idx =>
+            Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
             {
                 var tempModel = (SpatialGEV)SpatialGEV.Clone();
                 tempModel.SetParameterValues(BayesianAnalysis.Results.Output[idx].Values);
@@ -860,7 +865,7 @@ namespace RMC.BestFit.Analyses
                 sumInvDist += 1.0 / distances[j];
             }
 
-            Parallel.For(0, realz, idx =>
+            Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
             {
                 var tempModel = (SpatialGEV)SpatialGEV.Clone();
                 tempModel.SetParameterValues(BayesianAnalysis.Results.Output[idx].Values);
@@ -1136,14 +1141,14 @@ namespace RMC.BestFit.Analyses
         /// Computes the Godambe (sandwich) covariance matrix for robust standard errors.
         /// </summary>
         /// <param name="parameters">The MLE or MAP parameter values. If null, uses the current MAP estimate.</param>
-        /// <returns>The Godambe covariance matrix [nParams × nParams].</returns>
+        /// <returns>The Godambe covariance matrix [nParams � nParams].</returns>
         /// <remarks>
         /// <para>
         /// The Godambe sandwich estimator provides robust standard errors that account for
         /// model misspecification and correlation in the data:
         /// </para>
         /// <para>
-        /// Var(θ̂) = H(θ)⁻¹ J(θ) H(θ)⁻¹
+        /// Var(?^) = H(?)?� J(?) H(?)?�
         /// </para>
         /// <para>
         /// where H is the Hessian (sensitivity matrix) and J is the variability matrix computed
@@ -1192,7 +1197,7 @@ namespace RMC.BestFit.Analyses
 
                     if (i == j)
                     {
-                        // Diagonal: d²L/dθᵢ²
+                        // Diagonal: d�L/d??�
                         pPlusI[i] += hi;
                         pMinusI[i] -= hi;
                         double fPlusI = SpatialGEV.DataLogLikelihood(pPlusI);
@@ -1201,7 +1206,7 @@ namespace RMC.BestFit.Analyses
                     }
                     else
                     {
-                        // Off-diagonal: d²L/dθᵢdθⱼ
+                        // Off-diagonal: d�L/d??d??
                         pPlusIJ[i] += hi;
                         pPlusIJ[j] += hj;
                         pMinusIJ[i] -= hi;
@@ -1223,7 +1228,7 @@ namespace RMC.BestFit.Analyses
             }
 
             // Compute J (variability matrix) from outer product of score vectors
-            // J = Σᵢ sᵢ sᵢᵀ where sᵢ is the score for observation i
+            // J = S? s? s?? where s? is the score for observation i
             var J = new double[nParams, nParams];
             var pointwiseLL = SpatialGEV.PointwiseDataLogLikelihood(parameters);
 
@@ -1264,7 +1269,7 @@ namespace RMC.BestFit.Analyses
                 return J;
             }
 
-            // Compute sandwich: H⁻¹ J H⁻¹
+            // Compute sandwich: H?� J H?�
             var temp = MultiplyMatrices(HInv, J);
             GodambeCovariance = MultiplyMatrices(temp, HInv);
 
@@ -1280,10 +1285,10 @@ namespace RMC.BestFit.Analyses
         /// is underestimated by a factor approximately equal to the variance inflation factor:
         /// </para>
         /// <para>
-        /// VIF = 1 + (n_sites - 1) * ρ̄
+        /// VIF = 1 + (n_sites - 1) * ?�
         /// </para>
         /// <para>
-        /// where ρ̄ is the average intersite correlation. This method computes the VIF and
+        /// where ?� is the average intersite correlation. This method computes the VIF and
         /// adjusts the site results accordingly.
         /// </para>
         /// <para>

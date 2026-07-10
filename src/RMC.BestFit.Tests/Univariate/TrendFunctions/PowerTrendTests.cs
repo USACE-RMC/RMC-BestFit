@@ -2,10 +2,10 @@ using Numerics.Distributions;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="PowerTrend"/> class.
+/// Unit tests for the <c>PowerTrend</c> class.
 /// Tests the power-law trend model y(t) = α(t - StartIndex)^β.
 /// </summary>
 [TestClass]

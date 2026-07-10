@@ -2,11 +2,12 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Expanded programmatic unit tests for <see cref="MaximumAPosteriori"/>.
+/// Expanded programmatic unit tests for <c>MaximumAPosteriori</c>.
 /// Exercises pre-estimation state, ClearResults, and the documented exception
 /// contracts on methods that require an estimated fit.
 /// </summary>
@@ -22,7 +23,7 @@ public class MaximumAPosterioriExpandedTests
     /// </summary>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(
                 new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 })
@@ -90,7 +91,7 @@ public class MaximumAPosterioriExpandedTests
     }
 
     /// <summary>
-    /// BestParameterSet starts as a deterministic empty <see cref="ParameterSet"/>,
+    /// BestParameterSet starts as a deterministic empty <c>ParameterSet</c>,
     /// not null — protects callers that bypass the IsEstimated guard.
     /// </summary>
     [TestMethod]

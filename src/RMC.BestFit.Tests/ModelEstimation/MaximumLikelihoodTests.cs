@@ -2,21 +2,29 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Fast structural unit tests for the <see cref="MaximumLikelihood"/> class.
+/// Fast structural unit tests for the <c>MaximumLikelihood</c> class.
 /// Covers constructor, configuration round-trip, pre-estimation state, and the
-/// <see cref="MaximumLikelihood.MaximumLogLikelihood"/> sign-convention contract.
+/// <c>MaximumLikelihood.MaximumLogLikelihood</c> sign-convention contract.
 /// Real estimation runs live in <c>RMC.BestFit.Verification</c>.
 /// </summary>
 [TestClass]
 public class MaximumLikelihoodTests
 {
+    /// <summary>
+    /// Creates normal Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame { ExactSeries = new ExactSeries(
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(
             new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 }) };
         return new UnivariateDistribution(df, UnivariateDistributionType.Normal);
     }

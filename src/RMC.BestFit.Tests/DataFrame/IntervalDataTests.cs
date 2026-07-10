@@ -1,7 +1,9 @@
-namespace RMC.BestFit.Tests.InputDataFrame;
+using RMC.BestFit.Models;
+
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="IntervalData"/> class.
+/// Unit tests for the <c>IntervalData</c> class.
 /// Tests interval-censored data used in flood frequency analysis.
 /// </summary>
 /// <remarks>

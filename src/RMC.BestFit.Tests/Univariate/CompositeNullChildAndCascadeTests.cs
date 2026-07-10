@@ -6,26 +6,26 @@ using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
 /// Tests for the null-child validation propagation and the EstimateModelWeights
-/// cascade-suppression in <see cref="CompositeAnalysis"/>.
+/// cascade-suppression in <c>CompositeAnalysis</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Fix C: when a UI sub-distribution selection goes null (the user deletes the chosen
 /// child analysis or clears the data-grid combo), the model-layer
-/// <see cref="CompositeAnalysis.Validate"/> must produce an error message — previously
+/// <c>CompositeAnalysis.Validate</c> must produce an error message — previously
 /// the UI filtered nulls before syncing to the model layer, so the model-layer Validate
 /// saw an empty Analyses collection and reported nothing.
 /// </para>
 /// <para>
-/// Fix D: changing the <see cref="CompositeAnalysis.ModelAverageMethod"/> mutates each
+/// Fix D: changing the <c>CompositeAnalysis.ModelAverageMethod</c> mutates each
 /// child wua's Weight; without suppression, every Weight write triggered a
-/// <see cref="CompositeAnalysis.ClearResults"/> via
+/// <c>CompositeAnalysis.ClearResults</c> via
 /// <c>WeightedAnalysis_PropertyChanged</c>, producing N+1 AnalysisResults PropertyChanged
 /// events for an N-child composite. Each event drove a full UpdateFrequencyPlot rebuild
 /// in the App, producing visible flicker and a wait-cursor flash per child. The
@@ -41,14 +41,30 @@ public class CompositeNullChildAndCascadeTests
     private static readonly double[] InlineFloodData = new Normal(15000.0, 5000.0)
         .GenerateRandomValues(30, 12345);
 
-    private static DataFrame CreateDataFrame()
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, InlineFloodData[i]));
         return df;
     }
 
+    /// <summary>
+    /// Creates fit Child.
+    /// </summary>
+    /// <param name="mapValues">The MAP parameter values assigned to the child analysis.</param>
+    /// <param name="aic">The Akaike information criterion value assigned to the child analysis.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UnivariateAnalysis CreateFitChild(double[] mapValues, double aic)
     {
         var dist = new UnivariateDistribution(CreateDataFrame(), UnivariateDistributionType.Normal);
@@ -77,9 +93,9 @@ public class CompositeNullChildAndCascadeTests
     #region Fix C — null child validation
 
     /// <summary>
-    /// A composite that contains a <see cref="WeightedUnivariateAnalysis"/> with
-    /// <see cref="WeightedUnivariateAnalysis.UnivariateAnalysis"/> set to <c>null</c>
-    /// must report an error from <see cref="CompositeAnalysis.Validate"/>. The error
+    /// A composite that contains a <c>WeightedUnivariateAnalysis</c> with
+    /// <c>WeightedUnivariateAnalysis.UnivariateAnalysis</c> set to <c>null</c>
+    /// must report an error from <c>CompositeAnalysis.Validate</c>. The error
     /// message originates from <c>WeightedUnivariateAnalysis.Validate</c>.
     /// </summary>
     [TestMethod]
@@ -139,7 +155,7 @@ public class CompositeNullChildAndCascadeTests
 
     /// <summary>
     /// Counts the number of <c>"AnalysisResults"</c> PropertyChanged events fired by the
-    /// composite during a single <see cref="CompositeAnalysis.ModelAverageMethod"/>
+    /// composite during a single <c>CompositeAnalysis.ModelAverageMethod</c>
     /// change. Pre-fix this was N+1 for an N-child composite (one per per-child Weight
     /// write plus the outer ClearResults). Post-fix it must collapse to exactly 1.
     /// </summary>
@@ -179,7 +195,7 @@ public class CompositeNullChildAndCascadeTests
 
     /// <summary>
     /// User-driven Weight edits (Mixture mode, where the Weight column is editable) must
-    /// still fire <see cref="CompositeAnalysis.ClearResults"/> — the
+    /// still fire <c>CompositeAnalysis.ClearResults</c> — the
     /// _isEstimatingWeights guard only suppresses the cascade when EstimateModelWeights
     /// itself is the writer.
     /// </summary>

@@ -5,7 +5,7 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Unit tests for the <see cref="ObservationInfluence"/> readonly struct.
+/// Unit tests for the <c>ObservationInfluence</c> readonly struct.
 /// Tests construction, category classification, serialization, and edge cases.
 /// </summary>
 [TestClass]

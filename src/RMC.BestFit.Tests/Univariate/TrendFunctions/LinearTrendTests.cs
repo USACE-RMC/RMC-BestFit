@@ -2,10 +2,10 @@ using Numerics.Distributions;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="LinearTrend"/> class.
+/// Unit tests for the <c>LinearTrend</c> class.
 /// Tests the linear trend model y(t) = α + β(t - StartIndex).
 /// </summary>
 [TestClass]

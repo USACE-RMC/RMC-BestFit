@@ -2,12 +2,13 @@ using Numerics.Distributions;
 using Numerics.Distributions.Copulas;
 using RMC.BestFit.Models;
 using System.Xml.Linq;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Bivariate;
 
 /// <summary>
 /// Structural unit tests for the 2-parameter Student's t copula path through
-/// <see cref="BivariateDistribution"/>. Validates that the parameter-count
+/// <c>BivariateDistribution</c>. Validates that the parameter-count
 /// generalization (factory case, SetDefaultParameters loop, likelihood guards,
 /// SetParameterValues fan-out, XElement round-trip, and Validate) behaves
 /// correctly for a copula with <c>NumberOfCopulaParameters == 2</c>.
@@ -23,8 +24,8 @@ public class BivariateDistributionStudentTTests
 
     /// <summary>
     /// Builds a pair of Normal-marginal UnivariateDistributions seeded with fixed
-    /// parameter values (no MLE call) so <see cref="UnivariateDistribution.Validate"/>
-    /// passes and <see cref="BivariateDistribution.SetDefaultParameters"/> can run.
+    /// parameter values (no MLE call) so <c>UnivariateDistribution.Validate</c>
+    /// passes and <c>BivariateDistribution.SetDefaultParameters</c> can run.
     /// </summary>
     private static (UnivariateDistribution X, UnivariateDistribution Y) CreateFittedMarginals()
     {
@@ -33,13 +34,13 @@ public class BivariateDistributionStudentTTests
         double[] yValues = { 75.2, 82.1, 93.6, 68.7, 84.3, 72.5, 90.4, 78.9, 88.5, 81.0,
                              74.1, 87.6, 82.8, 76.3, 91.5, 69.2, 86.0, 80.4, 73.5, 89.1 };
 
-        var dfX = new DataFrame();
+        var dfX = new BestFitDataFrame();
         dfX.ExactSeries = new ExactSeries(xValues);
         dfX.CalculatePlottingPositions();
         var distX = new UnivariateDistribution(dfX, UnivariateDistributionType.Normal);
         distX.SetParameterValues(new[] { 101.8, 7.5 });
 
-        var dfY = new DataFrame();
+        var dfY = new BestFitDataFrame();
         dfY.ExactSeries = new ExactSeries(yValues);
         dfY.CalculatePlottingPositions();
         var distY = new UnivariateDistribution(dfY, UnivariateDistributionType.Normal);
@@ -61,8 +62,8 @@ public class BivariateDistributionStudentTTests
     #region Factory Tests
 
     /// <summary>
-    /// Verifies the factory produces a <see cref="StudentTCopula"/> for
-    /// <see cref="CopulaType.StudentT"/>, not a placeholder or exception.
+    /// Verifies the factory produces a <c>StudentTCopula</c> for
+    /// <c>CopulaType.StudentT</c>, not a placeholder or exception.
     /// </summary>
     [TestMethod]
     public void CreateCopula_StudentT_ReturnsStudentTCopula()
@@ -138,7 +139,7 @@ public class BivariateDistributionStudentTTests
 
     /// <summary>
     /// SetDefaultParameters on a StudentT model produces two ModelParameters whose
-    /// bounds match <see cref="BivariateCopula.ParameterConstraints"/> row by row,
+    /// bounds match <c>BivariateCopula.ParameterConstraints</c> row by row,
     /// with a default degrees-of-freedom value (5) strictly inside the [3, 30] range.
     /// </summary>
     [TestMethod]
@@ -199,7 +200,7 @@ public class BivariateDistributionStudentTTests
     }
 
     /// <summary>
-    /// ν is stored as a continuous <see cref="double"/> — non-integer values are preserved
+    /// ν is stored as a continuous <c>double</c> — non-integer values are preserved
     /// exactly rather than rounded. This guards against the legacy behavior that rounded ν
     /// to an integer inside <c>SetCopulaParameters</c>, which produced step-function
     /// likelihood surfaces during MCMC and unnecessary posterior plateaus.
@@ -224,7 +225,7 @@ public class BivariateDistributionStudentTTests
     /// DataLogLikelihood rejects a parameter array whose length does not match
     /// <c>Copula.NumberOfCopulaParameters</c> (2 for StudentT). Passing a 1-element
     /// array mimics the old hardcoded shape and must return <c>double.MinValue</c>
-    /// without crashing. Returns <see cref="double.NegativeInfinity"/> per the
+    /// without crashing. Returns <c>double.NegativeInfinity</c> per the
     /// CLAUDE.md numerical pattern for impossible log-likelihood.
     /// </summary>
     [TestMethod]
