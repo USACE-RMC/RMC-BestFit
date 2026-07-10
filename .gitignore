@@ -33,22 +33,6 @@ artifacts/
 /.dotnet-home/.dotnet/TelemetryStorageService/
 /.dotnet-home/.dotnet/sdk-advertising/
 /.codex-tmp
-
-# Test results / coverage (anticipated for incoming test projects)
-TestResults/
-*.coverage
-*.coveragexml
-coverage/
-
-# JetBrains / VS Code (anticipated for incoming devs)
-.idea/
-.vscode/
-
-# OS / filesystem cruft
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Editor swap / backup files
-*.swp
-*~
+/.claude/plans
+/AGENTS.md
+/CLAUDE.md
