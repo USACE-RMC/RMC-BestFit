@@ -2273,6 +2273,35 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
+        /// Determines whether DSS timestamps must be converted from end-of-period to
+        /// beginning-of-period indexing during import.
+        /// </summary>
+        /// <param name="dataType">The DSS time-series data type.</param>
+        /// <param name="interval">The resolved RMC-BestFit time interval.</param>
+        /// <returns>
+        /// <c>true</c> for regular <c>PER-AVER</c> and <c>PER-CUM</c> records; otherwise,
+        /// <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// HEC-DSS stores period-average and period-cumulative values at the end of the
+        /// represented period. RMC-BestFit indexes period values at the beginning of the
+        /// represented period. Irregular records have no single interval to subtract and
+        /// therefore retain their original timestamps.
+        /// Reference: USACE Hydrologic Engineering Center, HEC-DSS Time Series Conventions.
+        /// </remarks>
+        private static bool UsesDssEndOfPeriodConvention(string dataType, TimeInterval interval)
+        {
+            if (interval == TimeInterval.Irregular)
+            {
+                return false;
+            }
+
+            string normalizedDataType = dataType?.Trim() ?? "";
+            return normalizedDataType.Equals("PER-AVER", StringComparison.OrdinalIgnoreCase) ||
+                normalizedDataType.Equals("PER-CUM", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Copies values and timestamps from a <see cref="Hec.Dss.TimeSeries"/> into a new
         /// <see cref="TimeSeries"/>, converting DSS missing-value sentinels to <see cref="double.NaN"/>.
         /// </summary>
@@ -2280,6 +2309,10 @@ namespace RMC.BestFit.UI
         /// <param name="interval">The resolved time interval (regular or irregular).</param>
         /// <returns>A normalized <see cref="TimeSeries"/> with sentinel values converted to NaN.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="dssTs"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when converting a period-based DSS timestamp to beginning-of-period indexing
+        /// would produce a date outside the range supported by <see cref="DateTime"/>.
+        /// </exception>
         /// <exception cref="Exception">Thrown when DSS arrays are malformed, duplicate timestamps exist, or no valid regular extent can be determined.</exception>
         /// <remarks>
         /// Uses <see cref="Hec.Dss.DssReader.IsValid(double)"/> as the canonical sentinel detector,
@@ -2292,6 +2325,12 @@ namespace RMC.BestFit.UI
         /// The importer sorts timestamps chronologically, trims regular DSS block padding,
         /// fills omitted regular timesteps with NaN, and preserves irregular ordinates without
         /// filling gaps.
+        /// Regular <c>PER-AVER</c> and <c>PER-CUM</c> records are converted from the DSS
+        /// end-of-period convention to RMC-BestFit beginning-of-period indexing by subtracting
+        /// one resolved interval before any ordering or gap normalization. For example,
+        /// DSS <c>01Oct1905 2400</c> arrives from <c>Hec.Dss</c> as
+        /// <c>02Oct1905 0000</c> and is imported as <c>01Oct1905 0000</c>.
+        /// Reference: USACE Hydrologic Engineering Center, HEC-DSS Time Series Conventions.
         /// </remarks>
         internal static TimeSeries BuildFromDssTimeSeries(Hec.Dss.TimeSeries dssTs, TimeInterval interval)
         {
@@ -2311,6 +2350,7 @@ namespace RMC.BestFit.UI
                     "The DSS record may be corrupt.");
             }
 
+            bool convertEndOfPeriodTimestamps = UsesDssEndOfPeriodConvention(dssTs.DataType, interval);
             var ordinates = Enumerable.Range(0, valueCount)
                 .Select(i =>
                 {
@@ -2318,7 +2358,9 @@ namespace RMC.BestFit.UI
                     bool isValid = IsValidDssValue(rawValue);
                     return new
                     {
-                        Time = dssTs.Times[i],
+                        Time = convertEndOfPeriodTimestamps
+                            ? TimeSeries.SubtractTimeInterval(dssTs.Times[i], interval)
+                            : dssTs.Times[i],
                         IsValid = isValid,
                         Value = isValid ? rawValue : double.NaN,
                     };

@@ -27,17 +27,23 @@ public class TimeSeriesElementDssImportTests
     /// <param name="values">The input values.</param>
     /// <param name="times">The times value.</param>
     /// <param name="path">The DSS path assigned to the series.</param>
+    /// <param name="dataType">The DSS data type assigned to the series.</param>
     /// <returns>The created test object.</returns>
     /// <remarks>
     /// This helper keeps fixture setup local to the tests that use it.
     /// </remarks>
-    private static Hec.Dss.TimeSeries MakeDssSeries(double[] values, DateTime[] times, string path = "/A/B/C//1Day/F/")
+    private static Hec.Dss.TimeSeries MakeDssSeries(
+        double[] values,
+        DateTime[] times,
+        string path = "/A/B/C//1Day/F/",
+        string dataType = "")
     {
         var dssTs = new Hec.Dss.TimeSeries
         {
             Values = values,
             Times = times,
             Path = new Hec.Dss.DssPath(path),
+            DataType = dataType,
         };
         return dssTs;
     }
@@ -193,6 +199,134 @@ public class TimeSeriesElementDssImportTests
             Assert.AreEqual(t0.AddDays(i), ts[i].Index);
             Assert.AreEqual(i + 1.0, ts[i].Value, 1e-12);
         }
+    }
+
+    /// <summary>
+    /// Verifies that the reported DSS midnight boundary is converted to the represented day.
+    /// </summary>
+    /// <remarks>
+    /// HEC-DSS renders .NET midnight as 2400 on the preceding date. This test recreates the
+    /// reviewer example and confirms that period-average import uses beginning-of-period indexing.
+    /// </remarks>
+    [TestMethod]
+    public void BuildFromDss_PeriodAverageDaily_Converts2400ToRepresentedDay()
+    {
+        var returnedMidnight = new DateTime(1905, 10, 2, 0, 0, 0);
+        Hec.Dss.Time.DateTimeToHecDateTime(returnedMidnight, out string dssDate, out string dssTime);
+        var dssTs = MakeDssSeries(
+            values: new[] { 1950.0, 1950.0 },
+            times: new[] { returnedMidnight, returnedMidnight.AddDays(1) },
+            dataType: "PER-AVER");
+
+        var ts = TimeSeriesElement.BuildFromDssTimeSeries(dssTs, TimeInterval.OneDay);
+
+        Assert.AreEqual("01Oct1905", dssDate);
+        Assert.AreEqual("2400", dssTime);
+        Assert.AreEqual(new DateTime(1905, 10, 1), ts.StartDate);
+        Assert.AreEqual(1950.0, ts[0].Value, 1e-12);
+        Assert.AreEqual(new DateTime(1905, 10, 2), ts[1].Index);
+    }
+
+    /// <summary>
+    /// Verifies that both supported DSS period data types are matched after normalization.
+    /// </summary>
+    /// <param name="dataType">The DSS period data type to exercise.</param>
+    [DataTestMethod]
+    [DataRow(" per-aver ")]
+    [DataRow("per-cum")]
+    public void BuildFromDss_PeriodDataTypes_SubtractResolvedSubdailyInterval(string dataType)
+    {
+        var returnedTime = new DateTime(2020, 1, 2, 0, 0, 0);
+        var dssTs = MakeDssSeries(
+            values: new[] { 10.0 },
+            times: new[] { returnedTime },
+            path: "/A/B/C//1Hour/F/",
+            dataType: dataType);
+
+        var ts = TimeSeriesElement.BuildFromDssTimeSeries(dssTs, TimeInterval.OneHour);
+
+        Assert.AreEqual(returnedTime.AddHours(-1), ts.StartDate);
+        Assert.AreEqual(10.0, ts[0].Value, 1e-12);
+    }
+
+    /// <summary>
+    /// Verifies that calendar-based period records subtract the full resolved calendar interval.
+    /// </summary>
+    [TestMethod]
+    public void BuildFromDss_PeriodAverageMonthly_SubtractsCalendarInterval()
+    {
+        var dssTs = MakeDssSeries(
+            values: new[] { 1.0, 2.0, 3.0 },
+            times: new[]
+            {
+                new DateTime(2020, 2, 1),
+                new DateTime(2020, 3, 1),
+                new DateTime(2020, 4, 1),
+            },
+            path: "/A/B/C//1Month/F/",
+            dataType: "PER-AVER");
+
+        var ts = TimeSeriesElement.BuildFromDssTimeSeries(dssTs, TimeInterval.OneMonth);
+
+        Assert.AreEqual(new DateTime(2020, 1, 1), ts[0].Index);
+        Assert.AreEqual(new DateTime(2020, 2, 1), ts[1].Index);
+        Assert.AreEqual(new DateTime(2020, 3, 1), ts[2].Index);
+    }
+
+    /// <summary>
+    /// Verifies that non-period DSS data types preserve their returned timestamps.
+    /// </summary>
+    /// <param name="dataType">The DSS data type to exercise.</param>
+    [DataTestMethod]
+    [DataRow("INST-VAL")]
+    [DataRow("INST-CUM")]
+    [DataRow("")]
+    [DataRow("UNKNOWN")]
+    public void BuildFromDss_NonPeriodDataTypes_PreserveReturnedTimestamp(string dataType)
+    {
+        var returnedTime = new DateTime(2020, 1, 2, 0, 0, 0);
+        var dssTs = MakeDssSeries(
+            values: new[] { 10.0 },
+            times: new[] { returnedTime },
+            dataType: dataType);
+
+        var ts = TimeSeriesElement.BuildFromDssTimeSeries(dssTs, TimeInterval.OneDay);
+
+        Assert.AreEqual(returnedTime, ts.StartDate);
+    }
+
+    /// <summary>
+    /// Verifies that irregular period records retain their explicit observation times.
+    /// </summary>
+    [TestMethod]
+    public void BuildFromDss_IrregularPeriodData_PreservesReturnedTimestamps()
+    {
+        var t0 = new DateTime(2020, 1, 2, 0, 0, 0);
+        var dssTs = MakeDssSeries(
+            values: new[] { 10.0, 20.0 },
+            times: new[] { t0, t0.AddDays(3) },
+            path: "/A/B/C//IR-Day/F/",
+            dataType: "PER-AVER");
+
+        var ts = TimeSeriesElement.BuildFromDssTimeSeries(dssTs, TimeInterval.Irregular);
+
+        Assert.AreEqual(t0, ts[0].Index);
+        Assert.AreEqual(t0.AddDays(3), ts[1].Index);
+    }
+
+    /// <summary>
+    /// Verifies that a period timestamp too early to shift reports date underflow.
+    /// </summary>
+    [TestMethod]
+    public void BuildFromDss_PeriodTimestampAtMinimumDate_Throws()
+    {
+        var dssTs = MakeDssSeries(
+            values: new[] { 10.0 },
+            times: new[] { DateTime.MinValue },
+            dataType: "PER-AVER");
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() =>
+            TimeSeriesElement.BuildFromDssTimeSeries(dssTs, TimeInterval.OneDay));
     }
 
     /// <summary>
