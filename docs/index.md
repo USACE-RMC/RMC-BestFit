@@ -1,5 +1,8 @@
 # RMC-BestFit Library Documentation
 
+> [!NOTE]
+> This technical reference is under active development for RMC-BestFit 2.0. Content may be incomplete or change as the software and documentation are finalized.
+
 ## Overview
 
 ***RMC-BestFit*** is a Bayesian-first statistical analysis framework for flood frequency studies, developed by the U.S. Army Corps of Engineers Risk Management Center. The model library supports life-safety flood risk assessments, hydrologic frequency analysis, rating curves, time series, bivariate frequency analysis, and spatial extremes.

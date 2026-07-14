@@ -367,12 +367,14 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Defines and configures menu items for the main window's Help menu. Adds menu entries for
-        /// accessing the online User Guide, Terms and Conditions, and About dialog.
+        /// accessing online documentation, example projects, Terms and Conditions, and the About dialog.
         /// </summary>
         /// <remarks>
-        /// This method creates three help menu items:
+        /// This method creates five help menu items:
         /// <list type="bullet">
         /// <item>User Guide - Opens the online RMC-BestFit user guide in the default browser</item>
+        /// <item>Technical Reference - Opens the main-branch technical reference on GitHub</item>
+        /// <item>Example Projects - Opens the main-branch example project collection on GitHub</item>
         /// <item>Terms and Conditions for Use - Displays the software license and usage terms dialog</item>
         /// <item>About RMC-BestFit - Shows version information and software credits</item>
         /// </list>
@@ -380,38 +382,9 @@ namespace RMC_BestFit
         /// </remarks>
         protected override void DefineHelpMenuItems()
         {
-            // User guide
-            var userGuideItem = new MenuItem() { Header = "User Guide", Icon = TryFindResource("HelpIcon") };
-            userGuideItem.Click += async (x, y) =>
-            {
-                userGuideItem.IsEnabled = false;
-                try
-                {
-                    UserGuideLaunchResult result = await UserGuideLauncher.TryOpenAsync();
-                    if (result == UserGuideLaunchResult.NoInternet)
-                    {
-                        GenericControls.MessageBox.Show(
-                            "No internet connection is available. Please check your connection and try again.",
-                            "Connection Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Failed to open the online user guide: " + ex.Message);
-                    GenericControls.MessageBox.Show(
-                        "Something went wrong. Cannot open the RMC-BestFit User Guide.",
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
-                }
-                finally
-                {
-                    userGuideItem.IsEnabled = true;
-                }
-            };
-            _helpMenuItems.Add(userGuideItem);
+            _helpMenuItems.Add(CreateOnlineHelpMenuItem("User Guide", OnlineHelpLauncher.UserGuideUrl));
+            _helpMenuItems.Add(CreateOnlineHelpMenuItem("Technical Reference", OnlineHelpLauncher.TechnicalReferenceUrl));
+            _helpMenuItems.Add(CreateOnlineHelpMenuItem("Example Projects", OnlineHelpLauncher.ExampleProjectsUrl));
 
             // Terms & Conditions for Use
             var tcuMenuItem = new MenuItem() { Header = "Terms & Conditions for Use", Icon = TryFindResource("TCUIcon") };
@@ -443,6 +416,64 @@ namespace RMC_BestFit
             };
             _helpMenuItems.Add(aboutMenuItem);
 
+        }
+
+        /// <summary>
+        /// Creates a Help menu item that opens an online RMC-BestFit resource in the default browser.
+        /// </summary>
+        /// <param name="header">User-visible menu item header and resource name.</param>
+        /// <param name="url">Absolute HTTPS URL of the resource.</param>
+        /// <returns>A configured Help menu item.</returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown when <paramref name="header"/> or <paramref name="url"/> is empty.
+        /// </exception>
+        /// <remarks>
+        /// The item is disabled while connectivity is checked to prevent duplicate launches. Expected
+        /// offline results and unexpected launch failures are reported with distinct user messages.
+        /// </remarks>
+        private MenuItem CreateOnlineHelpMenuItem(string header, string url)
+        {
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                throw new ArgumentException("A Help menu header is required.", nameof(header));
+            }
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                throw new ArgumentException("A Help resource URL is required.", nameof(url));
+            }
+
+            var menuItem = new MenuItem() { Header = header, Icon = TryFindResource("HelpIcon") };
+            menuItem.Click += async (x, y) =>
+            {
+                menuItem.IsEnabled = false;
+                try
+                {
+                    OnlineHelpLaunchResult result = await OnlineHelpLauncher.TryOpenAsync(url);
+                    if (result == OnlineHelpLaunchResult.NoInternet)
+                    {
+                        GenericControls.MessageBox.Show(
+                            "No internet connection is available. Please check your connection and try again.",
+                            "Connection Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine("Failed to open " + header + ": " + ex.Message);
+                    GenericControls.MessageBox.Show(
+                        "Something went wrong. Cannot open the RMC-BestFit " + header + ".",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+                finally
+                {
+                    menuItem.IsEnabled = true;
+                }
+            };
+
+            return menuItem;
         }
 
         /// <summary>
