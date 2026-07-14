@@ -34,7 +34,6 @@ The documentation is organized to mirror the Numerics library: a short getting-s
 | [Time Series](technical-reference/analysis/time-series.md) | AR, MA, ARIMA, and ARIMAX |
 | [Spatial Extremes](technical-reference/spatial/spatial-extremes.md) | Spatial GEV and regional frequency analysis |
 | [Trend and Link Functions](technical-reference/support/trend-and-link-functions.md) | Nonstationary parameter functions and link space |
-| [Implementation Audit](technical-reference/implementation-audit.md) | Source-code traceability map for equations, algorithms, and examples |
 | [References](references.md) | Consolidated bibliography |
 
 ## Quick Start
@@ -107,7 +106,7 @@ foreach (var candidate in ranked.Take(5))
 
 The documentation targets roughly 90% coverage of the public `RMC.BestFit.dll` API. Coverage means public types and important public members are documented in concept pages, API tables, or examples. Trivial DTO properties may be grouped, but model, estimation, analysis, diagnostic, and serialization workflows must have an explicit documented usage path.
 
-All technical equations and algorithm descriptions are cross-checked against the production implementation listed in [Implementation Audit](technical-reference/implementation-audit.md). External references provide scientific context; source code controls the documented API behavior.
+External references provide scientific context; the production source code controls documented API behavior.
 
 ## Supplemental Public API Inventory
 
