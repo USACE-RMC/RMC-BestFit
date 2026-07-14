@@ -202,6 +202,9 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             StringAssert.Contains(source, "private MenuItem CreateOnlineHelpMenuItem");
             StringAssert.Contains(source, "TermsDocument = TermsAndConditionsDocumentFactory.Create(CitationLink_RequestNavigate)");
             StringAssert.Contains(source, "ShowButtons = false");
+            StringAssert.Contains(source, "EnableTermsDocumentLinks(window)");
+            StringAssert.Contains(source, "window.FindName(\"TCURichTextBox\") is RichTextBox termsTextBox");
+            StringAssert.Contains(source, "termsTextBox.IsDocumentEnabled = true");
             StringAssert.Contains(source, "await OpenOnlineResourceAsync(header, url)");
             StringAssert.Contains(source, "await OnlineHelpLauncher.TryOpenAsync(url)");
             StringAssert.Contains(source, "if (showHelpIcon)");
@@ -223,6 +226,34 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             Assert.IsTrue(source.IndexOf(exampleProjectsCall, StringComparison.Ordinal) < source.IndexOf(separatorCall, StringComparison.Ordinal));
             Assert.IsFalse(source.Contains("Quick Start Guide", StringComparison.Ordinal));
             Assert.IsFalse(source.Contains(".pdf", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Verifies the framework Terms viewer enables hyperlink interaction while remaining read-only.
+        /// </summary>
+        /// <remarks>
+        /// This exercises the actual framework window and named RichTextBox rather than relying only on a
+        /// source-level integration assertion.
+        /// </remarks>
+        [STATestMethod]
+        public void EnableTermsDocumentLinks_EnablesFrameworkRichTextBoxLinks()
+        {
+            var window = new FrameworkUI.TermsAndConditionsWindow();
+            System.Windows.Controls.RichTextBox termsTextBox =
+                window.FindName("TCURichTextBox") as System.Windows.Controls.RichTextBox;
+            System.Reflection.MethodInfo enableLinks = typeof(RMC_BestFit.MainProjectNode).GetMethod(
+                "EnableTermsDocumentLinks",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            Assert.IsNotNull(termsTextBox);
+            Assert.IsTrue(termsTextBox.IsReadOnly);
+            Assert.IsFalse(termsTextBox.IsDocumentEnabled);
+            Assert.IsNotNull(enableLinks);
+
+            enableLinks.Invoke(null, new object[] { window });
+
+            Assert.IsTrue(termsTextBox.IsDocumentEnabled);
+            Assert.IsTrue(termsTextBox.IsReadOnly);
         }
 
         /// <summary>

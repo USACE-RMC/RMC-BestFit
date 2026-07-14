@@ -8,7 +8,8 @@
 - Added main-branch Technical Reference and Example Projects links through the generalized online Help launcher.
 - Added active-development note boxes to the technical-reference and example-project indexes.
 - Reserved the type-compatible `HelpImage` resource for the User Guide and separated the text-only online resources from application items.
-- Replaced the framework's default Terms and Conditions document with the verbatim 0BSD license and optional Zenodo citation guidance.
+- Replaced the framework's default Terms and Conditions document with the verbatim 0BSD license and optional Zenodo citation guidance using a copyable, clickable concept-DOI URL.
+- Corrected the `YeoJohnsonLink.FitLambda` XML reference to use the Numerics method's `IList<double>` signature.
 - Added a README Documentation callout identifying the RMC-BestFit 2.0 documentation and verification materials as under active development.
 - Validated the affected App projects with zero warnings and all fast Core, UI, and App tests passing.
-- Repository-wide validation remains blocked by pre-existing solution nesting and `YeoJohnsonLink.FitLambda` XML `cref` errors; the required validation script is also absent.
+- The required repository XML validation script is absent; equivalent scoped XML-as-errors builds passed for all affected projects.

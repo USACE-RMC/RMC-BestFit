@@ -17,7 +17,7 @@ namespace RMC_BestFit
         /// <summary>
         /// User-visible label for the RMC-BestFit Zenodo concept DOI hyperlink.
         /// </summary>
-        internal const string ZenodoLinkLabel = "RMC-BestFit on Zenodo (Concept DOI: 10.5281/zenodo.21301036)";
+        internal const string ZenodoLinkLabel = "https://doi.org/10.5281/zenodo.21301036";
 
         /// <summary>
         /// Creates the RMC-BestFit license and citation document.

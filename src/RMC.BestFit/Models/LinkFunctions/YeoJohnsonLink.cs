@@ -61,7 +61,7 @@ namespace RMC.BestFit.Models.LinkFunctions
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="values"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="values"/> has fewer than 2 elements.</exception>
         /// <remarks>
-        /// Uses <see cref="YeoJohnson.FitLambda(double[], out double)"/> from the Numerics library
+        /// Uses <see cref="YeoJohnson.FitLambda(System.Collections.Generic.IList{double}, out double)"/> from the Numerics library
         /// to estimate the optimal power parameter via maximum profile log-likelihood.
         /// </remarks>
         public YeoJohnsonLink(double[] values)

@@ -75,6 +75,7 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             Hyperlink hyperlink = linkParagraph.Inlines.FirstInline as Hyperlink;
 
             Assert.IsNotNull(hyperlink);
+            Assert.AreEqual("https://doi.org/10.5281/zenodo.21301036", RMC_BestFit.TermsAndConditionsDocumentFactory.ZenodoLinkLabel);
             Assert.AreEqual(RMC_BestFit.TermsAndConditionsDocumentFactory.ZenodoLinkLabel, ReadInline(hyperlink));
             Assert.AreEqual(RMC_BestFit.OnlineHelpLauncher.ZenodoConceptDoiUrl, hyperlink.NavigateUri.AbsoluteUri);
 

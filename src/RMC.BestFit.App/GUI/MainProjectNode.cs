@@ -400,6 +400,7 @@ namespace RMC_BestFit
                     ShowButtons = false,
                     TermsDocument = TermsAndConditionsDocumentFactory.Create(CitationLink_RequestNavigate)
                 };
+                EnableTermsDocumentLinks(window);
                 if (Application.Current?.MainWindow != null)
                 {
                     window.Owner = Application.Current.MainWindow;
@@ -530,6 +531,31 @@ namespace RMC_BestFit
             finally
             {
                 if (hyperlink != null) hyperlink.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Enables interaction with hyperlinks in the read-only Terms and Conditions document viewer.
+        /// </summary>
+        /// <param name="window">Terms and Conditions window whose document viewer should allow link interaction.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="window"/> is <c>null</c>.
+        /// </exception>
+        /// <remarks>
+        /// WPF keeps content elements such as <see cref="Hyperlink"/> non-interactive unless the hosting
+        /// <see cref="RichTextBox.IsDocumentEnabled"/> property is enabled. The document remains read-only.
+        /// </remarks>
+        private static void EnableTermsDocumentLinks(TermsAndConditionsWindow window)
+        {
+            if (window == null) throw new ArgumentNullException(nameof(window));
+
+            if (window.FindName("TCURichTextBox") is RichTextBox termsTextBox)
+            {
+                termsTextBox.IsDocumentEnabled = true;
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("Could not enable Terms and Conditions document hyperlinks because TCURichTextBox was not found.");
             }
         }
 
