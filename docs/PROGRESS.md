@@ -7,6 +7,6 @@
 - Added deterministic App tests for online, offline, validation, failure propagation, and Help-menu wiring behavior.
 - Added main-branch Technical Reference and Example Projects links through the generalized online Help launcher.
 - Added active-development note boxes to the technical-reference and example-project indexes.
-- Reserved the theme-aware Help icon for the User Guide and separated the text-only online resources from application items.
+- Reserved the type-compatible `HelpImage` resource for the User Guide and separated the text-only online resources from application items.
 - Validated the affected App projects with zero warnings and all fast Core, UI, and App tests passing.
 - Repository-wide validation remains blocked by pre-existing solution nesting and `YeoJohnsonLink.FitLambda` XML `cref` errors; the required validation script is also absent.

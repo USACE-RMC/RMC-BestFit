@@ -448,7 +448,7 @@ namespace RMC_BestFit
             var menuItem = new MenuItem() { Header = header };
             if (showHelpIcon)
             {
-                menuItem.Icon = CreateThemedIcon("HelpIcon");
+                menuItem.Icon = CreateThemedIcon("HelpImage");
             }
 
             menuItem.Click += async (x, y) =>

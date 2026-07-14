@@ -199,7 +199,8 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             StringAssert.Contains(source, "private MenuItem CreateOnlineHelpMenuItem");
             StringAssert.Contains(source, "await OnlineHelpLauncher.TryOpenAsync(url)");
             StringAssert.Contains(source, "if (showHelpIcon)");
-            StringAssert.Contains(source, "menuItem.Icon = CreateThemedIcon(\"HelpIcon\")");
+            StringAssert.Contains(source, "menuItem.Icon = CreateThemedIcon(\"HelpImage\")");
+            Assert.IsFalse(source.Contains("CreateThemedIcon(\"HelpIcon\")", StringComparison.Ordinal));
             Assert.IsFalse(source.Contains("Icon = TryFindResource(\"HelpIcon\")", StringComparison.Ordinal));
             StringAssert.Contains(source, "private static MenuItem CreateHelpMenuSeparator()");
             StringAssert.Contains(source, "separatorLine.SetResourceReference(Border.BackgroundProperty, \"MenuPopupDefaultSeparator\")");
