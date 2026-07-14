@@ -3,7 +3,6 @@ using OxyPlotControls;
 using GenericControls;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -368,12 +367,12 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Defines and configures menu items for the main window's Help menu. Adds menu entries for
-        /// accessing the Quick Start Guide, Terms and Conditions, and About dialog.
+        /// accessing the online User Guide, Terms and Conditions, and About dialog.
         /// </summary>
         /// <remarks>
         /// This method creates three help menu items:
         /// <list type="bullet">
-        /// <item>Quick Start Guide - Opens the PDF user guide from the application's Help directory</item>
+        /// <item>User Guide - Opens the online RMC-BestFit user guide in the default browser</item>
         /// <item>Terms and Conditions for Use - Displays the software license and usage terms dialog</item>
         /// <item>About RMC-BestFit - Shows version information and software credits</item>
         /// </list>
@@ -382,19 +381,34 @@ namespace RMC_BestFit
         protected override void DefineHelpMenuItems()
         {
             // User guide
-            var userGuideItem = new MenuItem() { Header = "Quick Start Guide", Icon = TryFindResource("HelpIcon") };
-            userGuideItem.Click += (x, y) =>
+            var userGuideItem = new MenuItem() { Header = "User Guide", Icon = TryFindResource("HelpIcon") };
+            userGuideItem.Click += async (x, y) =>
             {
+                userGuideItem.IsEnabled = false;
                 try
                 {
-                    string directory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                    string fileName = Path.Combine(directory ?? string.Empty, "Help", "RMC-BestFit - Quick Start Guide.pdf");
-                    System.Diagnostics.Process.Start(fileName);
+                    UserGuideLaunchResult result = await UserGuideLauncher.TryOpenAsync();
+                    if (result == UserGuideLaunchResult.NoInternet)
+                    {
+                        GenericControls.MessageBox.Show(
+                            "No internet connection is available. Please check your connection and try again.",
+                            "Connection Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Failed to open quick-start guide: {ex.Message}");
-                    GenericControls.MessageBox.Show("Could not open the RMC-BestFit Quick Start Guide.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Diagnostics.Debug.WriteLine("Failed to open the online user guide: " + ex.Message);
+                    GenericControls.MessageBox.Show(
+                        "Something went wrong. Cannot open the RMC-BestFit User Guide.",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+                finally
+                {
+                    userGuideItem.IsEnabled = true;
                 }
             };
             _helpMenuItems.Add(userGuideItem);
