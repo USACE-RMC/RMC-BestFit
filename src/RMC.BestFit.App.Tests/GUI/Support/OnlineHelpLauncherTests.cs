@@ -65,6 +65,9 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             Assert.AreEqual(
                 "https://github.com/USACE-RMC/RMC-BestFit/tree/main/examples",
                 RMC_BestFit.OnlineHelpLauncher.ExampleProjectsUrl);
+            Assert.AreEqual(
+                "https://doi.org/10.5281/zenodo.21301036",
+                RMC_BestFit.OnlineHelpLauncher.ZenodoConceptDoiUrl);
             Assert.IsFalse(RMC_BestFit.OnlineHelpLauncher.TechnicalReferenceUrl.Contains("version-2-code-migration", StringComparison.Ordinal));
             Assert.IsFalse(RMC_BestFit.OnlineHelpLauncher.ExampleProjectsUrl.Contains("version-2-code-migration", StringComparison.Ordinal));
         }
@@ -197,6 +200,9 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             StringAssert.Contains(source, exampleProjectsCall);
             StringAssert.Contains(source, separatorCall);
             StringAssert.Contains(source, "private MenuItem CreateOnlineHelpMenuItem");
+            StringAssert.Contains(source, "TermsDocument = TermsAndConditionsDocumentFactory.Create(CitationLink_RequestNavigate)");
+            StringAssert.Contains(source, "ShowButtons = false");
+            StringAssert.Contains(source, "await OpenOnlineResourceAsync(header, url)");
             StringAssert.Contains(source, "await OnlineHelpLauncher.TryOpenAsync(url)");
             StringAssert.Contains(source, "if (showHelpIcon)");
             StringAssert.Contains(source, "menuItem.Icon = CreateThemedIcon(\"HelpImage\")");
@@ -204,6 +210,9 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             Assert.IsFalse(source.Contains("Icon = TryFindResource(\"HelpIcon\")", StringComparison.Ordinal));
             StringAssert.Contains(source, "private static MenuItem CreateHelpMenuSeparator()");
             StringAssert.Contains(source, "separatorLine.SetResourceReference(Border.BackgroundProperty, \"MenuPopupDefaultSeparator\")");
+            StringAssert.Contains(source, "await OpenOnlineResourceAsync(\"citation information\", OnlineHelpLauncher.ZenodoConceptDoiUrl)");
+            StringAssert.Contains(source, "hyperlink.IsEnabled = false");
+            StringAssert.Contains(source, "hyperlink.IsEnabled = true");
             StringAssert.Contains(source, "IsHitTestVisible = false");
             StringAssert.Contains(source, "menuItem.IsEnabled = false;");
             StringAssert.Contains(source, "menuItem.IsEnabled = true;");
@@ -239,6 +248,29 @@ namespace RMC.BestFit.App.Tests.GUI.Support
 
             Assert.IsTrue(technicalReference.StartsWith(technicalReferenceOpening, StringComparison.Ordinal));
             Assert.IsTrue(exampleProjects.StartsWith(exampleProjectsOpening, StringComparison.Ordinal));
+        }
+
+        /// <summary>
+        /// Verifies the README Documentation section identifies the version 2.0 materials under active development.
+        /// </summary>
+        /// <remarks>
+        /// The exact section opening keeps the callout immediately below its heading and prevents an em dash from
+        /// returning to the approved wording.
+        /// </remarks>
+        [TestMethod]
+        public void ReadmeDocumentation_DeclaresActiveDevelopmentWithoutEmDash()
+        {
+            string readme = ReadRepositoryFile("README.md").Replace("\r\n", "\n");
+            const string note =
+                "> [!NOTE]\n" +
+                "> Documentation for RMC-BestFit 2.0, including the User Guide, Technical Reference, Example Projects, and verification materials, is under active development and may be incomplete or change. The Version 1.0 User's Guide and Verification Report linked below remain published references for the previous major release.";
+            const string expectedSectionOpening =
+                "## Documentation\n\n" +
+                note +
+                "\n\n| Document | Description |";
+
+            StringAssert.Contains(readme, expectedSectionOpening);
+            Assert.IsFalse(note.Contains('\u2014'));
         }
 
         /// <summary>

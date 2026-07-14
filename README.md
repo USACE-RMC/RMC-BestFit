@@ -35,6 +35,9 @@ Source builds include the model library, unit tests, UI/project layer, desktop a
 
 ## Documentation
 
+> [!NOTE]
+> Documentation for RMC-BestFit 2.0, including the User Guide, Technical Reference, Example Projects, and verification materials, is under active development and may be incomplete or change. The Version 1.0 User's Guide and Verification Report linked below remain published references for the previous major release.
+
 | Document | Description |
 |----------|-------------|
 | [Getting Started](docs/getting-started.md) | Minimal namespaces and first model-library workflows |

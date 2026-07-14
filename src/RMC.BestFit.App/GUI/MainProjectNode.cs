@@ -8,6 +8,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Documents;
+using System.Windows.Navigation;
+using System.Threading.Tasks;
 using RMC.BestFit.Models;
 using RMC.BestFit.UI;
 using FrameworkInterfaces;
@@ -392,8 +395,11 @@ namespace RMC_BestFit
             var tcuMenuItem = new MenuItem() { Header = "Terms & Conditions for Use", Icon = TryFindResource("TCUIcon") };
             tcuMenuItem.Click += (s, e) =>
             {
-                var window = new TermsAndConditionsWindow();
-                window.ShowButtons = false;
+                var window = new TermsAndConditionsWindow
+                {
+                    ShowButtons = false,
+                    TermsDocument = TermsAndConditionsDocumentFactory.Create(CitationLink_RequestNavigate)
+                };
                 if (Application.Current?.MainWindow != null)
                 {
                     window.Owner = Application.Current.MainWindow;
@@ -456,24 +462,7 @@ namespace RMC_BestFit
                 menuItem.IsEnabled = false;
                 try
                 {
-                    OnlineHelpLaunchResult result = await OnlineHelpLauncher.TryOpenAsync(url);
-                    if (result == OnlineHelpLaunchResult.NoInternet)
-                    {
-                        GenericControls.MessageBox.Show(
-                            "No internet connection is available. Please check your connection and try again.",
-                            "Connection Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Failed to open " + header + ": " + ex.Message);
-                    GenericControls.MessageBox.Show(
-                        "Something went wrong. Cannot open the RMC-BestFit " + header + ".",
-                        "Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    await OpenOnlineResourceAsync(header, url);
                 }
                 finally
                 {
@@ -482,6 +471,66 @@ namespace RMC_BestFit
             };
 
             return menuItem;
+        }
+
+        /// <summary>
+        /// Opens an online RMC-BestFit resource and reports expected or unexpected failures to the user.
+        /// </summary>
+        /// <param name="resourceName">User-visible resource name used in diagnostic and error messages.</param>
+        /// <param name="url">Absolute HTTPS URL to open.</param>
+        /// <returns>A task representing the asynchronous connectivity check and browser launch.</returns>
+        /// <remarks>
+        /// Expected offline results receive a connection-specific message. Unexpected connectivity or browser
+        /// failures are logged and receive a resource-specific message without escaping an asynchronous UI handler.
+        /// </remarks>
+        private static async Task OpenOnlineResourceAsync(string resourceName, string url)
+        {
+            try
+            {
+                OnlineHelpLaunchResult result = await OnlineHelpLauncher.TryOpenAsync(url);
+                if (result == OnlineHelpLaunchResult.NoInternet)
+                {
+                    GenericControls.MessageBox.Show(
+                        "No internet connection is available. Please check your connection and try again.",
+                        "Connection Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Failed to open " + resourceName + ": " + ex);
+                GenericControls.MessageBox.Show(
+                    "Something went wrong. Cannot open the RMC-BestFit " + resourceName + ".",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Opens the Zenodo citation record when its hyperlink is activated in the Terms and Conditions document.
+        /// </summary>
+        /// <param name="sender">The citation hyperlink that raised the navigation request.</param>
+        /// <param name="e">Navigation event data.</param>
+        /// <remarks>
+        /// The hyperlink is disabled during the connectivity check to prevent duplicate browser launches and is
+        /// always restored afterward. Navigation uses the canonical concept DOI rather than a version-specific URL.
+        /// </remarks>
+        private async void CitationLink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            e.Handled = true;
+            Hyperlink hyperlink = sender as Hyperlink;
+            if (hyperlink != null) hyperlink.IsEnabled = false;
+
+            try
+            {
+                await OpenOnlineResourceAsync("citation information", OnlineHelpLauncher.ZenodoConceptDoiUrl);
+            }
+            finally
+            {
+                if (hyperlink != null) hyperlink.IsEnabled = true;
+            }
         }
 
         /// <summary>

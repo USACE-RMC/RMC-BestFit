@@ -51,6 +51,11 @@ namespace RMC_BestFit
         internal const string ExampleProjectsUrl = "https://github.com/USACE-RMC/RMC-BestFit/tree/main/examples";
 
         /// <summary>
+        /// Canonical concept DOI URL for all archived RMC-BestFit releases on Zenodo.
+        /// </summary>
+        internal const string ZenodoConceptDoiUrl = "https://doi.org/10.5281/zenodo.21301036";
+
+        /// <summary>
         /// Checks Internet connectivity and opens an online Help resource in the default browser.
         /// </summary>
         /// <param name="url">Absolute HTTPS URL of the Help resource to open.</param>
