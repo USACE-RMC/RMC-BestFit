@@ -378,13 +378,15 @@ namespace RMC_BestFit
         /// <item>Terms and Conditions for Use - Displays the software license and usage terms dialog</item>
         /// <item>About RMC-BestFit - Shows version information and software credits</item>
         /// </list>
+        /// A separator groups the three online resources above the application-specific items.
         /// All menu items are configured with appropriate icons and event handlers.
         /// </remarks>
         protected override void DefineHelpMenuItems()
         {
-            _helpMenuItems.Add(CreateOnlineHelpMenuItem("User Guide", OnlineHelpLauncher.UserGuideUrl));
+            _helpMenuItems.Add(CreateOnlineHelpMenuItem("User Guide", OnlineHelpLauncher.UserGuideUrl, showHelpIcon: true));
             _helpMenuItems.Add(CreateOnlineHelpMenuItem("Technical Reference", OnlineHelpLauncher.TechnicalReferenceUrl));
             _helpMenuItems.Add(CreateOnlineHelpMenuItem("Example Projects", OnlineHelpLauncher.ExampleProjectsUrl));
+            _helpMenuItems.Add(CreateHelpMenuSeparator());
 
             // Terms & Conditions for Use
             var tcuMenuItem = new MenuItem() { Header = "Terms & Conditions for Use", Icon = TryFindResource("TCUIcon") };
@@ -423,6 +425,7 @@ namespace RMC_BestFit
         /// </summary>
         /// <param name="header">User-visible menu item header and resource name.</param>
         /// <param name="url">Absolute HTTPS URL of the resource.</param>
+        /// <param name="showHelpIcon">Whether to display the Help icon next to the menu item.</param>
         /// <returns>A configured Help menu item.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when <paramref name="header"/> or <paramref name="url"/> is empty.
@@ -431,7 +434,7 @@ namespace RMC_BestFit
         /// The item is disabled while connectivity is checked to prevent duplicate launches. Expected
         /// offline results and unexpected launch failures are reported with distinct user messages.
         /// </remarks>
-        private MenuItem CreateOnlineHelpMenuItem(string header, string url)
+        private MenuItem CreateOnlineHelpMenuItem(string header, string url, bool showHelpIcon = false)
         {
             if (string.IsNullOrWhiteSpace(header))
             {
@@ -442,7 +445,12 @@ namespace RMC_BestFit
                 throw new ArgumentException("A Help resource URL is required.", nameof(url));
             }
 
-            var menuItem = new MenuItem() { Header = header, Icon = TryFindResource("HelpIcon") };
+            var menuItem = new MenuItem() { Header = header };
+            if (showHelpIcon)
+            {
+                menuItem.Icon = CreateThemedIcon("HelpIcon");
+            }
+
             menuItem.Click += async (x, y) =>
             {
                 menuItem.IsEnabled = false;
@@ -474,6 +482,35 @@ namespace RMC_BestFit
             };
 
             return menuItem;
+        }
+
+        /// <summary>
+        /// Creates a non-interactive, theme-aware separator compatible with the framework's Help menu collection.
+        /// </summary>
+        /// <returns>A menu item whose control template renders a horizontal separator.</returns>
+        /// <remarks>
+        /// The shared framework exposes Help entries as <see cref="MenuItem"/> instances, so a native
+        /// <see cref="Separator"/> cannot be added to the collection. This template preserves that contract
+        /// while using the framework's dynamic separator brush and icon-gutter alignment.
+        /// </remarks>
+        private static MenuItem CreateHelpMenuSeparator()
+        {
+            var separatorLine = new FrameworkElementFactory(typeof(Border));
+            separatorLine.SetValue(FrameworkElement.HeightProperty, 1d);
+            separatorLine.SetValue(FrameworkElement.MarginProperty, new Thickness(28d, 4d, 4d, 4d));
+            separatorLine.SetValue(UIElement.SnapsToDevicePixelsProperty, true);
+            separatorLine.SetResourceReference(Border.BackgroundProperty, "MenuPopupDefaultSeparator");
+
+            return new MenuItem
+            {
+                Focusable = false,
+                IsEnabled = false,
+                IsHitTestVisible = false,
+                Template = new ControlTemplate(typeof(MenuItem))
+                {
+                    VisualTree = separatorLine
+                }
+            };
         }
 
         /// <summary>

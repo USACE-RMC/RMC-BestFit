@@ -187,21 +187,30 @@ namespace RMC.BestFit.App.Tests.GUI.Support
         public void DefineHelpMenuItems_UsesOnlineHelpLauncher()
         {
             string source = ReadRepositoryFile("src/RMC.BestFit.App/GUI/MainProjectNode.cs");
-            const string userGuideCall = "CreateOnlineHelpMenuItem(\"User Guide\", OnlineHelpLauncher.UserGuideUrl)";
+            const string userGuideCall = "CreateOnlineHelpMenuItem(\"User Guide\", OnlineHelpLauncher.UserGuideUrl, showHelpIcon: true)";
             const string technicalReferenceCall = "CreateOnlineHelpMenuItem(\"Technical Reference\", OnlineHelpLauncher.TechnicalReferenceUrl)";
             const string exampleProjectsCall = "CreateOnlineHelpMenuItem(\"Example Projects\", OnlineHelpLauncher.ExampleProjectsUrl)";
+            const string separatorCall = "_helpMenuItems.Add(CreateHelpMenuSeparator());";
 
             StringAssert.Contains(source, userGuideCall);
             StringAssert.Contains(source, technicalReferenceCall);
             StringAssert.Contains(source, exampleProjectsCall);
+            StringAssert.Contains(source, separatorCall);
             StringAssert.Contains(source, "private MenuItem CreateOnlineHelpMenuItem");
             StringAssert.Contains(source, "await OnlineHelpLauncher.TryOpenAsync(url)");
+            StringAssert.Contains(source, "if (showHelpIcon)");
+            StringAssert.Contains(source, "menuItem.Icon = CreateThemedIcon(\"HelpIcon\")");
+            Assert.IsFalse(source.Contains("Icon = TryFindResource(\"HelpIcon\")", StringComparison.Ordinal));
+            StringAssert.Contains(source, "private static MenuItem CreateHelpMenuSeparator()");
+            StringAssert.Contains(source, "separatorLine.SetResourceReference(Border.BackgroundProperty, \"MenuPopupDefaultSeparator\")");
+            StringAssert.Contains(source, "IsHitTestVisible = false");
             StringAssert.Contains(source, "menuItem.IsEnabled = false;");
             StringAssert.Contains(source, "menuItem.IsEnabled = true;");
             StringAssert.Contains(source, "No internet connection is available. Please check your connection and try again.");
             StringAssert.Contains(source, "Something went wrong. Cannot open the RMC-BestFit ");
             Assert.IsTrue(source.IndexOf(userGuideCall, StringComparison.Ordinal) < source.IndexOf(technicalReferenceCall, StringComparison.Ordinal));
             Assert.IsTrue(source.IndexOf(technicalReferenceCall, StringComparison.Ordinal) < source.IndexOf(exampleProjectsCall, StringComparison.Ordinal));
+            Assert.IsTrue(source.IndexOf(exampleProjectsCall, StringComparison.Ordinal) < source.IndexOf(separatorCall, StringComparison.Ordinal));
             Assert.IsFalse(source.Contains("Quick Start Guide", StringComparison.Ordinal));
             Assert.IsFalse(source.Contains(".pdf", StringComparison.OrdinalIgnoreCase));
         }
