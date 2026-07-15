@@ -95,13 +95,17 @@ namespace RMC.BestFit.Api.Mappers
             {
                 try
                 {
-                    UnivariateDistributionFactory.CreateDistribution(type);
+                    if (!UnivariateDistributionFactory.TryCreateDistribution(type, out _))
+                    {
+                        continue;
+                    }
                     names.Add(EnumHelper.ToCamelCase(type.ToString()));
                 }
                 catch (ArgumentOutOfRangeException)
                 {
                     // Not constructible from a bare type (e.g., composite types that require
                     // component distributions) — excluded from the spec list.
+                    continue;
                 }
             }
             return names;

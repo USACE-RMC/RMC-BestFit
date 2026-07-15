@@ -80,6 +80,9 @@ namespace RMC.BestFit.Api.Tests.Mappers
             CollectionAssert.Contains(response.PriorDistributions, "uniform");
             CollectionAssert.Contains(response.PriorDistributions, "triangular");
             Assert.IsTrue(response.PriorDistributions.Count >= 15, "The spec list must cover at least the fitting distributions.");
+            CollectionAssert.DoesNotContain(response.PriorDistributions, "competingRisks");
+            CollectionAssert.DoesNotContain(response.PriorDistributions, "mixture");
+            CollectionAssert.DoesNotContain(response.PriorDistributions, "userDefined");
         }
 
         /// <summary>
