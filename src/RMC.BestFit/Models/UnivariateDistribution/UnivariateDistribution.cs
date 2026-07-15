@@ -1814,41 +1814,6 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Attempts to select the scale parameter to which the Jeffreys <c>1/scale</c> term applies.
-        /// </summary>
-        /// <param name="model">The distribution whose current parameters are inspected.</param>
-        /// <param name="scale">The selected scale value when one is available.</param>
-        /// <param name="scaleName">The selected scale parameter name when one is available.</param>
-        /// <returns><c>true</c> when both a scale value and a non-empty name exist; otherwise, <c>false</c>.</returns>
-        /// <remarks>
-        /// Gamma and Weibull expose scale at index zero; other supported scale families expose it at
-        /// index one. Single-parameter families have no applicable scale term, so their ordinary
-        /// parameter priors are retained without adding a Jeffreys contribution.
-        /// </remarks>
-        private static bool TryGetJeffreysScaleParameter(
-            UnivariateDistributionBase model,
-            out double scale,
-            out string scaleName)
-        {
-            int scaleIndex = model.Type == UnivariateDistributionType.GammaDistribution ||
-                model.Type == UnivariateDistributionType.Weibull ? 0 : 1;
-            double[] parameterValues = model.GetParameters;
-            string[] parameterNames = model.ParameterNames;
-
-            if (scaleIndex >= parameterValues.Length || scaleIndex >= parameterNames.Length ||
-                string.IsNullOrWhiteSpace(parameterNames[scaleIndex]))
-            {
-                scale = double.NaN;
-                scaleName = string.Empty;
-                return false;
-            }
-
-            scale = parameterValues[scaleIndex];
-            scaleName = parameterNames[scaleIndex];
-            return true;
-        }
-
-        /// <summary>
         /// Returns the log likelihood contribution of parameter and quantile priors.
         /// </summary>
         /// <param name="model">Working copy of the distribution.</param>
@@ -1865,7 +1830,7 @@ namespace RMC.BestFit.Models
             }
 
             if (UseJeffreysRuleForScale &&
-                TryGetJeffreysScaleParameter(model, out double scaleParam, out _))
+                TryGetJeffreysScaleParameter(model, out double scaleParam))
             {
                 // Jeffreys prior requires positive scale parameter. Return -Inf directly
                 // rather than subtracting +Inf (mathematically equivalent today because of the

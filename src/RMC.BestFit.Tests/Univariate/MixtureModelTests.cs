@@ -94,6 +94,42 @@ public class MixtureModelTests
         return df;
     }
 
+    /// <summary>
+    /// Creates a mixture model with explicit parameter priors without invoking component MLE initialization.
+    /// </summary>
+    /// <param name="distributions">The component distributions to include.</param>
+    /// <returns>A configured mixture model whose parameter vector matches the supplied components.</returns>
+    /// <remarks>
+    /// One-parameter Numerics families do not implement the continuous-distribution MLE interface used
+    /// by the normal BestFit setup path. Configuring the distribution before valid data and disabling
+    /// default priors permits direct regression coverage of the public prior-likelihood methods.
+    /// </remarks>
+    private static MixtureModel CreateModelWithManualPriors(
+        params UnivariateDistributionBase[] distributions)
+    {
+        double[] weights = Enumerable.Repeat(1.0 / distributions.Length, distributions.Length).ToArray();
+        var model = new MixtureModel
+        {
+            UseDefaultFlatPriors = false,
+            Mixture = new Mixture(weights, distributions),
+            DataFrame = CreateSampleDataFrame()
+        };
+        double[] parameterValues = model.Mixture!.GetParameters;
+
+        for (int i = 0; i < parameterValues.Length; i++)
+        {
+            double value = parameterValues[i];
+            model.Parameters.Add(new ModelParameter
+            {
+                Name = $"Parameter {i + 1}",
+                Value = value,
+                PriorDistribution = new Normal(value, Math.Max(1.0, Math.Abs(value) * 0.1))
+            });
+        }
+
+        return model;
+    }
+
     #endregion
 
     #region Constructor Tests
@@ -1182,6 +1218,53 @@ public class MixtureModelTests
 
         // Jeffreys prior adds -log(scale) term, so they should differ
         Assert.AreNotEqual(priorNoJeffreys, priorWithJeffreys);
+    }
+
+    /// <summary>
+    /// Verifies that a one-parameter component retains its ordinary prior without an inapplicable Jeffreys term.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_OneParameterComponent_OmitsScaleContribution()
+    {
+        var model = CreateModelWithManualPriors(new Poisson(2000.0));
+        model.UseJeffreysRuleForScale = true;
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+        double scalar = model.PriorLogLikelihood(parameters.ToArray());
+        var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+        Assert.IsTrue(double.IsFinite(scalar));
+        Assert.IsFalse(pointwise.Any(component =>
+            component.Type == PriorComponentType.JeffreysScalePrior));
+        Assert.AreEqual(
+            scalar,
+            pointwise.Sum(component => component.LogLikelihood),
+            1e-12);
+    }
+
+    /// <summary>
+    /// Verifies that a mixed one-parameter and Normal model applies Jeffreys' rule only to the Normal scale.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_MixedComponents_AppliesOnlyAvailableScaleContribution()
+    {
+        var model = CreateModelWithManualPriors(
+            new Poisson(2000.0),
+            new Normal(2000.0, 500.0));
+        model.UseJeffreysRuleForScale = true;
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+        double scalar = model.PriorLogLikelihood(parameters.ToArray());
+        var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+        Assert.AreEqual(
+            1,
+            pointwise.Count(component =>
+                component.Type == PriorComponentType.JeffreysScalePrior));
+        Assert.AreEqual(
+            scalar,
+            pointwise.Sum(component => component.LogLikelihood),
+            1e-12);
     }
 
     #endregion

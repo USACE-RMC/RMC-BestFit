@@ -675,18 +675,13 @@ namespace RMC.BestFit.Models
                 for (int j = 0; j < k; j++)
                 {
                     var dist = model.Distributions[j];
-                    double scale;
+                    if (!TryGetJeffreysScaleParameter(dist, out double scale))
+                        continue;
 
-                    if (dist.Type == UnivariateDistributionType.GammaDistribution ||
-                        dist.Type == UnivariateDistributionType.Weibull)
-                    {
-                        scale = dist.GetParameters[0];
-                    }
-                    else
-                    {
-                        scale = dist.GetParameters[1];
-                    }
-                    logLH -= scale > 0 ? Math.Log(scale) : double.PositiveInfinity;
+                    if (scale <= 0)
+                        return double.NegativeInfinity;
+
+                    logLH -= Math.Log(scale);
                 }
             }
 
@@ -727,20 +722,9 @@ namespace RMC.BestFit.Models
                 for (int j = 0; j < k; j++)
                 {
                     var dist = model.Distributions[j];
-                    double scale;
-                    string scaleName;
+                    if (!TryGetJeffreysScaleParameter(dist, out double scale, out string scaleName))
+                        continue;
 
-                    if (dist.Type == UnivariateDistributionType.GammaDistribution ||
-                        dist.Type == UnivariateDistributionType.Weibull)
-                    {
-                        scale = dist.GetParameters[0];
-                        scaleName = dist.ParameterNames[0];
-                    }
-                    else
-                    {
-                        scale = dist.GetParameters[1];
-                        scaleName = dist.ParameterNames[1];
-                    }
                     double ll = scale > 0 ? -Math.Log(scale) : double.NegativeInfinity;
                     result.Add(new PriorComponent($"Jeffreys Scale: D{j + 1}.{scaleName}", ll, PriorComponentType.JeffreysScalePrior));
                 }
