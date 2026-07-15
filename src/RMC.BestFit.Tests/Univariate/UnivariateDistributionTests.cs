@@ -362,4 +362,75 @@ public class UnivariateDistributionTests
     }
 
     #endregion
+
+    #region Jeffreys scale prior regression
+
+    /// <summary>
+    /// One-parameter families retain their ordinary priors without an inapplicable Jeffreys scale term.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_OneParameterFamiliesOmitScaleContribution()
+    {
+        UnivariateDistributionBase[] distributions =
+        [
+            new Poisson(2.0),
+            new Bernoulli(0.4),
+            new Geometric(0.4),
+            new Deterministic(2.0),
+        ];
+
+        foreach (UnivariateDistributionBase distribution in distributions)
+        {
+            var model = new UnivariateDistribution();
+            model.Distribution = distribution;
+            model.UseDefaultFlatPriors = false;
+            model.DataFrame = MakeDataFrame([0.0, 1.0, 2.0, 3.0, 4.0]);
+            model.Parameters[0].Value = distribution.GetParameters[0];
+            model.Parameters[0].PriorDistribution =
+                new Normal(model.Parameters[0].Value, 1.0);
+            model.UseJeffreysRuleForScale = true;
+            double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+            double scalar = model.PriorLogLikelihood(parameters);
+            var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+            Assert.IsTrue(double.IsFinite(scalar), distribution.Type.ToString());
+            Assert.IsFalse(pointwise.Any(component =>
+                component.Type == PriorComponentType.JeffreysScalePrior), distribution.Type.ToString());
+            Assert.AreEqual(scalar, pointwise.Sum(component => component.LogLikelihood), 1e-12,
+                distribution.Type.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Normal and Gamma retain their established Jeffreys scale contribution and scalar/pointwise parity.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_NormalAndGammaRetainScaleContribution()
+    {
+        foreach (UnivariateDistributionType distributionType in new[]
+        {
+            UnivariateDistributionType.Normal,
+            UnivariateDistributionType.GammaDistribution,
+        })
+        {
+            var model = new UnivariateDistribution(
+                MakeDataFrame(InlineNormalData), distributionType);
+            double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+            int scaleIndex = distributionType == UnivariateDistributionType.GammaDistribution ? 0 : 1;
+
+            model.UseJeffreysRuleForScale = false;
+            double withoutJeffreys = model.PriorLogLikelihood(parameters);
+            model.UseJeffreysRuleForScale = true;
+            double withJeffreys = model.PriorLogLikelihood(parameters);
+            var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+            Assert.AreEqual(-Math.Log(parameters[scaleIndex]), withJeffreys - withoutJeffreys, 1e-12);
+            Assert.AreEqual(1, pointwise.Count(component =>
+                component.Type == PriorComponentType.JeffreysScalePrior));
+            Assert.AreEqual(withJeffreys, pointwise.Sum(component => component.LogLikelihood), 1e-12);
+        }
+    }
+
+    #endregion
 }

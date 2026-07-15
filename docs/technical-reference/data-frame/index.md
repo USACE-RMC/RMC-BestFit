@@ -338,31 +338,40 @@ public class ThresholdData : Data
     public double Value { get; set; }
 
     /// <summary>
-    /// Number of events below the threshold (non-exceedances).
+    /// Effective number of events below the threshold after overlap processing.
     /// </summary>
-    public int NumberBelow { get; set; }
+    public int NumberBelow { get; internal set; }
 
     /// <summary>
-    /// Number of events above the threshold (exceedances).
+    /// User-supplied exceedance count; reads return the current effective count.
     /// </summary>
     public int NumberAbove { get; set; }
 }
 ```
 
+`NumberAbove` is the only count supplied by callers. Internally, the data frame retains that
+source count separately and recomputes effective `NumberAbove` and `NumberBelow` values from it
+whenever explicit, interval, uncertain, or threshold data change. Reprocessing is idempotent:
+repeated calls with unchanged input produce the same counts. XML continues to store the source
+count in the existing `NumberAbove` attribute, and effective counts are rebuilt when a data frame
+is restored.
+
 ### Creating Threshold Data
 
 ```cs
 // Historical period 1850-1920: threshold was 40,000 cfs (e.g., bridge deck elevation)
-// We know no floods exceeded this threshold during these 70 years
-var threshold = new ThresholdData(1850, 1920, 40000);
-threshold.NumberBelow = 70;  // All 70 years below threshold
-threshold.NumberAbove = 0;   // No exceedances recorded
+// We know no floods exceeded this threshold during these 71 inclusive years.
+var threshold = new ThresholdData(1850, 1920, 40000)
+{
+    NumberAbove = 0
+};
 df.ThresholdSeries.Add(threshold);
 
-// Another period with known exceedances
-var threshold2 = new ThresholdData(1800, 1850, 50000);
-threshold2.NumberBelow = 48;  // 48 years below
-threshold2.NumberAbove = 2;   // 2 floods exceeded (recorded in historical accounts)
+// Another period with two floods known to have exceeded the threshold.
+var threshold2 = new ThresholdData(1800, 1850, 50000)
+{
+    NumberAbove = 2
+};
 df.ThresholdSeries.Add(threshold2);
 ```
 

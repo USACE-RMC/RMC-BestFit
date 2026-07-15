@@ -204,6 +204,7 @@ namespace RMC.BestFit.Estimation
         private OptimizationMethod _optimizerMethod = OptimizationMethod.BFGS;
         private GMMEstimationStrategy _estimationStrategy = GMMEstimationStrategy.Iterative;
         private int _maxGMMIterations = 100;
+        private bool _convergedWithinTolerance;
         private double _absoluteTolerance = 1E-8;
         private double _relativeTolerance = 1E-8;
         private int _maxFunctionEvaluations = 2000;
@@ -488,18 +489,17 @@ namespace RMC.BestFit.Estimation
         public int GMMIterations { get; private set; }
 
         /// <summary>
-        /// Returns <c>true</c> only when the most recent <c>Estimate</c> run
-        /// reached the convergence tolerance before <see cref="MaxGMMIterations"/>.
+        /// Returns <c>true</c> only when the most recent iterative <c>Estimate</c> run
+        /// reached a convergence criterion.
         /// </summary>
         /// <remarks>
         /// Useful for callers that want to gate downstream reporting on
-        /// tolerance-convergence rather than on best-effort termination. A run that
-        /// hits <see cref="MaxGMMIterations"/> still has <c>IsEstimated</c>
-        /// set to <c>true</c> (the parameter values are valid and "close enough"
-        /// per the iterative GMM design) but is reported here as
-        /// <c>ConvergedWithinTolerance == false</c>.
+        /// tolerance-convergence rather than best-effort termination. Convergence on the final
+        /// permitted pass is reported as confirmed. Exhaustion, optimizer failure, one-step and
+        /// two-step strategies, and iterative runs without a comparison pass are reported as not
+        /// confirmed converged.
         /// </remarks>
-        public bool ConvergedWithinTolerance => IsEstimated && GMMIterations < MaxGMMIterations;
+        public bool ConvergedWithinTolerance => IsEstimated && _convergedWithinTolerance;
 
         /// <summary>
         /// Gets the total number of function evaluations required to estimate the model.
@@ -2235,6 +2235,7 @@ namespace RMC.BestFit.Estimation
         private void EstimateIterative()
         {
             ConvergenceHistory.Clear();
+            GMMIterations = 1;
 
             // Perform the 1st optimization step
             if (!MinimizeWithFallback(enableStartPointProbe: true))
@@ -2250,8 +2251,10 @@ namespace RMC.BestFit.Estimation
             double oldQ = Q(oldValues);
             ConvergenceHistory.Add(oldQ);
 
-            for (GMMIterations = 2; GMMIterations <= MaxGMMIterations; GMMIterations++)
+            for (int iteration = 2; iteration <= MaxGMMIterations; iteration++)
             {
+                GMMIterations = iteration;
+
                 // Subsequent iterations: no start-point probe needed
                 if (!MinimizeWithFallback(enableStartPointProbe: false))
                     break;
@@ -2271,6 +2274,7 @@ namespace RMC.BestFit.Estimation
 
                 if (distance < AbsoluteTolerance || relChange < RelativeTolerance)
                 {
+                    _convergedWithinTolerance = true;
                     BestParameterSet = Optimizer.BestParameterSet.Clone();
                     return;
                 }
@@ -2293,6 +2297,7 @@ namespace RMC.BestFit.Estimation
         {
             IsEstimated = false;
 
+            _convergedWithinTolerance = false;
             // Validation
             if (IdentificationStatus == GMMIdentificationStatus.UnderIdentified && PenaltyFunction == null)
                 throw new InvalidOperationException("The GMM problem is under-identified and cannot be estimated without a penalty function.");
@@ -2373,6 +2378,7 @@ namespace RMC.BestFit.Estimation
             Status = OptimizationStatus.None;
             GMMIterations = 0;
             TotalFunctionEvaluations = 0;
+            _convergedWithinTolerance = false;
             JStat = double.NaN;
             JStatPval = double.NaN;
             W = null;
@@ -2457,6 +2463,7 @@ namespace RMC.BestFit.Estimation
             // Output
             result.SetAttributeValue(nameof(GMMIterations), GMMIterations.ToString(CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(JStat), JStat.ToString("G17", CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(ConvergedWithinTolerance), ConvergedWithinTolerance.ToString());
             result.SetAttributeValue(nameof(JStatPval), JStatPval.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(Status), Status.ToString());
 
@@ -2503,11 +2510,17 @@ namespace RMC.BestFit.Estimation
         /// The model's parameter values are set to the restored BestParameterSet values,
         /// and <c>IsEstimated</c> is set to <c>true</c>.
         /// </para>
+        /// <para>
+        /// The optional <see cref="ConvergedWithinTolerance"/> attribute restores confirmed
+        /// convergence only for iterative runs with at least one comparison pass. Legacy XML
+        /// without the attribute is restored conservatively as not confirmed converged.
+        /// </para>
         /// </remarks>
         public void RestoreFromXElement(XElement xElement)
         {
             if (xElement == null) return;
 
+            _convergedWithinTolerance = false;
             // Restore configuration attributes
             var stratAttr = xElement.Attribute(nameof(EstimationStrategy));
             if (stratAttr != null && Enum.TryParse(stratAttr.Value, out GMMEstimationStrategy strat))
@@ -2534,6 +2547,10 @@ namespace RMC.BestFit.Estimation
             if (gmmIterAttr != null && int.TryParse(gmmIterAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int gmmIter))
                 GMMIterations = gmmIter;
 
+            var convergedAttr = xElement.Attribute(nameof(ConvergedWithinTolerance));
+            if (convergedAttr != null && bool.TryParse(convergedAttr.Value, out bool converged))
+                _convergedWithinTolerance = converged && GMMIterations >= 2 &&
+                    EstimationStrategy == GMMEstimationStrategy.Iterative;
             var jStatAttr = xElement.Attribute(nameof(JStat));
             if (jStatAttr != null && double.TryParse(jStatAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double jStat))
                 JStat = jStat;

@@ -350,4 +350,70 @@ public class BivariateDistributionTests
     }
 
     #endregion
+
+    #region Sample setup regression
+
+    /// <summary>
+    /// Pseudo-likelihood setup initializes missing plotting positions, invalidates its validation
+    /// cache when a position changes, and produces a finite likelihood.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetSampleData_PseudoLikelihoodInitializesMissingPlottingPositions()
+    {
+        var (marginalX, marginalY) = CreateMarginals(20);
+        foreach (var data in marginalX.DataFrame.ExactSeries)
+            data.PlottingPosition = 0.0;
+        foreach (var data in marginalY.DataFrame.ExactSeries)
+            data.PlottingPosition = 0.0;
+
+        var model = new BivariateDistribution(marginalX, marginalY, CopulaType.Normal)
+        {
+            CopulaEstimationMethod = CopulaEstimationMethod.PseudoLikelihood,
+        };
+
+        Assert.IsTrue(marginalX.DataFrame.ExactSeries.All(data =>
+            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
+        Assert.IsTrue(marginalY.DataFrame.ExactSeries.All(data =>
+            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
+
+        marginalX.DataFrame.ExactSeries[0].PlottingPosition = 0.0;
+        model.SetSampleData();
+
+        Assert.IsTrue(marginalX.DataFrame.ExactSeries.All(data =>
+            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
+
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(parameters)));
+    }
+
+    /// <summary>
+    /// IFM sample setup leaves marginal plotting positions unchanged.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetSampleData_InferenceFromMarginsDoesNotRecalculatePlottingPositions()
+    {
+        var (marginalX, marginalY) = CreateMarginals(20);
+        for (int i = 0; i < marginalX.DataFrame.ExactSeries.Count; i++)
+        {
+            marginalX.DataFrame.ExactSeries[i].PlottingPosition = 0.11 + (0.01 * i);
+            marginalY.DataFrame.ExactSeries[i].PlottingPosition = 0.21 + (0.01 * i);
+        }
+        double[] expectedX = marginalX.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray();
+        double[] expectedY = marginalY.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray();
+
+        var model = new BivariateDistribution(marginalX, marginalY, CopulaType.Normal)
+        {
+            CopulaEstimationMethod = CopulaEstimationMethod.InferenceFromMargins,
+        };
+        model.SetSampleData();
+
+        CollectionAssert.AreEqual(expectedX, marginalX.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray());
+        CollectionAssert.AreEqual(expectedY, marginalY.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray());
+    }
+
+    #endregion
 }

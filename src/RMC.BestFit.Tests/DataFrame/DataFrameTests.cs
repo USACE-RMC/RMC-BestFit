@@ -1012,5 +1012,73 @@ public class DataFrameTests
         Assert.AreEqual(1, df.ThresholdSeries.Count);
     }
 
+    #region Threshold Processing Regression
+
+    /// <summary>
+    /// Verifies repeated processing remains idempotent and an explicit-data mutation recomputes
+    /// effective counts from the original user input with one aggregate threshold notification.
+    /// </summary>
+    [TestMethod]
+    public void ProcessThresholdSeries_RepeatedAndInputMutated_RemainsIdempotent()
+    {
+        var frame = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(0, 2, 100.0) { NumberAbove = 2 };
+        frame.ThresholdSeries.Add(threshold);
+        var exact = new ExactData { Index = 1, Value = 150.0 };
+        frame.ExactSeries.Add(exact);
+        frame.ProcessThresholdSeries();
+
+        Assert.AreEqual(2, threshold.SourceNumberAbove);
+        Assert.AreEqual(0, threshold.NumberAbove);
+        Assert.AreEqual(0, threshold.NumberBelow);
+
+        for (int i = 0; i < 20; i++)
+            frame.ProcessThresholdSeries();
+
+        Assert.AreEqual(0, threshold.NumberAbove);
+        Assert.AreEqual(0, threshold.NumberBelow);
+
+        int thresholdNotifications = 0;
+        frame.PropertyChanged += (_, eventArgs) =>
+        {
+            if (eventArgs.PropertyName == nameof(BestFitDataFrame.ThresholdSeries))
+                thresholdNotifications++;
+        };
+
+        frame.ExactSeries.Remove(exact);
+
+        Assert.AreEqual(2, threshold.SourceNumberAbove);
+        Assert.AreEqual(2, threshold.NumberAbove);
+        Assert.AreEqual(1, threshold.NumberBelow);
+        Assert.AreEqual(1, thresholdNotifications);
+
+        frame.ProcessThresholdSeries();
+        Assert.AreEqual(1, thresholdNotifications,
+            "An unchanged pass must not emit another aggregate threshold notification.");
+    }
+
+    /// <summary>
+    /// Verifies a DataFrame XML round-trip rebuilds effective threshold counts from the source
+    /// NumberAbove value stored under the existing schema.
+    /// </summary>
+    [TestMethod]
+    public void XmlRoundTrip_ProcessedThreshold_RebuildsEffectiveCountsFromSource()
+    {
+        var frame = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(0, 2, 100.0) { NumberAbove = 2 };
+        frame.ThresholdSeries.Add(threshold);
+        frame.ExactSeries.Add(new ExactData { Index = 1, Value = 150.0 });
+        frame.ProcessThresholdSeries();
+
+        var restoredFrame = new BestFitDataFrame(frame.ToXElement());
+        var restored = (BestFitThresholdData)restoredFrame.ThresholdSeries[0];
+
+        Assert.AreEqual(2, restored.SourceNumberAbove);
+        Assert.AreEqual(0, restored.NumberAbove);
+        Assert.AreEqual(0, restored.NumberBelow);
+    }
+
+    #endregion
+
     #endregion
 }

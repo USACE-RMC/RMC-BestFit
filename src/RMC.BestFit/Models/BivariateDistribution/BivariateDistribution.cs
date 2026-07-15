@@ -103,6 +103,10 @@ namespace RMC.BestFit.Models
         private IUnivariateModel _marginalY = null!;
         private IList<double> _sampleDataX = null!;
         private IList<double> _sampleDataY = null!;
+        private DataFrame? _validatedPseudoDataFrameX;
+        private DataFrame? _validatedPseudoDataFrameY;
+        private long _validatedPseudoVersionX = -1;
+        private long _validatedPseudoVersionY = -1;
         private CopulaEstimationMethod _copulaEstimationMethod = CopulaEstimationMethod.InferenceFromMargins;
 
         /// <summary>
@@ -381,23 +385,76 @@ namespace RMC.BestFit.Models
         /// <para>
         /// When <see cref="CopulaEstimationMethod.PseudoLikelihood"/> is selected,
         /// the plotting position complements are used as pseudo observations on
-        /// the unit interval. Otherwise, the raw exact values are used and
+        /// the unit interval. Missing or invalid pseudo observations are initialized
+        /// once per distinct marginal data frame before the paired sample is rebuilt.
+        /// Otherwise, the raw exact values are used and
         /// transformed via the marginal CDFs inside the likelihood.
         /// </para>
         /// </remarks>
         public void SetSampleData()
         {
-            _sampleDataX = new List<double>();
-            _sampleDataY = new List<double>();
-
+            bool usePseudoLikelihood = CopulaEstimationMethod == CopulaEstimationMethod.PseudoLikelihood;
+            DataFrame dataFrameX = MarginalX!.DataFrame!;
+            DataFrame dataFrameY = MarginalY!.DataFrame!;
             var (dataX, dataY) = GetEligibleExactData();
-            AddPairedSampleData(
-                dataX,
-                dataY,
-                CopulaEstimationMethod == CopulaEstimationMethod.PseudoLikelihood,
-                _sampleDataX,
-                _sampleDataY);
+            int pairedCapacity = Math.Min(dataX.Count, dataY.Count);
+            _sampleDataX = new List<double>(pairedCapacity);
+            _sampleDataY = new List<double>(pairedCapacity);
 
+            bool requiresPseudoValidation = usePseudoLikelihood &&
+                (!ReferenceEquals(_validatedPseudoDataFrameX, dataFrameX) ||
+                 _validatedPseudoVersionX != dataFrameX.PlottingPositionVersion ||
+                 !ReferenceEquals(_validatedPseudoDataFrameY, dataFrameY) ||
+                 _validatedPseudoVersionY != dataFrameY.PlottingPositionVersion);
+
+            (bool InvalidX, bool InvalidY) invalidPseudoObservations;
+            if (requiresPseudoValidation)
+            {
+                invalidPseudoObservations = AddPairedSampleDataAndValidate(
+                    dataX,
+                    dataY,
+                    _sampleDataX,
+                    _sampleDataY);
+            }
+            else
+            {
+                invalidPseudoObservations = (false, false);
+                AddPairedSampleData(
+                    dataX,
+                    dataY,
+                    usePseudoLikelihood,
+                    _sampleDataX,
+                    _sampleDataY);
+            }
+
+            if (usePseudoLikelihood &&
+                (invalidPseudoObservations.InvalidX || invalidPseudoObservations.InvalidY))
+            {
+                if (invalidPseudoObservations.InvalidX)
+                    dataFrameX.CalculatePlottingPositions();
+                if (invalidPseudoObservations.InvalidY &&
+                    (!ReferenceEquals(dataFrameX, dataFrameY) ||
+                     !invalidPseudoObservations.InvalidX))
+                    dataFrameY.CalculatePlottingPositions();
+
+                _sampleDataX.Clear();
+                _sampleDataY.Clear();
+                (dataX, dataY) = GetEligibleExactData();
+                AddPairedSampleData(
+                    dataX,
+                    dataY,
+                    true,
+                    _sampleDataX,
+                    _sampleDataY);
+            }
+
+            if (usePseudoLikelihood)
+            {
+                _validatedPseudoDataFrameX = dataFrameX;
+                _validatedPseudoDataFrameY = dataFrameY;
+                _validatedPseudoVersionX = dataFrameX.PlottingPositionVersion;
+                _validatedPseudoVersionY = dataFrameY.PlottingPositionVersion;
+            }
         }
 
         /// <summary>
@@ -486,7 +543,7 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Adds paired exact observations to the supplied sample-data lists.
+        /// Adds paired exact observations without revalidating an unchanged pseudo sample.
         /// </summary>
         /// <param name="dataX">Eligible exact data from the X marginal, sorted by index.</param>
         /// <param name="dataY">Eligible exact data from the Y marginal, sorted by index.</param>
@@ -513,14 +570,65 @@ namespace RMC.BestFit.Models
                 int idxY = dataY[j].Index;
                 if (idxX == idxY)
                 {
-                    sampleDataX.Add(usePseudoLikelihood ? dataX[i].PlottingPositionComplement : dataX[i].Value);
-                    sampleDataY.Add(usePseudoLikelihood ? dataY[j].PlottingPositionComplement : dataY[j].Value);
+                    sampleDataX.Add(usePseudoLikelihood
+                        ? dataX[i].PlottingPositionComplement
+                        : dataX[i].Value);
+                    sampleDataY.Add(usePseudoLikelihood
+                        ? dataY[j].PlottingPositionComplement
+                        : dataY[j].Value);
                     i++;
                     j++;
                 }
                 else if (idxX < idxY) i++;
                 else j++;
             }
+        }
+
+        /// <summary>
+        /// Adds paired pseudo observations while validating both marginals on the unit interval.
+        /// </summary>
+        /// <param name="dataX">Eligible exact data from the X marginal, sorted by index.</param>
+        /// <param name="dataY">Eligible exact data from the Y marginal, sorted by index.</param>
+        /// <param name="sampleDataX">Destination collection for X pseudo observations.</param>
+        /// <param name="sampleDataY">Destination collection for Y pseudo observations.</param>
+        /// <returns>
+        /// Flags indicating whether either marginal supplied a paired pseudo observation outside <c>(0,1)</c>.
+        /// </returns>
+        /// <remarks>
+        /// Validation is performed only when a marginal data frame or its plotting-position version
+        /// changes. Unchanged samples use <see cref="AddPairedSampleData"/> to preserve the established
+        /// hot-path cost.
+        /// </remarks>
+        private static (bool InvalidX, bool InvalidY) AddPairedSampleDataAndValidate(
+            IReadOnlyList<ExactData> dataX,
+            IReadOnlyList<ExactData> dataY,
+            IList<double> sampleDataX,
+            IList<double> sampleDataY)
+        {
+            int i = 0;
+            int j = 0;
+            bool invalidX = false;
+            bool invalidY = false;
+            while (i < dataX.Count && j < dataY.Count)
+            {
+                int idxX = dataX[i].Index;
+                int idxY = dataY[j].Index;
+                if (idxX == idxY)
+                {
+                    double valueX = dataX[i].PlottingPositionComplement;
+                    double valueY = dataY[j].PlottingPositionComplement;
+                    invalidX |= !(valueX > 0.0 && valueX < 1.0);
+                    invalidY |= !(valueY > 0.0 && valueY < 1.0);
+                    sampleDataX.Add(valueX);
+                    sampleDataY.Add(valueY);
+                    i++;
+                    j++;
+                }
+                else if (idxX < idxY) i++;
+                else j++;
+            }
+
+            return (invalidX, invalidY);
         }
 
         /// <inheritdoc/>

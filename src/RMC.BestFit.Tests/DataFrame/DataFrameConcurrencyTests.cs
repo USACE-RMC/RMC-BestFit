@@ -148,6 +148,26 @@ public class DataFrameConcurrencyTests
         Assert.AreEqual(expectedBelow, actualThreshold.NumberBelow);
     }
 
+    /// <summary>
+    /// Concurrent passes preserve the first-pass result when explicit observations account for
+    /// every year not represented by the immutable source exceedance count.
+    /// </summary>
+    [TestMethod]
+    public void ProcessThresholdSeries_ParallelCoveredThreshold_PreservesFirstPassResult()
+    {
+        var frame = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(0, 2, 100.0) { NumberAbove = 2 };
+        frame.ThresholdSeries.Add(threshold);
+        frame.ExactSeries.Add(new ExactData { Index = 1, Value = 150.0 });
+        frame.ProcessThresholdSeries();
+
+        RunParallel(500, _ => frame.ProcessThresholdSeries());
+
+        Assert.AreEqual(2, threshold.SourceNumberAbove);
+        Assert.AreEqual(0, threshold.NumberAbove);
+        Assert.AreEqual(0, threshold.NumberBelow);
+    }
+
     #endregion
 
     #region Interleaved

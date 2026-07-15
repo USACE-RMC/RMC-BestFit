@@ -761,10 +761,24 @@ public class MixtureModelTests
         var df = CreateZeroInflatedDataFrame();
         var types = new List<UnivariateDistributionType> { UnivariateDistributionType.Normal };
         var original = new MixtureModel(df, types, isZeroInflated: true);
+        double[] parameters = original.Parameters.Select(parameter => parameter.Value).ToArray();
+        double likelihood = original.DataLogLikelihood(parameters);
+        double pdf = original.Mixture!.PDF(100.0);
+        double cdf = original.Mixture.CDF(100.0);
 
         var clone = (MixtureModel)original.Clone();
 
         Assert.AreEqual(original.IsZeroInflated, clone.IsZeroInflated);
+        Assert.IsTrue(clone.Mixture!.IsZeroInflated);
+        Assert.AreEqual(original.Mixture.ZeroWeight, clone.Mixture.ZeroWeight, 0.0);
+        Assert.AreEqual(likelihood, clone.DataLogLikelihood(parameters), 1e-12);
+        Assert.AreEqual(pdf, clone.Mixture.PDF(100.0), 1e-12);
+        Assert.AreEqual(cdf, clone.Mixture.CDF(100.0), 1e-12);
+        Assert.AreNotSame(original.Parameters[0], clone.Parameters[0]);
+
+        double originalParameter = original.Parameters[0].Value;
+        clone.Parameters[0].Value += 1.0;
+        Assert.AreEqual(originalParameter, original.Parameters[0].Value, 0.0);
     }
 
     /// <summary>Verifies that clone preserves quantile priors for .</summary>

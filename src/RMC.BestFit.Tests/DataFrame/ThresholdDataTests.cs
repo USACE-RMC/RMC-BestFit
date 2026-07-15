@@ -623,5 +623,30 @@ public class ThresholdDataTests
         Assert.AreEqual(-50.0, threshold.Value);
     }
 
+    #region Processed Count State Regression
+
+    /// <summary>
+    /// Verifies cloning preserves both source and effective counts while XML persists the source
+    /// under the existing NumberAbove attribute.
+    /// </summary>
+    [TestMethod]
+    public void Test_ProcessedCounts_CloneAndSerializationPreserveRequiredState()
+    {
+        var original = new BestFitThresholdData(0, 2, 100.0) { NumberAbove = 2 };
+        original.SetProcessedCounts(numberAbove: 0, numberBelow: 0);
+
+        var clone = original.Clone();
+
+        Assert.AreEqual(2, clone.SourceNumberAbove);
+        Assert.AreEqual(0, clone.NumberAbove);
+        Assert.AreEqual(0, clone.NumberBelow);
+
+        var xml = original.ToXElement();
+        Assert.AreEqual("2", xml.Attribute(nameof(BestFitThresholdData.NumberAbove))?.Value);
+        Assert.AreEqual(2, new BestFitThresholdData(xml).SourceNumberAbove);
+    }
+
+    #endregion
+
     #endregion
 }

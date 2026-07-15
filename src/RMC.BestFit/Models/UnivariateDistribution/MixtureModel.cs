@@ -1294,6 +1294,10 @@ namespace RMC.BestFit.Models
                 QuantilePriors = quants,
             };
 
+            result.Mixture!.IsZeroInflated = result._isZeroInflated;
+            result.Mixture.ZeroWeight = result._isZeroInflated
+                ? Mixture!.ZeroWeight : 0.0;
+
             result.ProcessQuantilePriors();
             return result;
         }

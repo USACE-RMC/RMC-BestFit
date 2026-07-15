@@ -287,4 +287,60 @@ public class GeneralizedMethodOfMomentsExpandedTests
     }
 
     #endregion
+
+    #region Convergence XML state
+
+    /// <summary>
+    /// Confirmed iterative convergence survives XML persistence without rerunning estimation.
+    /// </summary>
+    [TestMethod]
+    public void ConvergedWithinTolerance_XmlRoundTrip_PreservesConfirmedState()
+    {
+        var source = MakeStubGmm();
+        var xml = source.ToXElement();
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance), true);
+        source.RestoreFromXElement(xml);
+        Assert.IsTrue(source.ConvergedWithinTolerance);
+
+        var restored = MakeStubGmm();
+        restored.RestoreFromXElement(source.ToXElement());
+
+        Assert.IsTrue(restored.ConvergedWithinTolerance);
+        Assert.AreEqual(2, restored.GMMIterations);
+    }
+
+    /// <summary>
+    /// Legacy XML and non-iterative strategies restore conservatively as not confirmed converged.
+    /// </summary>
+    [TestMethod]
+    public void ConvergedWithinTolerance_LegacyAndNonIterativeXml_RestoreFalse()
+    {
+        var legacy = MakeStubGmm();
+        var legacyXml = legacy.ToXElement();
+        legacyXml.Attribute(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance))?.Remove();
+        legacyXml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+        legacy.RestoreFromXElement(legacyXml);
+        Assert.IsFalse(legacy.ConvergedWithinTolerance);
+
+        foreach (GeneralizedMethodOfMoments.GMMEstimationStrategy strategy in new[]
+        {
+            GeneralizedMethodOfMoments.GMMEstimationStrategy.OneStep,
+            GeneralizedMethodOfMoments.GMMEstimationStrategy.TwoStep,
+        })
+        {
+            var nonIterative = MakeStubGmm();
+            var xml = nonIterative.ToXElement();
+            xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.EstimationStrategy), strategy);
+            xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+            xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance), true);
+
+            nonIterative.RestoreFromXElement(xml);
+
+            Assert.IsFalse(nonIterative.ConvergedWithinTolerance,
+                $"{strategy} must not report iterative convergence.");
+        }
+    }
+
+    #endregion
 }

@@ -8,6 +8,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using System.Xml.Linq;
 
 namespace RMC.BestFit.Models
@@ -62,24 +63,6 @@ namespace RMC.BestFit.Models
                     ThresholdSeries = new ThresholdSeries(xEl);
             }
 
-            // Add handlers
-            for (int i = 0; i < ExactSeries.Count; i++)
-            {
-                ((ExactData)ExactSeries[i]).PropertyChanged += ExactDataChanged;
-            }
-            for (int i = 0; i < UncertainSeries.Count; i++)
-            {
-                ((UncertainData)UncertainSeries[i]).PropertyChanged += UncertainDataChanged;
-            }
-            for (int i = 0; i < IntervalSeries.Count; i++)
-            {
-                ((IntervalData)IntervalSeries[i]).PropertyChanged += IntervalDataChanged;
-            }
-            for (int i = 0; i < ThresholdSeries.Count; i++)
-            {
-                ((ThresholdData)ThresholdSeries[i]).PropertyChanged += ThresholdDataChanged;
-            }
-
             var lambdaAttr = xElement.Attribute(nameof(Lambda));
             if (lambdaAttr != null)
             {
@@ -93,6 +76,8 @@ namespace RMC.BestFit.Models
             var usgsRawTextAttr = xElement.Attribute(nameof(USGSRawText));
             if (usgsRawTextAttr != null) _usgsRawText = usgsRawTextAttr.Value;
 
+            // Rebuild effective threshold counts from the source NumberAbove values persisted in XML.
+            ProcessThresholdSeries();
         }
 
         #endregion
@@ -123,6 +108,7 @@ namespace RMC.BestFit.Models
         private int _numberOfLowOutliers = 0;
         private double _lowOutlierThreshold = 0;
         private double _plottingParameter = 0.0;
+        private long _plottingPositionVersion;
         private string _usgsRawText = "";
 
         /// <summary>
@@ -133,9 +119,14 @@ namespace RMC.BestFit.Models
             get { return _exactSeries; }
             set
             {
+                for (int i = 0; i < _exactSeries.Count; i++)
+                    _exactSeries[i].PropertyChanged -= ExactDataChanged;
                 _exactSeries.CollectionChanged -= ExactSeriesCollectionChanged;
                 _exactSeries = value;
                 _exactSeries.CollectionChanged += ExactSeriesCollectionChanged;
+                for (int i = 0; i < _exactSeries.Count; i++)
+                    _exactSeries[i].PropertyChanged += ExactDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(ExactSeries));
             }
         }
@@ -148,9 +139,14 @@ namespace RMC.BestFit.Models
             get { return _uncertainSeries; }
             set
             {
+                for (int i = 0; i < _uncertainSeries.Count; i++)
+                    _uncertainSeries[i].PropertyChanged -= UncertainDataChanged;
                 _uncertainSeries.CollectionChanged -= UncertainSeriesCollectionChanged;
                 _uncertainSeries = value;
                 _uncertainSeries.CollectionChanged += UncertainSeriesCollectionChanged;
+                for (int i = 0; i < _uncertainSeries.Count; i++)
+                    _uncertainSeries[i].PropertyChanged += UncertainDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(UncertainSeries));
             }
         }
@@ -163,9 +159,14 @@ namespace RMC.BestFit.Models
             get { return _intervalSeries; }
             set
             {
+                for (int i = 0; i < _intervalSeries.Count; i++)
+                    _intervalSeries[i].PropertyChanged -= IntervalDataChanged;
                 _intervalSeries.CollectionChanged -= IntervalSeriesCollectionChanged;
                 _intervalSeries = value;
                 _intervalSeries.CollectionChanged += IntervalSeriesCollectionChanged;
+                for (int i = 0; i < _intervalSeries.Count; i++)
+                    _intervalSeries[i].PropertyChanged += IntervalDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(IntervalSeries));
             }
         }
@@ -178,9 +179,14 @@ namespace RMC.BestFit.Models
             get { return _thresholdSeries; }
             set
             {
+                for (int i = 0; i < _thresholdSeries.Count; i++)
+                    _thresholdSeries[i].PropertyChanged -= ThresholdDataChanged;
                 _thresholdSeries.CollectionChanged -= ThresholdSeriesCollectionChanged;
                 _thresholdSeries = value;
                 _thresholdSeries.CollectionChanged += ThresholdSeriesCollectionChanged;
+                for (int i = 0; i < _thresholdSeries.Count; i++)
+                    _thresholdSeries[i].PropertyChanged += ThresholdDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(ThresholdSeries));
             }
         }
@@ -269,6 +275,15 @@ namespace RMC.BestFit.Models
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the version stamp for data-frame plotting-position inputs.
+        /// </summary>
+        /// <remarks>
+        /// The stamp changes whenever plotting positions are recalculated or assigned directly.
+        /// It permits consumers to cache validation without rescanning unchanged samples.
+        /// </remarks>
+        internal long PlottingPositionVersion => Volatile.Read(ref _plottingPositionVersion);
 
         /// <summary>
         /// The average number of events per index.
@@ -453,6 +468,8 @@ namespace RMC.BestFit.Models
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
                     CalculatePlottingPositions();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -468,6 +485,8 @@ namespace RMC.BestFit.Models
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
                     CalculatePlottingPositions();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -483,6 +502,8 @@ namespace RMC.BestFit.Models
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
                     CalculatePlottingPositions();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -498,6 +519,8 @@ namespace RMC.BestFit.Models
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
                     CalculatePlottingPositions();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -617,16 +640,21 @@ namespace RMC.BestFit.Models
         /// Thread-safe. Serialized via the same <c>_syncRoot</c> lock as <see cref="CreateFullTimeSeries"/>
         /// so that a concurrent rebuild observes a fully-processed threshold state rather than a
         /// torn view of <see cref="ThresholdData.NumberAbove"/>/<see cref="ThresholdData.NumberBelow"/>.
+        /// Each pass starts from the retained user-supplied exceedance count, so repeated calls are
+        /// idempotent and input mutations can restore a previously reduced effective count. Item-level
+        /// notifications are suppressed while counts are updated; one aggregate
+        /// <see cref="ThresholdSeries"/> notification is raised after the lock when any effective value changes.
         /// </remarks>
         public void ProcessThresholdSeries()
         {
+            bool countsChanged = false;
             lock (_syncRoot)
             {
-                // Adjust the number above and below for thresholds
+                // Adjust the number above and below for thresholds from the immutable user input.
                 for (int i = 0; i < ThresholdSeries.Count; i++)
                 {
                     var thresholdData = (ThresholdData)ThresholdSeries[i];
-                    int nAbove = thresholdData.NumberAbove;
+                    int nAbove = thresholdData.SourceNumberAbove;
                     int nBelow = thresholdData.Duration - nAbove;
                     // Check interval data
                     for (int j = 0; j < IntervalSeries.Count; j++)
@@ -653,11 +681,15 @@ namespace RMC.BestFit.Models
                             nBelow -= 1;
                         }
                     }
-                    // Zero out NumberAbove when all years are accounted for by explicit data
-                    thresholdData.NumberAbove = nBelow == 0 ? 0 : nAbove;
-                    thresholdData.NumberBelow = Math.Max(0, nBelow);
+                    // Zero out the effective NumberAbove when explicit data account for every remaining year.
+                    countsChanged |= thresholdData.SetProcessedCounts(
+                        nBelow == 0 ? 0 : nAbove,
+                        Math.Max(0, nBelow));
                 }
             }
+
+            if (countsChanged)
+                RaisePropertyChange(nameof(ThresholdSeries));
         }
 
         /// <summary>
@@ -1142,6 +1174,7 @@ namespace RMC.BestFit.Models
         /// </remarks>
         public void CalculatePlottingPositions()
         {
+            Interlocked.Increment(ref _plottingPositionVersion);
             // Process threshold series to compute NumberBelow/NumberAbove
             // before TotalRecordLength() is called below.
             ProcessThresholdSeries();

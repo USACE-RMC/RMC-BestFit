@@ -394,18 +394,32 @@ where $g(\theta)$ is a vector of moment conditions and $W$ is a weighting matrix
 ```cs
 using RMC.BestFit.Estimation;
 
-var gmm = new GeneralizedMethodOfMoments(model);
-gmm.Estimate();
+var gmm = new GeneralizedMethodOfMoments(model)
+{
+    EstimationStrategy = GeneralizedMethodOfMoments.GMMEstimationStrategy.Iterative,
+    MaxGMMIterations = 100
+};
 
-if (gmm.IsEstimated)
+if (gmm.Estimate())
 {
     Console.WriteLine("GMM Estimates:");
     for (int i = 0; i < model.Parameters.Count; i++)
     {
         Console.WriteLine($"  {model.Parameters[i].Name}: {gmm.BestParameterSet.Values[i]:F4}");
     }
+
+    Console.WriteLine($"Optimization passes: {gmm.GMMIterations}");
+    Console.WriteLine($"Confirmed converged: {gmm.ConvergedWithinTolerance}");
 }
 ```
+
+For iterative GMM, `GMMIterations` counts attempted optimization passes from 1 through
+`MaxGMMIterations` and never exceeds the configured limit. `ConvergedWithinTolerance` is true
+only when an iterative comparison pass satisfies the absolute parameter-distance or relative
+objective-change criterion, including convergence on the final permitted pass. It remains false
+for iteration exhaustion, optimizer failure, one-step and two-step strategies, and a one-pass run
+that has no comparison. The confirmed state is persisted in GMM XML; legacy XML without the
+attribute restores conservatively as not confirmed converged.
 
 **Advantages of GMM**:
 - Robust to distributional misspecification
