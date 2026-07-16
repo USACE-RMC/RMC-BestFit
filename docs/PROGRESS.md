@@ -1,5 +1,16 @@
 # Progress
 
+## 2026-07-16
+
+- Diagnosed the B17C bootstrap regression: assigning a resampled frame through the public `Bulletin17CDistribution.DataFrame` setter ran `SetDefaultParameters`, which wiped the cloned parent initials, disabled every parameter penalty (silently dropping regional-skew prior propagation), and — when default-parameter derivation threw for threshold-heavy boot frames — emptied the parameter list so every replicate failed and fell back to the parent (uncertainty collapsed to a point mass; the progress bar sat at 1% while retries crawled).
+- Fixed GMM `Status` coherence: multi-pass strategies restore `Status = Success` when abandoning a failed refinement pass and returning an earlier valid solution; `Estimate()` resets stale outputs up front.
+- Added `Bulletin17CDistribution.CloneWithDataFrame` (XElement round-trip preserves parameters, penalties, and links) and warm-started every bootstrap replicate at the parent fit; aligned the replicate acceptance gate with the parent fit (reject only hard failures and non-finite estimates).
+- Redesigned failure handling across the uncertainty samplers: failed or rejected realizations are discarded after retries — never substituted with the parent vector — with abort guards (fewer than two survivors or >50% discards) surfaced through the new `UncertaintyDiagnosticMessage` and the UI warning message.
+- Extended `BootstrapDiagnostics` (retained count, transform failures, per-attempt GMM status distribution; backward-compatible XML), made the plain MVN sampler report the same diagnostics, rewrote the report section for discard semantics with retention warnings, and persisted diagnostics with the analysis.
+- Fixed sampling-loop progress: first tick after the first completed replicate (`AnalysisProgress.ShouldReportLoopProgress`) and monotone pivot-phase mapping (55/56/44) replacing the backwards jump.
+- Hardened WPF dispatch: `B17CAnalysisPropertiesControl.Element_PropertyChanged` now marshals to the dispatcher; the UI wrapper suppresses its own run's mid-flight `ThresholdSeries` recompute notification (narrow guard) so `ClearResults` cannot fire on a worker thread.
+- Verified end-to-end with a headless harness on B17C Examples 1 and 4: penalties now survive on all boot clones and previously all-failing threshold-heavy replicates fit successfully; all four unit suites pass with zero warnings under XML-docs-as-errors builds.
+
 ## 2026-07-14
 
 - Replaced the `MainProjectNode` local Quick Start Guide PDF action with the online RMC-BestFit User Guide.
