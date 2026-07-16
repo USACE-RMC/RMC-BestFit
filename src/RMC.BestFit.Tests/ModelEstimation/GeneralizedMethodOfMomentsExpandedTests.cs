@@ -343,4 +343,67 @@ public class GeneralizedMethodOfMomentsExpandedTests
     }
 
     #endregion
+
+    #region Result reset and status persistence
+
+    /// <summary>
+    /// A fresh instance reports OptimizationStatus.None and is not estimated.
+    /// </summary>
+    [TestMethod]
+    public void FreshInstance_StatusNone_AndNotEstimated()
+    {
+        var gmm = MakeStubGmm();
+        Assert.AreEqual(OptimizationStatus.None, gmm.Status);
+        Assert.IsFalse(gmm.IsEstimated);
+    }
+
+    /// <summary>
+    /// Non-Success terminal statuses survive XML persistence, so analyses saved
+    /// before the status-coherence change restore their recorded status verbatim.
+    /// </summary>
+    [TestMethod]
+    public void Status_XmlRoundTrip_PreservesNonSuccessStatus()
+    {
+        var source = MakeStubGmm();
+        var xml = source.ToXElement();
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.Status), OptimizationStatus.MaximumIterationsReached);
+
+        source.RestoreFromXElement(xml);
+
+        Assert.AreEqual(OptimizationStatus.MaximumIterationsReached, source.Status);
+        Assert.IsTrue(source.IsEstimated);
+    }
+
+    /// <summary>
+    /// ClearResults resets the status, best parameter set, iteration count, and
+    /// convergence flag so a cleared instance cannot report stale estimation results.
+    /// </summary>
+    [TestMethod]
+    public void ClearResults_ResetsStatusBestParameterSetAndConvergence()
+    {
+        var gmm = MakeStubGmm(parameters: 3, moments: 3);
+        var xml = gmm.ToXElement();
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.Status), OptimizationStatus.Success);
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance), true);
+        var psElement = xml.Element(nameof(GeneralizedMethodOfMoments.BestParameterSet))?.Element(nameof(ParameterSet));
+        Assert.IsNotNull(psElement);
+        psElement.SetAttributeValue(nameof(ParameterSet.Values), "1|2|3");
+
+        gmm.RestoreFromXElement(xml);
+        Assert.IsTrue(gmm.IsEstimated);
+        Assert.AreEqual(OptimizationStatus.Success, gmm.Status);
+        Assert.IsNotNull(gmm.BestParameterSet.Values);
+        Assert.IsTrue(gmm.ConvergedWithinTolerance);
+
+        gmm.ClearResults();
+
+        Assert.IsFalse(gmm.IsEstimated);
+        Assert.AreEqual(OptimizationStatus.None, gmm.Status);
+        Assert.IsNull(gmm.BestParameterSet.Values);
+        Assert.IsFalse(gmm.ConvergedWithinTolerance);
+        Assert.AreEqual(0, gmm.GMMIterations);
+    }
+
+    #endregion
 }

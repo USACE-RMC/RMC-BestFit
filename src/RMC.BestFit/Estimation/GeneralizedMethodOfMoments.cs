@@ -428,7 +428,13 @@ namespace RMC.BestFit.Estimation
         /// <see cref="MinimizeWithFallback"/> so it remains valid after the transient optimizer is
         /// discarded — including after Open() via <see cref="RestoreFromXElement"/>. Returns
         /// <see cref="OptimizationStatus.None"/> before any estimation has run, and after
-        /// <see cref="ClearResults"/>.
+        /// <see cref="ClearResults"/>. This status always describes the optimization pass that
+        /// produced <see cref="BestParameterSet"/>: when a multi-pass strategy (two-step or
+        /// iterative) abandons a failed refinement pass and returns the solution from an earlier
+        /// successful pass, the status is restored to <see cref="OptimizationStatus.Success"/>
+        /// rather than reporting the abandoned pass. Consequently <see cref="IsEstimated"/> being
+        /// <c>true</c> implies <see cref="OptimizationStatus.Success"/>; use
+        /// <see cref="ConvergedWithinTolerance"/> to distinguish tolerance-confirmed convergence.
         /// </remarks>
         public OptimizationStatus Status { get; private set; } = OptimizationStatus.None;
 
@@ -2208,6 +2214,12 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// Perform the Two-Step optimization using the updated weighting matrix.
         /// </summary>
+        /// <remarks>
+        /// When the second optimization step fails, the valid first-step solution is retained in
+        /// <see cref="BestParameterSet"/> and <see cref="Status"/> is restored to
+        /// <see cref="OptimizationStatus.Success"/> so the reported status describes the returned
+        /// solution rather than the abandoned second pass.
+        /// </remarks>
         private void EstimateTwoStep()
         {
             GMMIterations = 0;
@@ -2225,13 +2237,26 @@ namespace RMC.BestFit.Estimation
             // Perform the 2nd optimization step
             InitialValues = Optimizer.BestParameterSet.Values;
             if (!MinimizeWithFallback())
+            {
+                // The second step failed, but BestParameterSet still holds the valid
+                // first-step solution. Restore Status so it describes the returned solution.
+                Status = OptimizationStatus.Success;
                 return;
+            }
             BestParameterSet = Optimizer.BestParameterSet.Clone();
         }
 
         /// <summary>
         /// Perform the 'iterative method' that iteratively improves the weighting matrix until convergence.
         /// </summary>
+        /// <remarks>
+        /// When a later refinement pass fails or hits an iteration cap, the loop is abandoned and
+        /// the solution from the last successful pass is retained in <see cref="BestParameterSet"/>;
+        /// <see cref="Status"/> is restored to <see cref="OptimizationStatus.Success"/> so it
+        /// describes the returned solution. Abandoned runs report
+        /// <see cref="ConvergedWithinTolerance"/> as <c>false</c>, preserving the distinction
+        /// between best-effort termination and tolerance-confirmed convergence.
+        /// </remarks>
         private void EstimateIterative()
         {
             ConvergenceHistory.Clear();
@@ -2257,7 +2282,13 @@ namespace RMC.BestFit.Estimation
 
                 // Subsequent iterations: no start-point probe needed
                 if (!MinimizeWithFallback(enableStartPointProbe: false))
+                {
+                    // The refinement pass failed or hit an iteration cap, but BestParameterSet
+                    // still holds the solution from the last successful pass. Restore Status so
+                    // it describes the returned solution rather than the abandoned pass.
+                    Status = OptimizationStatus.Success;
                     break;
+                }
 
                 // Update results
                 BestParameterSet = Optimizer.BestParameterSet.Clone();
@@ -2298,6 +2329,10 @@ namespace RMC.BestFit.Estimation
             IsEstimated = false;
 
             _convergedWithinTolerance = false;
+            // Reset prior outputs so a failed run can never return a stale solution
+            // from an earlier Estimate() call on the same instance.
+            Status = OptimizationStatus.None;
+            BestParameterSet = new ParameterSet();
             // Validation
             if (IdentificationStatus == GMMIdentificationStatus.UnderIdentified && PenaltyFunction == null)
                 throw new InvalidOperationException("The GMM problem is under-identified and cannot be estimated without a penalty function.");
