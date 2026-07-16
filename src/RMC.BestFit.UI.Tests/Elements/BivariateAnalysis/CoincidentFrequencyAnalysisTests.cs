@@ -26,6 +26,7 @@ public class CoincidentFrequencyAnalysisTests
 {
     private static BivariateAnalysisCollection? _collection;
     private static UnivariateAnalysisCollection? _univariateCollection;
+    private static InputDataCollection? _inputDataCollection;
 
     /// <summary>
     /// Creates a shared collection backed by the singleton BestFitProject.
@@ -36,6 +37,7 @@ public class CoincidentFrequencyAnalysisTests
         var project = BestFitProject.GetInstance();
         _collection = new BivariateAnalysisCollection(project);
         _univariateCollection = new UnivariateAnalysisCollection(project);
+        _inputDataCollection = new InputDataCollection(project);
     }
 
     /// <summary>
@@ -69,7 +71,18 @@ public class CoincidentFrequencyAnalysisTests
         double mean,
         double standardDeviation)
     {
+        var inputData = new UI.InputData($"{name}Data", _inputDataCollection!);
+        var dataFrame = new DataFrame();
+        for (int i = 0; i < 20; i++)
+        {
+            dataFrame.ExactSeries.Add(new ExactData(i, mean + (i - 10) * 0.5));
+        }
+
+        dataFrame.CalculatePlottingPositions();
+        inputData.DataFrame = dataFrame;
+
         var analysis = new UI.UnivariateAnalysis(name, _univariateCollection!);
+        analysis.InputData = inputData;
         analysis.UnivariateDistribution.DistributionType = UnivariateDistributionType.Normal;
         analysis.UnivariateDistribution.SetParameterValues(new[] { mean, standardDeviation });
 
@@ -82,6 +95,7 @@ public class CoincidentFrequencyAnalysisTests
             "_isEstimated",
             BindingFlags.Instance | BindingFlags.NonPublic);
         isEstimatedField!.SetValue(analysis.InnerAnalysis, true);
+        SetElementValid(analysis, true);
 
         return analysis;
     }
@@ -446,6 +460,79 @@ public class CoincidentFrequencyAnalysisTests
         CollectionAssert.DoesNotContain(raised, nameof(CoincidentFrequencyAnalysis.BivariateAnalysis));
     }
 
+    /// <summary>
+    /// Verifies an upstream BivariateAnalysis completion notification does not clear restored CFA results.
+    /// </summary>
+    [STATestMethod]
+    public void UpstreamIsEstimatedTrue_DoesNotClearCoincidentFrequencyResults()
+    {
+        var ba = CreateEstimatedBivariateAnalysis("UpstreamCompleteBA");
+        var cfa = new CoincidentFrequencyAnalysis("DependentCompleteCFA", _collection!) { BivariateAnalysis = ba };
+        var inner = (ModelAnalyses.CoincidentFrequencyAnalysis)cfa.InnerAnalysis;
+        var results = CreateCoincidentFrequencyResults();
+        inner.SetZOutputValues([10.0, 20.0]);
+        inner.RestoreAnalysisResults(results);
+        var raised = new List<string>();
+        cfa.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? "");
+
+        SimulateBivariateEstimatedState(ba, true);
+
+        Assert.AreSame(results, cfa.AnalysisResults,
+            "A successful upstream batch completion should refresh validation without clearing dependent CFA curves.");
+        Assert.IsNotNull(cfa.ZOutputValues);
+        Assert.IsTrue(cfa.IsEstimated);
+        CollectionAssert.DoesNotContain(raised, nameof(CoincidentFrequencyAnalysis.AnalysisResults));
+        CollectionAssert.DoesNotContain(raised, nameof(CoincidentFrequencyAnalysis.ZOutputValues));
+        CollectionAssert.Contains(raised, nameof(CoincidentFrequencyAnalysis.BivariateAnalysis));
+    }
+
+    /// <summary>
+    /// Verifies an upstream BivariateAnalysis becoming unavailable clears dependent CFA results.
+    /// </summary>
+    [STATestMethod]
+    public void UpstreamIsEstimatedFalse_ClearsCoincidentFrequencyResults()
+    {
+        var ba = CreateEstimatedBivariateAnalysis("UpstreamClearedBA");
+        var cfa = new CoincidentFrequencyAnalysis("DependentClearedCFA", _collection!) { BivariateAnalysis = ba };
+        var inner = (ModelAnalyses.CoincidentFrequencyAnalysis)cfa.InnerAnalysis;
+        inner.SetZOutputValues([10.0, 20.0]);
+        inner.RestoreAnalysisResults(CreateCoincidentFrequencyResults());
+        var raised = new List<string>();
+        cfa.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? "");
+
+        SimulateBivariateEstimatedState(ba, false);
+
+        Assert.IsNull(cfa.AnalysisResults,
+            "When the upstream analysis becomes unestimated, dependent CFA curves must be invalidated.");
+        Assert.IsNull(cfa.ZOutputValues,
+            "Clearing CFA results must also clear the Z output grid used by plots and tables.");
+        Assert.IsFalse(cfa.IsEstimated);
+        CollectionAssert.Contains(raised, nameof(CoincidentFrequencyAnalysis.AnalysisResults));
+        CollectionAssert.Contains(raised, nameof(CoincidentFrequencyAnalysis.ZOutputValues));
+        CollectionAssert.Contains(raised, nameof(CoincidentFrequencyAnalysis.IsEstimated));
+    }
+
+    /// <summary>
+    /// Verifies inner model result notifications are forwarded for App plot and table refreshes.
+    /// </summary>
+    [STATestMethod]
+    public void InnerResultNotifications_AreForwardedForBatchRefresh()
+    {
+        var cfa = new CoincidentFrequencyAnalysis("ForwardedBatchCFA", _collection!);
+        var inner = (ModelAnalyses.CoincidentFrequencyAnalysis)cfa.InnerAnalysis;
+        var raised = new List<string>();
+        cfa.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? "");
+
+        inner.SetZOutputValues([10.0, 20.0]);
+        inner.RestoreAnalysisResults(CreateCoincidentFrequencyResults());
+
+        CollectionAssert.Contains(raised, nameof(CoincidentFrequencyAnalysis.ZOutputValues));
+        CollectionAssert.Contains(raised, nameof(CoincidentFrequencyAnalysis.AnalysisResults));
+        CollectionAssert.Contains(raised, nameof(CoincidentFrequencyAnalysis.IsEstimated));
+        Assert.IsNotNull(cfa.ZOutputValues);
+        Assert.IsNotNull(cfa.AnalysisResults);
+        Assert.IsTrue(cfa.IsEstimated);
+    }
     #endregion
 
     #region Validation
@@ -658,6 +745,102 @@ public class CoincidentFrequencyAnalysisTests
             "After CFA.CancelAnalysis(), the inner model analysis's CancellationTokenSource " +
             "must be canceled — otherwise the App's Cancel button is a visual-only no-op " +
             "and the parallel realisation loop runs to completion.");
+    }
+
+    #endregion
+
+    #region Regression helpers
+
+    /// <summary>
+    /// Creates a valid, estimated upstream bivariate analysis for dependency-state tests.
+    /// </summary>
+    /// <param name="name">The upstream analysis name.</param>
+    /// <returns>A bivariate analysis with valid estimated marginals and an estimated model flag.</returns>
+    private static UI.BivariateAnalysis CreateEstimatedBivariateAnalysis(string name)
+    {
+        var ba = new UI.BivariateAnalysis(name, _collection!)
+        {
+            Description = "Configured bivariate analysis.",
+            MarginalX = CreateEstimatedMarginal($"{name}X", 100.0, 10.0),
+            MarginalY = CreateEstimatedMarginal($"{name}Y", 80.0, 8.0)
+        };
+        var inner = (ModelAnalyses.BivariateAnalysis)ba.InnerAnalysis;
+        SetAnalysisEstimated(inner, true);
+        Assert.IsTrue(ba.IsValid, "The upstream bivariate fixture should be valid before dependency assertions run.");
+        return ba;
+    }
+
+    /// <summary>
+    /// Creates a minimal coincident-frequency result object for wrapper notification tests.
+    /// </summary>
+    /// <returns>A populated uncertainty result object.</returns>
+    private static UncertaintyAnalysisResults CreateCoincidentFrequencyResults()
+    {
+        return new UncertaintyAnalysisResults
+        {
+            ModeCurve = [0.20, 0.10],
+            MeanCurve = [0.22, 0.11],
+            ConfidenceIntervals = new double[,] { { 0.10, 0.30 }, { 0.05, 0.20 } }
+        };
+    }
+
+    /// <summary>
+    /// Simulates the model-layer BivariateAnalysis estimated-state notification forwarded during batch runs.
+    /// </summary>
+    /// <param name="analysis">The UI bivariate analysis whose inner model state should change.</param>
+    /// <param name="isEstimated">The estimated-state value to publish.</param>
+    private static void SimulateBivariateEstimatedState(UI.BivariateAnalysis analysis, bool isEstimated)
+    {
+        var inner = (ModelAnalyses.BivariateAnalysis)analysis.InnerAnalysis;
+        SetAnalysisEstimated(inner, isEstimated);
+        RaiseAnalysisPropertyChanged(inner, nameof(ModelAnalyses.BivariateAnalysis.IsEstimated));
+    }
+
+    /// <summary>
+    /// Assigns the shared UI element validity flag without raising an event.
+    /// </summary>
+    /// <param name="element">The UI element wrapper to update.</param>
+    /// <param name="isValid">The validity value.</param>
+    private static void SetElementValid(object element, bool isValid)
+    {
+        Type? currentType = element.GetType();
+        while (currentType != null)
+        {
+            var field = currentType.GetField("_isValid", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field != null)
+            {
+                field.SetValue(element, isValid);
+                return;
+            }
+
+            currentType = currentType.BaseType;
+        }
+
+        Assert.Fail("Could not find the shared _isValid backing field on the UI fixture element.");
+    }
+
+    /// <summary>
+    /// Assigns the protected estimated-state backing field without raising an event.
+    /// </summary>
+    /// <param name="analysis">The model analysis to update.</param>
+    /// <param name="isEstimated">The estimated-state value.</param>
+    private static void SetAnalysisEstimated(ModelAnalyses.AnalysisBase analysis, bool isEstimated)
+    {
+        typeof(ModelAnalyses.AnalysisBase)
+            .GetField("_isEstimated", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(analysis, isEstimated);
+    }
+
+    /// <summary>
+    /// Raises a model-layer property change so wrapper forwarding paths are exercised.
+    /// </summary>
+    /// <param name="analysis">The model analysis that should raise the event.</param>
+    /// <param name="propertyName">The property name to raise.</param>
+    private static void RaiseAnalysisPropertyChanged(ModelAnalyses.AnalysisBase analysis, string propertyName)
+    {
+        typeof(ModelAnalyses.AnalysisBase)
+            .GetMethod("RaisePropertyChange", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(analysis, [propertyName]);
     }
 
     #endregion

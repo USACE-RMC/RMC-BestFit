@@ -293,7 +293,8 @@ namespace RMC.BestFit.Analyses
         {
             if (e.PropertyName == nameof(BivariateAnalysis.IsEstimated))
             {
-                ClearResults();
+                if (BivariateAnalysis?.IsEstimated == false)
+                    ClearResults();
                 RaisePropertyChange(e.PropertyName);
             }
         }

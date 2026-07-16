@@ -1300,6 +1300,10 @@ namespace RMC.BestFit.UI
                 await _innerAnalysis.RunAsync(progressReporter);
                 succeeded = true;
 
+                RaisePropertyChange(nameof(AnalysisResults));
+                RaisePropertyChange(nameof(ZOutputValues));
+                RaisePropertyChange(nameof(IsEstimated));
+
                 _messenger.Add(new BasicMessageItem(MessageType.Event,
                     $"The coincident frequency analysis for '{Name}' is complete.",
                     this, ParentCollection.Name, Name, nameof(CoincidentFrequencyAnalysis)));
@@ -1464,12 +1468,11 @@ namespace RMC.BestFit.UI
         /// Handles property changes from the upstream <see cref="BivariateAnalysis"/>.
         /// </summary>
         /// <remarks>
-        /// Any change to the upstream's input set â€” IsEstimated transition, marginal swap,
-        /// XYOrdinates edit, or BivariateDistribution swap â€” invalidates CFA results, since
-        /// CFA's posterior bands are integrated against those upstream chains. Per the project's
-        /// life-safety stance: CFA must not silently retain stale curves when the upstream
-        /// distribution changes. <see cref="ClearResults"/> wipes <c>AnalysisResults</c> and
-        /// flips <c>IsEstimated</c> to false, prompting a re-run.
+        /// Structural changes to the upstream input set invalidate CFA results. Estimated-state
+        /// notifications are split: becoming unavailable clears dependent CFA curves, while a
+        /// completed upstream batch run only refreshes validation and marginal-chain references.
+        /// This preserves the existing wrapper notification path used by the App controls without
+        /// erasing CFA results after the dependent batch phase completes.
         /// </remarks>
         private void BivariateAnalysis_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -1482,12 +1485,17 @@ namespace RMC.BestFit.UI
                 SetIsValid();
             }
 
-            // Any input-set change on the upstream invalidates the saved CFA curves.
-            if (e.PropertyName == nameof(BivariateAnalysis.IsEstimated) ||
+            bool dependencyBecameUnavailable =
+                e.PropertyName == nameof(BivariateAnalysis.IsEstimated) && _bivariateAnalysis?.IsEstimated == false;
+            bool dependencyResultsWereCleared =
+                e.PropertyName == nameof(BivariateAnalysis.AnalysisResults) && _bivariateAnalysis?.AnalysisResults == null;
+            bool upstreamStructureChanged =
                 e.PropertyName == nameof(BivariateAnalysis.BivariateDistribution) ||
                 e.PropertyName == nameof(BivariateAnalysis.MarginalX) ||
                 e.PropertyName == nameof(BivariateAnalysis.MarginalY) ||
-                e.PropertyName == nameof(BivariateAnalysis.XYOrdinates))
+                e.PropertyName == nameof(BivariateAnalysis.XYOrdinates);
+
+            if (dependencyBecameUnavailable || dependencyResultsWereCleared || upstreamStructureChanged)
             {
                 SyncMarginalChainsToInnerAnalysis();
                 if (!UndoManager.IsExecutingAction) ClearResults();
