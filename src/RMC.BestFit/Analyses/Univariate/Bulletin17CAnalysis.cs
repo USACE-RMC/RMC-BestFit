@@ -218,6 +218,9 @@ namespace RMC.BestFit.Analyses
                 }
             }
 
+            // Restore uncertainty sampling diagnostics when present. The element is optional —
+            // projects saved by earlier versions restore with null diagnostics.
+            BootstrapResults = BootstrapDiagnostics.FromXElement(xElement.Element(nameof(BootstrapDiagnostics)));
         }
 
         #endregion
@@ -387,8 +390,9 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Gets the bootstrap diagnostics from the most recent bootstrap uncertainty analysis.
-        /// Null if the uncertainty method is not a bootstrap method.
+        /// Gets the sampling diagnostics from the most recent uncertainty analysis
+        /// (bootstrap methods and plain multivariate normal sampling).
+        /// Null when no uncertainty quantification has run or for the linked MVN method.
         /// </summary>
         public BootstrapDiagnostics? BootstrapResults { get; private set; }
 
@@ -870,8 +874,12 @@ namespace RMC.BestFit.Analyses
 
             var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
+            // Sampling diagnostics: requested draws, rejected (discarded) draws, and the count
+            // actually delivered — reported alongside the bootstrap methods.
+            var diag = new BootstrapDiagnostics { TotalReplicates = B };
+            var samplingStopwatch = Stopwatch.StartNew();
+
             int iteration = 0;
-            int rejectionCount = 0;
 
             try
             {
@@ -908,7 +916,7 @@ namespace RMC.BestFit.Analyses
                             catch (Exception ex) { Debug.WriteLine($"B17C MVN sampling: rejected parameter set (idx={idx}): {ex.Message}"); }
                         }
                         if (acceptedTheta == null)
-                            Interlocked.Increment(ref rejectionCount);
+                            diag.IncrementFailed();
                     }
 
                     // Rejected draws stay as default(ParameterSet) (Values == null) and are
@@ -922,22 +930,29 @@ namespace RMC.BestFit.Analyses
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
+                samplingStopwatch.Stop();
+                diag.Phase1Time = samplingStopwatch.Elapsed;
+
                 // Check the rejection rate — persistent rejection signals the MVN approximation
                 // places most of its mass outside the valid parameter space, not sampling noise.
-                double rejectionRate = (double)rejectionCount / B;
-                if (rejectionRate > 0.50)
+                if (diag.FailureRate > 0.50)
                 {
+                    diag.RetainedReplicates = 0;
+                    BootstrapResults = diag;
                     SetUncertaintyDiagnosticMessage(
-                        $"Multivariate Normal sampling: {rejectionCount:N0} of {B:N0} requested draws were rejected as invalid parameter sets " +
-                        $"({rejectionRate:P0} rejection rate). Uncertainty quantification was aborted. " +
+                        $"Multivariate Normal sampling: {diag.FailedReplicates:N0} of {B:N0} requested draws were rejected as invalid parameter sets " +
+                        $"({diag.FailureRate:P0} rejection rate). Uncertainty quantification was aborted. " +
                         "Consider the Bootstrap uncertainty method, which does not rely on the asymptotic covariance.");
                     return null;
                 }
 
                 // Filter out rejected draws (default-initialized entries have Values == null).
                 var validResults = results.Where(ps => ps.Values != null).ToArray();
+                diag.RetainedReplicates = validResults.Length;
+                BootstrapResults = diag;
                 if (validResults.Length < 2)
                 {
+                    diag.RetainedReplicates = 0;
                     SetUncertaintyDiagnosticMessage(
                         $"Multivariate Normal sampling: only {validResults.Length:N0} of {B:N0} requested draws were valid. " +
                         "Uncertainty quantification was aborted.");
@@ -2013,6 +2028,7 @@ namespace RMC.BestFit.Analyses
                             bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
                             var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution);
                             bootGMM.Estimate();
+                            diag.RecordGMMStatus(bootGMM.Status);
 
                             // Accept any terminal state that produced a usable solution — the same
                             // gate the parent fit uses (only a hard Failure rejects the replicate).
@@ -2071,15 +2087,17 @@ namespace RMC.BestFit.Analyses
 
                 phase1Stopwatch.Stop();
                 diag.Phase1Time = phase1Stopwatch.Elapsed;
+                int retained = results.Count(ps => ps.Values != null);
+                diag.RetainedReplicates = retained;
                 BootstrapResults = diag;
 
                 // Abort when the delivered ensemble is unusable: nearly empty, or dominated
                 // by fit failures. A >50% discard rate signals a structurally unstable fit
                 // rather than sampling noise, and the surviving subset would not be a
                 // representative bootstrap sample.
-                int retained = results.Count(ps => ps.Values != null);
                 if (retained < 2 || diag.FailedReplicates > B / 2)
                 {
+                    diag.RetainedReplicates = 0;
                     SetUncertaintyDiagnosticMessage(
                         $"Parametric bootstrap: only {retained:N0} of {B:N0} requested replicates produced a valid GMM fit " +
                         $"({diag.FailedReplicates:N0} discarded after {maxRetries} attempts each). Uncertainty quantification was aborted. " +
@@ -2199,6 +2217,7 @@ namespace RMC.BestFit.Analyses
                             bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
                             var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution) { PenaltyIsRandom = false };
                             bootGMM.Estimate();
+                            diag.RecordGMMStatus(bootGMM.Status);
 
                             // Accept any terminal state that produced a usable solution — the same
                             // gate the parent fit uses (only a hard Failure rejects the replicate).
@@ -2273,6 +2292,7 @@ namespace RMC.BestFit.Analyses
             // than sampling noise.
             if (acceptedIdx.Length < 2 || diag.FailedReplicates > B / 2)
             {
+                diag.RetainedReplicates = 0;
                 BootstrapResults = diag;
                 SetUncertaintyDiagnosticMessage(
                     $"Pivot bootstrap: only {acceptedIdx.Length:N0} of {B:N0} requested replicates produced a valid GMM fit " +
@@ -2389,29 +2409,33 @@ namespace RMC.BestFit.Analyses
 
                         if (badPivot)
                         {
+                            // z-limit rejection: deliberate tail truncation, counted separately
+                            // from transform failures. The slot stays unset and is filtered out.
                             diag.IncrementPivotRejection();
-                            throw new Exception("Pivot exceeded z-limit for realization " + idx.ToString() + ".");
                         }
+                        else
+                        {
+                            // Map back: etaDraw = etaHat + LHat * z
+                            var zCol = new Matrix(p, 1);
+                            for (int j = 0; j < p; j++)
+                                zCol[j, 0] = z[j];
+                            var LzMatrix = LHat * zCol;
 
-                        // Map back: etaDraw = etaHat + LHat * z
-                        var zCol = new Matrix(p, 1);
-                        for (int j = 0; j < p; j++)
-                            zCol[j, 0] = z[j];
-                        var LzMatrix = LHat * zCol;
+                            var etaDraw = new double[p];
+                            for (int j = 0; j < p; j++)
+                                etaDraw[j] = etaHat[j] + LzMatrix[j, 0];
 
-                        var etaDraw = new double[p];
-                        for (int j = 0; j < p; j++)
-                            etaDraw[j] = etaHat[j] + LzMatrix[j, 0];
+                            // Inverse transform back to real-space
+                            var theta = linkController.InverseLink(etaDraw);
 
-                        // Inverse transform back to real-space
-                        var theta = linkController.InverseLink(etaDraw);
-
-                        // Validate then accept
-                        validator.ValidateParameters(theta, true);
-                        acceptedTheta = theta;
+                            // Validate then accept
+                            validator.ValidateParameters(theta, true);
+                            acceptedTheta = theta;
+                        }
                     }
                     catch (Exception ex)
                     {
+                        diag.IncrementTransformFailure();
                         Debug.WriteLine($"Pivot bootstrap Phase 3, replicate {idx}: {ex.Message}");
                         // The draw is discarded — the slot stays unset (Values == null) and is
                         // filtered out downstream. No parent substitution: the z-limit and
@@ -2428,6 +2452,7 @@ namespace RMC.BestFit.Analyses
 
                 phase3Stopwatch.Stop();
                 diag.Phase3Time = phase3Stopwatch.Elapsed;
+                diag.RetainedReplicates = results.Count(ps => ps.Values != null);
                 BootstrapResults = diag;
 
                 return results;
@@ -2568,6 +2593,11 @@ namespace RMC.BestFit.Analyses
             // GMM estimation results
             if (_gmm != null && _gmm.IsEstimated)
                 root.Add(_gmm.ToXElement());
+
+            // Uncertainty sampling diagnostics — persisted so the report's diagnostics
+            // section survives Save/Open instead of silently disappearing.
+            if (BootstrapResults != null)
+                root.Add(BootstrapResults.ToXElement());
 
             return root;
         }
@@ -3424,9 +3454,9 @@ namespace RMC.BestFit.Analyses
             }
 
             // Section 6: Bootstrap Diagnostics (bootstrap methods only)
-            if (isBootstrap && BootstrapResults != null)
+            if (BootstrapResults != null)
             {
-                ReportAppendBootstrapDiagnostics(sb, BootstrapResults, labelWidth);
+                ReportAppendBootstrapDiagnostics(sb, BootstrapResults, labelWidth, UncertaintyMethod);
             }
 
             // Section 7: Bootstrap Covariance & Correlation (bootstrap methods only)
@@ -3518,29 +3548,57 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Appends bootstrap diagnostics to the report.
+        /// Appends uncertainty sampling diagnostics to the report.
         /// </summary>
         /// <param name="sb">The string builder to append to.</param>
-        /// <param name="diag">The bootstrap diagnostics.</param>
+        /// <param name="diag">The sampling diagnostics.</param>
         /// <param name="labelWidth">The label padding width.</param>
-        private static void ReportAppendBootstrapDiagnostics(StringBuilder sb, BootstrapDiagnostics diag, int labelWidth)
+        /// <param name="method">The uncertainty method that produced the diagnostics.</param>
+        /// <remarks>
+        /// Internal so the report text can be unit tested. Failed or rejected realizations are
+        /// discarded from the delivered sample rather than substituted with the parent fit, so
+        /// the section reports the requested, valid, discarded, and used counts separately —
+        /// plus the distribution of replicate GMM optimizer outcomes for the bootstrap methods.
+        /// </remarks>
+        internal static void ReportAppendBootstrapDiagnostics(StringBuilder sb, BootstrapDiagnostics diag, int labelWidth, UncertaintyMethod method)
         {
-            ReportAppendSectionHeader(sb, "BOOTSTRAP DIAGNOSTICS");
-            sb.AppendLine($"  {"Replicates Requested:".PadRight(labelWidth)}{diag.TotalReplicates:N0}");
-            sb.AppendLine($"  {"Valid Replicates:".PadRight(labelWidth)}{diag.ValidReplicates:N0}");
-            sb.AppendLine($"  {"Failed (fallback):".PadRight(labelWidth)}{diag.FailedReplicates:N0} ({diag.FailureRate * 100:F1}%)");
-            sb.AppendLine($"  {"Total Retries:".PadRight(labelWidth)}{diag.TotalRetries:N0}");
-            sb.AppendLine($"  {"Avg Retries/Replicate:".PadRight(labelWidth)}{diag.AverageRetries:F2}");
-            sb.AppendLine($"  {"Avg Func Evals/Repl:".PadRight(labelWidth)}{diag.AverageFunctionEvaluations:F0}");
-            sb.AppendLine($"  {"Total Boot Func Evals:".PadRight(labelWidth)}{diag.TotalFunctionEvaluations:N0}");
+            bool isBootstrapMethod = method == UncertaintyMethod.Bootstrap ||
+                                     method == UncertaintyMethod.BiasCorrectedBootstrap;
+            ReportAppendSectionHeader(sb, isBootstrapMethod ? "BOOTSTRAP DIAGNOSTICS" : "SAMPLING DIAGNOSTICS");
+            string requestedLabel = isBootstrapMethod ? "Replicates Requested:" : "Draws Requested:";
+            string validLabel = isBootstrapMethod ? "Valid Replicates:" : "Valid Draws:";
+            string usedLabel = isBootstrapMethod ? "Replicates Used:" : "Draws Used:";
+            sb.AppendLine($"  {requestedLabel.PadRight(labelWidth)}{diag.TotalReplicates:N0}");
+            sb.AppendLine($"  {validLabel.PadRight(labelWidth)}{diag.ValidReplicates:N0}");
+            sb.AppendLine($"  {"Failed (discarded):".PadRight(labelWidth)}{diag.FailedReplicates:N0} ({diag.FailureRate * 100:F1}%)");
+            sb.AppendLine($"  {usedLabel.PadRight(labelWidth)}{diag.RetainedReplicates:N0}");
+            if (isBootstrapMethod)
+            {
+                sb.AppendLine($"  {"Total Retries:".PadRight(labelWidth)}{diag.TotalRetries:N0}");
+                sb.AppendLine($"  {"Avg Retries/Replicate:".PadRight(labelWidth)}{diag.AverageRetries:F2}");
+                sb.AppendLine($"  {"Avg Func Evals/Repl:".PadRight(labelWidth)}{diag.AverageFunctionEvaluations:F0}");
+                sb.AppendLine($"  {"Total Boot Func Evals:".PadRight(labelWidth)}{diag.TotalFunctionEvaluations:N0}");
+
+                // Per-attempt optimizer outcome distribution — makes the acceptance gate observable.
+                int statusTotal = diag.StatusSuccessCount + diag.StatusMaximumIterationsCount +
+                    diag.StatusMaximumFunctionEvaluationsCount + diag.StatusFailureCount + diag.StatusNoneCount;
+                if (statusTotal > 0)
+                {
+                    sb.AppendLine($"  {"GMM Status Counts:".PadRight(labelWidth)}" +
+                        $"Success {diag.StatusSuccessCount:N0} / MaxIter {diag.StatusMaximumIterationsCount:N0} / " +
+                        $"MaxEvals {diag.StatusMaximumFunctionEvaluationsCount:N0} / Failure {diag.StatusFailureCount:N0}");
+                }
+            }
             if (diag.PivotRejections > 0)
                 sb.AppendLine($"  {"Pivot Rejections:".PadRight(labelWidth)}{diag.PivotRejections:N0} ({diag.PivotRejectionRate * 100:F1}%)");
+            if (diag.TransformFailures > 0)
+                sb.AppendLine($"  {"Transform Failures:".PadRight(labelWidth)}{diag.TransformFailures:N0}");
             if (diag.MahalanobisRejections > 0)
                 sb.AppendLine($"  {"Outlier Rejections:".PadRight(labelWidth)}{diag.MahalanobisRejections:N0} ({diag.MahalanobisRejectionRate * 100:F1}%)");
 
             // Phase timing
             if (diag.Phase1Time.TotalMilliseconds > 0)
-                sb.AppendLine($"  {"Phase 1 (fitting):".PadRight(labelWidth)}{diag.Phase1Time:hh\\:mm\\:ss\\.fff}");
+                sb.AppendLine($"  {(isBootstrapMethod ? "Phase 1 (fitting):" : "Sampling Time:").PadRight(labelWidth)}{diag.Phase1Time:hh\\:mm\\:ss\\.fff}");
             if (diag.Phase2Time.TotalMilliseconds > 0)
                 sb.AppendLine($"  {"Phase 2 (link fit):".PadRight(labelWidth)}{diag.Phase2Time:hh\\:mm\\:ss\\.fff}");
             if (diag.Phase3Time.TotalMilliseconds > 0)
@@ -3550,17 +3608,32 @@ namespace RMC.BestFit.Analyses
             if (diag.FailureRate > 0.30)
             {
                 sb.AppendLine();
-                sb.AppendLine("  WARNING: Very high failure rate (>30%). Uncertainty estimates may be");
-                sb.AppendLine("  unreliable. Consider using Multivariate Normal method instead.");
+                sb.AppendLine("  WARNING: Very high discard rate (>30%). Uncertainty estimates may be");
+                sb.AppendLine("  unreliable. Consider using the Multivariate Normal method instead.");
             }
             else if (diag.FailureRate > 0.10)
             {
                 sb.AppendLine();
-                sb.AppendLine("  WARNING: High failure rate (>10%). The fitted model may be near a");
+                sb.AppendLine("  WARNING: High discard rate (>10%). The fitted model may be near a");
                 sb.AppendLine("  parameter boundary or poorly identified.");
             }
 
-            if (diag.AverageRetries > 2.0)
+            if (diag.RetainedReplicates < diag.TotalReplicates / 2)
+            {
+                sb.AppendLine();
+                sb.AppendLine("  WARNING: Fewer than half of the requested realizations were retained");
+                sb.AppendLine($"  ({diag.RetainedReplicates:N0} of {diag.TotalReplicates:N0}). Confidence intervals are based on the");
+                sb.AppendLine("  retained subset and may be unreliable.");
+            }
+            else if (diag.RetainedReplicates < 1000)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"  Note: Only {diag.RetainedReplicates:N0} realizations were retained. Extreme-quantile");
+                sb.AppendLine("  confidence limits may be poorly resolved; consider increasing the");
+                sb.AppendLine("  output length.");
+            }
+
+            if (isBootstrapMethod && diag.AverageRetries > 2.0)
             {
                 sb.AppendLine("  Note: Bootstrap replicates frequently need retries. The model may be");
                 sb.AppendLine("  sensitive to data perturbations.");

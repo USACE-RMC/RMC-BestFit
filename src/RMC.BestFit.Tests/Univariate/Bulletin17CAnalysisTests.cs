@@ -719,4 +719,42 @@ public class Bulletin17CAnalysisTests
     }
 
     #endregion
+
+    #region Sampling diagnostics persistence
+
+    /// <summary>
+    /// Sampling diagnostics round-trip through the analysis XElement: absent when no
+    /// uncertainty run has produced them, restored when present, and re-emitted on save.
+    /// Projects saved before diagnostics persistence restore with null diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void BootstrapResults_XElementRoundTrip_RestoresAndReEmitsDiagnostics()
+    {
+        var analysis = new Bulletin17CAnalysis(CreateLP3Model());
+        var legacyXml = analysis.ToXElement();
+        Assert.IsNull(legacyXml.Element(nameof(BootstrapDiagnostics)),
+            "No diagnostics element is written before an uncertainty run.");
+
+        var legacyRestored = new Bulletin17CAnalysis(CreateLP3Model(), legacyXml);
+        Assert.IsNull(legacyRestored.BootstrapResults,
+            "Projects saved before diagnostics persistence restore with null diagnostics.");
+
+        var diag = new BootstrapDiagnostics { TotalReplicates = 500 };
+        diag.IncrementFailed();
+        diag.RetainedReplicates = 480;
+        var xmlWithDiag = analysis.ToXElement();
+        xmlWithDiag.Add(diag.ToXElement());
+
+        var restored = new Bulletin17CAnalysis(CreateLP3Model(), xmlWithDiag);
+        Assert.IsNotNull(restored.BootstrapResults);
+        Assert.AreEqual(500, restored.BootstrapResults.TotalReplicates);
+        Assert.AreEqual(1, restored.BootstrapResults.FailedReplicates);
+        Assert.AreEqual(480, restored.BootstrapResults.RetainedReplicates);
+
+        var reSaved = restored.ToXElement();
+        Assert.IsNotNull(reSaved.Element(nameof(BootstrapDiagnostics)),
+            "Restored diagnostics must be re-emitted on the next save.");
+    }
+
+    #endregion
 }
