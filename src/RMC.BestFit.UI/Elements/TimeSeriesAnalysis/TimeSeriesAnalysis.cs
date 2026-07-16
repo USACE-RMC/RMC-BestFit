@@ -486,7 +486,7 @@ namespace RMC.BestFit.UI
         /// <remarks>
         /// Lightweight delegating wrapper over <see cref="ARIMAX.TrainingTimeSteps"/>. Undo-redo
         /// is handled by the existing <c>ModelUndoProperties</c> XElement-snapshot mechanism in
-        /// <see cref="InnerAnalysis_PropertyChanged"/>, which already watches this property name â€”
+        /// <see cref="InnerAnalysis_PropertyChanged"/>, which already watches this property name -
         /// so the setter uses <c>RaisePropertyChange</c> rather than
         /// <c>RecordPropertyChange</c> to avoid duplicate undo entries.
         /// </remarks>
@@ -638,6 +638,7 @@ namespace RMC.BestFit.UI
             if (ModelUndoProperties.Contains(e.PropertyName))
             {
                 RecordModelUndo(e.PropertyName);
+                SetIsValid();
             }
 
             // Forward relevant property changes to the WPF framework
@@ -947,7 +948,7 @@ namespace RMC.BestFit.UI
                 if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
                 if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
 
-                // Get time series â€” use backing field to avoid SetIsValid(), ClearResults(),
+                // Get time series - use backing field to avoid SetIsValid(), ClearResults(),
                 // and premature inner-analysis sync (the inner analysis is reconstructed below).
                 if (dtView.ColumnNames.Contains(nameof(TimeSeriesData)))
                 {
@@ -1043,7 +1044,7 @@ namespace RMC.BestFit.UI
                     ? null
                     : AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
 
-                // Get Bayesian analysis XElement â€” ignored for legacy files (we
+                // Get Bayesian analysis XElement - ignored for legacy files (we
                 // construct a fresh BayesianAnalysis with new defaults below).
                 XElement analysisXElement = null;
                 if (!isLegacyFormat && dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
@@ -1276,7 +1277,7 @@ namespace RMC.BestFit.UI
                 // Copy time series reference
                 element.TimeSeriesData = TimeSeriesData;
 
-                // Copy covariates â€” deep clone each CovariateData so the copy does not
+                // Copy covariates - deep clone each CovariateData so the copy does not
                 // share references with the source element.
                 element.Covariates.Clear();
                 foreach (var cov in Covariates)
@@ -1287,7 +1288,7 @@ namespace RMC.BestFit.UI
                 // Copy forecasting time steps
                 element._innerAnalysis.ForecastingTimeSteps = ForecastSteps;
 
-                // Copy plot settings (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings (inside undo suppression - matches FittingAnalysis.Copy template)
                 if (_timeSeriesPlot != null) PlotSerializer.FromXElement(element._timeSeriesPlot, PlotSerializer.ToXElement(_timeSeriesPlot));
                 if (_residualPlot != null) PlotSerializer.FromXElement(element._residualPlot, PlotSerializer.ToXElement(_residualPlot));
                 if (_residualHistogramPlot != null) PlotSerializer.FromXElement(element._residualHistogramPlot, PlotSerializer.ToXElement(_residualHistogramPlot));
@@ -1296,7 +1297,7 @@ namespace RMC.BestFit.UI
                 if (_residualPACFPlot != null) PlotSerializer.FromXElement(element._residualPACFPlot, PlotSerializer.ToXElement(_residualPACFPlot));
                 _bayesianController.CopyTo(element._bayesianController);
 
-                // Reset the cloned element to a clean post-construction state â€” no inherited
+                // Reset the cloned element to a clean post-construction state - no inherited
                 // fitted parameters or chain references. Matches the canonical FittingAnalysis.Copy template.
                 element.ClearResults();
             }
@@ -1328,7 +1329,7 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscription directly (do not route through the
-            // TimeSeriesData setter â€” that would re-add _tsDataNullMsg and re-flip IsDirty=true).
+            // TimeSeriesData setter - that would re-add _tsDataNullMsg and re-flip IsDirty=true).
             if (_timeSeriesData != null) _timeSeriesData.Deleted -= OnTimeSeriesDataDeleted;
             // Unhook covariate handlers to prevent memory leaks: each CovariateData wrapper
             // holds a PropertyChanged subscription back to this analysis, and the Covariates

@@ -139,6 +139,7 @@ namespace RMC.BestFit.Models
         private double _lambda = 0;
         private double _lambda2 = 0;
         private double _logJacobian = 0;
+        private string? _transformFitValidationMessage;
         private bool _includeIntercept = true;
         private bool _includeSeasonality = false;
         private int _seasonalPeriod = 12;
@@ -635,6 +636,7 @@ namespace RMC.BestFit.Models
         /// </remarks>
         private void SetTrainingData()
         {
+            _transformFitValidationMessage = null;
             if (TimeSeries == null || TrainingTimeSteps == 0) return;
 
             int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
@@ -660,7 +662,36 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.BoxCox)
             {
-                BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 for (int i = 0; i < TimeSeries.Count; i++)
                 {
                     var ord = TimeSeries[i].Clone();
@@ -670,7 +701,36 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.YeoJohnson)
             {
-                YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 for (int i = 0; i < TimeSeries.Count; i++)
                 {
                     var ord = TimeSeries[i].Clone();
@@ -2124,6 +2184,12 @@ namespace RMC.BestFit.Models
                         messages.Add($"Warning: MA coefficients may violate invertibility (sum of absolute values = {sumAbsMA:F3} >= 1). Consider checking characteristic equation roots.");
                     }
                 }
+            }
+
+            if (_transformFitValidationMessage != null)
+            {
+                isValid = false;
+                messages.Add(_transformFitValidationMessage);
             }
 
             return (isValid, messages);

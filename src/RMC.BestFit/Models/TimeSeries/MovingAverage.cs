@@ -123,6 +123,7 @@ namespace RMC.BestFit.Models
         private double _lambda = 0;
         private double _lambda2 = 0;
         private double _logJacobian = 0;
+        private string? _transformFitValidationMessage;
 
         // Training/forecasting split members
         private int _trainingTimeSteps = 0;
@@ -369,6 +370,7 @@ namespace RMC.BestFit.Models
         /// </summary>
         private void SetTrainingData()
         {
+            _transformFitValidationMessage = null;
             if (TimeSeries == null || TrainingTimeSteps == 0) return;
 
             int effectiveTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
@@ -398,7 +400,32 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.BoxCox)
             {
-                BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"MovingAverage.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"MovingAverage.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 var data = TimeSeries.ValuesToArray().Subset(0, effectiveTrainingSteps - 1);
                 _logJacobian = BoxCox.LogJacobian(data, _lambda);
 
@@ -410,7 +437,32 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.YeoJohnson)
             {
-                YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"MovingAverage.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"MovingAverage.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 var data = TimeSeries.ValuesToArray().Subset(0, effectiveTrainingSteps - 1);
                 _logJacobian = YeoJohnson.LogJacobian(data, _lambda);
 
@@ -970,6 +1022,12 @@ namespace RMC.BestFit.Models
                 {
                     messages.Add("Warning: MA parameters do not satisfy the sum-of-absolute-values invertibility sufficient condition (Σ|θᵢ| < 1). The model may still be invertible — this check is conservative for orders ≥ 2 — but uniqueness of the MA representation is not guaranteed if it is not.");
                 }
+            }
+
+            if (_transformFitValidationMessage != null)
+            {
+                isValid = false;
+                messages.Add(_transformFitValidationMessage);
             }
 
             return (isValid, messages);

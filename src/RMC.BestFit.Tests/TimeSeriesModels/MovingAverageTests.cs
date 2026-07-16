@@ -93,6 +93,36 @@ public class MovingAverageTests
         return ts;
     }
 
+    /// <summary>
+    /// Finite fixture that makes the Box-Cox lambda objective non-finite.
+    /// </summary>
+    private static NumericsTimeSeries CreateBoxCoxLambdaFailureTimeSeries()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+
+        for (int i = 0; i < ts.Count; i++)
+        {
+            ts[i].Value = i == 0 ? 0.0 : 10.0;
+        }
+
+        return ts;
+    }
+
+    /// <summary>
+    /// Finite fixture that makes the Yeo-Johnson lambda objective non-finite.
+    /// </summary>
+    private static NumericsTimeSeries CreateYeoJohnsonLambdaFailureTimeSeries()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+
+        for (int i = 0; i < ts.Count; i++)
+        {
+            ts[i].Value = -double.MaxValue;
+        }
+
+        return ts;
+    }
+
     #endregion
 
     #region Constructor Tests
@@ -956,6 +986,37 @@ public class MovingAverageTests
         Assert.IsTrue(messages.Any(m => m.Contains("Warning") && m.Contains("invertibility")));
     }
 
+    /// <summary>
+    /// Verifies that Box-Cox lambda solver failures are captured as validation errors.
+    /// </summary>
+    [TestMethod]
+    public void Test_BoxCoxTransform_LambdaFitFailure_ReturnsValidationError()
+    {
+        var model = new MovingAverage(CreateBoxCoxLambdaFailureTimeSeries(), order: 1);
+
+        model.TransformType = RMC.BestFit.Models.Transform.BoxCox;
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("Box-Cox lambda estimation failed")),
+            $"Expected a Box-Cox lambda validation message. Got: [{string.Join(" | ", messages)}]");
+    }
+
+    /// <summary>
+    /// Verifies that Yeo-Johnson lambda solver failures are captured as validation errors.
+    /// </summary>
+    [TestMethod]
+    public void Test_YeoJohnsonTransform_LambdaFitFailure_ReturnsValidationError()
+    {
+        var model = new MovingAverage(CreateYeoJohnsonLambdaFailureTimeSeries(), order: 1);
+
+        model.TransformType = RMC.BestFit.Models.Transform.YeoJohnson;
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("Yeo-Johnson lambda estimation failed")),
+            $"Expected a Yeo-Johnson lambda validation message. Got: [{string.Join(" | ", messages)}]");
+    }
     #endregion
 
     #region SetParameterValues Tests

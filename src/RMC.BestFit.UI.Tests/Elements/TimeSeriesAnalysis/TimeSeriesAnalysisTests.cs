@@ -1,7 +1,9 @@
 using DatabaseManager;
 using FrameworkInterfaces;
+using FrameworkInterfaces.Messaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Numerics.Data;
+using RMC.BestFit.Models;
 using RMC.BestFit.UI;
 using System.Data;
 using System.IO;
@@ -47,6 +49,51 @@ public class TimeSeriesAnalysisTests
         {
             series.Add(new SeriesOrdinate<DateTime, double>(date, i + 1.0));
             date = TimeSeries.AddTimeInterval(date, interval);
+        }
+
+        element.TimeSeries = series;
+        return element;
+    }
+
+    /// <summary>
+    /// Creates a time-series element with a constant positive value at each regular time step.
+    /// </summary>
+    /// <param name="name">The element name.</param>
+    /// <param name="count">The number of observations to create.</param>
+    /// <param name="interval">The interval between observations.</param>
+    /// <param name="start">The first observation timestamp.</param>
+    /// <param name="value">The value assigned to each observation.</param>
+    /// <returns>A populated constant time-series element.</returns>
+    private static TimeSeriesElement CreateConstantTimeSeriesElement(string name, int count, TimeInterval interval, DateTime start, double value)
+    {
+        var element = new TimeSeriesElement(name);
+        var series = new TimeSeries(interval);
+        DateTime date = start;
+        for (int i = 0; i < count; i++)
+        {
+            series.Add(new SeriesOrdinate<DateTime, double>(date, value));
+            date = TimeSeries.AddTimeInterval(date, interval);
+        }
+
+        element.TimeSeries = series;
+        return element;
+    }
+
+
+    /// <summary>
+    /// Creates a finite regular time-series element that makes Box-Cox lambda fitting fail.
+    /// </summary>
+    /// <param name="name">The element name.</param>
+    /// <returns>A populated time-series element.</returns>
+    private static TimeSeriesElement CreateBoxCoxLambdaFailureTimeSeriesElement(string name)
+    {
+        var element = new TimeSeriesElement(name);
+        var series = new TimeSeries(TimeInterval.OneYear);
+        DateTime date = new DateTime(1960, 1, 1);
+        for (int i = 0; i < 60; i++)
+        {
+            series.Add(new SeriesOrdinate<DateTime, double>(date, i == 0 ? 0.0 : 10.0));
+            date = TimeSeries.AddTimeInterval(date, TimeInterval.OneYear);
         }
 
         element.TimeSeries = series;
@@ -513,6 +560,33 @@ public class TimeSeriesAnalysisTests
         Assert.AreSame(series, tsa.ARIMAX.TimeSeries);
     }
 
+    /// <summary>
+    /// Verifies that direct ARIMAX Box-Cox edits re-sync model validation messages.
+    /// </summary>
+    [STATestMethod]
+    public void ARIMAXTransformType_BoxCoxLambdaFailure_AddsValidationMessage()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("BoxCoxFailureTSA", _collection!);
+
+        try
+        {
+            var tsElement = CreateBoxCoxLambdaFailureTimeSeriesElement("BoxCoxFailureTS");
+            tsa.TimeSeriesData = tsElement;
+
+            tsa.ARIMAX.TransformType = RMC.BestFit.Models.Transform.BoxCox;
+
+            Assert.IsFalse(tsa.IsValid);
+            Assert.IsTrue(Messenger.GetInstance().AllMessageItems().Any(m =>
+                ReferenceEquals(m.Source, tsa)
+                && m.Code != null
+                && m.Code.StartsWith("TSA-ERR-", StringComparison.Ordinal)),
+                "Expected a TSA model-validation error for the analysis source.");
+        }
+        finally
+        {
+            Messenger.GetInstance().Clear(tsa);
+        }
+    }
     /// <summary>
     /// Verifies that <see cref="UI.TimeSeriesAnalysis.CovariateExtension"/> defaults to
     /// <see cref="RMC.BestFit.Models.ARIMAX.CovariateExtensionMethod.BlockBootstrap"/>.
