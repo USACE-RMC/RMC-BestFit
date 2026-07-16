@@ -393,6 +393,36 @@ namespace RMC.BestFit.Analyses
         public BootstrapDiagnostics? BootstrapResults { get; private set; }
 
         /// <summary>
+        /// Gets a user-facing description of why the most recent uncertainty quantification was
+        /// degraded or aborted, or an empty string when no issue occurred.
+        /// </summary>
+        /// <remarks>
+        /// Populated when a sampling method aborts (for example, when more than half of the
+        /// requested bootstrap replicates are discarded after retries, or the sampled covariance
+        /// is not usable) and when the delivered ensemble is too small to summarize. The UI layer
+        /// surfaces this text as an analysis warning message after a run that produced a point
+        /// estimate without uncertainty results. Cleared by <see cref="ClearResults"/>.
+        /// </remarks>
+        public string UncertaintyDiagnosticMessage { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Records the reason the most recent uncertainty quantification was degraded or aborted.
+        /// </summary>
+        /// <param name="message">The user-facing diagnostic text.</param>
+        /// <remarks>
+        /// Also writes the text to the debug trace so headless runs retain the explanation.
+        /// May be invoked from a background sampling thread; the property notification is a
+        /// plain <see cref="System.ComponentModel.INotifyPropertyChanged"/> raise with no
+        /// dispatcher marshaling, matching the model layer's notification conventions.
+        /// </remarks>
+        private void SetUncertaintyDiagnosticMessage(string message)
+        {
+            UncertaintyDiagnosticMessage = message;
+            Debug.WriteLine($"Bulletin17CAnalysis: {message}");
+            RaisePropertyChange(nameof(UncertaintyDiagnosticMessage));
+        }
+
+        /// <summary>
         /// Optional override for the SES 'a' parameter formula used in the ? link function.
         /// </summary>
         /// <remarks>
@@ -526,6 +556,7 @@ namespace RMC.BestFit.Analyses
             GMMElapsedTime = null;
             UncertaintyElapsedTime = null;
             BootstrapResults = null;
+            UncertaintyDiagnosticMessage = string.Empty;
             RaisePropertyChange(nameof(AnalysisResults));
             RaisePropertyChange(nameof(GMM));
         }
@@ -720,19 +751,28 @@ namespace RMC.BestFit.Analyses
 
             if (rawSets == null)
             {
-                Debug.WriteLine("B17C: Uncertainty quantification failed � the covariance matrix from GMM estimation " +
-                    "is not positive-definite. The point estimate is still valid but confidence intervals cannot be computed. " +
-                    "Consider using a different distribution or the Bootstrap/Bias-Corrected Bootstrap uncertainty method.");
+                // The sampler either set a specific diagnostic before returning null (e.g., an
+                // abort after excessive discards) or failed on the shared covariance path.
+                if (string.IsNullOrEmpty(UncertaintyDiagnosticMessage))
+                {
+                    SetUncertaintyDiagnosticMessage(
+                        "Uncertainty quantification failed — the covariance matrix from GMM estimation is not positive-definite. " +
+                        "The point estimate is still valid but confidence intervals cannot be computed. " +
+                        "Consider using a different distribution or the Bootstrap/Bias-Corrected Bootstrap uncertainty method.");
+                }
                 return;
             }
 
             // Filter out unset entries (default ParameterSet has Values == null).
-            // Only LinkedMVN can produce these � the other three sampling methods substitute
-            // the parent thetaHat on failure, so every slot is populated.
+            // Every sampling method can produce these — failed or rejected realizations are
+            // discarded rather than substituted with the parent parameter vector, so the
+            // delivered ensemble may be smaller than the requested output length.
             var validSets = rawSets.Where(ps => ps.Values != null).ToArray();
             if (validSets.Length < 2)
             {
-                Debug.WriteLine($"B17C: Only {validSets.Length} valid parameter sets out of {rawSets.Length}. Skipping uncertainty analysis.");
+                SetUncertaintyDiagnosticMessage(
+                    $"Only {validSets.Length:N0} valid parameter sets out of {rawSets.Length:N0} sampled realizations. " +
+                    "Uncertainty analysis was skipped.");
                 return;
             }
 
@@ -831,6 +871,7 @@ namespace RMC.BestFit.Analyses
             var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
             int iteration = 0;
+            int rejectionCount = 0;
 
             try
             {
@@ -866,21 +907,44 @@ namespace RMC.BestFit.Analyses
                             }
                             catch (Exception ex) { Debug.WriteLine($"B17C MVN sampling: rejected parameter set (idx={idx}): {ex.Message}"); }
                         }
-                        // If still not accepted after 10 retries, fall back to the parent
-                        // parameter vector � preserves prior behavior where the cloned
-                        // distribution retained Distribution.Clone()'s starting parameters
-                        // (thetaHat) when no draw was accepted.
-                        acceptedTheta ??= thetaHat;
+                        if (acceptedTheta == null)
+                            Interlocked.Increment(ref rejectionCount);
                     }
 
-                    results[idx] = new ParameterSet(acceptedTheta, double.NaN);
+                    // Rejected draws stay as default(ParameterSet) (Values == null) and are
+                    // filtered below — no parent fallback, which would inject zero-variance
+                    // mass at the parent fit and bias the uncertainty bounds narrow.
+                    if (acceptedTheta != null)
+                        results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
                     int current = Interlocked.Increment(ref iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
-                return results;
+                // Check the rejection rate — persistent rejection signals the MVN approximation
+                // places most of its mass outside the valid parameter space, not sampling noise.
+                double rejectionRate = (double)rejectionCount / B;
+                if (rejectionRate > 0.50)
+                {
+                    SetUncertaintyDiagnosticMessage(
+                        $"Multivariate Normal sampling: {rejectionCount:N0} of {B:N0} requested draws were rejected as invalid parameter sets " +
+                        $"({rejectionRate:P0} rejection rate). Uncertainty quantification was aborted. " +
+                        "Consider the Bootstrap uncertainty method, which does not rely on the asymptotic covariance.");
+                    return null;
+                }
+
+                // Filter out rejected draws (default-initialized entries have Values == null).
+                var validResults = results.Where(ps => ps.Values != null).ToArray();
+                if (validResults.Length < 2)
+                {
+                    SetUncertaintyDiagnosticMessage(
+                        $"Multivariate Normal sampling: only {validResults.Length:N0} of {B:N0} requested draws were valid. " +
+                        "Uncertainty quantification was aborted.");
+                    return null;
+                }
+
+                return validResults;
             }
             catch (OperationCanceledException)
             {
@@ -1162,7 +1226,7 @@ namespace RMC.BestFit.Analyses
                         results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
                     int current = Interlocked.Increment(ref iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
@@ -1886,7 +1950,11 @@ namespace RMC.BestFit.Analyses
         ///         set a randomized penalty function via <see cref="Bulletin17CDistribution.SetPenaltyFunction"/>
         ///         to propagate prior uncertainty.</description></item>
         ///     <item><description>Estimate parameters using GMM. If GMM fails, retry up to
-        ///         <c>maxRetries</c> times with fresh bootstrap samples before falling back to parent parameters.</description></item>
+        ///         <c>maxRetries</c> times with fresh bootstrap samples; a replicate that fails every
+        ///         attempt is discarded and excluded from the delivered sample. Discarded replicates are
+        ///         counted in <see cref="BootstrapResults"/>, matching the drop semantics of
+        ///         <c>Numerics.Sampling.Bootstrap</c>. No parent-parameter substitution is performed —
+        ///         that would inject zero-variance mass at the parent fit and bias the intervals narrow.</description></item>
         /// </list>
         /// </remarks>
         private ParameterSet[]? GetParameterSetsFromParametricBootstrap(SafeProgressReporter? progressReporter)
@@ -1937,16 +2005,31 @@ namespace RMC.BestFit.Analyses
                             // model; clone with parent params for the resampling step only.
                             var samplingDist = parentDistribution.Clone();
                             var bootDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(samplingDist, prng);
-                            var bootB17CDistribution = (Bulletin17CDistribution)Bulletin17CDistribution.Clone();
-                            bootB17CDistribution.DataFrame = bootDataFrame;
+                            // CloneWithDataFrame preserves the parent's parameter bounds, priors, and
+                            // penalty configuration; the explicit warm start makes the GMM initial
+                            // values the parent fit rather than boot-data-derived defaults.
+                            var bootB17CDistribution = Bulletin17CDistribution.CloneWithDataFrame(bootDataFrame);
+                            bootB17CDistribution.SetParameterValues(thetaHat);
                             bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
                             var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution);
                             bootGMM.Estimate();
-                            if (bootGMM.Status != OptimizationStatus.Success)
-                                throw new Exception("The bootstrap GMM solver failed for realization " + idx.ToString() + ".");
+
+                            // Accept any terminal state that produced a usable solution — the same
+                            // gate the parent fit uses (only a hard Failure rejects the replicate).
+                            if (!bootGMM.IsEstimated || bootGMM.Status == OptimizationStatus.Failure)
+                                throw new InvalidOperationException($"The bootstrap GMM solver failed for realization {idx} (status: {bootGMM.Status}).");
+
+                            var bootParams = bootGMM.BestParameterSet.Values;
+                            // A non-finite parameter would make the Mahalanobis distance NaN, and NaN
+                            // threshold comparisons are false, so the screen below would silently
+                            // accept the vector. Reject it explicitly.
+                            for (int j = 0; j < p; j++)
+                            {
+                                if (!double.IsFinite(bootParams[j]))
+                                    throw new InvalidOperationException($"Bootstrap replicate {idx} produced a non-finite parameter estimate.");
+                            }
 
                             // Reject degenerate fits via Mahalanobis distance from parent
-                            var bootParams = bootGMM.BestParameterSet.Values;
                             double mahalDist = 0;
                             for (int j = 0; j < p; j++)
                             {
@@ -1971,25 +2054,38 @@ namespace RMC.BestFit.Analyses
                         }
                     }
 
-                    // Fall back to parent parameter vector if all retries failed � preserves prior
-                    // behavior where bootDistribution retained parent params after a Clone() with
-                    // no successful SetParameters call.
+                    // Discard the replicate if every retry failed. The slot stays as
+                    // default(ParameterSet) (Values == null) and is filtered out downstream,
+                    // matching the drop semantics of Numerics.Sampling.Bootstrap. Substituting
+                    // the parent vector here would inject zero-variance mass at the parent fit
+                    // and bias the uncertainty bounds narrow.
                     if (acceptedParams == null)
-                    {
                         diag.IncrementFailed();
-                        acceptedParams = thetaHat;
-                    }
-
-                    results[idx] = new ParameterSet(acceptedParams, double.NaN);
+                    else
+                        results[idx] = new ParameterSet(acceptedParams, double.NaN);
 
                     int current = Interlocked.Increment(ref iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
                 phase1Stopwatch.Stop();
                 diag.Phase1Time = phase1Stopwatch.Elapsed;
                 BootstrapResults = diag;
+
+                // Abort when the delivered ensemble is unusable: nearly empty, or dominated
+                // by fit failures. A >50% discard rate signals a structurally unstable fit
+                // rather than sampling noise, and the surviving subset would not be a
+                // representative bootstrap sample.
+                int retained = results.Count(ps => ps.Values != null);
+                if (retained < 2 || diag.FailedReplicates > B / 2)
+                {
+                    SetUncertaintyDiagnosticMessage(
+                        $"Parametric bootstrap: only {retained:N0} of {B:N0} requested replicates produced a valid GMM fit " +
+                        $"({diag.FailedReplicates:N0} discarded after {maxRetries} attempts each). Uncertainty quantification was aborted. " +
+                        "Review the fitted model and data, or use the Multivariate Normal uncertainty method.");
+                    return null;
+                }
 
                 return results;
             }
@@ -2019,7 +2115,8 @@ namespace RMC.BestFit.Analyses
         /// <para>
         ///     <b>Phase 1 � Collect bootstrap fits</b> (parallel): For each replicate b = 1, �, B,
         ///     generate a bootstrap data frame, re-estimate via GMM (with up to 5 retries), and store
-        ///     both the parameter estimates ?*_b and GMM covariance S*_b.
+        ///     both the parameter estimates ?*_b and GMM covariance S*_b. Replicates that fail every
+        ///     attempt are discarded; Phases 2 and 3 operate on the accepted subset only.
         /// </para>
         /// <para>
         ///     <b>Phase 2 � Fit link functions</b>: Fit a <see cref="YeoJohnsonLink"/> to the bootstrap
@@ -2028,10 +2125,11 @@ namespace RMC.BestFit.Analyses
         ///     <see cref="LinkController"/> and compute the parent Cholesky factor L^ in link-space.
         /// </para>
         /// <para>
-        ///     <b>Phase 3 � Generate pivot draws</b> (parallel): For each replicate b, compute the
-        ///     standardized pivot z = L*_b?� � (?^ - ?*_b) in link-space, add smoothing jitter,
-        ///     reject extreme pivots (|z_j| &gt; 8), and map back to real-space via
-        ///     ?_draw = InverseLink(?^ + L^ � z).
+        ///     <b>Phase 3 � Generate pivot draws</b> (parallel): For each accepted replicate b, compute
+        ///     the standardized pivot z = L*_b?� � (?^ - ?*_b) in link-space, add smoothing jitter,
+        ///     reject extreme pivots (|z_j| &gt; 6), and map back to real-space via
+        ///     ?_draw = InverseLink(?^ + L^ � z). Rejected or failed draws are dropped from the
+        ///     delivered sample — never substituted with the parent parameters.
         /// </para>
         /// <para>
         ///     Reference: DiCiccio, T.J. and Efron, B. (1996). Bootstrap confidence intervals.
@@ -2093,16 +2191,31 @@ namespace RMC.BestFit.Analyses
                         {
                             var bootDist = parentDistribution.Clone();
                             var bootDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(bootDist, prng);
-                            var bootB17CDistribution = (Bulletin17CDistribution)Bulletin17CDistribution.Clone();
-                            bootB17CDistribution.DataFrame = bootDataFrame;
+                            // CloneWithDataFrame preserves the parent's parameter bounds, priors, and
+                            // penalty configuration; the explicit warm start makes the GMM initial
+                            // values the parent fit rather than boot-data-derived defaults.
+                            var bootB17CDistribution = Bulletin17CDistribution.CloneWithDataFrame(bootDataFrame);
+                            bootB17CDistribution.SetParameterValues(thetaHat);
                             bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
                             var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution) { PenaltyIsRandom = false };
                             bootGMM.Estimate();
-                            if (bootGMM.Status != OptimizationStatus.Success)
-                                throw new Exception("The bootstrap GMM solver failed for realization " + idx.ToString() + ".");
+
+                            // Accept any terminal state that produced a usable solution — the same
+                            // gate the parent fit uses (only a hard Failure rejects the replicate).
+                            if (!bootGMM.IsEstimated || bootGMM.Status == OptimizationStatus.Failure)
+                                throw new InvalidOperationException($"The bootstrap GMM solver failed for realization {idx} (status: {bootGMM.Status}).");
+
+                            var bootParams = bootGMM.BestParameterSet.Values;
+                            // A non-finite parameter would make the Mahalanobis distance NaN, and NaN
+                            // threshold comparisons are false, so the screen below would silently
+                            // accept the vector. Reject it explicitly.
+                            for (int j = 0; j < p; j++)
+                            {
+                                if (!double.IsFinite(bootParams[j]))
+                                    throw new InvalidOperationException($"Pivot bootstrap replicate {idx} produced a non-finite parameter estimate.");
+                            }
 
                             // Reject degenerate fits via Mahalanobis distance from parent
-                            var bootParams = bootGMM.BestParameterSet.Values;
                             double mahalDist = 0;
                             for (int j = 0; j < p; j++)
                             {
@@ -2129,17 +2242,16 @@ namespace RMC.BestFit.Analyses
                         }
                     }
 
-                    // Fall back to parent fit if all retries failed
+                    // Discard the replicate if every retry failed — the null slot is excluded
+                    // from link fitting and pivot generation below. Substituting the parent fit
+                    // (theta-hat with the parent covariance) would make the pivot z ≈ 0 and
+                    // re-deliver the parent draw, biasing the uncertainty bounds narrow.
                     if (!estimated)
-                    {
-                        bootTheta[idx] = (double[])thetaHat.Clone();
-                        bootSigma[idx] = sigmaHat;
                         diag.IncrementFailed();
-                    }
 
                     int current = Interlocked.Increment(ref phase1Iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
-                        progressReporter?.ReportProgress((int)(99.0 * current / B));
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
+                        progressReporter?.ReportProgress((int)(55.0 * current / B));
                 });
             }
             catch (OperationCanceledException)
@@ -2150,26 +2262,45 @@ namespace RMC.BestFit.Analyses
             phase1Stopwatch.Stop();
             diag.Phase1Time = phase1Stopwatch.Elapsed;
 
+            // Compact to the accepted replicates. Phase 2 fits the link functions from
+            // accepted samples only, and Phase 3 maps k -> acceptedIdx[k] so per-replicate
+            // seeding stays keyed to the ORIGINAL replicate index — an accepted replicate
+            // produces the identical pivot draw regardless of how many others were discarded.
+            int[] acceptedIdx = Enumerable.Range(0, B).Where(i => bootTheta[i] != null).ToArray();
+
+            // Abort when the accepted ensemble is unusable: nearly empty, or dominated by
+            // fit failures. A >50% discard rate signals a structurally unstable fit rather
+            // than sampling noise.
+            if (acceptedIdx.Length < 2 || diag.FailedReplicates > B / 2)
+            {
+                BootstrapResults = diag;
+                SetUncertaintyDiagnosticMessage(
+                    $"Pivot bootstrap: only {acceptedIdx.Length:N0} of {B:N0} requested replicates produced a valid GMM fit " +
+                    $"({diag.FailedReplicates:N0} discarded after {maxRetries} attempts each). Uncertainty quantification was aborted. " +
+                    "Review the fitted model and data, or use the Multivariate Normal uncertainty method.");
+                return null;
+            }
+
             // -------------------------------------------------------------------
             // Phase 2: Fit link functions from bootstrap parameter samples
             // -------------------------------------------------------------------
             var phase2Stopwatch = Stopwatch.StartNew();
             progressReporter?.ReportProgress(56);
 
-            // Location (index 0): Yeo-Johnson fitted to bootstrap location estimates
-            var locationSamples = bootTheta.Select(t => t[0]).ToArray();
+            // Location (index 0): Yeo-Johnson fitted to accepted bootstrap location estimates
+            var locationSamples = acceptedIdx.Select(i => bootTheta[i][0]).ToArray();
             ILinkFunction locationLink = new BestFitYeoJohnsonLink(locationSamples);
 
             // Scale (index 1): Log link (scale is strictly positive)
-            var scaleSamples = bootTheta.Select(t => t[1]).ToArray();
+            var scaleSamples = acceptedIdx.Select(i => bootTheta[i][1]).ToArray();
             //ILinkFunction scaleLink = new BestFitYeoJohnsonLink(scaleSamples);
             ILinkFunction scaleLink = new LogLink();
 
-            // Shape (index 2, if present): Yeo-Johnson fitted to bootstrap shape estimates
+            // Shape (index 2, if present): Yeo-Johnson fitted to accepted bootstrap shape estimates
             ILinkFunction? shapeLink = null;
             if (p >= 3)
             {
-                var shapeSamples = bootTheta.Select(t => t[2]).ToArray();
+                var shapeSamples = acceptedIdx.Select(i => bootTheta[i][2]).ToArray();
                 shapeLink = new BestFitYeoJohnsonLink(shapeSamples);
             }
 
@@ -2209,9 +2340,13 @@ namespace RMC.BestFit.Analyses
 
             try
             {
-                Parallel.For(0, B, options, idx =>
+                Parallel.For(0, acceptedIdx.Length, options, k =>
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
+
+                    // Map back to the original replicate index so seeding, result slots, and
+                    // reproducibility stay keyed to the requested replicate identity.
+                    int idx = acceptedIdx[k];
 
                     var prng = new MersenneTwister(seeds[idx] + B);
                     // Per-thread validator (ValidateParameters is an instance method).
@@ -2278,15 +2413,17 @@ namespace RMC.BestFit.Analyses
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"Pivot bootstrap Phase 3, replicate {idx}: {ex.Message}");
-                        // Fall back to parent parameters � preserves prior behavior where the
-                        // pre-initialized parent-clone retained its parameters on failure.
+                        // The draw is discarded — the slot stays unset (Values == null) and is
+                        // filtered out downstream. No parent substitution: the z-limit and
+                        // transform guards exist to remove invalid draws, not to recentre them.
                     }
 
-                    results[idx] = new ParameterSet(acceptedTheta ?? thetaHat, double.NaN);
+                    if (acceptedTheta != null)
+                        results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
                     int current = Interlocked.Increment(ref phase3Iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
-                        progressReporter?.ReportProgress(99 + (int)(1 * current / B));
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, acceptedIdx.Length))
+                        progressReporter?.ReportProgress(56 + (int)(44.0 * current / acceptedIdx.Length));
                 });
 
                 phase3Stopwatch.Stop();

@@ -700,4 +700,23 @@ public class Bulletin17CAnalysisTests
     }
 
     #endregion
+
+    #region Uncertainty diagnostic message
+
+    /// <summary>
+    /// The uncertainty diagnostic message defaults to empty and is reset by ClearResults,
+    /// so a stale abort reason can never survive into the next run's report.
+    /// </summary>
+    [TestMethod]
+    public void UncertaintyDiagnosticMessage_DefaultsEmpty_AndClearedByClearResults()
+    {
+        var analysis = new Bulletin17CAnalysis(CreateLP3Model());
+        Assert.AreEqual(string.Empty, analysis.UncertaintyDiagnosticMessage);
+
+        analysis.ClearResults();
+
+        Assert.AreEqual(string.Empty, analysis.UncertaintyDiagnosticMessage);
+    }
+
+    #endregion
 }

@@ -96,6 +96,26 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Determines whether a sampling loop should emit a progress report for the given
+        /// completed-iteration count.
+        /// </summary>
+        /// <param name="current">The number of completed iterations (1-based).</param>
+        /// <param name="total">The total number of iterations.</param>
+        /// <returns>True on the first and last iterations and at every whole-percent boundary; false when <paramref name="total"/> is not positive.</returns>
+        /// <remarks>
+        /// Reporting at <c>current == 1</c> guarantees visible progress as soon as the first
+        /// replicate completes; without it the first tick waits for <c>total / 100</c>
+        /// completions, which pins the progress bar at the phase-start value whenever the
+        /// replicates are slow (e.g., bootstrap refits that need retries).
+        /// </remarks>
+        internal static bool ShouldReportLoopProgress(int current, int total)
+        {
+            if (total <= 0) return false;
+            if (current == 1 || current == total) return true;
+            return current % Math.Max(1, total / 100) == 0;
+        }
+
+        /// <summary>
         /// Applies an ambient maximum degree of parallelism for nested analysis loops.
         /// </summary>
         /// <param name="maxDegreeOfParallelism">The maximum degree of parallelism to use while the returned scope is active.</param>

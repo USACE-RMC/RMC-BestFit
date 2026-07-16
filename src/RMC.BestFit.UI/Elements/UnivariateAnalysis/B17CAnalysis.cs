@@ -1314,6 +1314,15 @@ namespace RMC.BestFit.UI
                 // When cancelled, the model sets IsEstimated = false, so this only triggers on genuine failure.
                 if (_innerAnalysis.IsEstimated && _innerAnalysis.AnalysisResults == null)
                 {
+                    // Prefer the model's specific diagnostic (e.g., "more than half of the requested
+                    // replicates were discarded") over the generic covariance text. The field and the
+                    // _messages entry are replaced together so ClearResults' and Delete's
+                    // remove-by-field calls target the live message instance.
+                    _messages.Remove(_uncertaintyFailedMsg);
+                    _uncertaintyFailedMsg = new BasicMessageItem(MessageType.Warning,
+                        GetUncertaintyFailureMessageText(), this, ParentCollection.Name, Name,
+                        nameof(B17CAnalysis), "B17-WRN-001");
+                    _messages.Add(_uncertaintyFailedMsg);
                     _messenger.Add(_uncertaintyFailedMsg);
                 }
             }
@@ -1333,6 +1342,21 @@ namespace RMC.BestFit.UI
                 SetIsValid();
                 _messenger.Add(new BasicMessageItem(MessageType.Event, "The Bulletin 17C analysis for '" + Name + "' is complete.", this, ParentCollection.Name, Name, nameof(B17CAnalysis)));
             }
+        }
+
+        /// <summary>
+        /// Selects the warning text shown when the point estimate succeeded but uncertainty
+        /// quantification produced no results.
+        /// </summary>
+        /// <returns>
+        /// The model's <see cref="ModelAnalyses.Bulletin17CAnalysis.UncertaintyDiagnosticMessage"/>
+        /// when one was recorded; otherwise the generic covariance failure text.
+        /// </returns>
+        internal string GetUncertaintyFailureMessageText()
+        {
+            return string.IsNullOrEmpty(_innerAnalysis.UncertaintyDiagnosticMessage)
+                ? "Uncertainty quantification failed — the covariance matrix is not positive-definite. The point estimate is still valid but confidence intervals could not be computed. Consider using a different distribution or the Bootstrap uncertainty method."
+                : _innerAnalysis.UncertaintyDiagnosticMessage;
         }
 
         /// <summary>
