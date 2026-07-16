@@ -292,6 +292,12 @@ namespace RMC.BestFit.UI
         private bool _inputDataValid = false;
 
         /// <summary>
+        /// Indicates whether <see cref="RunAsync"/> is currently in flight. Volatile because it
+        /// is written on the UI thread and read by worker-thread property-change notifications.
+        /// </summary>
+        private volatile bool _isRunning = false;
+
+        /// <summary>
         /// Indicates whether the probability ordinates are valid.
         /// </summary>
         private bool _ordinatesValid = true;
@@ -587,6 +593,13 @@ namespace RMC.BestFit.UI
         /// <param name="e">The property change event arguments.</param>
         private void InputDataChanged(object sender, PropertyChangedEventArgs e)
         {
+            // Ignore the aggregate threshold-recompute notification raised by our own run's
+            // preprocessing: the model RunAsync calls ProcessThresholdSeries on a worker thread
+            // and DataFrame raises "ThresholdSeries" when effective counts change. Reacting here
+            // would run ClearResults and message updates on that worker thread mid-run. Genuine
+            // user edits outside a run still flow through and clear results as designed.
+            if (ShouldIgnoreInputDataChange(_isRunning, e.PropertyName)) return;
+
             // Check if input data is valid
             _inputDataValid = true;
             _messenger.Remove(_inputDataNullMsg);
@@ -1287,6 +1300,7 @@ namespace RMC.BestFit.UI
 
             _messenger.Add(new BasicMessageItem(MessageType.Event, "The Bulletin 17C analysis for '" + Name + "' has started.", this, ParentCollection.Name, Name, nameof(B17CAnalysis)));
 
+            _isRunning = true;
             try
             {
                 // Prepare input data (UI-specific preprocessing)
@@ -1320,8 +1334,8 @@ namespace RMC.BestFit.UI
                     // remove-by-field calls target the live message instance.
                     _messages.Remove(_uncertaintyFailedMsg);
                     _uncertaintyFailedMsg = new BasicMessageItem(MessageType.Warning,
-                        GetUncertaintyFailureMessageText(), this, ParentCollection.Name, Name,
-                        nameof(B17CAnalysis), "B17-WRN-001");
+                        GetUncertaintyFailureMessageText(_innerAnalysis.UncertaintyDiagnosticMessage),
+                        this, ParentCollection.Name, Name, nameof(B17CAnalysis), "B17-WRN-001");
                     _messages.Add(_uncertaintyFailedMsg);
                     _messenger.Add(_uncertaintyFailedMsg);
                 }
@@ -1338,6 +1352,7 @@ namespace RMC.BestFit.UI
             }
             finally
             {
+                _isRunning = false;
                 progressReporter.IndicateTaskEnded();
                 SetIsValid();
                 _messenger.Add(new BasicMessageItem(MessageType.Event, "The Bulletin 17C analysis for '" + Name + "' is complete.", this, ParentCollection.Name, Name, nameof(B17CAnalysis)));
@@ -1348,15 +1363,37 @@ namespace RMC.BestFit.UI
         /// Selects the warning text shown when the point estimate succeeded but uncertainty
         /// quantification produced no results.
         /// </summary>
+        /// <param name="modelDiagnostic">
+        /// The model's <see cref="ModelAnalyses.Bulletin17CAnalysis.UncertaintyDiagnosticMessage"/>,
+        /// or null/empty when the model recorded no specific reason.
+        /// </param>
         /// <returns>
-        /// The model's <see cref="ModelAnalyses.Bulletin17CAnalysis.UncertaintyDiagnosticMessage"/>
-        /// when one was recorded; otherwise the generic covariance failure text.
+        /// The model's diagnostic when one was recorded; otherwise the generic covariance failure text.
         /// </returns>
-        internal string GetUncertaintyFailureMessageText()
+        internal static string GetUncertaintyFailureMessageText(string modelDiagnostic)
         {
-            return string.IsNullOrEmpty(_innerAnalysis.UncertaintyDiagnosticMessage)
+            return string.IsNullOrEmpty(modelDiagnostic)
                 ? "Uncertainty quantification failed — the covariance matrix is not positive-definite. The point estimate is still valid but confidence intervals could not be computed. Consider using a different distribution or the Bootstrap uncertainty method."
-                : _innerAnalysis.UncertaintyDiagnosticMessage;
+                : modelDiagnostic;
+        }
+
+        /// <summary>
+        /// Determines whether an input-data property change notification should be ignored.
+        /// </summary>
+        /// <param name="isRunning">Whether this analysis's own run is currently in flight.</param>
+        /// <param name="propertyName">The property name from the change notification.</param>
+        /// <returns>
+        /// True only for the aggregate threshold-recompute notification raised while the
+        /// analysis's own run is in flight; false for every other change.
+        /// </returns>
+        /// <remarks>
+        /// Deliberately narrow: it suppresses a single self-inflicted notification rather than
+        /// short-circuiting the model layer's property-change classification. A user's threshold
+        /// edit outside a run still clears results through the normal path.
+        /// </remarks>
+        internal static bool ShouldIgnoreInputDataChange(bool isRunning, string propertyName)
+        {
+            return isRunning && propertyName == nameof(InputData.DataFrame.ThresholdSeries);
         }
 
         /// <summary>

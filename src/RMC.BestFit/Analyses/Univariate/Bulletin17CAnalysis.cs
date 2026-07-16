@@ -609,6 +609,11 @@ namespace RMC.BestFit.Analyses
                         cancellationToken.ThrowIfCancellationRequested();
 
                         // Preprocess data and run the CPU-bound GMM fit off the UI thread.
+                        // ProcessThresholdSeries stays here for headless/API correctness — the
+                        // model must not rely on a UI wrapper's pre-processing. It is idempotent
+                        // and only raises "ThresholdSeries" when effective counts actually change
+                        // (the UI wrapper suppresses that self-inflicted notification while a run
+                        // is in flight).
                         Bulletin17CDistribution.DataFrame.ProcessThresholdSeries();
                         Bulletin17CDistribution.LinkController = LinkController.ForLocationScaleShape();
                         Bulletin17CDistribution.SetInitialParameters();

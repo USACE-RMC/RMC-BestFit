@@ -460,4 +460,47 @@ public class B17CAnalysisTests
         Assert.IsTrue(rowIndex >= 0, "Expected the Bulletin 17C analysis row to exist.");
         return table.GetCell("GMMReport", rowIndex)?.ToString() ?? string.Empty;
     }
+
+    /// <summary>
+    /// Only the self-inflicted mid-run threshold-recompute notification is ignored; every
+    /// other input-data change — and every change outside a run — flows through to the
+    /// normal clear-results classification.
+    /// </summary>
+    [TestMethod]
+    public void ShouldIgnoreInputDataChange_OnlyThresholdSeriesWhileRunning()
+    {
+        Assert.IsTrue(B17CAnalysis.ShouldIgnoreInputDataChange(true, "ThresholdSeries"));
+        Assert.IsFalse(B17CAnalysis.ShouldIgnoreInputDataChange(false, "ThresholdSeries"),
+            "A threshold edit outside a run must still clear results.");
+        Assert.IsFalse(B17CAnalysis.ShouldIgnoreInputDataChange(true, "ExactSeries"));
+        Assert.IsFalse(B17CAnalysis.ShouldIgnoreInputDataChange(true, "DataFrame"));
+        Assert.IsFalse(B17CAnalysis.ShouldIgnoreInputDataChange(true, null));
+        Assert.IsFalse(B17CAnalysis.ShouldIgnoreInputDataChange(false, null));
+    }
+
+    /// <summary>
+    /// The uncertainty failure warning prefers the model's specific diagnostic (e.g., an
+    /// excessive-discard abort reason) and falls back to the generic covariance text when
+    /// the model recorded no reason.
+    /// </summary>
+    [TestMethod]
+    public void GetUncertaintyFailureMessageText_PrefersModelDiagnostic()
+    {
+        const string modelText = "Parametric bootstrap: only 40 of 10,000 requested replicates produced a valid GMM fit.";
+
+        Assert.AreEqual(modelText, B17CAnalysis.GetUncertaintyFailureMessageText(modelText));
+        StringAssert.Contains(B17CAnalysis.GetUncertaintyFailureMessageText(null), "covariance");
+        StringAssert.Contains(B17CAnalysis.GetUncertaintyFailureMessageText(string.Empty), "covariance");
+    }
+
+    /// <summary>
+    /// BootstrapResults delegates to the inner analysis and is null before any uncertainty run.
+    /// </summary>
+    [STATestMethod]
+    public void BootstrapResults_DelegatesToInner_NullBeforeRun()
+    {
+        var b17 = new B17CAnalysis("DiagB17", _collection!);
+
+        Assert.IsNull(b17.BootstrapResults);
+    }
 }

@@ -383,6 +383,15 @@ namespace RMC_BestFit
         /// <param name="e">Event arguments containing the property name that changed.</param>
         private void Element_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            // Marshal to the UI thread if called from a background thread (the model-layer
+            // RaisePropertyChange does not marshal, and run-time notifications can arrive on
+            // worker threads). Rebinding ItemsSource cross-thread throws InvalidOperationException.
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => Element_PropertyChanged(sender, e)));
+                return;
+            }
+
             // Distribution object replaced (e.g., during undo restoration) — explicitly rebind
             // penalty grids and sync distribution combo box. Do NOT rely on WPF multi-level binding
             // path refresh for nested object replacement.
