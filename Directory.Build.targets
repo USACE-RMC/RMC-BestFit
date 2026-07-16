@@ -1,0 +1,64 @@
+<Project>
+  <!-- Temporary source links for validating local Numerics and WPF Framework changes. Delete this file to restore package references. -->
+  <PropertyGroup>
+    <UseLocalRmcLibraries Condition="'$(UseLocalRmcLibraries)' == ''">true</UseLocalRmcLibraries>
+    <LocalNumericsProject>$(MSBuildThisFileDirectory)..\numerics\Numerics\Numerics.csproj</LocalNumericsProject>
+    <LocalWpfFrameworkRoot>$(MSBuildThisFileDirectory)..\wpf-framework\</LocalWpfFrameworkRoot>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseLocalRmcLibraries)' == 'true'">
+    <PackageReference Remove="RMC.Numerics" />
+    <PackageReference Remove="RMC.Wpf.Framework.Core" />
+    <PackageReference Remove="RMC.Wpf.Framework.Models" />
+    <PackageReference Remove="RMC.Wpf.Framework.Controls" />
+    <PackageReference Remove="RMC.Wpf.Framework.Support" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseLocalRmcLibraries)' == 'true'">
+    <ProjectReference Include="$(LocalNumericsProject)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseLocalRmcLibraries)' == 'true' and ('$(MSBuildProjectName)' == 'RMC.BestFit.App' or '$(MSBuildProjectName)' == 'RMC.BestFit.UI')">
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\FrameworkInterfaces\FrameworkInterfaces.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\Themes\Themes.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\DAG\DAG.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\DatabaseManager\DatabaseManager.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\ExpressionParser\ExpressionParser.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\OxyPlot\OxyPlot\OxyPlot.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\OxyPlot\OxyPlot.Wpf.Shared\OxyPlot.Wpf.Shared.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\OxyPlot\OxyPlot.Wpf\OxyPlot.Wpf.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseLocalRmcLibraries)' == 'true' and '$(MSBuildProjectName)' == 'RMC.BestFit.App'">
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\GenericControls\GenericControls.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\FrameworkUI\FrameworkUI.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\DAGControls\DAGControls.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\DatabaseControls\DatabaseControls.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\ExpressionParserControls\ExpressionParserControls.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\NumericControls\NumericControls.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\OxyPlotControls\OxyPlotControls.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\AvalonDock\Xceed.Wpf.AvalonDock\Xceed.Wpf.AvalonDock.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\AvalonDock\Xceed.Wpf.AvalonDock.Themes.VS2013\Xceed.Wpf.AvalonDock.Themes.VS2013.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\SoftwareUpdate\SoftwareUpdate.csproj" />
+    <ProjectReference Include="$(LocalWpfFrameworkRoot)src\SoftwareUpdate.Updater\SoftwareUpdate.Updater.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseLocalRmcLibraries)' == 'true'">
+    <ProjectReference Update="$(LocalNumericsProject)">
+      <AdditionalProperties>Configuration=$(Configuration)</AdditionalProperties>
+    </ProjectReference>
+    <ProjectReference Update="$(LocalWpfFrameworkRoot)src\**\*.csproj">
+      <AdditionalProperties>Configuration=$(Configuration)</AdditionalProperties>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="CopyLocalSoftwareUpdater" AfterTargets="Build" Condition="'$(UseLocalRmcLibraries)' == 'true' and '$(MSBuildProjectName)' == 'RMC.BestFit.App'">
+    <ItemGroup>
+      <_LocalUpdaterFiles Include="$(LocalWpfFrameworkRoot)src\SoftwareUpdate.Updater\bin\$(Configuration)\net10.0-windows\SoftwareUpdate.Updater.exe" />
+      <_LocalUpdaterFiles Include="$(LocalWpfFrameworkRoot)src\SoftwareUpdate.Updater\bin\$(Configuration)\net10.0-windows\SoftwareUpdate.Updater.dll" />
+      <_LocalUpdaterFiles Include="$(LocalWpfFrameworkRoot)src\SoftwareUpdate.Updater\bin\$(Configuration)\net10.0-windows\SoftwareUpdate.Updater.deps.json" />
+      <_LocalUpdaterFiles Include="$(LocalWpfFrameworkRoot)src\SoftwareUpdate.Updater\bin\$(Configuration)\net10.0-windows\SoftwareUpdate.Updater.runtimeconfig.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_LocalUpdaterFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

@@ -266,6 +266,11 @@ namespace RMC.BestFit.UI
         private ModelAnalyses.CompositeAnalysis _innerAnalysis;
 
         /// <summary>
+        /// True while model-derived weights are being copied back to the UI rows.
+        /// </summary>
+        private bool _isSyncingWeightsFromInnerAnalysis;
+
+        /// <summary>
         /// Gets the collection name for composite distribution analyses.
         /// </summary>
         public static string CollectionName => "<Composite Distribution>";
@@ -597,6 +602,18 @@ namespace RMC.BestFit.UI
         /// <param name="e">The property change event arguments.</param>
         private void InnerAnalysis_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(ModelAnalyses.CompositeAnalysis.Analyses))
+            {
+                return;
+            }
+
+            if (e.PropertyName == nameof(ModelAnalyses.CompositeAnalysis.AnalysisResults) &&
+                _innerAnalysis.AnalysisResults == null &&
+                _innerAnalysis.IsEstimated == false)
+            {
+                return;
+            }
+
             if (e.PropertyName == nameof(ModelAnalyses.CompositeAnalysis.IsEstimated) ||
                 e.PropertyName == nameof(ModelAnalyses.CompositeAnalysis.AnalysisResults) ||
                 e.PropertyName == nameof(ModelAnalyses.CompositeAnalysis.BayesianAnalysis))
@@ -604,10 +621,10 @@ namespace RMC.BestFit.UI
                 SetIsValid();
             }
 
-            // Forward all property names â€” including BayesianAnalysis sub-property changes
-            // (CredibleIntervalWidth, OutputLength, PointEstimator) â€” so the App control's
-            // Element_PropertyChanged sees granular names and can refresh dependent UI
-            // (column headers, point-estimator labels). Mirrors UnivariateAnalysis.
+            // Forward all property names needed by the App controls. Inner Analyses events
+            // are suppressed because the UI wrapper raises Analyses for membership and user
+            // edits itself; forwarding model child-event Analyses would restyle the grid for
+            // every batch child completion.
             RaisePropertyChange(e.PropertyName);
         }
 
@@ -657,8 +674,37 @@ namespace RMC.BestFit.UI
         private void SyncWeightsFromInnerAnalysis()
         {
             if (_innerAnalysis == null) return;
-            for (int i = 0; i < Math.Min(_analyses.Count, _innerAnalysis.Analyses.Count); i++)
-                _analyses[i].Weight = _innerAnalysis.Analyses[i].Weight;
+            _isSyncingWeightsFromInnerAnalysis = true;
+            try
+            {
+                for (int i = 0; i < Math.Min(_analyses.Count, _innerAnalysis.Analyses.Count); i++)
+                    _analyses[i].Weight = _innerAnalysis.Analyses[i].Weight;
+            }
+            finally
+            {
+                _isSyncingWeightsFromInnerAnalysis = false;
+            }
+        }
+
+        /// <summary>
+        /// Refreshes model-average weights after a child analysis reaches a final usable state.
+        /// </summary>
+        /// <param name="weightedAnalysis">The weighted child row that forwarded the child event.</param>
+        private void RefreshModelAverageWeightsFromCompletedChild(WeightedUnivariateAnalysis weightedAnalysis)
+        {
+            if (_innerAnalysis == null) return;
+            if (CompositeDistributionType != ModelAnalyses.CompositeType.ModelAverage) return;
+            if (weightedAnalysis?.UnivariateAnalysis?.IsEstimated != true) return;
+            if (weightedAnalysis.UnivariateAnalysis.AnalysisResults == null) return;
+
+            if (_innerAnalysis.Analyses.Count != _analyses.Count)
+            {
+                SyncAndEstimateModelWeights();
+                return;
+            }
+
+            _innerAnalysis.EstimateModelWeights();
+            SyncWeightsFromInnerAnalysis();
         }
 
         /// <summary>
@@ -1381,27 +1427,48 @@ namespace RMC.BestFit.UI
         /// <param name="e">The event data.</param>
         private void WeightedAnalysis_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(WeightedUnivariateAnalysis.Weight) &&
+                _isSyncingWeightsFromInnerAnalysis)
+            {
+                return;
+            }
 
-            // Check if we need to clear results
-            if (e.PropertyName == nameof(WeightedUnivariateAnalysis.UnivariateAnalysis) || e.PropertyName == nameof(UnivariateAnalysis.AnalysisResults))
+            if (e.PropertyName == nameof(WeightedUnivariateAnalysis.UnivariateAnalysis))
             {
                 SyncAndEstimateModelWeights();
                 if (!UndoManager.IsExecutingAction) ClearResults();
+                ValidateFunctions();
+                RaisePropertyChange(nameof(Analyses));
+                return;
             }
-            else if (e.PropertyName == nameof(WeightedUnivariateAnalysis.Weight))
+
+            if (e.PropertyName == nameof(UnivariateAnalysis.AnalysisResults) ||
+                e.PropertyName == nameof(UnivariateAnalysis.IsEstimated))
+            {
+                if (sender is WeightedUnivariateAnalysis weightedAnalysis)
+                    RefreshModelAverageWeightsFromCompletedChild(weightedAnalysis);
+
+                if (!UndoManager.IsExecutingAction) ClearResults();
+                ValidateFunctions();
+                return;
+            }
+
+            if (e.PropertyName == nameof(WeightedUnivariateAnalysis.Weight))
             {
                 SyncAnalysesToInnerAnalysis();
-                // Only record undo for user-edited weights â€” i.e., the Mixture mode where the
+                // Only record undo for user-edited weights - i.e., the Mixture mode where the
                 // grid's Weight column is editable. Model-Average weights are derived from AIC/BIC
                 // and Competing-Risks weights are not user-editable, so writes from those paths
                 // are programmatic and should not appear on the undo stack.
                 if (CompositeDistributionType == ModelAnalyses.CompositeType.Mixture)
                     RecordAnalysesUndo("Weight");
                 if (!UndoManager.IsExecutingAction) ClearResults();
+                ValidateFunctions();
+                RaisePropertyChange(nameof(Analyses));
+                return;
             }
 
             ValidateFunctions();
-            RaisePropertyChange(nameof(Analyses));
         }
 
         /// <summary>
@@ -1477,13 +1544,14 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
-        /// Clear the fitting analysis results.
+        /// Clears stale composite analysis results when the inner analysis currently has output.
         /// </summary>
         public void ClearResults()
         {
-            _innerAnalysis?.ClearResults();
-            RaisePropertyChange(nameof(AnalysisResults));
-            RaisePropertyChange(nameof(IsEstimated));
+            if (_innerAnalysis == null) return;
+            if (_innerAnalysis.AnalysisResults == null && _innerAnalysis.IsEstimated == false) return;
+
+            _innerAnalysis.ClearResults();
         }
 
         /// <summary>
