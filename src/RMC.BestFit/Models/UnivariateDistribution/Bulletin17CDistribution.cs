@@ -31,7 +31,7 @@ namespace RMC.BestFit.Models
     /// <para>
     /// <b>Type-system design note:</b> Bulletin17CDistribution intentionally does NOT derive
     /// from <c>ModelBase</c> and does NOT implement <c>IModel</c>. The Bulletin 17C procedure
-    /// is fit by Generalized Method of Moments (GMM) only — there is no log-likelihood and no
+    /// is fit by Generalized Method of Moments (GMM) only ï¿½ there is no log-likelihood and no
     /// posterior MCMC chain to expose. Implementing only <see cref="IGMMModel"/>,
     /// <see cref="ISimulatable{T}"/>, and <see cref="IUnivariateModel"/> keeps the surface
     /// minimal and prevents Bayesian-API consumers from accidentally calling LogLikelihood-
@@ -149,7 +149,7 @@ namespace RMC.BestFit.Models
             }
             QuantilePenalties = quantPens;
 
-            // Link controller — use BestFit factory for SESLink/LogSESLink/CenteredLink support
+            // Link controller ï¿½ use BestFit factory for SESLink/LogSESLink/CenteredLink support
             var linkElement = xElement.Element("LinkController");
             if (linkElement != null)
             {
@@ -193,7 +193,7 @@ namespace RMC.BestFit.Models
             else
                 Distribution = CreateDistribution(UnivariateDistributionType.LogPearsonTypeIII);
 
-            // DataFrame intentionally not set — InputData is null during this undo state
+            // DataFrame intentionally not set ï¿½ InputData is null during this undo state
 
             // Parameters
             var parms = new List<ModelParameter>();
@@ -389,7 +389,7 @@ namespace RMC.BestFit.Models
 
         /// <inheritdoc/>
         /// <remarks>
-        /// Bulletin 17C analysis assumes a stationary parent population — there is no
+        /// Bulletin 17C analysis assumes a stationary parent population ï¿½ there is no
         /// trend-on-parameters concept in the B17C methodology. Always returns <c>false</c>.
         /// </remarks>
         public bool IsNonstationary => false;
@@ -533,6 +533,13 @@ namespace RMC.BestFit.Models
         /// </remarks>
         private void DataFrame_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            // Ignore notifications raised while this instance is being constructed from XML
+            // (e.g., threshold reprocessing during the DataFrame assignment in the XElement
+            // constructor). Reacting would call SetDefaultParameters mid-construction and
+            // overwrite the serialized parameter and penalty state being restored.
+            if (_isDeserializing)
+                return;
+
             if (e.PropertyName == nameof(DataFrame.PlottingParameter) ||
                 e.PropertyName == "PlottingPosition")
             {
@@ -1008,25 +1015,25 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="parameters">Parameter values in link space.</param>
         /// <returns>
-        /// A tuple (G, S) where G is the q×1 sample mean of moment conditions and
-        /// S is the q×q covariance matrix used to form the optimal weighting matrix W = S?¹.
+        /// A tuple (G, S) where G is the qï¿½1 sample mean of moment conditions and
+        /// S is the qï¿½q covariance matrix used to form the optimal weighting matrix W = S?ï¿½.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// The moment conditions are g(Y; ?) = [Y - µ, (Y - µ)² - s², (Y - µ)³ - µ3],
-        /// where µ, s², µ3 are the unconditional central moments of the fitted distribution.
+        /// The moment conditions are g(Y; ?) = [Y - ï¿½, (Y - ï¿½)ï¿½ - sï¿½, (Y - ï¿½)ï¿½ - ï¿½3],
+        /// where ï¿½, sï¿½, ï¿½3 are the unconditional central moments of the fitted distribution.
         /// For q = 2 distributions (Exponential, Gamma), only the first two conditions are used.
         /// </para>
         /// <para>
         /// <b>Exact data:</b> Observed values with Bessel small-sample corrections c2 = n/(n-1)
-        /// for variance and c3 = n²/((n-1)(n-2)) for skewness. The covariance E[gg'] is computed
-        /// using model higher central moments µ4–µ6 for supported families (Normal, Gamma, Pearson III),
+        /// for variance and c3 = nï¿½/((n-1)(n-2)) for skewness. The covariance E[gg'] is computed
+        /// using model higher central moments ï¿½4ï¿½ï¿½6 for supported families (Normal, Gamma, Pearson III),
         /// or via outer-product fallback for other families.
         /// </para>
         /// <para>
         /// <b>Censored, interval, and threshold data:</b> Conditional moments E[Y^k | A]
         /// are computed via numerical integration (<see cref="UnivariateDistributionBase.ConditionalMoments"/>),
-        /// and the covariance uses the outer-product approximation E[gg'|A] ˜ E[g|A] E[g|A]'.
+        /// and the covariance uses the outer-product approximation E[gg'|A] ï¿½ E[g|A] E[g|A]'.
         /// </para>
         /// <para>
         /// <b>Uncertain data:</b> Moments and their second moments are integrated over
@@ -1063,7 +1070,7 @@ namespace RMC.BestFit.Models
             bool isLog10 = false;
 
             // Disable model-based covariance when low outliers are present, since the
-            // unconditional µ4–µ6 formulas don't account for the truncated contribution
+            // unconditional ï¿½4ï¿½ï¿½6 formulas don't account for the truncated contribution
             bool useModelCovariance = DataFrame.NumberOfLowOutliers == 0;
 
             if (DistributionType == UnivariateDistributionType.LogPearsonTypeIII)
@@ -1081,12 +1088,12 @@ namespace RMC.BestFit.Models
                 model = Distribution.Clone();
             }
 
-            // Validate parameters without throwing — this is called thousands of times
+            // Validate parameters without throwing ï¿½ this is called thousands of times
             // during GMM optimization and exception overhead is significant
             var validation = model.ValidateParameters(parameters, false);
             if (validation is not null)
             {
-                // Invalid parameters — signal the optimizer to reject this parameter set
+                // Invalid parameters ï¿½ signal the optimizer to reject this parameter set
                 mean.Fill(double.MaxValue);
                 return (mean, covariance);
             }
@@ -1109,7 +1116,7 @@ namespace RMC.BestFit.Models
                 return (mean, covariance);
             }
 
-            // Store unconditional moments: [µ, s², µ3]
+            // Store unconditional moments: [ï¿½, sï¿½, ï¿½3]
             var unconditionalMoments = new double[q];
             unconditionalMoments[0] = mu;
             if (q >= 2) unconditionalMoments[1] = sigma2;
@@ -1118,7 +1125,7 @@ namespace RMC.BestFit.Models
             // Reusable buffer for conditional moments
             var conditionalMoments = new double[q];
 
-            // Low outlier moments — treated as left-censored below the low outlier threshold
+            // Low outlier moments ï¿½ treated as left-censored below the low outlier threshold
             if (DataFrame.NumberOfLowOutliers > 0)
             {
                 var lower = min;
@@ -1130,7 +1137,7 @@ namespace RMC.BestFit.Models
                 UpdateMomentMeanCovariance(conditionalMoments, unconditionalMoments, mean, covariance, DataFrame.NumberOfLowOutliers, true, false);
             }
 
-            // Exact data — non-outlier observed values with Bessel corrections
+            // Exact data ï¿½ non-outlier observed values with Bessel corrections
             foreach (ExactData data in DataFrame.ExactSeries)
             {
                 if (!data.IsLowOutlier)
@@ -1145,7 +1152,7 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Uncertain data — integrate over measurement error distribution
+            // Uncertain data ï¿½ integrate over measurement error distribution
             foreach (UncertainData data in DataFrame.UncertainSeries)
             {
                 var measurementErrorSecondMoment = new Matrix(q);
@@ -1158,7 +1165,7 @@ namespace RMC.BestFit.Models
                 UpdateMomentMeanCovariance(uncertainMoments, unconditionalMoments, mean, covariance, 1, false, useModelCovariance, sigma, skewness, measurementErrorSecondMoment);
             }
 
-            // Interval data — conditional moments over [L, U]
+            // Interval data ï¿½ conditional moments over [L, U]
             foreach (IntervalData data in DataFrame.IntervalSeries)
             {
                 var lower = Math.Max(min, isLog10 ? data.Log10LowerValue : data.LowerValue);
@@ -1170,7 +1177,7 @@ namespace RMC.BestFit.Models
                 UpdateMomentMeanCovariance(conditionalMoments, unconditionalMoments, mean, covariance, 1, true, false);
             }
 
-            // Threshold data — left-censored (Y < threshold) and right-censored (Y >= threshold)
+            // Threshold data ï¿½ left-censored (Y < threshold) and right-censored (Y >= threshold)
             foreach (ThresholdData data in DataFrame.ThresholdSeries)
             {
                 // Left censored
@@ -1258,19 +1265,19 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="sigma">The standard deviation s of the distribution.</param>
         /// <param name="gamma">The skewness coefficient ? of the distribution.</param>
-        /// <param name="mu4">Output: µ4 = s4(3 + 3?²/2).</param>
-        /// <param name="mu5">Output: µ5 = s5?(10 + 3?²).</param>
-        /// <param name="mu6">Output: µ6 = s6(15 + 65?²/2 + 15?4/2).</param>
+        /// <param name="mu4">Output: ï¿½4 = s4(3 + 3?ï¿½/2).</param>
+        /// <param name="mu5">Output: ï¿½5 = s5?(10 + 3?ï¿½).</param>
+        /// <param name="mu6">Output: ï¿½6 = s6(15 + 65?ï¿½/2 + 15?4/2).</param>
         /// <remarks>
         /// <para>
         /// These formulas are derived from the Pearson Type III moment-generating function.
-        /// The Pearson Type III has shape a = (2/?)², scale ß = s?/2, so the raw central
+        /// The Pearson Type III has shape a = (2/?)ï¿½, scale ï¿½ = s?/2, so the raw central
         /// moments can be expressed in closed form as functions of s and ?.
         /// </para>
         /// <para>
         /// Special cases: For the Normal distribution (? = 0), these reduce to
-        /// µ4 = 3s4, µ5 = 0, µ6 = 15s6. For the Exponential (? = 2, s = 1/?),
-        /// they reduce to µ4 = 9s4, µ5 = 44s5, µ6 = 265s6.
+        /// ï¿½4 = 3s4, ï¿½5 = 0, ï¿½6 = 15s6. For the Exponential (? = 2, s = 1/?),
+        /// they reduce to ï¿½4 = 9s4, ï¿½5 = 44s5, ï¿½6 = 265s6.
         /// </para>
         /// <para>
         /// Reference: Stuart, A. and Ord, J.K. (1994). Kendall's Advanced Theory of Statistics,
@@ -1297,12 +1304,12 @@ namespace RMC.BestFit.Models
         /// over the measurement error distribution using 20-point Gauss-Legendre quadrature.
         /// </summary>
         /// <param name="unconditionalMoments">
-        /// Unconditional moments [µ, s², µ3] used to center the conditional moments about the model mean.
+        /// Unconditional moments [ï¿½, sï¿½, ï¿½3] used to center the conditional moments about the model mean.
         /// </param>
         /// <param name="uncertainData">The uncertain data observation with its measurement error distribution.</param>
         /// <param name="isLog10">If true, observations are transformed to log10 space before computing moments.</param>
         /// <returns>
-        /// Conditional moments [E[Y|dist], E[(Y-µ)²|dist], E[(Y-µ)³|dist]] suitable for passing
+        /// Conditional moments [E[Y|dist], E[(Y-ï¿½)ï¿½|dist], E[(Y-ï¿½)ï¿½|dist]] suitable for passing
         /// to <see cref="UpdateMomentMeanCovariance"/>.
         /// </returns>
         /// <param name="measurementErrorSecondMoment">
@@ -1340,7 +1347,7 @@ namespace RMC.BestFit.Models
             // E[Y | error_dist] normalized by retained ME probability mass.
             moments[0] = Integration.GaussLegendre20(x => (isLog10 ? Tools.Log10(x) : x) * dist.PDF(x), a, b) / mass;
 
-            // E[(Y - µ)² | error_dist]
+            // E[(Y - ï¿½)ï¿½ | error_dist]
             if (q >= 2)
             {
                 moments[1] = Integration.GaussLegendre20(x =>
@@ -1351,7 +1358,7 @@ namespace RMC.BestFit.Models
                 }, a, b) / mass;
             }
 
-            // E[(Y - µ)³ | error_dist]
+            // E[(Y - ï¿½)ï¿½ | error_dist]
             if (q >= 3)
             {
                 moments[2] = Integration.GaussLegendre20(x =>
@@ -1402,12 +1409,12 @@ namespace RMC.BestFit.Models
         /// to <see cref="ConditionalMomentsForUncertainData"/> and subtracting unconditional moments.
         /// </summary>
         /// <param name="unconditionalMoments">
-        /// Unconditional moments [µ, s², µ3] against which the errors are computed.
+        /// Unconditional moments [ï¿½, sï¿½, ï¿½3] against which the errors are computed.
         /// </param>
         /// <param name="uncertainData">The uncertain data observation with its measurement error distribution.</param>
         /// <param name="isLog10">If true, observations are transformed to log10 space before computing moments.</param>
         /// <returns>
-        /// The g-vector errors [E[Y|dist]-µ, E[(Y-µ)²|dist]-s², E[(Y-µ)³|dist]-µ3].
+        /// The g-vector errors [E[Y|dist]-ï¿½, E[(Y-ï¿½)ï¿½|dist]-sï¿½, E[(Y-ï¿½)ï¿½|dist]-ï¿½3].
         /// Used by <see cref="CensoringAsymmetryScore"/> which needs errors directly.
         /// </returns>
         /// <remarks>
@@ -1429,32 +1436,32 @@ namespace RMC.BestFit.Models
         /// contributing one observation (or group of censored observations) per call.
         /// </summary>
         /// <param name="c">
-        /// Conditional central moments under event A (about µ):
-        /// c[0] = E[Y|A], c[1] = E[(Y-µ)²|A], c[2] = E[(Y-µ)³|A] (if q = 3).
-        /// For exact rows, pass the observed values: [Y, c2·(Y-µ)², c3·(Y-µ)³] with Bessel corrections.
+        /// Conditional central moments under event A (about ï¿½):
+        /// c[0] = E[Y|A], c[1] = E[(Y-ï¿½)ï¿½|A], c[2] = E[(Y-ï¿½)ï¿½|A] (if q = 3).
+        /// For exact rows, pass the observed values: [Y, c2ï¿½(Y-ï¿½)ï¿½, c3ï¿½(Y-ï¿½)ï¿½] with Bessel corrections.
         /// </param>
         /// <param name="m">
         /// Unconditional (model) central moments:
-        /// m[0] = µ, m[1] = s², m[2] = µ3 (if q = 3).
+        /// m[0] = ï¿½, m[1] = sï¿½, m[2] = ï¿½3 (if q = 3).
         /// </param>
         /// <param name="mean">Running sum of g (NOT averaged yet). Averaged to ? = Sg/n in the caller.</param>
         /// <param name="covariance">Running sum of gg' (NOT averaged yet). Used to form S = E[gg'] - ??' in the caller.</param>
         /// <param name="w">Observation weight: 1.0 for individual observations, or count for grouped censored data.</param>
         /// <param name="isCensored">If true, forces the outer-product fallback for E[gg'|A] regardless of family support.</param>
         /// <param name="useModelCovariance">
-        /// If true (and not censored), uses model higher central moments µ4–µ6 to compute the
+        /// If true (and not censored), uses model higher central moments ï¿½4ï¿½ï¿½6 to compute the
         /// theoretically correct E[gg'] for supported distribution families (Normal, Gamma, Pearson III).
-        /// Otherwise falls back to the outer-product approximation E[gg'|A] ˜ E[g|A]·E[g|A]'.
+        /// Otherwise falls back to the outer-product approximation E[gg'|A] ï¿½ E[g|A]ï¿½E[g|A]'.
         /// </param>
         /// <param name="modelSigma">
         /// Model standard deviation s, passed directly from the distribution.
         /// Required because for q &lt; 3 distributions (Exponential, Gamma),
-        /// the moments array m[] does not contain µ3, so s and ? cannot
+        /// the moments array m[] does not contain ï¿½3, so s and ? cannot
         /// be derived from m[] alone.
         /// </param>
         /// <param name="modelGamma">
         /// Model skewness coefficient ?, passed directly from the distribution.
-        /// Used with modelSigma to compute µ3 = ?s³ and higher central moments via
+        /// Used with modelSigma to compute ï¿½3 = ?sï¿½ and higher central moments via
         /// <see cref="Mu456_Pearson3_FromSigmaGamma"/>.
         /// </param>
         /// <param name="measurementErrorSecondMoment">
@@ -1468,16 +1475,16 @@ namespace RMC.BestFit.Models
         /// </para>
         /// <para>
         /// <b>Model-based path (exact data, supported families):</b> Uses the distribution's
-        /// higher central moments µ4, µ5, µ6 to compute E[gg'] analytically. For the moment
-        /// condition vector g = [(Y-µ), (Y-µ)²-s², (Y-µ)³-µ3], the second-moment matrix is:
-        /// M11 = µ2, M12 = µ3, M22 = µ4-µ2², M13 = µ4, M23 = µ5-µ2µ3, M33 = µ6-µ3².
+        /// higher central moments ï¿½4, ï¿½5, ï¿½6 to compute E[gg'] analytically. For the moment
+        /// condition vector g = [(Y-ï¿½), (Y-ï¿½)ï¿½-sï¿½, (Y-ï¿½)ï¿½-ï¿½3], the second-moment matrix is:
+        /// M11 = ï¿½2, M12 = ï¿½3, M22 = ï¿½4-ï¿½2ï¿½, M13 = ï¿½4, M23 = ï¿½5-ï¿½2ï¿½3, M33 = ï¿½6-ï¿½3ï¿½.
         /// This gives the optimal weighting matrix for efficient GMM.
         /// </para>
         /// <para>
         /// <b>Outer-product path (censored data or unsupported families):</b> Approximates
-        /// E[gg'|A] ˜ E[g|A]?E[g|A]', producing a rank-1 contribution. This is the standard
+        /// E[gg'|A] ï¿½ E[g|A]?E[g|A]', producing a rank-1 contribution. This is the standard
         /// approach for censored observations in the GMM literature, since the unconditional
-        /// µ4–µ6 formulas do not apply to truncated conditional distributions.
+        /// ï¿½4ï¿½ï¿½6 formulas do not apply to truncated conditional distributions.
         /// </para>
         /// <para>
         /// <b>Measurement-error rows:</b> The uncertain-data integration supplies the raw
@@ -1499,22 +1506,22 @@ namespace RMC.BestFit.Models
         {
             int q = mean.Length;
 
-            // Unconditional low-order (about µ)
+            // Unconditional low-order (about ï¿½)
             double mu = m[0];
             double mu2 = m[1];
             double mu3 = (q >= 3 && m.Length >= 3) ? m[2] : 0.0;
 
-            // Use model-provided sigma/gamma for higher central moments (µ4–µ6).
+            // Use model-provided sigma/gamma for higher central moments (ï¿½4ï¿½ï¿½6).
             // For q<3 distributions (Exponential, Gamma), the moments array m[]
-            // doesn't include µ3, so gamma cannot be derived from m[] alone.
+            // doesn't include ï¿½3, so gamma cannot be derived from m[] alone.
             // The caller passes the model's StandardDeviation and Skewness directly.
             double sigma = modelSigma;
             double gamma = modelGamma;
 
-            // "Conditional" pieces provided for this row (about µ for indices =1)
-            double c1 = c[0] - mu;                     // E[(Y-µ)|A] or (Y-µ) for exact row
-            double c2 = (c.Length >= 2) ? c[1] : 0.0;  // E[(Y-µ)^2|A]  or (Y-µ)^2
-            double c3 = (q >= 3 && c.Length >= 3) ? c[2] : 0.0; // E[(Y-µ)^3|A] or (Y-µ)^3
+            // "Conditional" pieces provided for this row (about ï¿½ for indices =1)
+            double c1 = c[0] - mu;                     // E[(Y-ï¿½)|A] or (Y-ï¿½) for exact row
+            double c2 = (c.Length >= 2) ? c[1] : 0.0;  // E[(Y-ï¿½)^2|A]  or (Y-ï¿½)^2
+            double c3 = (q >= 3 && c.Length >= 3) ? c[2] : 0.0; // E[(Y-ï¿½)^3|A] or (Y-ï¿½)^3
 
             // E[g|A]
             double eg1 = c1;
@@ -1561,7 +1568,7 @@ namespace RMC.BestFit.Models
 
             if (!isCensored && useModelCovariance)
             {
-                // Try to use model µ4..µ6 to get the proper "inflated" variance for EXACT rows.
+                // Try to use model ï¿½4..ï¿½6 to get the proper "inflated" variance for EXACT rows.
                 double mu4 = 0.0, mu5 = 0.0, mu6 = 0.0;
 
                 switch (DistributionType)
@@ -1578,7 +1585,7 @@ namespace RMC.BestFit.Models
                     // If you want to extend to other families, add cases here, e.g.:
                     case UnivariateDistributionType.Normal:
                     case UnivariateDistributionType.LogNormal:
-                        // µ4 = 3s^4, µ5 = 0, µ6 = 15s^6
+                        // ï¿½4 = 3s^4, ï¿½5 = 0, ï¿½6 = 15s^6
                         {
                             double s2 = mu2;
                             double s4 = s2 * s2;
@@ -1599,9 +1606,9 @@ namespace RMC.BestFit.Models
                 {
                     // Per-row E[gg?] using model central moments (unconditional)
                     // g = [ g1,             g2,                  g3              ]
-                    //   = [ (Y-µ),          (Y-µ)^2 - µ2,        (Y-µ)^3 - µ3    ]
+                    //   = [ (Y-ï¿½),          (Y-ï¿½)^2 - ï¿½2,        (Y-ï¿½)^3 - ï¿½3    ]
                     //
-                    // Use model µ3 = ?s³ instead of mu3 from m[2], which is 0 for
+                    // Use model ï¿½3 = ?sï¿½ instead of mu3 from m[2], which is 0 for
                     // q<3 distributions (Exponential, Gamma) since m[] has only q entries.
                     double modelMu3 = gamma * sigma * sigma * sigma;
 
@@ -1612,9 +1619,9 @@ namespace RMC.BestFit.Models
                     double M13 = 0.0, M23 = 0.0, M33 = 0.0;
                     if (q >= 3)
                     {
-                        M13 = mu4;                         // E[(Y-µ)·((Y-µ)³-µ3)] = µ4
-                        M23 = mu5 - mu2 * modelMu3;        // E[((Y-µ)²-µ2)·((Y-µ)³-µ3)] = µ5 - µ2µ3
-                        M33 = mu6 - modelMu3 * modelMu3;   // E[((Y-µ)³-µ3)²] = µ6 - µ3²
+                        M13 = mu4;                         // E[(Y-ï¿½)ï¿½((Y-ï¿½)ï¿½-ï¿½3)] = ï¿½4
+                        M23 = mu5 - mu2 * modelMu3;        // E[((Y-ï¿½)ï¿½-ï¿½2)ï¿½((Y-ï¿½)ï¿½-ï¿½3)] = ï¿½5 - ï¿½2ï¿½3
+                        M33 = mu6 - modelMu3 * modelMu3;   // E[((Y-ï¿½)ï¿½-ï¿½3)ï¿½] = ï¿½6 - ï¿½3ï¿½
                     }
 
                     covariance[0, 0] += w * M11;
@@ -1672,7 +1679,7 @@ namespace RMC.BestFit.Models
         /// <param name="parameters">Parameter values in link space.</param>
         /// <returns>
         /// An array of q scores where:
-        /// S ˜ 0 indicates symmetric censoring,
+        /// S ï¿½ 0 indicates symmetric censoring,
         /// S &gt; 0 indicates right-tail pull (high values censored more),
         /// S &lt; 0 indicates left-tail pull (low values censored more).
         /// Returns NaN-filled array if parameters are invalid.
@@ -1724,7 +1731,7 @@ namespace RMC.BestFit.Models
                 model = Distribution.Clone();
             }
 
-            // Validate parameters without throwing — called frequently during optimization
+            // Validate parameters without throwing ï¿½ called frequently during optimization
             var validation = model.ValidateParameters(parameters, false);
             if (validation is not null)
             {
@@ -1750,7 +1757,7 @@ namespace RMC.BestFit.Models
                 return score;
             }
 
-            // Store unconditional moments: [µ, s², µ3]
+            // Store unconditional moments: [ï¿½, sï¿½, ï¿½3]
             var unconditionalMoments = new double[q];
             unconditionalMoments[0] = mu;
             if (q >= 2) unconditionalMoments[1] = sigma2;
@@ -1772,7 +1779,7 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Low outlier moments — left-censored below the threshold
+            // Low outlier moments ï¿½ left-censored below the threshold
             if (DataFrame.NumberOfLowOutliers > 0)
             {
                 var lower = min;
@@ -1786,7 +1793,7 @@ namespace RMC.BestFit.Models
                 AccumulatePull(errors, DataFrame.NumberOfLowOutliers);
             }
 
-            // Exact data — non-outlier observed values with Bessel corrections
+            // Exact data ï¿½ non-outlier observed values with Bessel corrections
             foreach (ExactData data in DataFrame.ExactSeries)
             {
                 if (!data.IsLowOutlier)
@@ -1803,14 +1810,14 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Uncertain data — integrate over measurement error distribution
+            // Uncertain data ï¿½ integrate over measurement error distribution
             foreach (UncertainData data in DataFrame.UncertainSeries)
             {
                 var uncertainErrors = MomentConditionsForUncertainData(unconditionalMoments, data, isLog10);
                 AccumulatePull(uncertainErrors, 1);
             }
 
-            // Interval data — conditional moments over [L, U]
+            // Interval data ï¿½ conditional moments over [L, U]
             foreach (IntervalData data in DataFrame.IntervalSeries)
             {
                 var lower = Math.Max(min, isLog10 ? data.Log10LowerValue : data.LowerValue);
@@ -1824,7 +1831,7 @@ namespace RMC.BestFit.Models
                 AccumulatePull(errors, 1);
             }
 
-            // Threshold data — left-censored and right-censored
+            // Threshold data ï¿½ left-censored and right-censored
             foreach (ThresholdData data in DataFrame.ThresholdSeries)
             {
                 // Left censored
@@ -1873,7 +1880,7 @@ namespace RMC.BestFit.Models
         /// A q-length array with scores in [-1, +1]:
         /// S &gt; 0 indicates more weighted data above the model expectation (right-tail dominance),
         /// S &lt; 0 indicates more weighted data below the model expectation (left-tail dominance),
-        /// S ˜ 0 indicates balanced data.
+        /// S ï¿½ 0 indicates balanced data.
         /// Returns NaN-filled array if parameters are invalid.
         /// </returns>
         /// <remarks>
@@ -1888,14 +1895,14 @@ namespace RMC.BestFit.Models
         /// Unlike <see cref="CensoringAsymmetryScore"/> which decomposes error magnitudes (and is
         /// constrained to zero at the GMM solution by ? = 0), WEDS counts the weighted fraction of
         /// observations on each side. The count decomposition is NOT constrained by ? = 0, so WEDS
-        /// is nonzero whenever the data or censoring structure is directionally asymmetric — even
+        /// is nonzero whenever the data or censoring structure is directionally asymmetric ï¿½ even
         /// without penalties and with perfect GMM convergence.
         /// </para>
         /// <para>
         /// For the location parameter (index 0), WEDS measures what fraction of the weighted sample
         /// falls above vs below the fitted mean. Left censoring (low outliers) produces WEDS &lt; 0;
         /// right censoring (historical floods) produces WEDS &gt; 0. For the Exponential distribution,
-        /// WEDS is naturally negative (~-0.26) because P(X &lt; µ) = 1 - 1/e ˜ 0.63.
+        /// WEDS is naturally negative (~-0.26) because P(X &lt; ï¿½) = 1 - 1/e ï¿½ 0.63.
         /// </para>
         /// </remarks>
         public double[] WeightedErrorDirectionScore(double[] parameters)
@@ -1958,7 +1965,7 @@ namespace RMC.BestFit.Models
                 return score;
             }
 
-            // Store unconditional moments: [µ, s², µ3]
+            // Store unconditional moments: [ï¿½, sï¿½, ï¿½3]
             var unconditionalMoments = new double[q];
             unconditionalMoments[0] = mu;
             if (q >= 2) unconditionalMoments[1] = sigma2;
@@ -1980,7 +1987,7 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Low outlier moments — left-censored below the threshold
+            // Low outlier moments ï¿½ left-censored below the threshold
             if (DataFrame.NumberOfLowOutliers > 0)
             {
                 var lower = min;
@@ -1994,7 +2001,7 @@ namespace RMC.BestFit.Models
                 AccumulateDirection(errors, DataFrame.NumberOfLowOutliers);
             }
 
-            // Exact data — non-outlier observed values with Bessel corrections
+            // Exact data ï¿½ non-outlier observed values with Bessel corrections
             foreach (ExactData data in DataFrame.ExactSeries)
             {
                 if (!data.IsLowOutlier)
@@ -2011,14 +2018,14 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Uncertain data — integrate over measurement error distribution
+            // Uncertain data ï¿½ integrate over measurement error distribution
             foreach (UncertainData data in DataFrame.UncertainSeries)
             {
                 var uncertainErrors = MomentConditionsForUncertainData(unconditionalMoments, data, isLog10);
                 AccumulateDirection(uncertainErrors, 1);
             }
 
-            // Interval data — conditional moments over [L, U]
+            // Interval data ï¿½ conditional moments over [L, U]
             foreach (IntervalData data in DataFrame.IntervalSeries)
             {
                 var lower = Math.Max(min, isLog10 ? data.Log10LowerValue : data.LowerValue);
@@ -2032,7 +2039,7 @@ namespace RMC.BestFit.Models
                 AccumulateDirection(errors, 1);
             }
 
-            // Threshold data — left-censored and right-censored
+            // Threshold data ï¿½ left-censored and right-censored
             foreach (ThresholdData data in DataFrame.ThresholdSeries)
             {
                 // Left censored
@@ -2096,12 +2103,12 @@ namespace RMC.BestFit.Models
 
         /// <summary>
         /// Computes per-observation moment condition g-vectors for all observations in the data frame,
-        /// returning an [n × q] matrix where row i contains the g-vector for observation i.
+        /// returning an [n ï¿½ q] matrix where row i contains the g-vector for observation i.
         /// </summary>
         /// <param name="parameters">Parameter values in link space (transformed by the link controller).</param>
         /// <returns>
         /// A double[n, q] matrix where n = <see cref="DataFrame.TotalRecordLength()"/> and q = <see cref="NumberOfParameters"/>.
-        /// Each row contains [g1, g2, g3] = [c1-µ, c2-s², c3-µ3] for the corresponding observation.
+        /// Each row contains [g1, g2, g3] = [c1-ï¿½, c2-sï¿½, c3-ï¿½3] for the corresponding observation.
         /// Returns a zero-filled matrix if parameters are invalid.
         /// </returns>
         /// <remarks>
@@ -2159,7 +2166,7 @@ namespace RMC.BestFit.Models
                 model = Distribution.Clone();
             }
 
-            // Validate parameters without throwing — called frequently during optimization
+            // Validate parameters without throwing ï¿½ called frequently during optimization
             var validation = model.ValidateParameters(parameters, false);
             if (validation is not null)
             {
@@ -2183,7 +2190,7 @@ namespace RMC.BestFit.Models
                 return result;
             }
 
-            // Store unconditional moments: [µ, s², µ3]
+            // Store unconditional moments: [ï¿½, sï¿½, ï¿½3]
             var unconditionalMoments = new double[q];
             unconditionalMoments[0] = mu;
             if (q >= 2) unconditionalMoments[1] = sigma2;
@@ -2210,7 +2217,7 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Low outlier moments — treated as left-censored below the low outlier threshold
+            // Low outlier moments ï¿½ treated as left-censored below the low outlier threshold
             if (DataFrame.NumberOfLowOutliers > 0)
             {
                 var lower = min;
@@ -2222,7 +2229,7 @@ namespace RMC.BestFit.Models
                 StoreG(conditionalMoments, unconditionalMoments, DataFrame.NumberOfLowOutliers);
             }
 
-            // Exact data — non-outlier observed values with Bessel corrections
+            // Exact data ï¿½ non-outlier observed values with Bessel corrections
             foreach (ExactData data in DataFrame.ExactSeries)
             {
                 if (!data.IsLowOutlier)
@@ -2237,14 +2244,14 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Uncertain data — integrate over measurement error distribution
+            // Uncertain data ï¿½ integrate over measurement error distribution
             foreach (UncertainData data in DataFrame.UncertainSeries)
             {
                 var uncertainMoments = ConditionalMomentsForUncertainData(unconditionalMoments, data, isLog10);
                 StoreG(uncertainMoments, unconditionalMoments, 1);
             }
 
-            // Interval data — conditional moments over [L, U]
+            // Interval data ï¿½ conditional moments over [L, U]
             foreach (IntervalData data in DataFrame.IntervalSeries)
             {
                 var lower = Math.Max(min, isLog10 ? data.Log10LowerValue : data.LowerValue);
@@ -2256,7 +2263,7 @@ namespace RMC.BestFit.Models
                 StoreG(conditionalMoments, unconditionalMoments, 1);
             }
 
-            // Threshold data — left-censored (Y < threshold) and right-censored (Y >= threshold)
+            // Threshold data ï¿½ left-censored (Y < threshold) and right-censored (Y >= threshold)
             foreach (ThresholdData data in DataFrame.ThresholdSeries)
             {
                 // Left censored
@@ -2292,7 +2299,7 @@ namespace RMC.BestFit.Models
         /// <param name="probability">The non-exceedance probability, in the open interval (0, 1).</param>
         /// <param name="parameters">The distribution parameter values (moment parameters for B17C).</param>
         /// <returns>
-        /// The gradient vector ?F?¹(p)/??, where each element is the partial derivative
+        /// The gradient vector ?F?ï¿½(p)/??, where each element is the partial derivative
         /// of the quantile with respect to the corresponding parameter.
         /// </returns>
         /// <exception cref="ArgumentNullException">
@@ -2344,7 +2351,7 @@ namespace RMC.BestFit.Models
                 throw new ArgumentException("Invalid parameters for quantile gradient computation.");
             model.SetParameters(parameters);
 
-            // Get quantile gradient ?F?¹(p)/??
+            // Get quantile gradient ?F?ï¿½(p)/??
             if (DistributionType == UnivariateDistributionType.PearsonTypeIII ||
                 DistributionType == UnivariateDistributionType.LogPearsonTypeIII)
             {
@@ -2361,11 +2368,11 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="probability">The non-exceedance probability, strictly between 0 and 1.</param>
         /// <param name="parameters">
-        /// The distribution parameter values (moment-space: e.g., µ, s, ? for Pearson family;
-        /// µ, s for Normal/LogNormal). Length must equal <see cref="NumberOfParameters"/>.
+        /// The distribution parameter values (moment-space: e.g., ï¿½, s, ? for Pearson family;
+        /// ï¿½, s for Normal/LogNormal). Length must equal <see cref="NumberOfParameters"/>.
         /// </param>
         /// <param name="covarianceMatrix">
-        /// The p × p covariance matrix of the parameter estimates, where p = <see cref="NumberOfParameters"/>.
+        /// The p ï¿½ p covariance matrix of the parameter estimates, where p = <see cref="NumberOfParameters"/>.
         /// Typically obtained from <see cref="GeneralizedMethodOfMoments.GetCovarianceMatrix"/>.
         /// </param>
         /// <returns>
@@ -2381,7 +2388,7 @@ namespace RMC.BestFit.Models
         /// <remarks>
         /// <para>
         /// Uses the delta method to propagate parameter uncertainty to the quantile function:
-        /// Var(Q_p) = ?Q_p' · S · ?Q_p. Delegates to <see cref="QuantileGradient(double, double[])"/>
+        /// Var(Q_p) = ?Q_p' ï¿½ S ï¿½ ?Q_p. Delegates to <see cref="QuantileGradient(double, double[])"/>
         /// for the gradient computation, then forms the quadratic form g' S g.
         /// </para>
         /// </remarks>
@@ -2391,7 +2398,7 @@ namespace RMC.BestFit.Models
 
             int p = NumberOfParameters;
             if (covarianceMatrix.GetLength(0) != p || covarianceMatrix.GetLength(1) != p)
-                throw new ArgumentException($"Covariance matrix must be {p} × {p} but received {covarianceMatrix.GetLength(0)} × {covarianceMatrix.GetLength(1)}.", nameof(covarianceMatrix));
+                throw new ArgumentException($"Covariance matrix must be {p} ï¿½ {p} but received {covarianceMatrix.GetLength(0)} ï¿½ {covarianceMatrix.GetLength(1)}.", nameof(covarianceMatrix));
 
             // Get the quantile gradient vector
             var gradient = QuantileGradient(probability, parameters);
@@ -2418,6 +2425,38 @@ namespace RMC.BestFit.Models
             return DataFrame != null
                 ? new Bulletin17CDistribution(DataFrame, ToXElement())
                 : new Bulletin17CDistribution(ToXElement());
+        }
+
+        /// <summary>
+        /// Creates a deep clone of this Bulletin 17C model bound to the supplied data frame,
+        /// preserving the current parameters, parameter penalties, quantile penalties, and
+        /// link controller without any data-driven re-initialization.
+        /// </summary>
+        /// <param name="dataFrame">The data frame the clone will estimate against (e.g., a bootstrap resample).</param>
+        /// <returns>A new <see cref="Bulletin17CDistribution"/> bound to <paramref name="dataFrame"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="dataFrame"/> is null.</exception>
+        /// <remarks>
+        /// <para>
+        /// Round-trips through <see cref="Bulletin17CDistribution(DataFrame, XElement)"/> â€” the same
+        /// pattern used by <see cref="Clone"/> â€” so the data frame is assigned while the
+        /// deserialization flag suppresses <see cref="SetDefaultParameters"/>. The supplied frame's
+        /// threshold series is processed by the <see cref="DataFrame"/> setter; the parameter initial
+        /// values, bounds, priors, and penalty configuration (including regional-skew parameter
+        /// penalties) are restored from this instance's serialized snapshot instead of being rebuilt
+        /// from the new data.
+        /// </para>
+        /// <para>
+        /// Used by the bootstrap uncertainty methods so each replicate estimates from the parent's
+        /// fitted state. Assigning the resampled frame through the public <see cref="DataFrame"/>
+        /// setter instead would invoke <see cref="SetDefaultParameters"/>, which discards the cloned
+        /// initial values, disables every parameter penalty, and â€” when default-parameter derivation
+        /// fails for the resampled frame â€” empties the parameter list entirely.
+        /// </para>
+        /// </remarks>
+        public Bulletin17CDistribution CloneWithDataFrame(DataFrame dataFrame)
+        {
+            if (dataFrame == null) throw new ArgumentNullException(nameof(dataFrame));
+            return new Bulletin17CDistribution(dataFrame, ToXElement());
         }
 
         /// <inheritdoc/>

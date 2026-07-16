@@ -608,4 +608,150 @@ public class Bulletin17CDistributionTests
     }
 
     #endregion
+
+    #region CloneWithDataFrame
+
+    /// <summary>
+    /// Builds a parent LP3 model with fitted-like parameter values and an enabled
+    /// regional-skew parameter penalty, mimicking the state before a bootstrap run.
+    /// </summary>
+    /// <param name="df">The data frame the parent model is bound to.</param>
+    /// <returns>The configured parent model.</returns>
+    private static Bulletin17CDistribution CreateParentWithSkewPenalty(BestFitDataFrame df)
+    {
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
+        model.SetParameterValues(new[] { 3.3, 0.14, 0.4 });
+        model.ParameterPenalties[2].Enabled = true;
+        model.ParameterPenalties[2].Mean = 0.421;
+        model.ParameterPenalties[2].MSE = 0.302;
+        return model;
+    }
+
+    /// <summary>
+    /// Builds a second, independent data frame standing in for a bootstrap resample,
+    /// including an unprocessed historical threshold.
+    /// </summary>
+    /// <returns>The created boot-style data frame.</returns>
+    private static BestFitDataFrame CreateBootDataFrameWithThreshold()
+    {
+        var df = CreateFloodDataFrame();
+        df.ThresholdSeries.Add(new ThresholdData(1930, 1940, 25000) { NumberAbove = 2 });
+        return df;
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame rejects a null data frame.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_NullFrame_Throws()
+    {
+        var model = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        Assert.ThrowsException<ArgumentNullException>(() => model.CloneWithDataFrame(null!));
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame binds the supplied frame to the clone, preserves the parent's
+    /// parameter values and bounds, and leaves the parent bound to its original frame.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_BindsSuppliedFrame_AndPreservesParameters()
+    {
+        var parentFrame = CreateFloodDataFrame();
+        var parent = CreateParentWithSkewPenalty(parentFrame);
+        var bootFrame = CreateBootDataFrameWithThreshold();
+
+        var clone = parent.CloneWithDataFrame(bootFrame);
+
+        Assert.AreSame(bootFrame, clone.DataFrame, "The clone must be bound to the supplied frame.");
+        Assert.AreSame(parentFrame, parent.DataFrame, "The parent must keep its original frame.");
+        Assert.AreEqual(parent.NumberOfParameters, clone.NumberOfParameters);
+        for (int i = 0; i < parent.NumberOfParameters; i++)
+        {
+            Assert.AreEqual(parent.Parameters[i].Value, clone.Parameters[i].Value, 1e-12,
+                $"Parameter {i} value must survive the clone (no SetDefaultParameters rebuild).");
+            Assert.AreEqual(parent.Parameters[i].LowerBound, clone.Parameters[i].LowerBound, 1e-12);
+            Assert.AreEqual(parent.Parameters[i].UpperBound, clone.Parameters[i].UpperBound, 1e-12);
+        }
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame preserves the parent's penalty configuration — the regression
+    /// guarded here is the bootstrap penalty wipe, where assigning the boot frame through
+    /// the public DataFrame setter rebuilt every parameter penalty with Enabled = false.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_PreservesPenaltyConfiguration()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+
+        var clone = parent.CloneWithDataFrame(CreateBootDataFrameWithThreshold());
+
+        Assert.AreEqual(parent.ParameterPenalties.Count, clone.ParameterPenalties.Count);
+        Assert.IsTrue(clone.ParameterPenalties[2].Enabled, "The enabled skew penalty must survive the clone.");
+        Assert.AreEqual(0.421, clone.ParameterPenalties[2].Mean, 1e-12);
+        Assert.AreEqual(0.302, clone.ParameterPenalties[2].MSE, 1e-12);
+        Assert.AreEqual(parent.QuantilePenalties.Count, clone.QuantilePenalties.Count);
+    }
+
+    /// <summary>
+    /// After CloneWithDataFrame, SetRandomPenaltyFunction sees the preserved enabled
+    /// penalty and installs a non-null randomized penalty function, so bootstrap
+    /// replicates propagate regional-skew prior uncertainty as designed.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_ThenSetRandomPenaltyFunction_InstallsPenalty()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        var thetaHat = parent.Parameters.Select(p => p.Value).ToArray();
+
+        var clone = parent.CloneWithDataFrame(CreateBootDataFrameWithThreshold());
+        clone.SetParameterValues(thetaHat);
+        clone.SetRandomPenaltyFunction(thetaHat, new Random(1));
+
+        Assert.IsNotNull(clone.PenaltyFunction,
+            "The bootstrap penalty must be installed from the preserved penalty configuration.");
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame processes the supplied frame's threshold series during the
+    /// DataFrame assignment, so the clone's moment conditions see effective counts.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_ProcessesSuppliedFrameThresholds()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        var bootFrame = CreateBootDataFrameWithThreshold();
+
+        var clone = parent.CloneWithDataFrame(bootFrame);
+
+        var threshold = (ThresholdData)clone.DataFrame.ThresholdSeries[0];
+        Assert.AreEqual(2, threshold.NumberAbove, "The user-supplied exceedance count is retained.");
+        Assert.AreEqual(9, threshold.NumberBelow,
+            "ProcessThresholdSeries must derive NumberBelow = Duration (11) - NumberAbove (2) for a non-overlapping threshold.");
+    }
+
+    /// <summary>
+    /// The XElement constructor restores serialized parameters and penalties even when the
+    /// supplied frame raises threshold-recompute notifications during construction — the
+    /// deserialization guard keeps DataFrame_PropertyChanged from rebuilding defaults mid-restore.
+    /// </summary>
+    [TestMethod]
+    public void XElementConstructor_WithUnprocessedThresholdFrame_PreservesSerializedState()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        var xml = parent.ToXElement();
+        var unprocessedFrame = CreateBootDataFrameWithThreshold();
+
+        var restored = new Bulletin17CDistribution(unprocessedFrame, xml);
+
+        Assert.AreEqual(parent.NumberOfParameters, restored.NumberOfParameters);
+        for (int i = 0; i < parent.NumberOfParameters; i++)
+        {
+            Assert.AreEqual(parent.Parameters[i].Value, restored.Parameters[i].Value, 1e-12,
+                $"Parameter {i} must restore from XML, not from boot-frame defaults.");
+        }
+        Assert.IsTrue(restored.ParameterPenalties[2].Enabled, "The serialized penalty state must be restored.");
+    }
+
+    #endregion
 }
