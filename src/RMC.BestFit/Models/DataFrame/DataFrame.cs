@@ -277,7 +277,7 @@ namespace RMC.BestFit.Models
                 if (_plottingParameter != value)
                 {
                     _plottingParameter = value;
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
                     RaisePropertyChange(nameof(PlottingParameter));       
                 }
             }
@@ -346,7 +346,7 @@ namespace RMC.BestFit.Models
             if (ExactSeries.SuppressCollectionChanged == false)
             {
                 CalculateLambda();
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
             }
         }
 
@@ -385,7 +385,7 @@ namespace RMC.BestFit.Models
             //
             RaisePropertyChange(nameof(UncertainSeries));
             if (UncertainSeries.SuppressCollectionChanged == false)
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
         }
 
         /// <summary>
@@ -423,7 +423,7 @@ namespace RMC.BestFit.Models
             //
             RaisePropertyChange(nameof(IntervalSeries));
             if (IntervalSeries.SuppressCollectionChanged == false)
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
         }
 
         /// <summary>
@@ -461,7 +461,7 @@ namespace RMC.BestFit.Models
             //
             RaisePropertyChange(nameof(ThresholdSeries));
             if (ThresholdSeries.SuppressCollectionChanged == false)
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
         }
 
         /// <summary>
@@ -474,7 +474,7 @@ namespace RMC.BestFit.Models
             if (ExactSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
                 else
                     Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
@@ -491,7 +491,7 @@ namespace RMC.BestFit.Models
             if (UncertainSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
                 else
                     Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
@@ -508,7 +508,7 @@ namespace RMC.BestFit.Models
             if (IntervalSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
                 else
                     Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
@@ -525,7 +525,7 @@ namespace RMC.BestFit.Models
             if (ThresholdSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
                 else
                     Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
@@ -1144,6 +1144,27 @@ namespace RMC.BestFit.Models
         #endregion
 
         #region Plotting Positions
+
+        /// <summary>
+        /// Recalculates plotting positions after an interactive data edit when threshold inputs are valid.
+        /// </summary>
+        /// <remarks>
+        /// Invalid threshold windows and counts can be transient while a user or API request populates
+        /// the series. Explicit calls to <see cref="CalculatePlottingPositions"/> remain strict. The
+        /// threshold validity scan runs only after the calculation rejects an invalid state, preserving
+        /// the fast path for valid interactive edits.
+        /// </remarks>
+        private void RecalculatePlottingPositionsAfterEdit()
+        {
+            try
+            {
+                CalculatePlottingPositions();
+            }
+            catch (InvalidOperationException) when (!ThresholdSeries.Validate().IsValid)
+            {
+                Debug.WriteLine("Plotting positions were deferred until the threshold series is valid.");
+            }
+        }
 
         /// <summary>
         /// Provides plotting positions for censored data using the Hirsch-Stedinger plotting position formula.
