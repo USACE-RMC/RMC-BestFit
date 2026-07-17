@@ -1,13 +1,13 @@
 # Code of Conduct
 
-RMC-BestFit follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+This project follows the [Contributor Covenant Code of Conduct v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
 
-## Our Standards
+Please read the full text at the link above. In summary, we are committed to providing a welcoming and inclusive environment for everyone. Be respectful, constructive, and professional in all interactions.
 
-We expect participants to communicate respectfully, assume good intent, and focus discussions on improving the software, documentation, and validation record.
+## Reporting
 
-Unacceptable behavior includes harassment, personal attacks, discriminatory language, publishing private information without permission, or other conduct that would reasonably make participation unsafe or unproductive.
+If you experience or witness unacceptable behavior, please contact the project maintainers at cole.h.smith@usace.army.mil.
 
-## Enforcement
+## Attribution
 
-Project maintainers may moderate issues, pull requests, discussions, or other project spaces to preserve a constructive technical environment. Serious concerns should be reported through official USACE-RMC channels.
+This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1.
