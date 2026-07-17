@@ -5,12 +5,12 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.Support;
 
 /// <summary>
-/// Unit tests for the <see cref="QuantilePenalty"/> class.
+/// Unit tests for the <c>QuantilePenalty</c> class.
 /// </summary>
 /// <remarks>
 /// Covers: default construction, XML round-trip, <c>IsValid</c>, <c>Validate()</c>,
 /// <c>Function()</c> in real and log10 space, <c>Clone()</c>, <c>MeanValue</c>/<c>MSEValue</c>,
-/// <c>UpperValue</c>/<c>LowerValue</c>, and <see cref="INotifyPropertyChanged"/> event firing.
+/// <c>UpperValue</c>/<c>LowerValue</c>, and <c>INotifyPropertyChanged</c> event firing.
 /// </remarks>
 [TestClass]
 public class QuantilePenaltyTests

@@ -1,6 +1,8 @@
 using System.Reflection;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
 
 namespace RMC.BestFit.Tests.Univariate;
 
@@ -137,7 +139,7 @@ public class ThresholdLikelihoodGuardTests
     /// Verifies nonstationary threshold expansion handles one-sided zero counts.
     /// </summary>
     /// <remarks>
-    /// <see cref="DataFrame.CreateFullTimeSeries"/> expands grouped threshold records into
+    /// <c>DataFrame.CreateFullTimeSeries</c> expands grouped threshold records into
     /// single-count threshold observations where exactly one side has count one and the other
     /// side has count zero. This exercises the nonstationary aggregate, pointwise, and component
     /// likelihood paths.
@@ -145,8 +147,8 @@ public class ThresholdLikelihoodGuardTests
     [TestMethod]
     public void NonstationaryUnivariateThresholdLikelihood_SplitThresholdsRemainFinite()
     {
-        var dataFrame = new DataFrame();
-        dataFrame.ThresholdSeries.Add(new ThresholdData(2000, 2002, 100.0) { NumberAbove = 1 });
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2000, 2002, 100.0) { NumberAbove = 1 });
 
         var model = new UnivariateDistribution { UseDefaultFlatPriors = false };
         model.Distribution = new Normal(100.0, 10.0);
@@ -174,10 +176,10 @@ public class ThresholdLikelihoodGuardTests
     /// Tests adjust the threshold counts after model construction so the model's data-frame
     /// subscription cannot reprocess and overwrite the edge-case counts.
     /// </remarks>
-    private static (DataFrame DataFrame, ThresholdData Threshold) CreateThresholdDataFrame()
+    private static (BestFitDataFrame BestFitDataFrame, BestFitThresholdData Threshold) CreateThresholdDataFrame()
     {
-        var dataFrame = new DataFrame();
-        var threshold = new ThresholdData(2000, 2002, 100.0);
+        var dataFrame = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(2000, 2002, 100.0);
         dataFrame.ThresholdSeries.Add(threshold);
         return (dataFrame, threshold);
     }
@@ -195,7 +197,7 @@ public class ThresholdLikelihoodGuardTests
     /// Default flat priors are disabled where possible because these tests evaluate fixed
     /// likelihood values rather than estimating parameters from the threshold fixture.
     /// </remarks>
-    private static (IModel Model, double[] Parameters) CreateModel(ModelKind modelKind, DataFrame dataFrame)
+    private static (IModel Model, double[] Parameters) CreateModel(ModelKind modelKind, BestFitDataFrame dataFrame)
     {
         return modelKind switch
         {
@@ -212,7 +214,7 @@ public class ThresholdLikelihoodGuardTests
     /// </summary>
     /// <param name="dataFrame">The data frame to attach.</param>
     /// <returns>The model and Normal parameter vector.</returns>
-    private static (IModel Model, double[] Parameters) CreateUnivariateModel(DataFrame dataFrame)
+    private static (IModel Model, double[] Parameters) CreateUnivariateModel(BestFitDataFrame dataFrame)
     {
         var model = new UnivariateDistribution { UseDefaultFlatPriors = false };
         model.Distribution = new Normal(100.0, 10.0);
@@ -225,7 +227,7 @@ public class ThresholdLikelihoodGuardTests
     /// </summary>
     /// <param name="dataFrame">The data frame to attach.</param>
     /// <returns>The model and component parameter vector.</returns>
-    private static (IModel Model, double[] Parameters) CreateMixtureModel(DataFrame dataFrame)
+    private static (IModel Model, double[] Parameters) CreateMixtureModel(BestFitDataFrame dataFrame)
     {
         var model = new MixtureModel { UseDefaultFlatPriors = false };
         model.Mixture = new Mixture([1.0], [new Normal(100.0, 10.0)]);
@@ -238,7 +240,7 @@ public class ThresholdLikelihoodGuardTests
     /// </summary>
     /// <param name="dataFrame">The data frame to attach.</param>
     /// <returns>The model and component parameter vector.</returns>
-    private static (IModel Model, double[] Parameters) CreateCompetingRisksModel(DataFrame dataFrame)
+    private static (IModel Model, double[] Parameters) CreateCompetingRisksModel(BestFitDataFrame dataFrame)
     {
         var model = new CompetingRisksModel { UseDefaultFlatPriors = false };
         model.CompetingRisks = new CompetingRisks(new UnivariateDistributionBase[]
@@ -254,7 +256,7 @@ public class ThresholdLikelihoodGuardTests
     /// </summary>
     /// <param name="dataFrame">The data frame to attach.</param>
     /// <returns>The model and GEV parameter vector.</returns>
-    private static (IModel Model, double[] Parameters) CreatePointProcessModel(DataFrame dataFrame)
+    private static (IModel Model, double[] Parameters) CreatePointProcessModel(BestFitDataFrame dataFrame)
     {
         var model = new PointProcessModel
         {
@@ -281,15 +283,15 @@ public class ThresholdLikelihoodGuardTests
     /// Thrown if the expected backing fields are unavailable.
     /// </exception>
     /// <remarks>
-    /// <see cref="ThresholdData.NumberBelow"/> has an internal setter and model data-frame
+    /// <c>ThresholdData.NumberBelow</c> has an internal setter and model data-frame
     /// subscriptions reprocess threshold counts when the data frame changes. Reflection keeps
     /// these tests focused on the likelihood edge case without changing production visibility.
     /// </remarks>
-    private static void SetThresholdCounts(ThresholdData threshold, int numberBelow, int numberAbove)
+    private static void SetThresholdCounts(BestFitThresholdData threshold, int numberBelow, int numberAbove)
     {
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        var belowField = typeof(ThresholdData).GetField("_numberBelow", flags);
-        var aboveField = typeof(ThresholdData).GetField("_numberAbove", flags);
+        var belowField = typeof(BestFitThresholdData).GetField("_numberBelow", flags);
+        var aboveField = typeof(BestFitThresholdData).GetField("_numberAbove", flags);
 
         if (belowField is null || aboveField is null)
             throw new InvalidOperationException("Threshold count backing fields were not found.");

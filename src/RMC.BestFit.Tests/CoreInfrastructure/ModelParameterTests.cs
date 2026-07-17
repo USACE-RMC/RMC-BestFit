@@ -5,7 +5,7 @@ using System.ComponentModel;
 namespace RMC.BestFit.Tests.CoreInfrastructure;
 
 /// <summary>
-/// Unit tests for the <see cref="ModelParameter"/> class.
+/// Unit tests for the <c>ModelParameter</c> class.
 /// Tests construction, validation, serialization, and edge cases.
 /// </summary>
 [TestClass]

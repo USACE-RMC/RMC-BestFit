@@ -1,0 +1,37 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What engineering, analysis, or developer workflow would this help?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the feature you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Link guidance documents, journal articles, validation data, or comparable software behavior if relevant.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Model library
+        - API
+        - Desktop application
+        - Documentation
+        - Validation
+        - Other
+    validations:
+      required: true

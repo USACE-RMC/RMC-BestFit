@@ -2,11 +2,12 @@ using Numerics.Data;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesAnalysis;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="MAAnalysis"/> wrapper.
+/// Programmatic unit tests for the <c>MAAnalysis</c> wrapper.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,9 +25,9 @@ public class MAAnalysisTests
     /// Deterministic 60-observation annual streamflow fixture with MA(1) structure.
     /// Mean ≈ 5000, theta ≈ 0.5, sigma ≈ 600.
     /// </summary>
-    private static TimeSeries CreateAnnualStreamflowTimeSeries()
+    private static NumericsTimeSeries CreateAnnualStreamflowTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
 
         double mean = 5000;
@@ -55,9 +56,9 @@ public class MAAnalysisTests
     /// <summary>
     /// Deterministic short fixture (15 observations) for edge-case validation.
     /// </summary>
-    private static TimeSeries CreateShortTimeSeries()
+    private static NumericsTimeSeries CreateShortTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
         var rng = new Random(54321);
 
         double mean = 3000;

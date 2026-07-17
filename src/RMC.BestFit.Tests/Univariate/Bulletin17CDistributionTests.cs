@@ -2,12 +2,12 @@ using Numerics.Distributions;
 using Numerics.Functions;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="Bulletin17CDistribution"/> class.
+/// Programmatic unit tests for the <c>Bulletin17CDistribution</c> class.
 /// </summary>
 /// <remarks>
 /// Covers construction, supported-distribution gating, parameter management, validation,
@@ -27,9 +27,16 @@ public class Bulletin17CDistributionTests
     private static readonly double[] InlineFloodData = new LogNormal(8.0, 0.4)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateFloodDataFrame()
+    /// <summary>
+    /// Creates flood Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateFloodDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
         {
             // Add as exact systematic record (simulated water years).
@@ -44,7 +51,7 @@ public class Bulletin17CDistributionTests
 
     /// <summary>
     /// Default constructor falls back to LogPearsonTypeIII (the canonical B17C distribution)
-    /// even with no DataFrame attached. Quantile penalty list is initialized non-empty so
+    /// even with no BestFitDataFrame attached. Quantile penalty list is initialized non-empty so
     /// the UI grid binds correctly before InputData is selected.
     /// </summary>
     [TestMethod]
@@ -59,8 +66,8 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Verifies that the (DataFrame, type) constructor sets the distribution type and
-    /// triggers <see cref="Bulletin17CDistribution.SetDefaultParameters"/>, which seeds
+    /// Verifies that the (BestFitDataFrame, type) constructor sets the distribution type and
+    /// triggers <c>Bulletin17CDistribution.SetDefaultParameters</c>, which seeds
     /// the parameter list from the distribution.
     /// </summary>
     [TestMethod]
@@ -77,7 +84,49 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// The (DataFrame, distribution) overload clones the supplied distribution to avoid aliasing.
+    /// Duplicate bootstrap-like values must not poison the ROS moment path used by B17C
+    /// default parameter setup when low outliers are present.
+    /// </summary>
+    [TestMethod]
+    public void SetDefaultParameters_DuplicateLowOutlierSample_ComputesFiniteInitials()
+    {
+        var df = new BestFitDataFrame
+        {
+            ExactSeries = new ExactSeries(
+            [
+                10d,
+                100d,
+                100d,
+                125d,
+                125d,
+                150d,
+                150d,
+                200d,
+                200d,
+                250d
+            ])
+        };
+        df.LowOutlierThreshold = 50d;
+        df.SetLowOutliersFromThreshold();
+        df.CalculatePlottingPositions();
+
+        var moments = df.GetNonparametricMomentsROS(useLog10Values: true);
+
+        Assert.AreEqual(1, df.NumberOfLowOutliers);
+        Assert.IsNotNull(moments, "ROS moments should be computed for the duplicate bootstrap-like fixture.");
+        Assert.IsTrue(moments.All(x => !double.IsNaN(x) && !double.IsInfinity(x)),
+            "ROS moments must remain finite when duplicate values are present.");
+
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
+        model.SetDefaultParameters();
+
+        Assert.AreEqual(3, model.NumberOfParameters);
+        Assert.IsTrue(model.Parameters.All(p => !double.IsNaN(p.Value) && !double.IsInfinity(p.Value)),
+            "B17C default parameters must remain finite when the ROS empirical distribution contains duplicate values.");
+    }
+
+    /// <summary>
+    /// The (BestFitDataFrame, distribution) overload clones the supplied distribution to avoid aliasing.
     /// </summary>
     [TestMethod]
     public void Constructor_WithDistributionInstance_ClonesDistribution()
@@ -243,7 +292,7 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Sample size derives from <see cref="DataFrame.TotalRecordLength"/>; with no DataFrame it falls back to zero.
+    /// Sample size derives from <c>DataFrame.TotalRecordLength</c>; with no BestFitDataFrame it falls back to zero.
     /// </summary>
     [TestMethod]
     public void SampleSize_NullDataFrame_IsZero()
@@ -271,14 +320,14 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Validate must reject a null DataFrame with a clear message — otherwise the GMM
+    /// Validate must reject a null BestFitDataFrame with a clear message — otherwise the GMM
     /// estimation path would dereference null and surface a NullReferenceException to the user.
     /// </summary>
     [TestMethod]
     public void Validate_NullDataFrame_IsInvalid()
     {
         var model = new Bulletin17CDistribution();
-        // Default constructor does not set a DataFrame.
+        // Default constructor does not set a BestFitDataFrame.
 
         var (isValid, messages) = model.Validate();
 
@@ -293,7 +342,7 @@ public class Bulletin17CDistributionTests
     [TestMethod]
     public void Validate_LogDistribution_NonPositiveData_IsInvalid()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries.Add(new ExactData(1990, 1000.0));
         df.ExactSeries.Add(new ExactData(1991, 0.0));     // disallowed for log distributions
         df.ExactSeries.Add(new ExactData(1992, -5.0));    // disallowed
@@ -343,7 +392,7 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// The DataFrame-less XElement constructor exists to support the undo path where InputData
+    /// The BestFitDataFrame-less XElement constructor exists to support the undo path where InputData
     /// has been undone back to null. It must still rehydrate the model state without throwing.
     /// </summary>
     [TestMethod]
@@ -503,7 +552,7 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
-    /// Same invariant as <see cref="PointwiseMomentConditions_ColumnMeans_MatchMomentConditionsG_LP3"/>,
+    /// Same invariant as <c>PointwiseMomentConditions_ColumnMeans_MatchMomentConditionsG_LP3</c>,
     /// exercised against a Normal distribution to cover a different supported-distribution
     /// branch in the moment-condition setup.
     /// </summary>
@@ -598,6 +647,152 @@ public class Bulletin17CDistributionTests
             Assert.AreEqual(naturalScore[i], linkedScore[i], 1e-12,
                 $"Linked WEDS[{i}] did not match the natural-parameter score.");
         }
+    }
+
+    #endregion
+
+    #region CloneWithDataFrame
+
+    /// <summary>
+    /// Builds a parent LP3 model with fitted-like parameter values and an enabled
+    /// regional-skew parameter penalty, mimicking the state before a bootstrap run.
+    /// </summary>
+    /// <param name="df">The data frame the parent model is bound to.</param>
+    /// <returns>The configured parent model.</returns>
+    private static Bulletin17CDistribution CreateParentWithSkewPenalty(BestFitDataFrame df)
+    {
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
+        model.SetParameterValues(new[] { 3.3, 0.14, 0.4 });
+        model.ParameterPenalties[2].Enabled = true;
+        model.ParameterPenalties[2].Mean = 0.421;
+        model.ParameterPenalties[2].MSE = 0.302;
+        return model;
+    }
+
+    /// <summary>
+    /// Builds a second, independent data frame standing in for a bootstrap resample,
+    /// including an unprocessed historical threshold.
+    /// </summary>
+    /// <returns>The created boot-style data frame.</returns>
+    private static BestFitDataFrame CreateBootDataFrameWithThreshold()
+    {
+        var df = CreateFloodDataFrame();
+        df.ThresholdSeries.Add(new ThresholdData(1930, 1940, 25000) { NumberAbove = 2 });
+        return df;
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame rejects a null data frame.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_NullFrame_Throws()
+    {
+        var model = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        Assert.ThrowsException<ArgumentNullException>(() => model.CloneWithDataFrame(null!));
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame binds the supplied frame to the clone, preserves the parent's
+    /// parameter values and bounds, and leaves the parent bound to its original frame.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_BindsSuppliedFrame_AndPreservesParameters()
+    {
+        var parentFrame = CreateFloodDataFrame();
+        var parent = CreateParentWithSkewPenalty(parentFrame);
+        var bootFrame = CreateBootDataFrameWithThreshold();
+
+        var clone = parent.CloneWithDataFrame(bootFrame);
+
+        Assert.AreSame(bootFrame, clone.DataFrame, "The clone must be bound to the supplied frame.");
+        Assert.AreSame(parentFrame, parent.DataFrame, "The parent must keep its original frame.");
+        Assert.AreEqual(parent.NumberOfParameters, clone.NumberOfParameters);
+        for (int i = 0; i < parent.NumberOfParameters; i++)
+        {
+            Assert.AreEqual(parent.Parameters[i].Value, clone.Parameters[i].Value, 1e-12,
+                $"Parameter {i} value must survive the clone (no SetDefaultParameters rebuild).");
+            Assert.AreEqual(parent.Parameters[i].LowerBound, clone.Parameters[i].LowerBound, 1e-12);
+            Assert.AreEqual(parent.Parameters[i].UpperBound, clone.Parameters[i].UpperBound, 1e-12);
+        }
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame preserves the parent's penalty configuration — the regression
+    /// guarded here is the bootstrap penalty wipe, where assigning the boot frame through
+    /// the public DataFrame setter rebuilt every parameter penalty with Enabled = false.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_PreservesPenaltyConfiguration()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+
+        var clone = parent.CloneWithDataFrame(CreateBootDataFrameWithThreshold());
+
+        Assert.AreEqual(parent.ParameterPenalties.Count, clone.ParameterPenalties.Count);
+        Assert.IsTrue(clone.ParameterPenalties[2].Enabled, "The enabled skew penalty must survive the clone.");
+        Assert.AreEqual(0.421, clone.ParameterPenalties[2].Mean, 1e-12);
+        Assert.AreEqual(0.302, clone.ParameterPenalties[2].MSE, 1e-12);
+        Assert.AreEqual(parent.QuantilePenalties.Count, clone.QuantilePenalties.Count);
+    }
+
+    /// <summary>
+    /// After CloneWithDataFrame, SetRandomPenaltyFunction sees the preserved enabled
+    /// penalty and installs a non-null randomized penalty function, so bootstrap
+    /// replicates propagate regional-skew prior uncertainty as designed.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_ThenSetRandomPenaltyFunction_InstallsPenalty()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        var thetaHat = parent.Parameters.Select(p => p.Value).ToArray();
+
+        var clone = parent.CloneWithDataFrame(CreateBootDataFrameWithThreshold());
+        clone.SetParameterValues(thetaHat);
+        clone.SetRandomPenaltyFunction(thetaHat, new Random(1));
+
+        Assert.IsNotNull(clone.PenaltyFunction,
+            "The bootstrap penalty must be installed from the preserved penalty configuration.");
+    }
+
+    /// <summary>
+    /// CloneWithDataFrame processes the supplied frame's threshold series during the
+    /// DataFrame assignment, so the clone's moment conditions see effective counts.
+    /// </summary>
+    [TestMethod]
+    public void CloneWithDataFrame_ProcessesSuppliedFrameThresholds()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        var bootFrame = CreateBootDataFrameWithThreshold();
+
+        var clone = parent.CloneWithDataFrame(bootFrame);
+
+        var threshold = (ThresholdData)clone.DataFrame.ThresholdSeries[0];
+        Assert.AreEqual(2, threshold.NumberAbove, "The user-supplied exceedance count is retained.");
+        Assert.AreEqual(9, threshold.NumberBelow,
+            "ProcessThresholdSeries must derive NumberBelow = Duration (11) - NumberAbove (2) for a non-overlapping threshold.");
+    }
+
+    /// <summary>
+    /// The XElement constructor restores serialized parameters and penalties even when the
+    /// supplied frame raises threshold-recompute notifications during construction — the
+    /// deserialization guard keeps DataFrame_PropertyChanged from rebuilding defaults mid-restore.
+    /// </summary>
+    [TestMethod]
+    public void XElementConstructor_WithUnprocessedThresholdFrame_PreservesSerializedState()
+    {
+        var parent = CreateParentWithSkewPenalty(CreateFloodDataFrame());
+        var xml = parent.ToXElement();
+        var unprocessedFrame = CreateBootDataFrameWithThreshold();
+
+        var restored = new Bulletin17CDistribution(unprocessedFrame, xml);
+
+        Assert.AreEqual(parent.NumberOfParameters, restored.NumberOfParameters);
+        for (int i = 0; i < parent.NumberOfParameters; i++)
+        {
+            Assert.AreEqual(parent.Parameters[i].Value, restored.Parameters[i].Value, 1e-12,
+                $"Parameter {i} must restore from XML, not from boot-frame defaults.");
+        }
+        Assert.IsTrue(restored.ParameterPenalties[2].Enabled, "The serialized penalty state must be restored.");
     }
 
     #endregion

@@ -44,7 +44,7 @@ The block maximum and POT methods produce exact observations. The USGS peak down
 
 ## Prerequisites
 
-- **RMC-BestFit 2.0** (Beta or later)
+- **RMC-BestFit 2.0.0** or later
 - **Internet connection** required for the USGS peak discharge download example and for refreshing time series data in the block maximum and POT examples
 - All examples include pre-downloaded data -- you can explore the results without an internet connection
 

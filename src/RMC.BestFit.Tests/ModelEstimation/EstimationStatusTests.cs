@@ -3,22 +3,30 @@ using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Tests the new <c>Status</c> property on <see cref="GeneralizedMethodOfMoments"/>,
-/// <see cref="MaximumLikelihood"/>, and <see cref="MaximumAPosteriori"/> — captured from the
+/// Tests the new <c>Status</c> property on <c>GeneralizedMethodOfMoments</c>,
+/// <c>MaximumLikelihood</c>, and <c>MaximumAPosteriori</c> — captured from the
 /// inner transient <c>Optimizer</c> at the end of estimation so it remains valid after the
 /// optimizer is discarded (e.g., after Save/Open).
 /// </summary>
 [TestClass]
 public class EstimationStatusTests
 {
-    private static DataFrame CreateNormalTestData()
+    /// <summary>
+    /// Creates normal Test Data.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateNormalTestData()
     {
         var values = new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 };
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < values.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
         return df;

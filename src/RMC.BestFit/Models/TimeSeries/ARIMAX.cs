@@ -1,4 +1,4 @@
-﻿using Numerics.Distributions;
+using Numerics.Distributions;
 using Numerics.Data;
 using System;
 using System.Collections.Generic;
@@ -139,6 +139,7 @@ namespace RMC.BestFit.Models
         private double _lambda = 0;
         private double _lambda2 = 0;
         private double _logJacobian = 0;
+        private string? _transformFitValidationMessage;
         private bool _includeIntercept = true;
         private bool _includeSeasonality = false;
         private int _seasonalPeriod = 12;
@@ -209,6 +210,8 @@ namespace RMC.BestFit.Models
             get { return _timeSeries; }
             set
             {
+                if (ReferenceEquals(_timeSeries, value)) return;
+
                 if (_timeSeries != null)
                     _timeSeries.CollectionChanged -= TimeSeries_CollectionChanged;
 
@@ -217,11 +220,13 @@ namespace RMC.BestFit.Models
                 if (_timeSeries != null)
                 {
                     _timeSeries.CollectionChanged += TimeSeries_CollectionChanged;
-                    _seasonalPeriod = InferSeasonalPeriod();
-
-                    if (_useDefaultTrainingSteps)
-                        SetDefaultTrainingSteps();
+                    UpdateSeasonalPeriod();
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                     SetTrainingData();
+                }
+                else
+                {
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                 }
 
                 RaisePropertyChange(nameof(TimeSeries));
@@ -540,7 +545,7 @@ namespace RMC.BestFit.Models
             if (min <= 0)
                 _lambda2 = 0 - min + 1;
 
-            _seasonalPeriod = InferSeasonalPeriod();
+            UpdateSeasonalPeriod();
 
             if (_useDefaultTrainingSteps)
                 SetDefaultTrainingSteps();
@@ -576,6 +581,50 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Restores the default training split when the model is attached to a different input series.
+        /// </summary>
+        /// <remarks>
+        /// A new response series represents a new calibration problem. Manual training-window edits from
+        /// the previous series are therefore discarded, while analysis-layer forecast settings remain
+        /// outside this model and are preserved by their owning analysis.
+        /// </remarks>
+        private void ResetDefaultTrainingStepsForNewTimeSeries()
+        {
+            if (!_useDefaultTrainingSteps)
+            {
+                _useDefaultTrainingSteps = true;
+                RaisePropertyChange(nameof(UseDefaultTrainingSteps));
+            }
+
+            if (_timeSeries == null || _timeSeries.Count == 0)
+            {
+                if (_trainingTimeSteps != 0)
+                {
+                    _trainingTimeSteps = 0;
+                    RaisePropertyChange(nameof(TrainingTimeSteps));
+                }
+                return;
+            }
+
+            SetDefaultTrainingSteps();
+        }
+
+        /// <summary>
+        /// Updates the inferred seasonal period and notifies bindings when the interval scale changes.
+        /// </summary>
+        /// <remarks>
+        /// The period is derived from <see cref="TimeSeries.TimeInterval"/> rather than user input, so
+        /// assigning or replacing the response series is the authoritative trigger.
+        /// </remarks>
+        private void UpdateSeasonalPeriod()
+        {
+            int oldSeasonalPeriod = _seasonalPeriod;
+            _seasonalPeriod = InferSeasonalPeriod();
+            if (_seasonalPeriod != oldSeasonalPeriod)
+                RaisePropertyChange(nameof(SeasonalPeriod));
+        }
+
+        /// <summary>
         /// Creates the training data by applying transformation then differencing.
         /// </summary>
         /// <remarks>
@@ -587,6 +636,7 @@ namespace RMC.BestFit.Models
         /// </remarks>
         private void SetTrainingData()
         {
+            _transformFitValidationMessage = null;
             if (TimeSeries == null || TrainingTimeSteps == 0) return;
 
             int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
@@ -612,7 +662,36 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.BoxCox)
             {
-                BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 for (int i = 0; i < TimeSeries.Count; i++)
                 {
                     var ord = TimeSeries[i].Clone();
@@ -622,7 +701,36 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.YeoJohnson)
             {
-                YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 for (int i = 0; i < TimeSeries.Count; i++)
                 {
                     var ord = TimeSeries[i].Clone();
@@ -722,6 +830,13 @@ namespace RMC.BestFit.Models
             return extended;
         }
 
+        /// <summary>
+        /// Supports the <c>InferSeasonalPeriod</c> helper.
+        /// </summary>
+        /// <returns>The result.</returns>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private int InferSeasonalPeriod()
         {
             if (TimeSeries == null) return 12; // Default fallback
@@ -762,7 +877,7 @@ namespace RMC.BestFit.Models
                     return 4; // Annual cycle
 
                 case TimeInterval.OneYear:
-                    return 1; // No sub-annual seasonality
+                    return 10; // Decadal cycle for annual records
 
                 default:
                     return 12;
@@ -1840,6 +1955,9 @@ namespace RMC.BestFit.Models
             };
 
             result.TimeSeries = TimeSeries?.Clone()!;
+            result._trainingTimeSteps = TrainingTimeSteps;
+            result._useDefaultTrainingSteps = UseDefaultTrainingSteps;
+            result.SetTrainingData();
             if (_covariates != null)
             {
                 result.SetCovariates(_covariates.Select(c => c.Clone()).ToList());
@@ -1893,6 +2011,12 @@ namespace RMC.BestFit.Models
             {
                 isValid = false;
                 messages.Add("Error: Time series must have at least 10 observations.");
+            }
+
+            if (TimeSeries.TimeInterval == TimeInterval.Irregular)
+            {
+                isValid = false;
+                messages.Add("Error: Time series analysis requires a regular time interval. Resample or convert the series to a regular interval before estimating.");
             }
 
             // Check training steps
@@ -2060,6 +2184,12 @@ namespace RMC.BestFit.Models
                         messages.Add($"Warning: MA coefficients may violate invertibility (sum of absolute values = {sumAbsMA:F3} >= 1). Consider checking characteristic equation roots.");
                     }
                 }
+            }
+
+            if (_transformFitValidationMessage != null)
+            {
+                isValid = false;
+                messages.Add(_transformFitValidationMessage);
             }
 
             return (isValid, messages);

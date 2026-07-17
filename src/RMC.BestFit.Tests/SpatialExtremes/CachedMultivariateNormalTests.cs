@@ -1,9 +1,9 @@
 using RMC.BestFit.Models.SpatialExtremes;
 
-namespace RMC.BestFit.Tests.SpatialExtremesModels;
+namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
-/// Unit tests for the <see cref="CachedMultivariateNormal"/> class.
+/// Unit tests for the <c>CachedMultivariateNormal</c> class.
 /// Tests the cached multivariate normal distribution for efficient likelihood computation.
 /// </summary>
 /// <remarks>
@@ -14,7 +14,7 @@ namespace RMC.BestFit.Tests.SpatialExtremesModels;
 ///     <item>Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil</item>
 /// </list>
 /// <para>
-///     The <see cref="CachedMultivariateNormal"/> class provides an efficient implementation
+///     The <c>CachedMultivariateNormal</c> class provides an efficient implementation
 ///     of the multivariate normal distribution with cached Cholesky decomposition. This is
 ///     critical for performance in MCMC sampling where the covariance matrix is often reused.
 /// </para>
@@ -401,8 +401,8 @@ public class CachedMultivariateNormalTests
     }
 
     /// <summary>
-    /// Tests LogPDF returns <see cref="double.NegativeInfinity"/> for
-    /// non-positive-definite covariance, per the CLAUDE.md numerical-pattern
+    /// Tests LogPDF returns <c>double.NegativeInfinity</c> for
+    /// non-positive-definite covariance, per the the numerical robustness pattern
     /// rule for impossible log-likelihood.
     /// </summary>
     [TestMethod]
@@ -538,8 +538,8 @@ public class CachedMultivariateNormalTests
     }
 
     /// <summary>
-    /// Tests GetLogDeterminant returns <see cref="double.NegativeInfinity"/>
-    /// for non-positive-definite covariance, per CLAUDE.md numerical pattern.
+    /// Tests GetLogDeterminant returns <c>double.NegativeInfinity</c>
+    /// for non-positive-definite covariance, per the numerical robustness pattern.
     /// </summary>
     [TestMethod]
     public void GetLogDeterminant_NonPositiveDefinite_ReturnsNegativeInfinity()
@@ -844,7 +844,7 @@ public class CachedMultivariateNormalTests
 
     /// <summary>
     /// Tests that truly singular covariance is handled (returns
-    /// <see cref="double.NegativeInfinity"/> per CLAUDE.md numerical pattern).
+    /// <c>double.NegativeInfinity</c> per the numerical robustness pattern).
     /// </summary>
     [TestMethod]
     public void Singular_ReturnsNegativeInfinity()
@@ -861,7 +861,7 @@ public class CachedMultivariateNormalTests
         // Act
         double logPdf = mvn.LogPDF(new double[] { 0, 0 });
 
-        // Assert - Should return NegativeInfinity for singular matrix per CLAUDE.md
+        // Assert - Should return NegativeInfinity for singular matrix per the project coding standards
         Assert.AreEqual(double.NegativeInfinity, logPdf,
             "Singular covariance should return NegativeInfinity.");
     }

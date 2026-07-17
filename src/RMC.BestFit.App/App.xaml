@@ -1,0 +1,43 @@
+﻿<Application x:Class="RMC_BestFit.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:RMC_BestFit"
+             Startup="Application_Startup"
+             ShutdownMode="OnMainWindowClose"
+             DispatcherUnhandledException="Application_DispatcherUnhandledException">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Icon resources -->
+                <ResourceDictionary Source="pack://application:,,,/FrameworkUI;component/Icons/IconDictionary.xaml"/>
+
+                <!-- Theme resources are loaded by ThemeManager.SetTheme() in App.xaml.cs -->
+                <!-- This ensures proper loading order and enables runtime theme switching -->
+
+                <!-- Component theme resources -->
+                <ResourceDictionary Source="pack://application:,,,/GenericControls;component/Themes/GenericControlsTheme.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/OxyPlotControls;component/Themes/OxyPlotControlsTheme.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/NumericControls;component/Themes/NumericControlsTheme.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/DatabaseControls;component/Themes/DatabaseControlsTheme.xaml"/>
+
+                <!-- BestFit UI icon resources -->
+                <ResourceDictionary Source="pack://application:,,,/RMC.BestFit.UI;component/Resources/IconDictionary.xaml"/>
+
+                <!-- App-specific icon resources -->
+                <ResourceDictionary Source="/Resources/IconDictionary.xaml"/>
+
+                <!-- GenericControls shared resources (includes PlusMinusToggleStyle) -->
+                <ResourceDictionary Source="pack://application:,,,/GenericControls;component/Resources/ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--RMC-BestFit Icons-->
+            <ImageSource x:Key="BestFit">pack://application:,,/Resources/BestFit_Icon.ico</ImageSource>
+            <ImageSource x:Key="USACE">pack://application:,,/Resources/USACE.png</ImageSource>
+            <!-- Bayes icon now provided as BayesianAnalysisIcon DrawingImage from RMC.BestFit.UI IconDictionary -->
+            <!-- BatchRun icon now provided as BatchRunIcon DrawingImage from RMC.BestFit.UI IconDictionary -->
+            <!-- Run, Stop, Download icons now provided as Viewbox resources (RunIcon, StopIcon, DownloadIcon) from GenericControls IconDictionary -->
+            <!-- Process icon provided as ProcessIcon from FrameworkUI IconDictionary -->
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

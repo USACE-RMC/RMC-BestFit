@@ -3,7 +3,7 @@ using RMC.BestFit.Models.LinkFunctions;
 namespace RMC.BestFit.Tests.LinkFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="SESLink"/> class.
+/// Unit tests for the <c>SESLink</c> class.
 /// Verifies round-trip consistency, derivative correctness, adaptive lambda behavior,
 /// and behavior in various regimes (central, tails, symmetric, asymmetric).
 /// </summary>

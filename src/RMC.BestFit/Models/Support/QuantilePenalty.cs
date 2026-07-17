@@ -375,7 +375,7 @@ namespace RMC.BestFit.Models
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event.
+        /// Raises the <c>PropertyChanged</c> event.
         /// </summary>
         /// <param name="propertyName">The name of the property that changed.</param>
         protected virtual void RaisePropertyChanged(string propertyName)

@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>RMC_BestFit</RootNamespace>
+    <AssemblyName>RMC-BestFit</AssemblyName>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>BestFit_Icon.ico</ApplicationIcon>
+    <StartupObject>RMC_BestFit.App</StartupObject>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- OxyPlot 2.x has no replacement for PlotModel.Updated, which remains required by adaptive date formatting. -->
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Hec.Dss remains an explicit binary reference because its project pre-build downloads native assets. -->
+    <Reference Include="Hec.Dss">
+      <HintPath>$(HecDssAssemblyPath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <!-- HEC-DSS native libraries: copy from hec-dss repo to runtimes folder for P/Invoke resolution -->
+  <ItemGroup>
+    <None Include="$(HecDssNativeWin)" Link="runtimes\win-x64\native\hecdss.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(HecDssNativeLinux)" Link="runtimes\linux-x64\native\libhecdss.so" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\BestFit_Icon.ico" />
+    <None Remove="Resources\*.png" />
+    <Resource Include="Resources\*.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Wpf.Framework.Core" />
+    <PackageReference Include="RMC.Wpf.Framework.Models" />
+    <PackageReference Include="RMC.Wpf.Framework.Controls" />
+    <PackageReference Include="RMC.Wpf.Framework.Support" />
+    <ProjectReference Include="..\RMC.BestFit.UI\RMC.BestFit.UI.csproj" />
+    <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
+  </ItemGroup>
+
+  <!-- Post-build: Move supporting files to libraries subfolder and clean up -->
+  <Target Name="MoveToLibraries" AfterTargets="Build">
+    <ItemGroup>
+      <UpdaterPayload Include="$(OutputPath)SoftwareUpdate.Updater.exe;$(OutputPath)SoftwareUpdate.Updater.dll;$(OutputPath)SoftwareUpdate.Updater.deps.json;$(OutputPath)SoftwareUpdate.Updater.runtimeconfig.json" />
+      <LibraryDlls Include="$(OutputPath)*.dll" Exclude="$(OutputPath)$(AssemblyName).dll;@(UpdaterPayload)" />
+      <LibraryPdbs Include="$(OutputPath)*.pdb" Exclude="$(OutputPath)$(AssemblyName).pdb" />
+      <LibraryXmls Include="$(OutputPath)*.xml" Exclude="@(UpdaterPayload)" />
+      <LibraryConfigs Include="$(OutputPath)*.dll.config" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutputPath)libraries" />
+    <!-- Delete stale copies so Move does not fail with "file already exists" on incremental builds -->
+    <Delete Files="@(LibraryDlls->'$(OutputPath)libraries\%(Filename)%(Extension)')" />
+    <Delete Files="@(LibraryPdbs->'$(OutputPath)libraries\%(Filename)%(Extension)')" />
+    <Delete Files="@(LibraryXmls->'$(OutputPath)libraries\%(Filename)%(Extension)')" />
+    <Delete Files="@(LibraryConfigs->'$(OutputPath)libraries\%(Filename)%(Extension)')" />
+    <Move SourceFiles="@(LibraryDlls)" DestinationFolder="$(OutputPath)libraries" />
+    <Move SourceFiles="@(LibraryPdbs)" DestinationFolder="$(OutputPath)libraries" />
+    <Move SourceFiles="@(LibraryXmls)" DestinationFolder="$(OutputPath)libraries" />
+    <Move SourceFiles="@(LibraryConfigs)" DestinationFolder="$(OutputPath)libraries" />
+    <!-- Remove AvalonDock satellite assembly locale folders (not needed for English-only apps) -->
+    <RemoveDir Directories="$(OutputPath)cs-CZ;$(OutputPath)de;$(OutputPath)es;$(OutputPath)fr;$(OutputPath)hu;$(OutputPath)it;$(OutputPath)ja-JP;$(OutputPath)nl-BE;$(OutputPath)pt-BR;$(OutputPath)ro;$(OutputPath)ru;$(OutputPath)sv;$(OutputPath)zh-Hans" />
+  </Target>
+
+</Project>

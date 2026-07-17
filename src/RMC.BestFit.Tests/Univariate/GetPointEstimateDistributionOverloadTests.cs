@@ -7,15 +7,16 @@ using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
 /// Tests for the parameterized
-/// <see cref="IUnivariateAnalysis.GetPointEstimateDistribution(BayesianAnalysis.PointEstimateType)"/>
-/// overload added to support <see cref="CompositeAnalysis"/>'s need to extract
+/// <c>IUnivariateAnalysis.GetPointEstimateDistribution(BayesianAnalysis.PointEstimateType)</c>
+/// overload added to support <c>CompositeAnalysis</c>'s need to extract
 /// posterior-mean / MAP distributions from children without mutating the child's own
-/// <see cref="BayesianAnalysis.PointEstimator"/>.
+/// <c>BayesianAnalysis.PointEstimator</c>.
 /// </summary>
 /// <remarks>
 /// Critical regression coverage for the fix described as "Issue 1" in the
@@ -36,9 +37,16 @@ public class GetPointEstimateDistributionOverloadTests
         19200, 13800, 25600, 10500, 16900, 21300, 14700, 8200, 23800, 15900
     };
 
-    private static DataFrame CreateDataFrame()
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineExactData.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, InlineExactData[i]));
         df.CalculatePlottingPositions();
@@ -54,7 +62,7 @@ public class GetPointEstimateDistributionOverloadTests
         field!.SetValue(analysis, true);
     }
 
-    /// <summary>Builds an <see cref="MCMCResults"/> with MAP + N output draws averaged to a known mean.</summary>
+    /// <summary>Builds an <c>MCMCResults</c> with MAP + N output draws averaged to a known mean.</summary>
     private static MCMCResults BuildResults(double[] mapValues, double[] meanValues, int sampleSize = 100)
     {
         // Use the meanValues array verbatim as every draw so PosteriorMean equals it.
@@ -132,11 +140,11 @@ public class GetPointEstimateDistributionOverloadTests
 
     /// <summary>
     /// Calling the parameterized overload with an explicit estimator must not mutate the
-    /// analysis's own <see cref="BayesianAnalysis.PointEstimator"/> property.
+    /// analysis's own <c>BayesianAnalysis.PointEstimator</c> property.
     /// </summary>
     /// <remarks>
     /// This is the design contract that justifies adding the parameterized overload at all
-    /// — a parent <see cref="CompositeAnalysis"/> needs to evaluate a child under an
+    /// — a parent <c>CompositeAnalysis</c> needs to evaluate a child under an
     /// estimator different from the child's current setting without triggering the child's
     /// reprocess cascade (which fires on PointEstimator change).
     /// </remarks>
@@ -189,14 +197,14 @@ public class GetPointEstimateDistributionOverloadTests
     #region Nonstationary UnivariateAnalysis (Issue 1 — core fix)
 
     /// <summary>
-    /// Calling the parameterized overload on a nonstationary <see cref="UnivariateAnalysis"/>
+    /// Calling the parameterized overload on a nonstationary <c>UnivariateAnalysis</c>
     /// returns a stationary distribution evaluated at the last time step. This is the
-    /// regression test for the bug where <see cref="CompositeAnalysis"/> previously cloned
+    /// regression test for the bug where <c>CompositeAnalysis</c> previously cloned
     /// the base distribution and called <c>SetParameters</c> on a parameter array that
     /// included trend coefficients — silently corrupting the result.
     /// </summary>
     /// <remarks>
-    /// The fix routes through <see cref="UnivariateDistribution.SetParameterValues(IList{double})"/>,
+    /// The fix routes through <c>UnivariateDistribution.SetParameterValues(IList{double})</c>,
     /// which correctly distributes the array across base + trend models, then unwraps the
     /// frozen distribution at the configured <c>ParameterTimeIndex</c>.
     /// </remarks>
@@ -239,7 +247,7 @@ public class GetPointEstimateDistributionOverloadTests
     }
 
     /// <summary>
-    /// Nonstationary path also works for <see cref="BayesianAnalysis.PointEstimateType.PosteriorMode"/>.
+    /// Nonstationary path also works for <c>BayesianAnalysis.PointEstimateType.PosteriorMode</c>.
     /// </summary>
     [TestMethod]
     public void Nonstationary_PosteriorMode_ReturnsValidDistribution()
@@ -267,7 +275,7 @@ public class GetPointEstimateDistributionOverloadTests
     #region Bulletin17CAnalysis
 
     /// <summary>
-    /// <see cref="Bulletin17CAnalysis"/> implements the same parameterized overload and
+    /// <c>Bulletin17CAnalysis</c> implements the same parameterized overload and
     /// returns null when not estimated. (B17C has no nonstationary path — it is always a
     /// stationary LP3 fit — so a single round-trip test covers the contract.)
     /// </summary>
@@ -314,7 +322,7 @@ public class GetPointEstimateDistributionOverloadTests
 
     /// <summary>
     /// B17C parameterized overload also does not mutate the analysis's
-    /// <see cref="BayesianAnalysis.PointEstimator"/>.
+    /// <c>BayesianAnalysis.PointEstimator</c>.
     /// </summary>
     [TestMethod]
     public void B17C_DoesNotMutateAnalysisPointEstimatorProperty()

@@ -2,23 +2,24 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Diagnostics;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Expanded unit tests for the <see cref="PosteriorPredictiveCheck"/> class that
-/// exercise <see cref="PosteriorPredictiveCheck.GenerateReplicates"/>,
-/// <see cref="PosteriorPredictiveCheck.ComputePValue"/>,
-/// <see cref="PosteriorPredictiveCheck.ComputeCommonPValues"/>, and
-/// <see cref="PosteriorPredictiveCheck.ComputeSummary"/> code paths.
+/// Expanded unit tests for the <c>PosteriorPredictiveCheck</c> class that
+/// exercise <c>PosteriorPredictiveCheck.GenerateReplicates</c>,
+/// <c>PosteriorPredictiveCheck.ComputePValue</c>,
+/// <c>PosteriorPredictiveCheck.ComputeCommonPValues</c>, and
+/// <c>PosteriorPredictiveCheck.ComputeSummary</c> code paths.
 /// </summary>
 /// <remarks>
-/// These tests are programmatic — they use a <see cref="UnivariateDistribution"/>
-/// with fixed inline data and pre-built <see cref="ParameterSet"/> samples that
+/// These tests are programmatic — they use a <c>UnivariateDistribution</c>
+/// with fixed inline data and pre-built <c>ParameterSet</c> samples that
 /// represent already-fitted posterior draws. None of these tests run an estimator
 /// (no MLE, MAP, GMM, or MCMC). The methods under test only generate replicates
 /// from given parameter values, which is pure simulation supported by the
-/// <see cref="ISimulatable{T}"/> interface.
+/// <c>ISimulatable{T}</c> interface.
 /// Computational verification (e.g., comparing replicate distributions to fitted
 /// theoretical values) belongs in <c>RMC.BestFit.Verification</c>.
 /// </remarks>
@@ -30,7 +31,7 @@ public class PosteriorPredictiveCheckExpandedTests
     /// </summary>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(
                 new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 })
@@ -39,13 +40,13 @@ public class PosteriorPredictiveCheckExpandedTests
     }
 
     /// <summary>
-    /// Creates a deterministic list of <see cref="ParameterSet"/> draws representing
+    /// Creates a deterministic list of <c>ParameterSet</c> draws representing
     /// hypothetical posterior samples around the data mean and SD. The Fitness field
     /// is set to 0 (real posteriors store negative-log-likelihood, but the predictive
     /// check does not use it for replicate generation).
     /// </summary>
     /// <param name="count">The number of samples to produce.</param>
-    /// <returns>A list of <see cref="ParameterSet"/> with two parameters per draw.</returns>
+    /// <returns>A list of <c>ParameterSet</c> with two parameters per draw.</returns>
     private static IList<ParameterSet> MakePosteriorSamples(int count)
     {
         var samples = new List<ParameterSet>();

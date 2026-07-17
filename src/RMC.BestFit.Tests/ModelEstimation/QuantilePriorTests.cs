@@ -4,7 +4,7 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Unit tests for the <see cref="QuantilePrior"/> class.
+/// Unit tests for the <c>QuantilePrior</c> class.
 /// Tests quantile-based prior specification for Bayesian flood frequency analysis.
 /// </summary>
 /// <remarks>

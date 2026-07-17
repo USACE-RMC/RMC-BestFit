@@ -1,11 +1,12 @@
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Fast structural unit tests for the <see cref="BayesianAnalysis"/> class.
+/// Fast structural unit tests for the <c>BayesianAnalysis</c> class.
 /// MCMC-running tests live in RMC.BestFit.Verification/ModelEstimation/BayesianAnalysisMCMCTests.cs.
 /// </summary>
 [TestClass]
@@ -13,11 +14,18 @@ public class BayesianAnalysisTests
 {
     #region Test Data
 
-    private static DataFrame CreateNormalTestData()
+    /// <summary>
+    /// Creates normal Test Data.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateNormalTestData()
     {
         // Small inline fixture: 10 fixed annual peak values (cfs).
         var values = new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 };
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < values.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
         return df;

@@ -1,18 +1,18 @@
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="WeightedUnivariateAnalysis"/> class —
-/// the (analysis, weight) pair used by <see cref="CompositeAnalysis"/> for model averaging.
+/// Programmatic unit tests for the <c>WeightedUnivariateAnalysis</c> class —
+/// the (analysis, weight) pair used by <c>CompositeAnalysis</c> for model averaging.
 /// </summary>
 /// <remarks>
 /// Existing CompositeAnalysisTests instantiate this type but exercise composite-level behavior;
 /// this file pins the wrapper's own contract: property change events, weight setter idempotency,
-/// validation, and the deliberate intent of <see cref="WeightedUnivariateAnalysis.ToXElement"/>
+/// validation, and the deliberate intent of <c>WeightedUnivariateAnalysis.ToXElement</c>
 /// to omit the inner-analysis reference (resolved by name on deserialization).
 /// </remarks>
 [TestClass]
@@ -20,10 +20,17 @@ public class WeightedUnivariateAnalysisTests
 {
     #region Inline test fixtures
 
+    /// <summary>
+    /// Creates normal Analysis.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UnivariateAnalysis CreateNormalAnalysis()
     {
         var data = new Normal(100.0, 15.0).GenerateRandomValues(20, 12345);
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, data[i]));
         var dist = new UnivariateDistribution(df, UnivariateDistributionType.Normal);

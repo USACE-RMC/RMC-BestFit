@@ -1,11 +1,12 @@
 using System.Collections.Specialized;
 using System.Xml.Linq;
 using Numerics.Data;
+using RMC.BestFit.Models;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="ExactSeries"/> class.
+/// Unit tests for the <c>ExactSeries</c> class.
 /// Tests construction, mutation, querying, sorting, validation, and serialization.
 /// </summary>
 /// <remarks>

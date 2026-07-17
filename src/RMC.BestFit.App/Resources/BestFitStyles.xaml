@@ -1,0 +1,107 @@
+﻿<ResourceDictionary x:Class="RMC_BestFit.BestFitStyles" x:ClassModifier="public"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:RMC_BestFit"
+                    xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+                    xmlns:DataView="clr-namespace:DatabaseControls;assembly=DatabaseControls"         
+                    xmlns:numcntrls="clr-namespace:NumericControls;assembly=NumericControls">
+
+    <!--Column Header Styles-->
+    <Style x:Key="ColumnHeaderTextStyle" TargetType="{x:Type TextBlock}">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGrid.Header.Foreground}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="TextWrapping" Value="WrapWithOverflow"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+    <Style x:Key="ColumnHeaderBorderStyle" TargetType="{x:Type Border}">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="CornerRadius" Value=".5"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DataGrid.Header.Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Margin" Value="-.5"/>
+        <Setter Property="MinHeight" Value="23"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Offset="0.25" Color="{DynamicResource DataGrid.Header.Background}"/>
+                    <GradientStop Offset="1" Color="{DynamicResource DataGrid.Header.GradientEnd}"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource DataGrid.Header.MouseOver.Background}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="Background" Value="{DynamicResource DataGrid.Header.MouseOver.Background}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--Row Header Styles-->
+    <Style x:Key="RowHeaderTextStyle" TargetType="{x:Type TextBlock}">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource DataGrid.Header.Foreground}"/>
+        <Setter Property="Margin" Value="2,0,0,0"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+    <Style x:Key="RowHeaderBorderStyle" TargetType="{x:Type Border}">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DataGrid.Header.Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Margin" Value="-.5"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Offset="0.25" Color="{DynamicResource DataGrid.Header.Background}"/>
+                    <GradientStop Offset="1" Color="{DynamicResource DataGrid.Header.GradientEnd}"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--Cell Text Style-->
+    <Style x:Key="CellTextStyle" TargetType="{x:Type TextBlock}">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Left"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <!--<Setter Property="Background" Value="White"/>-->
+        <!--<Setter Property="Foreground" Value="Black"/>-->
+        <!--<Setter Property="Margin" Value="4,0,0,0"/>-->
+        <Setter Property="Padding" Value="4,0,0,0"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+    <Style x:Key="TableViewerStyle" TargetType="{x:Type DataView:TableViewer}">
+        <Setter Property="ColumnHeaderTextblockStyle" Value="{StaticResource ColumnHeaderTextStyle}"/>
+        <Setter Property="ColumnHeaderBorderStyle" Value="{StaticResource ColumnHeaderBorderStyle}"/>
+        <Setter Property="RowHeaderTextblockStyle" Value="{StaticResource RowHeaderTextStyle}"/>
+        <Setter Property="RowHeaderBorderStyle" Value="{StaticResource RowHeaderBorderStyle}"/>
+        <Setter Property="CellTextblockStyle" Value="{StaticResource CellTextStyle}"/>
+        <Setter Property="Foreground" Value="{DynamicResource EnvironmentWindowText}"/>
+        <Setter Property="Background" Value="{DynamicResource EnvironmentWindowBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DataGrid.Header.Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="RowHeight" Value="22"/>
+    </Style>
+
+    <Style TargetType="{x:Type DataView:TableViewer}" BasedOn="{StaticResource TableViewerStyle}"/>
+
+   
+</ResourceDictionary>

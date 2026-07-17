@@ -38,7 +38,7 @@ RMC-BestFit supports manual data entry, downloads from four web APIs, and import
 
 ## Prerequisites
 
-- **RMC-BestFit 2.0** (Beta or later)
+- **RMC-BestFit 2.0.0** or later
 - **Internet connection** required for USGS, GHCN, CHMN, and ABOM download examples
 - **HEC-DSS example** includes the `.dss` file in the [`5-hec-dss-import/`](5-hec-dss-import/) subfolder -- no internet required
 - **Manual entry example** includes CSV files in the [`6-manual-entry/`](6-manual-entry/) subfolder for copy-paste -- no internet required

@@ -2,21 +2,22 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Diagnostics;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Expanded unit tests for the <see cref="PriorPredictiveCheck"/> class that
-/// exercise <see cref="PriorPredictiveCheck.SampleFromPriors"/>,
-/// <see cref="PriorPredictiveCheck.GeneratePriorPredictive"/>, and
-/// <see cref="PriorPredictiveCheck.ComputeSummary"/> code paths.
+/// Expanded unit tests for the <c>PriorPredictiveCheck</c> class that
+/// exercise <c>PriorPredictiveCheck.SampleFromPriors</c>,
+/// <c>PriorPredictiveCheck.GeneratePriorPredictive</c>, and
+/// <c>PriorPredictiveCheck.ComputeSummary</c> code paths.
 /// </summary>
 /// <remarks>
 /// These tests are programmatic, not computational verification. They use a
-/// <see cref="UnivariateDistribution"/> with fixed inline data and never invoke
+/// <c>UnivariateDistribution</c> with fixed inline data and never invoke
 /// any estimator (MLE, MAP, GMM, MCMC). The methods under test sample from priors
 /// and generate replicates, which are pure simulation operations supported by
-/// the <see cref="ISimulatable{T}"/> interface — not estimation.
+/// the <c>ISimulatable{T}</c> interface — not estimation.
 /// Computational verification tests (e.g., comparing replicate distributions to
 /// theoretical ones) belong in <c>RMC.BestFit.Verification</c>.
 /// </remarks>
@@ -26,10 +27,10 @@ public class PriorPredictiveCheckExpandedTests
     /// <summary>
     /// Creates a small, well-defined Normal model for use across tests.
     /// </summary>
-    /// <returns>A configured <see cref="UnivariateDistribution"/> with a Normal distribution.</returns>
+    /// <returns>A configured <c>UnivariateDistribution</c> with a Normal distribution.</returns>
     private static UnivariateDistribution MakeNormalModel()
     {
-        var df = new DataFrame
+        var df = new BestFitDataFrame
         {
             ExactSeries = new ExactSeries(
                 new double[] { 12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 })
@@ -341,7 +342,7 @@ public class PriorPredictiveCheckExpandedTests
     }
 
     /// <summary>
-    /// Constructor throws ArgumentException when the model does not implement <see cref="ISimulatable{T}"/>.
+    /// Constructor throws ArgumentException when the model does not implement <c>ISimulatable{T}</c>.
     /// </summary>
     [TestMethod]
     public void Constructor_NonSimulatableModel_Throws()
@@ -357,8 +358,8 @@ public class PriorPredictiveCheckExpandedTests
     #endregion
 
     /// <summary>
-    /// Lightweight stub of <see cref="IModel"/> that does NOT implement
-    /// <see cref="ISimulatable{T}"/>; used only to test the constructor's
+    /// Lightweight stub of <c>IModel</c> that does NOT implement
+    /// <c>ISimulatable{T}</c>; used only to test the constructor's
     /// type guard.
     /// </summary>
     private sealed class NonSimulatableModelStub : IModel

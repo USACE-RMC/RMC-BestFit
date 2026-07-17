@@ -1,19 +1,20 @@
 using Numerics.Distributions;
+using Numerics.Functions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
 using System.Reflection;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="Bulletin17CAnalysis"/> class.
+/// Programmatic unit tests for the <c>Bulletin17CAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// Covers construction, property round-trip, validation, XElement serialization, and the
-/// supporting <see cref="UncertaintyMethod"/> enum + <see cref="CohnConfidenceIntervalResult"/>
+/// supporting <c>UncertaintyMethod</c> enum + <c>CohnConfidenceIntervalResult</c>
 /// DTO. GMM estimation, bootstrap, and Cohn-style CI computations are computationally
 /// expensive and live in <c>RMC.BestFit.Verification</c>.
 /// </remarks>
@@ -29,9 +30,16 @@ public class Bulletin17CAnalysisTests
     private static readonly double[] InlineFloodData = new LogNormal(8.0, 0.4)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateFloodDataFrame()
+    /// <summary>
+    /// Creates flood Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateFloodDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(1970 + i, InlineFloodData[i]));
@@ -39,6 +47,13 @@ public class Bulletin17CAnalysisTests
         return df;
     }
 
+    /// <summary>
+    /// Creates lP3 Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Bulletin17CDistribution CreateLP3Model()
     {
         var df = CreateFloodDataFrame();
@@ -129,7 +144,7 @@ public class Bulletin17CAnalysisTests
     #region UncertaintyMethod property
 
     /// <summary>
-    /// Setting <see cref="Bulletin17CAnalysis.UncertaintyMethod"/> to a new value clears
+    /// Setting <c>Bulletin17CAnalysis.UncertaintyMethod</c> to a new value clears
     /// existing results: the prior CIs no longer reflect the chosen method.
     /// </summary>
     [TestMethod]
@@ -150,7 +165,7 @@ public class Bulletin17CAnalysisTests
     }
 
     /// <summary>
-    /// Setting <see cref="Bulletin17CAnalysis.UncertaintyMethod"/> to the same value is a no-op:
+    /// Setting <c>Bulletin17CAnalysis.UncertaintyMethod</c> to the same value is a no-op:
     /// no PropertyChanged event, no result clearing — protects against unnecessary recomputes.
     /// </summary>
     [TestMethod]
@@ -212,12 +227,12 @@ public class Bulletin17CAnalysisTests
 
     /// <summary>
     /// Validate must propagate failures from the underlying distribution: if the model is
-    /// invalid (e.g., null DataFrame) the analysis is invalid too.
+    /// invalid (e.g., null BestFitDataFrame) the analysis is invalid too.
     /// </summary>
     [TestMethod]
     public void Validate_InvalidModel_PropagatesFailure()
     {
-        // Default constructor has no DataFrame, which the distribution's Validate flags.
+        // Default constructor has no BestFitDataFrame, which the distribution's Validate flags.
         var modelWithoutData = new Bulletin17CDistribution();
         var analysis = new Bulletin17CAnalysis(modelWithoutData);
 
@@ -601,6 +616,33 @@ public class Bulletin17CAnalysisTests
 
     #endregion
 
+    /// <summary>
+    /// Pivot bootstrap uses Numerics Yeo-Johnson links for well-behaved samples.
+    /// </summary>
+    [TestMethod]
+    public void PivotYeoJohnsonLink_ValidSamples_UsesNumericsLink()
+    {
+        var link = Bulletin17CAnalysis.CreatePivotYeoJohnsonLink(
+            new[] { -2.0, -1.0, -0.25, 0.0, 0.5, 1.0, 3.0 },
+            "location");
+
+        Assert.IsInstanceOfType(link, typeof(YeoJohnsonLink));
+    }
+
+    /// <summary>
+    /// Pivot bootstrap falls back to identity when Yeo-Johnson fitting fails.
+    /// </summary>
+    [TestMethod]
+    public void PivotYeoJohnsonLink_FitFailure_UsesIdentityLink()
+    {
+        var link = Bulletin17CAnalysis.CreatePivotYeoJohnsonLink(
+            new[] { -double.MaxValue, -double.MaxValue / 2d, -double.MaxValue / 4d },
+            "shape");
+
+        Assert.IsInstanceOfType(link, typeof(IdentityLink));
+        Assert.AreEqual(12.5, link.Link(12.5), 1e-12);
+    }
+
     #region UncertaintyMethod enum surface
 
     /// <summary>
@@ -686,4 +728,62 @@ public class Bulletin17CAnalysisTests
     }
 
     #endregion
+
+    #region Uncertainty diagnostic message
+
+    /// <summary>
+    /// The uncertainty diagnostic message defaults to empty and is reset by ClearResults,
+    /// so a stale abort reason can never survive into the next run's report.
+    /// </summary>
+    [TestMethod]
+    public void UncertaintyDiagnosticMessage_DefaultsEmpty_AndClearedByClearResults()
+    {
+        var analysis = new Bulletin17CAnalysis(CreateLP3Model());
+        Assert.AreEqual(string.Empty, analysis.UncertaintyDiagnosticMessage);
+
+        analysis.ClearResults();
+
+        Assert.AreEqual(string.Empty, analysis.UncertaintyDiagnosticMessage);
+    }
+
+    #endregion
+
+    #region Sampling diagnostics persistence
+
+    /// <summary>
+    /// Sampling diagnostics round-trip through the analysis XElement: absent when no
+    /// uncertainty run has produced them, restored when present, and re-emitted on save.
+    /// Projects saved before diagnostics persistence restore with null diagnostics.
+    /// </summary>
+    [TestMethod]
+    public void BootstrapResults_XElementRoundTrip_RestoresAndReEmitsDiagnostics()
+    {
+        var analysis = new Bulletin17CAnalysis(CreateLP3Model());
+        var legacyXml = analysis.ToXElement();
+        Assert.IsNull(legacyXml.Element(nameof(BootstrapDiagnostics)),
+            "No diagnostics element is written before an uncertainty run.");
+
+        var legacyRestored = new Bulletin17CAnalysis(CreateLP3Model(), legacyXml);
+        Assert.IsNull(legacyRestored.BootstrapResults,
+            "Projects saved before diagnostics persistence restore with null diagnostics.");
+
+        var diag = new BootstrapDiagnostics { TotalReplicates = 500 };
+        diag.IncrementFailed();
+        diag.RetainedReplicates = 480;
+        var xmlWithDiag = analysis.ToXElement();
+        xmlWithDiag.Add(diag.ToXElement());
+
+        var restored = new Bulletin17CAnalysis(CreateLP3Model(), xmlWithDiag);
+        Assert.IsNotNull(restored.BootstrapResults);
+        Assert.AreEqual(500, restored.BootstrapResults.TotalReplicates);
+        Assert.AreEqual(1, restored.BootstrapResults.FailedReplicates);
+        Assert.AreEqual(480, restored.BootstrapResults.RetainedReplicates);
+
+        var reSaved = restored.ToXElement();
+        Assert.IsNotNull(reSaved.Element(nameof(BootstrapDiagnostics)),
+            "Restored diagnostics must be re-emitted on the next save.");
+    }
+
+    #endregion
+
 }

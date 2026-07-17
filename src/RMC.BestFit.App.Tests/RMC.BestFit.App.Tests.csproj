@@ -1,0 +1,44 @@
+<Project Sdk="MSTest.Sdk/3.6.4">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyTitle>RMC.BestFit.App.Tests</AssemblyTitle>
+    <Description>Unit tests for RMC-BestFit.exe. Fast, runs on every build. Initial coverage target 40%; UserControl code-behinds excluded pending ViewModel extraction.</Description>
+    <Company>U.S. Army Corps of Engineers</Company>
+    <Product>RMC-BestFit</Product>
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Link shared MSTest parallelization settings for public unit tests. -->
+    <Compile Include="..\TestCommon\MSTestSettings.cs" Link="MSTestSettings.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Hec.Dss">
+      <HintPath>$(HecDssAssemblyPath)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Wpf.Framework.Core" />
+    <PackageReference Include="RMC.Wpf.Framework.Models" />
+    <PackageReference Include="RMC.Wpf.Framework.Controls" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
+    <ProjectReference Include="..\RMC.BestFit.UI\RMC.BestFit.UI.csproj" />
+    <ProjectReference Include="..\RMC.BestFit.App\RMC.BestFit.App.csproj" />
+  </ItemGroup>
+
+</Project>

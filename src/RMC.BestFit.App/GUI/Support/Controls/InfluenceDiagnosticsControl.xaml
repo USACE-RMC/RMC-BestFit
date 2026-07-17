@@ -1,0 +1,77 @@
+<UserControl x:Class="RMC_BestFit.InfluenceDiagnosticsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:oxyCntrls="clr-namespace:OxyPlotControls;assembly=OxyPlotControls"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="1000"
+             Loaded="UserControl_Loaded"
+             PreviewMouseDown="UserControl_PreviewMouseDown"
+             LostFocus="UserControl_LostFocus"
+             Background="{DynamicResource EnvironmentWindowBackground}"
+             Foreground="{DynamicResource EnvironmentWindowText}">
+    <ScrollViewer x:Name="Viewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Row 0-1: Options -->
+            <Label x:Name="ViewLabel" Content="Select View" Margin="0" Grid.Row="0" Grid.Column="0"/>
+            <ComboBox x:Name="ViewComboBox" Width="180" Margin="4" Grid.Row="1" Grid.Column="0"
+                      SelectionChanged="ViewComboBox_SelectionChanged">
+                <ComboBoxItem Content="Leverage" IsSelected="True"/>
+                <ComboBoxItem Content="Fit Influence"/>
+                <ComboBoxItem Content="Variance Influence"/>
+                <ComboBoxItem Content="Leave-One-Out Diagnostic"/>
+            </ComboBox>
+
+            <Label x:Name="TopNLabel" Content="Show Top" Margin="0" Grid.Row="0" Grid.Column="1"/>
+            <ComboBox x:Name="TopNComboBox" Width="70" Margin="4" Grid.Row="1" Grid.Column="1"
+                      SelectionChanged="TopNComboBox_SelectionChanged">
+                <ComboBoxItem Content="10"/>
+                <ComboBoxItem Content="20" IsSelected="True"/>
+                <ComboBoxItem Content="50"/>
+                <ComboBoxItem Content="All"/>
+            </ComboBox>
+
+            <CheckBox x:Name="IncludePriorsCheckBox" Content="Include Prior Components"
+                      Margin="4" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center"
+                      IsChecked="True"
+                      Foreground="{DynamicResource EnvironmentWindowText}"
+                      Checked="IncludePriorsCheckBox_Changed"
+                      Unchecked="IncludePriorsCheckBox_Changed"/>
+
+            <!-- Row 2: Plot + Toolbar -->
+            <Grid Grid.Row="2" Grid.ColumnSpan="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <ContentControl x:Name="PlotHost" Grid.Column="0" Margin="2,2,0,0"/>
+                <oxyCntrls:OxyPlotToolbar x:Name="PlotToolbar" Grid.Column="1"
+                                          Background="Transparent" VerticalAlignment="Stretch"
+                                          ToolBarOrientation="Vertical"
+                                          PropertiesCalled="PlotToolbar_PropertiesCalled"/>
+            </Grid>
+
+            <!-- Row 3: Summary -->
+            <TextBlock x:Name="SummaryText" Grid.Row="3" Grid.ColumnSpan="4" Margin="10,5"
+                       TextWrapping="Wrap" FontSize="11"
+                       Foreground="{DynamicResource EnvironmentWindowText}"/>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

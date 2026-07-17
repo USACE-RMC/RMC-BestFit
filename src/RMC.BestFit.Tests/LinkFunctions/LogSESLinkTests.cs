@@ -3,7 +3,7 @@ using RMC.BestFit.Models.LinkFunctions;
 namespace RMC.BestFit.Tests.LinkFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="LogSESLink"/> class.
+/// Unit tests for the <c>LogSESLink</c> class.
 /// Verifies round-trip consistency, derivative correctness, and log-space scale behavior.
 /// </summary>
 [TestClass]

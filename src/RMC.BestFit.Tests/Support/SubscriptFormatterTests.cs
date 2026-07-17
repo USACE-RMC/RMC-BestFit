@@ -3,7 +3,7 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Tests.Support;
 
 /// <summary>
-/// Unit tests for the <see cref="SubscriptFormatter"/> Unicode-subscript helper.
+/// Unit tests for the <c>SubscriptFormatter</c> Unicode-subscript helper.
 /// </summary>
 [TestClass]
 public class SubscriptFormatterTests

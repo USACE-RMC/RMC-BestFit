@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -86,6 +86,7 @@ namespace RMC.BestFit.Analyses
 
             // Restore analysis results
             AnalysisResults = analysisResults;
+            NormalizeRestoredEstimatedState();
         }
 
         #endregion
@@ -170,6 +171,32 @@ namespace RMC.BestFit.Analyses
         #region Methods
 
         /// <summary>
+        /// Repairs the persisted estimated flag when older saves contain complete Bayesian artifacts
+        /// but the outer analysis-level flag was left false.
+        /// </summary>
+        /// <remarks>
+        /// Point-estimate-only setting changes are routed through <see cref="AnalysisBase.ReprocessIfEstimated"/>.
+        /// Some persisted projects can have an estimated <see cref="BayesianAnalysis"/>, serialized
+        /// <see cref="MCMCResults"/>, and serialized <see cref="AnalysisResults"/> while the outer
+        /// <see cref="AnalysisBase.IsEstimated"/> flag is false. Treating those artifacts as authoritative
+        /// restores the intended post-processing path without rerunning MCMC.
+        /// </remarks>
+        private void NormalizeRestoredEstimatedState()
+        {
+            if (_isEstimated)
+            {
+                return;
+            }
+
+            if (BayesianAnalysis?.IsEstimated == true &&
+                BayesianAnalysis.Results != null &&
+                AnalysisResults != null)
+            {
+                _isEstimated = true;
+            }
+        }
+
+        /// <summary>
         /// Handles property changes on the <see cref="BivariateDistribution"/> model.
         /// Only structurally destructive changes (parameters, copula choice, marginals,
         /// estimation method) clear results. All other notifications are propagated for
@@ -241,12 +268,12 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only â€” the joint exceedance output whose
+        /// Clears <see cref="AnalysisResults"/> only — the joint exceedance output whose
         /// evaluation grid is <see cref="XYOrdinates"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results) and
-        /// <see cref="IsEstimated"/> intact. Called when ordinates become invalid â€” the
+        /// <c>IsEstimated</c> intact. Called when ordinates become invalid — the
         /// fit survives and reprocesses on the next valid ordinate change.
         /// </remarks>
         public void ClearFrequencyAnalysisResults()
@@ -264,7 +291,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// Validity: <see cref="XYOrdinates"/> non-null with at least one element. Reprocess
-        /// is fire-and-forget on the default task scheduler â€” exceptions are logged via
+        /// is fire-and-forget on the default task scheduler — exceptions are logged via
         /// <see cref="Debug"/> and do not propagate to the setter.
         /// </para>
         /// <para>
@@ -309,13 +336,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -323,18 +351,22 @@ namespace RMC.BestFit.Analyses
                 try
                 {
                     BivariateDistribution.SetSampleData();
-                    await BayesianAnalysis.RunAsync(progressReporter, false);
+                    await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     if (BayesianAnalysis.IsEstimated == true)
                     {
-                        progressReporter?.ReportProgress(100);
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
                         await CreateFrequencyAnalysisResultsAsync();
                     }
 
-                    // Conditional set â€” BayesianAnalysis.IsEstimated is false on soft-failure paths
+                    // Conditional set — BayesianAnalysis.IsEstimated is false on soft-failure paths
                     // (sampler returns without setting IsEstimated). Setting unconditionally would
                     // silently report success even when the chain failed.
                     IsEstimated = BayesianAnalysis.IsEstimated;
+                    if (IsEstimated)
+                    {
+                        AnalysisProgress.ReportComplete(progressReporter);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -407,8 +439,8 @@ namespace RMC.BestFit.Analyses
                 var dataY = marginalY.DataFrame.ExactSeries.Where(y => !((ExactData)y).IsLowOutlier).ToList();
                 var Fx = new List<double>();
                 var Fy = new List<double>();
-                // Two-pointer linear merge â€” both series are sorted by Index, so we
-                // pair matching observations in O(n + m) instead of the previous O(n Ã— m).
+                // Two-pointer linear merge — both series are sorted by Index, so we
+                // pair matching observations in O(n + m) instead of the previous O(n × m).
                 {
                     int ii = 0, jj = 0;
                     while (ii < dataX.Count && jj < dataY.Count)
@@ -430,8 +462,8 @@ namespace RMC.BestFit.Analyses
                 if (n < 2)
                 {
                     // RMSE requires at least 2 matched observations. With 0 or 1 the
-                    // (n âˆ’ 1) divisor would produce Â±Inf or NaN; return NaN explicitly so
-                    // the UI can render a "â€”" rather than a misleading number.
+                    // (n − 1) divisor would produce ±Inf or NaN; return NaN explicitly so
+                    // the UI can render a "—" rather than a misleading number.
                     AnalysisResults.RMSE = double.NaN;
                 }
                 else
@@ -455,7 +487,7 @@ namespace RMC.BestFit.Analyses
                 // AIC and BIC are computed at the MAP estimate using the full
                 // log-likelihood (data + prior). With uniform priors this matches
                 // the conventional MLE-based AIC/BIC; with informative priors the
-                // metric reflects the prior contribution as well â€” intentional in
+                // metric reflects the prior contribution as well — intentional in
                 // a Bayesian-first framework where model comparison includes priors.
                 double mapLogLH = BivariateDistribution.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 AnalysisResults.AIC = GoodnessOfFit.AIC(BivariateDistribution.Copula.NumberOfCopulaParameters, mapLogLH);
@@ -507,7 +539,7 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ModeCurve[i] = copulaTemplate.ANDJointExceedanceProbability(u, v);
 
                     var p = new double[realz];
-                    Parallel.For(0, realz, idx =>
+                    Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
                     {
                         var copula = copulaTemplate.Clone();
                         copula.SetCopulaParameters(BayesianAnalysis.Results.Output[idx].Values);

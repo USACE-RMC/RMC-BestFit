@@ -1,12 +1,13 @@
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using System.Xml.Linq;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="PointProcessAnalysis"/> class.
+/// Programmatic unit tests for the <c>PointProcessAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// Configuration, validation, and serialization tests live here.
@@ -27,9 +28,16 @@ public class PointProcessAnalysisTests
     private static readonly double[] InlinePOTData = new Gumbel(20000.0, 3000.0)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateTestDataFrame()
+    /// <summary>
+    /// Creates test Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateTestDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlinePOTData.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(100 + i * 10, InlinePOTData[i])); // Spread throughout year
@@ -37,15 +45,35 @@ public class PointProcessAnalysisTests
         return df;
     }
 
+    /// <summary>
+    /// Creates test Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static PointProcessModel CreateTestModel()
     {
         var df = CreateTestDataFrame();
         var model = new PointProcessModel
-        {
-            DataFrame = df,
+        { DataFrame = df,
             Threshold = 14000 // Set threshold for POT
         };
         return model;
+    }
+
+    /// <summary>
+    /// Creates an estimated point-process analysis with stub uncertainty results.
+    /// </summary>
+    /// <param name="model">The point-process model to attach to the analysis.</param>
+    /// <returns>An analysis whose stale estimated state can be invalidated without running MCMC.</returns>
+    /// <remarks>
+    /// The helper uses the XML constructor so tests stay fast and avoid computational verification.
+    /// </remarks>
+    private static PointProcessAnalysis CreateEstimatedAnalysis(PointProcessModel model)
+    {
+        var xElement = new XElement("PointProcessAnalysis", new XAttribute("IsEstimated", true));
+        return new PointProcessAnalysis(model, xElement, analysisResults: new UncertaintyAnalysisResults());
     }
 
     #endregion
@@ -172,6 +200,68 @@ public class PointProcessAnalysisTests
         analysis.ProbabilityOrdinates.Add(0.001);
 
         Assert.IsTrue(propertyChanged, "PropertyChanged should be raised for ProbabilityOrdinates.");
+    }
+
+    /// <summary>Verifies that enabling quantile priors clears stale analysis results.</summary>
+    [TestMethod]
+    public void EnableQuantilePriors_ClearsResults()
+    {
+        var model = CreateTestModel();
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(PointProcessAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.EnableQuantilePriors = true;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when quantile priors are enabled.");
+        Assert.IsNull(analysis.AnalysisResults, "Quantile prior changes should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Quantile prior changes should invalidate the estimated state.");
+        Assert.IsTrue(model.QuantilePriors.Count > 0, "Enabling quantile priors should create default prior rows.");
+    }
+
+    /// <summary>Verifies that editing an existing quantile prior clears stale analysis results.</summary>
+    [TestMethod]
+    public void QuantilePriorEdit_ClearsResults()
+    {
+        var model = CreateTestModel();
+        model.EnableQuantilePriors = true;
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(PointProcessAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.QuantilePriors[0].Alpha = 0.02;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when a quantile prior is edited.");
+        Assert.IsNull(analysis.AnalysisResults, "Quantile prior edits should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Quantile prior edits should invalidate the estimated state.");
+    }
+
+    /// <summary>Verifies that prior-related option changes clear stale analysis results.</summary>
+    [TestMethod]
+    public void PriorOptionChange_ClearsResults()
+    {
+        var model = CreateTestModel();
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(PointProcessAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.UseJeffreysRuleForScale = !model.UseJeffreysRuleForScale;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when prior options change.");
+        Assert.IsNull(analysis.AnalysisResults, "Prior option changes should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Prior option changes should invalidate the estimated state.");
     }
 
     #endregion

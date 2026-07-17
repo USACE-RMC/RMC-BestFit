@@ -1,0 +1,380 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options">
+
+    <!--
+    ╔═══════════════════════════════════════════════════════════════════════════════╗
+    ║  RMC.BestFit.UI Icon Dictionary                                              ║
+    ╠═══════════════════════════════════════════════════════════════════════════════╣
+    ║  Theme-aware vector icons for BestFit UI elements. Icons use DynamicResource ║
+    ║  bindings to adapt to light/dark/blue themes.                                ║
+    ║                                                                              ║
+    ║  THEME RESOURCES USED:                                                       ║
+    ║  • ToolbarIconForeground    - Main stroke/fill (dark in light, light in dark) ║
+    ║  • ToolbarIconDocumentFill  - Cell/document background fill                  ║
+    ║  • ToolbarIconAccent        - Accent color (blue cylinder/clock element)      ║
+    ║                                                                              ║
+    ║  ICON FORMAT:                                                                ║
+    ║  Icons are defined as DrawingImage with po:Freeze="False" and x:Shared="False"║
+    ║  so each resolution creates a fresh unfrozen instance whose DynamicResource   ║
+    ║  bindings remain active. Element nodes use SetResourceReference to bind to    ║
+    ║  these icons, which re-resolves on theme change.                             ║
+    ║                                                                              ║
+    ║  USAGE (code-behind):                                                        ║
+    ║  nodeHeader.SetResourceReference(StaticImageProperty, "InputDataIcon");      ║
+    ╚═══════════════════════════════════════════════════════════════════════════════╝
+    -->
+
+    <!-- Input Data Icon - Table with database cylinder (16x16) -->
+    <DrawingImage x:Key="InputDataIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- Outer border / knockout (transparent) -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,14L9.714,14C9.055,15.186 7.257,16 5,16 2.149,16 0,14.711 0,13L0,7C0,6.298,0.372999999999999,5.674,1,5.176L1,0 16,0z" />
+                    <!-- Table frame + cell borders (theme foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M14,6L11,6 11,4 14,4z M14,9L11,9 11,7 14,7z M14,12L11,12 11,10 14,10z M2,1L2,4.579C2.826,4.217 3.851,4 5,4 5.72,4 6.394,4.083 7,4.233L7,4 10,4 10,6 9.714,6C9.888,6.312,10,6.644,10,7L10,9 10,10 10,12 10,13 15,13 15,1z" />
+                    <!-- Table cells (document fill) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconDocumentFill}" Geometry="F1M5,5.6748C3.001,5.6748 1.675,6.4728 1.675,6.9998 1.675,7.5278 3.001,8.3248 5,8.3248 6.999,8.3248 8.325,7.5278 8.325,6.9998 8.325,6.4728 6.999,5.6748 5,5.6748 M11,5.9998L14,5.9998 14,3.9998 11,3.9998z M11,11.9998L14,11.9998 14,9.9998 11,9.9998z M11,8.9998L14,8.9998 14,6.9998 11,6.9998z M7,3.9998L10,3.9998 10,5.9998 9.714,5.9998C9.265,5.1928,8.297,4.5548,7,4.2338z" />
+                    <!-- Database cylinder (accent blue) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconAccent}" Geometry="F1M5,8.3252C3.001,8.3252 1.675,7.5272 1.675,7.0002 1.675,6.4722 3.001,5.6752 5,5.6752 6.999,5.6752 8.325,6.4722 8.325,7.0002 8.325,7.5272 6.999,8.3252 5,8.3252 M8,5.6892C7.267,5.2702 6.201,5.0002 5,5.0002 3.799,5.0002 2.733,5.2702 2,5.6892 1.385,6.0412 1,6.4962 1,7.0002L1,10.0002 1,13.0002C1,14.1042 2.791,15.0002 5,15.0002 7.209,15.0002 9,14.1042 9,13.0002L9,10.0002 9,7.0002C9,6.4962,8.615,6.0412,8,5.6892" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Time Series Data Icon - Table with clock (16x16) -->
+    <DrawingImage x:Key="TimeSeriesDataIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- Outer border / knockout (transparent) -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,0L1,0 1,8.031C0.380000000000001,8.864 0,9.884 0,11 0,12.115 0.380000000000001,13.136 1,13.969L1,14 1.026,14C1.939,15.207 3.373,16 5,16 6.627,16 8.061,15.207 8.974,14L16,14z" />
+                    <!-- Table frame + cell borders + clock outline + hands (theme foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M7,11L7,12 4,12 4,9 5,9 5,11z M5,14C3.345,14 2,12.655 2,11 2,9.345 3.345,8 5,8 6.655,8 8,9.345 8,11 8,12.655 6.655,14 5,14 M5,7C2.791,7 1,8.791 1,11 1,13.209 2.791,15 5,15 7.209,15 9,13.209 9,11 9,8.791 7.209,7 5,7 M14,6L11,6 11,4 14,4z M14,9L11,9 11,7 14,7z M14,12L11,12 11,10 14,10z M10,6L7,6 7,4 10,4z M2,1L2,7.026C2.838,6.391,3.87,6,5,6L3,6 3,4 6,4 6,6 5,6C6.116,6,7.136,6.38,7.969,7L10,7 10,9 9.576,9C9.716,9.318,9.828,9.651,9.899,10L10,10 10,12 9.899,12C9.828,12.349,9.716,12.682,9.576,13L15,13 15,1z" />
+                    <!-- Table cells + clock face (document fill) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconDocumentFill}" Geometry="F1M7,12L4,12 4,9 5,9 5,11 7,11z M5,8C3.345,8 2,9.345 2,11 2,12.655 3.345,14 5,14 6.655,14 8,12.655 8,11 8,9.345 6.655,8 5,8 M7,6L10,6 10,4 7,4z M11,12L14,12 14,10 11,10z M11,9L14,9 14,7 11,7z M11,6L14,6 14,4 11,4z M6,4L3,4 3,6 6,6z M9.576,9L10,9 10,7 7.969,7C8.663,7.517,9.224,8.199,9.576,9 M10,12L10,11C10,11.342,9.965,11.677,9.899,12z M9.899,10L10,10 10,11C10,10.658,9.965,10.323,9.899,10" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Time Series Analysis Icon - Zig-zag line plot with clock (16x16) -->
+    <!-- L-shaped axes (foreground) + blue zig-zag line + small clock bottom-right -->
+    <!-- Clock: center (12,11), outer r=3 (9→15 x, 8→14 y), hands L-shape          -->
+    <DrawingImage x:Key="TimeSeriesAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- L-shaped axes: left vertical (1x16) + bottom horizontal (15x1) (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M0,0L1,0 1,15 16,15 16,16 0,16z" />
+                    <!-- Zig-zag time series line: 2px thick filled shape (accent blue) -->
+                    <!-- Points: (2,10) (4,4) (6,8) (8,2) (10,6) (14,3) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconAccent}">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry>
+                                <PathFigure StartPoint="2,10" IsClosed="True" IsFilled="True">
+                                    <!-- Top edge -->
+                                    <LineSegment Point="4,4" />
+                                    <LineSegment Point="6,8" />
+                                    <LineSegment Point="8,2" />
+                                    <LineSegment Point="10,6" />
+                                    <LineSegment Point="14,3" />
+                                    <!-- Right cap down 2px -->
+                                    <LineSegment Point="14,5" />
+                                    <!-- Bottom edge -->
+                                    <LineSegment Point="10,8" />
+                                    <LineSegment Point="8,4" />
+                                    <LineSegment Point="6,10" />
+                                    <LineSegment Point="4,6" />
+                                    <LineSegment Point="2,12" />
+                                </PathFigure>
+                            </PathGeometry>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <!-- Clock outline circle + hands (foreground) -->
+                    <!-- Outer ring: center (12,11), r=3. Hands: vertical up 2px, horizontal right 2px -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M14,11L14,12 12,12 12,9 13,9 13,11z M12,14C10.345,14 9,12.655 9,11 9,9.345 10.345,8 12,8 13.655,8 15,9.345 15,11 15,12.655 13.655,14 12,14 M12,7C9.791,7 8,8.791 8,11 8,13.209 9.791,15 12,15 14.209,15 16,13.209 16,11 16,8.791 14.209,7 12,7" />
+                    <!-- Clock face (document fill) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconDocumentFill}" Geometry="F1M14,12L12,12 12,9 13,9 13,11 14,11z M12,8C10.345,8 9,9.345 9,11 9,12.655 10.345,14 12,14 13.655,14 15,12.655 15,11 15,9.345 13.655,8 12,8" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Mixture Analysis Icon - 3D prism/cube (16x16) -->
+    <DrawingImage x:Key="MixtureAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- Knockout (transparent) -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M4.7637,-0.000199999999999534L-0.000300000000000189,2.3818 -0.000300000000000189,3.6178 1.9997,4.6188 1.9997,13.6188 6.7637,15.9998 7.9997,15.9998 7.9997,13.6188 15.9997,9.6178 15.9997,2.8818 13.4997,4.1318 5.2367,-0.000199999999999534z" />
+                    <!-- Top face (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M12,4.5L5,1 1,3 8,6.5z" />
+                    <!-- Left face (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M3,13L7,15 7,7.35 3,5.5z" />
+                    <!-- Right face (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M8,8L8,12.5 15,9 15,4.5z" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Univariate Analysis Icon - Two overlapping bell curves matching app icon (16x16)       -->
+    <!-- Right/larger bell = pink/magenta (posterior), Left/smaller bell = blue (prior)         -->
+    <!-- Replicates the BestFit application icon concept: prior -> posterior Bayesian updating  -->
+    <DrawingImage x:Key="UnivariateAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- L-shaped axes: left vertical (1x16) + bottom horizontal (15x1) (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M0,0L1,0 1,15 16,15 16,16 0,16z" />
+                    <!-- Right/larger bell curve (posterior) - pink/magenta, above bottom axis -->
+                    <GeometryDrawing Brush="#D64D8A">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry>
+                                <PathFigure StartPoint="5,15" IsClosed="True" IsFilled="True">
+                                    <!-- Left base to inflection (~y=11): concave up (short flare) -->
+                                    <BezierSegment Point1="5,13.5" Point2="5.5,11" Point3="6,11" />
+                                    <!-- Left inflection to peak: concave down (wide dome) -->
+                                    <BezierSegment Point1="6.5,11" Point2="6.5,1.5" Point3="8.5,1.5" />
+                                    <!-- Peak to right inflection: concave down (wide dome) -->
+                                    <BezierSegment Point1="10.5,1.5" Point2="10.5,11" Point3="11,11" />
+                                    <!-- Right inflection to base (~y=11): concave up (short flare) -->
+                                    <BezierSegment Point1="11.5,11" Point2="13,13.5" Point3="14.5,15" />
+                                </PathFigure>
+                            </PathGeometry>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <!-- Left/smaller bell curve (prior) - blue/purple, above bottom axis -->
+                    <GeometryDrawing Brush="#5B6BDE">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry>
+                                <PathFigure StartPoint="1,15" IsClosed="True" IsFilled="True">
+                                    <BezierSegment Point1="1.5,9" Point2="2.5,6" Point3="3.5,6" />
+                                    <BezierSegment Point1="4.5,6" Point2="5.5,11" Point3="6.5,15" />
+                                </PathFigure>
+                            </PathGeometry>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Bulletin 17C Analysis Icon - "B17" text in Segoe UI SemiBold 10pt (16x16) -->
+    <DrawingImage x:Key="B17AnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- "B17" text geometry (foreground) - Segoe UI SemiBold 10pt, centered in 16x16 -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M2.3,8.9L2.3,11.2 3.3,11.2 4.3,10.9 4.7,10 4.3,9.2 3.2,8.9 2.3,8.9z M2.3,6L2.3,8 3.1,8 4,7.7 4.4,6.9 4.1,6.2 3.2,6 2.3,6z M1.2,5.1L3.4,5.1 5,5.5 5.6,6.7 5.3,7.7 4.3,8.3 4.3,8.4 5.5,8.9 5.9,10.1 5.2,11.5 3.4,12.1 1.2,12.1 1.2,5.1z M8.9,4.9L9.3,4.9 9.3,12.1 8.2,12.1 8.2,6.3 7.5,6.7 6.7,7 6.7,6 7.3,5.8 7.8,5.6 8.3,5.3 8.9,4.9z M10.7,5.1L15.4,5.1 15.4,5.7 14.5,7.2 13.8,8.8 13.3,10.4 12.9,12.1 11.7,12.1 12.1,10.6 12.6,9.1 13.2,7.6 14,6.1 10.7,6.1 10.7,5.1z" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Distribution Fitting Analysis Icon - Histogram with fitted curve (16x16) -->
+    <!-- Layout: L-shaped axes (1px) + 3 histogram bars (3px wide, 1px spacing) + blue curve -->
+    <!-- Left axis:   x=0, full height 16px, 1px wide                                       -->
+    <!-- Bottom axis: y=15, starts at x=1, 15px wide, 1px tall, connects at corner           -->
+    <!-- Bar 1: x=2  w=3 h=4  (y=11..15)                                                    -->
+    <!-- Bar 2: x=6  w=3 h=14 (y=1..15)                                                     -->
+    <!-- Bar 3: x=10 w=3 h=11 (y=4..15)                                                     -->
+    <DrawingImage x:Key="FittingAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- L-shaped axes: left vertical (1x16) + bottom horizontal (15x1) (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M0,0L1,0 1,15 16,15 16,16 0,16z" />
+                    <!-- Histogram bars: 3 bars, 3px wide, 1px gaps (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M2,11L5,11 5,15 2,15z M6,1L9,1 9,15 6,15z M10,4L13,4 13,15 10,15z" />
+                    <!-- Fitted curve: 3px thick filled shape, start (3,10) apex (8,4) end (15,11) -->
+                    <!-- Top edge curves from (3,10) through apex (8,4) to (15,11)                -->
+                    <!-- Bottom edge curves back from (15,14) through (8,7) to (3,13)             -->
+                    <GeometryDrawing Brush="#FF00CED1">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry>
+                                <PathFigure StartPoint="3,10" IsClosed="True" IsFilled="True">
+                                    <!-- Top edge: left to right -->
+                                    <QuadraticBezierSegment Point1="5.5,2" Point2="8,4" />
+                                    <QuadraticBezierSegment Point1="10.5,6" Point2="15,11" />
+                                    <!-- Right cap down 3px -->
+                                    <LineSegment Point="15,14" />
+                                    <!-- Bottom edge: right to left (wider gap on steep left side) -->
+                                    <QuadraticBezierSegment Point1="10.5,9" Point2="8,7" />
+                                    <QuadraticBezierSegment Point1="5.5,6" Point2="3,14" />
+                                </PathFigure>
+                            </PathGeometry>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Bivariate Analysis Icon - Scatter plot with copula pattern (16x16) -->
+    <!-- L-shaped axes (foreground) + 8 data points 2x2px (accent) in upward copula shape -->
+    <DrawingImage x:Key="BivariateAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- L-shaped axes: left vertical (1x16) + bottom horizontal (15x1) (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M0,0L1,0 1,15 16,15 16,16 0,16z" />
+                    <!-- 13 data points 2x2px in Gumbel copula pattern (accent)              -->
+                    <!-- Lower-left: wide scatter around 1:1. Upper-right: tight on 1:1  -->
+                    <!-- Upper tail dependence: cluster tightens toward upper-right corner -->
+                    <!-- Coords given as bottom-left of 2x2 square; XAML rect = (x, y-2, 2, 2) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconAccent}" Geometry="F1M3,12L5,12 5,14 3,14z M3,9L5,9 5,11 3,11z M6,12L8,12 8,14 6,14z M6,9L8,9 8,11 6,11z M4,6L6,6 6,8 4,8z M9,12L11,12 11,14 9,14z M9,9L11,9 11,11 9,11z M12,9L14,9 14,11 12,11z M10,6L12,6 12,8 10,8z M7,6L9,6 9,8 7,8z M10,3L12,3 12,5 10,5z M14,2L16,2 16,4 14,4z M13,5L15,5 15,7 13,7z" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Coincident Frequency Analysis Icon - Two interlocking rectangular frames with arrow (16x16) -->
+    <!-- Two overlapping panels (foreground frames) joined by a directional arrow (foreground arrowhead) -->
+    <!-- + light document fills inside each panel. Suggests "two analyses → one coincident view". -->
+    <!-- Source: AiToXaml export adapted to project theme brushes. -->
+    <DrawingImage x:Key="CoincidentFrequencyAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- Upper-left panel frame (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M4.5859,6L3.9999,5.414 3.9999,5 1.9999,5 1.9999,2 4.9999,2 4.9999,4 5.9999,4 5.9999,1 0.9999,1 0.9999,6 2.9999,6z" />
+                    <!-- Right panel frame (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M9,5L9,5.586 10,6.586 10,6 14,6 14,10 10,10 10,9.414 9,10.414 9,11 15,11 15,5z" />
+                    <!-- Lower-left panel frame (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M5,14L2,14 2,11 4,11 4,10.586 4.586,10 3,10 1,10 1,15 6,15 6,12 5,12z" />
+                    <!-- Diagonal connecting arrow (foreground) — "coincident" join across panels -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M7,5L5,5 7,7 4,7 4,9 7,9 5,11 7,11 10,8z" />
+                    <!-- Upper-left panel fill (document fill) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconDocumentFill}" Geometry="F1M2,5L4,5 4,4 5,4 5,2 2,2z" />
+                    <!-- Right panel fill (document fill) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconDocumentFill}" Geometry="F1M10,6L10,6.586 11,7.586 11,8.414 10,9.414 10,10 14,10 14,6z" />
+                    <!-- Lower-left panel fill (document fill) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconDocumentFill}" Geometry="F1M4,11L2,11 2,14 5,14 5,12 4,12z" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Composite Analysis Icon - Four quadrant grid (16x16) -->
+    <DrawingImage x:Key="CompositeAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- Inner cell fills (document fill) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconDocumentFill}" Geometry="F1M5,5L3,5 3,3 5,3z M13,3L11,3 11,5 13,5z M13,11L11,11 11,13 13,13z M5,11L3,11 3,13 5,13z" />
+                    <!-- Four quadrant frames (accent) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconAccent}" Geometry="F1M9,15L15,15 15,9 9,9z M11,11L13,11 13,13 11,13z M1,7L7,7 7,1 1,1z M3,3L5,3 5,5 3,5z M1,15L7,15 7,9 1,9z M3,11L5,11 5,13 3,13z M9,1L9,7 15,7 15,1z M13,5L11,5 11,3 13,3z" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Rating Curve Analysis Icon - Power-law curve with uncertainty band (16x16) -->
+    <!-- L-shaped axes (foreground) + uncertainty envelope (document fill) + central curve (accent) -->
+    <!-- Rating curve: stage(y) vs discharge(x), steep rise that flattens — classic Q = α(h-ξ)^β  -->
+    <DrawingImage x:Key="RatingCurveAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- L-shaped axes: left vertical (1x16) + bottom horizontal (15x1) (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M0,0L1,0 1,15 16,15 16,16 0,16z" />
+                    <!-- Uncertainty envelope: semi-transparent accent blue band               -->
+                    <GeometryDrawing Brush="#601C97EA">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry>
+                                <PathFigure StartPoint="2,14" IsClosed="True" IsFilled="True">
+                                    <!-- Upper bound -->
+                                    <QuadraticBezierSegment Point1="2,6" Point2="5,4" />
+                                    <QuadraticBezierSegment Point1="8,2" Point2="15,1" />
+                                    <!-- Cap across top -->
+                                    <LineSegment Point="15,4" />
+                                    <!-- Lower bound (tighter to central curve) -->
+                                    <QuadraticBezierSegment Point1="8,5" Point2="6,7" />
+                                    <QuadraticBezierSegment Point1="4,10" Point2="4,14" />
+                                </PathFigure>
+                            </PathGeometry>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <!-- Central rating curve: 2px thick accent blue over the envelope -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconAccent}">
+                        <GeometryDrawing.Geometry>
+                            <PathGeometry>
+                                <PathFigure StartPoint="2,14" IsClosed="True" IsFilled="True">
+                                    <!-- Top edge -->
+                                    <QuadraticBezierSegment Point1="2,7" Point2="5,5" />
+                                    <QuadraticBezierSegment Point1="8,3" Point2="15,2" />
+                                    <!-- Right cap down 2px -->
+                                    <LineSegment Point="15,4" />
+                                    <!-- Bottom edge -->
+                                    <QuadraticBezierSegment Point1="8,5" Point2="5,7" />
+                                    <QuadraticBezierSegment Point1="3,9" Point2="3,14" />
+                                </PathFigure>
+                            </PathGeometry>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Point Process Analysis Icon - Circular arrow with center dot (16x16)                 -->
+    <!-- Based on VS2019 Image Library process icon. Center dot = accent, outer symbol = foreground -->
+    <DrawingImage x:Key="PointProcessAnalysisIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- Inner dot at center (accent blue) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconAccent}" Geometry="F1M5,8C5,9.104 5.896,10 7,10 8.104,10 9,9.104 9,8 9,6.896 8.104,6 7,6 5.896,6 5,6.896 5,8z" />
+                    <!-- Outer circular arrow with refresh symbol (foreground) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M11.986,8.154C11.987,8.103 12,8.052 12,8 12,5.243 9.757,3 7,3 4.243,3 2,5.243 2,8 2,10.757 4.243,13 7,13 8.39,13 9.682,12.442 10.637,11.432L11.363,12.117C10.218,13.331 8.668,14 7,14 3.691,14 1,11.309 1,8 1,4.691 3.691,2 7,2 10.309,2 13,4.691 13,8 13,8.062 12.985,8.123 12.983,8.185L14.396,6.771 15.104,7.479 12.5,10.082 9.896,7.479 10.604,6.771z" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Batch Run Icon - Circular arrows with green play triangle (16x16)                     -->
+    <!-- Based on VS2019 Image Library. Play arrow = green (#16A34A), arrows = foreground       -->
+    <DrawingImage x:Key="BatchRunIcon" x:Shared="False" po:Freeze="False">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <DrawingGroup.Children>
+                    <!-- Transparent background -->
+                    <GeometryDrawing Brush="#00FFFFFF" Geometry="F1M16,16L0,16 0,0 16,0z" />
+                    <!-- Circular arrows (foreground - black in light, white in dark) -->
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M14,8.5C14,5.637,11.799,3.254,9,3L9,5C10.691,5.245 12,6.741 12,8.5 12,9.891 11.178,11.085 10,11.648L10,9 8,11 8,15 12,15 14,13 11.652,13C13.069,12.004,14,10.359,14,8.5" />
+                    <GeometryDrawing Brush="{DynamicResource ToolbarIconForeground}" Geometry="F1M8,7L8,3 6.277,3 7.944,4 2.481,7.277C2.178,7.958 2,8.707 2,9.5 2,12.363 4.201,14.746 7,15L7,13C5.309,12.755 4,11.259 4,9.5 4,8.109 4.822,6.915 6,6.352L6,9z" />
+                    <!-- Green play triangle (same green as GenericControls RunIcon) -->
+                    <GeometryDrawing Brush="#16A34A" Geometry="F1M1,1L6,4 1,7z" />
+                </DrawingGroup.Children>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+</ResourceDictionary>

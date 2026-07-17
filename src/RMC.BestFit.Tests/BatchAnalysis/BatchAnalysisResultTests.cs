@@ -5,7 +5,7 @@ using RMC.BestFit.Analyses;
 namespace RMC.BestFit.Tests.BatchAnalysis;
 
 /// <summary>
-/// Unit tests for the <see cref="BatchAnalysisResult"/> POCO that records
+/// Unit tests for the <c>BatchAnalysisResult</c> POCO that records
 /// the outcome of a single analysis in a batch run.
 /// </summary>
 [TestClass]
@@ -20,11 +20,31 @@ public class BatchAnalysisResultTests
         public event EventHandler<CancelEventArgs>? AnalysisStarting;
         public event EventHandler<AnalysisRunCompletedEventArgs>? AnalysisCompleted;
         public bool IsEstimated => false;
+        /// <summary>
+        /// Runs the stub analysis asynchronously.
+        /// </summary>
+        /// <param name="progressReporter">The optional progress reporter.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        /// <remarks>
+        /// This helper keeps fixture setup local to the tests that use it.
+        /// </remarks>
         public Task RunAsync(SafeProgressReporter? progressReporter = null) => Task.CompletedTask;
+        /// <summary>
+        /// Cancels the stub analysis.
+        /// </summary>
+        /// <remarks>
+        /// This helper keeps fixture setup local to the tests that use it.
+        /// </remarks>
         public void CancelAnalysis() { }
         public (bool IsValid, List<string> ValidationMessages) Validate() => (true, new List<string>());
 
         // Keep events referenced so they aren't reported as unused.
+        /// <summary>
+        /// Raises all stub analysis events.
+        /// </summary>
+        /// <remarks>
+        /// This helper keeps fixture setup local to the tests that use it.
+        /// </remarks>
         internal void RaiseAll()
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(""));

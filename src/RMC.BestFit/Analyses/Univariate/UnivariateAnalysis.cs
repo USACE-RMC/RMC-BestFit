@@ -1,4 +1,4 @@
-ï»¿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -23,7 +23,7 @@ namespace RMC.BestFit.Analyses
     ///     Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil
     /// </para>
     /// <para>
-    /// This analysis fits a specified <see cref="UnivariateDistribution"/> using Bayesian MCMC methods.
+    /// This analysis fits a specified <c>UnivariateDistribution</c> using Bayesian MCMC methods.
     /// It produces uncertainty quantification for both frequency analysis (quantiles at specified
     /// probabilities) and chronology analysis (time-varying quantiles for nonstationary models).
     /// </para>
@@ -41,7 +41,7 @@ namespace RMC.BestFit.Analyses
         /// for the specified univariate distribution.
         /// </summary>
         /// <param name="univariateDistribution">
-        /// The <see cref="UnivariateDistribution"/> to be estimated.
+        /// The <c>UnivariateDistribution</c> to be estimated.
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="univariateDistribution"/> is <c>null</c>.
@@ -59,7 +59,7 @@ namespace RMC.BestFit.Analyses
         /// MCMC results and analysis results from a previous estimation.
         /// </summary>
         /// <param name="univariateDistribution">
-        /// The <see cref="UnivariateDistribution"/> associated with this analysis.
+        /// The <c>UnivariateDistribution</c> associated with this analysis.
         /// </param>
         /// <param name="xElement">
         /// The XML element from which to restore the analysis configuration (BayesianAnalysis settings,
@@ -67,7 +67,7 @@ namespace RMC.BestFit.Analyses
         /// </param>
         /// <param name="mcmcResults">
         /// Optional MCMC results to restore from a previous estimation.
-        /// When provided, results are set via <see cref="BayesianAnalysis.SetCustomMCMCResults"/>
+        /// When provided, results are set via <c>BayesianAnalysis.SetCustomMCMCResults</c>
         /// with <c>skipInformationCriteria: true</c> since DIC/WAIC/LOO-CV are already in the BayesianAnalysis XElement.
         /// </param>
         /// <param name="analysisResults">
@@ -122,6 +122,7 @@ namespace RMC.BestFit.Analyses
             // Restore analysis results
             AnalysisResults = analysisResults;
             ChronologyAnalysisResults = chronologyAnalysisResults;
+            NormalizeRestoredEstimatedState();
         }
 
         #endregion
@@ -139,7 +140,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// When the distribution changes, the analysis subscribes to its
-        /// <see cref="UnivariateDistribution.PropertyChanged"/> event and updates
+        /// <c>PropertyChanged</c> event and updates
         /// the associated <see cref="BayesianAnalysis"/> model reference.
         /// </para>
         /// </remarks>
@@ -202,7 +203,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// The <see cref="BayesianAnalysis"/> handles all MCMC simulation, convergence diagnostics,
-        /// and posterior sampling for the <see cref="UnivariateDistribution"/>.
+        /// and posterior sampling for the <c>UnivariateDistribution</c>.
         /// </para>
         /// </remarks>
         public BayesianAnalysis BayesianAnalysis
@@ -255,13 +256,39 @@ namespace RMC.BestFit.Analyses
         #region Methods
 
         /// <summary>
+        /// Repairs the persisted estimated flag when older saves contain complete Bayesian artifacts
+        /// but the outer analysis-level flag was left false.
+        /// </summary>
+        /// <remarks>
+        /// Point-estimate-only setting changes are routed through <see cref="AnalysisBase.ReprocessIfEstimated"/>.
+        /// Some persisted projects can have an estimated <see cref="BayesianAnalysis"/>, serialized
+        /// <see cref="MCMCResults"/>, and serialized <see cref="AnalysisResults"/> while the outer
+        /// <see cref="AnalysisBase.IsEstimated"/> flag is false. Treating those artifacts as authoritative
+        /// restores the intended post-processing path without rerunning MCMC.
+        /// </remarks>
+        private void NormalizeRestoredEstimatedState()
+        {
+            if (_isEstimated)
+            {
+                return;
+            }
+
+            if (BayesianAnalysis?.IsEstimated == true &&
+                BayesianAnalysis.Results != null &&
+                AnalysisResults != null)
+            {
+                _isEstimated = true;
+            }
+        }
+
+        /// <summary>
         /// Handles changes to the <see cref="ProbabilityOrdinates"/> collection.
         /// </summary>
         /// <remarks>
         /// <para>
         /// Probability ordinates drive only <see cref="AnalysisResults"/> (the frequency/quantile
         /// output). They do not affect the Bayesian MCMC fit, <see cref="ChronologyAnalysisResults"/>,
-        /// or <see cref="IsEstimated"/>. So:
+        /// or <c>IsEstimated</c>. So:
         /// </para>
         /// <list type="bullet">
         /// <item><description>If not estimated, no-op.</description></item>
@@ -285,19 +312,19 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Handles property changes on the <see cref="UnivariateDistribution"/> model.
+        /// Handles property changes on the <c>UnivariateDistribution</c> model.
         /// Routes each notification to one of three branches per the canonical
         /// property-change classification:
         /// <list type="bullet">
-        /// <item><description><b>Clear results</b> â€” structurally destructive changes
+        /// <item><description><b>Clear results</b> — structurally destructive changes
         /// (data, distribution, parameters, trend models, prior toggles) call
         /// <see cref="ClearResults"/> to invalidate the fit.</description></item>
-        /// <item><description><b>Re-process if estimated</b> â€” <c>ParameterTimeIndex</c>
+        /// <item><description><b>Re-process if estimated</b> — <c>ParameterTimeIndex</c>
         /// re-runs <see cref="CreateFrequencyAnalysisResultsAsync"/> against the existing
         /// MCMC fit; <c>Alpha</c> re-runs <see cref="CreateChronologyResultsAsync"/>.
         /// Both are post-fit selectors of which time-slice / exceedance probability the
-        /// displayed curves are evaluated at â€” cheap to recompute, no MCMC re-run needed.</description></item>
-        /// <item><description><b>Propagate only</b> â€” every other notification flows through
+        /// displayed curves are evaluated at — cheap to recompute, no MCMC re-run needed.</description></item>
+        /// <item><description><b>Propagate only</b> — every other notification flows through
         /// <see cref="ModelBase.RaisePropertyChange"/> for UI binding.</description></item>
         /// </list>
         /// </summary>
@@ -344,7 +371,7 @@ namespace RMC.BestFit.Analyses
                     // or past the data's last index. The Chronology plot always covers the full
                     // period of record; when TimeIndex > maxIndex it extends a forecast tail to
                     // the new index. So re-process Chronology only when at least one of (old, new)
-                    // is past the data's last index â€” i.e. the forecast tail just appeared,
+                    // is past the data's last index — i.e. the forecast tail just appeared,
                     // disappeared, or changed extent. When both old and new are inside the POR,
                     // the chronology output is unchanged and a re-process would be wasted work.
                     int? maxIndex = TryGetMaxDataIndex();
@@ -420,7 +447,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears all analysis results and resets the <see cref="IsEstimated"/> flag.
+        /// Clears all analysis results and resets the <c>IsEstimated</c> flag.
         /// </summary>
         public void ClearResults()
         {
@@ -433,13 +460,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only â€” the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results),
-        /// <see cref="ChronologyAnalysisResults"/>, and <see cref="IsEstimated"/> intact.
-        /// Called when ordinates become invalid â€” the fit survives and can be reused once
+        /// <see cref="ChronologyAnalysisResults"/>, and <c>IsEstimated</c> intact.
+        /// Called when ordinates become invalid — the fit survives and can be reused once
         /// valid ordinates are restored.
         /// </remarks>
         public void ClearFrequencyAnalysisResults()
@@ -474,13 +501,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults â€”
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -494,12 +522,12 @@ namespace RMC.BestFit.Analyses
                     UnivariateDistribution.ProcessQuantilePriors();
 
                     // Run Bayesian analysis
-                    await BayesianAnalysis.RunAsync(progressReporter, false);
+                    await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process
                     if (BayesianAnalysis.IsEstimated == true)
                     {
-                        progressReporter?.ReportProgress(100);
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
                         await CreateFrequencyAnalysisResultsAsync();
                         await CreateChronologyResultsAsync();
                     }
@@ -508,6 +536,10 @@ namespace RMC.BestFit.Analyses
                     // MCMC (e.g., sampler returned without setting IsEstimated due to
                     // a soft failure) is reported correctly to AnalysisCompleted.
                     IsEstimated = BayesianAnalysis.IsEstimated;
+                    if (IsEstimated)
+                    {
+                        AnalysisProgress.ReportComplete(progressReporter);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -632,7 +664,7 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ModeCurve[i] = UnivariateDistribution.Distribution.InverseCDF(1 - ProbabilityOrdinates[i]);
 
                 // Information criteria. AIC/BIC are computed at the MAP estimate
-                // using the full log-likelihood (data + prior) â€” with uniform priors
+                // using the full log-likelihood (data + prior) — with uniform priors
                 // this matches the conventional MLE-based AIC/BIC; with informative
                 // priors the metric reflects the prior contribution as well, which
                 // is intentional in a Bayesian-first framework where model
@@ -689,7 +721,7 @@ namespace RMC.BestFit.Analyses
                 var sampledDistributions = new UnivariateDistributionBase[B];
                 if (UnivariateDistribution.IsNonstationary == true)
                 {
-                    Parallel.For(0, B, idx =>
+                    Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
                     {
                         var ud = (UnivariateDistribution)UnivariateDistribution.Clone();
                         ud.SetParameterValues(BayesianAnalysis.Results.Output[idx].Values);
@@ -698,7 +730,7 @@ namespace RMC.BestFit.Analyses
                 }
                 else
                 {
-                    Parallel.For(0, B, idx =>
+                    Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
                     {
                         var d = UnivariateDistribution.Distribution.Clone();
                         d.SetParameters(BayesianAnalysis.Results.Output[idx].Values);
@@ -756,7 +788,7 @@ namespace RMC.BestFit.Analyses
                 int length = ChronologyAnalysisResults.ModeCurve.Length;
                 var ts = new double[realz, length];
 
-                Parallel.For(0, realz, idx =>
+                Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
                     var ud = (UnivariateDistribution)UnivariateDistribution.Clone();
                     ud.SetParameterValues(BayesianAnalysis.Results!.Output[idx].Values);
@@ -767,7 +799,7 @@ namespace RMC.BestFit.Analyses
                 var ci = new double[length, 2];
                 double a = (1 - BayesianAnalysis.CredibleIntervalWidth) / 2;
 
-                Parallel.For(0, ts.GetLength(1), idx =>
+                Parallel.For(0, ts.GetLength(1), AnalysisProgress.CreateParallelOptions(), idx =>
                 {
                     var data = ts.GetColumn(idx);
                     Array.Sort(data);
@@ -826,7 +858,7 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        /// The XML representation does not include the underlying <see cref="UnivariateDistribution"/>
+        /// The XML representation does not include the underlying <c>UnivariateDistribution</c>
         /// or computed results (<see cref="AnalysisResults"/>, <see cref="ChronologyAnalysisResults"/>).
         /// It stores:
         /// </para>

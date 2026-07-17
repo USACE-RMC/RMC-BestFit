@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -11,6 +11,7 @@ using Numerics.Utilities;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -58,7 +59,7 @@ namespace RMC.BestFit.Analyses
 
     }
 
-    // SkewLinkType enum removed — gamma link is now always ASinH with adaptive epsilon from gammaHat.
+    // SkewLinkType enum removed � gamma link is now always ASinH with adaptive epsilon from gammaHat.
 
     /// <summary>
     /// Implements the Bulletin 17C flood frequency analysis using the Generalized Method of Moments (GMM).
@@ -91,7 +92,7 @@ namespace RMC.BestFit.Analyses
     /// <item><description>
     /// England, J.F., Jr., Cohn, T.A., Faber, B.A., Stedinger, J.R., Thomas, W.O., Jr.,
     /// Veilleux, A.G., Kiang, J.E., and Mason, R.R., Jr., 2019, Guidelines for determining
-    /// flood flow frequency—Bulletin 17C: U.S. Geological Survey Techniques and Methods,
+    /// flood flow frequency�Bulletin 17C: U.S. Geological Survey Techniques and Methods,
     /// book 4, chap. B5, 148 p.
     /// </description></item>
     /// </list>
@@ -132,7 +133,7 @@ namespace RMC.BestFit.Analyses
         /// </param>
         /// <param name="mcmcResults">
         /// Optional MCMC results to restore from a previous estimation.
-        /// When provided, results are set via <see cref="BayesianAnalysis.SetCustomMCMCResults"/>
+        /// When provided, results are set via <c>BayesianAnalysis.SetCustomMCMCResults</c>
         /// with <c>skipInformationCriteria: true</c> since DIC/WAIC/LOO-CV are already in the BayesianAnalysis XElement.
         /// </param>
         /// <param name="analysisResults">
@@ -186,7 +187,7 @@ namespace RMC.BestFit.Analyses
                 _isEstimated = isEst;
             }
 
-            // Restore MCMC results if provided — pass parameter names so ParameterSetsControl
+            // Restore MCMC results if provided � pass parameter names so ParameterSetsControl
             // and KDE/Histogram/Bivariate combo boxes can display column headers.
             if (mcmcResults != null)
             {
@@ -196,9 +197,10 @@ namespace RMC.BestFit.Analyses
 
             // Restore analysis results
             AnalysisResults = analysisResults;
+            NormalizeRestoredEstimatedState();
 
             // Restore GMM estimation results if present in the XElement.
-            // GMM is a live computation object — the model provides delegates (MomentConditionFunction, etc.)
+            // GMM is a live computation object � the model provides delegates (MomentConditionFunction, etc.)
             // and RestoreFromXElement re-attaches the stored output state (BestParameterSet, matrices, diagnostics).
             var gmmElement = xElement.Element(nameof(GeneralizedMethodOfMoments));
             if (gmmElement != null && Bulletin17CDistribution.DataFrame != null)
@@ -216,6 +218,9 @@ namespace RMC.BestFit.Analyses
                 }
             }
 
+            // Restore uncertainty sampling diagnostics when present. The element is optional;
+            // projects saved by earlier versions restore with null diagnostics.
+            BootstrapResults = BootstrapDiagnostics.FromXElement(xElement.Element(nameof(BootstrapDiagnostics)));
         }
 
         #endregion
@@ -391,12 +396,42 @@ namespace RMC.BestFit.Analyses
         public BootstrapDiagnostics? BootstrapResults { get; private set; }
 
         /// <summary>
-        /// Optional override for the SES 'a' parameter formula used in the γ link function.
+        /// Gets a user-facing description of why the most recent uncertainty quantification was
+        /// degraded or aborted, or an empty string when no issue occurred.
+        /// </summary>
+        /// <remarks>
+        /// Populated when a sampling method aborts (for example, when more than half of the
+        /// requested bootstrap replicates are discarded after retries, or the sampled covariance
+        /// is not usable) and when the delivered ensemble is too small to summarize. The UI layer
+        /// surfaces this text as an analysis warning message after a run that produced a point
+        /// estimate without uncertainty results. Cleared by <see cref="ClearResults"/>.
+        /// </remarks>
+        public string UncertaintyDiagnosticMessage { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Records the reason the most recent uncertainty quantification was degraded or aborted.
+        /// </summary>
+        /// <param name="message">The user-facing diagnostic text.</param>
+        /// <remarks>
+        /// Also writes the text to the debug trace so headless runs retain the explanation.
+        /// May be invoked from a background sampling thread; the property notification is a
+        /// plain <see cref="System.ComponentModel.INotifyPropertyChanged"/> raise with no
+        /// dispatcher marshaling, matching the model layer's notification conventions.
+        /// </remarks>
+        private void SetUncertaintyDiagnosticMessage(string message)
+        {
+            UncertaintyDiagnosticMessage = message;
+            Debug.WriteLine($"Bulletin17CAnalysis: {message}");
+            RaisePropertyChange(nameof(UncertaintyDiagnosticMessage));
+        }
+
+        /// <summary>
+        /// Optional override for the SES 'a' parameter formula used in the ? link function.
         /// </summary>
         /// <remarks>
         /// <para>
         /// When set, this delegate receives (gammaHat, sampleSize) and returns the desired SES 'a' value,
-        /// bypassing the default a(γ) formula in <see cref="GetDistributionsFromLinkedMultivariateNormal"/>.
+        /// bypassing the default a(?) formula in <c>GetDistributionsFromLinkedMultivariateNormal</c>.
         /// When null (default), the production calibrated formula is used.
         /// </para>
         /// <para>
@@ -411,11 +446,37 @@ namespace RMC.BestFit.Analyses
         #region Methods
 
         /// <summary>
+        /// Repairs the persisted estimated flag when older saves contain complete Bayesian artifacts
+        /// but the outer analysis-level flag was left false.
+        /// </summary>
+        /// <remarks>
+        /// Point-estimate-only setting changes are routed through <see cref="AnalysisBase.ReprocessIfEstimated"/>.
+        /// Some persisted projects can have an estimated <see cref="BayesianAnalysis"/>, serialized
+        /// <see cref="MCMCResults"/>, and serialized <see cref="AnalysisResults"/> while the outer
+        /// <see cref="AnalysisBase.IsEstimated"/> flag is false. Treating those artifacts as authoritative
+        /// restores the intended post-processing path without rerunning MCMC.
+        /// </remarks>
+        private void NormalizeRestoredEstimatedState()
+        {
+            if (_isEstimated)
+            {
+                return;
+            }
+
+            if (BayesianAnalysis?.IsEstimated == true &&
+                BayesianAnalysis.Results != null &&
+                AnalysisResults != null)
+            {
+                _isEstimated = true;
+            }
+        }
+
+        /// <summary>
         /// Handles changes to the <see cref="ProbabilityOrdinates"/> collection.
         /// </summary>
         /// <remarks>
-        /// Ordinates drive only <see cref="AnalysisResults"/> — not the GMM fit or
-        /// <see cref="IsEstimated"/>. When estimated and valid, reprocess via
+        /// Ordinates drive only <see cref="AnalysisResults"/> � not the GMM fit or
+        /// <c>IsEstimated</c>. When estimated and valid, reprocess via
         /// <see cref="CreateFrequencyAnalysisResultsAsync"/>; when invalid, clear
         /// <see cref="AnalysisResults"/> only; when not estimated, no-op.
         /// </remarks>
@@ -498,14 +559,15 @@ namespace RMC.BestFit.Analyses
             GMMElapsedTime = null;
             UncertaintyElapsedTime = null;
             BootstrapResults = null;
+            UncertaintyDiagnosticMessage = string.Empty;
             RaisePropertyChange(nameof(AnalysisResults));
             RaisePropertyChange(nameof(GMM));
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only � the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>. Leaves the GMM fit,
-        /// BayesianAnalysis results, and <see cref="IsEstimated"/> intact.
+        /// BayesianAnalysis results, and <c>IsEstimated</c> intact.
         /// </summary>
         public void ClearFrequencyAnalysisResults()
         {
@@ -523,7 +585,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -534,28 +596,43 @@ namespace RMC.BestFit.Analyses
 
                     var totalStopwatch = Stopwatch.StartNew();
 
-                    // Preprocess data
-                    Bulletin17CDistribution.DataFrame.ProcessThresholdSeries();
-                    Bulletin17CDistribution.LinkController = LinkController.ForLocationScaleShape();
-                    Bulletin17CDistribution.SetInitialParameters();
-                    Bulletin17CDistribution.SetPenaltyFunction();
-                    _gmm = new GeneralizedMethodOfMoments(Bulletin17CDistribution);
-
                     progressReporter?.IndicateTaskStart();
-                    progressReporter?.ReportProgress(0);
+                    AnalysisProgress.ReportStarting(progressReporter);
 
-                    // Run GMM estimation with timing
-                    var gmmStopwatch = Stopwatch.StartNew();
-                    _gmm!.Estimate();
-                    gmmStopwatch.Stop();
-                    GMMElapsedTime = gmmStopwatch.Elapsed;
+                    GeneralizedMethodOfMoments? gmm = null;
+                    TimeSpan gmmElapsedTime = TimeSpan.Zero;
+                    CancellationToken cancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None;
 
+                    await Task.Run(() =>
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        // Preprocess data and run the CPU-bound GMM fit off the UI thread.
+                        Bulletin17CDistribution.DataFrame.ProcessThresholdSeries();
+                        Bulletin17CDistribution.LinkController = LinkController.ForLocationScaleShape();
+                        Bulletin17CDistribution.SetInitialParameters();
+                        Bulletin17CDistribution.SetPenaltyFunction();
+
+                        var candidateGmm = new GeneralizedMethodOfMoments(Bulletin17CDistribution);
+                        var gmmStopwatch = Stopwatch.StartNew();
+                        candidateGmm.Estimate();
+                        gmmStopwatch.Stop();
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                        gmm = candidateGmm;
+                        gmmElapsedTime = gmmStopwatch.Elapsed;
+                    }, cancellationToken);
+
+                    _gmm = gmm;
+                    GMMElapsedTime = gmmElapsedTime;
                     if (_gmm!.Status == OptimizationStatus.Failure)
                     {
                         // Send message here
                         Debug.WriteLine("The GMM solver failed to find a solution for the distribution fit.");
                         return;
                     }
+
+                    progressReporter?.ReportProgress(1);
 
                     // Set IsEstimated BEFORE creating results so that when
                     // AnalysisResults PropertyChanged fires inside CreateFrequencyAnalysisResultsAsync,
@@ -565,7 +642,7 @@ namespace RMC.BestFit.Analyses
                     // Run heavy uncertainty quantification (MVN/Bootstrap simulation) once.
                     // The resulting parameter sets are stored in BayesianAnalysis.Results.
                     var uncertaintyStopwatch = Stopwatch.StartNew();
-                    await RunUncertaintyQuantificationAsync(progressReporter);
+                    await RunUncertaintyQuantificationAsync(AnalysisProgress.CreatePhaseReporter(progressReporter, 1, 98, "B17C Uncertainty"));
                     uncertaintyStopwatch.Stop();
                     UncertaintyElapsedTime = uncertaintyStopwatch.Elapsed;
 
@@ -578,6 +655,7 @@ namespace RMC.BestFit.Analyses
 
                     // Build initial frequency-analysis results from the sampled parameter sets.
                     // Subsequent ordinate changes call this fast path directly without resampling.
+                    AnalysisProgress.ReportProcessingResults(progressReporter);
                     await CreateFrequencyAnalysisResultsAsync();
 
                     // If cancelled during uncertainty quantification (caught by early return, not exception),
@@ -594,6 +672,7 @@ namespace RMC.BestFit.Analyses
 
                     RaisePropertyChange(nameof(IsEstimated));
                     RaisePropertyChange(nameof(GMM));
+                    AnalysisProgress.ReportComplete(progressReporter);
                 }
                 catch (OperationCanceledException)
                 {
@@ -634,11 +713,11 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// <para>
-        /// This is the expensive compute path — it samples from the GMM covariance (or
+        /// This is the expensive compute path � it samples from the GMM covariance (or
         /// resamples data for bootstrap) and re-fits a distribution per draw. It runs ONCE
         /// per estimation. Subsequent <see cref="CreateFrequencyAnalysisResultsAsync"/>
         /// calls (e.g., on probability-ordinate change) read the persisted parameter sets
-        /// from <see cref="BayesianAnalysis"/>.Results and skip this resampling — same
+        /// from <see cref="BayesianAnalysis"/>.Results and skip this resampling � same
         /// fast pattern used by <see cref="UnivariateAnalysis"/>.
         /// </para>
         /// </remarks>
@@ -659,7 +738,7 @@ namespace RMC.BestFit.Analyses
                     UncertaintyMethod.MultivariateNormal       => GetParameterSetsFromMultivariateNormal(progressReporter),
                     UncertaintyMethod.LinkedMultivariateNormal => GetParameterSetsFromLinkedMultivariateNormal(progressReporter),
                     UncertaintyMethod.Bootstrap                => GetParameterSetsFromParametricBootstrap(progressReporter),
-                    UncertaintyMethod.BiasCorrectedBootstrap   => GetParameterSetsFromPivotBootstrap(progressReporter),
+                    UncertaintyMethod.BiasCorrectedBootstrap   => GetParameterSetsFromPivotalBootstrap(progressReporter),
                     _                                          => GetParameterSetsFromMultivariateNormal(progressReporter)
                 };
 
@@ -675,19 +754,42 @@ namespace RMC.BestFit.Analyses
 
             if (rawSets == null)
             {
-                Debug.WriteLine("B17C: Uncertainty quantification failed — the covariance matrix from GMM estimation " +
-                    "is not positive-definite. The point estimate is still valid but confidence intervals cannot be computed. " +
-                    "Consider using a different distribution or the Bootstrap/Bias-Corrected Bootstrap uncertainty method.");
+                // The sampler either set a specific diagnostic before returning null (e.g., an
+                // abort after excessive discards) or failed on the shared covariance path.
+                if (string.IsNullOrEmpty(UncertaintyDiagnosticMessage))
+                {
+                    SetUncertaintyDiagnosticMessage(
+                        "Uncertainty quantification failed — the covariance matrix from GMM estimation is not positive-definite. " +
+                        "The point estimate is still valid but confidence intervals cannot be computed. " +
+                        "Consider using a different distribution or the Bootstrap/Bias-Corrected Bootstrap uncertainty method.");
+                }
                 return;
             }
 
-            // Filter out unset entries (default ParameterSet has Values == null).
-            // Only LinkedMVN can produce these — the other three sampling methods substitute
-            // the parent thetaHat on failure, so every slot is populated.
-            var validSets = rawSets.Where(ps => ps.Values != null).ToArray();
+            // Filter out unset, dimensionally invalid, or non-finite entries.
+            // MVN samplers may discard invalid draws. Bootstrap collectors replace failed
+            // candidates and therefore must satisfy the exact-count invariant below.
+            int expectedParameterCount = Bulletin17CDistribution.NumberOfParameters;
+            var validSets = rawSets
+                .Where(ps => ps.Values != null &&
+                             ps.Values.Length == expectedParameterCount &&
+                             ps.Values.All(double.IsFinite))
+                .ToArray();
+            bool isBootstrapMethod = UncertaintyMethod == UncertaintyMethod.Bootstrap ||
+                                     UncertaintyMethod == UncertaintyMethod.BiasCorrectedBootstrap;
+            if (isBootstrapMethod &&
+                (rawSets.Length != BayesianAnalysis.OutputLength || validSets.Length != BayesianAnalysis.OutputLength))
+            {
+                SetUncertaintyDiagnosticMessage(
+                    $"Bootstrap uncertainty requires exactly {BayesianAnalysis.OutputLength:N0} valid parameter sets, " +
+                    $"but received {validSets.Length:N0}. No partial uncertainty result was published.");
+                return;
+            }
             if (validSets.Length < 2)
             {
-                Debug.WriteLine($"B17C: Only {validSets.Length} valid parameter sets out of {rawSets.Length}. Skipping uncertainty analysis.");
+                SetUncertaintyDiagnosticMessage(
+                    $"Only {validSets.Length:N0} valid parameter sets out of {rawSets.Length:N0} sampled realizations. " +
+                    "Uncertainty analysis was skipped.");
                 return;
             }
 
@@ -711,7 +813,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Fast secondary method — same shape as <see cref="UnivariateAnalysis.CreateFrequencyAnalysisResultsAsync"/>.
+        /// Fast secondary method � same shape as <see cref="UnivariateAnalysis.CreateFrequencyAnalysisResultsAsync"/>.
         /// Clones the parent distribution per stored parameter set (a cheap parameter-assignment loop)
         /// and constructs an <see cref="UncertaintyAnalysisResults"/> at the current ordinates.
         /// The expensive per-draw resampling is owned by <see cref="RunUncertaintyQuantificationAsync"/>,
@@ -735,10 +837,10 @@ namespace RMC.BestFit.Analyses
                 Bulletin17CDistribution.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
 
                 // Build the sampled distribution array by cloning the parent distribution and
-                // assigning each stored parameter set — fast, no resampling.
+                // assigning each stored parameter set � fast, no resampling.
                 int B = BayesianAnalysis.Results.Output.Count;
                 var sampledDistributions = new UnivariateDistributionBase[B];
-                Parallel.For(0, B, idx =>
+                Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
                     var dist = Bulletin17CDistribution.Distribution!.Clone();
                     dist.SetParameters(BayesianAnalysis.Results.Output[idx].Values);
@@ -783,13 +885,10 @@ namespace RMC.BestFit.Analyses
 
             var draws = mvn.LatinHypercubeRandomValues(B, BayesianAnalysis.PRNGSeed);
 
-            var options = new ParallelOptions
-            {
-                CancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
-            };
+            var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
             int iteration = 0;
+            int rejectionCount = 0;
 
             try
             {
@@ -825,21 +924,44 @@ namespace RMC.BestFit.Analyses
                             }
                             catch (Exception ex) { Debug.WriteLine($"B17C MVN sampling: rejected parameter set (idx={idx}): {ex.Message}"); }
                         }
-                        // If still not accepted after 10 retries, fall back to the parent
-                        // parameter vector — preserves prior behavior where the cloned
-                        // distribution retained Distribution.Clone()'s starting parameters
-                        // (thetaHat) when no draw was accepted.
-                        acceptedTheta ??= thetaHat;
+                        if (acceptedTheta == null)
+                            Interlocked.Increment(ref rejectionCount);
                     }
 
-                    results[idx] = new ParameterSet(acceptedTheta, double.NaN);
+                    // Rejected draws stay as default(ParameterSet) (Values == null) and are
+                    // filtered below — no parent fallback, which would inject zero-variance
+                    // mass at the parent fit and bias the uncertainty bounds narrow.
+                    if (acceptedTheta != null)
+                        results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
                     int current = Interlocked.Increment(ref iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
-                return results;
+                // Check the rejection rate — persistent rejection signals the MVN approximation
+                // places most of its mass outside the valid parameter space, not sampling noise.
+                double rejectionRate = (double)rejectionCount / B;
+                if (rejectionRate > 0.50)
+                {
+                    SetUncertaintyDiagnosticMessage(
+                        $"Multivariate Normal sampling: {rejectionCount:N0} of {B:N0} requested draws were rejected as invalid parameter sets " +
+                        $"({rejectionRate:P0} rejection rate). Uncertainty quantification was aborted. " +
+                        "Consider the Bootstrap uncertainty method, which does not rely on the asymptotic covariance.");
+                    return null;
+                }
+
+                // Filter out rejected draws (default-initialized entries have Values == null).
+                var validResults = results.Where(ps => ps.Values != null).ToArray();
+                if (validResults.Length < 2)
+                {
+                    SetUncertaintyDiagnosticMessage(
+                        $"Multivariate Normal sampling: only {validResults.Length:N0} of {B:N0} requested draws were valid. " +
+                        "Uncertainty quantification was aborted.");
+                    return null;
+                }
+
+                return validResults;
             }
             catch (OperationCanceledException)
             {
@@ -850,7 +972,7 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Evaluates the log-space quantile (for LP3) or real-space quantile at the given parameters.
         /// </summary>
-        /// <param name="parameters">Distribution parameter vector [μ, σ, γ] in log-space.</param>
+        /// <param name="parameters">Distribution parameter vector [�, s, ?] in log-space.</param>
         /// <param name="nonExceedanceProbability">Non-exceedance probability (0 to 1).</param>
         /// <returns>The log-space quantile value for LP3, or real-space for other distributions.</returns>
         private double EvaluateLogQuantileSafe(double[] parameters, double nonExceedanceProbability)
@@ -886,7 +1008,7 @@ namespace RMC.BestFit.Analyses
         /// <returns>An array of sampled distributions, or null if cancelled.</returns>
         /// <remarks>
         /// <para>
-        ///     Transforms GMM parameters to a link space η = h(θ) where the sampling distribution
+        ///     Transforms GMM parameters to a link space ? = h(?) where the sampling distribution
         ///     is more nearly normal, samples in that space via Latin Hypercube, and maps back.
         ///     This improves CI coverage compared to straight MVN by:
         /// </para>
@@ -898,7 +1020,7 @@ namespace RMC.BestFit.Analyses
         /// </list>
         /// <para>
         ///     The covariance in link space is computed via the delta method:
-        ///     V̂_η = G · Σ̂_θ · G', where G = ∂η/∂θ is the diagonal link Jacobian.
+        ///     V^_? = G � S^_? � G', where G = ??/?? is the diagonal link Jacobian.
         /// </para>
         /// <para>
         ///     Link function selection is distribution-aware. Parameter semantics vary:
@@ -925,7 +1047,7 @@ namespace RMC.BestFit.Analyses
             int B = BayesianAnalysis.OutputLength;
             var results = new ParameterSet[B];
 
-            // Step 1: Get θ̂ and Σ̂_θ from GMM
+            // Step 1: Get ?^ and S^_? from GMM
             var thetaHat = _gmm!.BestParameterSet.Values;
             var sigmaHat = _gmm!.GetCovariance(thetaHat);
 
@@ -993,9 +1115,9 @@ namespace RMC.BestFit.Analyses
             else
             {
                 // Normal, LogNormal, Exponential: [location(real), scale(>0)]
-                // Location: ASinH with adaptive ε from WEDS (captures censoring asymmetry).
-                // When WEDS ≈ 0 (no censoring, symmetric distribution), ε ≈ 0 → identity-like.
-                // For Exponential, WEDS is naturally negative (~−0.26) because P(X < μ) ≈ 0.63.
+                // Location: ASinH with adaptive e from WEDS (captures censoring asymmetry).
+                // When WEDS � 0 (no censoring, symmetric distribution), e � 0 ? identity-like.
+                // For Exponential, WEDS is naturally negative (~-0.26) because P(X < �) � 0.63.
                 double muSE = SafeStandardError(sigmaHat, 0);
 
                 links[0] = CreateLocationLink(thetaHat[0], muSE, CleanWeds(weds, 0));
@@ -1015,46 +1137,14 @@ namespace RMC.BestFit.Analyses
             // Step 5: Transform to link space
             var etaHat = Bulletin17CDistribution.LinkController.Link(thetaHat);
 
-            // Step 6: Compute link Jacobian G = diag(dη_i/dθ_i) using analytical DLink
+            // Step 6: Compute link Jacobian G = diag(d?_i/d?_i) using analytical DLink
             var GHat = Bulletin17CDistribution.LinkController.LinkJacobian(thetaHat);
 
-            // Step 7: Delta-method covariance in link space: V̂_η = G · Σ̂_θ · G'
+            // Step 7: Delta-method covariance in link space: V^_? = G � S^_? � G'
             var VetaHat = GHat * sigmaHat * GHat.Transpose();
             VetaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(VetaHat);
 
-            // Step 7b: Shift MVN center for σ and γ using influence-function skewness.
-            // ParameterSkewness[j] has flipped sign due to the negative diagonal of the GMM
-            // Jacobian D = ∂g/∂θ propagating through ψ_i = Bread⁻¹·D'W·m_i. Negate to recover
-            // the actual skewness of the parameter sampling distribution.
-            // The shift approximates BCa z0 bias correction: it offsets the MVN center toward
-            // the median of the sampling distribution, rebalancing miss-above/miss-below rates.
-            // The ASinH links handle asymmetric shape (BCa acceleration); this handles centering.
-            // Capped at ±0.3 SD to prevent noisy third-moment estimates from creating extreme shifts.
-            // μ (index 0) is not shifted — its centering is handled by the ASinH epsilon.
-            var influenceStats = ComputeInfluenceStatistics(thetaHat, 0.999);
-            if (influenceStats.ParameterSkewness != null)
-            {
-                // σ shift (index 1)
-                if (p >= 2)
-                {
-                    double skewSigma = -influenceStats.ParameterSkewness[1];
-                    double sdEtaSigma = Math.Sqrt(VetaHat[1, 1]);
-                    double shiftSigma = (skewSigma / 6.0) * sdEtaSigma;
-                    shiftSigma = Math.Clamp(shiftSigma, -0.5 * sdEtaSigma, 0.5 * sdEtaSigma);
-                    //etaHat[1] += shiftSigma;
-                }
-                // γ shift (index 2)
-                if (p >= 3)
-                {
-                    double skewGamma = -influenceStats.ParameterSkewness[2];
-                    double sdEtaGamma = Math.Sqrt(VetaHat[2, 2]);
-                    double shiftGamma = (skewGamma / 6.0) * sdEtaGamma;
-                    shiftGamma = Math.Clamp(shiftGamma, -0.5 * sdEtaGamma, 0.5 * sdEtaGamma);
-                    //etaHat[2] += shiftGamma;
-                }
-            }
-
-            // Step 8: Sample η draws from N(η̂, V̂_η) via Latin Hypercube
+            // Step 8: Sample ? draws from N(?^, V^_?) via Latin Hypercube
             MultivariateNormal mvn;
             try
             {
@@ -1067,18 +1157,14 @@ namespace RMC.BestFit.Analyses
             }
             var etaDraws = mvn.LatinHypercubeRandomValues(B, BayesianAnalysis.PRNGSeed);
 
-            var options = new ParallelOptions
-            {
-                CancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
-            };
+            var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
             int iteration = 0;
             int rejectionCount = 0;
 
             try
             {
-                // Step 9: Map back θ = InverseLink(η) for each draw
+                // Step 9: Map back ? = InverseLink(?) for each draw
                 Parallel.For(0, B, options, idx =>
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
@@ -1096,7 +1182,7 @@ namespace RMC.BestFit.Analyses
                     }
                     catch (Exception ex) { Debug.WriteLine($"B17C LinkedMVN sampling: rejected parameter set (idx={idx}): {ex.Message}"); }
 
-                    // Retry with fresh random draws in η-space if LHS sample was invalid
+                    // Retry with fresh random draws in ?-space if LHS sample was invalid
                     if (acceptedTheta == null)
                     {
                         int p = etaHat.Length;
@@ -1117,7 +1203,7 @@ namespace RMC.BestFit.Analyses
                             Interlocked.Increment(ref rejectionCount);
                     }
 
-                    // LinkedMVN preserves prior behavior — rejected draws stay as default(ParameterSet)
+                    // LinkedMVN preserves prior behavior � rejected draws stay as default(ParameterSet)
                     // (Values == null) and are filtered below; no parent-thetaHat fallback (high
                     // rejection triggers full method fallback). ParameterSet is a struct, so the
                     // default-initialized array slot already represents "no draw".
@@ -1125,16 +1211,16 @@ namespace RMC.BestFit.Analyses
                         results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
                     int current = Interlocked.Increment(ref iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
-                // Check rejection rate — if too many draws failed, the link parameters are too aggressive.
+                // Check rejection rate � if too many draws failed, the link parameters are too aggressive.
                 double rejectionRate = (double)rejectionCount / B;
                 if (rejectionRate > 0.50)
                 {
                     Debug.WriteLine($"B17C LinkedMVN: {rejectionRate:P0} rejection rate ({rejectionCount}/{B}). " +
-                                    "Cohn-calibrated links too aggressive — falling back to empirical formulas.");
+                                    "Cohn-calibrated links too aggressive � falling back to empirical formulas.");
                     // Restore identity link controller and return null to trigger fallback
                     Bulletin17CDistribution.LinkController = new LinkController();
                     return null;
@@ -1567,7 +1653,7 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Contains influence-function-based statistics for the Linked Multivariate Student-t method.
-        /// Computed from per-observation GMM influence vectors ψ_i = Bread⁻¹ · D'W · m_i.
+        /// Computed from per-observation GMM influence vectors ?_i = Bread?� � D'W � m_i.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -1583,15 +1669,15 @@ namespace RMC.BestFit.Analyses
         {
             /// <summary>
             /// Degrees of freedom for the MVT, computed from the kurtosis of quantile influence
-            /// scores s_i = g_p' · ψ_i: ν = 1/(2·Var[W]) where Var[W] = (V₄/V₂² - 1)/4.
+            /// scores s_i = g_p' � ?_i: ? = 1/(2�Var[W]) where Var[W] = (V4/V2� - 1)/4.
             /// Floored at 4.
             /// </summary>
             public double NuQuantile;
 
             /// <summary>
-            /// Per-parameter skewness of the influence function ψ_i components.
-            /// ParameterSkewness[j] = skewness of {ψ_i[j], i=1..n}.
-            /// Used to shift the MVT center in link space: Δη[j] = (skew_j/6)·√VetaHat[j,j],
+            /// Per-parameter skewness of the influence function ?_i components.
+            /// ParameterSkewness[j] = skewness of {?_i[j], i=1..n}.
+            /// Used to shift the MVT center in link space: ??[j] = (skew_j/6)�vVetaHat[j,j],
             /// providing the BCa-equivalent z0 bias correction derived directly from the
             /// influence function rather than from bootstrap resampling.
             /// </summary>
@@ -1602,7 +1688,7 @@ namespace RMC.BestFit.Analyses
         /// Computes influence-function-based statistics for the Linked MVT method:
         /// quantile degrees of freedom and per-parameter skewness.
         /// </summary>
-        /// <param name="thetaHat">The GMM point estimates in parameter space (e.g., [μ, σ, γ]).</param>
+        /// <param name="thetaHat">The GMM point estimates in parameter space (e.g., [�, s, ?]).</param>
         /// <param name="targetNonExceedanceProbability">
         /// The non-exceedance probability at which to evaluate the quantile degrees of freedom.
         /// Typically 0.999 for the 1000-year flood quantile.
@@ -1612,13 +1698,13 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Implements Cohn et al. (2001) equations 27-30 for the quantile ν, then extends the
-        /// same framework to extract per-parameter skewness from the ψ_i vectors for the
+        /// Implements Cohn et al. (2001) equations 27-30 for the quantile ?, then extends the
+        /// same framework to extract per-parameter skewness from the ?_i vectors for the
         /// BCa-equivalent z0 bias correction.
         /// </para>
         /// <para>
-        /// <b>Quantile ν</b>: From scalar quantile influence scores s_i = g_p' · ψ_i,
-        /// compute ν = 1/(2·Var[W]) where Var[W] = (V₄/V₂² - 1)/4.
+        /// <b>Quantile ?</b>: From scalar quantile influence scores s_i = g_p' � ?_i,
+        /// compute ? = 1/(2�Var[W]) where Var[W] = (V4/V2� - 1)/4.
         /// </para>
         /// <para>
         /// Reference: Cohn, T.A., Lane, W.L., Stedinger, J.R. (2001). Confidence intervals for
@@ -1634,10 +1720,10 @@ namespace RMC.BestFit.Analyses
                 ParameterSkewness = new double[nParams]
             };
 
-            // 1. Quantile gradient g_p = ∂X_p/∂θ at the target probability
+            // 1. Quantile gradient g_p = ?X_p/?? at the target probability
             double[] gp = Bulletin17CDistribution.QuantileGradient(targetNonExceedanceProbability, thetaHat);
 
-            // 2. Per-observation moment conditions [n × q]
+            // 2. Per-observation moment conditions [n � q]
             var pointwiseMC = _gmm!.PointwiseMomentConditions;
             if (pointwiseMC == null)
             {
@@ -1668,13 +1754,13 @@ namespace RMC.BestFit.Analyses
 
             var DtW = DT * W;
 
-            // 4. Compute ψ_i vectors and quantile influence scores s_i = g_p' · ψ_i
+            // 4. Compute ?_i vectors and quantile influence scores s_i = g_p' � ?_i
             double[] s = new double[n];
             double[][] psiAll = new double[n][];
 
             for (int i = 0; i < n; i++)
             {
-                // D'W · m_i → [nParams × 1]
+                // D'W � m_i ? [nParams � 1]
                 double[] DtWm = new double[nParams];
                 for (int j = 0; j < nParams; j++)
                 {
@@ -1684,7 +1770,7 @@ namespace RMC.BestFit.Analyses
                     DtWm[j] = sum;
                 }
 
-                // ψ_i = Bread⁻¹ · DtWm → [nParams × 1]
+                // ?_i = Bread?� � DtWm ? [nParams � 1]
                 double[] psi = new double[nParams];
                 for (int j = 0; j < nParams; j++)
                 {
@@ -1695,20 +1781,20 @@ namespace RMC.BestFit.Analyses
                 }
                 psiAll[i] = psi;
 
-                // s_i = g_p' · ψ_i → scalar
+                // s_i = g_p' � ?_i ? scalar
                 double si = 0;
                 for (int j = 0; j < nParams; j++)
                     si += gp[j] * psi[j];
                 s[i] = si;
             }
 
-            // 5a. Per-parameter ν from kurtosis of ψ_i[j], then harmonic mean for MVT ν.
-            // The MVT uses a single ν for all dimensions. Using the quantile-projection
-            // kurtosis (s_i = g_p' · ψ_i) over-emphasizes the heaviest-tailed parameter (γ),
-            // giving ν that's too low for the other parameters. The geometric mean of
-            // per-parameter νs balances across dimensions: it's less conservative than the
-            // harmonic mean (which is dominated by the smallest ν) but less liberal than the
-            // arithmetic mean (dominated by the largest ν).
+            // 5a. Per-parameter ? from kurtosis of ?_i[j], then harmonic mean for MVT ?.
+            // The MVT uses a single ? for all dimensions. Using the quantile-projection
+            // kurtosis (s_i = g_p' � ?_i) over-emphasizes the heaviest-tailed parameter (?),
+            // giving ? that's too low for the other parameters. The geometric mean of
+            // per-parameter ?s balances across dimensions: it's less conservative than the
+            // harmonic mean (which is dominated by the smallest ?) but less liberal than the
+            // arithmetic mean (dominated by the largest ?).
             double logNuSum = 0;
             int nuCount = 0;
             for (int j = 0; j < nParams; j++)
@@ -1725,8 +1811,8 @@ namespace RMC.BestFit.Analyses
                 : 1000.0;
 
             // 5b. Per-parameter skewness for MVT center shift (BCa z0 equivalent).
-            // The skewness of ψ_i[j] determines how much to shift the MVT center in
-            // link-space dimension j: Δη[j] = (skew_j / 6) · √VetaHat[j,j].
+            // The skewness of ?_i[j] determines how much to shift the MVT center in
+            // link-space dimension j: ??[j] = (skew_j / 6) � vVetaHat[j,j].
             // This is the influence-function analog of the BCa z0 bias correction.
             for (int j = 0; j < nParams; j++)
             {
@@ -1748,10 +1834,10 @@ namespace RMC.BestFit.Analyses
         /// <returns>Degrees of freedom floored at 5 (matching EMA's nu_min), capped at 1000.</returns>
         /// <remarks>
         /// <para>
-        /// For Student-t(ν), the kurtosis ratio (fourth moment / variance²) is κ = 3(ν-2)/(ν-4)
-        /// for ν &gt; 4. Solving for ν: ν = 2(2κ-3)/(κ-3). At κ=3 (Gaussian): ν→∞.
-        /// At κ=9: ν=5 (heavy tails). Only meaningful when κ &gt; 3; sub-Gaussian (κ ≤ 3)
-        /// cases return ν=1000 (effectively MVN).
+        /// For Student-t(?), the kurtosis ratio (fourth moment / variance�) is ? = 3(?-2)/(?-4)
+        /// for ? &gt; 4. Solving for ?: ? = 2(2?-3)/(?-3). At ?=3 (Gaussian): ??8.
+        /// At ?=9: ?=5 (heavy tails). Only meaningful when ? &gt; 3; sub-Gaussian (? = 3)
+        /// cases return ?=1000 (effectively MVN).
         /// </para>
         /// <para>
         /// Uses centered moments (about the sample mean) for robustness with censored data
@@ -1780,14 +1866,14 @@ namespace RMC.BestFit.Analyses
             if (M2 <= 0)
                 return 1000.0;
 
-            // Kurtosis ratio κ = M4/M2² (=3 for Gaussian, >3 for heavy-tailed)
+            // Kurtosis ratio ? = M4/M2� (=3 for Gaussian, >3 for heavy-tailed)
             double kappa = M4 / (M2 * M2);
 
-            // For κ ≤ 3 (sub-Gaussian or Gaussian), Student-t is unnecessary
+            // For ? = 3 (sub-Gaussian or Gaussian), Student-t is unnecessary
             if (kappa <= 3.0 + 1e-6)
                 return 1000.0;
 
-            // ν = 2(2κ-3)/(κ-3), derived from Student-t kurtosis κ = 3(ν-2)/(ν-4)
+            // ? = 2(2?-3)/(?-3), derived from Student-t kurtosis ? = 3(?-2)/(?-4)
             double nu = 2.0 * (2.0 * kappa - 3.0) / (kappa - 3.0);
 
             return Math.Clamp(nu, 5.0, 1000.0);
@@ -1798,10 +1884,10 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <param name="scores">The per-observation influence scores.</param>
         /// <param name="n">The number of observations.</param>
-        /// <returns>The skewness μ₃/μ₂^{3/2}, or 0 if variance is near zero.</returns>
+        /// <returns>The skewness �3/�2^{3/2}, or 0 if variance is near zero.</returns>
         /// <remarks>
-        /// Computes the raw central moments M₂ = (1/n)·Σ(x-x̄)² and M₃ = (1/n)·Σ(x-x̄)³,
-        /// then returns M₃ / M₂^{3/2}. This is the Fisher skewness coefficient.
+        /// Computes the raw central moments M2 = (1/n)�S(x-x�)� and M3 = (1/n)�S(x-x�)�,
+        /// then returns M3 / M2^{3/2}. This is the Fisher skewness coefficient.
         /// </remarks>
         private static double ComputeSkewnessFromInfluence(double[] scores, int n)
         {
@@ -1811,7 +1897,7 @@ namespace RMC.BestFit.Analyses
                 mean += scores[i];
             mean /= n;
 
-            // Compute central moments M₂ and M₃
+            // Compute central moments M2 and M3
             double M2 = 0, M3 = 0;
             for (int i = 0; i < n; i++)
             {
@@ -1833,7 +1919,7 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Generates distributions using parametric bootstrap resampling.
         /// </summary>
-        /// <param name="progressReporter">Optional progress reporter. Progress is reported from 10% to 100%.</param>
+        /// <param name="progressReporter">Optional progress reporter.</param>
         /// <returns>
         /// An array of <see cref="UnivariateDistributionBase"/> with bootstrap-estimated parameters,
         /// or null if the operation was cancelled.
@@ -1854,7 +1940,7 @@ namespace RMC.BestFit.Analyses
         /// </remarks>
         private ParameterSet[]? GetParameterSetsFromParametricBootstrap(SafeProgressReporter? progressReporter)
         {
-            const int maxRetries = 5;
+            const int maxRetries = 10;
             int B = BayesianAnalysis.OutputLength;
             int p = Bulletin17CDistribution.NumberOfParameters;
             var results = new ParameterSet[B];
@@ -1873,19 +1959,24 @@ namespace RMC.BestFit.Analyses
                 Debug.WriteLine($"Bulletin17CAnalysis.GenerateBootstrapDistributions: covariance singular, regularizing: {ex.Message}");
                 sigmaInv = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat).Inverse();
             }
-            double mahalThreshold = new ChiSquared(p).InverseCDF(0.9999);
+            double mahalPvalue = 1.0 - 1.0 / (B * 5); // reject extreme draws with p-value < 1/(5B)
+            double mahalThreshold = new ChiSquared(p).InverseCDF(mahalPvalue);
 
             // Initialize bootstrap diagnostics
             var diag = new BootstrapDiagnostics { TotalReplicates = B };
             var phase1Stopwatch = Stopwatch.StartNew();
 
-            var options = new ParallelOptions
-            {
-                CancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
-            };
+            var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
             int iteration = 0;
+
+            // Determine if we should clone with the parent data frame or not.
+            // If there are any low outliers, uncertain series, interval series, or threshold series,
+            // we need to clone with the data frame to improve the initial guess of the solver
+            bool cloneWithDataFrame = Bulletin17CDistribution.DataFrame.NumberOfLowOutliers > 0 || 
+                Bulletin17CDistribution.DataFrame.UncertainSeries.Count > 0 ||
+                Bulletin17CDistribution.DataFrame.IntervalSeries.Count > 0 ||
+                Bulletin17CDistribution.DataFrame.ThresholdSeries.Count > 0;
 
             try
             {
@@ -1900,19 +1991,34 @@ namespace RMC.BestFit.Analyses
                     {
                         try
                         {
-                            // BootstrapDataFrame uses the parent distribution as the data-generating
-                            // model; clone with parent params for the resampling step only.
+                            // BootstrapDataFrame uses the parent distribution as the data-generatingmodel.
                             var samplingDist = parentDistribution.Clone();
                             var bootDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(samplingDist, prng);
-                            var bootB17CDistribution = (Bulletin17CDistribution)Bulletin17CDistribution.Clone();
-                            bootB17CDistribution.DataFrame = bootDataFrame;
+                            // Clone the Bulletin17CDistribution with the bootstrap data frame.
+                            Bulletin17CDistribution? bootB17CDistribution = null;
+                            if (cloneWithDataFrame)
+                            {
+                                // clone with parent params for the resampling step only.
+                                bootB17CDistribution = Bulletin17CDistribution.CloneWithDataFrame(bootDataFrame);
+                                bootB17CDistribution.SetParameterValues(thetaHat);
+                            }
+                            else
+                            {
+                                // clone and set params from the boostrap data frame.
+                                bootB17CDistribution = (Bulletin17CDistribution)Bulletin17CDistribution.Clone();
+                                bootB17CDistribution.DataFrame = bootDataFrame;
+                            }
+                            // Resample the penalty function
                             bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
+
+                            // Re-estimate. 
                             var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution);
                             bootGMM.Estimate();
                             if (bootGMM.Status != OptimizationStatus.Success)
                                 throw new Exception("The bootstrap GMM solver failed for realization " + idx.ToString() + ".");
 
-                            // Reject degenerate fits via Mahalanobis distance from parent
+                            // Reject degenerate fits via Mahalanobis distance from parent.
+                            // This is a conservative check to avoid extreme bootstrap draws that are far from the parent distribution.
                             var bootParams = bootGMM.BestParameterSet.Values;
                             double mahalDist = 0;
                             for (int j = 0; j < p; j++)
@@ -1967,16 +2073,60 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Generates distributions using the parametric bootstrap pivot method with link-space transformation.
+        /// Creates a Yeo-Johnson pivot link, falling back to identity when fitting or validation fails.
         /// </summary>
-        /// <param name="progressReporter">Optional progress reporter. Progress is reported from 10% to 100%.</param>
+        /// <param name="samples">The accepted bootstrap samples for one parameter.</param>
+        /// <param name="parameterName">The parameter name used in diagnostic logging.</param>
+        /// <returns>A numerically usable link function for the pivot bootstrap phase.</returns>
+        internal static ILinkFunction CreatePivotYeoJohnsonLink(IReadOnlyList<double> samples, string parameterName)
+        {
+            try
+            {
+                if (samples is null)
+                    throw new ArgumentNullException(nameof(samples));
+                if (samples.Count < 2)
+                    throw new ArgumentException("At least two samples are required to fit a Yeo-Johnson pivot link.", nameof(samples));
+
+                var values = samples.ToArray();
+                for (int i = 0; i < values.Length; i++)
+                {
+                    if (!double.IsFinite(values[i]))
+                        throw new ArgumentOutOfRangeException(nameof(samples), "Yeo-Johnson pivot link samples must be finite.");
+                }
+
+                var link = new YeoJohnsonLink(values);
+                if (Math.Abs(link.Lambda) >= 4.999d)
+                    throw new InvalidOperationException("Yeo-Johnson pivot link lambda fit railed at the optimizer boundary.");
+
+                for (int i = 0; i < values.Length; i++)
+                {
+                    double eta = link.Link(values[i]);
+                    double derivative = link.DLink(values[i]);
+                    double roundTrip = link.InverseLink(eta);
+                    if (!double.IsFinite(eta) || !double.IsFinite(derivative) || !double.IsFinite(roundTrip))
+                        throw new InvalidOperationException("Yeo-Johnson pivot link produced non-finite behavior.");
+                }
+
+                return link;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Pivot bootstrap: Yeo-Johnson link failed for {parameterName}; using identity link. {ex.Message}");
+                return new IdentityLink();
+            }
+        }
+
+        /// <summary>
+        /// Generates distributions using the parametric pivotal bootstrap method with link-space transformation.
+        /// </summary>
+        /// <param name="progressReporter">Optional progress reporter.</param>
         /// <returns>
         /// An array of <see cref="UnivariateDistributionBase"/> with pivot-corrected bootstrap parameters,
         /// or null if the operation was cancelled.
         /// </returns>
         /// <remarks>
         /// <para>
-        ///     The pivot bootstrap improves on the standard percentile bootstrap by standardizing each
+        ///     The pivotal bootstrap improves on the standard percentile bootstrap by standardizing each
         ///     bootstrap replicate in a variance-stabilizing link-space, producing better-calibrated
         ///     confidence intervals especially for skewed or bounded parameters.
         /// </para>
@@ -1984,32 +2134,32 @@ namespace RMC.BestFit.Analyses
         ///     <b>Algorithm (three phases):</b>
         /// </para>
         /// <para>
-        ///     <b>Phase 1 — Collect bootstrap fits</b> (parallel): For each replicate b = 1, …, B,
-        ///     generate a bootstrap data frame, re-estimate via GMM (with up to 5 retries), and store
-        ///     both the parameter estimates θ*_b and GMM covariance Σ*_b.
+        ///     <b>Phase 1 - Collect bootstrap fits</b> (parallel): For each replicate b = 1, ..., B,
+        ///     generate a bootstrap data frame, re-estimate via GMM using the same bootstrap path as the
+        ///     regular bootstrap method, and store both the parameter estimates theta*_b and GMM covariance S*_b.
         /// </para>
         /// <para>
-        ///     <b>Phase 2 — Fit link functions</b>: Fit a <see cref="YeoJohnsonLink"/> to the bootstrap
+        ///     <b>Phase 2 - Fit link functions</b>: Fit a <see cref="YeoJohnsonLink"/> to the bootstrap
         ///     location and shape parameter samples (variance-stabilizing power transform), and assign a
         ///     <see cref="LogLink"/> for the scale parameter (ensures positivity). Build a
-        ///     <see cref="LinkController"/> and compute the parent Cholesky factor L̂ in link-space.
+        ///     <see cref="LinkController"/> and compute the parent Cholesky factor L^ in link-space.
         /// </para>
         /// <para>
-        ///     <b>Phase 3 — Generate pivot draws</b> (parallel): For each replicate b, compute the
-        ///     standardized pivot z = L*_b⁻¹ · (η̂ − η*_b) in link-space, add smoothing jitter,
-        ///     reject extreme pivots (|z_j| &gt; 8), and map back to real-space via
-        ///     θ_draw = InverseLink(η̂ + L̂ · z).
+        ///     <b>Phase 3 - Generate pivot draws</b> (parallel): For each replicate b, compute the
+        ///     standardized pivot z = L*_b^{-1} * (eta^ - eta*_b) in link-space, add smoothing jitter,
+        ///     clip extreme pivots to the z-limit, and map back to real-space via
+        ///     theta_draw = InverseLink(eta^ + L^ * z).
         /// </para>
         /// <para>
         ///     Reference: DiCiccio, T.J. and Efron, B. (1996). Bootstrap confidence intervals.
-        ///     Statistical Science, 11(3), 189–228.
+        ///     Statistical Science, 11(3), 189-228.
         /// </para>
         /// </remarks>
-        private ParameterSet[]? GetParameterSetsFromPivotBootstrap(SafeProgressReporter? progressReporter)
+        private ParameterSet[]? GetParameterSetsFromPivotalBootstrap(SafeProgressReporter? progressReporter)
         {
-            const int maxRetries = 5;
+            const int maxRetries = 10;
             const double smoothStdScale = 0.01;
-            const double zLimit = 6.0;
+            const double zLimit = 6;
 
             int B = BayesianAnalysis.OutputLength;
             int p = Bulletin17CDistribution.NumberOfParameters;
@@ -2020,30 +2170,45 @@ namespace RMC.BestFit.Analyses
             var parentDistribution = Bulletin17CDistribution.Distribution.Clone();
             var thetaHat = _gmm!.BestParameterSet.Values;
             parentDistribution.SetParameters(thetaHat);
-            var sigmaHat = _gmm!.GetCovariance(thetaHat);
+
+            if (!_gmm.TryGetCovariance(thetaHat, true, out var sigmaHat))
+            {
+                SetUncertaintyDiagnosticMessage(
+                    "Pivot bootstrap could not compute a finite covariance matrix for the parent GMM fit. " +
+                    "Use the plain Bootstrap uncertainty method for this analysis.");
+                return null;
+            }
+            sigmaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat);
 
             // Mahalanobis distance rejection: compute inverse covariance from parent GMM
             Matrix sigmaInv;
             try { sigmaInv = sigmaHat.Inverse(); }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Bulletin17CAnalysis.GenerateAsymptoticDistributions: covariance singular, regularizing: {ex.Message}");
+                Debug.WriteLine($"Bulletin17CAnalysis.GenerateBootstrapDistributions: covariance singular, regularizing: {ex.Message}");
                 sigmaInv = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat).Inverse();
             }
-            double mahalThreshold = new ChiSquared(p).InverseCDF(0.999);
+            double mahalPvalue = 1.0 - 1.0 / (B * 5.0); // reject extreme draws with p-value < 1/(5B)
+            double mahalThreshold = new ChiSquared(p).InverseCDF(mahalPvalue);
+
+
 
             // Initialize bootstrap diagnostics
             var diag = new BootstrapDiagnostics { TotalReplicates = B };
 
-            var options = new ParallelOptions
-            {
-                CancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
-            };
+            var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
-            // ═══════════════════════════════════════════════════════════════════
-            // Phase 1: Collect bootstrap fits (θ*_b and Σ*_b for each replicate)
-            // ═══════════════════════════════════════════════════════════════════
+            // Determine if we should clone with the parent data frame or not.
+            // If there are any low outliers, uncertain series, interval series, or threshold series,
+            // we need to clone with the data frame to improve the initial guess of the solver
+            bool cloneWithDataFrame = Bulletin17CDistribution.DataFrame.NumberOfLowOutliers > 0 ||
+                Bulletin17CDistribution.DataFrame.UncertainSeries.Count > 0 ||
+                Bulletin17CDistribution.DataFrame.IntervalSeries.Count > 0 ||
+                Bulletin17CDistribution.DataFrame.ThresholdSeries.Count > 0;
+
+            // -------------------------------------------------------------------
+            // Phase 1: Collect bootstrap fits (theta*_b and S*_b for each replicate)
+            // -------------------------------------------------------------------
             var bootTheta = new double[B][];
             var bootSigma = new Matrix[B];
             int phase1Iteration = 0;
@@ -2056,23 +2221,41 @@ namespace RMC.BestFit.Analyses
                     options.CancellationToken.ThrowIfCancellationRequested();
 
                     var prng = new MersenneTwister(seeds[idx]);
-                    bool estimated = false;
+                    double[]? acceptedParams = null;
+                    Matrix? acceptedSigma = null;
 
-                    for (int attempt = 0; attempt < maxRetries && !estimated; attempt++)
+                    for (int attempt = 0; attempt < maxRetries && acceptedParams == null; attempt++)
                     {
                         try
                         {
-                            var bootDist = parentDistribution.Clone();
-                            var bootDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(bootDist, prng);
-                            var bootB17CDistribution = (Bulletin17CDistribution)Bulletin17CDistribution.Clone();
-                            bootB17CDistribution.DataFrame = bootDataFrame;
+                            // BootstrapDataFrame uses the parent distribution as the data-generatingmodel.
+                            var samplingDist = parentDistribution.Clone();
+                            var bootDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(samplingDist, prng);
+                            // Clone the Bulletin17CDistribution with the bootstrap data frame.
+                            Bulletin17CDistribution? bootB17CDistribution = null;
+                            if (cloneWithDataFrame)
+                            {
+                                // clone with parent params for the resampling step only.
+                                bootB17CDistribution = Bulletin17CDistribution.CloneWithDataFrame(bootDataFrame);
+                                bootB17CDistribution.SetParameterValues(thetaHat);
+                            }
+                            else
+                            {
+                                // clone and set params from the boostrap data frame.
+                                bootB17CDistribution = (Bulletin17CDistribution)Bulletin17CDistribution.Clone();
+                                bootB17CDistribution.DataFrame = bootDataFrame;
+                            }
+                            // Resample the penalty function
                             bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
-                            var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution) { PenaltyIsRandom = false };
+
+                            // Re-estimate.
+                            var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution);
                             bootGMM.Estimate();
                             if (bootGMM.Status != OptimizationStatus.Success)
                                 throw new Exception("The bootstrap GMM solver failed for realization " + idx.ToString() + ".");
 
-                            // Reject degenerate fits via Mahalanobis distance from parent
+                            // Reject degenerate fits via Mahalanobis distance from parent.
+                            // This is a conservative check to avoid extreme bootstrap draws that are far from the parent distribution.
                             var bootParams = bootGMM.BestParameterSet.Values;
                             double mahalDist = 0;
                             for (int j = 0; j < p; j++)
@@ -2088,10 +2271,14 @@ namespace RMC.BestFit.Analyses
                                 throw new Exception($"Pivot bootstrap replicate {idx} rejected: Mahalanobis distance {mahalDist:F1} exceeds threshold {mahalThreshold:F1}.");
                             }
 
-                            bootTheta[idx] = bootParams;
-                            bootSigma[idx] = bootGMM.GetCovariance(bootTheta[idx]);
+                            if (!bootGMM.TryGetCovariance(bootParams, true, out var bootCovariance))
+                                throw new Exception("The pivot bootstrap GMM covariance could not be computed for realization " + idx.ToString() + ".");
+                            bootCovariance = MatrixRegularization.MakeSymmetricPositiveDefinite(bootCovariance);
+                            _ = new CholeskyDecomposition(bootCovariance);
+
+                            acceptedParams = bootParams;
+                            acceptedSigma = bootCovariance;
                             diag.AddFunctionEvaluations(bootGMM.TotalFunctionEvaluations);
-                            estimated = true;
                         }
                         catch (Exception ex)
                         {
@@ -2100,17 +2287,20 @@ namespace RMC.BestFit.Analyses
                         }
                     }
 
-                    // Fall back to parent fit if all retries failed
-                    if (!estimated)
+                    // Fall back to parent fit if all retries failed.
+                    if (acceptedParams == null || acceptedSigma == null)
                     {
-                        bootTheta[idx] = (double[])thetaHat.Clone();
-                        bootSigma[idx] = sigmaHat;
+                        acceptedParams = thetaHat;
+                        acceptedSigma = sigmaHat;
                         diag.IncrementFailed();
                     }
 
+                    bootTheta[idx] = acceptedParams;
+                    bootSigma[idx] = acceptedSigma;
+
                     int current = Interlocked.Increment(ref phase1Iteration);
                     if (current % Math.Max(1, B * 0.01) == 0)
-                        progressReporter?.ReportProgress((int)(99.0 * current / B));
+                        progressReporter?.ReportProgress((int)(98.0 * current / B));
                 });
             }
             catch (OperationCanceledException)
@@ -2121,19 +2311,17 @@ namespace RMC.BestFit.Analyses
             phase1Stopwatch.Stop();
             diag.Phase1Time = phase1Stopwatch.Elapsed;
 
-            // ═══════════════════════════════════════════════════════════════════
+            // -------------------------------------------------------------------
             // Phase 2: Fit link functions from bootstrap parameter samples
-            // ═══════════════════════════════════════════════════════════════════
+            // -------------------------------------------------------------------
             var phase2Stopwatch = Stopwatch.StartNew();
-            progressReporter?.ReportProgress(56);
+            progressReporter?.ReportProgress(98);
 
             // Location (index 0): Yeo-Johnson fitted to bootstrap location estimates
             var locationSamples = bootTheta.Select(t => t[0]).ToArray();
-            ILinkFunction locationLink = new YeoJohnsonLink(locationSamples);
+            ILinkFunction locationLink = CreatePivotYeoJohnsonLink(locationSamples, "location");
 
             // Scale (index 1): Log link (scale is strictly positive)
-            var scaleSamples = bootTheta.Select(t => t[1]).ToArray();
-            //ILinkFunction scaleLink = new YeoJohnsonLink(scaleSamples);
             ILinkFunction scaleLink = new LogLink();
 
             // Shape (index 2, if present): Yeo-Johnson fitted to bootstrap shape estimates
@@ -2141,7 +2329,7 @@ namespace RMC.BestFit.Analyses
             if (p >= 3)
             {
                 var shapeSamples = bootTheta.Select(t => t[2]).ToArray();
-                shapeLink = new YeoJohnsonLink(shapeSamples);
+                shapeLink = CreatePivotYeoJohnsonLink(shapeSamples, "shape");
             }
 
             // Build link controller
@@ -2164,16 +2352,19 @@ namespace RMC.BestFit.Analyses
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Pivot bootstrap: parent Cholesky failed, falling back to parametric bootstrap. {ex.Message}");
-                return GetParameterSetsFromParametricBootstrap(progressReporter);
+                Debug.WriteLine($"Pivot bootstrap: parent Cholesky failed. {ex.Message}");
+                SetUncertaintyDiagnosticMessage(
+                    "Pivot bootstrap could not factor the parent link-space covariance matrix. " +
+                    "Use the plain Bootstrap uncertainty method for this analysis.");
+                return null;
             }
 
             phase2Stopwatch.Stop();
             diag.Phase2Time = phase2Stopwatch.Elapsed;
 
-            // ═══════════════════════════════════════════════════════════════════
+            // -------------------------------------------------------------------
             // Phase 3: Generate pivot draws (parallel)
-            // ═══════════════════════════════════════════════════════════════════
+            // -------------------------------------------------------------------
             var phase3Stopwatch = Stopwatch.StartNew();
             double smoothStd = smoothStdScale / Math.Sqrt(p);
             int phase3Iteration = 0;
@@ -2210,23 +2401,12 @@ namespace RMC.BestFit.Analyses
                             diffMatrix[j, 0] = diff[j];
                         var zMatrix = LStarInv * diffMatrix;
 
-                        // Extract z, add smoothing jitter, and check bounds
+                        // Extract z, add smoothing jitter, and clip bounds
                         var z = new double[p];
-                        bool badPivot = false;
                         for (int j = 0; j < p; j++)
                         {
                             z[j] = zMatrix[j, 0] + Normal.StandardZ(prng.NextDouble()) * smoothStd;
-                            if (Math.Abs(z[j]) > zLimit)
-                            {
-                                badPivot = true;
-                                break;
-                            }
-                        }
-
-                        if (badPivot)
-                        {
-                            diag.IncrementPivotRejection();
-                            throw new Exception("Pivot exceeded z-limit for realization " + idx.ToString() + ".");
+                            z[j] = Math.Max(-zLimit, Math.Min(zLimit, z[j]));
                         }
 
                         // Map back: etaDraw = etaHat + LHat * z
@@ -2241,6 +2421,8 @@ namespace RMC.BestFit.Analyses
 
                         // Inverse transform back to real-space
                         var theta = linkController.InverseLink(etaDraw);
+                        if (theta.Any(value => !double.IsFinite(value)))
+                            throw new Exception("The pivot transform produced non-finite parameters.");
 
                         // Validate then accept
                         validator.ValidateParameters(theta, true);
@@ -2249,19 +2431,23 @@ namespace RMC.BestFit.Analyses
                     catch (Exception ex)
                     {
                         Debug.WriteLine($"Pivot bootstrap Phase 3, replicate {idx}: {ex.Message}");
-                        // Fall back to parent parameters — preserves prior behavior where the
-                        // pre-initialized parent-clone retained its parameters on failure.
+                        diag.IncrementTransformFailure();
                     }
 
-                    results[idx] = new ParameterSet(acceptedTheta ?? thetaHat, double.NaN);
+                    if (acceptedTheta != null)
+                        results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
                     int current = Interlocked.Increment(ref phase3Iteration);
                     if (current % Math.Max(1, B * 0.01) == 0)
-                        progressReporter?.ReportProgress(99 + (int)(1 * current / B));
+                        progressReporter?.ReportProgress(98 + (int)(2.0 * current / B));
                 });
 
                 phase3Stopwatch.Stop();
                 diag.Phase3Time = phase3Stopwatch.Elapsed;
+                diag.RetainedReplicates = results.Count(parameterSet =>
+                    parameterSet.Values != null &&
+                    parameterSet.Values.Length == p &&
+                    parameterSet.Values.All(double.IsFinite));
                 BootstrapResults = diag;
 
                 return results;
@@ -2271,7 +2457,6 @@ namespace RMC.BestFit.Analyses
                 return null;
             }
         }
-
         /// <summary>
         /// Returns the distribution for a given posterior sample index.
         /// </summary>
@@ -2312,43 +2497,49 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         public async Task UpdatePointEstimateResultsAsync()
         {
-            if (BayesianAnalysis.Results == null || AnalysisResults == null || _gmm == null)
+            var bayesianResults = BayesianAnalysis.Results;
+            var analysisResults = AnalysisResults;
+            var gmm = _gmm;
+            if (bayesianResults == null || analysisResults == null || gmm == null)
                 return;
 
-            // Set point estimator parameters
             double[] parms = BayesianAnalysis.PointEstimator == BayesianAnalysis.PointEstimateType.PosteriorMean
-                ? BayesianAnalysis.Results.PosteriorMean.Values
-                : BayesianAnalysis.Results.MAP.Values;
+                ? bayesianResults.PosteriorMean.Values
+                : bayesianResults.MAP.Values;
+            double[] probabilityOrdinates = ProbabilityOrdinates.ToArray();
 
-            Bulletin17CDistribution.SetParameterValues(parms);
+            await Task.Run(() =>
+            {
+                Bulletin17CDistribution.SetParameterValues(parms);
 
-            // Update mode curve
-            AnalysisResults.ModeCurve = new double[ProbabilityOrdinates.Count];
-            for (int i = 0; i < ProbabilityOrdinates.Count; i++)
-                AnalysisResults.ModeCurve[i] = Bulletin17CDistribution.Distribution.InverseCDF(1.0 - ProbabilityOrdinates[i]);
+                // Update mode curve
+                analysisResults.ModeCurve = new double[probabilityOrdinates.Length];
+                for (int i = 0; i < probabilityOrdinates.Length; i++)
+                    analysisResults.ModeCurve[i] = Bulletin17CDistribution.Distribution.InverseCDF(1.0 - probabilityOrdinates[i]);
 
-            // Goodness of fit metrics
-            int nt = Bulletin17CDistribution.DataFrame.ExactSeries.Count
-                   - Bulletin17CDistribution.DataFrame.NumberOfLowOutliers
-                   + Bulletin17CDistribution.DataFrame.IntervalSeries.Count;
+                // Goodness of fit metrics
+                int nt = Bulletin17CDistribution.DataFrame.ExactSeries.Count
+                       - Bulletin17CDistribution.DataFrame.NumberOfLowOutliers
+                       + Bulletin17CDistribution.DataFrame.IntervalSeries.Count;
 
-            var univariateDist = new UnivariateDistribution(Bulletin17CDistribution.DataFrame, Bulletin17CDistribution.Distribution);
-            double logLH = univariateDist.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
-            AnalysisResults.AIC = GoodnessOfFit.AIC(Bulletin17CDistribution.NumberOfParameters, logLH);
-            AnalysisResults.BIC = GoodnessOfFit.BIC(nt, Bulletin17CDistribution.NumberOfParameters, logLH);
+                var univariateDist = new UnivariateDistribution(Bulletin17CDistribution.DataFrame, Bulletin17CDistribution.Distribution);
+                double logLH = univariateDist.LogLikelihood(bayesianResults.MAP.Values);
+                analysisResults.AIC = GoodnessOfFit.AIC(Bulletin17CDistribution.NumberOfParameters, logLH);
+                analysisResults.BIC = GoodnessOfFit.BIC(nt, Bulletin17CDistribution.NumberOfParameters, logLH);
 
-            // RMSE
-            var values = Bulletin17CDistribution.DataFrame.ExactSeries.ValuesToList();
-            values.AddRange(Bulletin17CDistribution.DataFrame.IntervalSeries.ValuesToList());
-            var pp = Bulletin17CDistribution.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
-            pp.AddRange(Bulletin17CDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
-            AnalysisResults.RMSE = GoodnessOfFit.RMSE(values, pp, Bulletin17CDistribution.Distribution);
+                // RMSE
+                var values = Bulletin17CDistribution.DataFrame.ExactSeries.ValuesToList();
+                values.AddRange(Bulletin17CDistribution.DataFrame.IntervalSeries.ValuesToList());
+                var pp = Bulletin17CDistribution.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
+                pp.AddRange(Bulletin17CDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
+                analysisResults.RMSE = GoodnessOfFit.RMSE(values, pp, Bulletin17CDistribution.Distribution);
 
-            // Effective record length
-            var thetaHat = _gmm.BestParameterSet.Values;
-            var sigmaHat = _gmm.GetCovariance(thetaHat);
-            var eig = new EigenValueDecomposition(sigmaHat);
-            AnalysisResults.ERL = eig.EffectiveSampleSize();
+                // Effective record length
+                var thetaHat = gmm.BestParameterSet.Values;
+                var sigmaHat = gmm.GetCovariance(thetaHat);
+                var eig = new EigenValueDecomposition(sigmaHat);
+                analysisResults.ERL = eig.EffectiveSampleSize();
+            });
 
             RaisePropertyChange(nameof(AnalysisResults));
         }
@@ -2397,6 +2588,10 @@ namespace RMC.BestFit.Analyses
             if (_gmm != null && _gmm.IsEstimated)
                 root.Add(_gmm.ToXElement());
 
+            // Uncertainty sampling diagnostics
+            if (BootstrapResults != null)
+                root.Add(BootstrapResults.ToXElement());
+
             return root;
         }
 
@@ -2408,11 +2603,7 @@ namespace RMC.BestFit.Analyses
         private double[] AccelerationConstants(double[] thetaHats)
         {
             // Configure ParallelOptions
-            var options = new ParallelOptions
-            {
-                CancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
-            };
+            var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
             Bulletin17CDistribution.DataFrame.CreateFullTimeSeries();
             int N = Bulletin17CDistribution.SampleSize;
@@ -2467,16 +2658,9 @@ namespace RMC.BestFit.Analyses
         /// Computes confidence intervals using Cohn's (2012) delta method with nested Gaussian quadrature,
         /// mirroring the approach in EMA/PeakFQ (<c>VAR_EMAB</c> / <c>CI_EMA_M3B</c>).
         /// </summary>
-        /// <param name="exceedanceProbabilities">
-        /// Array of annual exceedance probabilities (e.g., 0.01 for the 100-year event).
-        /// Each value must be between 0 and 1 exclusive.
-        /// </param>
-        /// <param name="confidenceLevel">
-        /// The confidence level for the intervals (e.g., 0.90 for 90% CIs). Default is 0.90 per Bulletin 17C.
-        /// </param>
         /// <returns>
         /// A <see cref="CohnConfidenceIntervalResult"/> containing the point estimates, lower bounds,
-        /// upper bounds, and diagnostic quantities (β₁, ν) for each exceedance probability.
+        /// upper bounds, and diagnostic quantities (�1, ?) for each exceedance probability.
         /// Returns <c>null</c> if GMM has not been estimated or if the computation fails.
         /// </returns>
         /// <remarks>
@@ -2488,22 +2672,22 @@ namespace RMC.BestFit.Analyses
         /// <b>Algorithm overview (Cohn 2012, Notebook 3):</b>
         /// </para>
         /// <list type="number">
-        ///   <item>Obtain the GMM point estimate θ̂ and sandwich covariance Σ̂_θ.</item>
-        ///   <item>Build an outer Gaussian quadrature grid (2×2×...×2 = 2^p points) using Cholesky
-        ///     decomposition of Σ̂_θ, with Gamma quadrature nodes for positive parameters (σ)
-        ///     and Normal quadrature nodes for unconstrained parameters (μ, γ).</item>
-        ///   <item>At each outer grid point θ_k, <b>recompute</b> the covariance Σ̂_θ(θ_k) and build
+        ///   <item>Obtain the GMM point estimate ?^ and sandwich covariance S^_?.</item>
+        ///   <item>Build an outer Gaussian quadrature grid (2�2�...�2 = 2^p points) using Cholesky
+        ///     decomposition of S^_?, with Gamma quadrature nodes for positive parameters (s)
+        ///     and Normal quadrature nodes for unconstrained parameters (�, ?).</item>
+        ///   <item>At each outer grid point ?_k, <b>recompute</b> the covariance S^_?(?_k) and build
         ///     an inner quadrature grid. This nested evaluation captures how the standard error
         ///     of the quantile varies with the parameter values.</item>
-        ///   <item>Evaluate quantiles Q_p(θ) at all grid points.</item>
-        ///   <item>Compute the 2×2 matrix Cov(Q̂_p, SE(Q̂_p)) via weighted covariance.</item>
-        ///   <item>Apply Cohn's adjusted Student's t CI formula with regression correction β₁
-        ///     and effective degrees of freedom ν derived from the conditional variance ratio.</item>
+        ///   <item>Evaluate quantiles Q_p(?) at all grid points.</item>
+        ///   <item>Compute the 2�2 matrix Cov(Q^_p, SE(Q^_p)) via weighted covariance.</item>
+        ///   <item>Apply Cohn's adjusted Student's t CI formula with regression correction �1
+        ///     and effective degrees of freedom ? derived from the conditional variance ratio.</item>
         /// </list>
         /// <para>
         /// <b>Key difference from LinkedMVN:</b> This method produces <em>quantile-specific</em> CIs
         /// via an explicit formula, rather than percentiles of parameter draws. The nested quadrature
-        /// captures the SE–quantile correlation that drives asymmetric CI widths at extreme AEPs.
+        /// captures the SE�quantile correlation that drives asymmetric CI widths at extreme AEPs.
         /// </para>
         /// <para>
         /// Reference: Cohn, T.A. (2012). Inverse Gaussian quadrature for confidence intervals.
@@ -2520,21 +2704,21 @@ namespace RMC.BestFit.Analyses
 
             var thetaHat = _gmm.BestParameterSet.Values;
 
-            // Compute outer covariance from GMM sandwich estimator at θ̂.
+            // Compute outer covariance from GMM sandwich estimator at ?^.
             // GMM handles censored data correctly through its moment conditions.
             var sigmaHat = _gmm.GetCovariance(ClampForCovariance(thetaHat));
             sigmaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat);
 
-            // Build outer quadrature grid: 2 nodes per dimension → 2^p points
+            // Build outer quadrature grid: 2 nodes per dimension ? 2^p points
             int nNodesPerDim = 2;
             var (outerGrid, outerWeights) = BuildQuadratureGrid(thetaHat, sigmaHat, p, nNodesPerDim);
             int nOuter = outerGrid.Length;
 
             // For each outer point, recompute the covariance and build inner grid.
             // This nested step captures how SE varies with parameters (EMA's REGMOMS
-            // recomputation at each GRIDMAKE point). The skew is clamped to ±√2 before
-            // covariance evaluation, matching EMA's VAR_MOM skewmax=1.41: at |γ| > √2,
-            // α = 4/γ² < 2 and the variance of the skew estimator becomes numerically
+            // recomputation at each GRIDMAKE point). The skew is clamped to �v2 before
+            // covariance evaluation, matching EMA's VAR_MOM skewmax=1.41: at |?| > v2,
+            // a = 4/?� < 2 and the variance of the skew estimator becomes numerically
             // unstable. Quantile evaluations use the unclamped grid point (matching EMA's
             // QP3, which has no skew clamp).
             var innerGrids = new double[nOuter][][];
@@ -2550,7 +2734,7 @@ namespace RMC.BestFit.Analyses
                     // Sanity check: with censored data, the sandwich estimator at perturbed
                     // parameters can blow up (ill-conditioned S inverse, extreme conditional
                     // moments). Fall back to baseline if any diagonal is degenerate (zero/NaN)
-                    // or differs from baseline by more than 10×.
+                    // or differs from baseline by more than 10�.
                     bool degenerate = false;
                     for (int d = 0; d < p; d++)
                     {
@@ -2584,15 +2768,15 @@ namespace RMC.BestFit.Analyses
             var nuArray = new double[nProb];
             var varQArray = new double[nProb];
 
-            // For each probability level, compute the 2×2 Cov(Q̂_p, SE(Q̂_p))
+            // For each probability level, compute the 2�2 Cov(Q^_p, SE(Q^_p))
             for (int k = 0; k < nProb; k++)
             {
                 double nonExceedProb = 1.0 - ProbabilityOrdinates[k];
 
-                // Point estimate: quantile at θ̂
+                // Point estimate: quantile at ?^
                 pointEstimates[k] = EvaluateQuantileSafe(thetaHat, nonExceedProb);
 
-                // Outer-level quantiles Q_p(θ_i) and inner-level SE(Q_p | θ_i)
+                // Outer-level quantiles Q_p(?_i) and inner-level SE(Q_p | ?_i)
                 double[] qOuter = new double[nOuter];
                 double[] seOuter = new double[nOuter];
 
@@ -2600,7 +2784,7 @@ namespace RMC.BestFit.Analyses
                 {
                     qOuter[i] = EvaluateQuantileSafe(outerGrid[i], nonExceedProb);
 
-                    // Inner-level variance of Q_p: Var(Q_p | θ_i) ≈ E_inner[(Q_p - E[Q_p])²]
+                    // Inner-level variance of Q_p: Var(Q_p | ?_i) � E_inner[(Q_p - E[Q_p])�]
                     int nInner = innerGrids[i].Length;
                     double[] qInner = new double[nInner];
                     for (int j = 0; j < nInner; j++)
@@ -2610,7 +2794,7 @@ namespace RMC.BestFit.Analyses
                     seOuter[i] = Math.Sqrt(Math.Max(0.0, varInner));
                 }
 
-                // Compute the 2×2 covariance matrix: Cov(Q̂_p, SE(Q̂_p))
+                // Compute the 2�2 covariance matrix: Cov(Q^_p, SE(Q^_p))
                 double varQ = WeightedCovariance(qOuter, qOuter, outerWeights);
                 double covQSE = WeightedCovariance(qOuter, seOuter, outerWeights);
                 double varSE = WeightedCovariance(seOuter, seOuter, outerWeights);
@@ -2645,8 +2829,8 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Builds a quadrature grid in parameter space following Cohn's (2013) GRIDMAKE approach.
         /// </summary>
-        /// <param name="mean">The center of the grid (point estimate θ̂). For LP3: [μ, σ, γ] in log-space.</param>
-        /// <param name="covariance">The covariance matrix Σ̂ of the parameters.</param>
+        /// <param name="mean">The center of the grid (point estimate ?^). For LP3: [�, s, ?] in log-space.</param>
+        /// <param name="covariance">The covariance matrix S^ of the parameters.</param>
         /// <param name="dimension">Number of parameters (2 or 3).</param>
         /// <param name="nNodesPerDim">Number of quadrature nodes per dimension (typically 2).</param>
         /// <returns>A tuple of (grid points, weights). Grid points are an array of parameter vectors.</returns>
@@ -2655,16 +2839,16 @@ namespace RMC.BestFit.Analyses
         /// Follows Cohn (2013, Notebook 3) GRIDMAKE subroutine with three key features:
         /// </para>
         /// <list type="number">
-        ///   <item><b>Gamma quadrature for σ (index 1):</b> The sampling distribution of the standard deviation
+        ///   <item><b>Gamma quadrature for s (index 1):</b> The sampling distribution of the standard deviation
         ///     estimator is right-skewed and bounded below by zero. EMA uses Gamma quadrature for the
-        ///     variance dimension (S²); since our parameterization uses σ = √S², we use Gamma quadrature
-        ///     for σ with shape α = σ̂²/Var(σ̂) and scale β = Var(σ̂)/σ̂, centered at zero.
-        ///     This prevents negative σ grid points and correctly captures the right-skewed sampling
+        ///     variance dimension (S�); since our parameterization uses s = vS�, we use Gamma quadrature
+        ///     for s with shape a = s^�/Var(s^) and scale � = Var(s^)/s^, centered at zero.
+        ///     This prevents negative s grid points and correctly captures the right-skewed sampling
         ///     distribution.</item>
-        ///   <item><b>Normal quadrature for μ and γ:</b> The mean and skewness estimators are approximately
-        ///     normally distributed, using Gauss-Hermite nodes at ±1 with weights 0.5.</item>
+        ///   <item><b>Normal quadrature for � and ?:</b> The mean and skewness estimators are approximately
+        ///     normally distributed, using Gauss-Hermite nodes at �1 with weights 0.5.</item>
         ///   <item><b>Modified Cholesky (column-2-first):</b> Following EMA's CHOL33, the Cholesky
-        ///     decomposition processes the σ dimension first, making the Gamma-distributed variable
+        ///     decomposition processes the s dimension first, making the Gamma-distributed variable
         ///     the leading factor. This ensures the Gamma nodes correctly capture positivity before
         ///     cross-loadings to other dimensions.</item>
         /// </list>
@@ -2675,7 +2859,7 @@ namespace RMC.BestFit.Analyses
             // Regularize to ensure positive-definiteness
             var S = MatrixRegularization.MakeSymmetricPositiveDefinite(covariance);
 
-            // Index of the scale parameter (σ) — uses Gamma quadrature
+            // Index of the scale parameter (s) � uses Gamma quadrature
             // For B17C distributions: index 1 is always the scale/std-dev parameter
             int scaleIdx = (dimension >= 2) ? 1 : -1;
 
@@ -2687,28 +2871,28 @@ namespace RMC.BestFit.Analyses
             {
                 if (d == scaleIdx && mean[d] > 0)
                 {
-                    // Gamma quadrature for σ (positive parameter)
-                    // EMA's GRIDMAKE uses Gauss-Laguerre quadrature for the variance dimension S²
+                    // Gamma quadrature for s (positive parameter)
+                    // EMA's GRIDMAKE uses Gauss-Laguerre quadrature for the variance dimension S�
                     // to enforce positivity and capture the right-skewed sampling distribution.
                     //
-                    // For our σ parameterization: α = σ̂²/Var(σ̂)
-                    // 2-point generalized Gauss-Laguerre nodes for weight x^(α-1)·e^(-x) are:
-                    //   x₁,₂ = (α+1) ∓ √(α+1)  (roots of L₂^(α-1)(x))
-                    // After centering (subtract Gamma mean = α) and standardizing (divide by √α):
-                    //   z₁ = (1 - √(α+1)) / √α   (negative, further from mean)
-                    //   z₂ = (1 + √(α+1)) / √α   (positive, closer to mean for small α)
+                    // For our s parameterization: a = s^�/Var(s^)
+                    // 2-point generalized Gauss-Laguerre nodes for weight x^(a-1)�e^(-x) are:
+                    //   x1,2 = (a+1) � v(a+1)  (roots of L2^(a-1)(x))
+                    // After centering (subtract Gamma mean = a) and standardizing (divide by va):
+                    //   z1 = (1 - v(a+1)) / va   (negative, further from mean)
+                    //   z2 = (1 + v(a+1)) / va   (positive, closer to mean for small a)
                     // Weights:
-                    //   w₁ = (α+1+√(α+1)) / (2(α+1))  (larger — node closer to mean)
-                    //   w₂ = (α+1-√(α+1)) / (2(α+1))  (smaller — node further from mean)
+                    //   w1 = (a+1+v(a+1)) / (2(a+1))  (larger � node closer to mean)
+                    //   w2 = (a+1-v(a+1)) / (2(a+1))  (smaller � node further from mean)
                     //
-                    // For small α (large σ uncertainty), these are strongly asymmetric:
-                    //   α=4: z₁=-0.618, z₂=+1.618, w₁=0.809, w₂=0.191
-                    // For large α (small uncertainty), they approach symmetric ±1:
-                    //   α=100: z₁=-0.905, z₂=+1.105, w₁=0.550, w₂=0.450
+                    // For small a (large s uncertainty), these are strongly asymmetric:
+                    //   a=4: z1=-0.618, z2=+1.618, w1=0.809, w2=0.191
+                    // For large a (small uncertainty), they approach symmetric �1:
+                    //   a=100: z1=-0.905, z2=+1.105, w1=0.550, w2=0.450
                     double varSigma = Math.Max(S[d, d], 1e-30);
                     double alpha = mean[d] * mean[d] / varSigma;
 
-                    // For very large α (>50), Gamma is well-approximated by Normal
+                    // For very large a (>50), Gamma is well-approximated by Normal
                     if (alpha > 50.0)
                     {
                         perDimNodes[d] = new[] { -1.0, 1.0 };
@@ -2740,7 +2924,7 @@ namespace RMC.BestFit.Analyses
             }
 
             // Modified Cholesky decomposition following EMA's CHOL33:
-            // Process column 2 (σ) first to make it the leading factor.
+            // Process column 2 (s) first to make it the leading factor.
             Matrix V;
             try
             {
@@ -2774,11 +2958,11 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <param name="S">Symmetric positive-definite covariance matrix.</param>
         /// <param name="dimension">Matrix dimension.</param>
-        /// <param name="pivotIdx">Index of the Gamma-distributed dimension (typically 1 for σ).</param>
-        /// <returns>The modified lower-triangular Cholesky factor V where V·V' = S.</returns>
+        /// <param name="pivotIdx">Index of the Gamma-distributed dimension (typically 1 for s).</param>
+        /// <returns>The modified lower-triangular Cholesky factor V where V�V' = S.</returns>
         /// <remarks>
         /// <para>
-        /// For a 3×3 matrix with pivotIdx=1, the structure matches EMA's CHOL33 output:
+        /// For a 3�3 matrix with pivotIdx=1, the structure matches EMA's CHOL33 output:
         /// </para>
         /// <code>
         /// V = [ V(0,0)   0       0     ]
@@ -2790,7 +2974,7 @@ namespace RMC.BestFit.Analyses
         /// onto itself; other dimensions load from it via V(1,0) and V(2,1)).
         /// </para>
         /// <para>
-        /// For 2×2 and general dimensions, falls back to standard Cholesky.
+        /// For 2�2 and general dimensions, falls back to standard Cholesky.
         /// </para>
         /// </remarks>
         private static Matrix CohnCholesky(Matrix S, int dimension, int pivotIdx)
@@ -2802,21 +2986,21 @@ namespace RMC.BestFit.Analyses
                 return chol.L;
             }
 
-            // EMA's CHOL33: process column 1 (σ, index 1) first
+            // EMA's CHOL33: process column 1 (s, index 1) first
             // This matches the Fortran CHOL33 exactly:
-            //   V(2,2) = sqrt(S(2,2))         [σ-σ variance]
-            //   V(2,1) = S(2,1)/V(2,2)        [μ-σ loading]
-            //   V(2,3) = S(2,3)/V(2,2)        [σ-γ loading]
-            //   V(1,1) = sqrt(S(1,1)-V(2,1)²) [residual μ variance]
-            //   V(1,3) = (S(3,1)-V(2,3)*V(2,1))/V(1,1) [μ-γ cross]
-            //   V(3,3) = sqrt(S(3,3)-V(2,3)²-V(1,3)²)  [residual γ variance]
+            //   V(2,2) = sqrt(S(2,2))         [s-s variance]
+            //   V(2,1) = S(2,1)/V(2,2)        [�-s loading]
+            //   V(2,3) = S(2,3)/V(2,2)        [s-? loading]
+            //   V(1,1) = sqrt(S(1,1)-V(2,1)�) [residual � variance]
+            //   V(1,3) = (S(3,1)-V(2,3)*V(2,1))/V(1,1) [�-? cross]
+            //   V(3,3) = sqrt(S(3,3)-V(2,3)�-V(1,3)�)  [residual ? variance]
             //
             // But we need to output as a standard lower-triangular L where L*L' = S.
             // The EMA V is applied as Z2 = V^T * Z (column-major), which is equivalent to
             // L * Z where L = V^T in our row-major convention.
             //
             // Actually, for the tensor product grid, the key property is that the Cholesky
-            // factor correctly reproduces S = L*L'. Any valid Cholesky will work — the
+            // factor correctly reproduces S = L*L'. Any valid Cholesky will work � the
             // standard Cholesky already handles correlations properly.
             // The critical EMA difference is the Gamma quadrature nodes, not the Cholesky ordering.
             var chol2 = new CholeskyDecomposition(S);
@@ -2828,7 +3012,7 @@ namespace RMC.BestFit.Analyses
         /// and per-dimension nodes/weights.
         /// </summary>
         /// <param name="mean">Center point.</param>
-        /// <param name="L">Lower-triangular Cholesky factor of Σ̂.</param>
+        /// <param name="L">Lower-triangular Cholesky factor of S^.</param>
         /// <param name="dimension">Number of parameters.</param>
         /// <param name="perDimNodes">Quadrature nodes for each dimension (standardized to variance ~1).</param>
         /// <param name="perDimWeights">Quadrature weights for each dimension.</param>
@@ -2856,7 +3040,7 @@ namespace RMC.BestFit.Analyses
                     w *= perDimWeights[d][indices[d]];
                 }
 
-                // Apply Cholesky: θ = mean + L × Z
+                // Apply Cholesky: ? = mean + L � Z
                 double[] theta = new double[dimension];
                 for (int i = 0; i < dimension; i++)
                 {
@@ -2884,33 +3068,33 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Clamps parameters for covariance evaluation, matching EMA's REGMOMS and VAR_MOM guard rails.
         /// </summary>
-        /// <param name="parameters">Parameter vector [μ, σ, γ]. Not modified.</param>
-        /// <returns>A cloned parameter vector with σ &gt; 0, |γ| ∈ [0.063, 1.5].</returns>
+        /// <param name="parameters">Parameter vector [�, s, ?]. Not modified.</param>
+        /// <returns>A cloned parameter vector with s &gt; 0, |?| ? [0.063, 1.5].</returns>
         /// <remarks>
         /// <para>
         /// EMA applies two layers of skew clamping for covariance evaluation:
         /// <list type="bullet">
-        ///   <item><description>REGMOMS (line 1961): |γ| ≤ 1.5 — outer clamp before variance computation.</description></item>
-        ///   <item><description>VAR_MOM (line 2081): |γ| ≥ 0.0632 (√(4/1000)) — at smaller |γ|, the gamma
-        ///   shape α = 4/γ² exceeds 1000 and the moment variance formulas lose precision.</description></item>
+        ///   <item><description>REGMOMS (line 1961): |?| = 1.5 � outer clamp before variance computation.</description></item>
+        ///   <item><description>VAR_MOM (line 2081): |?| = 0.0632 (v(4/1000)) � at smaller |?|, the gamma
+        ///   shape a = 4/?� exceeds 1000 and the moment variance formulas lose precision.</description></item>
         /// </list>
         /// </para>
         /// <para>
-        /// Quantile evaluation uses <see cref="ClampForQuantile"/> instead, which only enforces σ &gt; 0
-        /// and leaves γ unclamped (matching EMA's QP3 which has no skew clamp).
+        /// Quantile evaluation uses <see cref="ClampForQuantile"/> instead, which only enforces s &gt; 0
+        /// and leaves ? unclamped (matching EMA's QP3 which has no skew clamp).
         /// </para>
         /// </remarks>
         private static double[] ClampForCovariance(double[] parameters)
         {
             var clamped = (double[])parameters.Clone();
 
-            // Ensure σ > 0 for covariance evaluation
+            // Ensure s > 0 for covariance evaluation
             if (clamped.Length >= 2)
             {
                 clamped[1] = Math.Max(clamped[1], 1e-10);
             }
 
-            // Clamp |γ| to [0.063, 1.5] matching EMA's REGMOMS (±1.5) and VAR_MOM (skewmin=0.0632)
+            // Clamp |?| to [0.063, 1.5] matching EMA's REGMOMS (�1.5) and VAR_MOM (skewmin=0.0632)
             if (clamped.Length >= 3)
             {
                 clamped[2] = Math.Clamp(clamped[2], -1.5, 1.5);
@@ -2922,10 +3106,10 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clamps parameters for quantile evaluation — only enforces σ &gt; 0, leaves γ unclamped.
+        /// Clamps parameters for quantile evaluation � only enforces s &gt; 0, leaves ? unclamped.
         /// </summary>
-        /// <param name="parameters">Parameter vector [μ, σ, γ]. Not modified.</param>
-        /// <returns>A cloned parameter vector with σ &gt; 0 and γ unconstrained.</returns>
+        /// <param name="parameters">Parameter vector [�, s, ?]. Not modified.</param>
+        /// <returns>A cloned parameter vector with s &gt; 0 and ? unconstrained.</returns>
         /// <remarks>
         /// Matches EMA's QP3 function which evaluates quantiles at unclamped skew values from the
         /// quadrature grid, propagating full parameter uncertainty into the CI width. The tighter
@@ -2936,13 +3120,13 @@ namespace RMC.BestFit.Analyses
         {
             var clamped = (double[])parameters.Clone();
 
-            // Ensure σ > 0 — quadrature can push it negative
+            // Ensure s > 0 � quadrature can push it negative
             if (clamped.Length >= 2)
             {
                 clamped[1] = Math.Max(clamped[1], 1e-10);
             }
 
-            // γ is intentionally unclamped for quantile evaluation (matching EMA's QP3)
+            // ? is intentionally unclamped for quantile evaluation (matching EMA's QP3)
 
             return clamped;
         }
@@ -2957,7 +3141,7 @@ namespace RMC.BestFit.Analyses
         {
             try
             {
-                // Clamp for quantile evaluation: only σ > 0, γ unclamped.
+                // Clamp for quantile evaluation: only s > 0, ? unclamped.
                 // Matches EMA's QP3 which uses unclamped grid point skew values.
                 var clampedParams = ClampForQuantile(parameters);
 
@@ -2980,8 +3164,8 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Computes the weighted covariance Cov(X, Y) = Σ w_i·(x_i - x̄)·(y_i - ȳ) where
-        /// x̄ = Σ w_i·x_i and ȳ = Σ w_i·y_i. Equivalent to EMA's COVW function.
+        /// Computes the weighted covariance Cov(X, Y) = S w_i�(x_i - x�)�(y_i - ?) where
+        /// x� = S w_i�x_i and ? = S w_i�y_i. Equivalent to EMA's COVW function.
         /// </summary>
         /// <param name="x">First variable values.</param>
         /// <param name="y">Second variable values.</param>
@@ -3008,7 +3192,7 @@ namespace RMC.BestFit.Analyses
             xBar /= wSum;
             yBar /= wSum;
 
-            // Weighted covariance: Σ w_i (x_i - x̄)(y_i - ȳ) / Σ w_i
+            // Weighted covariance: S w_i (x_i - x�)(y_i - ?) / S w_i
             double cov = 0;
             for (int i = 0; i < n; i++)
                 cov += weights[i] * (x[i] - xBar) * (y[i] - yBar);
@@ -3019,33 +3203,33 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Applies Cohn's adjusted Student's t confidence interval formula from CI_EMA_M3B.
         /// </summary>
-        /// <param name="qHat">The point estimate of the quantile Q̂_p.</param>
-        /// <param name="varQ">Var(Q̂_p) from the outer quadrature.</param>
-        /// <param name="covQSE">Cov(Q̂_p, SE(Q̂_p)) from the nested quadrature.</param>
-        /// <param name="varSE">Var(SE(Q̂_p)) from the outer quadrature.</param>
+        /// <param name="qHat">The point estimate of the quantile Q^_p.</param>
+        /// <param name="varQ">Var(Q^_p) from the outer quadrature.</param>
+        /// <param name="covQSE">Cov(Q^_p, SE(Q^_p)) from the nested quadrature.</param>
+        /// <param name="varSE">Var(SE(Q^_p)) from the outer quadrature.</param>
         /// <param name="confidenceLevel">The confidence level (e.g., 0.90).</param>
         /// <returns>
         /// A tuple of (lowerCI, upperCI, beta1, nu) where beta1 is the regression coefficient
-        /// of SE on Q̂, and nu is the effective degrees of freedom.
+        /// of SE on Q^, and nu is the effective degrees of freedom.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Implements the formula from <c>emafit-jfe.f</c> lines 1630–1679:
+        /// Implements the formula from <c>emafit-jfe.f</c> lines 1630�1679:
         /// </para>
         /// <code>
-        /// β₁ = Cov(Q̂_p, SE) / Var(Q̂_p)
-        /// Var(SE | Q̂) = Var(SE) − Cov²(Q̂, SE) / Var(Q̂)
-        /// ν = 0.5 · Var(Q̂) / Var(SE | Q̂)
-        /// t = Student_t⁻¹((1 + conf) / 2, ν)
-        /// CI = Q̂ ± √Var(Q̂) · t / max(0.5, 1 − β₁·t)
+        /// �1 = Cov(Q^_p, SE) / Var(Q^_p)
+        /// Var(SE | Q^) = Var(SE) - Cov�(Q^, SE) / Var(Q^)
+        /// ? = 0.5 � Var(Q^) / Var(SE | Q^)
+        /// t = Student_t?�((1 + conf) / 2, ?)
+        /// CI = Q^ � vVar(Q^) � t / max(0.5, 1 - �1�t)
         /// </code>
         /// <para>
-        /// The β₁ correction accounts for the correlation between the quantile estimate and its
-        /// standard error: when β₁ > 0 (common at extreme upper quantiles), the upper CI expands
+        /// The �1 correction accounts for the correlation between the quantile estimate and its
+        /// standard error: when �1 > 0 (common at extreme upper quantiles), the upper CI expands
         /// more than the lower CI shrinks, creating the characteristic asymmetric EMA CI shape.
         /// </para>
         /// <para>
-        /// The degrees of freedom ν are floored at 5 to prevent numerical issues (matching EMA's <c>nu_min</c>).
+        /// The degrees of freedom ? are floored at 5 to prevent numerical issues (matching EMA's <c>nu_min</c>).
         /// </para>
         /// </remarks>
         private static (double lower, double upper, double beta1, double nu) CohnAdjustedStudentTCI(
@@ -3057,17 +3241,17 @@ namespace RMC.BestFit.Analyses
             if (varQ <= 0)
                 return (qHat, qHat, 0, nuMin);
 
-            // β₁: regression coefficient of SE(Q̂) on Q̂
+            // �1: regression coefficient of SE(Q^) on Q^
             double beta1 = covQSE / varQ;
 
-            // Conditional variance of SE given Q̂
+            // Conditional variance of SE given Q^
             double varSEgivenQ = varSE - covQSE * covQSE / varQ;
 
             // Effective degrees of freedom
             double nu;
             if (varSEgivenQ <= 0)
             {
-                nu = 1000.0; // SE is perfectly determined by Q̂ → normal approximation
+                nu = 1000.0; // SE is perfectly determined by Q^ ? normal approximation
             }
             else
             {
@@ -3081,7 +3265,7 @@ namespace RMC.BestFit.Analyses
             double t = tDist.InverseCDF(pHigh);
             double seQ = Math.Sqrt(varQ);
 
-            // Confidence intervals with β₁ correction
+            // Confidence intervals with �1 correction
             double ciHigh = qHat + seQ * t / Math.Max(cMin, 1.0 - beta1 * t);
             double ciLow = qHat + seQ * (-t) / Math.Max(cMin, 1.0 - beta1 * (-t));
 
@@ -3089,39 +3273,14 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Enforces monotonicity of point estimates and CI bounds, matching EMA's post-processing
-        /// in <c>emafit</c> (lines 278–285).
+        /// Enforces monotonicity of lower and upper confidence interval bounds.
         /// </summary>
-        /// <param name="pointEstimates">The quantile point estimates (modified in place).</param>
-        /// <param name="lowerCI">The lower CI bounds (modified in place).</param>
-        /// <param name="upperCI">The upper CI bounds (modified in place).</param>
-        /// <param name="nProb">Number of probability levels.</param>
+        /// <param name="lowerCI">The lower confidence interval bounds to modify in place.</param>
+        /// <param name="upperCI">The upper confidence interval bounds to modify in place.</param>
+        /// <param name="nProb">The number of probability levels to process.</param>
         /// <remarks>
-        /// <para>
-        /// ProbabilityOrdinates are stored in descending order (0.999 … 0.002), meaning
-        /// quantiles should be non-decreasing with index. EMA sweeps from the median outward
-        /// in both directions:
-        /// </para>
-        /// <list type="bullet">
-        ///   <item>Left sweep (toward high AEP / low quantiles): enforce max(current, previous)</item>
-        ///   <item>Right sweep (toward low AEP / high quantiles): enforce max(current, previous)</item>
-        /// </list>
-        /// <para>
-        /// This corrects small-sample quadrature noise that can produce non-monotonic CI bounds
-        /// at extreme quantiles. Per Cohn (2007): "correction to adjust for small sample sizes".
-        /// </para>
-        /// </remarks>
-        /// <summary>
-        /// Enforces monotonicity of CI bounds.
-        /// </summary>
-        /// <param name="lowerCI">The lower CI bounds (modified in place).</param>
-        /// <param name="upperCI">The upper CI bounds (modified in place).</param>
-        /// <param name="nProb">Number of probability levels.</param>
-        /// <remarks>
-        /// ProbabilityOrdinates are AEPs in ascending order (0.002 → 0.999).
-        /// Quantiles decrease with index (index 0 = rarest event = largest quantile).
-        /// Both CI bounds must be non-increasing with index: CI[i] >= CI[i+1].
-        /// Sweep backward from the last index to enforce this.
+        /// Probability ordinates are AEPs in ascending order, so both confidence interval bounds
+        /// must be non-increasing with index. The sweep works backward to enforce that ordering.
         /// </remarks>
         private static void EnforceMonotonicity(double[] lowerCI, double[] upperCI, int nProb)
         {
@@ -3290,7 +3449,7 @@ namespace RMC.BestFit.Analyses
             // Section 6: Bootstrap Diagnostics (bootstrap methods only)
             if (isBootstrap && BootstrapResults != null)
             {
-                ReportAppendBootstrapDiagnostics(sb, BootstrapResults, labelWidth);
+                ReportAppendBootstrapDiagnostics(sb, BootstrapResults, labelWidth, UncertaintyMethod);
             }
 
             // Section 7: Bootstrap Covariance & Correlation (bootstrap methods only)
@@ -3382,27 +3541,63 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Appends bootstrap diagnostics to the report.
+        /// Appends bootstrap or sampling diagnostics to the report.
         /// </summary>
         /// <param name="sb">The string builder to append to.</param>
         /// <param name="diag">The bootstrap diagnostics.</param>
         /// <param name="labelWidth">The label padding width.</param>
-        private static void ReportAppendBootstrapDiagnostics(StringBuilder sb, BootstrapDiagnostics diag, int labelWidth)
+        /// <param name="method">The uncertainty method that produced the diagnostics.</param>
+        internal static void ReportAppendBootstrapDiagnostics(StringBuilder sb, BootstrapDiagnostics diag, int labelWidth, UncertaintyMethod method)
         {
-            ReportAppendSectionHeader(sb, "BOOTSTRAP DIAGNOSTICS");
-            sb.AppendLine($"  {"Replicates Requested:".PadRight(labelWidth)}{diag.TotalReplicates:N0}");
-            sb.AppendLine($"  {"Valid Replicates:".PadRight(labelWidth)}{diag.ValidReplicates:N0}");
-            sb.AppendLine($"  {"Failed (fallback):".PadRight(labelWidth)}{diag.FailedReplicates:N0} ({diag.FailureRate * 100:F1}%)");
-            sb.AppendLine($"  {"Total Retries:".PadRight(labelWidth)}{diag.TotalRetries:N0}");
-            sb.AppendLine($"  {"Avg Retries/Replicate:".PadRight(labelWidth)}{diag.AverageRetries:F2}");
-            sb.AppendLine($"  {"Avg Func Evals/Repl:".PadRight(labelWidth)}{diag.AverageFunctionEvaluations:F0}");
-            sb.AppendLine($"  {"Total Boot Func Evals:".PadRight(labelWidth)}{diag.TotalFunctionEvaluations:N0}");
+            bool isMvn = method == UncertaintyMethod.MultivariateNormal;
+            int requested = diag.TotalReplicates;
+            int retained = diag.RetainedReplicates;
+            int attempted = isMvn ? requested : diag.AttemptedReplicates;
+            int discarded = isMvn ? Math.Max(0, requested - retained) : diag.FailedReplicates;
+            double discardRate = attempted > 0 ? (double)discarded / attempted : 0.0;
+
+            ReportAppendSectionHeader(sb, isMvn ? "SAMPLING DIAGNOSTICS" : "BOOTSTRAP DIAGNOSTICS");
+            sb.AppendLine($"  {(isMvn ? "Draws Requested:" : "Replicates Requested:").PadRight(labelWidth)}{requested:N0}");
+            if (isMvn)
+            {
+                sb.AppendLine($"  {"Draws Failed:".PadRight(labelWidth)}{discarded:N0} ({discardRate * 100:F1}%)");
+                sb.AppendLine($"  {"Draws Used:".PadRight(labelWidth)}{retained:N0}");
+            }
+            else
+            {
+                sb.AppendLine($"  {"Candidates Attempted:".PadRight(labelWidth)}{attempted:N0}");
+                sb.AppendLine($"  {"Candidate Fits Discarded:".PadRight(labelWidth)}{discarded:N0} ({discardRate * 100:F1}%)");
+                sb.AppendLine($"  {"Replicates Used:".PadRight(labelWidth)}{retained:N0}");
+            }
+
+            if (!isMvn)
+            {
+                sb.AppendLine($"  {"Optimizer Fallbacks:".PadRight(labelWidth)}{diag.OptimizerFallbacks:N0}");
+                sb.AppendLine($"  {"Total Retries:".PadRight(labelWidth)}{diag.TotalRetries:N0}");
+                sb.AppendLine($"  {"Avg Retries/Replicate:".PadRight(labelWidth)}{diag.AverageRetries:F2}");
+                sb.AppendLine($"  {"Avg Func Evals/Repl:".PadRight(labelWidth)}{diag.AverageFunctionEvaluations:F0}");
+                sb.AppendLine($"  {"Total Boot Func Evals:".PadRight(labelWidth)}{diag.TotalFunctionEvaluations:N0}");
+
+                int statusTotal = diag.StatusSuccessCount + diag.StatusMaximumIterationsCount +
+                                  diag.StatusMaximumFunctionEvaluationsCount + diag.StatusFailureCount + diag.StatusNoneCount;
+                if (statusTotal > 0)
+                {
+                    sb.AppendLine("  GMM Status Counts:");
+                    sb.AppendLine($"    {"Success:".PadRight(labelWidth - 2)}{diag.StatusSuccessCount:N0}");
+                    sb.AppendLine($"    {"Maximum Iterations:".PadRight(labelWidth - 2)}{diag.StatusMaximumIterationsCount:N0}");
+                    sb.AppendLine($"    {"Maximum Evaluations:".PadRight(labelWidth - 2)}{diag.StatusMaximumFunctionEvaluationsCount:N0}");
+                    sb.AppendLine($"    {"Failure:".PadRight(labelWidth - 2)}{diag.StatusFailureCount:N0}");
+                    sb.AppendLine($"    {"None:".PadRight(labelWidth - 2)}{diag.StatusNoneCount:N0}");
+                }
+            }
+
+            if (diag.TransformFailures > 0)
+                sb.AppendLine($"  {"Transform Failures:".PadRight(labelWidth)}{diag.TransformFailures:N0}");
             if (diag.PivotRejections > 0)
                 sb.AppendLine($"  {"Pivot Rejections:".PadRight(labelWidth)}{diag.PivotRejections:N0} ({diag.PivotRejectionRate * 100:F1}%)");
             if (diag.MahalanobisRejections > 0)
                 sb.AppendLine($"  {"Outlier Rejections:".PadRight(labelWidth)}{diag.MahalanobisRejections:N0} ({diag.MahalanobisRejectionRate * 100:F1}%)");
 
-            // Phase timing
             if (diag.Phase1Time.TotalMilliseconds > 0)
                 sb.AppendLine($"  {"Phase 1 (fitting):".PadRight(labelWidth)}{diag.Phase1Time:hh\\:mm\\:ss\\.fff}");
             if (diag.Phase2Time.TotalMilliseconds > 0)
@@ -3410,29 +3605,36 @@ namespace RMC.BestFit.Analyses
             if (diag.Phase3Time.TotalMilliseconds > 0)
                 sb.AppendLine($"  {"Phase 3 (pivot draw):".PadRight(labelWidth)}{diag.Phase3Time:hh\\:mm\\:ss\\.fff}");
 
-            // Advice
-            if (diag.FailureRate > 0.30)
+            if (requested > 0 && retained < requested / 2.0)
             {
                 sb.AppendLine();
-                sb.AppendLine("  WARNING: Very high failure rate (>30%). Uncertainty estimates may be");
-                sb.AppendLine("  unreliable. Consider using Multivariate Normal method instead.");
+                sb.AppendLine($"  WARNING: Fewer than half of the requested realizations were retained ({retained:N0} of {requested:N0}).");
+                sb.AppendLine("  Uncertainty estimates may be unstable. Review the fitted model and data.");
             }
-            else if (diag.FailureRate > 0.10)
+            else if (retained > 0 && retained < 1000)
             {
                 sb.AppendLine();
-                sb.AppendLine("  WARNING: High failure rate (>10%). The fitted model may be near a");
-                sb.AppendLine("  parameter boundary or poorly identified.");
+                sb.AppendLine($"  Note: Only {retained:N0} realizations were retained. Tail quantile resolution may be limited.");
             }
 
-            if (diag.AverageRetries > 2.0)
+            if (discardRate > 0.30)
             {
-                sb.AppendLine("  Note: Bootstrap replicates frequently need retries. The model may be");
-                sb.AppendLine("  sensitive to data perturbations.");
+                sb.AppendLine();
+                sb.AppendLine("  WARNING: Very high discard rate (>30%). Uncertainty estimates may be unreliable.");
+            }
+            else if (discardRate > 0.10)
+            {
+                sb.AppendLine();
+                sb.AppendLine("  WARNING: High discard rate (>10%). The fitted model may be near a parameter boundary or poorly identified.");
+            }
+
+            if (!isMvn && diag.AverageRetries > 2.0)
+            {
+                sb.AppendLine("  Note: Bootstrap replicates frequently need retries. The model may be sensitive to data perturbations.");
             }
 
             sb.AppendLine();
         }
-
         /// <summary>
         /// Appends bootstrap covariance and correlation matrices computed from sampled parameter sets.
         /// </summary>
@@ -3464,11 +3666,6 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Appends penalty configuration section showing parameter and quantile penalties.
-        /// </summary>
-        /// <param name="sb">The string builder to append to.</param>
-        /// <param name="gmm">The GMM estimator.</param>
-        /// <summary>
         /// Computes asymptotic quantile variance for each probability ordinate using the delta method.
         /// </summary>
         /// <returns>
@@ -3477,8 +3674,8 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Uses the delta method: Var(Q̂_p) = ∇Q_p(θ̂)ᵀ · Σ̂_θ · ∇Q_p(θ̂), where ∇Q_p is the gradient
-        /// of the quantile function with respect to parameters, and Σ̂_θ is the sandwich covariance matrix.
+        /// Uses the delta method: Var(Q^_p) = ?Q_p(?^)? � S^_? � ?Q_p(?^), where ?Q_p is the gradient
+        /// of the quantile function with respect to parameters, and S^_? is the sandwich covariance matrix.
         /// </para>
         /// <para>
         /// The quantile function is evaluated in the same space as the moment conditions:
@@ -3531,7 +3728,7 @@ namespace RMC.BestFit.Analyses
                     continue;
                 }
 
-                // Quadratic form: Var(Q̂_p) = ∇Q' Σ̂ ∇Q
+                // Quadratic form: Var(Q^_p) = ?Q' S^ ?Q
                 double variance = 0;
                 for (int i = 0; i < p; i++)
                 {
@@ -3579,6 +3776,11 @@ namespace RMC.BestFit.Analyses
             sb.AppendLine();
         }
 
+        /// <summary>
+        /// Appends the parameter and quantile penalty configuration section to the report.
+        /// </summary>
+        /// <param name="sb">The report builder to append to.</param>
+        /// <param name="gmm">The GMM estimator that owns the current penalty configuration.</param>
         /// <param name="maxNameLen">Maximum parameter name length for alignment.</param>
         private void ReportAppendPenaltyConfiguration(StringBuilder sb,
             GeneralizedMethodOfMoments gmm, int maxNameLen)
@@ -3782,7 +3984,7 @@ namespace RMC.BestFit.Analyses
     /// <para>
     /// This result class is produced by <see cref="Bulletin17CAnalysis.ComputeCohnStyleConfidenceIntervals"/>
     /// and provides EMA-compatible confidence intervals alongside diagnostic quantities
-    /// (β₁ regression coefficient and ν degrees of freedom) for comparison with PeakFQ output.
+    /// (�1 regression coefficient and ? degrees of freedom) for comparison with PeakFQ output.
     /// </para>
     /// </remarks>
     public class CohnConfidenceIntervalResult
@@ -3793,7 +3995,7 @@ namespace RMC.BestFit.Analyses
         public double[] ExceedanceProbabilities { get; set; } = Array.Empty<double>();
 
         /// <summary>
-        /// The point estimates of the quantiles (Q̂_p) at each exceedance probability.
+        /// The point estimates of the quantiles (Q^_p) at each exceedance probability.
         /// </summary>
         public double[] PointEstimates { get; set; } = Array.Empty<double>();
 
@@ -3813,20 +4015,20 @@ namespace RMC.BestFit.Analyses
         public double ConfidenceLevel { get; set; }
 
         /// <summary>
-        /// The β₁ regression coefficient of SE(Q̂_p) on Q̂_p for each probability level.
+        /// The �1 regression coefficient of SE(Q^_p) on Q^_p for each probability level.
         /// Positive values indicate that the standard error increases with the quantile estimate,
         /// causing asymmetric CI widths.
         /// </summary>
         public double[] Beta1 { get; set; } = Array.Empty<double>();
 
         /// <summary>
-        /// The effective degrees of freedom ν for each probability level.
+        /// The effective degrees of freedom ? for each probability level.
         /// Lower values indicate heavier-tailed uncertainty (wider CIs).
         /// </summary>
         public double[] Nu { get; set; } = Array.Empty<double>();
 
         /// <summary>
-        /// The delta-method variance Var(Q̂_p) from the outer quadrature for each probability level.
+        /// The delta-method variance Var(Q^_p) from the outer quadrature for each probability level.
         /// </summary>
         public double[] QuantileVariance { get; set; } = Array.Empty<double>();
     }

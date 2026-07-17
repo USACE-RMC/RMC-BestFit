@@ -20,7 +20,14 @@ namespace RMC.BestFit.Models
 
         #region Members
 
+        /// <summary>
+        /// Backing collection of model parameters.
+        /// </summary>
         protected List<ModelParameter> _parameters = new List<ModelParameter>();
+
+        /// <summary>
+        /// Backing value indicating whether default flat priors are applied.
+        /// </summary>
         protected bool _useDefaultFlatPriors = true;
 
         /// <inheritdoc/>
@@ -72,6 +79,9 @@ namespace RMC.BestFit.Models
         }
 
         /// <inheritdoc/>
+        /// <summary>
+        /// Occurs when a model property changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
 
         #endregion

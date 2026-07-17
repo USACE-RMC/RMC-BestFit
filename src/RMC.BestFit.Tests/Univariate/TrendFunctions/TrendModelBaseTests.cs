@@ -2,10 +2,10 @@ using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 using System.ComponentModel;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="TrendModelBase"/> abstract class.
+/// Unit tests for the <c>TrendModelBase</c> abstract class.
 /// Tests are performed using concrete implementations (ConstantTrend, LinearTrend).
 /// </summary>
 [TestClass]

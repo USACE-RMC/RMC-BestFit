@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -114,7 +114,7 @@ namespace RMC.BestFit.Analyses
         #region Construction
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CompositeAnalysis"/> class.
+        /// Initializes a new instance of the <c>CompositeAnalysis</c> class.
         /// </summary>
         public CompositeAnalysis()
         {
@@ -124,7 +124,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CompositeAnalysis"/> class
+        /// Initializes a new instance of the <c>CompositeAnalysis</c> class
         /// with the specified analyses.
         /// </summary>
         /// <param name="analyses">The collection of weighted univariate analyses.</param>
@@ -136,13 +136,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CompositeAnalysis"/> class
+        /// Initializes a new instance of the <c>CompositeAnalysis</c> class
         /// from an <see cref="XElement"/>.
         /// </summary>
         /// <param name="xElement">The XML element containing the serialized state.</param>
         /// <param name="analysisResolver">
         /// A function that resolves analysis names to <see cref="IUnivariateAnalysis"/> instances.
-        /// Resolved analyses that are themselves <see cref="CompositeAnalysis"/> are skipped to
+        /// Resolved analyses that are themselves <c>CompositeAnalysis</c> are skipped to
         /// prevent composite-of-composite nesting.
         /// </param>
         public CompositeAnalysis(XElement xElement, Func<string, IUnivariateAnalysis?>? analysisResolver = null)
@@ -242,7 +242,7 @@ namespace RMC.BestFit.Analyses
         /// child) plus the outer caller's single <see cref="ClearResults"/>. Each
         /// <see cref="ClearResults"/> raises <c>AnalysisResults</c> PropertyChanged,
         /// which the App's <c>UpdateFrequencyPlot</c> handler treats as a full plot
-        /// rebuild — producing visible flicker and a wait-cursor flash for every child.
+        /// rebuild � producing visible flicker and a wait-cursor flash for every child.
         /// This guard collapses the cascade to a single ClearResults at the outer
         /// caller's site.
         /// </summary>
@@ -393,6 +393,14 @@ namespace RMC.BestFit.Analyses
 
         #region Methods
 
+        /// <summary>
+        /// Supports the <c>Analyses_CollectionChanged</c> helper.
+        /// </summary>
+        /// <param name="sender">The event source.</param>
+        /// <param name="e">The event data.</param>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private void Analyses_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.OldItems != null)
@@ -414,13 +422,21 @@ namespace RMC.BestFit.Analyses
             RaisePropertyChange(nameof(Analyses));
         }
 
+        /// <summary>
+        /// Supports the <c>WeightedAnalysis_PropertyChanged</c> helper.
+        /// </summary>
+        /// <param name="sender">The event source.</param>
+        /// <param name="e">The event data.</param>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private void WeightedAnalysis_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             // Re-fit detection: a child analysis re-running goes through ClearResults (sets
             // AnalysisResults = null with IsEstimated still true), then MCMC, then assigns
             // a fresh AnalysisResults, then finally flips IsEstimated to true (see
             // UnivariateAnalysis.RunAsync line 510). The "AnalysisResults"-only branch fires
-            // EstimateModelWeights at every step of that sequence — but at the moment a new
+            // EstimateModelWeights at every step of that sequence � but at the moment a new
             // AnalysisResults is set, IsEstimated is still false, so the child is filtered out
             // by EstimateModelWeights' "valid sub-analyses" check (CompositeAnalysis.cs:561)
             // and ends up with weight=0. The IsEstimated handler below catches the final
@@ -435,7 +451,7 @@ namespace RMC.BestFit.Analyses
             }
             else if (e.PropertyName == nameof(WeightedUnivariateAnalysis.Weight))
             {
-                // Skip the per-Weight ClearResults when EstimateModelWeights is the writer —
+                // Skip the per-Weight ClearResults when EstimateModelWeights is the writer �
                 // the cascading rebuild fires N AnalysisResults PropertyChanged events in
                 // the App, producing flicker and a wait-cursor flash per child. The caller
                 // (e.g. ModelAverageMethod setter) invokes ClearResults once at the end.
@@ -508,8 +524,8 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only â€” the frequency/quantile output whose
-        /// evaluation grid is <see cref="ProbabilityOrdinates"/>. Leaves <see cref="IsEstimated"/>
+        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
+        /// evaluation grid is <see cref="ProbabilityOrdinates"/>. Leaves <c>IsEstimated</c>
         /// and the child analyses' fits intact.
         /// </summary>
         public void ClearFrequencyAnalysisResults()
@@ -549,7 +565,7 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Restores previously saved analysis results from deserialization.
-        /// Sets <see cref="IsEstimated"/> to true if results are non-null.
+        /// Sets <c>IsEstimated</c> to true if results are non-null.
         /// </summary>
         /// <param name="results">The deserialized analysis results.</param>
         public void RestoreAnalysisResults(UncertaintyAnalysisResults results)
@@ -686,7 +702,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -694,6 +710,7 @@ namespace RMC.BestFit.Analyses
                 ClearResults();
                 EstimateModelWeights();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -704,12 +721,13 @@ namespace RMC.BestFit.Analyses
                     // PropertyChanged fires inside CreateFrequencyAnalysisResultsAsync, the
                     // App control's gates (Element.IsEstimated == true && AnalysisResults != null)
                     // see the analysis as estimated and draw the curves. Without this, the batch
-                    // path — which calls inner.RunAsync directly without the UI wrapper's
-                    // post-await RaisePropertyChange — leaves the plot/grids empty. Mirrors the
+                    // path � which calls inner.RunAsync directly without the UI wrapper's
+                    // post-await RaisePropertyChange � leaves the plot/grids empty. Mirrors the
                     // B17C pattern (Bulletin17CAnalysis.cs:558).
                     _isEstimated = true;
                     await CreateFrequencyAnalysisResultsAsync(progressReporter);
                     RaisePropertyChange(nameof(IsEstimated));
+                    AnalysisProgress.ReportComplete(progressReporter);
                 }
                 catch (OperationCanceledException)
                 {
@@ -759,11 +777,7 @@ namespace RMC.BestFit.Analyses
                 // already-running iteration short-circuits instead of completing. The
                 // outer RunAsync already catches OperationCanceledException at line 714
                 // and reports it through AnalysisRunCompletedEventArgs.
-                var options = new ParallelOptions
-                {
-                    CancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None,
-                    MaxDegreeOfParallelism = Environment.ProcessorCount
-                };
+                var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
                 var results = new UnivariateDistributionBase[realz];
                 UnivariateDistributionBase? mode = null;
@@ -795,9 +809,9 @@ namespace RMC.BestFit.Analyses
                         // regardless of how fast individual iterations are. The
                         // OperationCanceledException it raises pops as a "first-chance
                         // exception" in the Visual Studio debugger when CLR exceptions
-                        // are enabled in Debug → Windows → Exception Settings, but the
+                        // are enabled in Debug ? Windows ? Exception Settings, but the
                         // outer catch in RunAsync (CompositeAnalysis.cs:714) handles it
-                        // correctly — the user sees a clean cancel in Release mode and
+                        // correctly � the user sees a clean cancel in Release mode and
                         // when running outside the debugger. (Silent-return + phase-
                         // boundary check is theoretically equivalent but only catches
                         // the cancel between Parallel.For dispatches, which can be
@@ -892,7 +906,6 @@ namespace RMC.BestFit.Analyses
                 var boot = new BootstrapAnalysis(mode, ParameterEstimationMethod.MaximumLikelihood, 100, realz);
                 AnalysisResults = boot.Estimate(probs, 1 - BayesianAnalysis.CredibleIntervalWidth, results, false);
 
-                progressReporter?.ReportProgress(100);
             });
 
             RaisePropertyChange(nameof(AnalysisResults));
@@ -973,7 +986,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// Delegates to <see cref="IUnivariateAnalysis.GetPointEstimateDistribution(BayesianAnalysis.PointEstimateType)"/>
         /// so the child handles its own stationary / nonstationary parameter layout. The
-        /// composite never directly pokes at the child's <see cref="UnivariateDistribution"/>
+        /// composite never directly pokes at the child's <c>UnivariateDistribution</c>
         /// or calls <c>SetParameters</c> on a base distribution, which previously broke
         /// nonstationary <see cref="UnivariateAnalysis"/> children whose parameter array
         /// includes trend coefficients.
@@ -1043,7 +1056,7 @@ namespace RMC.BestFit.Analyses
                 // Bulletin17CAnalysis is fit by GMM, not by an MCMC chain, so it does not
                 // produce posterior-likelihood-based information criteria (DIC, WAIC, LOO-CV).
                 // Reject Model Averaging weighted by any of those criteria when at least one
-                // child is a Bulletin17CAnalysis — silently averaging with NaN / 0 weights
+                // child is a Bulletin17CAnalysis � silently averaging with NaN / 0 weights
                 // would produce a meaningless composite curve.
                 if (CompositeDistributionType == CompositeType.ModelAverage &&
                     (ModelAverageMethod == AverageMethod.DIC ||

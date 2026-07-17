@@ -5,7 +5,7 @@ using RMC.BestFit.Estimation;
 namespace RMC.BestFit.Tests.RatingCurve;
 
 /// <summary>
-/// Phase 3a unit tests for the <see cref="RatingCurveAnalysis"/> grid setters.
+/// Phase 3a unit tests for the <c>RatingCurveAnalysis</c> grid setters.
 /// Verifies that <c>MinStage</c>, <c>MaxStage</c>, and <c>StageBins</c> changes
 /// reprocess the uncertainty grid without wiping the MCMC fit. These are
 /// programmatic event-wiring tests — no MCMC chain is run. Chain-running parity
@@ -26,6 +26,13 @@ public class RatingCurveAnalysisGridReprocessTests
     private static readonly double[] s_stage = { 5.0, 6.5, 7.5, 9.0, 10.5, 12.0, 14.0 };
     private static readonly double[] s_discharge = { 110.0, 300.0, 600.0, 1200.0, 2000.0, 3500.0, 5100.0 };
 
+    /// <summary>
+    /// Creates fresh Analysis.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static RatingCurveAnalysis CreateFreshAnalysis()
     {
         var stage = new Numerics.Data.TimeSeries(TimeInterval.OneDay, new DateTime(2000, 1, 1), s_stage);
@@ -34,6 +41,14 @@ public class RatingCurveAnalysisGridReprocessTests
         return new RatingCurveAnalysis(model);
     }
 
+    /// <summary>
+    /// Supports the <c>TrackClearSideEffects</c> helper.
+    /// </summary>
+    /// <param name="analysis">The analysis value.</param>
+    /// <param name="assertNoClear">The assertNoClear value.</param>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static void TrackClearSideEffects(
         RatingCurveAnalysis analysis,
         out Action<string> assertNoClear)

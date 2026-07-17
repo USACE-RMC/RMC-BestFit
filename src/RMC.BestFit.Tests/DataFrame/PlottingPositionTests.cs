@@ -1,12 +1,14 @@
+using Numerics;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
-using RMC.BestFit;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for <see cref="DataFrame"/> plotting position calculation methods.
+/// Unit tests for <c>DataFrame</c> plotting position calculation methods.
 /// Validates implementations against HEC-SSP software and the Numerics library.
 /// </summary>
 /// <remarks>
@@ -29,7 +31,7 @@ public class PlottingPositionTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> using Bulletin 17C Example 4, which
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> using Bulletin 17C Example 4, which
     /// demonstrates a real flood frequency analysis with systematic record, historical flood intervals,
     /// and multiple perception thresholds spanning different time periods.
     /// </para>
@@ -55,7 +57,7 @@ public class PlottingPositionTests
         var intPP = new double[] { 0.0091324200913242, 0.0507219548315439, 0.0211032950758978, 0.0045662100456621 };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
 
         // Add exact data
         for (int i = 0; i < sysValues.Length; i++)
@@ -70,10 +72,10 @@ public class PlottingPositionTests
         df.IntervalSeries.Add(new IntervalData(1921, 80000, 90774.44574, 103000));
 
         // Add thresholds
-        df.ThresholdSeries.Add(new ThresholdData(1165, 1858, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1859, 1892, 40000));
-        df.ThresholdSeries.Add(new ThresholdData(1893, 1894, 19900));
-        df.ThresholdSeries.Add(new ThresholdData(1977, 2004, 20000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1165, 1858, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1859, 1892, 40000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1893, 1894, 19900));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1977, 2004, 20000));
 
         // Process thresholds
         df.ProcessThresholdSeries();
@@ -100,7 +102,7 @@ public class PlottingPositionTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> using Bulletin 17C Example 7, which
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> using Bulletin 17C Example 7, which
     /// demonstrates extreme historical record length with paleoflood data. This example includes a systematic
     /// record from 1905-1997 plus 5 historical interval floods dating back to 605 AD, spanning nearly 1,400 years.
     /// </para>
@@ -124,7 +126,7 @@ public class PlottingPositionTests
         var intPP = new double[] { 0.00025, 0.0013043186695279, 0.00264484978540773, 0.00398538090128755, 0.0142509977329467 };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
 
         // Add exact data
         for (int i = 0; i < sysValues.Length; i++)
@@ -140,16 +142,16 @@ public class PlottingPositionTests
         df.IntervalSeries.Add(new IntervalData(1862, 262000, 280356.9154, 300000));
 
         // Add thresholds
-        df.ThresholdSeries.Add(new ThresholdData(1, 1301, 599000));
-        df.ThresholdSeries.Add(new ThresholdData(1302, 1847, 399000));
-        df.ThresholdSeries.Add(new ThresholdData(1848, 1904, 261000));
-        df.ThresholdSeries.Add(new ThresholdData(1910, 1910, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1912, 1913, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1918, 1918, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1929, 1929, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1977, 1977, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1987, 1996, 150000));
-        df.ThresholdSeries.Add(new ThresholdData(1998, 2000, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1, 1301, 599000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1302, 1847, 399000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1848, 1904, 261000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1910, 1910, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1912, 1913, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1918, 1918, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1929, 1929, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1977, 1977, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1987, 1996, 150000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1998, 2000, 150000));
 
         // Process thresholds
         df.ProcessThresholdSeries();
@@ -176,8 +178,8 @@ public class PlottingPositionTests
     /// Tests Blom plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Blom parameter (α = 0.375) against
-    /// <see cref="PlottingPositions.Blom"/> from the Numerics library. The Blom formula is approximately
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Blom parameter (α = 0.375) against
+    /// <c>PlottingPositions.Blom</c> from the Numerics library. The Blom formula is approximately
     /// unbiased for the Normal distribution and provides plotting positions: p = (i - 0.375)/(n + 0.25).
     /// This formula is widely used and provides reasonable results for most distribution families.
     /// </remarks>
@@ -192,7 +194,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -214,8 +216,8 @@ public class PlottingPositionTests
     /// Tests Cunnane plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Cunnane parameter (α = 0.4) against
-    /// <see cref="PlottingPositions.Cunnane"/> from the Numerics library. The Cunnane formula provides
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Cunnane parameter (α = 0.4) against
+    /// <c>PlottingPositions.Cunnane</c> from the Numerics library. The Cunnane formula provides
     /// plotting positions: p = (i - 0.4)/(n + 0.2) and is approximately unbiased for the Gumbel and
     /// Generalized Extreme Value (GEV) distributions. This is the recommended formula in USGS Bulletin 17C
     /// for flood frequency analysis.
@@ -231,7 +233,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -253,8 +255,8 @@ public class PlottingPositionTests
     /// Tests Gringorten plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Gringorten parameter (α = 0.44) against
-    /// <see cref="PlottingPositions.Gringorten"/> from the Numerics library. The Gringorten formula provides
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Gringorten parameter (α = 0.44) against
+    /// <c>PlottingPositions.Gringorten</c> from the Numerics library. The Gringorten formula provides
     /// plotting positions: p = (i - 0.44)/(n + 0.12) and is approximately unbiased for the Weibull distribution.
     /// This formula is commonly used in extreme value analysis and provides slightly more conservative
     /// (higher probability) estimates for extreme events compared to Cunnane.
@@ -270,7 +272,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -292,8 +294,8 @@ public class PlottingPositionTests
     /// Tests Hazen plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Hazen parameter (α = 0.5) against
-    /// <see cref="PlottingPositions.Hazen"/> from the Numerics library. The Hazen formula provides plotting
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Hazen parameter (α = 0.5) against
+    /// <c>PlottingPositions.Hazen</c> from the Numerics library. The Hazen formula provides plotting
     /// positions: p = (i - 0.5)/n and is one of the oldest plotting position formulas. It provides the
     /// median plotting position and is symmetric, making it appropriate when no specific distribution
     /// is assumed. The formula is simple but can be biased for some distributions.
@@ -309,7 +311,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -331,8 +333,8 @@ public class PlottingPositionTests
     /// Tests median (APL) plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with median parameter (α = 0.3175) against
-    /// <see cref="PlottingPositions.Median"/> from the Numerics library. The median formula, also known as
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with median parameter (α = 0.3175) against
+    /// <c>PlottingPositions.Median</c> from the Numerics library. The median formula, also known as
     /// the APL (Approximate Probability for Large samples) formula, provides plotting positions:
     /// p = (i - 0.3175)/(n + 0.365) and is approximately median-unbiased for a wide range of distributions.
     /// This formula balances performance across multiple distribution families.
@@ -348,7 +350,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -370,8 +372,8 @@ public class PlottingPositionTests
     /// Tests Weibull plotting position formula.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.CalculatePlottingPositions"/> with Weibull parameter (α = 0.0) against
-    /// <see cref="PlottingPositions.Weibull"/> from the Numerics library. The Weibull formula provides the
+    /// Validates <c>DataFrame.CalculatePlottingPositions</c> with Weibull parameter (α = 0.0) against
+    /// <c>PlottingPositions.Weibull</c> from the Numerics library. The Weibull formula provides the
     /// simplest plotting positions: p = i/(n + 1) and is also known as the California formula. While simple,
     /// this formula can be biased for most distributions and tends to underestimate extreme probabilities.
     /// It remains popular due to its intuitive interpretation and historical usage.
@@ -387,7 +389,7 @@ public class PlottingPositionTests
         Array.Reverse(data);
 
         // Create data frame and add data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < data.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(i, data[i]));
@@ -405,4 +407,279 @@ public class PlottingPositionTests
         }
     }
 
+    /// <summary>
+    /// Verifies the Example 5 bootstrap edge shape keeps every resampled value unchanged
+    /// and assigns only open-interval plotting positions.
+    /// </summary>
+    /// <remarks>
+    /// The arranged counts intentionally reproduce the former K=43/K=6 condition that
+    /// made the prior recurrence calculate Q=1 at the 743-cfs level. Two observations
+    /// fall below their own perception thresholds and are classified as censored only
+    /// for plotting; they remain exact observations with their original values.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_Example5BootstrapEdge_RemainsStrictWithoutChangingSample()
+    {
+        var values = new double[50];
+        for (int i = 0; i < 8; i++)
+            values[i] = i == 7 ? 1000d : 2000d + i;
+        for (int i = 8; i < 44; i++)
+            values[i] = 3000d + i;
+        for (int i = 44; i < 49; i++)
+            values[i] = 800d + (10d * (i - 44));
+        values[49] = 500d;
+
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+
+        for (int i = 0; i < values.Length; i++)
+            dataFrame.ExactSeries.Add(new ExactData(1965 + i, values[i]));
+
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(1965, 1972, 1180));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(1973, 1991, 705));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(1992, 2001, 714));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2002, 2002, 743));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2003, 2003, 560));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2004, 2005, 700));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2006, 2009, 710));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2010, 2012, 661));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2013, 2014, 700));
+
+        double[] originalValues = dataFrame.ExactSeries.Select(data => data.Value).ToArray();
+        dataFrame.PlottingParameter = 0.4;
+        dataFrame.CalculatePlottingPositions();
+
+        CollectionAssert.AreEqual(originalValues, dataFrame.ExactSeries.Select(data => data.Value).ToArray());
+        Assert.AreEqual(50, dataFrame.ExactSeries.Count);
+        Assert.IsTrue(dataFrame.ExactSeries.All(
+            data => double.IsFinite(data.PlottingPosition) &&
+                    data.PlottingPosition > 0d &&
+                    data.PlottingPosition < 1d));
+        Assert.IsTrue(dataFrame.ExactSeries.Any(data => data.PlottingPosition > 0.98d));
+        Assert.IsTrue(dataFrame.ExactSeries.SuppressCollectionChanged,
+            "CalculatePlottingPositions must restore the caller's prior suppression state.");
+        Assert.IsTrue(dataFrame.ThresholdSeries.SuppressCollectionChanged,
+            "CalculatePlottingPositions must restore the caller's prior suppression state.");
+    }
+
+    /// <summary>
+    /// Verifies a frozen Example 5 bootstrap sample cannot retain duplicate H-S plotting positions.
+    /// </summary>
+    /// <remarks>
+    /// Seed 1 previously assigned the exact same probability to events at indexes 1975 and 1998.
+    /// Freezing the generated values keeps this regression isolated from bootstrap mechanics.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_Example5BootstrapSample_TiesAreSeparated()
+    {
+        int[] years =
+        [
+            1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974,
+            1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984,
+            1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994,
+            1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
+            2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014
+        ];
+        double[] values =
+        [
+            1398.5976334510967, 966.59552180918161, 1974.3223495966256, 2891.8338540508757, 2505.9334402560103,
+            1885.0116761582647, 1680.6543191030453, 3847.0027056032231, 930.55140459080849, 2460.2531376046609,
+            564.28401727153459, 1396.8182016011826, 1591.5650583425017, 4578.067551996458, 2582.6599531978427,
+            2497.8881953825239, 1491.8593917890207, 2380.1796316909777, 2654.2379192321528, 2646.1646459149301,
+            3905.9886563585524, 899.41749596844386, 1138.9218977761075, 1753.1788985139399, 2995.6252828849888,
+            1166.0571810678148, 2978.705067413357, 1557.4501735296865, 3102.3195776956154, 3424.0748502645079,
+            2213.4043771087458, 2695.8435706029095, 2637.9755363911408, 429.59797890129613, 4654.4548499288721,
+            3030.215825029497, 3272.014817282608, 763.26237263475105, 2099.7317325275308, 2128.9063276074667,
+            1465.0224395732935, 4738.3332968838067, 2611.3950878331016, 1765.2295530597592, 1889.0450114112809,
+            2561.4319968329551, 2567.6539372706479, 1989.7098547510266, 1387.028035261912, 1679.0903337032385
+        ];
+
+        var source = new BestFitDataFrame
+        {
+            LowOutlierThreshold = 1200d,
+            PlottingParameter = 0.4d
+        };
+        source.ExactSeries.SuppressCollectionChanged = true;
+        source.ThresholdSeries.SuppressCollectionChanged = true;
+        for (int i = 0; i < years.Length; i++)
+            source.ExactSeries.Add(new ExactData(years[i], values[i]));
+
+        source.ThresholdSeries.Add(new BestFitThresholdData(1965, 1972, 1180));
+        source.ThresholdSeries.Add(new BestFitThresholdData(1973, 1991, 705));
+        source.ThresholdSeries.Add(new BestFitThresholdData(1992, 2001, 714));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2002, 2002, 743));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2003, 2003, 560));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2004, 2005, 700));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2006, 2009, 710));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2010, 2012, 661));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2013, 2014, 700));
+        source.CalculatePlottingPositions();
+
+        double[] positions = source.ExactSeries
+            .Select(data => data.PlottingPosition)
+            .OrderBy(position => position)
+            .ToArray();
+
+        const int higherValueIndex = 1975;
+        const int lowerValueIndex = 1998;
+        const double expectedCenter = 0.97714285714285709d;
+        Data higherValueEvent = source.ExactSeries.Single(data => data.Index == higherValueIndex);
+        Data lowerValueEvent = source.ExactSeries.Single(data => data.Index == lowerValueIndex);
+
+        Assert.IsTrue(higherValueEvent.Value > lowerValueEvent.Value);
+        Assert.IsTrue(
+            higherValueEvent.PlottingPosition < lowerValueEvent.PlottingPosition,
+            $"Higher event {higherValueEvent.PlottingPosition:G17}; lower event {lowerValueEvent.PlottingPosition:G17}.");
+        Assert.AreEqual(
+            expectedCenter,
+            (higherValueEvent.PlottingPosition + lowerValueEvent.PlottingPosition) / 2d,
+            1E-15,
+            "Separating a tie must preserve its original H-S probability center.");
+
+        for (int i = 1; i < positions.Length; i++)
+        {
+            Assert.IsFalse(
+                positions[i - 1].AlmostEquals(positions[i]),
+                $"Positions {positions[i - 1]:G17} and {positions[i]:G17} must be distinct.");
+        }
+
+        Assert.AreEqual(
+            positions.Length,
+            positions.Select(position => Math.Round(position, 6)).Distinct().Count(),
+            "Plotting positions must remain distinct in the app's six-decimal display.");
+    }
+
+    /// <summary>
+    /// Verifies explicit values below their own thresholds use the ARRANGE2 censored branch.
+    /// </summary>
+    /// <remarks>
+    /// With one detection and one censored observation at a common threshold, Weibull
+    /// plotting positions are 0.25 and 0.75 exceedance probability, respectively.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_ValueBelowOwnThreshold_UsesCensoredBranch()
+    {
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ExactSeries.Add(new ExactData(0, 50d));
+        dataFrame.ExactSeries.Add(new ExactData(1, 200d));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 1, 100d));
+
+        dataFrame.CalculatePlottingPositions();
+
+        Assert.AreEqual(0.75d, dataFrame.ExactSeries[0].PlottingPosition, 1E-12);
+        Assert.AreEqual(0.25d, dataFrame.ExactSeries[1].PlottingPosition, 1E-12);
+        Assert.AreEqual(50d, dataFrame.ExactSeries[0].Value);
+        Assert.AreEqual(200d, dataFrame.ExactSeries[1].Value);
+    }
+
+    /// <summary>
+    /// Verifies aggregate below- and above-threshold counts participate in PPLOT2 ranks.
+    /// </summary>
+    /// <remarks>
+    /// Three left-censored placeholders, one finite detection, and one right-censored
+    /// placeholder give a detection probability of 2/(2+3). The finite detection is
+    /// ordered before the right-censored placeholder.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_AggregateThresholdCounts_AffectRanks()
+    {
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ExactSeries.Add(new ExactData(2, 150d));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100d) { NumberAbove = 1 });
+
+        dataFrame.CalculatePlottingPositions();
+
+        Assert.AreEqual(4d / 15d, dataFrame.ExactSeries[0].PlottingPosition, 1E-12);
+        Assert.AreEqual(3, ((BestFitThresholdData)dataFrame.ThresholdSeries[0]).NumberBelow);
+        Assert.AreEqual(1, ((BestFitThresholdData)dataFrame.ThresholdSeries[0]).NumberAbove);
+    }
+
+    /// <summary>
+    /// Verifies observations outside perception windows receive the synthetic unbounded threshold.
+    /// </summary>
+    /// <remarks>
+    /// An outside observation is detected regardless of whether its magnitude is below an
+    /// unrelated finite threshold. The two threshold-only years remain left-censored.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_OutsideThresholdWindow_IsDetected()
+    {
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ExactSeries.Add(new ExactData(10, 50d));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 1, 100d));
+
+        dataFrame.CalculatePlottingPositions();
+
+        Assert.AreEqual(0.5d, dataFrame.ExactSeries[0].PlottingPosition, 1E-12);
+    }
+
+    /// <summary>
+    /// Verifies invalid plotting parameters and impossible processed threshold counts are rejected.
+    /// </summary>
+    /// <remarks>
+    /// Rejecting invalid inputs prevents zero denominators and boundary probabilities; the
+    /// routine does not clamp or silently substitute denominators.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_InvalidInputs_Throw()
+    {
+        var dataFrame = new BestFitDataFrame();
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = double.NaN);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = -0.01d);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = 1d);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = double.PositiveInfinity);
+
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 0, 100d) { NumberAbove = 2 });
+        Assert.ThrowsException<InvalidOperationException>(() => dataFrame.CalculatePlottingPositions());
+
+        var overlappingFrame = new BestFitDataFrame();
+        overlappingFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        overlappingFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 2, 100d));
+        overlappingFrame.ThresholdSeries.Add(new BestFitThresholdData(2, 4, 200d));
+        Assert.ThrowsException<InvalidOperationException>(
+            () => overlappingFrame.CalculatePlottingPositions());
+    }
+
+    /// <summary>
+    /// Verifies plotting positions remain fast enough for interactive data-entry recalculation.
+    /// </summary>
+    /// <remarks>
+    /// The two-second ceiling for 25,000 observations is intentionally generous to avoid
+    /// machine-sensitive microbenchmark failures while guarding against accidental nested
+    /// observation-by-threshold scans or other order-of-magnitude regressions.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_LargeInteractiveFrame_CompletesPromptly()
+    {
+        const int observationCount = 25000;
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+
+        for (int i = 0; i < observationCount; i++)
+            dataFrame.ExactSeries.Add(new ExactData(i, 1d + ((i * 7919L) % 100003L)));
+
+        for (int i = 0; i < 25; i++)
+            dataFrame.ThresholdSeries.Add(
+                new BestFitThresholdData(i * 1000, ((i + 1) * 1000) - 1, 100d + i));
+
+        dataFrame.CalculatePlottingPositions();
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        dataFrame.CalculatePlottingPositions();
+        stopwatch.Stop();
+
+        Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(2),
+            $"Plotting {observationCount:N0} observations took {stopwatch.Elapsed.TotalMilliseconds:N0} ms.");
+        Assert.IsTrue(dataFrame.ExactSeries.All(
+            data => data.PlottingPosition > 0d && data.PlottingPosition < 1d));
+    }
 }

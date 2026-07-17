@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
+using Numerics.Distributions;
 
 namespace RMC.BestFit.Models
 {
@@ -86,7 +87,7 @@ namespace RMC.BestFit.Models
         /// <see cref="DataFrame_PropertyChanged"/>.
         /// </description></item>
         /// <item><description>
-        /// Optionally calls <see cref="SetDefaultParameters"/> (defined in a derived
+        /// Optionally calls <c>SetDefaultParameters</c> (defined in a derived
         /// class) when <c>UseDefaultFlatPriors</c> is true.
         /// </description></item>
         /// </list>
@@ -119,13 +120,13 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <remarks>
         /// <para>
-        /// When true, the prior on the scale parameter σ is proportional to 1/σ,
+        /// When true, the prior on the scale parameter s is proportional to 1/s,
         /// which is the Jeffreys noninformative prior for a pure scale parameter.
         /// </para>
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("Use Jeffreys' Rule for Scale")]
-        [Description("If true, applies Jeffreys' rule to the scale (σ) parameter, setting the prior P(σ) proportional to 1/σ.")]
+        [Description("If true, applies Jeffreys' rule to the scale (s) parameter, setting the prior P(s) proportional to 1/s.")]
         [Browsable(true)]
         public bool UseJeffreysRuleForScale
         {
@@ -224,7 +225,7 @@ namespace RMC.BestFit.Models
         /// <para>
         /// The base implementation reprocesses threshold series and, when
         /// <see cref="ModelBase.UseDefaultFlatPriors"/> is true, calls
-        /// <see cref="SetDefaultParameters"/> in the derived class.
+        /// <c>SetDefaultParameters</c> in the derived class.
         /// </para>
         /// <para>
         /// Changes to plotting parameter properties are ignored because they
@@ -266,6 +267,79 @@ namespace RMC.BestFit.Models
         {
             ProcessQuantilePriors();
             RaisePropertyChange(nameof(QuantilePriors));
+        }
+
+        /// <summary>
+        /// Attempts to select the scale value to which the Jeffreys <c>1/scale</c> term applies.
+        /// </summary>
+        /// <param name="distribution">The distribution whose current parameters are inspected.</param>
+        /// <param name="scale">The selected scale value when one is available.</param>
+        /// <returns><c>true</c> when a scale value exists; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// <para>
+        /// Gamma and Weibull expose scale at index zero; other supported scale families expose it at
+        /// index one. Single-parameter families have no applicable scale term.
+        /// </para>
+        /// <para>
+        /// Scalar likelihood evaluations use this overload to avoid allocating the parameter-name
+        /// array required only by pointwise diagnostics.
+        /// </para>
+        /// </remarks>
+        protected static bool TryGetJeffreysScaleParameter(
+            UnivariateDistributionBase distribution,
+            out double scale)
+        {
+            int scaleIndex = distribution.Type == UnivariateDistributionType.GammaDistribution ||
+                distribution.Type == UnivariateDistributionType.Weibull ? 0 : 1;
+            double[] parameterValues = distribution.GetParameters;
+
+            if (scaleIndex >= parameterValues.Length)
+            {
+                scale = double.NaN;
+                return false;
+            }
+
+            scale = parameterValues[scaleIndex];
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to select the scale parameter to which the Jeffreys <c>1/scale</c> term applies.
+        /// </summary>
+        /// <param name="distribution">The distribution whose current parameters are inspected.</param>
+        /// <param name="scale">The selected scale value when one is available.</param>
+        /// <param name="scaleName">The selected scale parameter name when one is available.</param>
+        /// <returns><c>true</c> when both a scale value and a non-empty name exist; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// Gamma and Weibull expose scale at index zero; other supported scale families expose it at
+        /// index one. Single-parameter families have no applicable scale term, so their ordinary
+        /// parameter priors are retained without adding a Jeffreys contribution.
+        /// </remarks>
+        protected static bool TryGetJeffreysScaleParameter(
+            UnivariateDistributionBase distribution,
+            out double scale,
+            out string scaleName)
+        {
+            int scaleIndex = distribution.Type == UnivariateDistributionType.GammaDistribution ||
+                distribution.Type == UnivariateDistributionType.Weibull ? 0 : 1;
+
+            if (!TryGetJeffreysScaleParameter(distribution, out scale))
+            {
+                scaleName = string.Empty;
+                return false;
+            }
+
+            string[] parameterNames = distribution.ParameterNames;
+            if (scaleIndex >= parameterNames.Length ||
+                string.IsNullOrWhiteSpace(parameterNames[scaleIndex]))
+            {
+                scale = double.NaN;
+                scaleName = string.Empty;
+                return false;
+            }
+
+            scaleName = parameterNames[scaleIndex];
+            return true;
         }
 
         /// <inheritdoc/>

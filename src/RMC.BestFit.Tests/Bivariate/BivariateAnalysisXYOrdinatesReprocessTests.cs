@@ -6,11 +6,12 @@ using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Bivariate;
 
 /// <summary>
-/// Phase 5 unit tests for the <see cref="BivariateAnalysis.XYOrdinates"/> setter.
+/// Phase 5 unit tests for the <c>BivariateAnalysis.XYOrdinates</c> setter.
 /// Verifies that the joint exceedance evaluation grid can be changed without wiping
 /// the MCMC fit. Programmatic event-wiring tests — no MCMC chain is run. Chain-running
 /// parity tests live in RMC.BestFit.Verification.
@@ -32,9 +33,19 @@ public class BivariateAnalysisXYOrdinatesReprocessTests
     private static readonly double[] _sampleY =
         { 75.2, 82.1, 93.6, 68.7, 84.3, 72.5, 90.4, 78.9, 88.5, 81.0 };
 
+    /// <summary>
+    /// Creates marginal.
+    /// </summary>
+    /// <param name="data">The input data.</param>
+    /// <param name="mu">The mu value.</param>
+    /// <param name="sigma">The standard deviation used by the scenario.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UnivariateDistribution MakeMarginal(double[] data, double mu, double sigma)
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
         df.CalculatePlottingPositions();
         var dist = new UnivariateDistribution(df, UnivariateDistributionType.Normal);
@@ -44,6 +55,13 @@ public class BivariateAnalysisXYOrdinatesReprocessTests
         return dist;
     }
 
+    /// <summary>
+    /// Creates fresh Analysis.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static BivariateAnalysis CreateFreshAnalysis()
     {
         var x = MakeMarginal(_sampleX, 100.0, 10.0);

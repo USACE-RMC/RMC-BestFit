@@ -1,5 +1,6 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
@@ -17,9 +18,9 @@ public class MeasurementErrorIntegrationTests
     /// Creates a small positive data frame for validation tests.
     /// </summary>
     /// <returns>A data frame with positive exact observations.</returns>
-    private static DataFrame CreatePositiveDataFrame()
+    private static BestFitDataFrame CreatePositiveDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries.Add(new ExactData(2000, 90.0));
         df.ExactSeries.Add(new ExactData(2001, 100.0));
         df.ExactSeries.Add(new ExactData(2002, 110.0));
@@ -34,7 +35,7 @@ public class MeasurementErrorIntegrationTests
     [TestMethod]
     public void Bulletin17C_MomentConditions_UncertainUniform_IncludesMeasurementErrorVariance()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.UncertainSeries.Add(new UncertainData(2000, new Uniform(80.0, 120.0)));
         var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Normal);
 

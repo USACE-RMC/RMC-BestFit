@@ -2,10 +2,10 @@ using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Expanded programmatic unit tests for <see cref="GeneralizedMethodOfMoments"/>.
+/// Expanded programmatic unit tests for <c>GeneralizedMethodOfMoments</c>.
 /// Exercises configuration round-trip on every public property setter and
 /// pre-estimation invariants on the read-only outputs.
 /// </summary>
@@ -284,6 +284,125 @@ public class GeneralizedMethodOfMomentsExpandedTests
             gmm.OptimizerMethod = method;
             Assert.AreEqual(method, gmm.OptimizerMethod);
         }
+    }
+
+    #endregion
+
+    #region Convergence XML state
+
+    /// <summary>
+    /// Confirmed iterative convergence survives XML persistence without rerunning estimation.
+    /// </summary>
+    [TestMethod]
+    public void ConvergedWithinTolerance_XmlRoundTrip_PreservesConfirmedState()
+    {
+        var source = MakeStubGmm();
+        var xml = source.ToXElement();
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance), true);
+        source.RestoreFromXElement(xml);
+        Assert.IsTrue(source.ConvergedWithinTolerance);
+
+        var restored = MakeStubGmm();
+        restored.RestoreFromXElement(source.ToXElement());
+
+        Assert.IsTrue(restored.ConvergedWithinTolerance);
+        Assert.AreEqual(2, restored.GMMIterations);
+    }
+
+    /// <summary>
+    /// Legacy XML and non-iterative strategies restore conservatively as not confirmed converged.
+    /// </summary>
+    [TestMethod]
+    public void ConvergedWithinTolerance_LegacyAndNonIterativeXml_RestoreFalse()
+    {
+        var legacy = MakeStubGmm();
+        var legacyXml = legacy.ToXElement();
+        legacyXml.Attribute(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance))?.Remove();
+        legacyXml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+        legacy.RestoreFromXElement(legacyXml);
+        Assert.IsFalse(legacy.ConvergedWithinTolerance);
+
+        foreach (GeneralizedMethodOfMoments.GMMEstimationStrategy strategy in new[]
+        {
+            GeneralizedMethodOfMoments.GMMEstimationStrategy.OneStep,
+            GeneralizedMethodOfMoments.GMMEstimationStrategy.TwoStep,
+        })
+        {
+            var nonIterative = MakeStubGmm();
+            var xml = nonIterative.ToXElement();
+            xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.EstimationStrategy), strategy);
+            xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+            xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance), true);
+
+            nonIterative.RestoreFromXElement(xml);
+
+            Assert.IsFalse(nonIterative.ConvergedWithinTolerance,
+                $"{strategy} must not report iterative convergence.");
+        }
+    }
+
+    #endregion
+
+    #region Result reset and status persistence
+
+    /// <summary>
+    /// A fresh instance reports OptimizationStatus.None and is not estimated.
+    /// </summary>
+    [TestMethod]
+    public void FreshInstance_StatusNone_AndNotEstimated()
+    {
+        var gmm = MakeStubGmm();
+        Assert.AreEqual(OptimizationStatus.None, gmm.Status);
+        Assert.IsFalse(gmm.IsEstimated);
+    }
+
+    /// <summary>
+    /// Non-Success terminal statuses survive XML persistence, so analyses saved
+    /// before the status-coherence change restore their recorded status verbatim.
+    /// </summary>
+    [TestMethod]
+    public void Status_XmlRoundTrip_PreservesNonSuccessStatus()
+    {
+        var source = MakeStubGmm();
+        var xml = source.ToXElement();
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.Status), OptimizationStatus.MaximumIterationsReached);
+
+        source.RestoreFromXElement(xml);
+
+        Assert.AreEqual(OptimizationStatus.MaximumIterationsReached, source.Status);
+        Assert.IsTrue(source.IsEstimated);
+    }
+
+    /// <summary>
+    /// ClearResults resets the status, best parameter set, iteration count, and
+    /// convergence flag so a cleared instance cannot report stale estimation results.
+    /// </summary>
+    [TestMethod]
+    public void ClearResults_ResetsStatusBestParameterSetAndConvergence()
+    {
+        var gmm = MakeStubGmm(parameters: 3, moments: 3);
+        var xml = gmm.ToXElement();
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.Status), OptimizationStatus.Success);
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.GMMIterations), 2);
+        xml.SetAttributeValue(nameof(GeneralizedMethodOfMoments.ConvergedWithinTolerance), true);
+        var psElement = xml.Element(nameof(GeneralizedMethodOfMoments.BestParameterSet))?.Element(nameof(ParameterSet));
+        Assert.IsNotNull(psElement);
+        psElement.SetAttributeValue(nameof(ParameterSet.Values), "1|2|3");
+
+        gmm.RestoreFromXElement(xml);
+        Assert.IsTrue(gmm.IsEstimated);
+        Assert.AreEqual(OptimizationStatus.Success, gmm.Status);
+        Assert.IsNotNull(gmm.BestParameterSet.Values);
+        Assert.IsTrue(gmm.ConvergedWithinTolerance);
+
+        gmm.ClearResults();
+
+        Assert.IsFalse(gmm.IsEstimated);
+        Assert.AreEqual(OptimizationStatus.None, gmm.Status);
+        Assert.IsNull(gmm.BestParameterSet.Values);
+        Assert.IsFalse(gmm.ConvergedWithinTolerance);
+        Assert.AreEqual(0, gmm.GMMIterations);
     }
 
     #endregion

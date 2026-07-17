@@ -1,4 +1,4 @@
-ï»¿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -44,12 +44,12 @@ namespace RMC.BestFit.Analyses
         #region Construction
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FittingAnalysis"/> class.
+        /// Initializes a new instance of the <c>FittingAnalysis</c> class.
         /// </summary>
         public FittingAnalysis() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FittingAnalysis"/> class
+        /// Initializes a new instance of the <c>FittingAnalysis</c> class
         /// for the specified input data frame.
         /// </summary>
         /// <param name="dataFrame">
@@ -67,7 +67,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FittingAnalysis"/> class
+        /// Initializes a new instance of the <c>FittingAnalysis</c> class
         /// by deserializing from an <see cref="XElement"/>.
         /// </summary>
         /// <param name="dataFrame">
@@ -206,7 +206,7 @@ namespace RMC.BestFit.Analyses
         /// list contains all 15 supported univariate distributions.
         /// </para>
         /// <para>
-        /// Property (with a private setter) rather than a public field â€” encapsulating the
+        /// Property (with a private setter) rather than a public field — encapsulating the
         /// candidate set behind a property prevents external code from replacing the list
         /// reference wholesale, which would silently invalidate any in-flight fit. Existing
         /// callers that mutate the list contents via <c>Add</c> / <c>Remove</c> still work.
@@ -254,7 +254,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// Probability ordinates do not affect the MLE fit stored in
-        /// <see cref="FittedDistributions"/> â€” they are consumed only by the App-layer
+        /// <see cref="FittedDistributions"/> — they are consumed only by the App-layer
         /// plot/table rendering (see FittingAnalysisControl). So this handler simply
         /// notifies listeners that ordinates changed; it does not touch fit state.
         /// </remarks>
@@ -304,6 +304,7 @@ namespace RMC.BestFit.Analyses
 
             ClearResults();
             progressReporter?.IndicateTaskStart();
+            AnalysisProgress.ReportStarting(progressReporter);
 
             int iteration = 0;
             int N = DistributionList.Count;
@@ -320,7 +321,7 @@ namespace RMC.BestFit.Analyses
                         // CancellationToken in ParallelOptions prevents Parallel.For from
                         // starting new iterations after cancellation is requested. This is
                         // the only mechanism that stops queued iterations from running.
-                        var options = new ParallelOptions { CancellationToken = token };
+                        var options = AnalysisProgress.CreateParallelOptions(token);
 
                         Parallel.For(0, N, options, idx =>
                         {
@@ -379,7 +380,7 @@ namespace RMC.BestFit.Analyses
                                 }
 
                                 int currentIteration = Interlocked.Increment(ref iteration);
-                                progressReporter?.ReportProgress(100 * currentIteration / N);
+                                progressReporter?.ReportProgress(AnalysisProgress.EstimationComplete * currentIteration / N);
                             }
                             catch (Exception ex)
                             {
@@ -394,7 +395,7 @@ namespace RMC.BestFit.Analyses
 
                                 // Ensure progress is still reported
                                 int currentIteration = Interlocked.Increment(ref iteration);
-                                progressReporter?.ReportProgress(100 * currentIteration / N);
+                                progressReporter?.ReportProgress(AnalysisProgress.EstimationComplete * currentIteration / N);
                             }
                         });
                     }
@@ -412,13 +413,19 @@ namespace RMC.BestFit.Analyses
                 });
 
                 if (!wasCanceled)
+                {
+                    AnalysisProgress.ReportProcessingResults(progressReporter);
                     IsEstimated = true;
+                    AnalysisProgress.ReportComplete(progressReporter);
+                }
                 else
+                {
                     IsEstimated = false;
+                }
             }
             catch (OperationCanceledException)
             {
-                // Safety net â€” should not be reached since the exception is caught inside Task.Run
+                // Safety net — should not be reached since the exception is caught inside Task.Run
                 wasCanceled = true;
                 IsEstimated = false;
             }

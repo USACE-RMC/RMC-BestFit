@@ -1,5 +1,8 @@
 # RMC-BestFit Example Projects
 
+> [!NOTE]
+> These example projects and tutorials are published for RMC-BestFit 2.0.0 and will continue to expand with additional screenshots, output tables, and validation notes.
+
 This folder contains tutorial example projects for RMC-BestFit 2.0. Each `.bestfit` file is a self-contained SQLite project that can be opened directly in BestFit; each `.md` file alongside is a step-by-step tutorial guide describing what's inside, how to explore it, and what the expected results look like.
 
 ## Chapters

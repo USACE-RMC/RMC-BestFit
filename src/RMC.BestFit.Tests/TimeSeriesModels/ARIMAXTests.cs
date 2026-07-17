@@ -1,10 +1,11 @@
 using Numerics.Data;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesModels;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="ARIMAX"/> time-series model.
+/// Programmatic unit tests for the <c>ARIMAX</c> time-series model.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,9 +31,9 @@ public class ARIMAXTests
     /// fixed seed so this file does not depend on the Verification project's
     /// shared <c>TestData</c>.
     /// </summary>
-    private static TimeSeries CreateSampleTimeSeries()
+    private static NumericsTimeSeries CreateSampleTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
 
         // Generate AR(1)-like data with linear trend
@@ -58,9 +59,9 @@ public class ARIMAXTests
     /// Deterministic monthly fixture (240 observations, 2000-2019) with seasonal
     /// pattern + linear trend + noise.
     /// </summary>
-    private static TimeSeries CreateMonthlyTimeSeries()
+    private static NumericsTimeSeries CreateMonthlyTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), new DateTime(2019, 12, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), new DateTime(2019, 12, 1));
         var rng = new Random(54321);
 
         for (int i = 0; i < ts.Count; i++)
@@ -77,9 +78,9 @@ public class ARIMAXTests
     /// <summary>
     /// Deterministic short fixture (15 annual observations) for edge-case validation.
     /// </summary>
-    private static TimeSeries CreateShortTimeSeries()
+    private static NumericsTimeSeries CreateShortTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
         for (int i = 0; i < ts.Count; i++)
         {
             ts[i].Value = 100.0 + i * 10.0;
@@ -90,14 +91,44 @@ public class ARIMAXTests
     /// <summary>
     /// Deterministic covariate fixture aligned to the supplied target time series.
     /// </summary>
-    private static TimeSeries CreateCovariateTimeSeries(TimeSeries target)
+    private static NumericsTimeSeries CreateCovariateTimeSeries(NumericsTimeSeries target)
     {
-        var ts = new TimeSeries(target.TimeInterval, target.First().Index, target.Last().Index);
+        var ts = new NumericsTimeSeries(target.TimeInterval, target.First().Index, target.Last().Index);
         var rng = new Random(67890);
 
         for (int i = 0; i < ts.Count; i++)
         {
             ts[i].Value = 0.5 * target[i].Value + rng.NextDouble() * 50.0;
+        }
+
+        return ts;
+    }
+
+    /// <summary>
+    /// Finite fixture that makes the Box-Cox lambda objective non-finite.
+    /// </summary>
+    private static NumericsTimeSeries CreateBoxCoxLambdaFailureTimeSeries()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+
+        for (int i = 0; i < ts.Count; i++)
+        {
+            ts[i].Value = i == 0 ? 0.0 : 10.0;
+        }
+
+        return ts;
+    }
+
+    /// <summary>
+    /// Finite fixture that makes the Yeo-Johnson lambda objective non-finite.
+    /// </summary>
+    private static NumericsTimeSeries CreateYeoJohnsonLambdaFailureTimeSeries()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+
+        for (int i = 0; i < ts.Count; i++)
+        {
+            ts[i].Value = -double.MaxValue;
         }
 
         return ts;
@@ -160,7 +191,7 @@ public class ARIMAXTests
     #region Property Tests
 
     /// <summary>
-    /// Tests that the TimeSeries property can be set and retrieved correctly.
+    /// Tests that the NumericsTimeSeries property can be set and retrieved correctly.
     /// </summary>
     [TestMethod]
     public void Test_TimeSeries_SetAndGet()
@@ -171,6 +202,60 @@ public class ARIMAXTests
         model.TimeSeries = ts;
 
         Assert.AreSame(ts, model.TimeSeries);
+    }
+
+    /// <summary>
+    /// Verifies that assigning a different time series resets manual training edits to the default split.
+    /// </summary>
+    [TestMethod]
+    public void TimeSeries_NewSeries_ResetsTrainingSplitToDefault()
+    {
+        var originalSeries = CreateSampleTimeSeries();
+        var replacementSeries = CreateMonthlyTimeSeries();
+        var model = new ARIMAX(originalSeries);
+
+        model.UseDefaultTrainingSteps = false;
+        model.TrainingTimeSteps = 40;
+
+        model.TimeSeries = replacementSeries;
+
+        Assert.IsTrue(model.UseDefaultTrainingSteps);
+        Assert.AreEqual((int)Math.Floor(0.8 * replacementSeries.Count), model.TrainingTimeSteps);
+    }
+
+    /// <summary>
+    /// Verifies that editing the currently attached series preserves an explicit manual training window.
+    /// </summary>
+    [TestMethod]
+    public void TimeSeries_CollectionChanged_PreservesManualTrainingSplit()
+    {
+        var series = CreateSampleTimeSeries();
+        var model = new ARIMAX(series);
+
+        model.UseDefaultTrainingSteps = false;
+        model.TrainingTimeSteps = 40;
+
+        var nextDate = NumericsTimeSeries.AddTimeInterval(series.Last().Index, series.TimeInterval);
+        series.Add(new SeriesOrdinate<DateTime, double>(nextDate, 1200.0));
+
+        Assert.IsFalse(model.UseDefaultTrainingSteps);
+        Assert.AreEqual(40, model.TrainingTimeSteps);
+    }
+
+    /// <summary>
+    /// Verifies that editing the currently attached series recomputes the split while the default rule is enabled.
+    /// </summary>
+    [TestMethod]
+    public void TimeSeries_CollectionChanged_RecomputesDefaultTrainingSplit()
+    {
+        var series = CreateMonthlyTimeSeries();
+        var model = new ARIMAX(series);
+
+        var nextDate = NumericsTimeSeries.AddTimeInterval(series.Last().Index, series.TimeInterval);
+        series.Add(new SeriesOrdinate<DateTime, double>(nextDate, 640.0));
+
+        Assert.IsTrue(model.UseDefaultTrainingSteps);
+        Assert.AreEqual((int)Math.Floor(0.8 * series.Count), model.TrainingTimeSteps);
     }
 
     /// <summary>
@@ -786,7 +871,7 @@ public class ARIMAXTests
     [TestMethod]
     public void Test_Validate_TooShortTimeSeries_ReturnsFalse()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
         for (int i = 0; i < ts.Count; i++) ts[i].Value = i;
         var model = new ARIMAX(ts);
 
@@ -795,6 +880,55 @@ public class ARIMAXTests
         Assert.IsFalse(isValid);
     }
 
+    /// <summary>
+    /// Tests that validation rejects irregular time intervals.
+    /// </summary>
+    [TestMethod]
+    public void Test_Validate_IrregularTimeSeries_ReturnsFalse()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.Irregular);
+        var start = new DateTime(2000, 1, 1);
+        for (int i = 0; i < 50; i++)
+            ts.Add(new SeriesOrdinate<DateTime, double>(start.AddDays(i * i + 1), i + 1.0));
+        var model = new ARIMAX(ts);
+
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("regular time interval")));
+    }
+
+    /// <summary>
+    /// Verifies that Box-Cox lambda solver failures are captured as validation errors.
+    /// </summary>
+    [TestMethod]
+    public void Test_BoxCoxTransform_LambdaFitFailure_ReturnsValidationError()
+    {
+        var model = new ARIMAX(CreateBoxCoxLambdaFailureTimeSeries());
+
+        model.TransformType = RMC.BestFit.Models.Transform.BoxCox;
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("Box-Cox lambda estimation failed")),
+            $"Expected a Box-Cox lambda validation message. Got: [{string.Join(" | ", messages)}]");
+    }
+
+    /// <summary>
+    /// Verifies that Yeo-Johnson lambda solver failures are captured as validation errors.
+    /// </summary>
+    [TestMethod]
+    public void Test_YeoJohnsonTransform_LambdaFitFailure_ReturnsValidationError()
+    {
+        var model = new ARIMAX(CreateYeoJohnsonLambdaFailureTimeSeries());
+
+        model.TransformType = RMC.BestFit.Models.Transform.YeoJohnson;
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("Yeo-Johnson lambda estimation failed")),
+            $"Expected a Yeo-Johnson lambda validation message. Got: [{string.Join(" | ", messages)}]");
+    }
     #endregion
 
     #region Trend Tests
@@ -956,6 +1090,50 @@ public class ARIMAXTests
         Assert.IsFalse(double.IsNaN(dataLogLH));
     }
 
+    /// <summary>
+    /// Verifies that monthly records infer a twelve-step annual seasonal cycle.
+    /// </summary>
+    [TestMethod]
+    public void MonthlyTimeSeries_SeasonalPeriod_IsTwelve()
+    {
+        var model = new ARIMAX(CreateMonthlyTimeSeries());
+
+        Assert.AreEqual(12, model.SeasonalPeriod);
+    }
+
+    /// <summary>
+    /// Verifies that annual records infer a decadal seasonal cycle.
+    /// </summary>
+    [TestMethod]
+    public void AnnualTimeSeries_SeasonalPeriod_IsTen()
+    {
+        var model = new ARIMAX(CreateSampleTimeSeries());
+
+        Assert.AreEqual(10, model.SeasonalPeriod);
+    }
+
+    /// <summary>
+    /// Verifies that annual seasonality varies over the inferred decadal cycle.
+    /// </summary>
+    [TestMethod]
+    public void AnnualSeasonality_FourierTerms_AreNonDegenerate()
+    {
+        var model = new ARIMAX(CreateSampleTimeSeries())
+        {
+            IncludeSeasonality = true,
+        };
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+        int sinIndex = model.Parameters.FindIndex(p => p.Name.StartsWith("Seasonality Sin", StringComparison.Ordinal));
+        int cosIndex = model.Parameters.FindIndex(p => p.Name.StartsWith("Seasonality Cos", StringComparison.Ordinal));
+        parameters[sinIndex] = 1.0;
+        parameters[cosIndex] = 0.0;
+
+        var result = model.Predict(parameters, seed: -1);
+        double range = result.SeasonalityPart.Take(10).Max() - result.SeasonalityPart.Take(10).Min();
+
+        Assert.IsTrue(range > 1.0, "Annual seasonality should vary over the ten-year inferred cycle.");
+    }
+
     #endregion
 
     #region Covariate Tests
@@ -980,7 +1158,7 @@ public class ARIMAXTests
         int baseParams = model.NumberOfParameters;
 
         var cov = CreateCovariateTimeSeries(ts);
-        model.SetCovariates(new List<TimeSeries> { cov });
+        model.SetCovariates(new List<NumericsTimeSeries> { cov });
 
         Assert.IsTrue(model.NumberOfParameters > baseParams,
             "Adding a covariate should increase the parameter count.");
@@ -1002,7 +1180,7 @@ public class ARIMAXTests
         };
         model.TrainingTimeSteps = ts.Count;
         var cov = CreateCovariateTimeSeries(ts);
-        model.SetCovariates(new List<TimeSeries> { cov });
+        model.SetCovariates(new List<NumericsTimeSeries> { cov });
 
         var parameters = model.Parameters.Select(p => p.Value).ToArray();
         double dataLogLH = model.DataLogLikelihood(parameters);
@@ -1128,8 +1306,8 @@ public class ARIMAXTests
     public void Test_Predict_CovariateExtensionNone_ThrowsWhenInsufficient()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1141,7 +1319,7 @@ public class ARIMAXTests
             CovariateExtension = ARIMAX.CovariateExtensionMethod.None
         };
         model.TrainingTimeSteps = 100;
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 }); // mu, beta, phi, sigma
 
@@ -1157,8 +1335,8 @@ public class ARIMAXTests
     public void Test_Predict_CovariateExtensionBlockBootstrap_ExtendsCovariates()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1170,7 +1348,7 @@ public class ARIMAXTests
             CovariateExtension = ARIMAX.CovariateExtensionMethod.BlockBootstrap
         };
         model.TrainingTimeSteps = 100;
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 });
 
@@ -1188,8 +1366,8 @@ public class ARIMAXTests
     public void Test_Predict_CovariateExtensionKNN_ExtendsCovariates()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1201,7 +1379,7 @@ public class ARIMAXTests
             CovariateExtension = ARIMAX.CovariateExtensionMethod.KNN
         };
         model.TrainingTimeSteps = 100;
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 });
 
@@ -1219,8 +1397,8 @@ public class ARIMAXTests
     public void Test_Predict_ExplicitForecastCovariates_OverridesExtensionSetting()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1232,15 +1410,15 @@ public class ARIMAXTests
             CovariateExtension = ARIMAX.CovariateExtensionMethod.None // Would throw if used
         };
         model.TrainingTimeSteps = 100;
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 });
 
-        var forecastCov = new TimeSeries(TimeInterval.OneMonth, new DateTime(2008, 5, 1),
+        var forecastCov = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2008, 5, 1),
             Enumerable.Range(0, 20).Select(i => 60.0 + i * 0.5).ToArray());
 
         var result = model.Predict(model.Parameters.Select(p => p.Value).ToArray(),
-            forecastSteps: 20, seed: 12345, forecastCovariates: new List<TimeSeries> { forecastCov });
+            forecastSteps: 20, seed: 12345, forecastCovariates: new List<NumericsTimeSeries> { forecastCov });
 
         Assert.AreEqual(120, result.Y.Length, "Should have 100 training + 20 forecast steps.");
     }
@@ -1253,8 +1431,8 @@ public class ARIMAXTests
     public void Test_GenerateRandomValues_CovariateExtensionNone_ThrowsWhenInsufficient()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1264,7 +1442,7 @@ public class ARIMAXTests
             MAOrderQ = 0,
             CovariateExtension = ARIMAX.CovariateExtensionMethod.None
         };
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 });
 
@@ -1279,8 +1457,8 @@ public class ARIMAXTests
     public void Test_GenerateRandomValues_CovariateExtensionBlockBootstrap_ExtendsCovariates()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1290,7 +1468,7 @@ public class ARIMAXTests
             MAOrderQ = 0,
             CovariateExtension = ARIMAX.CovariateExtensionMethod.BlockBootstrap
         };
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 });
 
@@ -1308,8 +1486,8 @@ public class ARIMAXTests
     public void Test_GenerateRandomValues_CovariateExtensionKNN_ExtendsCovariates()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1319,7 +1497,7 @@ public class ARIMAXTests
             MAOrderQ = 0,
             CovariateExtension = ARIMAX.CovariateExtensionMethod.KNN
         };
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 });
 
@@ -1337,8 +1515,8 @@ public class ARIMAXTests
     public void Test_GenerateRandomValues_ExplicitCovariates_OverridesExtensionSetting()
     {
         var values = Enumerable.Range(0, 100).Select(i => 50.0 + i * 0.1 + new Random(i).NextDouble() * 5).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
-        var covariate = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var covariate = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 100).Select(i => 10.0 + i * 0.5).ToArray());
 
         var model = new ARIMAX(ts)
@@ -1348,15 +1526,15 @@ public class ARIMAXTests
             MAOrderQ = 0,
             CovariateExtension = ARIMAX.CovariateExtensionMethod.None // Would throw if used
         };
-        model.SetCovariates(new List<TimeSeries> { covariate });
+        model.SetCovariates(new List<NumericsTimeSeries> { covariate });
         model.SetDefaultParameters();
         model.SetParameterValues(new[] { 50.0, 0.1, 0.5, 1.0 });
 
-        var extendedCov = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
+        var extendedCov = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1),
             Enumerable.Range(0, 200).Select(i => 10.0 + i * 0.5).ToArray());
 
         var generated = model.GenerateRandomValues(200, seed: 12345,
-            generateCovariates: new List<TimeSeries> { extendedCov });
+            generateCovariates: new List<NumericsTimeSeries> { extendedCov });
 
         Assert.AreEqual(200, generated.Length, "Should generate 200 values.");
     }
@@ -1368,7 +1546,7 @@ public class ARIMAXTests
     public void Test_CovariateExtension_XmlSerialization()
     {
         var values = Enumerable.Range(0, 50).Select(i => 50.0 + i * 0.1).ToArray();
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
 
         var original = new ARIMAX(ts)
         {

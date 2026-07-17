@@ -49,6 +49,16 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         internal const double StepGrowthFactor = 4.0;
 
+        /// <summary>
+        /// Maximum number of attempts used when searching for a usable Hessian diagonal step.
+        /// </summary>
+        private const int MaxAdaptiveHessianDiagStepAttempts = 64;
+
+        /// <summary>
+        /// Maximum number of attempts used when searching for a usable Jacobian column step.
+        /// </summary>
+        private const int MaxAdaptiveJacobianStepAttempts = 64;
+
         #endregion
 
         #region Step Size Computation
@@ -185,16 +195,19 @@ namespace RMC.BestFit.Estimation
 
             // Compute effective step sizes per parameter (with flat-spot escalation for diagonals)
             var h = new double[p];
+            var diagonalStencils = new (double ForwardValue, double BackwardValue)[p];
             for (int j = 0; j < p; j++)
-                h[j] = AdaptiveHessianDiagStep(function, parameters, perturbed, j, f0, lowerBounds, upperBounds);
+            {
+                (h[j], diagonalStencils[j].ForwardValue, diagonalStencils[j].BackwardValue) =
+                    AdaptiveHessianDiagStep(function, parameters, perturbed, j, f0, lowerBounds, upperBounds);
+            }
 
             // Diagonal entries: H[j,j] = (f(θ+h) − 2f(θ) + f(θ−h)) / h²
             for (int j = 0; j < p; j++)
             {
-                double fp = EvalPerturbed(function, perturbed, parameters[j] + h[j], j, lowerBounds, upperBounds);
-                double fm = EvalPerturbed(function, perturbed, parameters[j] - h[j], j, lowerBounds, upperBounds);
+                double fp = diagonalStencils[j].ForwardValue;
+                double fm = diagonalStencils[j].BackwardValue;
                 hessian[j, j] = (fp - 2.0 * f0 + fm) / (h[j] * h[j]);
-                perturbed[j] = parameters[j];
             }
 
             // Off-diagonal entries: H[j,k] = (fpp − fpm − fmp + fmm) / (4hⱼhₖ)
@@ -232,38 +245,85 @@ namespace RMC.BestFit.Estimation
         /// Computes an adaptive step size for the j-th diagonal Hessian entry,
         /// escalating through flat spots until curvature is detected.
         /// </summary>
-        private static double AdaptiveHessianDiagStep(
+        /// <param name="function">Scalar function f: R^p -> R.</param>
+        /// <param name="parameters">The parameter values at which to evaluate.</param>
+        /// <param name="perturbed">Reusable parameter work array.</param>
+        /// <param name="j">The zero-based parameter index to perturb.</param>
+        /// <param name="f0">The scalar function value at <paramref name="parameters"/>.</param>
+        /// <param name="lowerBounds">Optional lower bounds for parameters.</param>
+        /// <param name="upperBounds">Optional upper bounds for parameters.</param>
+        /// <returns>The selected step size and the corresponding finite forward/backward function values.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when no finite central stencil can be found.</exception>
+        /// <remarks>
+        /// The search is deliberately bounded because alternating finite flat spots and non-finite
+        /// larger steps can otherwise cycle forever under grow/shrink retry logic.
+        /// </remarks>
+        private static (double Step, double ForwardValue, double BackwardValue) AdaptiveHessianDiagStep(
             Func<double[], double> function,
             double[] parameters, double[] perturbed,
             int j, double f0,
             double[]? lowerBounds, double[]? upperBounds)
         {
-            double h = InitialStep(parameters[j]);
+            double h = NormalizeStep(InitialStep(parameters[j]));
+            double lastFiniteStep = double.NaN;
+            double lastFiniteForward = double.NaN;
+            double lastFiniteBackward = double.NaN;
+            double firstNonFiniteUpperStep = double.PositiveInfinity;
 
-            while (h <= MaxStep)
+            for (int attempt = 0; attempt < MaxAdaptiveHessianDiagStepAttempts; attempt++)
             {
-                double fp = EvalPerturbed(function, perturbed, parameters[j] + h, j, lowerBounds, upperBounds);
-                double fm = EvalPerturbed(function, perturbed, parameters[j] - h, j, lowerBounds, upperBounds);
-                perturbed[j] = parameters[j];
+                h = NormalizeStep(h);
+
+                if (h > MaxStep && !IsFinite(lastFiniteStep))
+                    h = MaxStep;
+                else if (h > MaxStep)
+                    return (lastFiniteStep, lastFiniteForward, lastFiniteBackward);
+
+                double fp;
+                double fm;
+                try
+                {
+                    fp = EvalPerturbed(function, perturbed, parameters[j] + h, j, lowerBounds, upperBounds);
+                    fm = EvalPerturbed(function, perturbed, parameters[j] - h, j, lowerBounds, upperBounds);
+                }
+                finally
+                {
+                    perturbed[j] = parameters[j];
+                }
 
                 if (!IsFinite(fp) || !IsFinite(fm))
                 {
-                    h *= 0.5;
-                    if (h < DefaultAbsStep * 0.01)
-                        return InitialStep(parameters[j]);
+                    firstNonFiniteUpperStep = Math.Min(firstNonFiniteUpperStep, h);
+                    double nextH = NormalizeStep(h * 0.5);
+                    if (nextH >= h || nextH < DefaultAbsStep * 0.01)
+                        break;
+
+                    h = nextH;
                     continue;
                 }
+
+                lastFiniteStep = h;
+                lastFiniteForward = fp;
+                lastFiniteBackward = fm;
 
                 double secondDeriv = Math.Abs(fp - 2.0 * f0 + fm);
                 double scale = Math.Max(Math.Abs(fp), Math.Max(Math.Abs(fm), Math.Max(Math.Abs(f0), 1.0)));
 
                 if (secondDeriv >= FlatSpotRelTol * scale)
-                    return h;
+                    return (h, fp, fm);
 
-                h *= StepGrowthFactor;
+                double grownH = NormalizeStep(h * StepGrowthFactor);
+                if (grownH <= h || grownH >= firstNonFiniteUpperStep)
+                    return (lastFiniteStep, lastFiniteForward, lastFiniteBackward);
+
+                h = grownH;
             }
 
-            return Math.Min(h, MaxStep);
+            if (IsFinite(lastFiniteStep))
+                return (lastFiniteStep, lastFiniteForward, lastFiniteBackward);
+
+            throw new InvalidOperationException(
+                $"NumericalDiff.Hessian: no finite central stencil found for parameter {j}.");
         }
 
         #endregion
@@ -375,6 +435,11 @@ namespace RMC.BestFit.Estimation
         /// <param name="lowerBounds">Optional lower bounds for parameters.</param>
         /// <param name="upperBounds">Optional upper bounds for parameters.</param>
         /// <returns>An m × p Jacobian matrix where J[i,j] = ∂g_i/∂θ_j.</returns>
+        /// <remarks>
+        /// Central differences are preferred. If a central stencil crosses a non-finite side of
+        /// the model domain but the base value and opposite side are finite, the method falls back
+        /// to the finite one-sided stencil for that column rather than silently leaving zeros.
+        /// </remarks>
         internal static double[,] ComputeJacobian(
             Func<double[], double[]> function,
             double[] parameters, int m,
@@ -385,14 +450,16 @@ namespace RMC.BestFit.Estimation
             var J = new double[m, p];
             var perturbed = (double[])parameters.Clone();
             double[] g0 = function(perturbed);
+            bool baseIsBad = IsBad(g0, m);
 
             for (int j = 0; j < p; j++)
             {
-                double h = InitialStep(parameters[j]);
+                double h = Math.Min(NormalizeStep(InitialStep(parameters[j])), MaxStep);
                 double[]? col = null;
 
-                while (h <= MaxStep)
+                for (int attempt = 0; attempt < MaxAdaptiveJacobianStepAttempts; attempt++)
                 {
+                    h = Math.Min(NormalizeStep(h), MaxStep);
                     double roomLeft = AvailableLeft(parameters, j, lowerBounds);
                     double roomRight = AvailableRight(parameters, j, upperBounds);
 
@@ -407,9 +474,9 @@ namespace RMC.BestFit.Estimation
                         double[] gMinus = function(perturbed);
                         perturbed[j] = parameters[j];
 
-                        if (IsBad(gPlus, m) || IsBad(gMinus, m))
-                        { success = false; isFlat = false; }
-                        else
+                        bool plusIsBad = IsBad(gPlus, m);
+                        bool minusIsBad = IsBad(gMinus, m);
+                        if (!plusIsBad && !minusIsBad)
                         {
                             success = true;
                             double totalDiff = 0, totalScale = 0;
@@ -423,8 +490,39 @@ namespace RMC.BestFit.Estimation
                             }
                             isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
                         }
+                        else if (!baseIsBad && !plusIsBad)
+                        {
+                            success = true;
+                            double totalDiff = 0, totalScale = 0;
+                            col = new double[m];
+                            for (int i = 0; i < m; i++)
+                            {
+                                col[i] = (gPlus[i] - g0[i]) / h;
+                                totalDiff += Math.Abs(gPlus[i] - g0[i]);
+                                totalScale += Math.Max(Math.Abs(gPlus[i]), Math.Abs(g0[i]));
+                            }
+                            isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
+                        }
+                        else if (!baseIsBad && !minusIsBad)
+                        {
+                            success = true;
+                            double totalDiff = 0, totalScale = 0;
+                            col = new double[m];
+                            for (int i = 0; i < m; i++)
+                            {
+                                col[i] = (g0[i] - gMinus[i]) / h;
+                                totalDiff += Math.Abs(g0[i] - gMinus[i]);
+                                totalScale += Math.Max(Math.Abs(gMinus[i]), Math.Abs(g0[i]));
+                            }
+                            isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
+                        }
+                        else
+                        {
+                            success = false;
+                            isFlat = false;
+                        }
                     }
-                    else if (roomRight >= h)
+                    else if (!baseIsBad && roomRight >= h)
                     {
                         perturbed[j] = Clamp(parameters[j] + h, j, lowerBounds, upperBounds);
                         double[] gPlus = function(perturbed);
@@ -446,7 +544,7 @@ namespace RMC.BestFit.Estimation
                             isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
                         }
                     }
-                    else if (roomLeft >= h)
+                    else if (!baseIsBad && roomLeft >= h)
                     {
                         perturbed[j] = Clamp(parameters[j] - h, j, lowerBounds, upperBounds);
                         double[] gMinus = function(perturbed);
@@ -470,13 +568,31 @@ namespace RMC.BestFit.Estimation
                     }
                     else
                     {
-                        h *= 0.5;
+                        double nextH = h * 0.5;
+                        if (nextH >= h || nextH < DefaultAbsStep * 0.01)
+                            break;
+
+                        h = nextH;
                         continue;
                     }
 
-                    if (!success) { h *= 0.5; continue; }
-                    if (!isFlat) break;
-                    h *= StepGrowthFactor;
+                    if (!success)
+                    {
+                        double nextH = h * 0.5;
+                        if (nextH >= h || nextH < DefaultAbsStep * 0.01)
+                            break;
+
+                        h = nextH;
+                        continue;
+                    }
+
+                    if (!isFlat)
+                        break;
+
+                    if (h >= MaxStep)
+                        break;
+
+                    h = Math.Min(h * StepGrowthFactor, MaxStep);
                 }
 
                 if (col == null)
@@ -522,6 +638,23 @@ namespace RMC.BestFit.Estimation
             if (upperBounds != null && value > upperBounds[j])
                 value = upperBounds[j];
             return value;
+        }
+
+        /// <summary>
+        /// Normalizes a finite-difference step to a positive finite value.
+        /// </summary>
+        /// <param name="step">The candidate step value.</param>
+        /// <returns>A positive finite step value.</returns>
+        /// <remarks>
+        /// This protects retry loops from NaN, infinity, zero, and underflow values before
+        /// comparing step progress.
+        /// </remarks>
+        private static double NormalizeStep(double step)
+        {
+            if (!IsFinite(step) || step <= 0.0)
+                return DefaultAbsStep;
+
+            return step;
         }
 
         /// <summary>

@@ -4,7 +4,7 @@ using RMC.BestFit.Models.LinkFunctions;
 namespace RMC.BestFit.Tests.LinkFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="CenteredLink"/> class.
+/// Unit tests for the <c>CenteredLink</c> class.
 /// Verifies affine centering/scaling of inner link functions, round-trip consistency,
 /// derivative chain rule correctness, and constructor validation.
 /// </summary>

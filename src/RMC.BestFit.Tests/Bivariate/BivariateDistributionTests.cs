@@ -1,12 +1,12 @@
 using Numerics.Distributions;
 using Numerics.Distributions.Copulas;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Bivariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="BivariateDistribution"/> model class.
+/// Programmatic unit tests for the <c>BivariateDistribution</c> model class.
 /// </summary>
 /// <remarks>
 /// Computational / estimation tests (MLE convergence, parameter recovery) live in
@@ -40,21 +40,44 @@ public class BivariateDistributionTests
     {
         int n = count ?? FixtureSize;
 
-        var dfX = new DataFrame { ExactSeries = new ExactSeries(InlineXData.Take(n).ToArray()) };
+        var dfX = new BestFitDataFrame { ExactSeries = new ExactSeries(InlineXData.Take(n).ToArray()) };
         var marginalX = new UnivariateDistribution(dfX, UnivariateDistributionType.Normal);
 
-        var dfY = new DataFrame { ExactSeries = new ExactSeries(InlineYData.Take(n).ToArray()) };
+        var dfY = new BestFitDataFrame { ExactSeries = new ExactSeries(InlineYData.Take(n).ToArray()) };
         var marginalY = new UnivariateDistribution(dfY, UnivariateDistributionType.Gumbel);
 
         return (marginalX, marginalY);
     }
 
     /// <summary>
+    /// Creates a Normal marginal with exact data at the supplied indexes.
+    /// </summary>
+    /// <param name="indexes">The exact-data indexes to assign to the fixture rows.</param>
+    /// <param name="lowOutlierIndexes">Indexes that should be flagged as low outliers.</param>
+    /// <returns>A configured Normal marginal backed by the generated exact data.</returns>
+    private static UnivariateDistribution CreateIndexedNormalMarginal(
+        IReadOnlyList<int> indexes,
+        ISet<int>? lowOutlierIndexes = null)
+    {
+        var dataFrame = new BestFitDataFrame();
+        for (int i = 0; i < indexes.Count; i++)
+        {
+            bool isLowOutlier = lowOutlierIndexes?.Contains(indexes[i]) == true;
+            dataFrame.ExactSeries.Add(new ExactData(indexes[i], 100.0 + i, isLowOutlier: isLowOutlier));
+        }
+
+        dataFrame.CalculatePlottingPositions();
+        var marginal = new UnivariateDistribution(dataFrame, UnivariateDistributionType.Normal);
+        marginal.SetParameterValues([100.0, 10.0]);
+        return marginal;
+    }
+
+    /// <summary>
     /// Creates a bivariate model with the marginals' parameters explicitly set to the
     /// values that generated the inline fixture. Copula parameters stay at the bivariate
     /// model's defaults. <c>BivariateDistribution.Parameters</c> only exposes the copula
-    /// parameters; marginal parameters live on <see cref="BivariateDistribution.MarginalX"/>
-    /// / <see cref="BivariateDistribution.MarginalY"/> directly.
+    /// parameters; marginal parameters live on <c>BivariateDistribution.MarginalX</c>
+    /// / <c>BivariateDistribution.MarginalY</c> directly.
     /// </summary>
     private static BivariateDistribution CreateConfiguredModel(CopulaType copulaType = CopulaType.Normal, int? count = null)
     {
@@ -66,6 +89,68 @@ public class BivariateDistributionTests
         marginalY.SetParameterValues([50.0, 15.0]);
 
         return new BivariateDistribution(marginalX, marginalY, copulaType);
+    }
+
+    #endregion
+
+    #region Sample-data alignment counts
+
+    /// <summary>
+    /// Exact data with matching indexes report all observations as paired.
+    /// </summary>
+    [TestMethod]
+    public void GetSampleDataAlignmentCounts_FullOverlap_ReturnsAllCounts()
+    {
+        var indexes = Enumerable.Range(0, 100).ToArray();
+        var model = new BivariateDistribution(
+            CreateIndexedNormalMarginal(indexes),
+            CreateIndexedNormalMarginal(indexes),
+            CopulaType.Normal);
+
+        var counts = model.GetSampleDataAlignmentCounts();
+
+        Assert.AreEqual(100, counts.XExactCount);
+        Assert.AreEqual(100, counts.YExactCount);
+        Assert.AreEqual(100, counts.PairedCount);
+    }
+
+    /// <summary>
+    /// Equal-length exact data with staggered indexes report only matching indexes as paired.
+    /// </summary>
+    [TestMethod]
+    public void GetSampleDataAlignmentCounts_PartialOverlap_ReturnsPairedCount()
+    {
+        var xIndexes = Enumerable.Range(0, 100).ToArray();
+        var yIndexes = Enumerable.Range(60, 100).ToArray();
+        var model = new BivariateDistribution(
+            CreateIndexedNormalMarginal(xIndexes),
+            CreateIndexedNormalMarginal(yIndexes),
+            CopulaType.Normal);
+
+        var counts = model.GetSampleDataAlignmentCounts();
+
+        Assert.AreEqual(100, counts.XExactCount);
+        Assert.AreEqual(100, counts.YExactCount);
+        Assert.AreEqual(40, counts.PairedCount);
+    }
+
+    /// <summary>
+    /// Low outliers are excluded from source counts and cannot contribute paired observations.
+    /// </summary>
+    [TestMethod]
+    public void GetSampleDataAlignmentCounts_LowOutliers_AreExcluded()
+    {
+        var indexes = Enumerable.Range(0, 12).ToArray();
+        var model = new BivariateDistribution(
+            CreateIndexedNormalMarginal(indexes, new HashSet<int> { 0, 1 }),
+            CreateIndexedNormalMarginal(indexes, new HashSet<int> { 2 }),
+            CopulaType.Normal);
+
+        var counts = model.GetSampleDataAlignmentCounts();
+
+        Assert.AreEqual(10, counts.XExactCount);
+        Assert.AreEqual(11, counts.YExactCount);
+        Assert.AreEqual(9, counts.PairedCount);
     }
 
     #endregion
@@ -111,15 +196,8 @@ public class BivariateDistributionTests
 
         foreach (var copulaType in copulaTypes)
         {
-            try
-            {
-                var model = new BivariateDistribution(marginalX, marginalY, copulaType);
-                Assert.IsNotNull(model.Copula, $"{copulaType}: Copula should not be null.");
-            }
-            catch (Exception ex) when (ex is not AssertFailedException)
-            {
-                Assert.Inconclusive($"{copulaType}: {ex.Message}");
-            }
+            var model = new BivariateDistribution(marginalX, marginalY, copulaType);
+            Assert.IsNotNull(model.Copula, $"{copulaType}: Copula should not be null.");
         }
     }
 
@@ -147,17 +225,11 @@ public class BivariateDistributionTests
     {
         var (marginalX, marginalY) = CreateMarginals();
 
-        try
-        {
-            var model = new BivariateDistribution(marginalX, marginalY, CopulaType.StudentT);
-            // Student-T copula has dependency + degrees-of-freedom.
-            Assert.AreEqual(2, model.Parameters.Count);
-            Assert.AreEqual("DegreesOfFreedom", model.Parameters[1].Name);
-        }
-        catch (Exception ex) when (ex is not AssertFailedException)
-        {
-            Assert.Inconclusive($"StudentT copula construction failed: {ex.Message}");
-        }
+        var model = new BivariateDistribution(marginalX, marginalY, CopulaType.StudentT);
+
+        // Student-T copula has dependency + degrees-of-freedom.
+        Assert.AreEqual(2, model.Parameters.Count);
+        Assert.AreEqual("DegreesOfFreedom", model.Parameters[1].Name);
     }
 
     #endregion
@@ -186,18 +258,11 @@ public class BivariateDistributionTests
 
         foreach (var copulaType in copulaTypes)
         {
-            try
-            {
-                var model = CreateConfiguredModel(copulaType);
-                var parameters = model.Parameters.Select(p => p.Value).ToArray();
-                double ll = model.LogLikelihood(parameters);
+            var model = CreateConfiguredModel(copulaType);
+            var parameters = model.Parameters.Select(p => p.Value).ToArray();
+            double ll = model.LogLikelihood(parameters);
 
-                Assert.IsFalse(double.IsNaN(ll), $"{copulaType}: Log-likelihood should not be NaN.");
-            }
-            catch (Exception ex) when (ex is not AssertFailedException)
-            {
-                Assert.Inconclusive($"{copulaType}: {ex.Message}");
-            }
+            Assert.IsFalse(double.IsNaN(ll), $"{copulaType}: Log-likelihood should not be NaN.");
         }
     }
 
@@ -282,6 +347,72 @@ public class BivariateDistributionTests
         var (isValid, messages) = model.Validate();
 
         Assert.IsTrue(isValid, $"Validation failed: {string.Join(", ", messages)}");
+    }
+
+    #endregion
+
+    #region Sample setup regression
+
+    /// <summary>
+    /// Pseudo-likelihood setup initializes missing plotting positions, invalidates its validation
+    /// cache when a position changes, and produces a finite likelihood.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetSampleData_PseudoLikelihoodInitializesMissingPlottingPositions()
+    {
+        var (marginalX, marginalY) = CreateMarginals(20);
+        foreach (var data in marginalX.DataFrame.ExactSeries)
+            data.PlottingPosition = 0.0;
+        foreach (var data in marginalY.DataFrame.ExactSeries)
+            data.PlottingPosition = 0.0;
+
+        var model = new BivariateDistribution(marginalX, marginalY, CopulaType.Normal)
+        {
+            CopulaEstimationMethod = CopulaEstimationMethod.PseudoLikelihood,
+        };
+
+        Assert.IsTrue(marginalX.DataFrame.ExactSeries.All(data =>
+            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
+        Assert.IsTrue(marginalY.DataFrame.ExactSeries.All(data =>
+            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
+
+        marginalX.DataFrame.ExactSeries[0].PlottingPosition = 0.0;
+        model.SetSampleData();
+
+        Assert.IsTrue(marginalX.DataFrame.ExactSeries.All(data =>
+            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
+
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(parameters)));
+    }
+
+    /// <summary>
+    /// IFM sample setup leaves marginal plotting positions unchanged.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetSampleData_InferenceFromMarginsDoesNotRecalculatePlottingPositions()
+    {
+        var (marginalX, marginalY) = CreateMarginals(20);
+        for (int i = 0; i < marginalX.DataFrame.ExactSeries.Count; i++)
+        {
+            marginalX.DataFrame.ExactSeries[i].PlottingPosition = 0.11 + (0.01 * i);
+            marginalY.DataFrame.ExactSeries[i].PlottingPosition = 0.21 + (0.01 * i);
+        }
+        double[] expectedX = marginalX.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray();
+        double[] expectedY = marginalY.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray();
+
+        var model = new BivariateDistribution(marginalX, marginalY, CopulaType.Normal)
+        {
+            CopulaEstimationMethod = CopulaEstimationMethod.InferenceFromMargins,
+        };
+        model.SetSampleData();
+
+        CollectionAssert.AreEqual(expectedX, marginalX.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray());
+        CollectionAssert.AreEqual(expectedY, marginalY.DataFrame.ExactSeries
+            .Select(data => data.PlottingPosition).ToArray());
     }
 
     #endregion

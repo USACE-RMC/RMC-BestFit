@@ -5,9 +5,9 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Tests.Diagnostics;
 
 /// <summary>
-/// Unit tests for the <see cref="LeverageDiagnostics"/> class and its nested structs
-/// <see cref="LeverageDiagnostics.ObservationLeverage"/> and
-/// <see cref="LeverageDiagnostics.PriorComponentLeverage"/>.
+/// Unit tests for the <c>LeverageDiagnostics</c> class and its nested structs
+/// <c>LeverageDiagnostics.ObservationLeverage</c> and
+/// <c>LeverageDiagnostics.PriorComponentLeverage</c>.
 /// </summary>
 /// <remarks>
 /// These tests cover the empty constructor, pre-computed constructor, XML round-trip,

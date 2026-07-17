@@ -8,6 +8,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using System.Xml.Linq;
 
 namespace RMC.BestFit.Models
@@ -62,24 +63,6 @@ namespace RMC.BestFit.Models
                     ThresholdSeries = new ThresholdSeries(xEl);
             }
 
-            // Add handlers
-            for (int i = 0; i < ExactSeries.Count; i++)
-            {
-                ((ExactData)ExactSeries[i]).PropertyChanged += ExactDataChanged;
-            }
-            for (int i = 0; i < UncertainSeries.Count; i++)
-            {
-                ((UncertainData)UncertainSeries[i]).PropertyChanged += UncertainDataChanged;
-            }
-            for (int i = 0; i < IntervalSeries.Count; i++)
-            {
-                ((IntervalData)IntervalSeries[i]).PropertyChanged += IntervalDataChanged;
-            }
-            for (int i = 0; i < ThresholdSeries.Count; i++)
-            {
-                ((ThresholdData)ThresholdSeries[i]).PropertyChanged += ThresholdDataChanged;
-            }
-
             var lambdaAttr = xElement.Attribute(nameof(Lambda));
             if (lambdaAttr != null)
             {
@@ -93,12 +76,17 @@ namespace RMC.BestFit.Models
             var usgsRawTextAttr = xElement.Attribute(nameof(USGSRawText));
             if (usgsRawTextAttr != null) _usgsRawText = usgsRawTextAttr.Value;
 
+            // Rebuild effective threshold counts from the source NumberAbove values persisted in XML.
+            ProcessThresholdSeries();
         }
 
         #endregion
 
         #region Members
 
+        /// <summary>
+        /// Occurs when a data-frame property changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
         private ExactSeries _exactSeries = new ExactSeries();
         private UncertainSeries _uncertainSeries = new UncertainSeries();
@@ -120,6 +108,7 @@ namespace RMC.BestFit.Models
         private int _numberOfLowOutliers = 0;
         private double _lowOutlierThreshold = 0;
         private double _plottingParameter = 0.0;
+        private long _plottingPositionVersion;
         private string _usgsRawText = "";
 
         /// <summary>
@@ -130,9 +119,14 @@ namespace RMC.BestFit.Models
             get { return _exactSeries; }
             set
             {
+                for (int i = 0; i < _exactSeries.Count; i++)
+                    _exactSeries[i].PropertyChanged -= ExactDataChanged;
                 _exactSeries.CollectionChanged -= ExactSeriesCollectionChanged;
                 _exactSeries = value;
                 _exactSeries.CollectionChanged += ExactSeriesCollectionChanged;
+                for (int i = 0; i < _exactSeries.Count; i++)
+                    _exactSeries[i].PropertyChanged += ExactDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(ExactSeries));
             }
         }
@@ -145,9 +139,14 @@ namespace RMC.BestFit.Models
             get { return _uncertainSeries; }
             set
             {
+                for (int i = 0; i < _uncertainSeries.Count; i++)
+                    _uncertainSeries[i].PropertyChanged -= UncertainDataChanged;
                 _uncertainSeries.CollectionChanged -= UncertainSeriesCollectionChanged;
                 _uncertainSeries = value;
                 _uncertainSeries.CollectionChanged += UncertainSeriesCollectionChanged;
+                for (int i = 0; i < _uncertainSeries.Count; i++)
+                    _uncertainSeries[i].PropertyChanged += UncertainDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(UncertainSeries));
             }
         }
@@ -160,9 +159,14 @@ namespace RMC.BestFit.Models
             get { return _intervalSeries; }
             set
             {
+                for (int i = 0; i < _intervalSeries.Count; i++)
+                    _intervalSeries[i].PropertyChanged -= IntervalDataChanged;
                 _intervalSeries.CollectionChanged -= IntervalSeriesCollectionChanged;
                 _intervalSeries = value;
                 _intervalSeries.CollectionChanged += IntervalSeriesCollectionChanged;
+                for (int i = 0; i < _intervalSeries.Count; i++)
+                    _intervalSeries[i].PropertyChanged += IntervalDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(IntervalSeries));
             }
         }
@@ -175,9 +179,14 @@ namespace RMC.BestFit.Models
             get { return _thresholdSeries; }
             set
             {
+                for (int i = 0; i < _thresholdSeries.Count; i++)
+                    _thresholdSeries[i].PropertyChanged -= ThresholdDataChanged;
                 _thresholdSeries.CollectionChanged -= ThresholdSeriesCollectionChanged;
                 _thresholdSeries = value;
                 _thresholdSeries.CollectionChanged += ThresholdSeriesCollectionChanged;
+                for (int i = 0; i < _thresholdSeries.Count; i++)
+                    _thresholdSeries[i].PropertyChanged += ThresholdDataChanged;
+                Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(nameof(ThresholdSeries));
             }
         }
@@ -188,7 +197,7 @@ namespace RMC.BestFit.Models
         /// <remarks>
         /// <para>
         /// Thread-safe for concurrent readers. The getter uses a double-checked-locking pattern
-        /// with <see cref="Volatile.Read{T}(ref T)"/> on the fast path so MCMC hot loops that
+        /// with <c>Volatile.Read</c> on the fast path so MCMC hot loops that
         /// iterate <see cref="FullTimeSeries"/> do not take a lock. The rebuild branch acquires
         /// <c>_syncRoot</c>, which is also taken by <see cref="CreateFullTimeSeries"/> and
         /// <see cref="ProcessThresholdSeries"/>.
@@ -249,6 +258,9 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// The plotting position parameter. Default is 0.0 (Weibull).
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when the value is not finite or is outside the interval [0, 1).
+        /// </exception>
         [Category("Plotting Positions")]
         [DisplayName("Plotting Parameter")]
         [Description("Sets the plotting position parameter. A value of 0.0 (Weibull) is recommended by default. Alternatives include 0.40 (Cunnane), 0.44 (Gringorten), and 0.50 (Hazen).")]
@@ -258,14 +270,27 @@ namespace RMC.BestFit.Models
             get { return _plottingParameter; }
             set
             {
+                if (!double.IsFinite(value) || value < 0d || value >= 1d)
+                    throw new ArgumentOutOfRangeException(nameof(value), value,
+                        "The plotting parameter must be finite, greater than or equal to zero, and less than one.");
+
                 if (_plottingParameter != value)
                 {
                     _plottingParameter = value;
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
                     RaisePropertyChange(nameof(PlottingParameter));       
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the version stamp for data-frame plotting-position inputs.
+        /// </summary>
+        /// <remarks>
+        /// The stamp changes whenever plotting positions are recalculated or assigned directly.
+        /// It permits consumers to cache validation without rescanning unchanged samples.
+        /// </remarks>
+        internal long PlottingPositionVersion => Volatile.Read(ref _plottingPositionVersion);
 
         /// <summary>
         /// The average number of events per index.
@@ -321,7 +346,7 @@ namespace RMC.BestFit.Models
             if (ExactSeries.SuppressCollectionChanged == false)
             {
                 CalculateLambda();
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
             }
         }
 
@@ -360,7 +385,7 @@ namespace RMC.BestFit.Models
             //
             RaisePropertyChange(nameof(UncertainSeries));
             if (UncertainSeries.SuppressCollectionChanged == false)
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
         }
 
         /// <summary>
@@ -398,7 +423,7 @@ namespace RMC.BestFit.Models
             //
             RaisePropertyChange(nameof(IntervalSeries));
             if (IntervalSeries.SuppressCollectionChanged == false)
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
         }
 
         /// <summary>
@@ -436,7 +461,7 @@ namespace RMC.BestFit.Models
             //
             RaisePropertyChange(nameof(ThresholdSeries));
             if (ThresholdSeries.SuppressCollectionChanged == false)
-                CalculatePlottingPositions();
+                RecalculatePlottingPositionsAfterEdit();
         }
 
         /// <summary>
@@ -449,7 +474,9 @@ namespace RMC.BestFit.Models
             if (ExactSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -464,7 +491,9 @@ namespace RMC.BestFit.Models
             if (UncertainSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -479,7 +508,9 @@ namespace RMC.BestFit.Models
             if (IntervalSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -494,7 +525,9 @@ namespace RMC.BestFit.Models
             if (ThresholdSeries.SuppressCollectionChanged == false)
             {
                 if (e.PropertyName != nameof(Data.PlottingPosition))
-                    CalculatePlottingPositions();
+                    RecalculatePlottingPositionsAfterEdit();
+                else
+                    Interlocked.Increment(ref _plottingPositionVersion);
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -529,9 +562,9 @@ namespace RMC.BestFit.Models
             var messages = new List<string>();
             bool isValid = true;
 
-            if (PlottingParameter < 0 || PlottingParameter > 1)
+            if (!double.IsFinite(PlottingParameter) || PlottingParameter < 0d || PlottingParameter >= 1d)
             {
-                messages.Add("Error: The plotting parameter must be between 0 and 1.");
+                messages.Add("Error: The plotting parameter must be finite, greater than or equal to 0, and less than 1.");
                 isValid = false;
             }
 
@@ -614,16 +647,21 @@ namespace RMC.BestFit.Models
         /// Thread-safe. Serialized via the same <c>_syncRoot</c> lock as <see cref="CreateFullTimeSeries"/>
         /// so that a concurrent rebuild observes a fully-processed threshold state rather than a
         /// torn view of <see cref="ThresholdData.NumberAbove"/>/<see cref="ThresholdData.NumberBelow"/>.
+        /// Each pass starts from the retained user-supplied exceedance count, so repeated calls are
+        /// idempotent and input mutations can restore a previously reduced effective count. Item-level
+        /// notifications are suppressed while counts are updated; one aggregate
+        /// <see cref="ThresholdSeries"/> notification is raised after the lock when any effective value changes.
         /// </remarks>
         public void ProcessThresholdSeries()
         {
+            bool countsChanged = false;
             lock (_syncRoot)
             {
-                // Adjust the number above and below for thresholds
+                // Adjust the number above and below for thresholds from the immutable user input.
                 for (int i = 0; i < ThresholdSeries.Count; i++)
                 {
                     var thresholdData = (ThresholdData)ThresholdSeries[i];
-                    int nAbove = thresholdData.NumberAbove;
+                    int nAbove = thresholdData.SourceNumberAbove;
                     int nBelow = thresholdData.Duration - nAbove;
                     // Check interval data
                     for (int j = 0; j < IntervalSeries.Count; j++)
@@ -650,11 +688,15 @@ namespace RMC.BestFit.Models
                             nBelow -= 1;
                         }
                     }
-                    // Zero out NumberAbove when all years are accounted for by explicit data
-                    thresholdData.NumberAbove = nBelow == 0 ? 0 : nAbove;
-                    thresholdData.NumberBelow = Math.Max(0, nBelow);
+                    // Zero out the effective NumberAbove when explicit data account for every remaining year.
+                    countsChanged |= thresholdData.SetProcessedCounts(
+                        nBelow == 0 ? 0 : nAbove,
+                        Math.Max(0, nBelow));
                 }
             }
+
+            if (countsChanged)
+                RaisePropertyChange(nameof(ThresholdSeries));
         }
 
         /// <summary>
@@ -1104,8 +1146,32 @@ namespace RMC.BestFit.Models
         #region Plotting Positions
 
         /// <summary>
+        /// Recalculates plotting positions after an interactive data edit when threshold inputs are valid.
+        /// </summary>
+        /// <remarks>
+        /// Invalid threshold windows and counts can be transient while a user or API request populates
+        /// the series. Explicit calls to <see cref="CalculatePlottingPositions"/> remain strict. The
+        /// threshold validity scan runs only after the calculation rejects an invalid state, preserving
+        /// the fast path for valid interactive edits.
+        /// </remarks>
+        private void RecalculatePlottingPositionsAfterEdit()
+        {
+            try
+            {
+                CalculatePlottingPositions();
+            }
+            catch (InvalidOperationException) when (!ThresholdSeries.Validate().IsValid)
+            {
+                Debug.WriteLine("Plotting positions were deferred until the threshold series is valid.");
+            }
+        }
+
+        /// <summary>
         /// Provides plotting positions for censored data using the Hirsch-Stedinger plotting position formula.
         /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when plotting inputs, threshold windows, processed counts, or a computed probability are invalid.
+        /// </exception>
         /// <remarks>
         /// <para>
         /// This routine provides plotting positions for censored data using the Hirsch/Stedinger plotting position 
@@ -1136,319 +1202,543 @@ namespace RMC.BestFit.Models
         ///         </description></item>
         ///      </list>
         /// </para>
+        /// <para>
+        /// The implementation is a documented port of peakFQ's ARRANGE2, PPLOT2, and PLPOS
+        /// sequence. Each explicit observation is classified against the perception threshold
+        /// covering its own index; this classification changes plotting ranks only and never
+        /// changes the observation type or value.
+        /// </para>
+        /// <para>
+        /// After threshold counts are processed, observations and distinct levels are arranged
+        /// with one global value sort plus binary threshold lookups to support interactive edits.
+        /// </para>
         /// </remarks>
         public void CalculatePlottingPositions()
         {
-            // Process threshold series to compute NumberBelow/NumberAbove
-            // before TotalRecordLength() is called below.
-            ProcessThresholdSeries();
-
-            // Suppress collection changed events
-            ExactSeries.SuppressCollectionChanged = true;
-            UncertainSeries.SuppressCollectionChanged = true;
-            IntervalSeries.SuppressCollectionChanged = true;
-            ThresholdSeries.SuppressCollectionChanged = true;
-
-            // The plotting position parameter
             double alpha = PlottingParameter;
-            int totalYears = TotalRecordLength();
+            if (!double.IsFinite(alpha) || alpha < 0d || alpha >= 1d)
+                throw new InvalidOperationException(
+                    "Plotting positions require a finite plotting parameter greater than or equal to zero and less than one.");
 
-            // Probability of exceedance
-            double[] Pej = new double[ThresholdSeries.Count];
-            // Condition probability that a value falls between the j-th
-            // and (j-1)-th threshold. 
-            double[] Qej = new double[ThresholdSeries.Count];   
-            // The number values that exceed threshold j but not higher
-            // thresholds (j-1).
-            int[] Kj = new int[ThresholdSeries.Count];
-            // The total number of years the threshold applies
-            int[] Nj = new int[ThresholdSeries.Count];
-            int[] durations = new int[ThresholdSeries.Count];
-            // The total number of values that exceed higher thresholds
-            // during period Nj
-            int[] Kl = new int[ThresholdSeries.Count];
-            // The values above thresholds
-            var aboveValues = new List<Data>();
-            // The above-value probability of exceedance
-            double[] Pi;
-            // The values below thresholds
-            var belowValues = new List<Data>();
-            // The below-value probability of exceedance
-            double[] Pr;
-            // The number of values below
-            int Nb = 0;
-            
-            // Sort thresholds from largest to smallest.
-            var newThresholdDataList = ThresholdSeries.Clone();
-            newThresholdDataList.Sort(SortOrder.Descending);
-            for (int i = 0; i < newThresholdDataList.Count; i++)
+            // NumberBelow and NumberAbove are inputs to the ARRANGE2 counts.
+            ProcessThresholdSeries();
+            Interlocked.Increment(ref _plottingPositionVersion);
+
+            var exactSeries = ExactSeries;
+            var uncertainSeries = UncertainSeries;
+            var intervalSeries = IntervalSeries;
+            var thresholdSeries = ThresholdSeries;
+
+            bool exactWasSuppressed = exactSeries.SuppressCollectionChanged;
+            bool uncertainWasSuppressed = uncertainSeries.SuppressCollectionChanged;
+            bool intervalWasSuppressed = intervalSeries.SuppressCollectionChanged;
+            bool thresholdWasSuppressed = thresholdSeries.SuppressCollectionChanged;
+
+            exactSeries.SuppressCollectionChanged = true;
+            uncertainSeries.SuppressCollectionChanged = true;
+            intervalSeries.SuppressCollectionChanged = true;
+            thresholdSeries.SuppressCollectionChanged = true;
+
+            try
             {
-                var thresholdData = newThresholdDataList[i];
-                // Determine the number of years that the threshold applies.
-                if (i == 0)
+                var exactSnapshot = SnapshotNonNull(exactSeries);
+                var uncertainSnapshot = SnapshotNonNull(uncertainSeries);
+                var intervalSnapshot = SnapshotNonNull(intervalSeries);
+                var thresholdDataSnapshot = SnapshotNonNull(thresholdSeries);
+                var thresholdsByIndex = new ThresholdData[thresholdDataSnapshot.Length];
+
+                for (int i = 0; i < thresholdDataSnapshot.Length; i++)
                 {
-                    Nj[i] = totalYears;
-                    durations[i] = ((ThresholdData)thresholdData).Duration;
-                }
-                else
-                {
-                    // Ensure Nj doesn't go negative if durations exceed totalYears
-                    Nj[i] = Math.Max(0, totalYears - durations[i - 1]);
-                    durations[i] = durations[i - 1] + ((ThresholdData)thresholdData).Duration;
-                }
-                
-                // Check interval data
-                for (int j = 0; j < IntervalSeries.Count; j++)
-                {
-                    if (i == 0)
+                    var threshold = (ThresholdData)thresholdDataSnapshot[i];
+                    if (!double.IsFinite(threshold.Value))
+                        throw new InvalidOperationException("Perception threshold values must be finite.");
+                    if (threshold.StartIndex > threshold.EndIndex)
+                        throw new InvalidOperationException("Perception threshold start indexes must not exceed their end indexes.");
+                    if (threshold.NumberBelow < 0 || threshold.NumberAbove < 0 ||
+                        (long)threshold.NumberBelow + threshold.NumberAbove > threshold.Duration)
                     {
-                        if (IntervalSeries[j].Value >= thresholdData.Value)
-                        {
-                            Kj[i] += 1;
-                        }
+                        throw new InvalidOperationException(
+                            "Processed perception-threshold counts must be nonnegative and must not exceed the threshold duration.");
                     }
-                    else
+
+                    thresholdsByIndex[i] = threshold;
+                }
+
+                Array.Sort(thresholdsByIndex, (left, right) =>
+                {
+                    int comparison = left.StartIndex.CompareTo(right.StartIndex);
+                    return comparison != 0 ? comparison : left.EndIndex.CompareTo(right.EndIndex);
+                });
+
+                for (int i = 1; i < thresholdsByIndex.Length; i++)
+                {
+                    if (thresholdsByIndex[i].StartIndex <= thresholdsByIndex[i - 1].EndIndex)
+                        throw new InvalidOperationException("Perception threshold windows must not overlap.");
+                }
+
+                var explicitData = new List<Data>(
+                    exactSnapshot.Length + uncertainSnapshot.Length + intervalSnapshot.Length);
+                explicitData.AddRange(intervalSnapshot);
+                explicitData.AddRange(uncertainSnapshot);
+                explicitData.AddRange(exactSnapshot);
+
+                var occupiedIndexes = new HashSet<int>();
+                var thresholdLevels = new SortedSet<double>();
+                var observations =
+                    new List<(Data Source, double Threshold, int Ordinal, bool IsDetected)>(explicitData.Count);
+
+                for (int i = 0; i < thresholdsByIndex.Length; i++)
+                {
+                    var threshold = thresholdsByIndex[i];
+                    if (threshold.NumberBelow > 0 || threshold.NumberAbove > 0)
+                        thresholdLevels.Add(threshold.Value);
+                }
+
+                for (int i = 0; i < explicitData.Count; i++)
+                {
+                    Data source = explicitData[i];
+                    if (!double.IsFinite(source.Value))
+                        throw new InvalidOperationException("Explicit observation values must be finite.");
+
+                    occupiedIndexes.Add(source.Index);
+                    ThresholdData? threshold = FindThresholdForPlotting(thresholdsByIndex, source.Index);
+                    double thresholdValue = threshold?.Value ?? double.NegativeInfinity;
+                    thresholdLevels.Add(thresholdValue);
+                    observations.Add((source, thresholdValue, i, source.Value >= thresholdValue));
+                }
+
+                double[] levels = thresholdLevels.ToArray();
+                if (levels.Length > 0)
+                {
+                    var detectedByLevel =
+                        new List<(Data Source, double Value, int Index, int Ordinal)>[levels.Length];
+                    var censoredByLevel =
+                        new List<(Data Source, int Index, int Ordinal)>[levels.Length];
+                    var leftPlaceholderIndexes = new List<int>[levels.Length];
+
+                    for (int i = 0; i < levels.Length; i++)
                     {
-                        if (IntervalSeries[j].Value >= thresholdData.Value && IntervalSeries[j].Value < newThresholdDataList[i - 1].Value)
+                        detectedByLevel[i] = new List<(Data Source, double Value, int Index, int Ordinal)>();
+                        censoredByLevel[i] = new List<(Data Source, int Index, int Ordinal)>();
+                        leftPlaceholderIndexes[i] = new List<int>();
+                    }
+
+                    long rightPlaceholderCount = 0L;
+                    for (int i = 0; i < thresholdsByIndex.Length; i++)
+                    {
+                        ThresholdData threshold = thresholdsByIndex[i];
+                        if (threshold.NumberBelow == 0 && threshold.NumberAbove == 0)
+                            continue;
+
+                        int levelIndex = Array.BinarySearch(levels, threshold.Value);
+                        if (levelIndex < 0)
+                            throw new InvalidOperationException("A processed perception threshold could not be arranged.");
+
+                        HashSet<int>? selectedLeftIndexes =
+                            threshold.NumberAbove > 0 ? new HashSet<int>() : null;
+                        int selectedBelow = 0;
+                        for (long candidate = threshold.StartIndex;
+                             candidate <= threshold.EndIndex && selectedBelow < threshold.NumberBelow;
+                             candidate++)
                         {
-                            Kj[i] += 1;
-                        }   
-                        // Determine if the value exceeds higher thresholds during period Nj
-                        bool Klbool = false;
-                        for (int k = i - 1; k >= 0; k -= 1)
+                            int index = (int)candidate;
+                            if (occupiedIndexes.Contains(index))
+                                continue;
+
+                            leftPlaceholderIndexes[levelIndex].Add(index);
+                            selectedLeftIndexes?.Add(index);
+                            selectedBelow++;
+                        }
+
+                        if (selectedBelow != threshold.NumberBelow)
                         {
-                            if (IntervalSeries[j].Value >= newThresholdDataList[k].Value)
+                            throw new InvalidOperationException(
+                                "The processed number below a perception threshold exceeds its available unoccupied indexes.");
+                        }
+
+                        int selectedAbove = 0;
+                        for (long candidate = threshold.EndIndex;
+                             candidate >= threshold.StartIndex && selectedAbove < threshold.NumberAbove;
+                             candidate--)
+                        {
+                            int index = (int)candidate;
+                            if (occupiedIndexes.Contains(index) ||
+                                (selectedLeftIndexes != null && selectedLeftIndexes.Contains(index)))
                             {
-                                Klbool = true;
-                                // Check if the event occurs during a larger threshold's period
-                                if (IntervalSeries[j].Index >= ((ThresholdData)newThresholdDataList[k]).StartIndex && IntervalSeries[j].Index <= ((ThresholdData)newThresholdDataList[k]).EndIndex)
-                                {
-                                    Klbool = false;
-                                    break;
-                                }
+                                continue;
                             }
+
+                            selectedAbove++;
                         }
-                        if (Klbool == true)
+
+                        if (selectedAbove != threshold.NumberAbove)
                         {
-                            Kl[i] += 1;
-                        }   
-                    }
-                }
-                 
-                // Check uncertain data
-                for (int j = 0; j < UncertainSeries.Count; j++)
-                {
-                    if (i == 0)
-                    {
-                        if (UncertainSeries[j].Value >= thresholdData.Value)
-                        {
-                            Kj[i] += 1;
-                        }    
-                    }
-                    else
-                    {
-                        if (UncertainSeries[j].Value >= thresholdData.Value && UncertainSeries[j].Value < newThresholdDataList[i - 1].Value)
-                        {
-                            Kj[i] += 1;
+                            throw new InvalidOperationException(
+                                "The processed number above a perception threshold exceeds its available unoccupied indexes.");
                         }
-                        // Determine if the value exceeds higher thresholds during period Nj
-                        bool Klbool = false;
-                        for (int k = i - 1; k >= 0; k -= 1)
+
+                        rightPlaceholderCount += threshold.NumberAbove;
+                    }
+
+                    var legacyAboveOrder = new List<Data>();
+                    var legacyBelowOrder = new List<Data>();
+                    double minimumFiniteThreshold = thresholdsByIndex.Length > 0
+                        ? thresholdsByIndex.Min(threshold => threshold.Value)
+                        : double.PositiveInfinity;
+
+                    for (int i = 0; i < observations.Count; i++)
+                    {
+                        var observation = observations[i];
+                        if (observation.IsDetected)
                         {
-                            if (UncertainSeries[j].Value >= newThresholdDataList[k].Value)
+                            if (observation.Source.Value >= minimumFiniteThreshold)
+                                legacyAboveOrder.Add(observation.Source);
+                            else
+                                legacyBelowOrder.Add(observation.Source);
+                        }
+                        else
+                        {
+                            int levelIndex = Array.BinarySearch(levels, observation.Threshold);
+                            if (levelIndex < 0)
+                                throw new InvalidOperationException("A censored observation threshold could not be arranged.");
+
+                            censoredByLevel[levelIndex].Add((
+                                observation.Source,
+                                observation.Source.Index,
+                                observation.Ordinal));
+                        }
+                    }
+
+                    // Preserve only the legacy tie permutation: the former routine sorted
+                    // finite values in separate above/below lists split at the global minimum
+                    // threshold. Detection status itself still comes from the observation's
+                    // own threshold, as required by ARRANGE2.
+                    legacyAboveOrder.Sort((left, right) => -1 * left.Value.CompareTo(right.Value));
+                    legacyBelowOrder.Sort((left, right) => -1 * left.Value.CompareTo(right.Value));
+
+                    int detectedOrdinal = 0;
+                    for (int group = 0; group < 2; group++)
+                    {
+                        List<Data> ordered = group == 0 ? legacyAboveOrder : legacyBelowOrder;
+                        for (int i = 0; i < ordered.Count; i++)
+                        {
+                            Data observation = ordered[i];
+                            int levelIndex = FindPlottingLevel(levels, observation.Value);
+                            detectedByLevel[levelIndex].Add((
+                                observation,
+                                observation.Value,
+                                observation.Index,
+                                detectedOrdinal++));
+                        }
+                    }
+                    var detectedCount = new long[levels.Length];
+                    var censoredCount = new long[levels.Length];
+                    for (int i = 0; i < levels.Length; i++)
+                    {
+                        detectedCount[i] = detectedByLevel[i].Count;
+                        censoredCount[i] = (long)censoredByLevel[i].Count + leftPlaceholderIndexes[i].Count;
+                    }
+
+                    // NumberAbove entries are right-censored values. PLPOS orders them above
+                    // every finite observation, so they occupy the end of the highest band.
+                    detectedCount[^1] += rightPlaceholderCount;
+
+                    // ARRANGE2 cumulative NB recurrence.
+                    var notObservableAtLevel = new long[levels.Length];
+                    notObservableAtLevel[0] = censoredCount[0];
+                    for (int i = 1; i < levels.Length; i++)
+                    {
+                        notObservableAtLevel[i] =
+                            notObservableAtLevel[i - 1] + censoredCount[i] + detectedCount[i - 1];
+                    }
+
+                    // PPLOT2 computes nonexceedance interval boundaries from high to low thresholds.
+                    var intervalBoundary = new double[levels.Length + 1];
+                    intervalBoundary[^1] = 0d;
+                    for (int i = levels.Length - 1; i >= 0; i--)
+                    {
+                        double conditionalDetectionProbability =
+                            detectedCount[i] /
+                            (Math.Max(1L, detectedCount[i]) + (double)notObservableAtLevel[i]);
+                        intervalBoundary[i] =
+                            intervalBoundary[i + 1] +
+                            (1d - intervalBoundary[i + 1]) * conditionalDetectionProbability;
+                    }
+
+                    for (int i = 0; i < levels.Length; i++)
+                    {
+                        var detected = detectedByLevel[i];
+                        double denominator = detectedCount[i] + 1d - 2d * alpha;
+                        for (int j = 0; j < detected.Count; j++)
+                        {
+                            double nonexceedanceProbability =
+                                (1d - intervalBoundary[i]) +
+                                (intervalBoundary[i] - intervalBoundary[i + 1]) *
+                                ((detected.Count - j - alpha) / denominator);
+                            SetStrictPlottingPosition(detected[j].Source, 1d - nonexceedanceProbability);
+                        }
+
+                        var censored = censoredByLevel[i];
+                        censored.Sort((left, right) =>
+                        {
+                            int comparison = left.Index.CompareTo(right.Index);
+                            return comparison != 0 ? comparison : left.Ordinal.CompareTo(right.Ordinal);
+                        });
+
+                        var placeholderIndexes = leftPlaceholderIndexes[i];
+                        placeholderIndexes.Sort();
+
+                        long rank = 0L;
+                        int placeholderCursor = 0;
+                        denominator = censoredCount[i] + 1d - 2d * alpha;
+                        for (int j = 0; j < censored.Count; j++)
+                        {
+                            while (placeholderCursor < placeholderIndexes.Count &&
+                                   placeholderIndexes[placeholderCursor] < censored[j].Index)
                             {
-                                Klbool = true;
-                                // Check if the event occurs during a larger threshold's period
-                                if (UncertainSeries[j].Index >= ((ThresholdData)newThresholdDataList[k]).StartIndex && UncertainSeries[j].Index <= ((ThresholdData)newThresholdDataList[k]).EndIndex)
-                                {
-                                    Klbool = false;
-                                    break;
-                                }
+                                placeholderCursor++;
+                                rank++;
                             }
-                        }
-                        if (Klbool == true)
-                        {
-                            Kl[i] += 1;
-                        }                          
-                    }
-                }
 
-                // Check exact data
-                for (int j = 0; j < ExactSeries.Count; j++)
-                {
-                    if (i == 0)
-                    {
-                        if (ExactSeries[j].Value >= thresholdData.Value)
-                        {
-                            Kj[i] += 1;
-                        }
-                    }
-                    else
-                    {
-                        if (ExactSeries[j].Value >= thresholdData.Value && ExactSeries[j].Value < newThresholdDataList[i - 1].Value)
-                        {
-                            Kj[i] += 1;
-                        }
-                        // Determine if the value exceeds higher thresholds during period Nj
-                        bool Klbool = false;
-                        for (int k = i - 1; k >= 0; k -= 1)
-                        {
-                            if (ExactSeries[j].Value >= newThresholdDataList[k].Value)
-                            {
-                                Klbool = true;
-                                // Check if the event occurs during a larger threshold's period
-                                if (ExactSeries[j].Index >= ((ThresholdData)newThresholdDataList[k]).StartIndex && ExactSeries[j].Index <= ((ThresholdData)newThresholdDataList[k]).EndIndex)
-                                {
-                                    Klbool = false;
-                                    break;
-                                }
-                            }
-                        }
-                        if (Klbool == true)
-                        {
-                            Kl[i] += 1;
+                            rank++;
+                            double nonexceedanceProbability =
+                                (1d - intervalBoundary[i]) * ((rank - alpha) / denominator);
+                            SetStrictPlottingPosition(censored[j].Source, 1d - nonexceedanceProbability);
                         }
                     }
                 }
 
-                // Compute threshold exceedance probability
-                if (i == 0)
-                {
-                    Kl[i] = 0;
-                    int denominator = Nj[i] - Kl[i];
-                    // Guard against division by zero: if all observations are below threshold, Qej = 0
-                    Qej[i] = denominator > 0 ? Kj[i] / (double)denominator : 0.0;
-                    Pej[i] = Qej[i];
-                }
-                else
-                {
-                    int denominator = Nj[i] - Kl[i];
-                    // Guard against division by zero: if all observations are below threshold, Qej = 0
-                    Qej[i] = denominator > 0 ? Kj[i] / (double)denominator : 0.0;
-                    Pej[i] = Pej[i - 1] + (1 - Pej[i - 1]) * Qej[i];
-                }
-                 
-                // Record plotting position
-                thresholdData.PlottingPosition = Pej[i];
+                EnsureDistinctPlottingPositions(explicitData);
             }
-            
-            // Record the values that are above and below thresholds
-            // Loop through interval data
-            for (int i = 0; i < IntervalSeries.Count; i++)
+            finally
             {
-                bool above = false;
-                for (int j = 0; j < newThresholdDataList.Count; j++)
-                {
-                    if (IntervalSeries[i].Value >= newThresholdDataList[j].Value)
-                    {
-                        above = true;
-                        break;
-                    }
-                }
-                if (above == true)
-                {
-                    aboveValues.Add(IntervalSeries[i]);
-                }
-                else
-                {
-                    belowValues.Add(IntervalSeries[i]);
-                }
+                exactSeries.SuppressCollectionChanged = exactWasSuppressed;
+                uncertainSeries.SuppressCollectionChanged = uncertainWasSuppressed;
+                intervalSeries.SuppressCollectionChanged = intervalWasSuppressed;
+                thresholdSeries.SuppressCollectionChanged = thresholdWasSuppressed;
             }
-            // Loop through uncertain data
-            for (int i = 0; i < UncertainSeries.Count; i++)
-            {
-                bool above = false;
-                for (int j = 0; j < newThresholdDataList.Count; j++)
-                {
-                    if (UncertainSeries[i].Value >= newThresholdDataList[j].Value)
-                    {
-                        above = true;
-                        break;
-                    }
-                }
-                if (above == true)
-                {
-                    aboveValues.Add(UncertainSeries[i]);
-                }
-                else
-                {
-                    belowValues.Add(UncertainSeries[i]);
-                }
-            }
-            // Loop through exact data
-            for (int i = 0; i < ExactSeries.Count; i++)
-            {
-                bool above = false;
-                for (int j = 0; j < newThresholdDataList.Count; j++)
-                {
-                    if (ExactSeries[i].Value >= newThresholdDataList[j].Value)
-                    {
-                        above = true;
-                        break;
-                    }
-                }
-                if (above == true)
-                {
-                    aboveValues.Add(ExactSeries[i]);
-                }
-                else
-                {
-                    belowValues.Add(ExactSeries[i]);
-                }
-            }
-             
-            // Sort above- and below-values from largest to smallest.
-            aboveValues.Sort((x, y) => -1 * x.Value.CompareTo(y.Value));
-            belowValues.Sort((x, y) => -1 * x.Value.CompareTo(y.Value));
-            Pi = new double[aboveValues.Count];
-            Pr = new double[belowValues.Count];
-            Nb = belowValues.Count;
-            
-            // Compute the above-threshold plotting positions
-            int t = 0;
-            for (int i = 0; i < Kj.Count(); i++)
-            {
-                for (int j = 1; j <= Kj[i]; j++)
-                {
-                    t += 1;
-                    if (i == 0)
-                    {
-                        Pi[t - 1] = Qej[i] * (j - alpha) / (Kj[i] + 1 - 2 * alpha);
-                    }
-                    else
-                    {
-                        Pi[t - 1] = Pej[i - 1] + (1 - Pej[i - 1]) * Qej[i] * (j - alpha) / (Kj[i] + 1 - 2 * alpha);
-                    }
-                    aboveValues[t - 1].PlottingPosition = Pi[t - 1];
-                }
-            }
-             
-            // Compute the below-threshold plotting positions
-            double belowDenominator = Nb + 1 - 2 * alpha;
-            // Guard against division by zero or negative denominator
-            if (belowDenominator <= 0)
-                belowDenominator = 1.0; // Fallback to prevent invalid computation
-
-            for (int i = 1; i <= belowValues.Count; i++)
-            {
-                if (Pej.Count() > 0)
-                {
-                    Pr[i - 1] = Pej[Pej.Count() - 1] + (1 - Pej[Pej.Count() - 1]) * (i - alpha) / belowDenominator;
-                }
-                else
-                {
-                    Pr[i - 1] = (i - alpha) / belowDenominator;
-                }
-                belowValues[i - 1].PlottingPosition = Pr[i - 1];
-            }
-
-            // All collection changed events to fire
-            ExactSeries.SuppressCollectionChanged = false;
-            UncertainSeries.SuppressCollectionChanged = false;
-            IntervalSeries.SuppressCollectionChanged = false;
-            ThresholdSeries.SuppressCollectionChanged = false;
 
             RaisePropertyChange("PlottingPosition");
+        }
+
+        /// <summary>
+        /// Finds the perception threshold covering an observation index.
+        /// </summary>
+        /// <param name="thresholdsByIndex">Nonoverlapping thresholds sorted by start index.</param>
+        /// <param name="index">Observation index to locate.</param>
+        /// <returns>The covering threshold, or <c>null</c> when the observation is outside all threshold windows.</returns>
+        /// <remarks>
+        /// Binary search keeps per-observation threshold association O(log m), where m is the threshold count.
+        /// Observations outside all windows use a synthetic negative-infinity threshold in ARRANGE2.
+        /// </remarks>
+        private static ThresholdData? FindThresholdForPlotting(ThresholdData[] thresholdsByIndex, int index)
+        {
+            int low = 0;
+            int high = thresholdsByIndex.Length - 1;
+            int candidate = -1;
+
+            while (low <= high)
+            {
+                int middle = low + ((high - low) / 2);
+                if (thresholdsByIndex[middle].StartIndex <= index)
+                {
+                    candidate = middle;
+                    low = middle + 1;
+                }
+                else
+                {
+                    high = middle - 1;
+                }
+            }
+
+            if (candidate >= 0 && index <= thresholdsByIndex[candidate].EndIndex)
+                return thresholdsByIndex[candidate];
+
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the highest threshold level that does not exceed a detected value.
+        /// </summary>
+        /// <param name="levels">Distinct threshold levels sorted from low to high.</param>
+        /// <param name="value">Detected observation value.</param>
+        /// <returns>The zero-based PPLOT2 detection-band index.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the value falls below every arranged threshold level.
+        /// </exception>
+        /// <remarks>
+        /// Binary search avoids scanning every threshold for each observation.
+        /// </remarks>
+        private static int FindPlottingLevel(double[] levels, double value)
+        {
+            int levelIndex = Array.BinarySearch(levels, value);
+            if (levelIndex >= 0)
+                return levelIndex;
+
+            levelIndex = ~levelIndex - 1;
+            if (levelIndex < 0)
+                throw new InvalidOperationException("A detected observation falls below every arranged threshold.");
+
+            return levelIndex;
+        }
+
+        /// <summary>
+        /// Separates duplicate plotting positions produced by independent censored threshold bands.
+        /// </summary>
+        /// <param name="explicitData">Explicit observations whose H-S positions have been assigned.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when a duplicate run cannot be separated into finite open-interval positions.
+        /// </exception>
+        /// <remarks>
+        /// <para>
+        /// PeakFQ's PPLOT2 equations rank censored observations independently within each threshold
+        /// band, so distinct bands can algebraically produce the same plotting position. All PeakFQ
+        /// values remain unchanged when no exact or numerical tie exists.
+        /// </para>
+        /// <para>
+        /// A tied run is ordered by decreasing observed value and spread symmetrically within the local
+        /// interval bounded by the midpoints to its neighboring untied positions. This preserves the
+        /// H-S tie center, global exceedance ordering, and the strict probability ordering required by
+        /// empirical-distribution consumers.
+        /// </para>
+        /// </remarks>
+        private static void EnsureDistinctPlottingPositions(IList<Data> explicitData)
+        {
+            if (explicitData.Count < 2)
+                return;
+
+
+            var positions = new double[explicitData.Count];
+            for (int i = 0; i < explicitData.Count; i++)
+                positions[i] = explicitData[i].PlottingPosition;
+            Array.Sort(positions);
+
+            bool hasDuplicate = false;
+            for (int i = 1; i < positions.Length; i++)
+            {
+                if (positions[i - 1].AlmostEquals(positions[i]))
+                {
+                    hasDuplicate = true;
+                    break;
+                }
+            }
+
+            if (!hasDuplicate)
+                return;
+
+            var ordered = new (Data Source, double Position, int Ordinal)[explicitData.Count];
+            for (int i = 0; i < explicitData.Count; i++)
+                ordered[i] = (explicitData[i], explicitData[i].PlottingPosition, i);
+
+            Array.Sort(ordered, (left, right) =>
+            {
+                int comparison = left.Position.CompareTo(right.Position);
+                if (comparison != 0)
+                    return comparison;
+
+                comparison = right.Source.Value.CompareTo(left.Source.Value);
+                if (comparison != 0)
+                    return comparison;
+
+                comparison = left.Source.Index.CompareTo(right.Source.Index);
+                return comparison != 0 ? comparison : left.Ordinal.CompareTo(right.Ordinal);
+            });
+
+            int tieStart = 0;
+            while (tieStart < ordered.Length)
+            {
+                int tieEnd = tieStart;
+                while (tieEnd + 1 < ordered.Length &&
+                       ordered[tieEnd].Position.AlmostEquals(ordered[tieEnd + 1].Position))
+                {
+                    tieEnd++;
+                }
+
+                int tieCount = tieEnd - tieStart + 1;
+                if (tieCount > 1)
+                {
+                    Array.Sort(
+                        ordered,
+                        tieStart,
+                        tieCount,
+                        Comparer<(Data Source, double Position, int Ordinal)>.Create((left, right) =>
+                        {
+                            int comparison = right.Source.Value.CompareTo(left.Source.Value);
+                            if (comparison != 0)
+                                return comparison;
+
+                            comparison = left.Source.Index.CompareTo(right.Source.Index);
+                            return comparison != 0
+                                ? comparison
+                                : left.Ordinal.CompareTo(right.Ordinal);
+                        }));
+
+                    double tieCenter = 0d;
+                    for (int i = tieStart; i <= tieEnd; i++)
+                        tieCenter += ordered[i].Position;
+                    tieCenter /= tieCount;
+
+                    double lowerBoundary = tieStart == 0
+                        ? 0d
+                        : (ordered[tieStart - 1].Position + tieCenter) / 2d;
+                    double upperBoundary = tieEnd == ordered.Length - 1
+                        ? 1d
+                        : (tieCenter + ordered[tieEnd + 1].Position) / 2d;
+                    double halfSpan = Math.Min(tieCenter - lowerBoundary, upperBoundary - tieCenter);
+                    double increment = (2d * halfSpan) / (tieCount + 1d);
+                    double firstBoundary = tieCenter - halfSpan;
+
+                    if (!double.IsFinite(increment) || increment <= 0d)
+                    {
+                        throw new InvalidOperationException(
+                            "Duplicate Hirsch-Stedinger plotting positions could not be separated.");
+                    }
+
+                    for (int i = 0; i < tieCount; i++)
+                    {
+                        double plottingPosition = firstBoundary + ((i + 1d) * increment);
+                        SetStrictPlottingPosition(ordered[tieStart + i].Source, plottingPosition);
+                    }
+                }
+
+                tieStart = tieEnd + 1;
+            }
+
+            double previous = ordered[0].Source.PlottingPosition;
+            for (int i = 1; i < ordered.Length; i++)
+            {
+                double current = ordered[i].Source.PlottingPosition;
+                if (current <= previous || current.AlmostEquals(previous))
+                {
+                    throw new InvalidOperationException(
+                        "Duplicate Hirsch-Stedinger plotting positions could not be separated.");
+                }
+
+                previous = current;
+            }
+        }
+
+        /// <summary>
+        /// Assigns a finite, open-interval exceedance plotting position to an explicit observation.
+        /// </summary>
+        /// <param name="data">Observation receiving the plotting position.</param>
+        /// <param name="plottingPosition">Computed exceedance plotting position.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the computed position is nonfinite or is not strictly between zero and one.
+        /// </exception>
+        /// <remarks>
+        /// Boundary probabilities are rejected rather than clamped because either boundary makes
+        /// downstream inverse-CDF calculations infinite and indicates invalid arrangement counts.
+        /// </remarks>
+        private static void SetStrictPlottingPosition(Data data, double plottingPosition)
+        {
+            if (!double.IsFinite(plottingPosition) || plottingPosition <= 0d || plottingPosition >= 1d)
+            {
+                throw new InvalidOperationException(
+                    $"The Hirsch-Stedinger routine produced invalid plotting position {plottingPosition:G17}.");
+            }
+
+            data.PlottingPosition = plottingPosition;
         }
 
         /// <summary>
@@ -1600,10 +1890,12 @@ namespace RMC.BestFit.Models
                 logValues.AddRange(IntervalSeries.Select(x => x.Log10Value).ToList());
                 logValues.Sort();
 
-                var dist = new EmpiricalDistribution(values, probs);
-                var moments = dist.CentralMoments(1000);
-                var logDist = new EmpiricalDistribution(logValues, probs);
-                var logMoments = logDist.CentralMoments(1000);
+                var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+                var moments = dist?.CentralMoments(1000)
+                    ?? new[] { double.NaN, double.NaN, double.NaN, double.NaN };
+                var logDist = CreateEmpiricalDistributionWithUniqueValues(logValues, probs);
+                var logMoments = logDist?.CentralMoments(1000)
+                    ?? new[] { double.NaN, double.NaN, double.NaN, double.NaN };
 
                 CreateFullTimeSeries();
                 result.Add("Record Length", FullTimeSeries.Count);
@@ -1619,16 +1911,70 @@ namespace RMC.BestFit.Models
                 result.Add("Std Dev (of log)", logMoments[1]);
                 result.Add("Skewness (of log)", logMoments[2]);
                 result.Add("Kurtosis (of log)", logMoments[3]);
-                result.Add("1%", dist.InverseCDF(0.01));
-                result.Add("5%", dist.InverseCDF(0.05));
-                result.Add("25%", dist.InverseCDF(0.25));
-                result.Add("50%", dist.InverseCDF(0.5));
-                result.Add("75%", dist.InverseCDF(0.75));
-                result.Add("95%", dist.InverseCDF(0.95));
-                result.Add("99%", dist.InverseCDF(0.99));
+                result.Add("1%", dist?.InverseCDF(0.01) ?? double.NaN);
+                result.Add("5%", dist?.InverseCDF(0.05) ?? double.NaN);
+                result.Add("25%", dist?.InverseCDF(0.25) ?? double.NaN);
+                result.Add("50%", dist?.InverseCDF(0.5) ?? double.NaN);
+                result.Add("75%", dist?.InverseCDF(0.75) ?? double.NaN);
+                result.Add("95%", dist?.InverseCDF(0.95) ?? double.NaN);
+                result.Add("99%", dist?.InverseCDF(0.99) ?? double.NaN);
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Creates an empirical distribution after collapsing repeated sorted values.
+        /// </summary>
+        /// <param name="sortedValues">Empirical X-values in ascending order.</param>
+        /// <param name="sortedProbabilities">Cumulative probabilities in ascending order.</param>
+        /// <returns>
+        /// An empirical distribution with unique X-values, or <c>null</c> when fewer than two
+        /// distinct values remain.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown when the value and probability collections have different lengths.
+        /// </exception>
+        /// <remarks>
+        /// Repeated X-values represent a single CDF step. The largest cumulative probability in
+        /// each repeated-value run is retained so the resulting curve remains right-continuous.
+        /// </remarks>
+        private static EmpiricalDistribution? CreateEmpiricalDistributionWithUniqueValues(
+            IList<double> sortedValues,
+            IList<double> sortedProbabilities)
+        {
+            if (sortedValues.Count != sortedProbabilities.Count)
+            {
+                throw new ArgumentException(
+                    "The empirical value and probability collections must have the same length.",
+                    nameof(sortedProbabilities));
+            }
+
+            var uniqueValues = new List<double>(sortedValues.Count);
+            var uniqueProbabilities = new List<double>(sortedProbabilities.Count);
+            for (int i = 0; i < sortedValues.Count; i++)
+            {
+                double value = sortedValues[i];
+                double probability = sortedProbabilities[i];
+                int lastIndex = uniqueValues.Count - 1;
+
+                if (lastIndex >= 0 && value == uniqueValues[lastIndex])
+                {
+                    // A CDF is right-continuous, so a repeated value retains the largest
+                    // cumulative probability assigned to that value.
+                    if (probability > uniqueProbabilities[lastIndex])
+                        uniqueProbabilities[lastIndex] = probability;
+                }
+                else
+                {
+                    uniqueValues.Add(value);
+                    uniqueProbabilities.Add(probability);
+                }
+            }
+
+            return uniqueValues.Count < 2
+                ? null
+                : new EmpiricalDistribution(uniqueValues, uniqueProbabilities);
         }
 
         /// <summary>
@@ -1685,7 +2031,8 @@ namespace RMC.BestFit.Models
             probs.AddRange(IntervalSeries.Select(x => x.PlottingPositionComplement));
             probs.Sort();
 
-            var dist = new EmpiricalDistribution(values, probs);
+            var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+            if (dist is null) return null;
             return dist.CentralMoments(1000);
         }
 
@@ -1752,7 +2099,6 @@ namespace RMC.BestFit.Models
             {
                 double value = useLog10Values ? ExactSeries[i].Log10Value : ExactSeries[i].Value;
                 double z = stdNormal.InverseCDF(ExactSeries[i].PlottingPositionComplement);
-
                 if (!((ExactData)ExactSeries[i]).IsLowOutlier)
                 {
                     uncensoredValues.Add(value);
@@ -1808,7 +2154,8 @@ namespace RMC.BestFit.Models
             probs.AddRange(IntervalSeries.Select(x => x.PlottingPositionComplement));
             probs.Sort();
 
-            var dist = new EmpiricalDistribution(values, probs);
+            var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+            if (dist is null) return null;
             return dist.CentralMoments(1000);
         }
 
@@ -1834,9 +2181,29 @@ namespace RMC.BestFit.Models
             logValues.AddRange(IntervalSeries.Select(x => x.Log10Value).ToList());
             logValues.Sort();
 
-            var dist = new EmpiricalDistribution(values, probs);
+            var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+            var logDist = CreateEmpiricalDistributionWithUniqueValues(logValues, probs);
+            if (dist is null || logDist is null)
+            {
+                for (int i = 0; i < ExactSeries.Count; i++)
+                {
+                    ExactSeries[i].StandardizedValue = double.NaN;
+                    ExactSeries[i].StandardizedLog10Value = double.NaN;
+                }
+                for (int i = 0; i < UncertainSeries.Count; i++)
+                {
+                    UncertainSeries[i].StandardizedValue = double.NaN;
+                    UncertainSeries[i].StandardizedLog10Value = double.NaN;
+                }
+                for (int i = 0; i < IntervalSeries.Count; i++)
+                {
+                    IntervalSeries[i].StandardizedValue = double.NaN;
+                    IntervalSeries[i].StandardizedLog10Value = double.NaN;
+                }
+                return;
+            }
+
             var moments = dist.CentralMoments(200);
-            var logDist = new EmpiricalDistribution(logValues, probs);
             var logMoments = logDist.CentralMoments(200);
 
             // Check if moments are invalid
@@ -2035,13 +2402,14 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="siteNumber">The USGS site number.</param>
         /// <param name="timeSeriesType">The type of time series to download. Default = PeakDischarge.</param>
+        /// <param name="cancellationToken">Token used to cancel the USGS download.</param>
         /// <exception cref="ArgumentException">Thrown when time series type is not peak discharge or peak stage.</exception>
-        public async Task CreateFromUSGS(string siteNumber, TimeSeriesDownload.TimeSeriesType timeSeriesType = TimeSeriesDownload.TimeSeriesType.PeakDischarge)
+        public async Task CreateFromUSGS(string siteNumber, TimeSeriesDownload.TimeSeriesType timeSeriesType = TimeSeriesDownload.TimeSeriesType.PeakDischarge, CancellationToken cancellationToken = default)
         {
             if (timeSeriesType != TimeSeriesDownload.TimeSeriesType.PeakDischarge && timeSeriesType != TimeSeriesDownload.TimeSeriesType.PeakStage)
                 throw new ArgumentException("The time series type must be peak discharge or peak stage", nameof(timeSeriesType));
 
-            var result = await TimeSeriesDownload.FromUSGS(siteNumber, timeSeriesType);
+            var result = await TimeSeriesDownload.FromUSGS(siteNumber, timeSeriesType, cancellationToken);
             var timeSeries = result.TimeSeries;
             _usgsRawText = result.RawText;
 
@@ -2452,6 +2820,7 @@ namespace RMC.BestFit.Models
 
             // ── Post-processing ─────────────────────────────────────────────────
             dataframe.ProcessThresholdSeries();
+            dataframe.CalculatePlottingPositions();
             if (createFullTimeSeries) dataframe.CreateFullTimeSeries();
 
             // Un-suppress collection change events

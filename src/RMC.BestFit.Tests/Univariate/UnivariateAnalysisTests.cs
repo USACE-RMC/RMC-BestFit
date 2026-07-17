@@ -6,11 +6,12 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using System.Xml.Linq;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.UnivariateAnalyses;
+namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Unit tests for the <see cref="UnivariateAnalysis"/> class.
+/// Unit tests for the <c>UnivariateAnalysis</c> class.
 /// Validates Bayesian MCMC estimation workflow for univariate distributions.
 /// </summary>
 /// <remarks>
@@ -21,7 +22,7 @@ namespace RMC.BestFit.Tests.UnivariateAnalyses;
 ///     <item>Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil</item>
 /// </list>
 /// <para>
-///     The <see cref="UnivariateAnalysis"/> class is the primary analysis class for
+///     The <c>UnivariateAnalysis</c> class is the primary analysis class for
 ///     performing Bayesian MCMC estimation of univariate distributions in RMC-BestFit.
 /// </para>
 /// </remarks>
@@ -33,8 +34,8 @@ public class UnivariateAnalysisTests
     /// <summary>
     /// Creates sample flood data for testing.
     /// </summary>
-    /// <returns>A <see cref="DataFrame"/> with annual peak flow data.</returns>
-    private static DataFrame CreateTestDataFrame()
+    /// <returns>A <c>DataFrame</c> with annual peak flow data.</returns>
+    private static BestFitDataFrame CreateTestDataFrame()
     {
         // Annual peak flow data (cfs) - synthetic data based on typical flood record
         var values = new double[]
@@ -44,7 +45,7 @@ public class UnivariateAnalysisTests
             12100, 27400, 19800, 11200, 16400, 20600, 13200, 9400, 24900, 17800
         };
 
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < values.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
@@ -55,7 +56,7 @@ public class UnivariateAnalysisTests
     /// <summary>
     /// Creates a test univariate distribution with Normal distribution.
     /// </summary>
-    /// <returns>A configured <see cref="UnivariateDistribution"/>.</returns>
+    /// <returns>A configured <c>UnivariateDistribution</c>.</returns>
     private static UnivariateDistribution CreateTestDistribution()
     {
         var df = CreateTestDataFrame();
@@ -66,7 +67,7 @@ public class UnivariateAnalysisTests
     /// <summary>
     /// Creates a test univariate distribution with GEV distribution.
     /// </summary>
-    /// <returns>A configured <see cref="UnivariateDistribution"/> with GEV.</returns>
+    /// <returns>A configured <c>UnivariateDistribution</c> with GEV.</returns>
     private static UnivariateDistribution CreateGEVDistribution()
     {
         var df = CreateTestDataFrame();
@@ -100,7 +101,7 @@ public class UnivariateAnalysisTests
     }
 
     /// <summary>
-    /// Tests that the constructor throws <see cref="ArgumentNullException"/> when distribution is null.
+    /// Tests that the constructor throws <c>ArgumentNullException</c> when distribution is null.
     /// </summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
@@ -516,8 +517,8 @@ public class UnivariateAnalysisTests
     [TestMethod]
     public void Constructor_WithMinimalData_InitializesCorrectly()
     {
-        // Arrange - Create DataFrame with minimum data points
-        var df = new DataFrame();
+        // Arrange - Create BestFitDataFrame with minimum data points
+        var df = new BestFitDataFrame();
         df.ExactSeries.Add(new ExactData(2000, 100));
         df.ExactSeries.Add(new ExactData(2001, 150));
         df.ExactSeries.Add(new ExactData(2002, 120));
@@ -555,7 +556,7 @@ public class UnivariateAnalysisTests
     #region ProbabilityOrdinates Reprocess-or-Clear Tests (Phase 1)
 
     /// <summary>
-    /// Tests that <see cref="UnivariateAnalysis.ClearFrequencyAnalysisResults"/> exists and is callable.
+    /// Tests that <c>UnivariateAnalysis.ClearFrequencyAnalysisResults</c> exists and is callable.
     /// </summary>
     [TestMethod]
     public void ClearFrequencyAnalysisResults_OnFreshAnalysis_DoesNotThrow()
@@ -573,8 +574,8 @@ public class UnivariateAnalysisTests
     }
 
     /// <summary>
-    /// Tests that <see cref="UnivariateAnalysis.ClearFrequencyAnalysisResults"/> raises
-    /// <see cref="System.ComponentModel.INotifyPropertyChanged.PropertyChanged"/> for <c>AnalysisResults</c>.
+    /// Tests that <c>UnivariateAnalysis.ClearFrequencyAnalysisResults</c> raises
+    /// <c>System.ComponentModel.INotifyPropertyChanged.PropertyChanged</c> for <c>AnalysisResults</c>.
     /// </summary>
     [TestMethod]
     public void ClearFrequencyAnalysisResults_RaisesAnalysisResultsPropertyChanged()
@@ -638,7 +639,7 @@ public class UnivariateAnalysisTests
     }
 
     /// <summary>
-    /// Tests that <see cref="UnivariateAnalysis.ClearResults"/> still clears everything destructively
+    /// Tests that <c>UnivariateAnalysis.ClearResults</c> still clears everything destructively
     /// (unchanged by the Phase 1 work).
     /// </summary>
     [TestMethod]

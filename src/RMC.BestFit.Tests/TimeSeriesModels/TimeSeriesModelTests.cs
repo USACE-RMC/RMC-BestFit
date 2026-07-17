@@ -1,5 +1,6 @@
 using Numerics.Data;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesModels;
 
@@ -25,6 +26,13 @@ public class PredictNoiseInTrainingTests
         167, 179, 185, 117, 192, 337, 125, 166,  99, 202
     };
 
+    /// <summary>
+    /// Creates time Series.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Numerics.Data.TimeSeries MakeTimeSeries() =>
         new(TimeInterval.OneYear, new DateTime(1970, 1, 1), s_values);
 
@@ -195,6 +203,13 @@ public class PredictBackTransformTests
         167, 179, 185, 117, 192, 337, 125, 166,  99, 202
     };
 
+    /// <summary>
+    /// Creates time Series.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Numerics.Data.TimeSeries MakeTimeSeries() =>
         new(TimeInterval.OneYear, new DateTime(1970, 1, 1), s_positive);
 
@@ -379,9 +394,23 @@ public class ARIMAXCovariateExtensionPreservesObservedTests
         15, 17, 18, 14, 15, 16, 18, 14, 15, 16
     };
 
+    /// <summary>
+    /// Creates y.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Numerics.Data.TimeSeries MakeY() =>
         new(TimeInterval.OneYear, new DateTime(1970, 1, 1), s_y);
 
+    /// <summary>
+    /// Creates x.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Numerics.Data.TimeSeries MakeX() =>
         new(TimeInterval.OneYear, new DateTime(1970, 1, 1), s_x);
 
@@ -555,6 +584,14 @@ public class ARIMAXCovariateExtensionPreservesObservedTests
             $"after the KNN off-by-one fix. varBootstrap={varB:F4}, varKNN={varK:F4}, ratio={ratio:F2}.");
     }
 
+    /// <summary>
+    /// Supports the <c>SampleVariance</c> helper.
+    /// </summary>
+    /// <param name="x">The numeric values.</param>
+    /// <returns>The numeric data.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static double SampleVariance(double[] x)
     {
         if (x.Length < 2) return 0;
@@ -570,7 +607,7 @@ public class ARIMAXCovariateExtensionPreservesObservedTests
 }
 
 /// <summary>
-/// Validation tests for <see cref="RMC.BestFit.Analyses.TimeSeries.ARIMAXAnalysis.Validate"/>.
+/// Validation tests for <c>RMC.BestFit.Analyses.TimeSeries.ARIMAXAnalysis.Validate</c>.
 /// Forecasting with <c>CovariateExtension = None</c> is only valid when the covariate is
 /// long enough to cover the full (training + validation + forecast) horizon; otherwise
 /// the analysis must surface an error message so the UI disables Run rather than
@@ -581,7 +618,7 @@ public class ARIMAXAnalysisValidateCovariateExtensionTests
 {
     /// <summary>
     /// When CovariateExtension = None and ForecastingTimeSteps > 0 with a covariate shorter
-    /// than (TimeSeries.Count + ForecastingTimeSteps), Validate must return isValid = false
+    /// than (NumericsTimeSeries.Count + ForecastingTimeSteps), Validate must return isValid = false
     /// and a message referencing CovariateExtension.
     /// </summary>
     [TestMethod]

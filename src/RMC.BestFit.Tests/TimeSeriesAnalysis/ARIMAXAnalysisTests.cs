@@ -2,11 +2,12 @@ using Numerics.Data;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesAnalysis;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="ARIMAXAnalysis"/> wrapper.
+/// Programmatic unit tests for the <c>ARIMAXAnalysis</c> wrapper.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -25,9 +26,9 @@ public class ARIMAXAnalysisTests
     /// <summary>
     /// Deterministic 60-observation annual streamflow fixture with ARMA(1,1) structure.
     /// </summary>
-    private static TimeSeries CreateAnnualStreamflowTimeSeries()
+    private static NumericsTimeSeries CreateAnnualStreamflowTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
 
         double mean = 5000;
@@ -57,9 +58,9 @@ public class ARIMAXAnalysisTests
     /// <summary>
     /// Monthly time series with seasonal pattern (10 years).
     /// </summary>
-    private static TimeSeries CreateMonthlySeasonalTimeSeries()
+    private static NumericsTimeSeries CreateMonthlySeasonalTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2010, 1, 1), new DateTime(2019, 12, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2010, 1, 1), new DateTime(2019, 12, 1));
         var rng = new Random(67890);
 
         for (int i = 0; i < ts.Count; i++)
@@ -76,10 +77,10 @@ public class ARIMAXAnalysisTests
     /// <summary>
     /// Time series + covariate fixture (50 annual observations).
     /// </summary>
-    private static (TimeSeries response, TimeSeries covariate) CreateTimeSeriesWithCovariate()
+    private static (NumericsTimeSeries response, NumericsTimeSeries covariate) CreateTimeSeriesWithCovariate()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
-        var covariate = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var covariate = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(11111);
 
         for (int i = 0; i < covariate.Count; i++)
@@ -103,9 +104,9 @@ public class ARIMAXAnalysisTests
     /// <summary>
     /// Deterministic short fixture (15 observations) for edge-case validation.
     /// </summary>
-    private static TimeSeries CreateShortTimeSeries()
+    private static NumericsTimeSeries CreateShortTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
         var rng = new Random(54321);
 
         double mean = 3000;
@@ -119,9 +120,9 @@ public class ARIMAXAnalysisTests
     /// <summary>
     /// Linear trend fixture (40 annual observations).
     /// </summary>
-    private static TimeSeries CreateTrendTimeSeries()
+    private static NumericsTimeSeries CreateTrendTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1980, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1980, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(22222);
 
         double intercept = 2000;
@@ -194,6 +195,23 @@ public class ARIMAXAnalysisTests
         var analysis = new ARIMAXAnalysis(armax);
 
         Assert.AreEqual(0, analysis.ForecastingTimeSteps);
+    }
+
+    /// <summary>
+    /// Verifies changing the model input series does not reset the analysis-level forecast horizon.
+    /// </summary>
+    [TestMethod]
+    public void ModelTimeSeriesChanged_PreservesForecastingTimeSteps()
+    {
+        var armax = new ARIMAX(CreateAnnualStreamflowTimeSeries());
+        var analysis = new ARIMAXAnalysis(armax)
+        {
+            ForecastingTimeSteps = 12,
+        };
+
+        armax.TimeSeries = CreateMonthlySeasonalTimeSeries();
+
+        Assert.AreEqual(12, analysis.ForecastingTimeSteps);
     }
 
     #endregion
@@ -688,7 +706,7 @@ public class ARIMAXAnalysisTests
     {
         var (ts, covariate) = CreateTimeSeriesWithCovariate();
         var armax = new ARIMAX(ts) { AROrderP = 1, MAOrderQ = 0 };
-        armax.SetCovariates(new List<TimeSeries> { covariate });
+        armax.SetCovariates(new List<NumericsTimeSeries> { covariate });
 
         var analysis = new ARIMAXAnalysis(armax);
         var (isValid, messages) = analysis.Validate();
@@ -842,14 +860,14 @@ public class ARIMAXAnalysisTests
         var (ts, covariate1) = CreateTimeSeriesWithCovariate();
         var rng = new Random(33333);
 
-        var covariate2 = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var covariate2 = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         for (int i = 0; i < covariate2.Count; i++)
         {
             covariate2[i].Value = 100 + (rng.NextDouble() * 2 - 1) * 20;
         }
 
         var armax = new ARIMAX(ts) { AROrderP = 1, MAOrderQ = 0 };
-        armax.SetCovariates(new List<TimeSeries> { covariate1, covariate2 });
+        armax.SetCovariates(new List<NumericsTimeSeries> { covariate1, covariate2 });
 
         var analysis = new ARIMAXAnalysis(armax);
         var (isValid, messages) = analysis.Validate();
@@ -1045,7 +1063,7 @@ public class ARIMAXAnalysisTests
             TrendType = ARIMAX.Trend.Linear,
             IncludeIntercept = true
         };
-        armax.SetCovariates(new List<TimeSeries> { covariate });
+        armax.SetCovariates(new List<NumericsTimeSeries> { covariate });
 
         var analysis = new ARIMAXAnalysis(armax);
         var (isValid, messages) = analysis.Validate();

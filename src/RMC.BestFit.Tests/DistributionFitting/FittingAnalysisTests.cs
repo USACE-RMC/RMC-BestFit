@@ -2,11 +2,12 @@ using Numerics.Data;
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.DistributionFitting;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="FittingAnalysis"/> class.
+/// Programmatic unit tests for the <c>FittingAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -38,22 +39,22 @@ public class FittingAnalysisTests
     ];
 
     /// <summary>
-    /// Creates a test DataFrame with exact data.
+    /// Creates a test BestFitDataFrame with exact data.
     /// </summary>
-    private static DataFrame CreateTestDataFrame(int count = 30)
+    private static BestFitDataFrame CreateTestDataFrame(int count = 30)
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = SampleAnnualPeaks.Take(count).ToArray();
         df.ExactSeries = new ExactSeries(data);
         return df;
     }
 
     /// <summary>
-    /// Creates a small inline DataFrame used by the legacy Phase 1 tests below.
+    /// Creates a small inline BestFitDataFrame used by the legacy Phase 1 tests below.
     /// </summary>
-    private static DataFrame CreateSmallTestDataFrame()
+    private static BestFitDataFrame CreateSmallTestDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var values = new[] { 12500.0, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600 };
         for (int i = 0; i < values.Length; i++)
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
@@ -74,7 +75,7 @@ public class FittingAnalysisTests
     #region Constructor Tests
 
     /// <summary>
-    /// Tests that the constructor with DataFrame creates a valid analysis.
+    /// Tests that the constructor with BestFitDataFrame creates a valid analysis.
     /// </summary>
     [TestMethod]
     public void Constructor_WithDataFrame_CreatesValidAnalysis()
@@ -124,7 +125,7 @@ public class FittingAnalysisTests
     }
 
     /// <summary>
-    /// Tests that the constructor throws ArgumentNullException for null DataFrame.
+    /// Tests that the constructor throws ArgumentNullException for null BestFitDataFrame.
     /// </summary>
     [TestMethod]
     public void Constructor_WithNullDataFrame_ThrowsArgumentNullException()
@@ -133,7 +134,7 @@ public class FittingAnalysisTests
     }
 
     /// <summary>
-    /// Tests that the XElement constructor throws for null DataFrame.
+    /// Tests that the XElement constructor throws for null BestFitDataFrame.
     /// </summary>
     [TestMethod]
     public void Constructor_WithXElement_NullDataFrame_ThrowsArgumentNullException()
@@ -229,7 +230,7 @@ public class FittingAnalysisTests
     #region Property Change Tests
 
     /// <summary>
-    /// Tests that DataFrame property change raises PropertyChanged.
+    /// Tests that BestFitDataFrame property change raises PropertyChanged.
     /// </summary>
     [TestMethod]
     public void DataFrame_Change_RaisesPropertyChanged()

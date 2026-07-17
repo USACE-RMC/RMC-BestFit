@@ -1,10 +1,13 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
+using BestFitThresholdSeries = RMC.BestFit.Models.ThresholdSeries;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for the <see cref="DataFrame"/> class.
+/// Unit tests for the <c>DataFrame</c> class.
 /// Tests data series management, property change notifications, validation, and serialization.
 /// </summary>
 /// <remarks>
@@ -15,7 +18,7 @@ namespace RMC.BestFit.Tests.InputDataFrame;
 ///     </list>
 /// </para>
 /// <para>
-/// The <see cref="DataFrame"/> is the fundamental input data structure for flood frequency analysis,
+/// The <c>DataFrame</c> is the fundamental input data structure for flood frequency analysis,
 /// supporting exact observations, uncertain data with measurement error distributions, interval-censored
 /// data from paleofloods, and historical threshold information.
 /// </para>
@@ -36,22 +39,22 @@ public class DataFrameTests
     ];
 
     /// <summary>
-    /// Creates a test DataFrame with exact data.
+    /// Creates a test BestFitDataFrame with exact data.
     /// </summary>
-    private static DataFrame CreateTestDataFrame(int count = 30)
+    private static BestFitDataFrame CreateTestDataFrame(int count = 30)
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = SampleAnnualPeaks.Take(count).ToArray();
         df.ExactSeries = new ExactSeries(data);
         return df;
     }
 
     /// <summary>
-    /// Creates a test DataFrame with mixed data types.
+    /// Creates a test BestFitDataFrame with mixed data types.
     /// </summary>
-    private static DataFrame CreateMixedDataFrame()
+    private static BestFitDataFrame CreateMixedDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
 
         // Exact observations (systematic record)
         df.ExactSeries = new ExactSeries([45000, 52000, 61000, 49000, 55000, 67000, 48000, 58000, 53000, 62000]);
@@ -65,8 +68,8 @@ public class DataFrameTests
         df.IntervalSeries.Add(new IntervalData(1700, 50000, 70000, 90000));
 
         // Threshold data (historical period with perception threshold).
-        // NumberAbove is user-set; NumberBelow is auto-derived by DataFrame on Add.
-        var threshold = new ThresholdData(1850, 1920, 40000) { NumberAbove = 5 };
+        // NumberAbove is user-set; NumberBelow is auto-derived by BestFitDataFrame on Add.
+        var threshold = new BestFitThresholdData(1850, 1920, 40000) { NumberAbove = 5 };
         df.ThresholdSeries.Add(threshold);
 
         return df;
@@ -82,7 +85,7 @@ public class DataFrameTests
     [TestMethod]
     public void Constructor_Empty_CreatesEmptyDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
 
         Assert.IsNotNull(df);
         Assert.IsNotNull(df.ExactSeries);
@@ -101,7 +104,7 @@ public class DataFrameTests
     [TestMethod]
     public void Constructor_Empty_InitializesDefaultProperties()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
 
         Assert.AreEqual(0.0, df.PlottingParameter, "Default plotting parameter should be 0 (Weibull).");
         Assert.AreEqual(0, df.NumberOfLowOutliers);
@@ -118,7 +121,7 @@ public class DataFrameTests
         var original = CreateMixedDataFrame();
         var xElement = original.ToXElement();
 
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         Assert.AreEqual(original.ExactSeries.Count, restored.ExactSeries.Count);
         Assert.AreEqual(original.UncertainSeries.Count, restored.UncertainSeries.Count);
@@ -136,7 +139,7 @@ public class DataFrameTests
     [TestMethod]
     public void ExactSeries_SetAndGet_StoresDataCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(SampleAnnualPeaks);
 
         Assert.AreEqual(SampleAnnualPeaks.Length, df.ExactSeries.Count);
@@ -153,7 +156,7 @@ public class DataFrameTests
     [TestMethod]
     public void ExactSeries_SmallSample_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var smallSample = new double[] { 45000, 52000, 61000, 49000, 55000 };
         df.ExactSeries = new ExactSeries(smallSample);
 
@@ -166,7 +169,7 @@ public class DataFrameTests
     [TestMethod]
     public void ExactSeries_SingleValue_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries([42000.0]);
 
         Assert.AreEqual(1, df.ExactSeries.Count);
@@ -179,7 +182,7 @@ public class DataFrameTests
     [TestMethod]
     public void ExactSeries_EmptyArray_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(Array.Empty<double>());
 
         Assert.AreEqual(0, df.ExactSeries.Count);
@@ -212,7 +215,7 @@ public class DataFrameTests
     [TestMethod]
     public void UncertainSeries_AddUncertainData_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var uncertainData = new UncertainData(1889, new Normal(85000, 10000));
 
         df.UncertainSeries.Add(uncertainData);
@@ -227,7 +230,7 @@ public class DataFrameTests
     [TestMethod]
     public void UncertainSeries_MultipleItems_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.UncertainSeries.Add(new UncertainData(1889, new Normal(85000, 10000)));
         df.UncertainSeries.Add(new UncertainData(1913, new Normal(75000, 8000)));
         df.UncertainSeries.Add(new UncertainData(1927, new Normal(90000, 12000)));
@@ -241,7 +244,7 @@ public class DataFrameTests
     [TestMethod]
     public void UncertainSeries_DifferentDistributions_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.UncertainSeries.Add(new UncertainData(1889, new Normal(85000, 10000)));
         df.UncertainSeries.Add(new UncertainData(1913, new LogNormal(11.2, 0.3)));
         df.UncertainSeries.Add(new UncertainData(1927, new Triangular(70000, 90000, 110000)));
@@ -262,7 +265,7 @@ public class DataFrameTests
     [TestMethod]
     public void IntervalSeries_AddIntervalData_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var intervalData = new IntervalData(1500, 60000, 80000, 100000);
 
         df.IntervalSeries.Add(intervalData);
@@ -280,7 +283,7 @@ public class DataFrameTests
     [TestMethod]
     public void IntervalSeries_MultipleItems_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.IntervalSeries.Add(new IntervalData(1500, 60000, 80000, 100000));
         df.IntervalSeries.Add(new IntervalData(1700, 50000, 70000, 90000));
         df.IntervalSeries.Add(new IntervalData(1800, 40000, 60000, 80000));
@@ -290,15 +293,15 @@ public class DataFrameTests
 
     #endregion
 
-    #region ThresholdSeries Tests
+    #region BestFitThresholdSeries Tests
 
     /// <summary>
-    /// Tests that ThresholdSeries stores threshold data correctly.
+    /// Tests that BestFitThresholdSeries stores threshold data correctly.
     /// </summary>
     /// <remarks>
-    /// Users only set <c>NumberAbove</c> on a <see cref="ThresholdData"/>. <c>NumberBelow</c>
-    /// is a derived value — <see cref="DataFrame.ProcessThresholdSeries"/> (triggered by
-    /// <see cref="DataFrame.ThresholdSeries"/> <c>Add</c>) computes it as
+    /// Users only set <c>NumberAbove</c> on a <c>ThresholdData</c>. <c>NumberBelow</c>
+    /// is a derived value — <c>DataFrame.ProcessThresholdSeries</c> (triggered by
+    /// <c>DataFrame.ThresholdSeries</c> <c>Add</c>) computes it as
     /// <c>Duration − NumberAbove − (overlapping exact/interval/uncertain data)</c>.
     /// This test verifies the stored scalar fields (Value, Start/EndIndex, NumberAbove)
     /// and the automatic derivation of NumberBelow.
@@ -306,14 +309,14 @@ public class DataFrameTests
     [TestMethod]
     public void ThresholdSeries_AddThresholdData_StoresCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         // User sets only NumberAbove (5 historical exceedances out of 71 years).
-        var thresholdData = new ThresholdData(1850, 1920, 40000) { NumberAbove = 5 };
+        var thresholdData = new BestFitThresholdData(1850, 1920, 40000) { NumberAbove = 5 };
 
         df.ThresholdSeries.Add(thresholdData);
 
         Assert.AreEqual(1, df.ThresholdSeries.Count);
-        var stored = (ThresholdData)df.ThresholdSeries[0];
+        var stored = (BestFitThresholdData)df.ThresholdSeries[0];
         Assert.AreEqual(1850, stored.StartIndex);
         Assert.AreEqual(1920, stored.EndIndex);
         Assert.AreEqual(40000, stored.Value);
@@ -325,30 +328,30 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that ThresholdSeries handles multiple thresholds.
+    /// Tests that BestFitThresholdSeries handles multiple thresholds.
     /// </summary>
     [TestMethod]
     public void ThresholdSeries_MultipleThresholds_StoresCorrectly()
     {
-        var df = new DataFrame();
-        df.ThresholdSeries.Add(new ThresholdData(1800, 1850, 30000) { NumberAbove = 3 });
-        df.ThresholdSeries.Add(new ThresholdData(1851, 1900, 40000) { NumberAbove = 2 });
-        df.ThresholdSeries.Add(new ThresholdData(1901, 1950, 50000) { NumberAbove = 1 });
+        var df = new BestFitDataFrame();
+        df.ThresholdSeries.Add(new BestFitThresholdData(1800, 1850, 30000) { NumberAbove = 3 });
+        df.ThresholdSeries.Add(new BestFitThresholdData(1851, 1900, 40000) { NumberAbove = 2 });
+        df.ThresholdSeries.Add(new BestFitThresholdData(1901, 1950, 50000) { NumberAbove = 1 });
 
         Assert.AreEqual(3, df.ThresholdSeries.Count);
     }
 
     /// <summary>
-    /// Tests that ThresholdSeries handles above threshold counts.
+    /// Tests that BestFitThresholdSeries handles above threshold counts.
     /// </summary>
     [TestMethod]
     public void ThresholdSeries_NumberAbove_StoresCorrectly()
     {
-        var df = new DataFrame();
-        var threshold = new ThresholdData(1800, 1900, 100000) { NumberAbove = 5 };
+        var df = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(1800, 1900, 100000) { NumberAbove = 5 };
         df.ThresholdSeries.Add(threshold);
 
-        Assert.AreEqual(5, ((ThresholdData)df.ThresholdSeries[0]).NumberAbove);
+        Assert.AreEqual(5, ((BestFitThresholdData)df.ThresholdSeries[0]).NumberAbove);
     }
 
     #endregion
@@ -356,14 +359,14 @@ public class DataFrameTests
     #region Combined Data Tests
 
     /// <summary>
-    /// Tests that DataFrame handles combined exact and threshold data.
+    /// Tests that BestFitDataFrame handles combined exact and threshold data.
     /// </summary>
     [TestMethod]
     public void DataFrame_CombinedExactAndThreshold_StoresCorrectly()
     {
         var df = CreateTestDataFrame(20);
-        // NumberBelow is auto-derived by DataFrame; user sets only NumberAbove.
-        var threshold = new ThresholdData(1850, 1920, 35000) { NumberAbove = 3 };
+        // NumberBelow is auto-derived by BestFitDataFrame; user sets only NumberAbove.
+        var threshold = new BestFitThresholdData(1850, 1920, 35000) { NumberAbove = 3 };
         df.ThresholdSeries.Add(threshold);
 
         Assert.AreEqual(20, df.ExactSeries.Count);
@@ -371,7 +374,7 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that DataFrame handles all data types together.
+    /// Tests that BestFitDataFrame handles all data types together.
     /// </summary>
     [TestMethod]
     public void DataFrame_AllDataTypes_StoresCorrectly()
@@ -398,7 +401,7 @@ public class DataFrameTests
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.PlottingParameter))
+            if (e.PropertyName == nameof(BestFitDataFrame.PlottingParameter))
                 propertyChanged = true;
         };
 
@@ -418,7 +421,7 @@ public class DataFrameTests
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.PlottingParameter))
+            if (e.PropertyName == nameof(BestFitDataFrame.PlottingParameter))
                 propertyChanged = true;
         };
 
@@ -437,7 +440,7 @@ public class DataFrameTests
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.LowOutlierThreshold))
+            if (e.PropertyName == nameof(BestFitDataFrame.LowOutlierThreshold))
                 propertyChanged = true;
         };
 
@@ -452,11 +455,11 @@ public class DataFrameTests
     [TestMethod]
     public void ExactSeries_Change_RaisesPropertyChanged()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.ExactSeries))
+            if (e.PropertyName == nameof(BestFitDataFrame.ExactSeries))
                 propertyChanged = true;
         };
 
@@ -475,7 +478,7 @@ public class DataFrameTests
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.ExactSeries))
+            if (e.PropertyName == nameof(BestFitDataFrame.ExactSeries))
                 propertyChanged = true;
         };
 
@@ -490,11 +493,11 @@ public class DataFrameTests
     [TestMethod]
     public void UncertainSeries_AddItem_RaisesPropertyChanged()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.UncertainSeries))
+            if (e.PropertyName == nameof(BestFitDataFrame.UncertainSeries))
                 propertyChanged = true;
         };
 
@@ -509,11 +512,11 @@ public class DataFrameTests
     [TestMethod]
     public void IntervalSeries_AddItem_RaisesPropertyChanged()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.IntervalSeries))
+            if (e.PropertyName == nameof(BestFitDataFrame.IntervalSeries))
                 propertyChanged = true;
         };
 
@@ -523,20 +526,20 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that adding to ThresholdSeries raises PropertyChanged.
+    /// Tests that adding to BestFitThresholdSeries raises PropertyChanged.
     /// </summary>
     [TestMethod]
     public void ThresholdSeries_AddItem_RaisesPropertyChanged()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         bool propertyChanged = false;
         df.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(DataFrame.ThresholdSeries))
+            if (e.PropertyName == nameof(BestFitDataFrame.ThresholdSeries))
                 propertyChanged = true;
         };
 
-        df.ThresholdSeries.Add(new ThresholdData(1850, 1920, 40000));
+        df.ThresholdSeries.Add(new BestFitThresholdData(1850, 1920, 40000));
 
         Assert.IsTrue(propertyChanged, "PropertyChanged should be raised when adding to ThresholdSeries.");
     }
@@ -581,8 +584,8 @@ public class DataFrameTests
     public void TotalRecordLength_WithThresholdData_ReturnsCorrectValue()
     {
         var df = CreateTestDataFrame(30);
-        // NumberBelow is auto-derived by DataFrame; user sets only NumberAbove.
-        var threshold = new ThresholdData(1850, 1920, 40000) { NumberAbove = 3 };
+        // NumberBelow is auto-derived by BestFitDataFrame; user sets only NumberAbove.
+        var threshold = new BestFitThresholdData(1850, 1920, 40000) { NumberAbove = 3 };
         df.ThresholdSeries.Add(threshold);
 
         int totalLength = df.TotalRecordLength();
@@ -619,11 +622,11 @@ public class DataFrameTests
     /// Tests that Weibull plotting positions are calculated correctly.
     /// </summary>
     /// <remarks>
-    /// The <see cref="DataFrame.PlottingParameter"/> setter only invokes
-    /// <see cref="DataFrame.CalculatePlottingPositions"/> when the value changes.
+    /// The <c>DataFrame.PlottingParameter</c> setter only invokes
+    /// <c>DataFrame.CalculatePlottingPositions</c> when the value changes.
     /// Because the default is already 0.0 (Weibull), assigning 0.0 is a no-op and leaves
     /// plotting positions at their initial default (0). The test must explicitly call
-    /// <see cref="DataFrame.CalculatePlottingPositions"/> to populate them.
+    /// <c>DataFrame.CalculatePlottingPositions</c> to populate them.
     /// </remarks>
     [TestMethod]
     public void PlottingParameter_Weibull_CalculatesCorrectly()
@@ -669,7 +672,7 @@ public class DataFrameTests
         var original = CreateTestDataFrame(15);
 
         var xElement = original.ToXElement();
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         var originalValues = original.ExactSeries.ValuesToArray();
         var restoredValues = restored.ExactSeries.ValuesToArray();
@@ -687,12 +690,12 @@ public class DataFrameTests
     [TestMethod]
     public void XmlRoundTrip_PreservesUncertainData()
     {
-        var original = new DataFrame();
+        var original = new BestFitDataFrame();
         original.UncertainSeries.Add(new UncertainData(1889, new Normal(85000, 10000)));
         original.UncertainSeries.Add(new UncertainData(1913, new Normal(75000, 8000)));
 
         var xElement = original.ToXElement();
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         Assert.AreEqual(2, restored.UncertainSeries.Count);
         Assert.AreEqual(85000, restored.UncertainSeries[0].Value, 100);
@@ -705,11 +708,11 @@ public class DataFrameTests
     [TestMethod]
     public void XmlRoundTrip_PreservesIntervalData()
     {
-        var original = new DataFrame();
+        var original = new BestFitDataFrame();
         original.IntervalSeries.Add(new IntervalData(1500, 60000, 80000, 100000));
 
         var xElement = original.ToXElement();
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         Assert.AreEqual(1, restored.IntervalSeries.Count);
         var restoredInterval = (IntervalData)restored.IntervalSeries[0];
@@ -721,25 +724,25 @@ public class DataFrameTests
     /// Tests that XML round-trip preserves threshold data.
     /// </summary>
     /// <remarks>
-    /// Users set <c>NumberAbove</c>; <c>NumberBelow</c> is auto-derived by DataFrame on Add.
+    /// Users set <c>NumberAbove</c>; <c>NumberBelow</c> is auto-derived by BestFitDataFrame on Add.
     /// After serialization/deserialization, all stored fields (Value, Start/EndIndex,
     /// NumberAbove, NumberBelow) round-trip faithfully via the XML attributes.
     /// </remarks>
     [TestMethod]
     public void XmlRoundTrip_PreservesThresholdData()
     {
-        var original = new DataFrame();
-        var threshold = new ThresholdData(1850, 1920, 40000) { NumberAbove = 5 };
+        var original = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(1850, 1920, 40000) { NumberAbove = 5 };
         original.ThresholdSeries.Add(threshold);
-        // DataFrame.Add triggered derivation of NumberBelow = 71 - 5 = 66.
-        var originalThreshold = (ThresholdData)original.ThresholdSeries[0];
+        // BestFitDataFrame.Add triggered derivation of NumberBelow = 71 - 5 = 66.
+        var originalThreshold = (BestFitThresholdData)original.ThresholdSeries[0];
         int expectedNumberBelow = originalThreshold.NumberBelow;
 
         var xElement = original.ToXElement();
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         Assert.AreEqual(1, restored.ThresholdSeries.Count);
-        var restoredThreshold = (ThresholdData)restored.ThresholdSeries[0];
+        var restoredThreshold = (BestFitThresholdData)restored.ThresholdSeries[0];
         Assert.AreEqual(40000, restoredThreshold.Value);
         Assert.AreEqual(5, restoredThreshold.NumberAbove);
         Assert.AreEqual(expectedNumberBelow, restoredThreshold.NumberBelow,
@@ -755,7 +758,7 @@ public class DataFrameTests
         var original = CreateMixedDataFrame();
 
         var xElement = original.ToXElement();
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         Assert.AreEqual(original.ExactSeries.Count, restored.ExactSeries.Count);
         Assert.AreEqual(original.UncertainSeries.Count, restored.UncertainSeries.Count);
@@ -773,7 +776,7 @@ public class DataFrameTests
         original.PlottingParameter = 0.44;
 
         var xElement = original.ToXElement();
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         Assert.AreEqual(0.44, restored.PlottingParameter, 1e-10);
     }
@@ -788,7 +791,7 @@ public class DataFrameTests
         original.LowOutlierThreshold = 15000.0;
 
         var xElement = original.ToXElement();
-        var restored = new DataFrame(xElement);
+        var restored = new BestFitDataFrame(xElement);
 
         Assert.AreEqual(15000.0, restored.LowOutlierThreshold, 1e-10);
     }
@@ -798,12 +801,12 @@ public class DataFrameTests
     #region Edge Cases
 
     /// <summary>
-    /// Tests that DataFrame handles negative values.
+    /// Tests that BestFitDataFrame handles negative values.
     /// </summary>
     [TestMethod]
     public void DataFrame_WithNegativeValues_HandlesCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var dataWithNegatives = new double[] { -10, -5, 0, 5, 10, 15, 20, 25, 30, 35 };
         df.ExactSeries = new ExactSeries(dataWithNegatives);
 
@@ -812,12 +815,12 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that DataFrame handles large datasets.
+    /// Tests that BestFitDataFrame handles large datasets.
     /// </summary>
     [TestMethod]
     public void DataFrame_LargeDataset_HandlesCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var largeData = Enumerable.Range(1, 1000).Select(i => (double)(30000 + i * 100)).ToArray();
         df.ExactSeries = new ExactSeries(largeData);
 
@@ -825,12 +828,12 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that DataFrame handles special double values.
+    /// Tests that BestFitDataFrame handles special double values.
     /// </summary>
     [TestMethod]
     public void DataFrame_SpecialDoubleValues_HandlesCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         double[] dataWithSpecialValues = [1.0, 2.0, double.NaN, 4.0, double.PositiveInfinity];
         df.ExactSeries = new ExactSeries(dataWithSpecialValues);
 
@@ -840,12 +843,12 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that DataFrame handles very small values.
+    /// Tests that BestFitDataFrame handles very small values.
     /// </summary>
     [TestMethod]
     public void DataFrame_VerySmallValues_HandlesCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var smallData = new double[] { 1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1 };
         df.ExactSeries = new ExactSeries(smallData);
 
@@ -854,12 +857,12 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that DataFrame handles very large values.
+    /// Tests that BestFitDataFrame handles very large values.
     /// </summary>
     [TestMethod]
     public void DataFrame_VeryLargeValues_HandlesCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var largeData = new double[] { 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19 };
         df.ExactSeries = new ExactSeries(largeData);
 
@@ -868,12 +871,12 @@ public class DataFrameTests
     }
 
     /// <summary>
-    /// Tests that DataFrame handles identical values.
+    /// Tests that BestFitDataFrame handles identical values.
     /// </summary>
     [TestMethod]
     public void DataFrame_IdenticalValues_HandlesCorrectly()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var identicalData = Enumerable.Repeat(50000.0, 20).ToArray();
         df.ExactSeries = new ExactSeries(identicalData);
 
@@ -886,7 +889,7 @@ public class DataFrameTests
     #region Integration Tests
 
     /// <summary>
-    /// Tests that creating a DataFrame with various plotting parameters works.
+    /// Tests that creating a BestFitDataFrame with various plotting parameters works.
     /// </summary>
     [TestMethod]
     [DataRow(0.0, "Weibull")]
@@ -928,8 +931,8 @@ public class DataFrameTests
     [TestMethod]
     public void DataFrame_ModifyDataItem_RaisesPropertyChanged()
     {
-        // Create DataFrame and add items via Add() to properly hook up PropertyChanged handlers
-        var df = new DataFrame();
+        // Create BestFitDataFrame and add items via Add() to properly hook up PropertyChanged handlers
+        var df = new BestFitDataFrame();
         foreach (var value in SampleAnnualPeaks.Take(10))
         {
             df.ExactSeries.Add(new ExactData(df.ExactSeries.Count, value));
@@ -955,7 +958,7 @@ public class DataFrameTests
     public void Scenario_SystematicRecord_WorksCorrectly()
     {
         // 50 years of annual peak flow data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = Enumerable.Range(1970, 50).Select(year =>
             new ExactData(year, 30000 + new Random(year).NextDouble() * 40000)).ToList();
 
@@ -979,7 +982,7 @@ public class DataFrameTests
         df.UncertainSeries.Add(new UncertainData(1889, new Normal(95000, 15000)));
 
         // Add historical threshold
-        var threshold = new ThresholdData(1850, 1920, 80000);
+        var threshold = new BestFitThresholdData(1850, 1920, 80000);
         df.ThresholdSeries.Add(threshold);
 
         Assert.AreEqual(30, df.ExactSeries.Count);
@@ -1001,13 +1004,81 @@ public class DataFrameTests
         df.IntervalSeries.Add(new IntervalData(1650, 70000, 90000, 110000));
 
         // Add non-exceedance bound
-        var threshold = new ThresholdData(1000, 2000, 150000);
+        var threshold = new BestFitThresholdData(1000, 2000, 150000);
         df.ThresholdSeries.Add(threshold);
 
         Assert.AreEqual(30, df.ExactSeries.Count);
         Assert.AreEqual(3, df.IntervalSeries.Count);
         Assert.AreEqual(1, df.ThresholdSeries.Count);
     }
+
+    #region Threshold Processing Regression
+
+    /// <summary>
+    /// Verifies repeated processing remains idempotent and an explicit-data mutation recomputes
+    /// effective counts from the original user input with one aggregate threshold notification.
+    /// </summary>
+    [TestMethod]
+    public void ProcessThresholdSeries_RepeatedAndInputMutated_RemainsIdempotent()
+    {
+        var frame = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(0, 2, 100.0) { NumberAbove = 2 };
+        frame.ThresholdSeries.Add(threshold);
+        var exact = new ExactData { Index = 1, Value = 150.0 };
+        frame.ExactSeries.Add(exact);
+        frame.ProcessThresholdSeries();
+
+        Assert.AreEqual(2, threshold.SourceNumberAbove);
+        Assert.AreEqual(0, threshold.NumberAbove);
+        Assert.AreEqual(0, threshold.NumberBelow);
+
+        for (int i = 0; i < 20; i++)
+            frame.ProcessThresholdSeries();
+
+        Assert.AreEqual(0, threshold.NumberAbove);
+        Assert.AreEqual(0, threshold.NumberBelow);
+
+        int thresholdNotifications = 0;
+        frame.PropertyChanged += (_, eventArgs) =>
+        {
+            if (eventArgs.PropertyName == nameof(BestFitDataFrame.ThresholdSeries))
+                thresholdNotifications++;
+        };
+
+        frame.ExactSeries.Remove(exact);
+
+        Assert.AreEqual(2, threshold.SourceNumberAbove);
+        Assert.AreEqual(2, threshold.NumberAbove);
+        Assert.AreEqual(1, threshold.NumberBelow);
+        Assert.AreEqual(1, thresholdNotifications);
+
+        frame.ProcessThresholdSeries();
+        Assert.AreEqual(1, thresholdNotifications,
+            "An unchanged pass must not emit another aggregate threshold notification.");
+    }
+
+    /// <summary>
+    /// Verifies a DataFrame XML round-trip rebuilds effective threshold counts from the source
+    /// NumberAbove value stored under the existing schema.
+    /// </summary>
+    [TestMethod]
+    public void XmlRoundTrip_ProcessedThreshold_RebuildsEffectiveCountsFromSource()
+    {
+        var frame = new BestFitDataFrame();
+        var threshold = new BestFitThresholdData(0, 2, 100.0) { NumberAbove = 2 };
+        frame.ThresholdSeries.Add(threshold);
+        frame.ExactSeries.Add(new ExactData { Index = 1, Value = 150.0 });
+        frame.ProcessThresholdSeries();
+
+        var restoredFrame = new BestFitDataFrame(frame.ToXElement());
+        var restored = (BestFitThresholdData)restoredFrame.ThresholdSeries[0];
+
+        Assert.AreEqual(2, restored.SourceNumberAbove);
+        Assert.AreEqual(0, restored.NumberAbove);
+        Assert.AreEqual(0, restored.NumberBelow);
+    }
+
+    #endregion
 
     #endregion
 }

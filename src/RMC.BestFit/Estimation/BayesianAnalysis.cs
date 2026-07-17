@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Sampling.MCMC;
@@ -142,7 +142,7 @@ namespace RMC.BestFit.Estimation
                 // PointEstimator XML attribute did not exist. Defaulting to
                 // PosteriorMode here keeps loaded legacy results faithful to what
                 // those projects actually contain. New analyses (constructor at
-                // line ~217) default to PosteriorMean — the asymmetry is intentional.
+                // line ~217) default to PosteriorMean � the asymmetry is intentional.
                 _pointEstimator = PointEstimateType.PosteriorMode;
             }
             var isEstimatedAttr = xElement.Attribute(nameof(IsEstimated));
@@ -225,6 +225,9 @@ namespace RMC.BestFit.Estimation
         private IModel? _model = null;
         private IReadOnlyList<string>? _parameterNames = null;
         private TimeSpan? _elapsedTime = null;
+        /// <summary>
+        /// Occurs when an analysis property changes.
+        /// </summary>
         public event PropertyChangedEventHandler? PropertyChanged;
         private bool _tokenDisposed = false;
 
@@ -374,7 +377,7 @@ namespace RMC.BestFit.Estimation
         /// started. Cleared at the start of every new <c>RunAsync</c>.
         /// </summary>
         /// <remarks>
-        /// Pairs with <see cref="IsEstimated"/>: when <c>IsEstimated == false</c>
+        /// Pairs with <c>IsEstimated</c>: when <c>IsEstimated == false</c>
         /// and <c>LastError != null</c>, the run failed with that exception. The
         /// UI / wrapper analyses can subscribe to <c>AnalysisCompleted</c> and
         /// surface <c>LastError.Message</c> to the user.
@@ -408,7 +411,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// <para>
-        /// WAIC is computed as -2 × lppd + 2 × p_WAIC, where lppd is the log pointwise predictive density
+        /// WAIC is computed as -2 � lppd + 2 � p_WAIC, where lppd is the log pointwise predictive density
         /// and p_WAIC is the effective number of parameters.
         /// </para>
         /// <para>
@@ -435,7 +438,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// <para>
-        /// LOOIC is computed as -2 × elpd_loo, where elpd_loo is the expected log pointwise predictive
+        /// LOOIC is computed as -2 � elpd_loo, where elpd_loo is the expected log pointwise predictive
         /// density for a new dataset estimated using leave-one-out cross-validation.
         /// </para>
         /// <para>
@@ -468,12 +471,12 @@ namespace RMC.BestFit.Estimation
         /// </para>
         /// <list type="bullet">
         /// <item><description>k &lt; 0.5: Very good, estimates are reliable</description></item>
-        /// <item><description>0.5 ≤ k &lt; 0.7: Good, estimates are reasonably reliable</description></item>
-        /// <item><description>0.7 ≤ k &lt; 1.0: Problematic, estimates may be biased</description></item>
-        /// <item><description>k ≥ 1.0: Very bad, estimates are unreliable</description></item>
+        /// <item><description>0.5 = k &lt; 0.7: Good, estimates are reasonably reliable</description></item>
+        /// <item><description>0.7 = k &lt; 1.0: Problematic, estimates may be biased</description></item>
+        /// <item><description>k = 1.0: Very bad, estimates are unreliable</description></item>
         /// </list>
         /// <para>
-        /// If many observations have k ≥ 0.7, consider using exact LOO-CV for those points or WAIC instead.
+        /// If many observations have k = 0.7, consider using exact LOO-CV for those points or WAIC instead.
         /// </para>
         /// </remarks>
         public double[]? ParetoK { get; private set; }
@@ -638,7 +641,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         [Category("Advanced Options")]
         [DisplayName("Jump Parameter")]
-        [Description("Specifies the jump parameter (γ) that enables the simulation to move between modes in the target distribution. A recommended setting is γ = 2.38/√(2d), where d is the number of model parameters.")]
+        [Description("Specifies the jump parameter (?) that enables the simulation to move between modes in the target distribution. A recommended setting is ? = 2.38/v(2d), where d is the number of model parameters.")]
         [Browsable(true)]
         public double Jump
         {
@@ -659,7 +662,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         [Category("Advanced Options")]
         [DisplayName("Jump Threshold")]
-        [Description("Specifies the probability at which the jump parameter (γ) is set to 1.0. For example, a value of 0.10 results in a large jump 10 percent of the time.")]
+        [Description("Specifies the probability at which the jump parameter (?) is set to 1.0. For example, a value of 0.10 results in a large jump 10 percent of the time.")]
         [Browsable(true)]
         public double JumpThreshold
         {
@@ -828,7 +831,7 @@ namespace RMC.BestFit.Estimation
 
                     // Alpha = 1 - CIWidth only affects the LowerCI/UpperCI percentiles in
                     // ParameterResults[i].SummaryStatistics. The MCMC chain itself is
-                    // independent of alpha — preserve Results and recompute summaries in place.
+                    // independent of alpha � preserve Results and recompute summaries in place.
                     if (IsEstimated && Results != null)
                     {
                         Results.RecomputeParameterResults(1.0 - value);
@@ -908,7 +911,7 @@ namespace RMC.BestFit.Estimation
         #region Methods
 
         /// <summary>
-        /// Raises the <see cref="PropertyChanged"/> event for a given property name.
+        /// Raises the <c>PropertyChanged</c> event for a given property name.
         /// </summary>
         /// <param name="propertyName">Name of the property that changed.</param>
         protected virtual void RaisePropertyChange(string propertyName)
@@ -1064,7 +1067,7 @@ namespace RMC.BestFit.Estimation
             // Errors
             if (NumberOfChains < 4 || NumberOfChains > 20)
             {
-                // Vehtari et al. (2021) recommend ≥4 chains for reliable split-Rhat
+                // Vehtari et al. (2021) recommend =4 chains for reliable split-Rhat
                 // and bulk/tail-ESS diagnostics. DEMCz/DEMCzs technically work with 3,
                 // but the convergence verdict is unreliable below 4.
                 messages.Add("Error: The number of Markov chains must be between 4 and 20.");
@@ -1292,16 +1295,19 @@ namespace RMC.BestFit.Estimation
 
                 // Post-await: now back on the dispatcher (or whichever SynchronizationContext
                 // was captured at await). Property setters here fire PropertyChanged on the
-                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results — assign Results
+                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results � assign Results
                 // first so they see the new chains, and they internally use Parallel.For which
                 // dispatches its own worker threads (no dispatcher block on the math itself).
                 ElapsedTime = capturedElapsed;
                 if (capturedResults != null)
                 {
                     Results = capturedResults;
-                    ComputeDIC();
-                    ComputeWAIC();
-                    ComputePSISLOO();
+                    await Task.Run(() =>
+                    {
+                        ComputeDIC();
+                        ComputeWAIC();
+                        ComputePSISLOO();
+                    });
                 }
 
                 if (sampler.CancellationTokenSource!.IsCancellationRequested == false)
@@ -1311,7 +1317,7 @@ namespace RMC.BestFit.Estimation
             }
             catch (OperationCanceledException)
             {
-                // Cancellation is normal — re-throw so wrapper analyses' OperationCanceledException
+                // Cancellation is normal � re-throw so wrapper analyses' OperationCanceledException
                 // handlers see it as a cancel rather than a generic failure. Without this branch
                 // the catch (Exception) below would swallow OCE into LastError and the user would
                 // see "TaskCanceledException" reported as a run failure.
@@ -1343,7 +1349,7 @@ namespace RMC.BestFit.Estimation
         /// Cancels the Bayesian analysis if it is currently running.
         /// </summary>
         /// <remarks>
-        /// One-shot per <see cref="RunAsync(SafeProgressReporter?, bool)"/> invocation —
+        /// One-shot per <c>RunAsync(SafeProgressReporter?, bool)</c> invocation �
         /// after the run completes (success, fault, or cancellation) the underlying
         /// <see cref="System.Threading.CancellationTokenSource"/> is disposed in the
         /// finally block of <c>RunAsync</c>. Subsequent calls to <c>CancelSimulation</c>
@@ -1408,15 +1414,15 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// <para>
-        /// WAIC is computed as -2 × lppd + 2 × p_WAIC using the correct pointwise formulation:
+        /// WAIC is computed as -2 � lppd + 2 � p_WAIC using the correct pointwise formulation:
         /// </para>
         /// <para>
         /// <b>lppd</b> (log pointwise predictive density):
-        /// lppd = Σᵢ log(1/S Σₛ p(yᵢ|θˢ))
+        /// lppd = S? log(1/S S? p(y?|??))
         /// </para>
         /// <para>
         /// <b>p_WAIC</b> (effective number of parameters):
-        /// p_WAIC = Σᵢ Varₛ[log p(yᵢ|θˢ)]
+        /// p_WAIC = S? Var?[log p(y?|??)]
         /// </para>
         /// <para>
         /// This implementation uses the log-sum-exp trick for numerical stability when computing lppd.
@@ -1474,7 +1480,7 @@ namespace RMC.BestFit.Estimation
                 {
                     // Extract log-likelihoods for observation i across all samples
                     // Find max for log-sum-exp stability. Use NegativeInfinity (not MinValue)
-                    // per CLAUDE.md "Numerical patterns" — when every per-sample LL is -Inf
+                    // per the numerical robustness guidelines � when every per-sample LL is -Inf
                     // (a fully invalid posterior sample for this obs), the log-sum-exp must
                     // collapse to -Inf, not MinValue.
                     double maxLogLik = double.NegativeInfinity;
@@ -1489,8 +1495,8 @@ namespace RMC.BestFit.Estimation
                         if (ll > maxLogLik) maxLogLik = ll;
                     }
 
-                    // lppd_i = log(1/S Σₛ exp(logLik_is)) using log-sum-exp trick
-                    // = log(1/S) + max + log(Σₛ exp(logLik_is - max))
+                    // lppd_i = log(1/S S? exp(logLik_is)) using log-sum-exp trick
+                    // = log(1/S) + max + log(S? exp(logLik_is - max))
                     double sumExp = 0.0;
                     for (int s = 0; s < S; s++)
                     {
@@ -1601,7 +1607,7 @@ namespace RMC.BestFit.Estimation
                     logLiks[s] = pointwiseLogLik[i, s];
 
                 // Compute log importance weights: log r_is = -logLik_is
-                // (We want 1/p(y_i|θ^s), and log(1/x) = -log(x))
+                // (We want 1/p(y_i|?^s), and log(1/x) = -log(x))
                 var logWeights = new double[S];
                 for (int s = 0; s < S; s++)
                     logWeights[s] = -logLiks[s];
@@ -1633,7 +1639,7 @@ namespace RMC.BestFit.Estimation
                     weights[s] /= sumWeights;
 
                 // Compute LOO predictive density using normalized weights
-                // elpd_loo_i = log(Σ_s w_is * exp(logLik_is))
+                // elpd_loo_i = log(S_s w_is * exp(logLik_is))
                 // Using log-sum-exp trick for stability
                 double maxLL = logLiks[0];
                 for (int s = 1; s < S; s++)
@@ -1714,7 +1720,7 @@ namespace RMC.BestFit.Estimation
             //
             // Numerics uses Hosking's parameterization where the shape Kappa has the
             // OPPOSITE sign of the PSIS k convention. If GPD CDF is
-            //   F(x) = 1 - (1 + k_psis · x/σ)^(-1/k_psis)
+            //   F(x) = 1 - (1 + k_psis � x/s)^(-1/k_psis)
             // then Numerics Kappa = -k_psis. We flip the sign on the way out so the
             // downstream smoothing formulas (which use the PSIS k convention) are
             // unchanged.
@@ -1726,11 +1732,11 @@ namespace RMC.BestFit.Estimation
                 var mleParams = gpdMle.MLE(tailWeights);
                 // mleParams: [xi (location, fixed at min), alpha (scale), kappa (Hosking shape)].
                 sigma = mleParams[1];
-                k = -mleParams[2];  // Convert Hosking κ → PSIS k.
+                k = -mleParams[2];  // Convert Hosking ? ? PSIS k.
             }
             catch (Exception ex)
             {
-                // MLE failed (rare — happens when the tail is degenerate).
+                // MLE failed (rare � happens when the tail is degenerate).
                 // Fall back to method-of-moments.
                 Debug.WriteLine($"BayesianAnalysis.FitGPD: MLE failed, falling back to MOM: {ex.Message}");
                 double mean = 0.0;
@@ -1766,8 +1772,8 @@ namespace RMC.BestFit.Estimation
             {
 
                 // Replace tail weights with expected order statistics from fitted GPD
-                // F(x) = 1 - (1 + k*x/σ)^(-1/k) for k ≠ 0
-                // Quantile: Q(p) = σ/k * ((1-p)^(-k) - 1) for k ≠ 0
+                // F(x) = 1 - (1 + k*x/s)^(-1/k) for k ? 0
+                // Quantile: Q(p) = s/k * ((1-p)^(-k) - 1) for k ? 0
                 // Expected order statistic at rank j of M: p_j = (j - 0.5)/M
                 for (int j = 0; j < M; j++)
                 {
@@ -1776,7 +1782,7 @@ namespace RMC.BestFit.Estimation
 
                     if (Math.Abs(k) < 1e-8)
                     {
-                        // k ≈ 0: Exponential distribution, Q(p) = -σ * log(1-p)
+                        // k � 0: Exponential distribution, Q(p) = -s * log(1-p)
                         quantile = -sigma * Math.Log(1.0 - p);
                     }
                     else
@@ -1852,7 +1858,7 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method requires that MCMC estimation has been completed (i.e., <see cref="Estimate"/>
+        /// This method requires that MCMC estimation has been completed (i.e., <c>Estimate</c>
         /// has been called). The diagnostics are based on PSIS-LOO (Pareto Smoothed Importance
         /// Sampling Leave-One-Out cross-validation).
         /// </para>
@@ -1947,7 +1953,7 @@ namespace RMC.BestFit.Estimation
         /// </para>
         /// <para>
         /// This is the Bayesian analogue of Cook's distance. The leverage of each component (observation or prior)
-        /// measures its share of the total information: ℓᵢ = gᵢᵀ H⁻¹ gᵢ. All leverages sum approximately
+        /// measures its share of the total information: l? = g?? H?� g?. All leverages sum approximately
         /// to p (the number of parameters), providing a unified ranking across observations and priors.
         /// </para>
         /// </remarks>
@@ -1988,7 +1994,7 @@ namespace RMC.BestFit.Estimation
                     pointwiseLogLik[i, s] = logLiks[i];
             });
 
-            // PSIS tail size — Vehtari et al. (2017). Match the floor used in
+            // PSIS tail size � Vehtari et al. (2017). Match the floor used in
             // ComputePSISLOO so per-observation diagnostics agree across calls.
             int M = (int)Math.Min(S / 5.0, 3.0 * Math.Sqrt(S));
             M = Math.Max(M, 3);
@@ -2144,7 +2150,7 @@ namespace RMC.BestFit.Estimation
 
             // Section 3: Acceptance Rates
             double overallAcceptance = double.NaN;
-            bool acceptanceGood = true;
+            bool acceptanceWarning = false;
             if (Results.AcceptanceRates != null && Results.AcceptanceRates.Length > 0)
             {
                 AppendReportSectionHeader(sb, "ACCEPTANCE RATES");
@@ -2154,24 +2160,27 @@ namespace RMC.BestFit.Estimation
                 overallAcceptance = Results.AcceptanceRates.Average();
                 sb.AppendLine($"  Overall:   {overallAcceptance * 100.0:F1}%");
 
-                string targetRange = GetDesirableAcceptanceRange(Type);
-                acceptanceGood = IsAcceptanceRateGood(overallAcceptance, Type);
-                sb.AppendLine($"  Target:    {targetRange}    {(acceptanceGood ? "OK" : "WARNING: Outside target range")}");
-                if (!acceptanceGood)
-                    AppendAcceptanceAdvice(sb, overallAcceptance, Type);
+                var acceptance = AssessAcceptanceRate(overallAcceptance, Type);
+                bool chainAcceptanceWarning = AppendChainAcceptanceWarnings(sb, Results.AcceptanceRates, Type);
+                acceptanceWarning = acceptance.Status == ReportDiagnosticStatus.Warning || chainAcceptanceWarning;
+                sb.AppendLine($"  Preferred: {acceptance.PreferredRangeLabel}");
+                sb.AppendLine($"  Buffer:    {acceptance.AcceptableRangeLabel}");
+                sb.AppendLine($"  Status:    {GetStatusLabel(acceptance.Status)} - {acceptance.Message}");
+                AppendAcceptanceAdvice(sb, acceptance, Type);
 
                 sb.AppendLine();
             }
 
             // Section 4: Convergence Diagnostics
-            AppendReportSectionHeader(sb, "CONVERGENCE DIAGNOSTICS");
+            AppendReportSectionHeader(sb, "CONVERGENCE AND PRECISION DIAGNOSTICS");
             double maxRhat = double.NaN;
             double minESS = double.NaN;
             string worstRhatParam = "";
             string worstESSParam = "";
             if (Results.ParameterResults != null && Results.ParameterResults.Length > 0)
             {
-                for (int i = 0; i < p; i++)
+                int parameterCount = Math.Min(p, Results.ParameterResults.Length);
+                for (int i = 0; i < parameterCount; i++)
                 {
                     double rhat = Results.ParameterResults[i].SummaryStatistics.Rhat;
                     double ess = Results.ParameterResults[i].SummaryStatistics.ESS;
@@ -2179,14 +2188,23 @@ namespace RMC.BestFit.Estimation
                     if (double.IsNaN(minESS) || ess < minESS) { minESS = ess; worstESSParam = Model.Parameters[i].DisplayName; }
                 }
             }
-            sb.AppendLine($"  Max R-hat:   {maxRhat:F4}   (target < 1.10)   {(maxRhat < 1.1 ? "OK" : $"WARNING ({worstRhatParam})")}");
-            sb.AppendLine($"  Min ESS:     {minESS:F0}   (target > 400)    {(minESS > 400 ? "OK" : $"WARNING ({worstESSParam})")}");
-            bool converged = maxRhat < 1.1 && minESS > 400;
-            sb.AppendLine($"  Verdict:     {(converged ? "CONVERGED" : "NOT CONVERGED")}");
-            if (!converged)
+            int retainedDrawCount = GetRetainedDrawCount(Results, OutputLength);
+            var essAssessment = AssessEffectiveSampleSize(minESS, retainedDrawCount);
+            bool rhatOk = !double.IsNaN(maxRhat) && maxRhat < 1.1;
+            bool essOk = essAssessment.Status == ReportDiagnosticStatus.OK;
+            bool ready = rhatOk && essOk;
+
+            sb.AppendLine($"  Max R-hat:   {maxRhat:F4}   (target < 1.10)   {(rhatOk ? "OK" : $"WARNING ({worstRhatParam})")}");
+            sb.AppendLine($"  Min ESS:     {FormatEssSummary(essAssessment)}");
+            sb.AppendLine($"  ESS Target:  >= {EssPreferredEfficiency * 100.0:F0}% of retained draws and >= {EssDiagnosticFloor:N0} diagnostic floor");
+            sb.AppendLine($"  R-hat Verdict: {GetStatusLabel(rhatOk ? ReportDiagnosticStatus.OK : ReportDiagnosticStatus.Warning)} - {(rhatOk ? "chains mixed across parameters" : $"chain mixing problem detected for {worstRhatParam}")}");
+            sb.AppendLine($"  ESS Verdict:   {GetStatusLabel(essAssessment.Status)} - {essAssessment.Message}");
+            sb.AppendLine($"  Overall Readiness: {(ready ? "READY" : "NOT READY")}");
+            if (!ready)
             {
                 sb.AppendLine();
-                AppendConvergenceAdvice(sb, maxRhat, minESS, worstRhatParam, worstESSParam, acceptanceGood, overallAcceptance, Type);
+                AppendConvergenceAdvice(sb, maxRhat, rhatOk, essAssessment, worstRhatParam,
+                    worstESSParam, acceptanceWarning, overallAcceptance, Type);
             }
             sb.AppendLine();
 
@@ -2323,57 +2341,57 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
-        /// Appends advice text when the acceptance rate is outside the desirable range.
+        /// Appends advice text for an assessed acceptance rate.
         /// </summary>
-        private static void AppendAcceptanceAdvice(StringBuilder sb, double rate, SamplerType type)
+        /// <param name="sb">The report builder.</param>
+        /// <param name="assessment">The acceptance-rate diagnostic assessment.</param>
+        /// <param name="type">The MCMC sampler type.</param>
+        private static void AppendAcceptanceAdvice(StringBuilder sb, AcceptanceRateAssessment assessment, SamplerType type)
         {
-            bool isTooLow = type switch
-            {
-                SamplerType.DEMCz => rate < 0.15,
-                SamplerType.DEMCzs => rate < 0.15,
-                SamplerType.ARWMH => rate < 0.15,
-                SamplerType.NUTS => rate < 0.50,
-                _ => false
-            };
-            bool isTooHigh = type switch
-            {
-                SamplerType.DEMCz => rate > 0.50,
-                SamplerType.DEMCzs => rate > 0.50,
-                SamplerType.ARWMH => rate > 0.40,
-                SamplerType.NUTS => rate > 0.95,
-                _ => false
-            };
+            if (assessment.Status == ReportDiagnosticStatus.OK)
+                return;
 
-            if (isTooLow)
+            sb.AppendLine();
+            if (assessment.Status == ReportDiagnosticStatus.Note)
             {
-                sb.AppendLine();
-                sb.AppendLine("  Advice: Acceptance rate is too LOW. Proposals are too ambitious.");
-                if (type == SamplerType.ARWMH)
-                    sb.AppendLine("    - Decrease the jump rate to make smaller proposals.");
-                sb.AppendLine("    - Check that priors are consistent with the data.");
-                sb.AppendLine("    - Check for highly correlated parameters or a poorly identified model.");
+                sb.AppendLine("  Note: Acceptance rate is outside the preferred range but within the acceptable buffer.");
+                sb.AppendLine("    - Acceptance rate is a sampler-efficiency diagnostic, not a convergence verdict by itself.");
+                sb.AppendLine("    - If R-hat, ESS, trace plots, and autocorrelation are acceptable, no immediate rerun is required.");
+                sb.AppendLine("    - Tune only if other diagnostics show poor mixing or low effective sample size.");
+                return;
             }
-            else if (isTooHigh)
+
+            if (assessment.Direction == DiagnosticDirection.Low)
             {
-                sb.AppendLine();
+                sb.AppendLine("  Advice: Acceptance rate is too LOW. Proposals are too ambitious.");
+                AppendLowAcceptanceTuningAdvice(sb, type);
+            }
+            else if (assessment.Direction == DiagnosticDirection.High)
+            {
                 sb.AppendLine("  Advice: Acceptance rate is too HIGH. Proposals are too timid.");
-                if (type == SamplerType.ARWMH)
-                    sb.AppendLine("    - Increase the jump rate to make larger proposals.");
-                sb.AppendLine("    - The chain may be exploring the posterior too slowly.");
-                sb.AppendLine("    - Consider increasing the thinning interval to reduce autocorrelation.");
+                AppendHighAcceptanceTuningAdvice(sb, type);
             }
         }
 
         /// <summary>
-        /// Appends detailed advice when MCMC convergence diagnostics indicate problems.
+        /// Appends detailed advice when MCMC convergence or precision diagnostics indicate problems.
         /// </summary>
-        private static void AppendConvergenceAdvice(StringBuilder sb, double maxRhat, double minESS,
-            string worstRhatParam, string worstESSParam, bool acceptanceGood, double overallAcceptance,
-            SamplerType type)
+        /// <param name="sb">The report builder.</param>
+        /// <param name="maxRhat">The maximum R-hat across all parameters.</param>
+        /// <param name="rhatOk">Whether the R-hat diagnostic passed.</param>
+        /// <param name="essAssessment">The effective sample size diagnostic assessment.</param>
+        /// <param name="worstRhatParam">Display name of the parameter with the worst R-hat.</param>
+        /// <param name="worstESSParam">Display name of the parameter with the worst ESS.</param>
+        /// <param name="acceptanceWarning">Whether acceptance-rate diagnostics include a warning.</param>
+        /// <param name="overallAcceptance">The overall acceptance rate (0 to 1).</param>
+        /// <param name="type">The MCMC sampler type.</param>
+        private static void AppendConvergenceAdvice(StringBuilder sb, double maxRhat, bool rhatOk,
+            EffectiveSampleSizeAssessment essAssessment, string worstRhatParam, string worstESSParam,
+            bool acceptanceWarning, double overallAcceptance, SamplerType type)
         {
             sb.AppendLine("  Recommendations:");
 
-            if (maxRhat >= 1.1)
+            if (!rhatOk)
             {
                 sb.AppendLine();
                 sb.AppendLine($"  R-hat ({worstRhatParam} = {maxRhat:F4}):");
@@ -2390,25 +2408,489 @@ namespace RMC.BestFit.Estimation
                     sb.AppendLine("    - Increase warmup iterations to allow chains to converge.");
                     sb.AppendLine("    - Increase total iterations for better mixing.");
                 }
-                if (!acceptanceGood && !double.IsNaN(overallAcceptance))
-                    sb.AppendLine("    - Fix the acceptance rate first (see above), then re-run.");
+                if (acceptanceWarning && !double.IsNaN(overallAcceptance))
+                    sb.AppendLine("    - Review the acceptance-rate warning above, then re-run.");
             }
 
-            if (minESS < 400)
+            if (essAssessment.Status != ReportDiagnosticStatus.OK)
             {
                 sb.AppendLine();
-                sb.AppendLine($"  ESS ({worstESSParam} = {minESS:F0}):");
-                sb.AppendLine("    Low ESS means high autocorrelation between posterior samples.");
-                sb.AppendLine("    Posterior summaries and credible intervals may be unreliable.");
-                sb.AppendLine("    - Increase the thinning interval to reduce autocorrelation.");
-                sb.AppendLine("    - Increase the output length to retain more independent samples.");
-                if (minESS < 100)
+                sb.AppendLine($"  ESS ({worstESSParam} = {essAssessment.EffectiveSampleSize:N0}):");
+                sb.AppendLine("    ESS is the independent-equivalent sample size used to estimate Monte Carlo error.");
+                sb.AppendLine("    Low ESS means retained posterior draws are highly autocorrelated.");
+                sb.AppendLine("    Posterior summaries and credible intervals may be noisier than the retained draw count suggests.");
+                if (rhatOk)
+                    sb.AppendLine("    - R-hat is acceptable, so the chains may have mixed, but retained draws are inefficient.");
+                if (essAssessment.EffectiveSampleSize <= EssSevereFloor)
+                    sb.AppendLine("    - ESS <= 100 is very low; quantile estimates will be noisy.");
+                else if (essAssessment.EffectiveSampleSize < EssDiagnosticFloor)
+                    sb.AppendLine("    - ESS is below the 400 diagnostic floor used for stable Monte Carlo error estimates.");
+                if (essAssessment.Efficiency < EssWarningEfficiency)
+                    sb.AppendLine("    - ESS is below 10% of retained draws; improve sampler efficiency before relying on summaries.");
+                sb.AppendLine("    - Increase iterations/output length only after inspecting trace and autocorrelation plots.");
+                AppendSamplerEfficiencyAdvice(sb, type);
+            }
+        }
+
+        /// <summary>
+        /// Represents the diagnostic status assigned to a report item.
+        /// </summary>
+        private enum ReportDiagnosticStatus
+        {
+            /// <summary>
+            /// The diagnostic is within the preferred range.
+            /// </summary>
+            OK,
+
+            /// <summary>
+            /// The diagnostic is usable but deserves user review.
+            /// </summary>
+            Note,
+
+            /// <summary>
+            /// The diagnostic is outside the acceptable range.
+            /// </summary>
+            Warning
+        }
+
+        /// <summary>
+        /// Represents whether a diagnostic value is low, high, or neither.
+        /// </summary>
+        private enum DiagnosticDirection
+        {
+            /// <summary>
+            /// The diagnostic has no directional problem.
+            /// </summary>
+            None,
+
+            /// <summary>
+            /// The diagnostic is below its target range.
+            /// </summary>
+            Low,
+
+            /// <summary>
+            /// The diagnostic is above its target range.
+            /// </summary>
+            High
+        }
+
+        /// <summary>
+        /// The minimum effective sample size used as a diagnostic floor.
+        /// </summary>
+        private const double EssDiagnosticFloor = 400.0;
+
+        /// <summary>
+        /// The severe effective sample size warning threshold.
+        /// </summary>
+        private const double EssSevereFloor = 100.0;
+
+        /// <summary>
+        /// Preferred ESS efficiency as a fraction of retained posterior draws.
+        /// </summary>
+        private const double EssPreferredEfficiency = 0.25;
+
+        /// <summary>
+        /// Warning ESS efficiency as a fraction of retained posterior draws.
+        /// </summary>
+        private const double EssWarningEfficiency = 0.10;
+
+        /// <summary>
+        /// Contains preferred and acceptable acceptance-rate thresholds.
+        /// </summary>
+        private readonly struct AcceptanceRateThresholds
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AcceptanceRateThresholds"/> struct.
+            /// </summary>
+            /// <param name="preferredMin">The lower preferred acceptance rate.</param>
+            /// <param name="preferredMax">The upper preferred acceptance rate.</param>
+            /// <param name="acceptableMin">The lower acceptable acceptance rate.</param>
+            /// <param name="acceptableMax">The upper acceptable acceptance rate.</param>
+            public AcceptanceRateThresholds(double preferredMin, double preferredMax,
+                double acceptableMin, double acceptableMax)
+            {
+                PreferredMin = preferredMin;
+                PreferredMax = preferredMax;
+                AcceptableMin = acceptableMin;
+                AcceptableMax = acceptableMax;
+            }
+
+            /// <summary>
+            /// Gets the lower preferred acceptance rate.
+            /// </summary>
+            public double PreferredMin { get; }
+
+            /// <summary>
+            /// Gets the upper preferred acceptance rate.
+            /// </summary>
+            public double PreferredMax { get; }
+
+            /// <summary>
+            /// Gets the lower acceptable acceptance rate.
+            /// </summary>
+            public double AcceptableMin { get; }
+
+            /// <summary>
+            /// Gets the upper acceptable acceptance rate.
+            /// </summary>
+            public double AcceptableMax { get; }
+        }
+
+        /// <summary>
+        /// Contains an acceptance-rate diagnostic assessment.
+        /// </summary>
+        private readonly struct AcceptanceRateAssessment
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AcceptanceRateAssessment"/> struct.
+            /// </summary>
+            /// <param name="status">The diagnostic status.</param>
+            /// <param name="direction">Whether the diagnostic is low, high, or neither.</param>
+            /// <param name="message">The user-facing diagnostic message.</param>
+            /// <param name="preferredRangeLabel">The preferred range label.</param>
+            /// <param name="acceptableRangeLabel">The acceptable buffer label.</param>
+            public AcceptanceRateAssessment(ReportDiagnosticStatus status, DiagnosticDirection direction,
+                string message, string preferredRangeLabel, string acceptableRangeLabel)
+            {
+                Status = status;
+                Direction = direction;
+                Message = message;
+                PreferredRangeLabel = preferredRangeLabel;
+                AcceptableRangeLabel = acceptableRangeLabel;
+            }
+
+            /// <summary>
+            /// Gets the diagnostic status.
+            /// </summary>
+            public ReportDiagnosticStatus Status { get; }
+
+            /// <summary>
+            /// Gets whether the acceptance rate is low, high, or neither.
+            /// </summary>
+            public DiagnosticDirection Direction { get; }
+
+            /// <summary>
+            /// Gets the user-facing diagnostic message.
+            /// </summary>
+            public string Message { get; }
+
+            /// <summary>
+            /// Gets the preferred range label.
+            /// </summary>
+            public string PreferredRangeLabel { get; }
+
+            /// <summary>
+            /// Gets the acceptable buffer label.
+            /// </summary>
+            public string AcceptableRangeLabel { get; }
+        }
+
+        /// <summary>
+        /// Contains an effective sample size diagnostic assessment.
+        /// </summary>
+        private readonly struct EffectiveSampleSizeAssessment
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="EffectiveSampleSizeAssessment"/> struct.
+            /// </summary>
+            /// <param name="status">The diagnostic status.</param>
+            /// <param name="message">The user-facing diagnostic message.</param>
+            /// <param name="effectiveSampleSize">The effective sample size.</param>
+            /// <param name="retainedDrawCount">The number of retained posterior draws.</param>
+            /// <param name="efficiency">The effective sample size divided by retained draws.</param>
+            /// <param name="mcseInflation">The MCSE inflation relative to independent retained draws.</param>
+            public EffectiveSampleSizeAssessment(ReportDiagnosticStatus status, string message,
+                double effectiveSampleSize, int retainedDrawCount, double efficiency, double mcseInflation)
+            {
+                Status = status;
+                Message = message;
+                EffectiveSampleSize = effectiveSampleSize;
+                RetainedDrawCount = retainedDrawCount;
+                Efficiency = efficiency;
+                McseInflation = mcseInflation;
+            }
+
+            /// <summary>
+            /// Gets the diagnostic status.
+            /// </summary>
+            public ReportDiagnosticStatus Status { get; }
+
+            /// <summary>
+            /// Gets the user-facing diagnostic message.
+            /// </summary>
+            public string Message { get; }
+
+            /// <summary>
+            /// Gets the effective sample size.
+            /// </summary>
+            public double EffectiveSampleSize { get; }
+
+            /// <summary>
+            /// Gets the number of retained posterior draws.
+            /// </summary>
+            public int RetainedDrawCount { get; }
+
+            /// <summary>
+            /// Gets the effective sample size divided by retained draws.
+            /// </summary>
+            public double Efficiency { get; }
+
+            /// <summary>
+            /// Gets the MCSE inflation relative to independent retained draws.
+            /// </summary>
+            public double McseInflation { get; }
+        }
+
+        /// <summary>
+        /// Assesses an overall acceptance rate against sampler-specific preferred and acceptable ranges.
+        /// </summary>
+        /// <param name="rate">The overall acceptance rate.</param>
+        /// <param name="type">The sampler type.</param>
+        /// <returns>An acceptance-rate assessment for report display.</returns>
+        private static AcceptanceRateAssessment AssessAcceptanceRate(double rate, SamplerType type)
+        {
+            var thresholds = GetAcceptanceRateThresholds(type);
+            string preferred = $"{FormatPercentRange(thresholds.PreferredMin, thresholds.PreferredMax)} ({FormatSamplerType(type)})";
+            string acceptable = $"{FormatPercentRange(thresholds.AcceptableMin, thresholds.AcceptableMax)} acceptable buffer";
+
+            if (double.IsNaN(rate))
+            {
+                return new AcceptanceRateAssessment(ReportDiagnosticStatus.Warning, DiagnosticDirection.None,
+                    "acceptance rate is unavailable", preferred, acceptable);
+            }
+
+            if (rate < thresholds.AcceptableMin)
+            {
+                return new AcceptanceRateAssessment(ReportDiagnosticStatus.Warning, DiagnosticDirection.Low,
+                    "below acceptable buffer", preferred, acceptable);
+            }
+
+            if (rate > thresholds.AcceptableMax)
+            {
+                return new AcceptanceRateAssessment(ReportDiagnosticStatus.Warning, DiagnosticDirection.High,
+                    "above acceptable buffer", preferred, acceptable);
+            }
+
+            if (rate < thresholds.PreferredMin)
+            {
+                return new AcceptanceRateAssessment(ReportDiagnosticStatus.Note, DiagnosticDirection.Low,
+                    "below preferred range but within acceptable buffer", preferred, acceptable);
+            }
+
+            if (rate > thresholds.PreferredMax)
+            {
+                return new AcceptanceRateAssessment(ReportDiagnosticStatus.Note, DiagnosticDirection.High,
+                    "above preferred range but within acceptable buffer", preferred, acceptable);
+            }
+
+            return new AcceptanceRateAssessment(ReportDiagnosticStatus.OK, DiagnosticDirection.None,
+                "within preferred range", preferred, acceptable);
+        }
+
+        /// <summary>
+        /// Gets the retained draw count used to judge effective sample size efficiency.
+        /// </summary>
+        /// <param name="results">The MCMC results.</param>
+        /// <param name="configuredOutputLength">The configured output length.</param>
+        /// <returns>The retained posterior draw count.</returns>
+        private static int GetRetainedDrawCount(MCMCResults results, int configuredOutputLength)
+        {
+            if (results.Output != null && results.Output.Count > 0)
+                return results.Output.Count;
+            return Math.Max(0, configuredOutputLength);
+        }
+
+        /// <summary>
+        /// Assesses effective sample size against absolute and retained-draw-relative thresholds.
+        /// </summary>
+        /// <param name="ess">The minimum effective sample size.</param>
+        /// <param name="retainedDrawCount">The retained posterior draw count.</param>
+        /// <returns>An ESS assessment for report display.</returns>
+        private static EffectiveSampleSizeAssessment AssessEffectiveSampleSize(double ess, int retainedDrawCount)
+        {
+            double efficiency = retainedDrawCount > 0 && !double.IsNaN(ess) ? ess / retainedDrawCount : double.NaN;
+            double mcseInflation = retainedDrawCount > 0 && ess > 0.0 ? Math.Sqrt(retainedDrawCount / ess) : double.NaN;
+
+            if (double.IsNaN(ess))
+            {
+                return new EffectiveSampleSizeAssessment(ReportDiagnosticStatus.Warning,
+                    "effective sample size is unavailable", ess, retainedDrawCount, efficiency, mcseInflation);
+            }
+
+            if (ess <= EssSevereFloor)
+            {
+                return new EffectiveSampleSizeAssessment(ReportDiagnosticStatus.Warning,
+                    "severe Monte Carlo precision warning", ess, retainedDrawCount, efficiency, mcseInflation);
+            }
+
+            if (ess < EssDiagnosticFloor)
+            {
+                return new EffectiveSampleSizeAssessment(ReportDiagnosticStatus.Warning,
+                    "below 400 diagnostic floor", ess, retainedDrawCount, efficiency, mcseInflation);
+            }
+
+            if (!double.IsNaN(efficiency) && efficiency < EssWarningEfficiency)
+            {
+                return new EffectiveSampleSizeAssessment(ReportDiagnosticStatus.Warning,
+                    "low efficiency relative to retained draw count", ess, retainedDrawCount, efficiency, mcseInflation);
+            }
+
+            if (!double.IsNaN(efficiency) && efficiency < EssPreferredEfficiency)
+            {
+                return new EffectiveSampleSizeAssessment(ReportDiagnosticStatus.Note,
+                    "above diagnostic floor but below preferred efficiency", ess, retainedDrawCount, efficiency, mcseInflation);
+            }
+
+            return new EffectiveSampleSizeAssessment(ReportDiagnosticStatus.OK,
+                "meets preferred effective-sample efficiency", ess, retainedDrawCount, efficiency, mcseInflation);
+        }
+
+        /// <summary>
+        /// Formats an ESS assessment summary.
+        /// </summary>
+        /// <param name="assessment">The ESS assessment.</param>
+        /// <returns>A formatted ESS summary string.</returns>
+        private static string FormatEssSummary(EffectiveSampleSizeAssessment assessment)
+        {
+            if (assessment.RetainedDrawCount <= 0 || double.IsNaN(assessment.Efficiency))
+                return $"{assessment.EffectiveSampleSize:N0} retained-draw baseline unavailable    {GetStatusLabel(assessment.Status)}";
+
+            string inflation = double.IsNaN(assessment.McseInflation)
+                ? "MCSE inflation unavailable"
+                : $"MCSE {assessment.McseInflation:F1}x independent draws";
+
+            return $"{assessment.EffectiveSampleSize:N0} of {assessment.RetainedDrawCount:N0} retained draws " +
+                   $"({assessment.Efficiency * 100.0:F1}% efficiency; {inflation})    {GetStatusLabel(assessment.Status)}";
+        }
+
+        /// <summary>
+        /// Appends warnings for chains whose acceptance rate is outside the acceptable buffer.
+        /// </summary>
+        /// <param name="sb">The report builder.</param>
+        /// <param name="acceptanceRates">The per-chain acceptance rates.</param>
+        /// <param name="type">The sampler type.</param>
+        /// <returns><c>true</c> if any chain-level warning was appended; otherwise, <c>false</c>.</returns>
+        private static bool AppendChainAcceptanceWarnings(StringBuilder sb, double[] acceptanceRates, SamplerType type)
+        {
+            var thresholds = GetAcceptanceRateThresholds(type);
+            bool hasWarnings = false;
+            string bufferLabel = FormatPercentRange(thresholds.AcceptableMin, thresholds.AcceptableMax);
+
+            for (int i = 0; i < acceptanceRates.Length; i++)
+            {
+                double rate = acceptanceRates[i];
+                if (rate < thresholds.AcceptableMin || rate > thresholds.AcceptableMax)
                 {
-                    sb.AppendLine("    - ESS < 100 is very low; quantile estimates will be noisy.");
-                    sb.AppendLine("    - Consider switching samplers (e.g., DEMCzs handles correlated");
-                    sb.AppendLine("      parameters better than ARWMH).");
+                    if (!hasWarnings)
+                    {
+                        sb.AppendLine();
+                        sb.AppendLine("  Chain-level warnings:");
+                    }
+
+                    string direction = rate < thresholds.AcceptableMin ? "below" : "above";
+                    sb.AppendLine($"    - Chain {i + 1} acceptance {rate * 100.0:F1}% is {direction} acceptable buffer {bufferLabel}.");
+                    hasWarnings = true;
                 }
             }
+
+            return hasWarnings;
+        }
+
+        /// <summary>
+        /// Gets sampler-specific preferred and acceptable acceptance-rate thresholds.
+        /// </summary>
+        /// <param name="type">The sampler type.</param>
+        /// <returns>The preferred and acceptable acceptance-rate thresholds.</returns>
+        private static AcceptanceRateThresholds GetAcceptanceRateThresholds(SamplerType type)
+        {
+            return type switch
+            {
+                SamplerType.DEMCz => new AcceptanceRateThresholds(0.23, 0.44, 0.15, 0.50),
+                SamplerType.DEMCzs => new AcceptanceRateThresholds(0.23, 0.44, 0.15, 0.50),
+                SamplerType.ARWMH => new AcceptanceRateThresholds(0.20, 0.30, 0.15, 0.40),
+                SamplerType.NUTS => new AcceptanceRateThresholds(0.65, 0.90, 0.50, 0.95),
+                _ => new AcceptanceRateThresholds(0.0, 1.0, 0.0, 1.0)
+            };
+        }
+
+        /// <summary>
+        /// Formats a status label for report output.
+        /// </summary>
+        /// <param name="status">The diagnostic status.</param>
+        /// <returns>A user-facing status label.</returns>
+        private static string GetStatusLabel(ReportDiagnosticStatus status)
+        {
+            return status switch
+            {
+                ReportDiagnosticStatus.OK => "OK",
+                ReportDiagnosticStatus.Note => "NOTE",
+                ReportDiagnosticStatus.Warning => "WARNING",
+                _ => "UNKNOWN"
+            };
+        }
+
+        /// <summary>
+        /// Formats a rate interval as a percentage range.
+        /// </summary>
+        /// <param name="minimum">The minimum rate.</param>
+        /// <param name="maximum">The maximum rate.</param>
+        /// <returns>A formatted percentage range.</returns>
+        private static string FormatPercentRange(double minimum, double maximum)
+        {
+            return $"{minimum * 100.0:F0}-{maximum * 100.0:F0}%";
+        }
+
+        /// <summary>
+        /// Appends low-acceptance tuning advice for the specified sampler.
+        /// </summary>
+        /// <param name="sb">The report builder.</param>
+        /// <param name="type">The sampler type.</param>
+        private static void AppendLowAcceptanceTuningAdvice(StringBuilder sb, SamplerType type)
+        {
+            if (type == SamplerType.DEMCz || type == SamplerType.DEMCzs)
+                sb.AppendLine("    - Reduce the Jump parameter to make smaller differential-evolution proposals.");
+            else if (type == SamplerType.ARWMH)
+                sb.AppendLine("    - Decrease the Scale parameter to make smaller adaptive random-walk proposals.");
+            else if (type == SamplerType.NUTS)
+                sb.AppendLine("    - NUTS is rejecting too often; inspect trace/autocorrelation plots and consider another sampler if ESS remains poor.");
+
+            sb.AppendLine("    - Check that priors and parameter bounds are consistent with the data.");
+            sb.AppendLine("    - Review highly correlated parameters or poorly identified model structure.");
+        }
+
+        /// <summary>
+        /// Appends high-acceptance tuning advice for the specified sampler.
+        /// </summary>
+        /// <param name="sb">The report builder.</param>
+        /// <param name="type">The sampler type.</param>
+        private static void AppendHighAcceptanceTuningAdvice(StringBuilder sb, SamplerType type)
+        {
+            if (type == SamplerType.DEMCz || type == SamplerType.DEMCzs)
+                sb.AppendLine("    - Increase the Jump parameter so proposals explore the posterior more efficiently.");
+            else if (type == SamplerType.ARWMH)
+                sb.AppendLine("    - Increase the Scale parameter to make larger adaptive random-walk proposals.");
+            else if (type == SamplerType.NUTS)
+                sb.AppendLine("    - NUTS is accepting almost every proposal; inspect ESS and autocorrelation for slow exploration.");
+
+            sb.AppendLine("    - The chain may be exploring the posterior too slowly.");
+            sb.AppendLine("    - Prefer improving proposal efficiency before increasing thinning.");
+        }
+
+        /// <summary>
+        /// Appends sampler-specific advice for improving ESS efficiency.
+        /// </summary>
+        /// <param name="sb">The report builder.</param>
+        /// <param name="type">The sampler type.</param>
+        private static void AppendSamplerEfficiencyAdvice(StringBuilder sb, SamplerType type)
+        {
+            if (type == SamplerType.DEMCz || type == SamplerType.DEMCzs)
+                sb.AppendLine("    - For DE-MC samplers, tune Jump and review correlated parameters before simply drawing more samples.");
+            else if (type == SamplerType.ARWMH)
+                sb.AppendLine("    - For ARWMH, tune Scale and consider DEMCzs for strongly correlated parameters.");
+            else if (type == SamplerType.NUTS)
+                sb.AppendLine("    - For NUTS, inspect trace/autocorrelation plots and consider model reparameterization if ESS remains low.");
+            else
+                sb.AppendLine("    - Consider sampler tuning, sampler changes, or reparameterization if ESS remains low.");
         }
 
         /// <summary>
@@ -2426,36 +2908,6 @@ namespace RMC.BestFit.Estimation
             };
         }
 
-        /// <summary>
-        /// Returns the desirable acceptance rate range for the given sampler type.
-        /// </summary>
-        private static string GetDesirableAcceptanceRange(SamplerType type)
-        {
-            return type switch
-            {
-                SamplerType.DEMCz => "23-44% (DE-MCz)",
-                SamplerType.DEMCzs => "23-44% (DE-MCzs)",
-                SamplerType.ARWMH => "20-30% (ARWMH)",
-                SamplerType.NUTS => "65-90% (NUTS)",
-                _ => "Unknown"
-            };
-        }
-
-        /// <summary>
-        /// Checks whether the overall acceptance rate is within the desirable range.
-        /// </summary>
-        private static bool IsAcceptanceRateGood(double rate, SamplerType type)
-        {
-            return type switch
-            {
-                SamplerType.DEMCz => rate >= 0.15 && rate <= 0.50,
-                SamplerType.DEMCzs => rate >= 0.15 && rate <= 0.50,
-                SamplerType.ARWMH => rate >= 0.15 && rate <= 0.40,
-                SamplerType.NUTS => rate >= 0.50,
-                _ => true
-            };
-        }
-
         #endregion
 
         /// <summary>
@@ -2463,7 +2915,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// The <see cref="Model"/> reference is shared by design (consistent with
-        /// the rest of the project — the model is the single source of truth and
+        /// the rest of the project � the model is the single source of truth and
         /// is not deep-copied). <see cref="Results"/> (the <c>MCMCResults</c>
         /// containing posterior samples) is also shared by reference. Callers who
         /// intend to re-fit the clone should call <c>ClearResults()</c> on it

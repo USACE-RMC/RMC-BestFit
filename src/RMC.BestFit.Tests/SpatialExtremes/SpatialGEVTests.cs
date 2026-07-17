@@ -7,8 +7,8 @@ using RMC.BestFit.Models.TrendFunctions;
 namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="SpatialGEV"/> hierarchical Bayesian spatial GEV model
-/// and the <see cref="SpatialGEVAnalysis"/> wrapper.
+/// Programmatic unit tests for the <c>SpatialGEV</c> hierarchical Bayesian spatial GEV model
+/// and the <c>SpatialGEVAnalysis</c> wrapper.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -109,7 +109,7 @@ public class SpatialGEVTests
     }
 
     /// <summary>
-    /// Creates a default-configured <see cref="SpatialGEV"/> with intercept-only trends.
+    /// Creates a default-configured <c>SpatialGEV</c> with intercept-only trends.
     /// </summary>
     private static SpatialGEV CreateTestModel()
     {

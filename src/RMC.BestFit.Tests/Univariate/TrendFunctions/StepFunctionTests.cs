@@ -1,10 +1,10 @@
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="StepFunction"/> class.
+/// Unit tests for the <c>StepFunction</c> class.
 /// Tests the step function model with a single change point.
 /// </summary>
 [TestClass]

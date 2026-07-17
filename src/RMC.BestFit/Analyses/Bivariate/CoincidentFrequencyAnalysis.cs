@@ -1,4 +1,4 @@
-﻿using Numerics.Data;
+using Numerics.Data;
 using Numerics.Distributions;
 using Numerics.Distributions.Copulas;
 using Numerics.Data.Statistics;
@@ -24,16 +24,16 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// Given a fitted <see cref="BivariateAnalysis"/> (marginals X, Y and copula C) and
-    /// an external response surface Z = f(X, Y) tabulated on an M × N grid, the analysis
-    /// produces a stage-frequency curve P(Z ≥ z) with posterior uncertainty bands.
+    /// an external response surface Z = f(X, Y) tabulated on an M � N grid, the analysis
+    /// produces a stage-frequency curve P(Z = z) with posterior uncertainty bands.
     /// </para>
     /// <para>
     /// The integration uses the chain-rule decomposition P(A,B) = P(A|B) P(B) materialised
     /// per Y column: for each Z output bin <i>z</i> and each Y column <i>j</i>, the X value
     /// x*(z, j) that produces output <i>z</i> is found by linear interpolation of
     /// (XValues, BivariateResponse[*, j]); the contribution of that column to F_Z(z) is
-    /// the 2-point copula CDF difference C(F_X(x*), F_Y(yEdge_{j+1})) − C(F_X(x*), F_Y(yEdge_j)).
-    /// Summing over Y columns gives F_Z(z); 1 − F_Z(z) is the AEP at that bin.
+    /// the 2-point copula CDF difference C(F_X(x*), F_Y(yEdge_{j+1})) - C(F_X(x*), F_Y(yEdge_j)).
+    /// Summing over Y columns gives F_Z(z); 1 - F_Z(z) is the AEP at that bin.
     /// </para>
     /// <para>
     /// Per-realisation uncertainty is obtained by looping over posterior samples from the
@@ -67,7 +67,7 @@ namespace RMC.BestFit.Analyses
         /// <param name="bivariateAnalysis">The fitted bivariate analysis containing marginals and copula.</param>
         /// <param name="xValues">The X (primary) ordinates, strictly ascending. Length M = rows of <paramref name="bivariateResponse"/>.</param>
         /// <param name="yValues">The Y (secondary) ordinates, strictly ascending. Length N = columns of <paramref name="bivariateResponse"/>.</param>
-        /// <param name="bivariateResponse">The response surface Z[i, j] (M × N), strictly increasing along both axes.</param>
+        /// <param name="bivariateResponse">The response surface Z[i, j] (M � N), strictly increasing along both axes.</param>
         /// <exception cref="ArgumentNullException">Any argument is null.</exception>
         public CoincidentFrequencyAnalysis(BivariateAnalysis bivariateAnalysis, double[] xValues, double[] yValues, double[,] bivariateResponse)
         {
@@ -83,7 +83,7 @@ namespace RMC.BestFit.Analyses
         /// Initializes a new instance of the <see cref="CoincidentFrequencyAnalysis"/> class
         /// from a serialized <see cref="XElement"/> and a fitted bivariate analysis.
         /// </summary>
-        /// <param name="bivariateAnalysis">The fitted bivariate analysis (the upstream input — not serialized here).</param>
+        /// <param name="bivariateAnalysis">The fitted bivariate analysis (the upstream input � not serialized here).</param>
         /// <param name="xElement">The XML element containing the persisted state.</param>
         /// <exception cref="ArgumentNullException">Either argument is null.</exception>
         public CoincidentFrequencyAnalysis(BivariateAnalysis bivariateAnalysis, XElement xElement)
@@ -157,8 +157,8 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Gets the Bayesian analysis settings (CredibleIntervalWidth, OutputLength, PointEstimator).
-        /// CFA does not own an MCMC chain — this object holds presentation settings only and is
-        /// set once in the constructor (mirrors <see cref="Univariate.CompositeAnalysis"/>).
+        /// CFA does not own an MCMC chain � this object holds presentation settings only and is
+        /// set once in the constructor (mirrors <c>CompositeAnalysis</c>).
         /// </summary>
         public BayesianAnalysis BayesianAnalysis { get; private set; } = null!;
 
@@ -233,7 +233,7 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Gets or sets the number of evenly-spaced Z output bins. Default is 50.
-        /// Range checking (5 ≤ N ≤ 1000) and slow-run warning (N &gt; 100) are surfaced
+        /// Range checking (5 = N = 1000) and slow-run warning (N &gt; 100) are surfaced
         /// through <see cref="Validate"/> rather than the setter, matching the rest of
         /// the library.
         /// </summary>
@@ -281,11 +281,20 @@ namespace RMC.BestFit.Analyses
 
         #region Methods
 
+        /// <summary>
+        /// Supports the <c>BivariateAnalysis_PropertyChanged</c> helper.
+        /// </summary>
+        /// <param name="sender">The event source.</param>
+        /// <param name="e">The event data.</param>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private void BivariateAnalysis_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(BivariateAnalysis.IsEstimated))
             {
-                ClearResults();
+                if (BivariateAnalysis?.IsEstimated == false)
+                    ClearResults();
                 RaisePropertyChange(e.PropertyName);
             }
         }
@@ -355,13 +364,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -372,12 +382,13 @@ namespace RMC.BestFit.Analyses
                     // PropertyChanged fires inside CreateFrequencyAnalysisResultsAsync, the
                     // App control's BindSummaryStatisticsDataGrid gate (Element.IsEstimated == true)
                     // sees the analysis as estimated and populates summary stats. Without this, the
-                    // batch path — which calls inner.RunAsync directly without the UI wrapper's
-                    // post-await RaisePropertyChange — leaves the summary grid empty. Mirrors the
+                    // batch path � which calls inner.RunAsync directly without the UI wrapper's
+                    // post-await RaisePropertyChange � leaves the summary grid empty. Mirrors the
                     // B17C pattern (Bulletin17CAnalysis.cs:558).
                     _isEstimated = true;
                     await CreateFrequencyAnalysisResultsAsync(progressReporter, cancellationToken);
                     RaisePropertyChange(nameof(IsEstimated));
+                    AnalysisProgress.ReportComplete(progressReporter);
                 }
                 catch (OperationCanceledException)
                 {
@@ -407,7 +418,7 @@ namespace RMC.BestFit.Analyses
         /// response surface and 2-point copula conditional CDF differences, looped over
         /// posterior MCMC realisations to produce uncertainty bands.
         /// </summary>
-        /// <param name="progressReporter">Optional progress reporter (0–100).</param>
+        /// <param name="progressReporter">Optional progress reporter (0�100).</param>
         /// <param name="cancellationToken">Token used to cancel the per-realisation
         /// parallel loop and the surrounding aggregation. When triggered, the task
         /// throws <see cref="OperationCanceledException"/> before any partial
@@ -433,10 +444,10 @@ namespace RMC.BestFit.Analyses
                 int K = NumberOfBins;
                 double alpha = 1d - BayesianAnalysis.CredibleIntervalWidth;
 
-                // Step 1 — Z output bins (endpoint-inclusive linspace).
+                // Step 1 � Z output bins (endpoint-inclusive linspace).
                 ZOutputValues = BuildZOutputBins(BivariateResponse, K);
 
-                // Step 2 — Y bin edges (midpoints with ±∞ at ends).
+                // Step 2 � Y bin edges (midpoints with �8 at ends).
                 var yEdges = ComputeYBinEdges(YValues);
 
                 // Cancellation checkpoint: if the user cancelled before the parallel
@@ -445,7 +456,7 @@ namespace RMC.BestFit.Analyses
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Determine realisation count: copula chain is the only required source
-                // (marginal chains are optional — fall back to point-estimate marginals if missing).
+                // (marginal chains are optional � fall back to point-estimate marginals if missing).
                 var copulaResults = BivariateAnalysis.BayesianAnalysis?.Results;
                 int copulaRealz = copulaResults?.Output?.Count ?? 0;
                 int marginalXRealz = MarginalXChain?.Output?.Count ?? int.MaxValue;
@@ -468,20 +479,16 @@ namespace RMC.BestFit.Analyses
                         AnalysisResults.ConfidenceIntervals![k, 0] = double.NaN;
                         AnalysisResults.ConfidenceIntervals![k, 1] = double.NaN;
                     }
-                    progressReporter?.ReportProgress(100);
+                    AnalysisProgress.ReportProcessingResults(progressReporter);
                     return;
                 }
 
-                // Steps 3–4 — Per-realisation loop.
+                // Steps 3�4 � Per-realisation loop.
                 // aepStore[k][r] = AEP at output bin k under realisation r.
                 var aepStore = new double[K][];
                 for (int k = 0; k < K; k++) aepStore[k] = new double[realz];
 
-                var options = new ParallelOptions
-                {
-                    CancellationToken = cancellationToken,
-                    MaxDegreeOfParallelism = Environment.ProcessorCount
-                };
+                var options = AnalysisProgress.CreateParallelOptions(cancellationToken);
 
                 int progressCounter = 0;
                 Parallel.For(0, realz, options, r =>
@@ -489,9 +496,9 @@ namespace RMC.BestFit.Analyses
                     // ThrowIfCancellationRequested fires immediately when the token is
                     // signaled. The OperationCanceledException pops as a "first-chance
                     // exception" in the Visual Studio debugger when CLR exceptions are
-                    // enabled in Debug → Windows → Exception Settings, but the outer
+                    // enabled in Debug ? Windows ? Exception Settings, but the outer
                     // catch in RunAsync (CoincidentFrequencyAnalysis.cs:382) handles it
-                    // correctly — the user sees a clean cancel in Release mode and when
+                    // correctly � the user sees a clean cancel in Release mode and when
                     // running outside the debugger.
                     options.CancellationToken.ThrowIfCancellationRequested();
 
@@ -504,7 +511,7 @@ namespace RMC.BestFit.Analyses
 
                     int done = Interlocked.Increment(ref progressCounter);
                     if (done % Math.Max(1, realz / 20) == 0)
-                        progressReporter?.ReportProgress((int)(100.0 * done / realz));
+                        progressReporter?.ReportProgress((int)(99.0 * done / realz));
                 });
 
                 // Defensive checkpoint between the parallel loop and aggregation: if
@@ -598,15 +605,15 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Computes F_Z(z) for a single Z output bin by total probability over Y columns:
-        /// F_Z(z) = Σ_j [ C(F_X(x*_j), v_{j+1}) − C(F_X(x*_j), v_j) ], where v_0 = 0,
-        /// v_N = 1, and v_j = F_Y(midpoint(y_{j-1}, y_j)) for 1 ≤ j ≤ N − 1. The Y-tail
-        /// mass (Y &lt; y_0 and Y &gt; y_{N-1}) is folded into bins j = 0 and j = N − 1
+        /// F_Z(z) = S_j [ C(F_X(x*_j), v_{j+1}) - C(F_X(x*_j), v_j) ], where v_0 = 0,
+        /// v_N = 1, and v_j = F_Y(midpoint(y_{j-1}, y_j)) for 1 = j = N - 1. The Y-tail
+        /// mass (Y &lt; y_0 and Y &gt; y_{N-1}) is folded into bins j = 0 and j = N - 1
         /// respectively so the integration is collectively exhaustive over Y.
         /// </summary>
         /// <param name="z">The Z output bin value.</param>
         /// <param name="response">The response surface BivariateResponse[i, j].</param>
-        /// <param name="xZetas">Pre-computed Φ⁻¹(F_X(xValues[i])) for i = 0..M − 1. The
-        /// column inversion interpolates linearly in (z, ζ) space, the standard Normal-Z
+        /// <param name="xZetas">Pre-computed F?�(F_X(xValues[i])) for i = 0..M - 1. The
+        /// column inversion interpolates linearly in (z, ?) space, the standard Normal-Z
         /// probability-paper convention used elsewhere in BestFit.</param>
         /// <param name="vEdges">Pre-computed Y bin edges in copula space (length N + 1).
         /// vEdges[0] = 0 and vEdges[N] = 1; interior values are F_Y at midpoints between
@@ -615,20 +622,20 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// For each Y column j the algorithm finds x*(z, j) by interpolating linearly along
-        /// (response[*, j], xZetas) — i.e., the response value vs the Normal Z-variate of
+        /// (response[*, j], xZetas) � i.e., the response value vs the Normal Z-variate of
         /// F_X(x_i). When z falls outside the column's response range it uses linear
         /// extrapolation along the nearest segment. The result is converted back to a
-        /// probability via Φ.
+        /// probability via F.
         /// </para>
         /// <para>
-        /// The contribution of column j is C(u, v_{j+1}) − C(u, v_j) (a 2-point copula CDF
+        /// The contribution of column j is C(u, v_{j+1}) - C(u, v_j) (a 2-point copula CDF
         /// difference). The boundary identities C(u, 0) = 0 and C(u, 1) = u are applied
-        /// analytically for j = 0 and j = N − 1 to avoid passing 0 or 1 to copula.CDF, which
-        /// elliptical copulas compute via Φ⁻¹ internally.
+        /// analytically for j = 0 and j = N - 1 to avoid passing 0 or 1 to copula.CDF, which
+        /// elliptical copulas compute via F?� internally.
         /// </para>
         /// <para>
-        /// Mass conservation: at z = +∞ every column has u = 1, so the sum collapses to
-        /// v_1 + Σ_{j=1}^{N−2}(v_{j+1} − v_j) + (1 − v_{N−1}) = 1. At z = −∞ every column
+        /// Mass conservation: at z = +8 every column has u = 1, so the sum collapses to
+        /// v_1 + S_{j=1}^{N-2}(v_{j+1} - v_j) + (1 - v_{N-1}) = 1. At z = -8 every column
         /// has u = 0 and F_Z = 0.
         /// </para>
         /// </remarks>
@@ -641,14 +648,14 @@ namespace RMC.BestFit.Analyses
 
             double fz = 0d;
 
-            // Sum over Y columns: P(Z ≤ z) = Σ_j P(X ≤ x*_j, Y ∈ bin_j) via the copula.
+            // Sum over Y columns: P(Z = z) = S_j P(X = x*_j, Y ? bin_j) via the copula.
             for (int j = 0; j < N; j++)
             {
                 double u = ClampUnit(FindUStarInColumn(z, j, response, M, xZetas), UEpsilon);
 
-                // Upper-edge term: C(u, vEdges[j+1]). For j = N − 1, vEdges[N] = 1 → C(u, 1) = u.
+                // Upper-edge term: C(u, vEdges[j+1]). For j = N - 1, vEdges[N] = 1 ? C(u, 1) = u.
                 double upperTerm = (j == N - 1) ? u : copula.CDF(u, vEdges[j + 1]);
-                // Lower-edge term: C(u, vEdges[j]). For j = 0, vEdges[0] = 0 → C(u, 0) = 0.
+                // Lower-edge term: C(u, vEdges[j]). For j = 0, vEdges[0] = 0 ? C(u, 0) = 0.
                 double lowerTerm = (j == 0) ? 0d : copula.CDF(u, vEdges[j]);
                 double contribution = upperTerm - lowerTerm;
 
@@ -662,20 +669,20 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Finds u = F_X(x*) where x* is the X-axis solution to response(x*, yValues[colIdx]) = z,
-        /// interpolating linearly in (response, ζ) space where ζ = Φ⁻¹(F_X(x)) is the Normal
+        /// interpolating linearly in (response, ?) space where ? = F?�(F_X(x)) is the Normal
         /// Z-variate. Linear extrapolation along the first or last segment is used when z
-        /// falls outside the column's response range. The result is converted back via Φ.
+        /// falls outside the column's response range. The result is converted back via F.
         /// </summary>
         /// <param name="z">The Z value to invert.</param>
         /// <param name="colIdx">Column index (Y position) into the response surface.</param>
         /// <param name="response">The response surface.</param>
         /// <param name="M">Length of the X axis (rows of <paramref name="response"/>).</param>
-        /// <param name="xZetas">Pre-computed Normal Z-variate of F_X at each X grid point —
+        /// <param name="xZetas">Pre-computed Normal Z-variate of F_X at each X grid point �
         /// see <see cref="BuildXZetas"/>. Length must equal <paramref name="M"/>.</param>
-        /// <returns>u = Φ(ζ*) ∈ [0, 1].</returns>
-        /// <remarks>Interpolating in (z, ζ) rather than (z, x) follows the project's
+        /// <returns>u = F(?*) ? [0, 1].</returns>
+        /// <remarks>Interpolating in (z, ?) rather than (z, x) follows the project's
         /// standard Normal-Z probability-paper convention. For Normal marginals the two
-        /// schemes coincide because ζ is a linear function of x; for non-Normal marginals
+        /// schemes coincide because ? is a linear function of x; for non-Normal marginals
         /// (LP3, GEV, Gumbel) the Normal-Z form is more accurate at sparse-grid resolutions.</remarks>
         private static double FindUStarInColumn(double z, int colIdx, double[,] response, int M, double[] xZetas)
         {
@@ -722,7 +729,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Pre-computes ζ_i = Φ⁻¹(F_X(xValues[i])) for use as the probability-axis ordinate
+        /// Pre-computes ?_i = F?�(F_X(xValues[i])) for use as the probability-axis ordinate
         /// in <see cref="FindUStarInColumn"/>. Called once per posterior draw in
         /// <see cref="ComputeAEPCurveForDraw"/>; the result is reused across all Z output bins.
         /// </summary>
@@ -743,7 +750,7 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Pre-computes the Y bin edges in copula space (length N + 1). vEdges[0] = 0 and
-        /// vEdges[N] = 1 fold the Y-tail mass into bins j = 0 and j = N − 1 respectively.
+        /// vEdges[N] = 1 fold the Y-tail mass into bins j = 0 and j = N - 1 respectively.
         /// Interior edges are F_Y at the midpoint between consecutive y values
         /// (yEdges[1..N-1] from <see cref="ComputeYBinEdges"/>).
         /// </summary>
@@ -784,8 +791,8 @@ namespace RMC.BestFit.Analyses
         /// <param name="copulaParameters">Copula parameters; null leaves the cloned upstream copula unchanged.</param>
         /// <param name="marginalXParameters">Marginal X parameters; null leaves the cloned upstream marginal X unchanged.</param>
         /// <param name="marginalYParameters">Marginal Y parameters; null leaves the cloned upstream marginal Y unchanged.</param>
-        /// <param name="yEdges">Pre-computed Y bin edges (length N + 1) — see <see cref="ComputeYBinEdges"/>.</param>
-        /// <returns>AEP[k] = 1 − F_Z(<see cref="ZOutputValues"/>[k]) for k in [0, K).</returns>
+        /// <param name="yEdges">Pre-computed Y bin edges (length N + 1) � see <see cref="ComputeYBinEdges"/>.</param>
+        /// <returns>AEP[k] = 1 - F_Z(<see cref="ZOutputValues"/>[k]) for k in [0, K).</returns>
         /// <remarks>Each call clones the upstream copula and marginals so the helper is safe under
         /// the parallel realisation loop in <see cref="CreateFrequencyAnalysisResultsAsync"/>.</remarks>
         private double[] ComputeAEPCurveForDraw(double[]? copulaParameters,
@@ -804,7 +811,7 @@ namespace RMC.BestFit.Analyses
             if (marginalYParameters != null) mY.SetParameters(marginalYParameters);
 
             // Pre-compute the X probability-axis ordinates (Normal Z-variates of F_X(x_i))
-            // and the Y bin edges in copula space ONCE per draw — both are constant across
+            // and the Y bin edges in copula space ONCE per draw � both are constant across
             // Z output bins and reused inside every ComputeFZAtBin call.
             var xZetas = BuildXZetas(XValues, mX);
             var vEdges = BuildVEdges(YValues, yEdges, mY);
@@ -823,7 +830,7 @@ namespace RMC.BestFit.Analyses
         /// current <see cref="BayesianAnalysis.PointEstimator"/> setting.
         /// </summary>
         /// <param name="yEdges">Pre-computed Y bin edges used to integrate the response surface.</param>
-        /// <returns>AEP[k] = 1 − F_Z(<see cref="ZOutputValues"/>[k]) for each output bin.</returns>
+        /// <returns>AEP[k] = 1 - F_Z(<see cref="ZOutputValues"/>[k]) for each output bin.</returns>
         /// <remarks>
         /// If posterior samples are unavailable, the method falls back to the current upstream
         /// copula and marginal parameter values, preserving the deterministic point-estimate-only
@@ -853,7 +860,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Returns an empirical distribution over Z (response value) and AEP (= 1 − F_Z) for the
+        /// Returns an empirical distribution over Z (response value) and AEP (= 1 - F_Z) for the
         /// upstream <see cref="BivariateAnalysis"/>'s point estimate. The choice of point estimate
         /// is driven by <see cref="BayesianAnalysis.PointEstimator"/>:
         /// <see cref="BayesianAnalysis.PointEstimateType.PosteriorMean"/> rebuilds copula + marginals
@@ -861,9 +868,9 @@ namespace RMC.BestFit.Analyses
         /// <see cref="BayesianAnalysis.PointEstimateType.PosteriorMode"/> reuses the already-computed
         /// <see cref="UncertaintyAnalysisResults.ModeCurve"/>.
         /// </summary>
-        /// <returns>The empirical Z↔AEP distribution, or null when upstream is not estimated, chains
+        /// <returns>The empirical Z?AEP distribution, or null when upstream is not estimated, chains
         /// are unavailable, results are missing, or the constructor rejects the data.</returns>
-        /// <remarks>Mirrors <see cref="UnivariateAnalysis.GetPointEstimateDistribution"/>, but returns
+        /// <remarks>Mirrors <c>UnivariateAnalysis.GetPointEstimateDistribution</c>, but returns
         /// an <see cref="EmpiricalDistribution"/> rather than a parametric distribution because CFA's
         /// output is a tabulated Z-vs-AEP curve. The probability axis is in descending sort order
         /// (AEP), passed through <see cref="EmpiricalDistribution(IList{double}, IList{double}, SortOrder, SortOrder)"/>.
@@ -891,13 +898,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Returns an empirical distribution over Z (response value) and AEP (= 1 − F_Z) for posterior
+        /// Returns an empirical distribution over Z (response value) and AEP (= 1 - F_Z) for posterior
         /// draw <paramref name="index"/>. The realisation count equals
         /// min(copulaChain, marginalXChain, marginalYChain), where missing marginal chains are treated
         /// as unbounded (point-estimate fall-back inside <see cref="ComputeAEPCurveForDraw"/>).
         /// </summary>
         /// <param name="index">Posterior realisation index in [0, realz).</param>
-        /// <returns>The empirical Z↔AEP distribution for the requested draw, or null when upstream is
+        /// <returns>The empirical Z?AEP distribution for the requested draw, or null when upstream is
         /// not estimated, <see cref="ZOutputValues"/> is null, the index is out of range, or the
         /// constructor rejects the data.</returns>
         /// <remarks>Mirrors <see cref="UnivariateAnalysis.GetDistribution(int)"/>. The probability
@@ -956,7 +963,7 @@ namespace RMC.BestFit.Analyses
         /// is non-null so consumers see the persisted curves as a successfully estimated state.
         /// </summary>
         /// <remarks>
-        /// Mirrors <see cref="Univariate.CompositeAnalysis.RestoreAnalysisResults"/>. The plain
+        /// Mirrors <c>RestoreAnalysisResults</c>. The plain
         /// <see cref="SetAnalysisResults"/> setter is preserved for in-flight UI updates that
         /// must not flip the IsEstimated flag.
         /// </remarks>
@@ -1088,7 +1095,7 @@ namespace RMC.BestFit.Analyses
                     messages.Add("Bivariate response contains NaN or infinity values.");
                 }
 
-                // Per-column monotonicity (along X) — required for X inversion.
+                // Per-column monotonicity (along X) � required for X inversion.
                 if (rows == XValues.Length && cols == YValues.Length)
                 {
                     bool columnMonotonic = true;
@@ -1109,7 +1116,7 @@ namespace RMC.BestFit.Analyses
                         messages.Add("Bivariate response must be strictly increasing along X (each column).");
                     }
 
-                    // Per-row monotonicity (along Y) — required for physical sense.
+                    // Per-row monotonicity (along Y) � required for physical sense.
                     bool rowMonotonic = true;
                     for (int i = 0; i < rows && rowMonotonic; i++)
                     {
@@ -1143,7 +1150,7 @@ namespace RMC.BestFit.Analyses
             }
             else if (NumberOfBins > 100)
             {
-                // Non-blocking warning — large bin counts are valid but slow.
+                // Non-blocking warning � large bin counts are valid but slow.
                 messages.Add("Warning: NumberOfBins > 100 may result in slow run times.");
             }
 
@@ -1182,11 +1189,27 @@ namespace RMC.BestFit.Analyses
             return root;
         }
 
+        /// <summary>
+        /// Joins doubles.
+        /// </summary>
+        /// <param name="values">The input values.</param>
+        /// <returns>The joined text.</returns>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private static string JoinDoubles(IEnumerable<double> values)
         {
             return string.Join(",", values.Select(d => d.ToString("G17", CultureInfo.InvariantCulture)));
         }
 
+        /// <summary>
+        /// Parses double Array.
+        /// </summary>
+        /// <param name="csv">The csv value.</param>
+        /// <returns>The parsed values.</returns>
+        /// <remarks>
+        /// This member supports the owning analysis or model implementation.
+        /// </remarks>
         private static double[] ParseDoubleArray(string? csv)
         {
             if (string.IsNullOrWhiteSpace(csv)) return Array.Empty<double>();

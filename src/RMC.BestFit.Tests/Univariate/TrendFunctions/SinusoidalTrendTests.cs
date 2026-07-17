@@ -2,10 +2,10 @@ using Numerics.Distributions;
 using RMC.BestFit.Models.TrendFunctions;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
-namespace RMC.BestFit.Tests.TrendFunctions;
+namespace RMC.BestFit.Tests.Univariate.TrendFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="SinusoidalTrend"/> class.
+/// Unit tests for the <c>SinusoidalTrend</c> class.
 /// Tests the sinusoidal trend model y(t) = α + β × sin(2πγ(t - StartIndex) + δ).
 /// </summary>
 [TestClass]
@@ -13,6 +13,9 @@ public class SinusoidalTrendTests
 {
     #region Constructor Tests
 
+    /// <summary>
+    /// Verifies <c>Test_Constructor_EmptyConstructor_CreatesDefaultModel</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Constructor_EmptyConstructor_CreatesDefaultModel()
     {
@@ -23,6 +26,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(4, model.NumberOfParameters);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Constructor_XElement_RestoresModel</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Constructor_XElement_RestoresModel()
     {
@@ -45,6 +51,9 @@ public class SinusoidalTrendTests
 
     #region Type Tests
 
+    /// <summary>
+    /// Verifies <c>Test_Type_ReturnsSinusoidal</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Type_ReturnsSinusoidal()
     {
@@ -56,6 +65,9 @@ public class SinusoidalTrendTests
 
     #region SetDefaultParameters Tests
 
+    /// <summary>
+    /// Verifies <c>Test_SetDefaultParameters_CreatesFourParameters</c>.
+    /// </summary>
     [TestMethod]
     public void Test_SetDefaultParameters_CreatesFourParameters()
     {
@@ -68,6 +80,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual("(δ)", model.Parameters[3].Name);  // Phase
     }
 
+    /// <summary>
+    /// Verifies <c>Test_SetDefaultParameters_AmplitudeHasPositiveBounds</c>.
+    /// </summary>
     [TestMethod]
     public void Test_SetDefaultParameters_AmplitudeHasPositiveBounds()
     {
@@ -78,6 +93,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(1.0, model.Parameters[1].UpperBound);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_SetDefaultParameters_FrequencyHasPositiveBounds</c>.
+    /// </summary>
     [TestMethod]
     public void Test_SetDefaultParameters_FrequencyHasPositiveBounds()
     {
@@ -88,6 +106,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(0.5, model.Parameters[2].UpperBound);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_SetDefaultParameters_PhaseHasPeriodicBounds</c>.
+    /// </summary>
     [TestMethod]
     public void Test_SetDefaultParameters_PhaseHasPeriodicBounds()
     {
@@ -98,6 +119,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(2 * Math.PI, model.Parameters[3].UpperBound, 1e-10);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_SetDefaultParameters_AllHaveUniformPriors</c>.
+    /// </summary>
     [TestMethod]
     public void Test_SetDefaultParameters_AllHaveUniformPriors()
     {
@@ -112,6 +136,9 @@ public class SinusoidalTrendTests
 
     #region Predict Tests
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_AtStartIndex_WithZeroPhase</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_AtStartIndex_WithZeroPhase()
     {
@@ -125,6 +152,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(100.0, model.Predict(1950), 1e-10);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_SimpleSine</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_SimpleSine()
     {
@@ -142,6 +172,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(0.0, model.Predict(4), 1e-10);   // sin(2π) = 0
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_WithMeanLevel</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_WithMeanLevel()
     {
@@ -158,6 +191,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(40.0, model.Predict(3), 1e-10);   // Min
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_WithPhaseShift</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_WithPhaseShift()
     {
@@ -174,6 +210,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(0.0, model.Predict(3), 1e-10);   // cos(3π/2) = 0
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_AnnualCycle</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_AnnualCycle()
     {
@@ -198,6 +237,9 @@ public class SinusoidalTrendTests
         Assert.IsTrue(minTemp >= 5.0);   // α - β
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_ZeroAmplitude_ReturnsConstant</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_ZeroAmplitude_ReturnsConstant()
     {
@@ -213,6 +255,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(42.0, model.Predict(-50), 1e-10);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_Period</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_Period()
     {
@@ -233,6 +278,9 @@ public class SinusoidalTrendTests
 
     #region Clone Tests
 
+    /// <summary>
+    /// Verifies <c>Test_Clone_CreatesIndependentCopy</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Clone_CreatesIndependentCopy()
     {
@@ -248,6 +296,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(100.0, clone.Parameters[0].Value);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Clone_PreservesPrediction</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Clone_PreservesPrediction()
     {
@@ -266,6 +317,9 @@ public class SinusoidalTrendTests
 
     #region Serialization Tests
 
+    /// <summary>
+    /// Verifies <c>Test_ToXElement_ContainsTypeAttribute</c>.
+    /// </summary>
     [TestMethod]
     public void Test_ToXElement_ContainsTypeAttribute()
     {
@@ -275,6 +329,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual("Sinusoidal", xElement.Attribute("Type")?.Value);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_RoundTrip_PreservesAllProperties</c>.
+    /// </summary>
     [TestMethod]
     public void Test_RoundTrip_PreservesAllProperties()
     {
@@ -290,6 +347,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(original.Predict(2000), restored.Predict(2000), 1e-10);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_RoundTrip_PreservesPhaseParameter</c>.
+    /// </summary>
     [TestMethod]
     public void Test_RoundTrip_PreservesPhaseParameter()
     {
@@ -306,6 +366,9 @@ public class SinusoidalTrendTests
 
     #region Physical Application Tests
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_TidalPattern</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_TidalPattern()
     {
@@ -325,6 +388,9 @@ public class SinusoidalTrendTests
         Assert.IsTrue(model.Predict(0) <= model.Parameters[0].Value + model.Parameters[1].Value);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_SeasonalFloodPattern</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_SeasonalFloodPattern()
     {
@@ -344,6 +410,9 @@ public class SinusoidalTrendTests
         }
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_MultiDecadalOscillation</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_MultiDecadalOscillation()
     {
@@ -363,6 +432,9 @@ public class SinusoidalTrendTests
 
     #region Edge Cases
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_VeryHighFrequency</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_VeryHighFrequency()
     {
@@ -378,6 +450,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(0.0, model.Predict(2), 1e-10);   // sin(2π)
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_VeryLowFrequency</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_VeryLowFrequency()
     {
@@ -393,6 +468,9 @@ public class SinusoidalTrendTests
         Assert.IsTrue(Math.Abs(val10 - val0) < 0.1);  // Little change
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_NegativeTime</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_NegativeTime()
     {
@@ -407,6 +485,9 @@ public class SinusoidalTrendTests
         Assert.AreEqual(-model.Predict(3), model.Predict(-3), 1e-10);
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_LargeTime</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_LargeTime()
     {
@@ -423,6 +504,9 @@ public class SinusoidalTrendTests
         Assert.IsFalse(double.IsNaN(result));
     }
 
+    /// <summary>
+    /// Verifies <c>Test_Predict_PhaseEquivalence</c>.
+    /// </summary>
     [TestMethod]
     public void Test_Predict_PhaseEquivalence()
     {

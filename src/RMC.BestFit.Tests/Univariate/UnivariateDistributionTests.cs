@@ -1,11 +1,11 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="UnivariateDistribution"/> wrapper class.
+/// Programmatic unit tests for the <c>UnivariateDistribution</c> wrapper class.
 /// Construction, parameter management, log-likelihood at fixed parameters, prior evaluation,
 /// serialization, and validation. Estimation-driven tests live in <c>RMC.BestFit.Verification</c>.
 /// </summary>
@@ -36,9 +36,17 @@ public class UnivariateDistributionTests
     /// </summary>
     private static readonly double[] InlineNormalTrueParams = [100.0, 15.0];
 
-    private static DataFrame MakeDataFrame(double[] data)
+    /// <summary>
+    /// Creates data Frame.
+    /// </summary>
+    /// <param name="data">The input data.</param>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame MakeDataFrame(double[] data)
     {
-        var df = new DataFrame { ExactSeries = new ExactSeries(data) };
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(data) };
         return df;
     }
 
@@ -64,20 +72,30 @@ public class UnivariateDistributionTests
     public void Test_Constructor_AllDistributionTypes()
     {
         var df = MakeDataFrame(InlineNormalData);
-        var distributionTypes = Enum.GetValues<UnivariateDistributionType>();
+        var distributionTypes = new[]
+        {
+            UnivariateDistributionType.Exponential,
+            UnivariateDistributionType.GammaDistribution,
+            UnivariateDistributionType.GeneralizedExtremeValue,
+            UnivariateDistributionType.GeneralizedLogistic,
+            UnivariateDistributionType.GeneralizedNormal,
+            UnivariateDistributionType.GeneralizedPareto,
+            UnivariateDistributionType.Gumbel,
+            UnivariateDistributionType.KappaFour,
+            UnivariateDistributionType.LnNormal,
+            UnivariateDistributionType.Logistic,
+            UnivariateDistributionType.LogNormal,
+            UnivariateDistributionType.LogPearsonTypeIII,
+            UnivariateDistributionType.Normal,
+            UnivariateDistributionType.PearsonTypeIII,
+            UnivariateDistributionType.Weibull
+        };
 
         foreach (var distType in distributionTypes)
         {
-            try
-            {
-                var model = new UnivariateDistribution(df, distType);
-                Assert.IsNotNull(model.Distribution, $"{distType}: Distribution should not be null.");
-                Assert.IsNotNull(model.Parameters, $"{distType}: Parameters should not be null.");
-            }
-            catch (Exception ex) when (ex is not AssertFailedException)
-            {
-                Assert.Inconclusive($"{distType}: {ex.Message}");
-            }
+            var model = new UnivariateDistribution(df, distType);
+            Assert.IsNotNull(model.Distribution, $"{distType}: Distribution should not be null.");
+            Assert.IsNotNull(model.Parameters, $"{distType}: Parameters should not be null.");
         }
     }
 
@@ -316,7 +334,7 @@ public class UnivariateDistributionTests
         Assert.IsTrue(isValid, $"Validation failed: {string.Join(", ", messages)}");
     }
 
-    // Note: An empty DataFrame currently passes validation in the model layer
+    // Note: An empty BestFitDataFrame currently passes validation in the model layer
     // (empty series and zero data points are not flagged as errors). The "model with
     // no data should fail validation" expectation lives at the UI / analysis layer,
     // not in UnivariateDistribution itself. Keep this contract documented here so
@@ -341,6 +359,77 @@ public class UnivariateDistributionTests
 
         Assert.AreEqual(2, normalParamCount);
         Assert.AreEqual(3, gevParamCount);
+    }
+
+    #endregion
+
+    #region Jeffreys scale prior regression
+
+    /// <summary>
+    /// One-parameter families retain their ordinary priors without an inapplicable Jeffreys scale term.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_OneParameterFamiliesOmitScaleContribution()
+    {
+        UnivariateDistributionBase[] distributions =
+        [
+            new Poisson(2.0),
+            new Bernoulli(0.4),
+            new Geometric(0.4),
+            new Deterministic(2.0),
+        ];
+
+        foreach (UnivariateDistributionBase distribution in distributions)
+        {
+            var model = new UnivariateDistribution();
+            model.Distribution = distribution;
+            model.UseDefaultFlatPriors = false;
+            model.DataFrame = MakeDataFrame([0.0, 1.0, 2.0, 3.0, 4.0]);
+            model.Parameters[0].Value = distribution.GetParameters[0];
+            model.Parameters[0].PriorDistribution =
+                new Normal(model.Parameters[0].Value, 1.0);
+            model.UseJeffreysRuleForScale = true;
+            double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+            double scalar = model.PriorLogLikelihood(parameters);
+            var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+            Assert.IsTrue(double.IsFinite(scalar), distribution.Type.ToString());
+            Assert.IsFalse(pointwise.Any(component =>
+                component.Type == PriorComponentType.JeffreysScalePrior), distribution.Type.ToString());
+            Assert.AreEqual(scalar, pointwise.Sum(component => component.LogLikelihood), 1e-12,
+                distribution.Type.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Normal and Gamma retain their established Jeffreys scale contribution and scalar/pointwise parity.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_NormalAndGammaRetainScaleContribution()
+    {
+        foreach (UnivariateDistributionType distributionType in new[]
+        {
+            UnivariateDistributionType.Normal,
+            UnivariateDistributionType.GammaDistribution,
+        })
+        {
+            var model = new UnivariateDistribution(
+                MakeDataFrame(InlineNormalData), distributionType);
+            double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+            int scaleIndex = distributionType == UnivariateDistributionType.GammaDistribution ? 0 : 1;
+
+            model.UseJeffreysRuleForScale = false;
+            double withoutJeffreys = model.PriorLogLikelihood(parameters);
+            model.UseJeffreysRuleForScale = true;
+            double withJeffreys = model.PriorLogLikelihood(parameters);
+            var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+            Assert.AreEqual(-Math.Log(parameters[scaleIndex]), withJeffreys - withoutJeffreys, 1e-12);
+            Assert.AreEqual(1, pointwise.Count(component =>
+                component.Type == PriorComponentType.JeffreysScalePrior));
+            Assert.AreEqual(withJeffreys, pointwise.Sum(component => component.LogLikelihood), 1e-12);
+        }
     }
 
     #endregion

@@ -11,9 +11,24 @@
     /// </remarks>
     public enum Transform
     {
+        /// <summary>
+        /// No transformation is applied.
+        /// </summary>
         None,
+
+        /// <summary>
+        /// Natural logarithm transformation.
+        /// </summary>
         Logarithmic,
+
+        /// <summary>
+        /// Box-Cox power transformation.
+        /// </summary>
         BoxCox,
+
+        /// <summary>
+        /// Yeo-Johnson power transformation.
+        /// </summary>
         YeoJohnson
     }
 }

@@ -1,11 +1,11 @@
-using RMC.BestFit;
 using RMC.BestFit.Models;
 using Numerics.Distributions;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.InputDataFrame;
+namespace RMC.BestFit.Tests.DataFrame;
 
 /// <summary>
-/// Unit tests for <see cref="DataFrame"/> hypothesis testing methods and Multiple Grubbs-Beck Test (MGBT) for low outlier detection.
+/// Unit tests for <c>DataFrame</c> hypothesis testing methods and Multiple Grubbs-Beck Test (MGBT) for low outlier detection.
 /// Tests validate implementations against R statistical packages and published hydrologic examples.
 /// </summary>
 /// <remarks>
@@ -23,7 +23,7 @@ namespace RMC.BestFit.Tests.InputDataFrame;
 /// Vienna, Austria. ISBN 3-900051-07-0, URL http://www.R-project.org/.
 /// </item>
 /// <item>
-/// Bobee, B. & Ashkar, F. (1991). The Gamma Family and Derived Distributions Applied in Hydrology. Water Resources Publications.
+/// Bobee, B. and Ashkar, F. (1991). The Gamma Family and Derived Distributions Applied in Hydrology. Water Resources Publications.
 /// </item>
 /// </list>
 /// </remarks>
@@ -34,7 +34,7 @@ public class ExactDataHypothesisTests
     /// Tests equal variance (Student's) t-test for comparing two sample means.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.EqualVarianceTtest"/> against R's t.test() function from the stats package.
+    /// Validates <c>DataFrame.EqualVarianceTtest</c> against R's t.test() function from the stats package.
     /// This two-sample t-test assumes equal population variances (homoscedasticity) and tests whether
     /// the means of two groups differ significantly. The pooled variance estimate is used for the test statistic.
     /// </remarks>
@@ -48,7 +48,7 @@ public class ExactDataHypothesisTests
         data.AddRange(data2);
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         var p = df.EqualVarianceTtest(data1.Length);
@@ -60,7 +60,7 @@ public class ExactDataHypothesisTests
     /// Tests unequal variance (Welch's) t-test for comparing two sample means.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.UnequalVarianceTtest"/> against R's t.test() function from the stats package.
+    /// Validates <c>DataFrame.UnequalVarianceTtest</c> against R's t.test() function from the stats package.
     /// This two-sample t-test does not assume equal population variances and uses the Welch-Satterthwaite
     /// approximation for degrees of freedom. It is more robust than the equal variance t-test when
     /// homoscedasticity cannot be assumed.
@@ -75,7 +75,7 @@ public class ExactDataHypothesisTests
         data.AddRange(data2);
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         var p = df.UnequalVarianceTtest(data1.Length);
@@ -87,7 +87,7 @@ public class ExactDataHypothesisTests
     /// Tests F-test for equality of variances between two samples.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.Ftest"/> against R's var.test() function from the stats package.
+    /// Validates <c>DataFrame.Ftest</c> against R's var.test() function from the stats package.
     /// The F-test compares the ratio of two sample variances to determine if they come from populations
     /// with equal variance. This test is sensitive to departures from normality and is often used
     /// to decide between equal and unequal variance t-tests.
@@ -102,7 +102,7 @@ public class ExactDataHypothesisTests
         data.AddRange(data2);
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         var p = df.Ftest(data1.Length);
@@ -115,7 +115,7 @@ public class ExactDataHypothesisTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.JarqueBeraTest"/> against R's jarque.test() function from the moments package
+    /// Validates <c>DataFrame.JarqueBeraTest</c> against R's jarque.test() function from the moments package
     /// and published examples. The test statistic combines squared skewness and excess kurtosis to detect
     /// departures from normality. Under the null hypothesis of normality, the test statistic follows a chi-squared
     /// distribution with 2 degrees of freedom.
@@ -139,7 +139,7 @@ public class ExactDataHypothesisTests
         var data = new double[] { -17.82175266, -2.33394663, 4.66366786, 6.77181741, 48.09893105, -28.26940615, -9.98265593, -0.87518792, 14.97758789, -0.54200675, 8.80374205, -3.40846222, -3.35109891, -12.98362149, -1.42481547, 18.5800533, 10.86238267, -13.65904345, 1.76995771, 13.91485418, 10.8528196, -11.69442361, -11.6048953, 5.89082943, -13.20258835, 3.93329214, 2.62990935, -4.00680666, 18.4215721, 0.14773234, 10.20778973, -7.41284797, 8.42081407, 35.41116192, 59.37166512, 9.36721778, 22.37395361, 22.9971476, 13.47067667, -18.98066759, -22.84094314, 16.7108515, 18.72618308, 29.97227498, -16.078326, -0.26901107, -0.05773469, 14.44571902, -7.23727541, 18.87940528, -10.55665291, -0.40463948, 1.1599797, -9.47746043, -8.83651712, -0.1277879, -7.43500345, 18.02267959, 10.38996171, 6.73008507, -0.78965999, -6.63662283, -0.26534812, -18.26597299, 10.68284417, 4.14715065, -22.73605154, 0.38107214, 17.99480125, 4.67217999, -7.55979566, -5.02964486, 10.07853161, -10.20580542, -3.83664015, -3.13645528, -4.30412819, 12.06651361, 16.46249676, -0.77303738, 10.72787315, 12.09162065, 8.22959713, 5.86544228, -11.14598952, 9.55434186, -4.24740884, -2.84574008, -7.08625811, 0.80619592, 12.92545548, -3.22668772, -25.39204102, 9.92546076, -3.16982112, 18.60432604, -14.00214643, 1.17374306, -13.04390662, 24.21704845, 3.82716675, -5.17619789, -8.06288031, 4.1033081, -13.36564786, -15.91238602, -25.39452748, 18.80121063, 7.80923857, -6.8516946, 6.54494797, 26.80612853, 4.65921504, 23.73597901, 44.15782916, 2.64243694, -24.27815428, 40.02096079, 6.5730404, 25.71086816, 28.14206721, 55.47192889, -14.9762203, -10.03718017, 38.03084527, 7.20256442 };
         
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         // R is different because it estimates moments differently.
@@ -158,7 +158,7 @@ public class ExactDataHypothesisTests
     /// Tests Ljung-Box test for autocorrelation in time series data.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.LjungBoxTest"/> against R's Box.test() function from the stats package.
+    /// Validates <c>DataFrame.LjungBoxTest</c> against R's Box.test() function from the stats package.
     /// The Ljung-Box test examines whether a group of autocorrelations of a time series are different from zero.
     /// It is commonly used to test for independence in hydrologic time series, where serial correlation may
     /// indicate persistence or trends. The test statistic follows a chi-squared distribution with degrees of
@@ -170,7 +170,7 @@ public class ExactDataHypothesisTests
         var data = new double[] { -17.82175266, -2.33394663, 4.66366786, 6.77181741, 48.09893105, -28.26940615, -9.98265593, -0.87518792, 14.97758789, -0.54200675, 8.80374205, -3.40846222, -3.35109891, -12.98362149, -1.42481547, 18.5800533, 10.86238267, -13.65904345, 1.76995771, 13.91485418, 10.8528196, -11.69442361, -11.6048953, 5.89082943, -13.20258835, 3.93329214, 2.62990935, -4.00680666, 18.4215721, 0.14773234, 10.20778973, -7.41284797, 8.42081407, 35.41116192, 59.37166512, 9.36721778, 22.37395361, 22.9971476, 13.47067667, -18.98066759, -22.84094314, 16.7108515, 18.72618308, 29.97227498, -16.078326, -0.26901107, -0.05773469, 14.44571902, -7.23727541, 18.87940528, -10.55665291, -0.40463948, 1.1599797, -9.47746043, -8.83651712, -0.1277879, -7.43500345, 18.02267959, 10.38996171, 6.73008507, -0.78965999, -6.63662283, -0.26534812, -18.26597299, 10.68284417, 4.14715065, -22.73605154, 0.38107214, 17.99480125, 4.67217999, -7.55979566, -5.02964486, 10.07853161, -10.20580542, -3.83664015, -3.13645528, -4.30412819, 12.06651361, 16.46249676, -0.77303738, 10.72787315, 12.09162065, 8.22959713, 5.86544228, -11.14598952, 9.55434186, -4.24740884, -2.84574008, -7.08625811, 0.80619592, 12.92545548, -3.22668772, -25.39204102, 9.92546076, -3.16982112, 18.60432604, -14.00214643, 1.17374306, -13.04390662, 24.21704845, 3.82716675, -5.17619789, -8.06288031, 4.1033081, -13.36564786, -15.91238602, -25.39452748, 18.80121063, 7.80923857, -6.8516946, 6.54494797, 26.80612853, 4.65921504, 23.73597901, 44.15782916, 2.64243694, -24.27815428, 40.02096079, 6.5730404, 25.71086816, 28.14206721, 55.47192889, -14.9762203, -10.03718017, 38.03084527, 7.20256442 };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         var p = df.LjungBoxTest(5);
@@ -187,8 +187,8 @@ public class ExactDataHypothesisTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.WaldWolfowitzTest"/> using the Harricana River data from 
-    /// Bobee & Ashkar (1991), Table 1.2, page 5.
+    /// Validates <c>DataFrame.WaldWolfowitzTest</c> using the Harricana River data from
+    /// Bobee and Ashkar (1991), Table 1.2, page 5.
     /// </para>
     /// <para>
     /// The Wald-Wolfowitz runs test examines the randomness of a binary sequence by counting the number
@@ -201,12 +201,12 @@ public class ExactDataHypothesisTests
     public void Test_WaldWolfowitz()
     {
 
-        // Reference: "The Gamma Family and Derived Distributions Applied in Hydrology", B. Bobee & F. Ashkar, Water Resources Publications, 1991.
+        // Reference: "The Gamma Family and Derived Distributions Applied in Hydrology", B. Bobee and F. Ashkar, Water Resources Publications, 1991.
         // Table 1.2 Maximum annual peak discharge values in cms, observed at the Harricana River at Amos (Quebec, Canada)
         var data = new double[] { 122d, 244d, 214d, 173d, 229d, 156d, 212d, 263d, 146d, 183d, 161d, 205d, 135d, 331d, 225d, 174d, 98.8d, 149d, 238d, 262d, 132d, 235d, 216d, 240d, 230d, 192d, 195d, 172d, 173d, 172d, 153d, 142d, 317d, 161d, 201d, 204d, 194d, 164d, 183d, 161d, 167d, 179d, 185d, 117d, 192d, 337d, 125d, 166d, 99.1d, 202d, 230d, 158d, 262d, 154d, 164d, 182d, 164d, 183d, 171d, 250d, 184d, 205d, 237d, 177d, 239d, 187d, 180d, 173d, 174d };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         var p = df.WaldWolfowitzTest();
@@ -220,8 +220,8 @@ public class ExactDataHypothesisTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.MannWhitneyTest"/> using the Harricana River data from 
-    /// Bobee & Ashkar (1991), Table 1.2, page 7.
+    /// Validates <c>DataFrame.MannWhitneyTest</c> using the Harricana River data from
+    /// Bobee and Ashkar (1991), Table 1.2, page 7.
     /// </para>
     /// <para>
     /// The Mann-Whitney U test (also known as the Wilcoxon rank-sum test) is a non-parametric test
@@ -233,12 +233,12 @@ public class ExactDataHypothesisTests
     [TestMethod]
     public void Test_MannWhitney()
     {
-        // Reference: "The Gamma Family and Derived Distributions Applied in Hydrology", B. Bobee & F. Ashkar, Water Resources Publications, 1991.
+        // Reference: "The Gamma Family and Derived Distributions Applied in Hydrology", B. Bobee and F. Ashkar, Water Resources Publications, 1991.
         // Table 1.2 Maximum annual peak discharge values in cms, observed at the Harricana River at Amos (Quebec, Canada)
         var data = new double[] { 122d, 244d, 214d, 173d, 229d, 156d, 212d, 263d, 146d, 183d, 161d, 205d, 135d, 331d, 225d, 174d, 98.8d, 149d, 238d, 262d, 132d, 235d, 216d, 240d, 230d, 192d, 195d, 172d, 173d, 172d, 153d, 142d, 317d, 161d, 201d, 204d, 194d, 164d, 183d, 161d, 167d, 179d, 185d, 117d, 192d, 337d, 125d, 166d, 99.1d, 202d, 230d, 158d, 262d, 154d, 164d, 182d, 164d, 183d, 171d, 250d, 184d, 205d, 237d, 177d, 239d, 187d, 180d, 173d, 174d };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         var p = df.MannWhitneyTest(50);
@@ -251,8 +251,8 @@ public class ExactDataHypothesisTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.MannKendallTest"/> against R's mk.test() function from the trend package.
-    /// Uses Harricana River data from Bobee & Ashkar (1991).
+    /// Validates <c>DataFrame.MannKendallTest</c> against R's mk.test() function from the trend package.
+    /// Uses Harricana River data from Bobee and Ashkar (1991).
     /// </para>
     /// <para>
     /// The Mann-Kendall test is a non-parametric test for detecting monotonic trends in time series data.
@@ -266,12 +266,12 @@ public class ExactDataHypothesisTests
     [TestMethod]
     public void Test_MannKendall()
     {
-        // Reference: "The Gamma Family and Derived Distributions Applied in Hydrology", B. Bobee & F. Ashkar, Water Resources Publications, 1991.
+        // Reference: "The Gamma Family and Derived Distributions Applied in Hydrology", B. Bobee and F. Ashkar, Water Resources Publications, 1991.
         // Table 1.2 Maximum annual peak discharge values in cms, observed at the Harricana River at Amos (Quebec, Canada)
         var data = new double[] { 122d, 244d, 214d, 173d, 229d, 156d, 212d, 263d, 146d, 183d, 161d, 205d, 135d, 331d, 225d, 174d, 98.8d, 149d, 238d, 262d, 132d, 235d, 216d, 240d, 230d, 192d, 195d, 172d, 173d, 172d, 153d, 142d, 317d, 161d, 201d, 204d, 194d, 164d, 183d, 161d, 167d, 179d, 185d, 117d, 192d, 337d, 125d, 166d, 99.1d, 202d, 230d, 158d, 262d, 154d, 164d, 182d, 164d, 183d, 171d, 250d, 184d, 205d, 237d, 177d, 239d, 187d, 180d, 173d, 174d };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         // Tested with R
@@ -284,7 +284,7 @@ public class ExactDataHypothesisTests
     /// Tests linear regression t-test for trend significance.
     /// </summary>
     /// <remarks>
-    /// Validates <see cref="DataFrame.LinearTrendTest"/> against the p-value from R's lm() function in the base package.
+    /// Validates <c>DataFrame.LinearTrendTest</c> against the p-value from R's lm() function in the base package.
     /// This parametric test fits a linear regression model with time as the predictor and tests whether the
     /// slope coefficient is significantly different from zero. A significant result indicates a linear trend
     /// in the data. Unlike the Mann-Kendall test, this assumes normally distributed residuals.
@@ -299,7 +299,7 @@ public class ExactDataHypothesisTests
         }
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
 
         var pVal = df.LinearTrendTest();
@@ -312,7 +312,7 @@ public class ExactDataHypothesisTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.UnimodalityTest"/> against R's mclust package. The test uses
+    /// Validates <c>DataFrame.UnimodalityTest</c> against R's mclust package. The test uses
     /// Gaussian finite mixture models to determine whether data is better represented by one or two
     /// normal components. This is important in flood frequency analysis where bimodality may indicate
     /// mixed flood populations (e.g., snowmelt vs. rainfall floods).
@@ -322,7 +322,7 @@ public class ExactDataHypothesisTests
     /// models. A significant p-value indicates evidence against unimodality.
     /// </para>
     /// <b> References: </b>
-    /// Scrucca, L., Fop, M., Murphy, T.B., & Raftery, A.E. (2016). mclust 5: Clustering, Classification and 
+    /// Scrucca, L., Fop, M., Murphy, T.B., and Raftery, A.E. (2016). mclust 5: Clustering, Classification and
     /// Density Estimation Using Gaussian Finite Mixture Models. The R Journal, 8(1), 289-317.
     /// </remarks>
     [TestMethod]
@@ -333,7 +333,7 @@ public class ExactDataHypothesisTests
                    4.9, 5.1, 5.2, 4.8, 5.0, 5.1, 5.2, 4.7, 5.3, 5.0 };
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(unimodalData);
 
         var pval = df.UnimodalityTest();
@@ -358,7 +358,7 @@ public class ExactDataHypothesisTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.SetLowOutliersFromMGBT"/> against HEC-SSP software, which implements
+    /// Validates <c>DataFrame.SetLowOutliersFromMGBT</c> against HEC-SSP software, which implements
     /// the MGBT methodology recommended in USGS Bulletin 17C for flood frequency analysis.
     /// </para>
     /// <para>
@@ -397,7 +397,7 @@ public class ExactDataHypothesisTests
         int LO;
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(BLU);
         df.SetLowOutliersFromMGBT();
         LO = df.NumberOfLowOutliers;
@@ -445,7 +445,7 @@ public class ExactDataHypothesisTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Validates <see cref="DataFrame.SetLowOutliersFromThreshold"/> by applying user-specified threshold
+    /// Validates <c>DataFrame.SetLowOutliersFromThreshold</c> by applying user-specified threshold
     /// values to the same datasets used in the MGBT test. This provides an alternative method for outlier
     /// identification when analysts have specific hydrologic or operational reasons to define a threshold.
     /// </para>
@@ -479,7 +479,7 @@ public class ExactDataHypothesisTests
         int LO;
 
         // Create data frame
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(BLU);
         df.LowOutlierThreshold = 1785.3;
         df.SetLowOutliersFromThreshold();

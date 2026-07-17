@@ -1,12 +1,14 @@
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using System.Reflection;
+using System.Xml.Linq;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="CompetingRiskAnalysis"/> class.
+/// Programmatic unit tests for the <c>CompetingRiskAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// Configuration, validation, and serialization tests live here.
@@ -26,9 +28,16 @@ public class CompetingRiskAnalysisTests
     private static readonly double[] InlinePeakData = new Gumbel(15000.0, 4000.0)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateTestDataFrame()
+    /// <summary>
+    /// Creates test Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateTestDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlinePeakData.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(1990 + i, InlinePeakData[i]));
@@ -36,6 +45,13 @@ public class CompetingRiskAnalysisTests
         return df;
     }
 
+    /// <summary>
+    /// Creates test Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static CompetingRisksModel CreateTestModel()
     {
         var df = CreateTestDataFrame();
@@ -47,6 +63,13 @@ public class CompetingRiskAnalysisTests
         return new CompetingRisksModel(df, distributionTypes);
     }
 
+    /// <summary>
+    /// Creates gEV Model.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static CompetingRisksModel CreateGEVModel()
     {
         var df = CreateTestDataFrame();
@@ -56,6 +79,24 @@ public class CompetingRiskAnalysisTests
             UnivariateDistributionType.GeneralizedExtremeValue
         };
         return new CompetingRisksModel(df, distributionTypes);
+    }
+
+    /// <summary>
+    /// Creates an estimated competing-risks analysis with stub uncertainty results.
+    /// </summary>
+    /// <param name="model">The competing-risks model to attach to the analysis.</param>
+    /// <returns>An analysis whose stale estimated state can be invalidated without running MCMC.</returns>
+    /// <remarks>
+    /// The helper uses the XML constructor and reflection so tests stay fast and avoid computational verification.
+    /// </remarks>
+    private static CompetingRiskAnalysis CreateEstimatedAnalysis(CompetingRisksModel model)
+    {
+        var xElement = new XElement("CompetingRiskAnalysis", new XAttribute("IsEstimated", true));
+        var analysis = new CompetingRiskAnalysis(model, xElement);
+        var resultsProperty = typeof(CompetingRiskAnalysis).GetProperty(nameof(CompetingRiskAnalysis.AnalysisResults),
+            BindingFlags.Instance | BindingFlags.Public)!;
+        resultsProperty.GetSetMethod(true)!.Invoke(analysis, new object[] { new UncertaintyAnalysisResults() });
+        return analysis;
     }
 
     #endregion
@@ -212,6 +253,68 @@ public class CompetingRiskAnalysisTests
         analysis.ProbabilityOrdinates.Add(0.001);
 
         Assert.IsTrue(propertyChanged, "PropertyChanged should be raised for ProbabilityOrdinates.");
+    }
+
+    /// <summary>Verifies that enabling quantile priors clears stale analysis results.</summary>
+    [TestMethod]
+    public void EnableQuantilePriors_ClearsResults()
+    {
+        var model = CreateTestModel();
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(CompetingRiskAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.EnableQuantilePriors = true;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when quantile priors are enabled.");
+        Assert.IsNull(analysis.AnalysisResults, "Quantile prior changes should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Quantile prior changes should invalidate the estimated state.");
+        Assert.IsTrue(model.QuantilePriors.Count > 0, "Enabling quantile priors should create default prior rows.");
+    }
+
+    /// <summary>Verifies that editing an existing quantile prior clears stale analysis results.</summary>
+    [TestMethod]
+    public void QuantilePriorEdit_ClearsResults()
+    {
+        var model = CreateTestModel();
+        model.EnableQuantilePriors = true;
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(CompetingRiskAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.QuantilePriors[0].Alpha = 0.02;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when a quantile prior is edited.");
+        Assert.IsNull(analysis.AnalysisResults, "Quantile prior edits should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Quantile prior edits should invalidate the estimated state.");
+    }
+
+    /// <summary>Verifies that prior-related option changes clear stale analysis results.</summary>
+    [TestMethod]
+    public void PriorOptionChange_ClearsResults()
+    {
+        var model = CreateTestModel();
+        var analysis = CreateEstimatedAnalysis(model);
+        bool analysisResultsChanged = false;
+        analysis.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(CompetingRiskAnalysis.AnalysisResults))
+                analysisResultsChanged = true;
+        };
+
+        model.UseJeffreysRuleForScale = !model.UseJeffreysRuleForScale;
+
+        Assert.IsTrue(analysisResultsChanged, "AnalysisResults should be raised when prior options change.");
+        Assert.IsNull(analysis.AnalysisResults, "Prior option changes should clear stale AnalysisResults.");
+        Assert.IsFalse(analysis.IsEstimated, "Prior option changes should invalidate the estimated state.");
     }
 
     #endregion

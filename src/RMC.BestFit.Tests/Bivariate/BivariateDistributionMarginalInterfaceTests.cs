@@ -1,13 +1,14 @@
 using Numerics.Distributions;
 using Numerics.Distributions.Copulas;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Bivariate;
 
 /// <summary>
-/// Guards the <see cref="IUnivariateModel"/> marginal contract: every model type that
+/// Guards the <c>IUnivariateModel</c> marginal contract: every model type that
 /// is supposed to serve as a bivariate marginal (Univariate, Bulletin17C, PointProcess,
-/// Mixture) implements the interface, and the <see cref="BivariateDistribution"/>
+/// Mixture) implements the interface, and the <c>BivariateDistribution</c>
 /// constructor accepts each of them via the interface.
 /// </summary>
 [TestClass]
@@ -16,12 +17,12 @@ public class BivariateDistributionMarginalInterfaceTests
     #region Helpers
 
     /// <summary>
-    /// Creates a pre-fit <see cref="UnivariateDistribution"/> with Normal parameters seeded
+    /// Creates a pre-fit <c>UnivariateDistribution</c> with Normal parameters seeded
     /// to <c>(μ, σ)</c> so <c>Validate()</c> passes without an MLE call.
     /// </summary>
     private static UnivariateDistribution BuildNormalMarginal(double mu, double sigma, double[] data)
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(data);
         df.CalculatePlottingPositions();
         var dist = new UnivariateDistribution(df, UnivariateDistributionType.Normal);
@@ -43,7 +44,7 @@ public class BivariateDistributionMarginalInterfaceTests
 
     #region Interface Implementations
 
-    /// <summary>Each target model class implements <see cref="IUnivariateModel"/>.</summary>
+    /// <summary>Each target model class implements <c>IUnivariateModel</c>.</summary>
     [TestMethod]
     public void TargetModelClasses_ImplementIUnivariateModel()
     {
@@ -54,13 +55,13 @@ public class BivariateDistributionMarginalInterfaceTests
     }
 
     /// <summary>
-    /// <see cref="MixtureModel"/> exposes its fitted distribution as <c>Mixture</c> (type-specific)
+    /// <c>MixtureModel</c> exposes its fitted distribution as <c>Mixture</c> (type-specific)
     /// but the interface accessor must route back to the same underlying object.
     /// </summary>
     [TestMethod]
     public void MixtureModel_ExplicitInterfaceDistribution_ReturnsMixtureProperty()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(SampleX);
 
         var components = new List<UnivariateDistributionBase> { new Normal(95, 10), new Normal(110, 10) };
@@ -73,9 +74,9 @@ public class BivariateDistributionMarginalInterfaceTests
     }
 
     /// <summary>
-    /// <see cref="PointProcessModel"/> exposes its fitted distribution as <c>Distribution</c>
+    /// <c>PointProcessModel</c> exposes its fitted distribution as <c>Distribution</c>
     /// typed <c>CompetingRisks?</c>. The interface accessor must return the same object typed
-    /// as <see cref="UnivariateDistributionBase"/> (which <c>CompetingRisks</c> derives from).
+    /// as <c>UnivariateDistributionBase</c> (which <c>CompetingRisks</c> derives from).
     /// </summary>
     [TestMethod]
     public void PointProcessModel_ExplicitInterfaceDistribution_ReturnsSameObject()
@@ -94,7 +95,7 @@ public class BivariateDistributionMarginalInterfaceTests
     [TestMethod]
     public void NonTrendModels_ReportStationary()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(SampleX);
 
         var b17c = new Bulletin17CDistribution();
@@ -111,8 +112,8 @@ public class BivariateDistributionMarginalInterfaceTests
     #region BivariateDistribution Accepts Any IUnivariateModel
 
     /// <summary>
-    /// The <see cref="BivariateDistribution"/> constructor accepts any
-    /// <see cref="IUnivariateModel"/> implementation, not just <see cref="UnivariateDistribution"/>.
+    /// The <c>BivariateDistribution</c> constructor accepts any
+    /// <c>IUnivariateModel</c> implementation, not just <c>UnivariateDistribution</c>.
     /// </summary>
     [TestMethod]
     public void Construct_WithMixedMarginalTypes_DoesNotThrow()
@@ -120,7 +121,7 @@ public class BivariateDistributionMarginalInterfaceTests
         IUnivariateModel normalX = BuildNormalMarginal(101.0, 7.5, SampleX);
 
         // Mixture-backed marginal with a fitted Mixture distribution.
-        var dfY = new DataFrame();
+        var dfY = new BestFitDataFrame();
         dfY.ExactSeries = new ExactSeries(SampleY);
         dfY.CalculatePlottingPositions();
         var components = new UnivariateDistributionBase[] { new Normal(77, 5), new Normal(88, 5) };
@@ -140,9 +141,9 @@ public class BivariateDistributionMarginalInterfaceTests
     }
 
     /// <summary>
-    /// Swapping the X marginal from a <see cref="UnivariateDistribution"/> to a
-    /// <see cref="MixtureModel"/> via the property setter rewires the reactive
-    /// PropertyChanged subscription through <see cref="INotifyPropertyChanged"/>
+    /// Swapping the X marginal from a <c>UnivariateDistribution</c> to a
+    /// <c>MixtureModel</c> via the property setter rewires the reactive
+    /// PropertyChanged subscription through <c>INotifyPropertyChanged</c>
     /// without throwing.
     /// </summary>
     [TestMethod]
@@ -154,7 +155,7 @@ public class BivariateDistributionMarginalInterfaceTests
         var bivariate = new BivariateDistribution(origX, origY, CopulaType.Normal);
 
         // Replace X with a Mixture-based marginal
-        var dfX2 = new DataFrame();
+        var dfX2 = new BestFitDataFrame();
         dfX2.ExactSeries = new ExactSeries(SampleX);
         dfX2.CalculatePlottingPositions();
         var components = new UnivariateDistributionBase[] { new Normal(95, 10), new Normal(110, 10) };

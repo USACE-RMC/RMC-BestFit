@@ -1,0 +1,261 @@
+﻿<UserControl x:Class="RMC_BestFit.MixtureAnalysisPropertiesControl" x:Name="MixtureAnalysisProperties"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RMC_BestFit"
+             xmlns:cntrls="clr-namespace:GenericControls;assembly=GenericControls"
+             xmlns:numcntrls="clr-namespace:NumericControls;assembly=NumericControls"
+             mc:Ignorable="d" 
+             MinWidth="100"
+             MinHeight="100"
+             d:DesignHeight="450" d:DesignWidth="800"
+             KeyDown="MixtureAnalysisProperties_KeyDown"
+             Background="{DynamicResource PropertyGrid.Content.Background}"
+             Foreground="{DynamicResource EnvironmentWindowText}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/GenericControls;Component/Resources/ResourceDictionary.xaml"/>
+                <ResourceDictionary>
+                    <cntrls:DoubleToGridLengthConverter x:Key="ActualToLengthConverter" />
+                    <cntrls:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+                    <cntrls:ReverseBooleanConverter x:Key="ReverseBoolConverter"/>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="10000000*" MinHeight="200"/>
+            <RowDefinition Height="*" MinHeight="1"/>
+            <RowDefinition Height="Auto" MinHeight="50" MaxHeight="200" />
+        </Grid.RowDefinitions>
+        <ScrollViewer x:Name="Viewer" Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Grid x:Name="MainGrid" Width="{Binding ElementName=Viewer, Path=ViewportWidth}" MinWidth="200" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TabControl Background="Transparent" DockPanel.Dock="Top" BorderBrush="Transparent" BorderThickness="0" Padding="0" Margin="0,5,0,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+                    <TabControl.Resources>
+                        <Style TargetType="{x:Type TabPanel}">
+                            <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        </Style>
+                    </TabControl.Resources>
+                    <TabItem x:Name="General_TabItem" Header="General" Style="{StaticResource PropertiesTabItemStyle}" PreviewMouseLeftButtonDown="TabItem_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Function Properties-->
+                            <Expander x:Name="PropertiesExpander" Grid.Row="0" 
+                            Margin="0,4,4,8" 
+                            Header="MIXTURE ANALYSIS PROPERTIES" 
+                            IsExpanded="True" 
+                            Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel>
+
+                                    <cntrls:NameTextPropertyControl x:Name="ElementName" Margin="0 2" CharacterLimit="50" DockPanel.Dock="Top" Title="Name" MaxPropertyWidth="200"
+                                                        Text="{Binding Element.Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="Name_PreviewMouseLeftButtonDown"
+                                                        PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"
+                                                        GotFocus="Name_GotFocus" LostFocus="Name_LostFocus"/>
+
+                                    <cntrls:ResizeableTextPropertyControl x:Name="Description" Margin="0 2" DockPanel.Dock="Top" Title="Description" MaxPropertyWidth="200" 
+                                                                Text="{Binding Element.Description, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" PreviewMouseLeftButtonDown="Description_PreviewMouseLeftButtonDown"
+                                                                PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                                    <cntrls:TextPropertyControl x:Name="CreationDate" Margin="0 2" DockPanel.Dock="Top" Title="Created On" MaxPropertyWidth="200" IsReadOnly="True"
+                                                    Text="{Binding Element.CreationDate, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="CreationDate_PreviewMouseLeftButtonDown"
+                                                    PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}"/>
+
+                                    <cntrls:TextPropertyControl x:Name="LastModified" Margin="0 2" DockPanel.Dock="Top" Title="Last Modified" MaxPropertyWidth="200" IsReadOnly="True" 
+                                                    Text="{Binding Element.LastModified, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="LastModified_PreviewMouseLeftButtonDown"/>
+
+                                    <!--Input Data-->
+                                    <cntrls:ContentPropertyControl x:Name="InputDataComboBox" Margin="0 2" DockPanel.Dock="Top" Title="Input Data" MaxPropertyWidth="200"
+                                                PreviewMouseLeftButtonDown="InputData_PreviewMouseLeftButtonDown" ToolTip="Please select a valid input data."
+                                                PropertyWidth="{Binding ElementName=LastModified, Path=ActualPropertyWidth, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ActualToLengthConverter}}">
+                                        <cntrls:ContentPropertyControl.InnerContent>
+                                            <Border BorderBrush="Red" BorderThickness="1" Visibility="Visible">
+                                                <ComboBox HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Loaded="ComboBox_Loaded"
+                                            SelectedValue="{Binding Element.InputData, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                            DisplayMemberPath="Name" SelectionChanged="InputDataComboBox_SelectionChanged">
+                                                </ComboBox>
+                                            </Border>
+                                        </cntrls:ContentPropertyControl.InnerContent>
+                                    </cntrls:ContentPropertyControl>
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Mixture Options-->
+                            <Expander x:Name="MixtureOptionsExpander" Grid.Row="1" 
+                                Margin="0,4,4,8" 
+                                Header="MIXTURE OPTIONS" 
+                                IsExpanded="True" 
+                                Grid.ColumnSpan="2"
+                                Style="{DynamicResource PropertyExpanderStyle}">            
+                                <DockPanel>
+
+                                    <!--Data Grid-->
+                                    <cntrls:DataGridToolbar DockPanel.Dock="Top" Name="DataGridToolBar" DataGrid="{Binding ElementName=DistributionDataGrid, Mode=OneTime}" 
+                                            ToolOrientation="Horizontal" PreviewMouseLeftButtonDown="DistributionDataGrid_PreviewMouseLeftButtonDown"/>
+                                    <cntrls:CopyPasteDataGrid 
+                                        DockPanel.Dock="Top" 
+                                        x:Name="DistributionDataGrid" 
+                                        HeadersVisibility="All" 
+                                        Style="{DynamicResource CopyPasteDataGridStyle}"
+                                        CanUserAddInsertDeleteRows="True" 
+                                        IsReadOnly="False"
+                                        RowHeight="24"
+                                        SelectionMode="Extended" SelectionUnit="CellOrRowHeader" AutoGenerateColumns="False"
+                                        CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeColumns="True"
+                                        CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False" 
+                                        PreviewMouseLeftButtonDown="DistributionDataGrid_PreviewMouseLeftButtonDown"
+                                        ItemsSource="{Binding Element.Distributions}">   
+                                        <cntrls:CopyPasteDataGrid.Columns>
+                                            <DataGridTemplateColumn 
+                                                x:Name="DistributionColumn"  
+                                                Header="Distribution Type" 
+                                                Width="*" 
+                                                HeaderStyle="{DynamicResource Center_ColumnHeaderStyle}">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Grid>
+                                                            <ComboBox
+                                                                ItemsSource="{Binding ElementName=MixtureAnalysisProperties, Path=DistributionList, UpdateSourceTrigger=PropertyChanged}"
+                                                                DisplayMemberPath="DisplayName"
+                                                                SelectedValuePath="Value"
+                                                                SelectedValue="{Binding Mode=OneWay}"
+                                                                SelectionChanged="DistributionComboBox_SelectionChanged"
+                                                                />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </cntrls:CopyPasteDataGrid.Columns>
+                                    </cntrls:CopyPasteDataGrid>
+
+                                    <!--Is Zero-Inflated-->
+                                    <cntrls:BooleanPropertyControl 
+                                        x:Name="IsZeroInflated" 
+                                        Margin="0 2" 
+                                        DockPanel.Dock="Top" 
+                                        Title="Is Zero-Inflated" 
+                                        IsSelected="{Binding Element.MixtureDistribution.IsZeroInflated, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                        PreviewMouseLeftButtonDown="IsZeroInflated_PreviewMouseLeftButtonDown"/>
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Parameter Priors-->
+                            <Expander x:Name="ParameterPriorsExpander" Grid.Row="2" 
+                                Margin="0,4,4,8" 
+                                Header="PARAMETER PRIORS" 
+                                IsExpanded="True" 
+                                Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel >
+                                    <local:ParameterPriorsControl x:Name="ParameterPriorsControl" DockPanel.Dock="Top" Model="{Binding ElementName=MixtureAnalysisProperties, Path=Element.MixtureDistribution, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                                        ShowPropertyAttributes="ParameterPriorsControl_ShowPropertyAttributes"/>
+
+                                    <!--Use Jeffreys Rule-->
+                                    <cntrls:BooleanPropertyControl x:Name="UseJeffreysRule" Margin="0 2" Grid.Row="1" Title="Use Jeffreys' Rule for Scale"
+                                       PreviewMouseLeftButtonDown="UseJeffreysRule_PreviewMouseLeftButtonDown"
+                                       IsSelected="{Binding Element.MixtureDistribution.UseJeffreysRuleForScale, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"  />
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Quantile Priors-->
+                            <Expander x:Name="QuantilePriorsExpander" Grid.Row="3" 
+                                Margin="0,4,4,8" 
+                                Header="QUANTILE PRIORS" 
+                                IsExpanded="False" 
+                                Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel >
+
+                                    <local:QuantilePriorsControl x:Name="QuantilePriorsControl" DockPanel.Dock="Top" Model="{Binding ElementName=MixtureAnalysisProperties, Path=Element.MixtureDistribution, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" 
+                                                        ShowPropertyAttributes="QuantilePriorsControl_ShowPropertyAttributes" ShowSingleQuantileCheckBox="False" />
+
+                                </DockPanel>
+                            </Expander>
+
+                            <!--Estimate Button-->
+                            <Grid Grid.Row="4">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ProgressBar x:Name="ProgressBar" Minimum="0" Maximum="100" Value="0" Height="24" Margin="2,5,4,0" Grid.Column="0" Visibility="Hidden" Background="{DynamicResource ProgressBar.Static.Background}" Foreground="{DynamicResource ProgressBar.Static.Foreground}" BorderBrush="{DynamicResource ProgressBar.Static.Border}"/>
+                                <TextBlock x:Name="ProgressTextBlock" Text="0%" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="2,5,4,0" Grid.Column="0" Visibility="Hidden" Foreground="{DynamicResource EnvironmentWindowText}"/>
+                                <Button Name="EstimateButton" ToolTip="Click to run the analysis" Grid.Row="0" Grid.Column="1"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                                    Width="83" Height="24" Margin="0,5,5,0" Cursor="Hand" Click="EstimateButton_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ContentControl Content="{DynamicResource RunIcon}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Estimate" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Name="CancelButton" ToolTip="Click to cancel the analysis" Grid.Row="0" Grid.Column="1"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                                    Visibility="Hidden" Width="83" Height="24" Margin="0,5,5,0" Cursor="Hand" Click="CancelButton_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ContentControl Content="{DynamicResource StopIcon}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="Cancel" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="Options_TabItem" Header="Options" Style="{StaticResource PropertiesTabItemStyle}" PreviewMouseLeftButtonDown="TabItem_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Bayesian Analysis Control-->
+                            <local:BayesianOptionsControl x:Name="BayesianOptionsControl" Grid.Row="1" Analysis="{Binding ElementName=MixtureAnalysisProperties, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                ShowPropertyAttributes="BayesianOptionsControl_ShowPropertyAttributes"/>
+                        </Grid>
+                    </TabItem>
+                    <TabItem x:Name="Output_TabItem" Header="Output" Style="{StaticResource PropertiesTabItemStyle}" PreviewMouseLeftButtonDown="TabItem_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Bayesian Output Control-->
+                            <local:BayesianOutputControl x:Name="BayesianOutputControl" Grid.Row="0" Analysis="{Binding ElementName=MixtureAnalysisProperties, Path=Element.BayesianAnalysis, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                ShowPropertyAttributes="BayesianOutputControl_ShowPropertyAttributes"/>
+
+                            <!--Probability Ordinates-->
+                            <Expander Grid.Row="1" 
+                                Margin="0,4,4,8" 
+                                Header="PROBABILITY ORDINATES" 
+                                IsExpanded="True" 
+                                Grid.ColumnSpan="2"
+                                Style="{DynamicResource PropertyExpanderStyle}">
+                                <DockPanel >
+                                    <!--Probability Ordinates-->
+                                    <numcntrls:ProbabilityOrdinatesControl ProbabilityOrdinates="{Binding ElementName=MixtureAnalysisProperties, Path=Element.ProbabilityOrdinates, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" PreviewMouseLeftButtonDown="ProbabilityOrdinatesControl_PreviewMouseLeftButtonDown"/>
+                                </DockPanel>
+                            </Expander>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </ScrollViewer>
+        <!--Property Attributes-->
+        <GridSplitter Grid.Row="1" Height="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Background="{DynamicResource SeparatorBorder}"/>
+        <cntrls:PropertyAttributes x:Name="PropertyAttributes" Grid.Row="2"/>
+    </Grid>
+</UserControl>

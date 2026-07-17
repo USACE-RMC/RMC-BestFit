@@ -3,7 +3,7 @@ using RMC.BestFit.Models.LinkFunctions;
 namespace RMC.BestFit.Tests.LinkFunctions;
 
 /// <summary>
-/// Unit tests for the <see cref="LogASinHLink"/> class.
+/// Unit tests for the <c>LogASinHLink</c> class.
 /// </summary>
 /// <remarks>
 /// These tests focus on the support and local-linearization properties needed for linked-MVN

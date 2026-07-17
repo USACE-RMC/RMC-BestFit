@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
 
     /// <summary>
@@ -50,7 +50,11 @@ namespace RMC.BestFit
             var numberBelowAttr = xElement.Attribute(nameof(NumberBelow));
             if (numberBelowAttr != null) int.TryParse(numberBelowAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _numberBelow);
             var numberAboveAttr = xElement.Attribute(nameof(NumberAbove));
-            if (numberAboveAttr != null) int.TryParse(numberAboveAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _numberAbove);
+            if (numberAboveAttr != null)
+            {
+                int.TryParse(numberAboveAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _numberAbove);
+                _sourceNumberAbove = _numberAbove;
+            }
             var plottingPositionAttr = xElement.Attribute(nameof(PlottingPosition));
             if (plottingPositionAttr != null) double.TryParse(plottingPositionAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _plottingPosition);
             Index = StartIndex;
@@ -60,6 +64,7 @@ namespace RMC.BestFit
         private int _endIndex;
         private int _numberBelow = 0;
         private int _numberAbove = 0;
+        private int _sourceNumberAbove = 0;
 
         /// <summary>
         /// The start index of the threshold.
@@ -98,9 +103,9 @@ namespace RMC.BestFit
         /// The number of data points below the threshold during the threshold window.
         /// </summary>
         /// <remarks>
-        /// <b>Derived value — not user-settable.</b>
+        /// <b>Derived value � not user-settable.</b>
         /// Automatically computed by <see cref="DataFrame.ProcessThresholdSeries"/> as
-        /// <c>Duration − NumberAbove − (overlapping exact / interval / uncertain data points)</c>
+        /// <c>Duration - source NumberAbove - (overlapping exact / interval / uncertain data points)</c>
         /// whenever a threshold is added to <see cref="DataFrame.ThresholdSeries"/> or any
         /// data series changes. Users should only set <see cref="NumberAbove"/>; this
         /// property refreshes on the next <c>CalculatePlottingPositions</c> pass.
@@ -116,17 +121,53 @@ namespace RMC.BestFit
         /// <summary>
         /// The number of data points above the threshold.
         /// </summary>
+        /// <remarks>
+        /// Assignments update the user-supplied source count. Reads return the current effective
+        /// count, which may be reduced by <see cref="DataFrame.ProcessThresholdSeries"/> when
+        /// explicit observations account for the remaining threshold years. The source count is
+        /// retained for idempotent reprocessing and persisted under the existing XML attribute.
+        /// </remarks>
         public int NumberAbove
         {
             get { return _numberAbove; }
             set
             {
-                if (_numberAbove != value)
+                if (_sourceNumberAbove != value || _numberAbove != value)
                 {
+                    _sourceNumberAbove = value;
                     _numberAbove = value;
                     RaisePropertyChanged(nameof(NumberAbove));
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the user-supplied number above before overlap processing adjusts the effective count.
+        /// </summary>
+        /// <remarks>
+        /// This value is the stable input to <see cref="DataFrame.ProcessThresholdSeries"/> and is
+        /// persisted under the existing <see cref="NumberAbove"/> XML attribute.
+        /// </remarks>
+        internal int SourceNumberAbove => _sourceNumberAbove;
+
+        /// <summary>
+        /// Updates the effective threshold counts without treating the processed value as new user input.
+        /// </summary>
+        /// <param name="numberAbove">The effective number above after overlapping observations are removed.</param>
+        /// <param name="numberBelow">The effective number below after overlapping observations are removed.</param>
+        /// <returns><c>true</c> when either effective count changed; otherwise, <c>false</c>.</returns>
+        /// <remarks>
+        /// Notifications are deliberately suppressed so a complete threshold pass can publish one aggregate
+        /// change notification instead of recursively re-entering threshold processing for each item.
+        /// </remarks>
+        internal bool SetProcessedCounts(int numberAbove, int numberBelow)
+        {
+            if (_numberAbove == numberAbove && _numberBelow == numberBelow)
+                return false;
+
+            _numberAbove = numberAbove;
+            _numberBelow = numberBelow;
+            return true;
         }
 
         /// <summary>
@@ -192,19 +233,19 @@ namespace RMC.BestFit
                 isValid = false;
             }
 
-            if (NumberAbove < 0)
+            if (SourceNumberAbove < 0)
             {
                 messages.Add("Error: The number above cannot be negative.");
                 isValid = false;
             }
 
-            if (NumberAbove > Duration)
+            if (SourceNumberAbove > Duration)
             {
                 messages.Add("Error: The number above must be less than or equal to the threshold duration.");
                 isValid = false;
             }
 
-            if (NumberBelow + NumberAbove > Duration)
+            if (NumberBelow + SourceNumberAbove > Duration)
             {
                 messages.Add("Error: The sum of number above and number below cannot exceed the threshold duration.");
                 isValid = false;
@@ -218,7 +259,13 @@ namespace RMC.BestFit
         /// </summary>
         public new virtual ThresholdData Clone()
         {
-            return new ThresholdData(StartIndex, EndIndex, Value) { NumberBelow = NumberBelow, NumberAbove = NumberAbove, PlottingPosition = PlottingPosition };
+            var clone = new ThresholdData(StartIndex, EndIndex, Value)
+            {
+                NumberAbove = SourceNumberAbove,
+                PlottingPosition = PlottingPosition,
+            };
+            clone.SetProcessedCounts(NumberAbove, NumberBelow);
+            return clone;
         }
 
         /// <summary>
@@ -231,7 +278,7 @@ namespace RMC.BestFit
             result.SetAttributeValue(nameof(EndIndex), EndIndex.ToString(CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(Value), Value.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(NumberBelow), NumberBelow.ToString(CultureInfo.InvariantCulture));
-            result.SetAttributeValue(nameof(NumberAbove), NumberAbove.ToString(CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(NumberAbove), SourceNumberAbove.ToString(CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(PlottingPosition), PlottingPosition.ToString("G17", CultureInfo.InvariantCulture));
             return result;
         }

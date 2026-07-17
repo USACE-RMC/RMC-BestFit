@@ -2,12 +2,12 @@ using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
-using DataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="CompositeAnalysis"/> class.
+/// Programmatic unit tests for the <c>CompositeAnalysis</c> class.
 /// </summary>
 /// <remarks>
 /// Configuration, validation, weight aggregation, and serialization tests live here.
@@ -27,9 +27,16 @@ public class CompositeAnalysisTests
     private static readonly double[] InlineFloodData = new Normal(15000.0, 5000.0)
         .GenerateRandomValues(FixtureSize, 12345);
 
-    private static DataFrame CreateTestDataFrame()
+    /// <summary>
+    /// Creates test Data Frame.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
+    private static BestFitDataFrame CreateTestDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         for (int i = 0; i < InlineFloodData.Length; i++)
         {
             df.ExactSeries.Add(new ExactData(1990 + i, InlineFloodData[i]));
@@ -37,6 +44,13 @@ public class CompositeAnalysisTests
         return df;
     }
 
+    /// <summary>
+    /// Creates test Univariate Analysis.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static UnivariateAnalysis CreateTestUnivariateAnalysis()
     {
         var df = CreateTestDataFrame();
@@ -44,6 +58,13 @@ public class CompositeAnalysisTests
         return new UnivariateAnalysis(dist);
     }
 
+    /// <summary>
+    /// Creates test Analysis.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static CompositeAnalysis CreateTestAnalysis()
     {
         var analysis1 = CreateTestUnivariateAnalysis();

@@ -1,0 +1,62 @@
+name: Publish to NuGet.org
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Extract and validate version
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          if ($version -ne '2.0.0') {
+            throw "The first public NuGet publish is restricted to v2.0.0; got '$env:GITHUB_REF_NAME'."
+          }
+          "VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Restore
+        run: dotnet restore src/RMC.BestFit/RMC.BestFit.csproj
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build src/RMC.BestFit/RMC.BestFit.csproj -c Release --no-restore /p:Version=$env:VERSION
+
+      - name: Pack
+        shell: pwsh
+        run: dotnet pack src/RMC.BestFit/RMC.BestFit.csproj -c Release --no-build --no-restore -o packages /p:Version=$env:VERSION
+
+      - name: NuGet login
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: USACE-RMC
+
+      - name: Push to NuGet.org
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          $packagePath = "packages/RMC.BestFit.$env:VERSION.nupkg"
+          if (-not (Test-Path $packagePath)) {
+            throw "Missing package: $packagePath"
+          }
+          dotnet nuget push $packagePath --api-key $env:NUGET_API_KEY --source "https://api.nuget.org/v3/index.json" --skip-duplicate

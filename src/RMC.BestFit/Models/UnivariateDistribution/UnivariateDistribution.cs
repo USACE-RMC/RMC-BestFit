@@ -1829,23 +1829,13 @@ namespace RMC.BestFit.Models
                 logLH += Parameters[i].PriorDistribution.LogPDF(parameters[i]);
             }
 
-            if (UseJeffreysRuleForScale)
+            if (UseJeffreysRuleForScale &&
+                TryGetJeffreysScaleParameter(model, out double scaleParam))
             {
-                double scaleParam;
-                if (model.Type == UnivariateDistributionType.GammaDistribution ||
-                    model.Type == UnivariateDistributionType.Weibull)
-                {
-                    scaleParam = model.GetParameters[0];
-                }
-                else
-                {
-                    scaleParam = model.GetParameters[1];
-                }
                 // Jeffreys prior requires positive scale parameter. Return -Inf directly
                 // rather than subtracting +Inf (mathematically equivalent today because of the
                 // outer Tools.IsFinite collapse, but the early-return is more robust to future
-                // refactors that might add positive terms after this one). Mirrors the
-                // pointwise-variant pattern at line ~1865.
+                // refactors that might add positive terms after this one).
                 if (scaleParam <= 0) return double.NegativeInfinity;
                 logLH -= Math.Log(scaleParam);
             }
@@ -1914,21 +1904,9 @@ namespace RMC.BestFit.Models
             }
 
             // Jeffreys rule for scale parameter
-            if (UseJeffreysRuleForScale && valid is null)
+            if (UseJeffreysRuleForScale && valid is null &&
+                TryGetJeffreysScaleParameter(model, out double scale, out string scaleName))
             {
-                double scale;
-                string scaleName;
-                if (model.Type == UnivariateDistributionType.GammaDistribution ||
-                    model.Type == UnivariateDistributionType.Weibull)
-                {
-                    scale = model.GetParameters[0];
-                    scaleName = model.ParameterNames[0];
-                }
-                else
-                {
-                    scale = model.GetParameters[1];
-                    scaleName = model.ParameterNames[1];
-                }
                 // Jeffreys prior 1/σ requires positive scale; mirror the scalar guard
                 // in Prior_LogLikelihood so the Pointwise sum stays consistent.
                 double ll = scale > 0 ? -Math.Log(scale) : double.NegativeInfinity;

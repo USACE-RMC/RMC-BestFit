@@ -2,11 +2,13 @@ using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
+using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
 
-namespace RMC.BestFit.Tests.UnivariateAnalyses;
+namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Unit tests for the <see cref="PointProcessModel"/> class.
+/// Unit tests for the <c>PointProcessModel</c> class.
 /// Tests peaks-over-threshold (POT) models with Poisson process and GEV distributions.
 /// </summary>
 /// <remarks>
@@ -29,9 +31,9 @@ public class PointProcessModelTests
     /// <summary>
     /// Creates a sample POT data frame with exact observations.
     /// </summary>
-    private static DataFrame CreatePOTDataFrame()
+    private static BestFitDataFrame CreatePOTDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>
         {
             new ExactData(new DateTime(1990, 3, 15), 1500),
@@ -52,9 +54,9 @@ public class PointProcessModelTests
     /// <summary>
     /// Creates a seasonal POT data frame with events from different seasons.
     /// </summary>
-    private static DataFrame CreateSeasonalPOTDataFrame()
+    private static BestFitDataFrame CreateSeasonalPOTDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
 
         // Winter/Spring events (season 1)
@@ -76,9 +78,9 @@ public class PointProcessModelTests
     /// <summary>
     /// Creates a simple annual maximum data frame.
     /// </summary>
-    private static DataFrame CreateAMSDataFrame()
+    private static BestFitDataFrame CreateAMSDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 20; i++)
         {
@@ -481,7 +483,7 @@ public class PointProcessModelTests
     {
         var df = CreatePOTDataFrame();
         double expectedSpan = df.ExactSeries.IndexSpan();
-        df.ThresholdSeries.Add(new ThresholdData(1000, 2000, 500.0) { NumberAbove = 3 });
+        df.ThresholdSeries.Add(new BestFitThresholdData(1000, 2000, 500.0) { NumberAbove = 3 });
         df.UncertainSeries.Add(new UncertainData(500, new Normal(1000.0, 100.0)));
         df.IntervalSeries.Add(new IntervalData(2500, 900.0, 1000.0, 1100.0));
         var model = new PointProcessModel { DataFrame = df };
@@ -1144,7 +1146,7 @@ public class PointProcessModelTests
     [TestMethod]
     public void Test_PointProcess_SingleDataPoint()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(new List<ExactData>
         {
             new ExactData(2000, 1000)
@@ -1160,7 +1162,7 @@ public class PointProcessModelTests
     [TestMethod]
     public void Test_PointProcess_LargeValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {
@@ -1179,7 +1181,7 @@ public class PointProcessModelTests
     [TestMethod]
     public void Test_PointProcess_SmallValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {
@@ -1199,7 +1201,7 @@ public class PointProcessModelTests
     public void Test_PointProcess_ManyEventsPerYear()
     {
         // High-frequency POT data
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 100; i++)
         {
@@ -1270,11 +1272,11 @@ public class PointProcessModelTests
 
     /// <summary>
     /// Verifies the canonical model-base contract that
-    /// <see cref="PointProcessModel.PointwisePriorLogLikelihood"/>.Sum() equals
-    /// <see cref="PointProcessModel.PriorLogLikelihood"/>. Non-seasonal configuration.
+    /// <c>PointProcessModel.PointwisePriorLogLikelihood</c>.Sum() equals
+    /// <c>PointProcessModel.PriorLogLikelihood</c>. Non-seasonal configuration.
     /// </summary>
     /// <remarks>
-    /// Per CLAUDE.md "LogLikelihood vs DataLogLikelihood (CRITICAL)" the canonical contract is
+    /// Per the project coding standards "LogLikelihood vs DataLogLikelihood (CRITICAL)" the canonical contract is
     /// pointwise.Sum(c =&gt; c.LogLikelihood) == scalar prior. Disable Jeffreys-rule scaling so
     /// the two methods evaluate identical prior contributions (PointwisePriorLogLikelihood
     /// excludes the Jeffreys term to match ModelBase.PriorLogLikelihood semantics).
@@ -1295,7 +1297,7 @@ public class PointProcessModelTests
     }
 
     /// <summary>
-    /// Same canonical contract as <see cref="Test_PointwisePriorLogLikelihood_Sum_Equals_PriorLogLikelihood_NonSeasonal"/>,
+    /// Same canonical contract as <c>Test_PointwisePriorLogLikelihood_Sum_Equals_PriorLogLikelihood_NonSeasonal</c>,
     /// but with a 2-season seasonal configuration to cover the seasonal parameter slicing path.
     /// </summary>
     [TestMethod]
@@ -1303,8 +1305,7 @@ public class PointProcessModelTests
     {
         var df = CreateSeasonalPOTDataFrame();
         var model = new PointProcessModel
-        {
-            DataFrame = df,
+        { DataFrame = df,
             UseJeffreysRuleForScale = false,
             IsSeasonal = true
         };

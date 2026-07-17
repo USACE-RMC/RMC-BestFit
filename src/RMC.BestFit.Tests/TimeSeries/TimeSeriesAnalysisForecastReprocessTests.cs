@@ -3,7 +3,7 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 
-namespace RMC.BestFit.Tests.TimeSeriesAnalyses;
+namespace RMC.BestFit.Tests.TimeSeries;
 
 /// <summary>
 /// Phase 3b unit tests for the four time-series analyses' <c>ForecastingTimeSteps</c>
@@ -25,9 +25,26 @@ public class TimeSeriesAnalysisForecastReprocessTests
 {
     private static readonly double[] s_obs = { 10.0, 11.5, 13.2, 12.1, 14.8, 15.3, 14.9, 16.0, 15.7, 17.1 };
 
+    /// <summary>
+    /// Creates series.
+    /// </summary>
+    /// <returns>The created test object.</returns>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static Numerics.Data.TimeSeries MakeSeries() =>
         new(TimeInterval.OneDay, new DateTime(2000, 1, 1), s_obs);
 
+    /// <summary>
+    /// Asserts that forecast Change Does Not Clear Mcmc.
+    /// </summary>
+    /// <param name="analysis">The analysis value.</param>
+    /// <param name="bayes">The bayes value.</param>
+    /// <param name="setForecast">The setForecast value.</param>
+    /// <param name="label">The label value.</param>
+    /// <remarks>
+    /// This helper keeps fixture setup local to the tests that use it.
+    /// </remarks>
     private static void AssertForecastChange_DoesNotClearMcmc(
         AnalysisBase analysis,
         BayesianAnalysis bayes,

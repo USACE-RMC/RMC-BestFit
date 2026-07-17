@@ -1,7 +1,7 @@
-﻿using Numerics.Data;
+using Numerics.Data;
 using System;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
     /// <summary>
     /// Base class for censored data ordinate.
@@ -32,6 +32,9 @@ namespace RMC.BestFit
             _plottingPosition = plottingPosition;
         }
 
+        /// <summary>
+        /// Backing value for the plotting position.
+        /// </summary>
         protected double _plottingPosition;
 
         /// <summary>

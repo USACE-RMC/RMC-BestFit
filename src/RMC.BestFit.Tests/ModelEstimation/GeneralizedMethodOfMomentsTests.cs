@@ -3,10 +3,10 @@ using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 
-namespace RMC.BestFit.Tests.Estimation;
+namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Fast structural unit tests for the <see cref="GeneralizedMethodOfMoments"/> class.
+/// Fast structural unit tests for the <c>GeneralizedMethodOfMoments</c> class.
 /// </summary>
 /// <remarks>
 /// Real estimation runs (Bulletin 17C published-table parity, Cohn-style confidence
@@ -28,7 +28,7 @@ public class GeneralizedMethodOfMomentsTests
 
     /// <summary>
     /// Verifies that the IGMMModel constructor rejects a null model with
-    /// <see cref="ArgumentNullException"/>.
+    /// <c>ArgumentNullException</c>.
     /// </summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
@@ -73,7 +73,7 @@ public class GeneralizedMethodOfMomentsTests
 
     /// <summary>
     /// Verifies that the delegate constructor rejects a null moment-condition function
-    /// with <see cref="ArgumentNullException"/>.
+    /// with <c>ArgumentNullException</c>.
     /// </summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
@@ -146,7 +146,7 @@ public class GeneralizedMethodOfMomentsTests
     #region Identification status
 
     /// <summary>
-    /// p == q is exact identification: <see cref="GeneralizedMethodOfMoments.IdentificationStatus"/>
+    /// p == q is exact identification: <c>GeneralizedMethodOfMoments.IdentificationStatus</c>
     /// must report <c>JustIdentified</c>.
     /// </summary>
     [TestMethod]
@@ -188,7 +188,7 @@ public class GeneralizedMethodOfMomentsTests
     #region Configuration round-trip
 
     /// <summary>
-    /// Verifies that <see cref="GeneralizedMethodOfMoments.OptimizerMethod"/> stores and
+    /// Verifies that <c>GeneralizedMethodOfMoments.OptimizerMethod</c> stores and
     /// returns the value passed to the constructor.
     /// </summary>
     [TestMethod]
@@ -210,7 +210,7 @@ public class GeneralizedMethodOfMomentsTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="GeneralizedMethodOfMoments.MaxGMMIterations"/> round-trips
+    /// Verifies that <c>GeneralizedMethodOfMoments.MaxGMMIterations</c> round-trips
     /// through the property setter.
     /// </summary>
     [TestMethod]
@@ -224,8 +224,8 @@ public class GeneralizedMethodOfMomentsTests
     }
 
     /// <summary>
-    /// Verifies <see cref="GeneralizedMethodOfMoments.ObjectiveFunctionValue"/> returns
-    /// <see cref="double.NaN"/> before estimation runs (matches the MLE/MAP
+    /// Verifies <c>GeneralizedMethodOfMoments.ObjectiveFunctionValue</c> returns
+    /// <c>double.NaN</c> before estimation runs (matches the MLE/MAP
     /// "NaN before estimation" sign-convention contract).
     /// </summary>
     [TestMethod]

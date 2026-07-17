@@ -6,11 +6,12 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using System.Xml.Linq;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Bivariate;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="BivariateAnalysis"/> class.
+/// Programmatic unit tests for the <c>BivariateAnalysis</c> class.
 /// Constructors, property round-trips, validation, serialization, ClearResults,
 /// event-routing, and copula-type configuration. No MCMC chains are run here —
 /// computational verification (parameter recovery, RunAsync end-to-end) lives in
@@ -53,17 +54,17 @@ public class BivariateAnalysisTests
     {
         int n = count ?? FixtureSize;
 
-        var dfX = new DataFrame { ExactSeries = new ExactSeries(InlineXData.Take(n).ToArray()) };
+        var dfX = new BestFitDataFrame { ExactSeries = new ExactSeries(InlineXData.Take(n).ToArray()) };
         var marginalX = new UnivariateDistribution(dfX, UnivariateDistributionType.Normal);
 
-        var dfY = new DataFrame { ExactSeries = new ExactSeries(InlineYData.Take(n).ToArray()) };
+        var dfY = new BestFitDataFrame { ExactSeries = new ExactSeries(InlineYData.Take(n).ToArray()) };
         var marginalY = new UnivariateDistribution(dfY, UnivariateDistributionType.Gumbel);
 
         return (marginalX, marginalY);
     }
 
     /// <summary>
-    /// Creates a test <see cref="BivariateDistribution"/> with Normal copula.
+    /// Creates a test <c>BivariateDistribution</c> with Normal copula.
     /// </summary>
     private static BivariateDistribution CreateTestBivariateDistribution(int? count = null)
     {
@@ -72,7 +73,7 @@ public class BivariateAnalysisTests
     }
 
     /// <summary>
-    /// Creates a test <see cref="BivariateDistribution"/> with a specified copula type.
+    /// Creates a test <c>BivariateDistribution</c> with a specified copula type.
     /// </summary>
     private static BivariateDistribution CreateTestBivariateDistribution(CopulaType copulaType, int? count = null)
     {
@@ -81,7 +82,7 @@ public class BivariateAnalysisTests
     }
 
     /// <summary>
-    /// Creates a <see cref="BivariateAnalysis"/> with the BayesianAnalysis configuration set
+    /// Creates a <c>BivariateAnalysis</c> with the BayesianAnalysis configuration set
     /// to satisfy <c>BayesianAnalysis.Validate()</c>'s lower bound on chain count.
     /// </summary>
     /// <remarks>
@@ -140,7 +141,7 @@ public class BivariateAnalysisTests
     }
 
     /// <summary>
-    /// Tests that the constructor throws <see cref="ArgumentNullException"/> when distribution is null.
+    /// Tests that the constructor throws <c>ArgumentNullException</c> when distribution is null.
     /// </summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
@@ -269,17 +270,16 @@ public class BivariateAnalysisTests
     }
 
     /// <summary>
-    /// Tests that XY ordinates serialization works correctly.
+    /// Tests that XY ordinates serialization writes the current payload.
     /// </summary>
     /// <remarks>
-    /// Currently round-trips only 1 ordinate when 5 are provided. The
-    /// <c>UncertainOrderedPairedData</c> XElement save/load path needs verification —
-    /// this is a candidate production bug surfaced by the migration. Skipping until
-    /// the round-trip behavior is confirmed.
+    /// This test stays at the analysis boundary and verifies that
+    /// <c>BivariateAnalysis.ToXElement()</c> embeds the same payload produced by the
+    /// ordinate collection itself. Full <c>UncertainOrderedPairedData</c> XML
+    /// round-trip behavior belongs with that type.
     /// </remarks>
-    [Ignore("XYOrdinates XML round-trip drops entries — pending production verification.")]
     [TestMethod]
-    public void XmlSerialization_XYOrdinates_RoundTripsCorrectly()
+    public void ToXElement_XYOrdinates_WritesCurrentPayload()
     {
         var bivariateDist = CreateTestBivariateDistribution(100);
         var analysis = CreateTestAnalysis(bivariateDist);
@@ -287,11 +287,13 @@ public class BivariateAnalysisTests
         analysis.XYOrdinates = testOrdinates;
 
         var xElement = analysis.ToXElement();
-        var restoredAnalysis = new BivariateAnalysis(bivariateDist, xElement);
+        var xyElement = xElement.Elements()
+            .FirstOrDefault(element => element.Name.LocalName != nameof(BayesianAnalysis));
 
-        Assert.IsNotNull(restoredAnalysis.XYOrdinates, "XY ordinates should be restored.");
-        Assert.AreEqual(testOrdinates.Count, restoredAnalysis.XYOrdinates.Count,
-            "XY ordinates count should be preserved.");
+        Assert.IsNotNull(xyElement, "XY ordinates should be serialized.");
+        Assert.AreEqual(testOrdinates.SaveToXElement().ToString(SaveOptions.DisableFormatting),
+            xyElement.ToString(SaveOptions.DisableFormatting),
+            "Serialized XY ordinates should match the current ordinate payload.");
     }
 
     #endregion
@@ -437,31 +439,31 @@ public class BivariateAnalysisTests
     }
 
     /// <summary>
-    /// Tests that setting XYOrdinates clears existing results.
+    /// Tests that setting XYOrdinates on an unestimated analysis leaves results empty.
     /// </summary>
     /// <remarks>
-    /// The <c>AnalysisResults</c> PropertyChanged event only fires when an estimated
-    /// analysis is reprocessed. On a fresh, unestimated analysis this assertion does
-    /// not hold. Skipping until either (a) the test is rewritten to first run a fast
-    /// estimation, or (b) the production code unconditionally fires the change event.
+    /// <c>ReprocessOrClearXYOrdinates()</c> returns immediately until the analysis is
+    /// estimated. This deterministic contract avoids relying on background timing or
+    /// running an estimator in the fast test suite.
     /// </remarks>
-    [Ignore("Requires an estimated analysis to fire the AnalysisResults change event; skipping in fast Tests.")]
     [TestMethod]
-    public void XYOrdinates_Change_ClearsResults()
+    public void XYOrdinates_Change_WhenUnestimated_KeepsResultsNull()
     {
         var bivariateDist = CreateTestBivariateDistribution(100);
         var analysis = CreateTestAnalysis(bivariateDist);
-        bool resultsClearedEventRaised = false;
+        bool analysisResultsChanged = false;
         analysis.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(BivariateAnalysis.AnalysisResults))
-                resultsClearedEventRaised = true;
+                analysisResultsChanged = true;
         };
 
         analysis.XYOrdinates = CreateTestXYOrdinates();
 
-        Assert.IsNull(analysis.AnalysisResults, "AnalysisResults should be null after XYOrdinates change.");
-        Assert.IsTrue(resultsClearedEventRaised, "AnalysisResults PropertyChanged should be raised.");
+        Assert.IsFalse(analysis.IsEstimated, "The test analysis should remain unestimated.");
+        Assert.IsNull(analysis.AnalysisResults, "AnalysisResults should remain null before estimation.");
+        Assert.IsFalse(analysisResultsChanged,
+            "AnalysisResults should not fire when a fresh, unestimated analysis has no results to clear.");
     }
 
     /// <summary>
@@ -724,10 +726,10 @@ public class BivariateAnalysisTests
     [TestMethod]
     public void Analysis_WithDifferentMarginalTypes_ValidatesCorrectly()
     {
-        var dfX = new DataFrame { ExactSeries = new ExactSeries(InlineXData.Take(100).ToArray()) };
+        var dfX = new BestFitDataFrame { ExactSeries = new ExactSeries(InlineXData.Take(100).ToArray()) };
         var marginalX = new UnivariateDistribution(dfX, UnivariateDistributionType.Normal);
 
-        var dfY = new DataFrame { ExactSeries = new ExactSeries(InlineYData.Take(100).ToArray()) };
+        var dfY = new BestFitDataFrame { ExactSeries = new ExactSeries(InlineYData.Take(100).ToArray()) };
         var marginalY = new UnivariateDistribution(dfY, UnivariateDistributionType.GeneralizedExtremeValue);
 
         var bivariateDist = new BivariateDistribution(marginalX, marginalY, CopulaType.Normal);

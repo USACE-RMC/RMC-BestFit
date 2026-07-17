@@ -296,33 +296,10 @@ namespace RMC.BestFit.Models
                     Parameters[i].PropertyChanged -= Parameter_PropertyChanged;
             }
 
-            // Get stage constraints
-            double minH = 0;
-            double maxH = 10;
-            double rangeH = 10;
-            if (StageData != null && StageData.Count > 0)
-            {
-                minH = StageData.MinValue();
-                maxH = StageData.MaxValue();
-                rangeH = maxH - minH;
-            }
-
-            // Get discharge constraints for log-space standard deviation
-            double sigmaUB = 2.0; // Default for log-space errors
-            if (DischargeData != null && DischargeData.Count > 0)
-            {
-                var logQ = new List<double>();
-                for (int i = 0; i < DischargeData.Count; i++)
-                {
-                    if (DischargeData[i].Value > 0)
-                        logQ.Add(Math.Log10(DischargeData[i].Value));
-                }
-                if (logQ.Count > 1)
-                {
-                    double stdDevLogQ = Statistics.StandardDeviation(logQ.ToArray());
-                    sigmaUB = Math.Ceiling(stdDevLogQ * 3); // 3x std dev for upper bound
-                }
-            }
+            var stageScale = GetDefaultPriorStageScale();
+            double minH = stageScale.MinimumStage;
+            double rangeH = stageScale.StageSpan;
+            double sigmaUB = GetDefaultPriorSigmaUpperBound();
 
             // Zero-flow stage bounds for segment 1 (h₁ is the main-channel
             // cease-to-flow stage and the only location parameter fit directly).
@@ -350,18 +327,17 @@ namespace RMC.BestFit.Models
             {
                 Name = "Coefficient (α₁)",
                 Value = 0,
-                LowerBound = -5,
-                UpperBound = 5,
-                PriorDistribution = new Uniform(-5, 5)
+                LowerBound = -10,
+                UpperBound = 10,
+                PriorDistribution = new Uniform(-10, 10)
             });
             Parameters.Add(new ModelParameter()
             {
                 Name = "Exponent (β₁)",
                 Value = 2.0,
-                LowerBound = 0.5,
+                LowerBound = 0,
                 UpperBound = 5,
-                IsPositive = true,
-                PriorDistribution = new Uniform(0.5, 5)
+                PriorDistribution = new Uniform(0, 5)
             });
 
             if (NumberOfSegments >= 2)
@@ -387,18 +363,17 @@ namespace RMC.BestFit.Models
                 {
                     Name = "Coefficient (α₂)",
                     Value = 0,
-                    LowerBound = -5,
-                    UpperBound = 5,
-                    PriorDistribution = new Uniform(-5, 5)
+                    LowerBound = -10,
+                    UpperBound = 10,
+                    PriorDistribution = new Uniform(-10, 10)
                 });
                 Parameters.Add(new ModelParameter()
                 {
                     Name = "Exponent (β₂)",
                     Value = 2.0,
-                    LowerBound = 0.5,
+                    LowerBound = 0,
                     UpperBound = 5,
-                    IsPositive = true,
-                    PriorDistribution = new Uniform(0.5, 5)
+                    PriorDistribution = new Uniform(0, 5)
                 });
             }
 
@@ -409,7 +384,7 @@ namespace RMC.BestFit.Models
                 // addition mode, control 3 contributes α₃·(h − h₃)^β₃ for h > h₃,
                 // added on top of the two lower controls.
                 double h3Min = minH + 0.5 * rangeH;
-                double h3Max = maxH;
+                double h3Max = minH + rangeH;
                 double h3Default = minH + 0.75 * rangeH;
 
                 Parameters.Add(new ModelParameter()
@@ -424,18 +399,17 @@ namespace RMC.BestFit.Models
                 {
                     Name = "Coefficient (α₃)",
                     Value = 0,
-                    LowerBound = -5,
-                    UpperBound = 5,
-                    PriorDistribution = new Uniform(-5, 5)
+                    LowerBound = -10,
+                    UpperBound = 10,
+                    PriorDistribution = new Uniform(-10, 10)
                 });
                 Parameters.Add(new ModelParameter()
                 {
                     Name = "Exponent (β₃)",
                     Value = 2.0,
-                    LowerBound = 0.5,
+                    LowerBound = 0,
                     UpperBound = 5,
-                    IsPositive = true,
-                    PriorDistribution = new Uniform(0.5, 5)
+                    PriorDistribution = new Uniform(0, 5)
                 });
             }
 
@@ -455,6 +429,121 @@ namespace RMC.BestFit.Models
                 Parameters[i].PropertyChanged += Parameter_PropertyChanged;
 
             RaisePropertyChange(nameof(SetDefaultParameters));
+        }
+
+        /// <summary>
+        /// Computes the stage location and span used to create weakly informative default priors.
+        /// </summary>
+        /// <returns>The minimum calibration stage and a finite positive stage span.</returns>
+        /// <remarks>
+        /// Date-aligned observations are preferred because the likelihood only uses paired
+        /// stage-discharge observations. If no valid aligned pairs are available, the method
+        /// falls back to finite stage observations so default construction remains robust while
+        /// the user is still configuring the analysis.
+        /// </remarks>
+        private (double MinimumStage, double StageSpan) GetDefaultPriorStageScale()
+        {
+            var stages = GetDefaultPriorStageValues();
+            if (stages.Count == 0)
+                return (0.0, 10.0);
+
+            double minStage = stages.Min();
+            double maxStage = stages.Max();
+            double span = maxStage - minStage;
+
+            if (!Tools.IsFinite(minStage))
+                minStage = 0.0;
+            if (!Tools.IsFinite(span) || span < 1.0)
+                span = 1.0;
+
+            return (minStage, span);
+        }
+
+        /// <summary>
+        /// Gets finite stage values for calibrating the default flat stage priors.
+        /// </summary>
+        /// <returns>A list of finite stage values from aligned pairs, or from all stage data as a fallback.</returns>
+        /// <remarks>
+        /// Aligned pairs with non-positive or non-finite discharge values are excluded because
+        /// the log-space rating-curve likelihood cannot use them.
+        /// </remarks>
+        private List<double> GetDefaultPriorStageValues()
+        {
+            if (StageData != null && DischargeData != null)
+            {
+                var alignedStages = GetAlignedObservations()
+                    .Where(x => Tools.IsFinite(x.Stage) && Tools.IsFinite(x.Discharge) && x.Discharge > 0)
+                    .Select(x => x.Stage)
+                    .ToList();
+
+                if (alignedStages.Count > 0)
+                    return alignedStages;
+            }
+
+            if (StageData == null)
+                return new List<double>();
+
+            return StageData
+                .Where(x => Tools.IsFinite(x.Value))
+                .Select(x => x.Value)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Computes the upper bound for the log-space residual scale prior.
+        /// </summary>
+        /// <returns>A finite positive upper bound for the sigma prior.</returns>
+        /// <remarks>
+        /// The bound uses three standard deviations of log10 discharge, rounded up to keep
+        /// the prior broad. Date-aligned discharges are preferred; unpaired discharge outliers
+        /// should not widen priors for a likelihood that will never observe them.
+        /// </remarks>
+        private double GetDefaultPriorSigmaUpperBound()
+        {
+            const double defaultSigmaUpperBound = 2.0;
+
+            var logQ = GetDefaultPriorLogDischarges();
+            if (logQ.Count > 1)
+            {
+                double stdDevLogQ = Statistics.StandardDeviation(logQ.ToArray());
+                double sigmaUpperBound = Math.Ceiling(stdDevLogQ * 3.0);
+                if (Tools.IsFinite(sigmaUpperBound) && sigmaUpperBound > Tools.DoubleMachineEpsilon)
+                    return sigmaUpperBound;
+            }
+
+            return defaultSigmaUpperBound;
+        }
+
+        /// <summary>
+        /// Gets positive finite log10 discharge values for calibrating the default sigma prior.
+        /// </summary>
+        /// <returns>A list of log10 discharge values from aligned pairs, or from all discharge data as a fallback.</returns>
+        /// <remarks>
+        /// Non-positive discharges are excluded because the rating-curve error model is defined
+        /// in log10 discharge space.
+        /// </remarks>
+        private List<double> GetDefaultPriorLogDischarges()
+        {
+            if (StageData != null && DischargeData != null)
+            {
+                var alignedLogQ = GetAlignedObservations()
+                    .Where(x => Tools.IsFinite(x.Stage) && Tools.IsFinite(x.Discharge) && x.Discharge > 0)
+                    .Select(x => Math.Log10(x.Discharge))
+                    .Where(Tools.IsFinite)
+                    .ToList();
+
+                if (alignedLogQ.Count > 0)
+                    return alignedLogQ;
+            }
+
+            if (DischargeData == null)
+                return new List<double>();
+
+            return DischargeData
+                .Where(x => Tools.IsFinite(x.Value) && x.Value > 0)
+                .Select(x => Math.Log10(x.Value))
+                .Where(Tools.IsFinite)
+                .ToList();
         }
 
         /// <inheritdoc/>
@@ -520,6 +609,28 @@ namespace RMC.BestFit.Models
 
             _alignedObservationsCache = result;
             return result;
+        }
+
+        /// <summary>
+        /// Counts the source stage and discharge observations and the aligned pairs
+        /// that will contribute to the rating-curve likelihood.
+        /// </summary>
+        /// <returns>
+        /// Tuple containing the stage count, discharge count, and date-aligned pair
+        /// count used by the fit.
+        /// </returns>
+        /// <remarks>
+        /// The paired count is the length of <see cref="GetAlignedObservations"/>,
+        /// so the reported count matches the observations used by likelihood,
+        /// residual, and fitted-value calculations.
+        /// </remarks>
+        public (int StageCount, int DischargeCount, int PairedCount) GetDataAlignmentCounts()
+        {
+            int stageCount = StageData?.Count ?? 0;
+            int dischargeCount = DischargeData?.Count ?? 0;
+            int pairedCount = GetAlignedObservations().Count;
+
+            return (stageCount, dischargeCount, pairedCount);
         }
 
         /// <summary>

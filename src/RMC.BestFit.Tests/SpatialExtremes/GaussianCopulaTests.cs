@@ -1,9 +1,9 @@
 using RMC.BestFit.Models.SpatialExtremes;
 
-namespace RMC.BestFit.Tests.SpatialExtremesModels;
+namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
-/// Unit tests for the <see cref="GaussianCopula"/> class.
+/// Unit tests for the <c>GaussianCopula</c> class.
 /// Tests spatial dependence modeling using Gaussian copulas.
 /// </summary>
 /// <remarks>

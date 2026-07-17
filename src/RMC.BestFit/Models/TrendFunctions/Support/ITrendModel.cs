@@ -1,4 +1,4 @@
-﻿using System.Xml.Linq;
+using System.Xml.Linq;
 
 namespace RMC.BestFit.Models.TrendFunctions.Support
 {
@@ -47,7 +47,7 @@ namespace RMC.BestFit.Models.TrendFunctions.Support
         /// <summary>
         /// Gets or sets a value indicating whether default "flat" priors
         /// should be applied when initializing the trend parameters.
-        /// When set to <c>true</c>, <see cref="SetDefaultParameters"/> is
+        /// When set to <c>true</c>, <c>SetDefaultParameters</c> is
         /// typically called to reset parameter definitions.
         /// </summary>
         bool UseDefaultFlatPriors { get; set; }

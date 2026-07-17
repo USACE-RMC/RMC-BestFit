@@ -1,10 +1,10 @@
-﻿using Numerics.Data;
+using Numerics.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace RMC.BestFit
+namespace RMC.BestFit.Models
 {
 
     /// <summary>
@@ -264,13 +264,17 @@ namespace RMC.BestFit
         /// <summary>
         /// Returns the autocorrelation function
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A matrix containing autocorrelation values by lag.</returns>
         public double[,] Autocorrelation()
         {
             var data = ValuesToArray();
             return Numerics.Data.Statistics.Autocorrelation.Function(data)!;
         }
 
+        /// <summary>
+        /// Returns the partial autocorrelation function.
+        /// </summary>
+        /// <returns>A matrix containing partial autocorrelation values by lag.</returns>
         public double[,] PartialAutocorrelation()
         {
             var data = ValuesToArray();

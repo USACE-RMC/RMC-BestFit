@@ -1,9 +1,9 @@
 using RMC.BestFit.Analyses;
 
-namespace RMC.BestFit.Tests.SpatialExtremesAnalysis;
+namespace RMC.BestFit.Tests.SpatialExtremes;
 
 /// <summary>
-/// Unit tests for <see cref="SpatialGEVSiteResults"/> and <see cref="SpatialGEVCrossValidationResults"/> classes.
+/// Unit tests for <c>SpatialGEVSiteResults</c> and <c>SpatialGEVCrossValidationResults</c> classes.
 /// </summary>
 /// <remarks>
 /// <para>

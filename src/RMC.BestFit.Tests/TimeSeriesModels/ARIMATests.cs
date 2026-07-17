@@ -1,10 +1,11 @@
 using Numerics.Data;
 using RMC.BestFit.Models;
+using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesModels;
 
 /// <summary>
-/// Programmatic unit tests for the <see cref="ARIMA"/> time-series model.
+/// Programmatic unit tests for the <c>ARIMA</c> time-series model.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,9 +33,9 @@ public class ARIMATests
     /// with a fixed seed so this file does not depend on the Verification
     /// project's shared <c>TestData</c>. Mean ≈ 1000, persistence φ ≈ 0.6.
     /// </summary>
-    private static TimeSeries CreateSampleTimeSeries()
+    private static NumericsTimeSeries CreateSampleTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1970, 1, 1), new DateTime(2019, 1, 1));
         var rng = new Random(12345);
 
         const double mean = 1000.0;
@@ -57,9 +58,9 @@ public class ARIMATests
     /// Deterministic short fixture (15 annual observations) for edge-case
     /// validation.
     /// </summary>
-    private static TimeSeries CreateShortTimeSeries()
+    private static NumericsTimeSeries CreateShortTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2014, 1, 1));
         for (int i = 0; i < ts.Count; i++)
         {
             ts[i].Value = 100.0 + i * 10.0;
@@ -71,9 +72,9 @@ public class ARIMATests
     /// Deterministic monthly fixture (240 monthly observations) with seasonal +
     /// trend + noise components for higher-frequency analysis.
     /// </summary>
-    private static TimeSeries CreateMonthlyTimeSeries()
+    private static NumericsTimeSeries CreateMonthlyTimeSeries()
     {
-        var ts = new TimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), new DateTime(2019, 12, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), new DateTime(2019, 12, 1));
         var rng = new Random(54321);
 
         for (int i = 0; i < ts.Count; i++)
@@ -82,6 +83,36 @@ public class ARIMATests
             double trend = 0.5 * i;
             double noise = rng.NextDouble() * 20.0 - 10.0;
             ts[i].Value = 500.0 + seasonal + trend + noise;
+        }
+
+        return ts;
+    }
+
+    /// <summary>
+    /// Finite fixture that makes the Box-Cox lambda objective non-finite.
+    /// </summary>
+    private static NumericsTimeSeries CreateBoxCoxLambdaFailureTimeSeries()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+
+        for (int i = 0; i < ts.Count; i++)
+        {
+            ts[i].Value = i == 0 ? 0.0 : 10.0;
+        }
+
+        return ts;
+    }
+
+    /// <summary>
+    /// Finite fixture that makes the Yeo-Johnson lambda objective non-finite.
+    /// </summary>
+    private static NumericsTimeSeries CreateYeoJohnsonLambdaFailureTimeSeries()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1960, 1, 1), new DateTime(2019, 1, 1));
+
+        for (int i = 0; i < ts.Count; i++)
+        {
+            ts[i].Value = -double.MaxValue;
         }
 
         return ts;
@@ -170,7 +201,7 @@ public class ARIMATests
     #region Property Tests
 
     /// <summary>
-    /// Tests that the TimeSeries property can be set and retrieved correctly.
+    /// Tests that the NumericsTimeSeries property can be set and retrieved correctly.
     /// </summary>
     [TestMethod]
     public void Test_TimeSeries_SetAndGet()
@@ -428,7 +459,7 @@ public class ARIMATests
 
     /// <summary>
     /// Tests that DataLogLikelihood returns the canonical "impossible likelihood"
-    /// sentinel when TimeSeries is null.
+    /// sentinel when NumericsTimeSeries is null.
     /// </summary>
     [TestMethod]
     public void Test_DataLogLikelihood_NullTimeSeries_ReturnsNegativeInfinity()
@@ -624,7 +655,7 @@ public class ARIMATests
     }
 
     /// <summary>
-    /// Tests that Predict throws InvalidOperationException when TimeSeries is null.
+    /// Tests that Predict throws InvalidOperationException when NumericsTimeSeries is null.
     /// </summary>
     [TestMethod]
     [ExpectedException(typeof(InvalidOperationException))]
@@ -894,7 +925,7 @@ public class ARIMATests
     }
 
     /// <summary>
-    /// Tests that Validate returns false when TimeSeries is null.
+    /// Tests that Validate returns false when NumericsTimeSeries is null.
     /// </summary>
     [TestMethod]
     public void Test_Validate_NullTimeSeries_ReturnsFalse()
@@ -913,7 +944,7 @@ public class ARIMATests
     [TestMethod]
     public void Test_Validate_TooShortTimeSeries_ReturnsFalse()
     {
-        var ts = new TimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
+        var ts = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(2000, 1, 1), new DateTime(2004, 1, 1));
         for (int i = 0; i < ts.Count; i++) ts[i].Value = i;
         var model = new ARIMA(ts);
 
@@ -921,6 +952,24 @@ public class ARIMATests
 
         Assert.IsFalse(isValid);
         Assert.IsTrue(messages.Any(m => m.Contains("10 observations")));
+    }
+
+    /// <summary>
+    /// Tests that validation rejects irregular time intervals.
+    /// </summary>
+    [TestMethod]
+    public void Test_Validate_IrregularTimeSeries_ReturnsFalse()
+    {
+        var ts = new NumericsTimeSeries(TimeInterval.Irregular);
+        var start = new DateTime(2000, 1, 1);
+        for (int i = 0; i < 50; i++)
+            ts.Add(new SeriesOrdinate<DateTime, double>(start.AddDays(i * i + 1), i + 1.0));
+        var model = new ARIMA(ts);
+
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("regular time interval")));
     }
 
     /// <summary>
@@ -993,6 +1042,37 @@ public class ARIMATests
             $"Got: [{string.Join(" | ", messages)}]");
     }
 
+    /// <summary>
+    /// Verifies that Box-Cox lambda solver failures are captured as validation errors.
+    /// </summary>
+    [TestMethod]
+    public void Test_BoxCoxTransform_LambdaFitFailure_ReturnsValidationError()
+    {
+        var model = new ARIMA(CreateBoxCoxLambdaFailureTimeSeries(), pOrder: 1, qOrder: 0);
+
+        model.TransformType = RMC.BestFit.Models.Transform.BoxCox;
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("Box-Cox lambda estimation failed")),
+            $"Expected a Box-Cox lambda validation message. Got: [{string.Join(" | ", messages)}]");
+    }
+
+    /// <summary>
+    /// Verifies that Yeo-Johnson lambda solver failures are captured as validation errors.
+    /// </summary>
+    [TestMethod]
+    public void Test_YeoJohnsonTransform_LambdaFitFailure_ReturnsValidationError()
+    {
+        var model = new ARIMA(CreateYeoJohnsonLambdaFailureTimeSeries(), pOrder: 1, qOrder: 0);
+
+        model.TransformType = RMC.BestFit.Models.Transform.YeoJohnson;
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(m => m.Contains("Yeo-Johnson lambda estimation failed")),
+            $"Expected a Yeo-Johnson lambda validation message. Got: [{string.Join(" | ", messages)}]");
+    }
     #endregion
 
     #region SetParameterValues Tests
@@ -1367,7 +1447,7 @@ public class ARIMATests
     }
 
     /// <summary>
-    /// Tests that ForecastingTimeSteps is computed correctly from TimeSeries length and TrainingTimeSteps.
+    /// Tests that ForecastingTimeSteps is computed correctly from NumericsTimeSeries length and TrainingTimeSteps.
     /// </summary>
     [TestMethod]
     public void Test_ForecastingTimeSteps_ComputedCorrectly()
@@ -1377,7 +1457,7 @@ public class ARIMATests
         model.UseDefaultTrainingSteps = false;
         model.TrainingTimeSteps = 40;
 
-        // ForecastingTimeSteps = TimeSeries.Count - TrainingTimeSteps
+        // ForecastingTimeSteps = NumericsTimeSeries.Count - TrainingTimeSteps
         Assert.AreEqual(ts.Count - 40, model.ForecastingTimeSteps);
     }
 

@@ -9,14 +9,14 @@ namespace RMC.BestFit.Models
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Implemented by <see cref="UnivariateDistribution"/>, <see cref="Bulletin17CDistribution"/>,
+    /// Implemented by <c>UnivariateDistribution</c>, <see cref="Bulletin17CDistribution"/>,
     /// <see cref="PointProcessModel"/>, and <see cref="MixtureModel"/>. Intentionally minimal so
     /// that classes with different base hierarchies (e.g., <see cref="Bulletin17CDistribution"/>
     /// implements <see cref="IGMMModel"/> directly, not <c>ModelBase</c>) can satisfy it without
     /// a base-class refactor.
     /// </para>
     /// <para>
-    /// <see cref="CompositeAnalysis"/> / CompositeModel is intentionally excluded: it has no owned
+    /// <c>CompositeAnalysis</c> / CompositeModel is intentionally excluded: it has no owned
     /// <see cref="DataFrame"/> (its posterior is averaged across component analyses), so it cannot
     /// contribute paired observations to a bivariate copula fit.
     /// </para>

@@ -103,6 +103,10 @@ namespace RMC.BestFit.Models
         private IUnivariateModel _marginalY = null!;
         private IList<double> _sampleDataX = null!;
         private IList<double> _sampleDataY = null!;
+        private DataFrame? _validatedPseudoDataFrameX;
+        private DataFrame? _validatedPseudoDataFrameY;
+        private long _validatedPseudoVersionX = -1;
+        private long _validatedPseudoVersionY = -1;
         private CopulaEstimationMethod _copulaEstimationMethod = CopulaEstimationMethod.InferenceFromMargins;
 
         /// <summary>
@@ -381,63 +385,250 @@ namespace RMC.BestFit.Models
         /// <para>
         /// When <see cref="CopulaEstimationMethod.PseudoLikelihood"/> is selected,
         /// the plotting position complements are used as pseudo observations on
-        /// the unit interval. Otherwise, the raw exact values are used and
+        /// the unit interval. Missing or invalid pseudo observations are initialized
+        /// once per distinct marginal data frame before the paired sample is rebuilt.
+        /// Otherwise, the raw exact values are used and
         /// transformed via the marginal CDFs inside the likelihood.
         /// </para>
         /// </remarks>
         public void SetSampleData()
         {
-            _sampleDataX = new List<double>();
-            _sampleDataY = new List<double>();
+            bool usePseudoLikelihood = CopulaEstimationMethod == CopulaEstimationMethod.PseudoLikelihood;
+            DataFrame dataFrameX = MarginalX!.DataFrame!;
+            DataFrame dataFrameY = MarginalY!.DataFrame!;
+            var (dataX, dataY) = GetEligibleExactData();
+            int pairedCapacity = Math.Min(dataX.Count, dataY.Count);
+            _sampleDataX = new List<double>(pairedCapacity);
+            _sampleDataY = new List<double>(pairedCapacity);
 
-            if (MarginalX is null || MarginalX.Validate().IsValid == false) return;
-            if (MarginalY is null || MarginalY.Validate().IsValid == false) return;
+            bool requiresPseudoValidation = usePseudoLikelihood &&
+                (!ReferenceEquals(_validatedPseudoDataFrameX, dataFrameX) ||
+                 _validatedPseudoVersionX != dataFrameX.PlottingPositionVersion ||
+                 !ReferenceEquals(_validatedPseudoDataFrameY, dataFrameY) ||
+                 _validatedPseudoVersionY != dataFrameY.PlottingPositionVersion);
 
-            // Process data frames
-            MarginalX.DataFrame.ExactSeries.SortByIndex();
-            MarginalY.DataFrame.ExactSeries.SortByIndex();
-
-            var dataX = MarginalX.DataFrame.ExactSeries.Where(y => ((ExactData)y).IsLowOutlier == false).ToList();
-            var dataY = MarginalY.DataFrame.ExactSeries.Where(y => ((ExactData)y).IsLowOutlier == false).ToList();
-
-            // Two-pointer linear merge — both lists are sorted by Index above, so we
-            // can pair matching indexes in O(n + m) instead of the previous O(n × m).
-            if (CopulaEstimationMethod == CopulaEstimationMethod.PseudoLikelihood)
+            (bool InvalidX, bool InvalidY) invalidPseudoObservations;
+            if (requiresPseudoValidation)
             {
-                int i = 0, j = 0;
-                while (i < dataX.Count && j < dataY.Count)
-                {
-                    int idxX = dataX[i].Index;
-                    int idxY = dataY[j].Index;
-                    if (idxX == idxY)
-                    {
-                        _sampleDataX.Add(dataX[i].PlottingPositionComplement);
-                        _sampleDataY.Add(dataY[j].PlottingPositionComplement);
-                        i++; j++;
-                    }
-                    else if (idxX < idxY) i++;
-                    else j++;
-                }
+                invalidPseudoObservations = AddPairedSampleDataAndValidate(
+                    dataX,
+                    dataY,
+                    _sampleDataX,
+                    _sampleDataY);
             }
             else
             {
-                int i = 0, j = 0;
-                while (i < dataX.Count && j < dataY.Count)
-                {
-                    int idxX = dataX[i].Index;
-                    int idxY = dataY[j].Index;
-                    if (idxX == idxY)
-                    {
-                        _sampleDataX.Add(dataX[i].Value);
-                        _sampleDataY.Add(dataY[j].Value);
-                        i++; j++;
-                    }
-                    else if (idxX < idxY) i++;
-                    else j++;
-                }
-
+                invalidPseudoObservations = (false, false);
+                AddPairedSampleData(
+                    dataX,
+                    dataY,
+                    usePseudoLikelihood,
+                    _sampleDataX,
+                    _sampleDataY);
             }
 
+            if (usePseudoLikelihood &&
+                (invalidPseudoObservations.InvalidX || invalidPseudoObservations.InvalidY))
+            {
+                if (invalidPseudoObservations.InvalidX)
+                    dataFrameX.CalculatePlottingPositions();
+                if (invalidPseudoObservations.InvalidY &&
+                    (!ReferenceEquals(dataFrameX, dataFrameY) ||
+                     !invalidPseudoObservations.InvalidX))
+                    dataFrameY.CalculatePlottingPositions();
+
+                _sampleDataX.Clear();
+                _sampleDataY.Clear();
+                (dataX, dataY) = GetEligibleExactData();
+                AddPairedSampleData(
+                    dataX,
+                    dataY,
+                    true,
+                    _sampleDataX,
+                    _sampleDataY);
+            }
+
+            if (usePseudoLikelihood)
+            {
+                _validatedPseudoDataFrameX = dataFrameX;
+                _validatedPseudoDataFrameY = dataFrameY;
+                _validatedPseudoVersionX = dataFrameX.PlottingPositionVersion;
+                _validatedPseudoVersionY = dataFrameY.PlottingPositionVersion;
+            }
+        }
+
+        /// <summary>
+        /// Counts the exact observations available for each marginal and the paired
+        /// observations that will contribute to the copula likelihood.
+        /// </summary>
+        /// <returns>
+        /// Tuple containing the eligible X exact count, eligible Y exact count, and
+        /// paired count after matching by exact-data index.
+        /// </returns>
+        /// <remarks>
+        /// Counts use the same eligibility rules as <see cref="SetSampleData"/>:
+        /// exact observations flagged as low outliers are excluded, and observations
+        /// are paired only when their <c>Index</c> values match.
+        /// </remarks>
+        public (int XExactCount, int YExactCount, int PairedCount) GetSampleDataAlignmentCounts()
+        {
+            var (dataX, dataY) = GetEligibleExactData();
+            return (dataX.Count, dataY.Count, CountPairedExactData(dataX, dataY));
+        }
+
+        /// <summary>
+        /// Gets sorted, non-low-outlier exact data from both marginals.
+        /// </summary>
+        /// <returns>
+        /// Tuple containing eligible exact data for the X and Y marginals. Empty
+        /// lists are returned when either marginal is missing or invalid.
+        /// </returns>
+        /// <remarks>
+        /// This method sorts the underlying exact series before copying them, matching
+        /// the historical behavior of <see cref="SetSampleData"/> and keeping the
+        /// two-pointer merge valid.
+        /// </remarks>
+        private (List<ExactData> XData, List<ExactData> YData) GetEligibleExactData()
+        {
+            if (MarginalX is null || MarginalX.Validate().IsValid == false || MarginalX.DataFrame is null)
+                return (new List<ExactData>(), new List<ExactData>());
+            if (MarginalY is null || MarginalY.Validate().IsValid == false || MarginalY.DataFrame is null)
+                return (new List<ExactData>(), new List<ExactData>());
+
+            MarginalX.DataFrame.ExactSeries.SortByIndex();
+            MarginalY.DataFrame.ExactSeries.SortByIndex();
+
+            var dataX = MarginalX.DataFrame.ExactSeries
+                .Select(y => (ExactData)y)
+                .Where(y => y.IsLowOutlier == false)
+                .ToList();
+            var dataY = MarginalY.DataFrame.ExactSeries
+                .Select(y => (ExactData)y)
+                .Where(y => y.IsLowOutlier == false)
+                .ToList();
+
+            return (dataX, dataY);
+        }
+
+        /// <summary>
+        /// Counts paired exact observations by matching sorted exact-data indexes.
+        /// </summary>
+        /// <param name="dataX">Eligible exact data from the X marginal, sorted by index.</param>
+        /// <param name="dataY">Eligible exact data from the Y marginal, sorted by index.</param>
+        /// <returns>The number of index-matched pairs.</returns>
+        /// <remarks>
+        /// Uses the same O(n + m) two-pointer merge as sample construction so the
+        /// reported count cannot drift from the data used by the fit.
+        /// </remarks>
+        private static int CountPairedExactData(IReadOnlyList<ExactData> dataX, IReadOnlyList<ExactData> dataY)
+        {
+            int count = 0;
+            int i = 0;
+            int j = 0;
+            while (i < dataX.Count && j < dataY.Count)
+            {
+                int idxX = dataX[i].Index;
+                int idxY = dataY[j].Index;
+                if (idxX == idxY)
+                {
+                    count++;
+                    i++;
+                    j++;
+                }
+                else if (idxX < idxY) i++;
+                else j++;
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Adds paired exact observations without revalidating an unchanged pseudo sample.
+        /// </summary>
+        /// <param name="dataX">Eligible exact data from the X marginal, sorted by index.</param>
+        /// <param name="dataY">Eligible exact data from the Y marginal, sorted by index.</param>
+        /// <param name="usePseudoLikelihood">Whether to add plotting-position complements instead of raw values.</param>
+        /// <param name="sampleDataX">Destination collection for X sample values.</param>
+        /// <param name="sampleDataY">Destination collection for Y sample values.</param>
+        /// <remarks>
+        /// The copula likelihood uses either pseudo observations or raw observations
+        /// depending on <see cref="CopulaEstimationMethod"/>. In both modes, the same
+        /// index-matched observations are included.
+        /// </remarks>
+        private static void AddPairedSampleData(
+            IReadOnlyList<ExactData> dataX,
+            IReadOnlyList<ExactData> dataY,
+            bool usePseudoLikelihood,
+            IList<double> sampleDataX,
+            IList<double> sampleDataY)
+        {
+            int i = 0;
+            int j = 0;
+            while (i < dataX.Count && j < dataY.Count)
+            {
+                int idxX = dataX[i].Index;
+                int idxY = dataY[j].Index;
+                if (idxX == idxY)
+                {
+                    sampleDataX.Add(usePseudoLikelihood
+                        ? dataX[i].PlottingPositionComplement
+                        : dataX[i].Value);
+                    sampleDataY.Add(usePseudoLikelihood
+                        ? dataY[j].PlottingPositionComplement
+                        : dataY[j].Value);
+                    i++;
+                    j++;
+                }
+                else if (idxX < idxY) i++;
+                else j++;
+            }
+        }
+
+        /// <summary>
+        /// Adds paired pseudo observations while validating both marginals on the unit interval.
+        /// </summary>
+        /// <param name="dataX">Eligible exact data from the X marginal, sorted by index.</param>
+        /// <param name="dataY">Eligible exact data from the Y marginal, sorted by index.</param>
+        /// <param name="sampleDataX">Destination collection for X pseudo observations.</param>
+        /// <param name="sampleDataY">Destination collection for Y pseudo observations.</param>
+        /// <returns>
+        /// Flags indicating whether either marginal supplied a paired pseudo observation outside <c>(0,1)</c>.
+        /// </returns>
+        /// <remarks>
+        /// Validation is performed only when a marginal data frame or its plotting-position version
+        /// changes. Unchanged samples use <see cref="AddPairedSampleData"/> to preserve the established
+        /// hot-path cost.
+        /// </remarks>
+        private static (bool InvalidX, bool InvalidY) AddPairedSampleDataAndValidate(
+            IReadOnlyList<ExactData> dataX,
+            IReadOnlyList<ExactData> dataY,
+            IList<double> sampleDataX,
+            IList<double> sampleDataY)
+        {
+            int i = 0;
+            int j = 0;
+            bool invalidX = false;
+            bool invalidY = false;
+            while (i < dataX.Count && j < dataY.Count)
+            {
+                int idxX = dataX[i].Index;
+                int idxY = dataY[j].Index;
+                if (idxX == idxY)
+                {
+                    double valueX = dataX[i].PlottingPositionComplement;
+                    double valueY = dataY[j].PlottingPositionComplement;
+                    invalidX |= !(valueX > 0.0 && valueX < 1.0);
+                    invalidY |= !(valueY > 0.0 && valueY < 1.0);
+                    sampleDataX.Add(valueX);
+                    sampleDataY.Add(valueY);
+                    i++;
+                    j++;
+                }
+                else if (idxX < idxY) i++;
+                else j++;
+            }
+
+            return (invalidX, invalidY);
         }
 
         /// <inheritdoc/>

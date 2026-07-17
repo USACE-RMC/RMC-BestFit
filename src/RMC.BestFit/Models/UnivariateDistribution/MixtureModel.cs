@@ -1167,18 +1167,13 @@ namespace RMC.BestFit.Models
                 for (int j = 0; j < k; j++)
                 {
                     var dist = model.Distributions[j];
-                    double scale;
+                    if (!TryGetJeffreysScaleParameter(dist, out double scale))
+                        continue;
 
-                    if (dist.Type == UnivariateDistributionType.GammaDistribution ||
-                        dist.Type == UnivariateDistributionType.Weibull)
-                    {
-                        scale = dist.GetParameters[0];
-                    }
-                    else
-                    {
-                        scale = dist.GetParameters[1];
-                    }
-                    logLH -= scale > 0 ? Math.Log(scale) : double.PositiveInfinity;
+                    if (scale <= 0)
+                        return double.NegativeInfinity;
+
+                    logLH -= Math.Log(scale);
                 }
             }
 
@@ -1223,17 +1218,8 @@ namespace RMC.BestFit.Models
                 for (int j = 0; j < k; j++)
                 {
                     var dist = model.Distributions[j];
-                    double scale;
-
-                    if (dist.Type == UnivariateDistributionType.GammaDistribution ||
-                        dist.Type == UnivariateDistributionType.Weibull)
-                    {
-                        scale = dist.GetParameters[0];
-                    }
-                    else
-                    {
-                        scale = dist.GetParameters[1];
-                    }
+                    if (!TryGetJeffreysScaleParameter(dist, out double scale, out _))
+                        continue;
 
                     result.Add(new PriorComponent(
                         $"Jeffreys Scale: Component {j + 1}",
@@ -1293,6 +1279,10 @@ namespace RMC.BestFit.Models
                 Parameters = parms,
                 QuantilePriors = quants,
             };
+
+            result.Mixture!.IsZeroInflated = result._isZeroInflated;
+            result.Mixture.ZeroWeight = result._isZeroInflated
+                ? Mixture!.ZeroWeight : 0.0;
 
             result.ProcessQuantilePriors();
             return result;

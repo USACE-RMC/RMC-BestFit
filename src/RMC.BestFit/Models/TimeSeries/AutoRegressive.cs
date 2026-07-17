@@ -92,6 +92,11 @@ namespace RMC.BestFit.Models
 
             // Set TimeSeries first (this may trigger SetDefaultParameters)
             TimeSeries = timeSeries;
+            if (trainingStepsAttr != null)
+                int.TryParse(trainingStepsAttr.Value, out _trainingTimeSteps);
+            if (useDefaultTrainingAttr != null)
+                bool.TryParse(useDefaultTrainingAttr.Value, out _useDefaultTrainingSteps);
+            SetTrainingData();
 
             // Then restore parameters from XElement to override defaults
             var parmsElement = xElement.Element(nameof(Parameters));
@@ -118,6 +123,7 @@ namespace RMC.BestFit.Models
         private double _lambda = 0;
         private double _lambda2 = 0;
         private double _logJacobian = 0;
+        private string? _transformFitValidationMessage;
 
         // Training/forecasting split members
         private int _trainingTimeSteps = 0;
@@ -136,6 +142,8 @@ namespace RMC.BestFit.Models
             get { return _timeSeries; }
             set
             {
+                if (ReferenceEquals(_timeSeries, value)) return;
+
                 if (_timeSeries != null)
                     _timeSeries.CollectionChanged -= TimeSeries_CollectionChanged;
 
@@ -144,10 +152,12 @@ namespace RMC.BestFit.Models
                 if (_timeSeries != null)
                 {
                     _timeSeries.CollectionChanged += TimeSeries_CollectionChanged;
-
-                    if (_useDefaultTrainingSteps)
-                        SetDefaultTrainingSteps();
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                     SetTrainingData();
+                }
+                else
+                {
+                    ResetDefaultTrainingStepsForNewTimeSeries();
                 }
 
                 RaisePropertyChange(nameof(TimeSeries));
@@ -328,10 +338,39 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Restores the default training split when the model is attached to a different input series.
+        /// </summary>
+        /// <remarks>
+        /// A new response series represents a new calibration problem, so manual training-window edits
+        /// from the previous series are discarded.
+        /// </remarks>
+        private void ResetDefaultTrainingStepsForNewTimeSeries()
+        {
+            if (!_useDefaultTrainingSteps)
+            {
+                _useDefaultTrainingSteps = true;
+                RaisePropertyChange(nameof(UseDefaultTrainingSteps));
+            }
+
+            if (_timeSeries == null || _timeSeries.Count == 0)
+            {
+                if (_trainingTimeSteps != 0)
+                {
+                    _trainingTimeSteps = 0;
+                    RaisePropertyChange(nameof(TrainingTimeSteps));
+                }
+                return;
+            }
+
+            SetDefaultTrainingSteps();
+        }
+
+        /// <summary>
         /// Prepares the training data by applying transformations.
         /// </summary>
         private void SetTrainingData()
         {
+            _transformFitValidationMessage = null;
             if (TimeSeries == null || TrainingTimeSteps == 0) return;
 
             int effectiveTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
@@ -361,7 +400,32 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.BoxCox)
             {
-                BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"AutoRegressive.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"AutoRegressive.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 var data = TimeSeries.ValuesToArray().Subset(Order, effectiveTrainingSteps - 1);
                 _logJacobian = BoxCox.LogJacobian(data, _lambda);
 
@@ -373,7 +437,32 @@ namespace RMC.BestFit.Models
             }
             else if (TransformType == Transform.YeoJohnson)
             {
-                YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                try
+                {
+                    YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
+                }
+                catch (ArithmeticException ex)
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
+                    System.Diagnostics.Debug.WriteLine($"AutoRegressive.SetTrainingData: {_transformFitValidationMessage}");
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    return;
+                }
+
+
+                if (!double.IsFinite(_lambda))
+                {
+                    _lambda = 0;
+                    _logJacobian = 0;
+                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data.";
+                    System.Diagnostics.Debug.WriteLine($"AutoRegressive.SetTrainingData: {_transformFitValidationMessage}");
+                    return;
+                }
+
                 var data = TimeSeries.ValuesToArray().Subset(Order, effectiveTrainingSteps - 1);
                 _logJacobian = YeoJohnson.LogJacobian(data, _lambda);
 
@@ -829,6 +918,9 @@ namespace RMC.BestFit.Models
             };
 
             result.TimeSeries = TimeSeries?.Clone()!;
+            result._trainingTimeSteps = TrainingTimeSteps;
+            result._useDefaultTrainingSteps = UseDefaultTrainingSteps;
+            result.SetTrainingData();
             return result;
         }
 
@@ -900,6 +992,12 @@ namespace RMC.BestFit.Models
                 messages.Add("Error: Time series must have at least 10 observations.");
             }
 
+            if (TimeSeries.TimeInterval == TimeInterval.Irregular)
+            {
+                isValid = false;
+                messages.Add("Error: Time series analysis requires a regular time interval. Resample or convert the series to a regular interval before estimating.");
+            }
+
             if (Order < 1 || Order > 10)
             {
                 isValid = false;
@@ -940,6 +1038,12 @@ namespace RMC.BestFit.Models
                 {
                     messages.Add("Warning: AR parameters do not satisfy the sum-of-absolute-values stationarity sufficient condition (Σ|φᵢ| < 1). The model may still be stationary — this check is conservative for orders ≥ 3 — but forecasts may be unstable if it is not.");
                 }
+            }
+
+            if (_transformFitValidationMessage != null)
+            {
+                isValid = false;
+                messages.Add(_transformFitValidationMessage);
             }
 
             return (isValid, messages);

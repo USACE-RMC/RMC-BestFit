@@ -3,7 +3,7 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Tests.CoreInfrastructure;
 
 /// <summary>
-/// Unit tests for the <see cref="DataComponent"/> readonly struct.
+/// Unit tests for the <c>DataComponent</c> readonly struct.
 /// Tests constructor behavior, property access, and edge cases.
 /// </summary>
 [TestClass]

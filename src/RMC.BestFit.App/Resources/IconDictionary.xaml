@@ -1,0 +1,111 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Pending: Gray clock icon. Medium gray (#888) contrasts well on both light and dark backgrounds. -->
+    <DrawingImage x:Key="StatusPendingIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Clock circle -->
+                <GeometryDrawing Brush="Transparent">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="8,8" RadiusX="6.5" RadiusY="6.5"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#888888" Thickness="1.3"/>
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+                <!-- Clock hands: hour (12 to 3) and minute (12 to 12) -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 8,4.5 L 8,8 L 11,8"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#888888" Thickness="1.2" StartLineCap="Round" EndLineCap="Round" LineJoin="Round"/>
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Running: Blue filled circular arrows. Top-right arrow and its 180-degree mirror. -->
+    <DrawingImage x:Key="StatusRunningIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Top-right arrow (from BatchRunIcon geometry) -->
+                <GeometryDrawing Brush="#0078D4" Geometry="F1M14,8.5C14,5.637,11.799,3.254,9,3L9,5C10.691,5.245 12,6.741 12,8.5 12,9.891 11.178,11.085 10,11.648L10,9 8,11 8,15 12,15 14,13 11.652,13C13.069,12.004,14,10.359,14,8.5" />
+                <!-- Bottom-left arrow (mirrored through center 8,8) -->
+                <GeometryDrawing Brush="#0078D4" Geometry="F1M2,7.5C2,10.363,4.201,12.746,7,13L7,11C5.309,10.755 4,9.259 4,7.5 4,6.109 4.822,4.915 6,4.352L6,7 8,5 8,1 4,1 2,3 4.348,3C2.931,3.996,2,5.641,2,7.5" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Succeeded: Green filled circle with white checkmark. High contrast on any background. -->
+    <DrawingImage x:Key="StatusSucceededIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Green filled circle -->
+                <GeometryDrawing Brush="#16A34A">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="8,8" RadiusX="7" RadiusY="7"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <!-- White checkmark -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 4.5,8 L 7,10.5 L 11.5,5.5"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" Thickness="1.6" StartLineCap="Round" EndLineCap="Round" LineJoin="Round"/>
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Failed: Red filled circle with white X. High contrast on any background. -->
+    <DrawingImage x:Key="StatusFailedIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Red filled circle -->
+                <GeometryDrawing Brush="#DC2626">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="8,8" RadiusX="7" RadiusY="7"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <!-- White X -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 5,5 L 11,11 M 11,5 L 5,11"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" Thickness="1.6" StartLineCap="Round" EndLineCap="Round"/>
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Canceled: Gray filled circle with white horizontal dash. Distinct from the red failed icon. -->
+    <DrawingImage x:Key="StatusCanceledIcon">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Gray filled circle -->
+                <GeometryDrawing Brush="#6B7280">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="8,8" RadiusX="7" RadiusY="7"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <!-- White horizontal dash (stop/cancel symbol) -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M 5,8 L 11,8"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="White" Thickness="1.8" StartLineCap="Round" EndLineCap="Round"/>
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+</ResourceDictionary>

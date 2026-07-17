@@ -1,10 +1,11 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
-namespace RMC.BestFit.Tests.UnivariateAnalyses;
+namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Unit tests for the <see cref="CompetingRisksModel"/> class.
+/// Unit tests for the <c>CompetingRisksModel</c> class.
 /// Tests competing risks models for multiple flood-generating processes.
 /// </summary>
 /// <remarks>
@@ -28,9 +29,9 @@ public class CompetingRisksModelTests
     /// <summary>
     /// Creates a sample data frame with positive exact observations.
     /// </summary>
-    private static DataFrame CreateSampleDataFrame()
+    private static BestFitDataFrame CreateSampleDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>
         {
             new ExactData { Index = 1990, Value = 1500 },
@@ -51,9 +52,9 @@ public class CompetingRisksModelTests
     /// <summary>
     /// Creates a data frame with extreme event characteristics.
     /// </summary>
-    private static DataFrame CreateExtremeEventDataFrame()
+    private static BestFitDataFrame CreateExtremeEventDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
 
         // Regular events
@@ -76,21 +77,21 @@ public class CompetingRisksModelTests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <see cref="IntervalData"/> requires a most-likely <c>Value</c> strictly between
+    /// <c>IntervalData</c> requires a most-likely <c>Value</c> strictly between
     /// <c>LowerValue</c> and <c>UpperValue</c>; the object-initializer syntax
     /// <c>new IntervalData { Index = ..., LowerValue = ..., UpperValue = ... }</c> leaves
-    /// <c>Value = 0</c>, which fails <see cref="IntervalData.Validate"/> and cascades to
-    /// an invalid <see cref="DataFrame"/>. Use the 4-argument constructor
+    /// <c>Value = 0</c>, which fails <c>IntervalData.Validate</c> and cascades to
+    /// an invalid <c>DataFrame</c>. Use the 4-argument constructor
     /// <c>new IntervalData(index, lower, value, upper)</c> with a mid-point value so the
-    /// frame validates and <see cref="CompetingRisksModel.SetDefaultParameters"/> populates
-    /// <see cref="CompetingRisksModel.Parameters"/>.
+    /// frame validates and <c>CompetingRisksModel.SetDefaultParameters</c> populates
+    /// <c>CompetingRisksModel.Parameters</c>.
     /// </para>
     /// </remarks>
-    private static DataFrame CreateIntervalDataFrame()
+    private static BestFitDataFrame CreateIntervalDataFrame()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         // At least 4 exact data points are required because
-        // <see cref="Numerics.Data.Statistics.Statistics.ProductMoments"/> returns
+        // <c>Numerics.Data.Statistics.Statistics.ProductMoments</c> returns
         // all-NaN when N &lt; 4 (see Statistics.cs ~line 481) — and NaN initial values
         // later cause Normal.ValidateParameters to throw "The mean must be a number".
         df.ExactSeries = new ExactSeries(new List<ExactData>
@@ -108,6 +109,41 @@ public class CompetingRisksModelTests
             new IntervalData(1850, 5000, 6500, 8000)
         });
         return df;
+    }
+
+    /// <summary>
+    /// Creates a competing-risks model with explicit parameter priors without invoking component MLE initialization.
+    /// </summary>
+    /// <param name="distributions">The component distributions to include.</param>
+    /// <returns>A configured competing-risks model whose parameter vector matches the supplied components.</returns>
+    /// <remarks>
+    /// One-parameter Numerics families do not implement the continuous-distribution MLE interface used
+    /// by the normal BestFit setup path. Configuring the distribution before valid data and disabling
+    /// default priors permits direct regression coverage of the public prior-likelihood methods.
+    /// </remarks>
+    private static CompetingRisksModel CreateModelWithManualPriors(
+        params UnivariateDistributionBase[] distributions)
+    {
+        var model = new CompetingRisksModel
+        {
+            UseDefaultFlatPriors = false,
+            CompetingRisks = new CompetingRisks(distributions),
+            DataFrame = CreateSampleDataFrame()
+        };
+        double[] parameterValues = model.CompetingRisks!.GetParameters;
+
+        for (int i = 0; i < parameterValues.Length; i++)
+        {
+            double value = parameterValues[i];
+            model.Parameters.Add(new ModelParameter
+            {
+                Name = $"Parameter {i + 1}",
+                Value = value,
+                PriorDistribution = new Normal(value, Math.Max(1.0, Math.Abs(value) * 0.1))
+            });
+        }
+
+        return model;
     }
 
     #endregion
@@ -972,6 +1008,53 @@ public class CompetingRisksModelTests
         Assert.IsTrue(priors.Any(p => p.Type == PriorComponentType.JeffreysScalePrior));
     }
 
+    /// <summary>
+    /// Verifies that a one-parameter component retains its ordinary prior without an inapplicable Jeffreys term.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_OneParameterComponent_OmitsScaleContribution()
+    {
+        var model = CreateModelWithManualPriors(new Poisson(2000.0));
+        model.UseJeffreysRuleForScale = true;
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+        double scalar = model.PriorLogLikelihood(parameters.ToArray());
+        var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+        Assert.IsTrue(double.IsFinite(scalar));
+        Assert.IsFalse(pointwise.Any(component =>
+            component.Type == PriorComponentType.JeffreysScalePrior));
+        Assert.AreEqual(
+            scalar,
+            pointwise.Sum(component => component.LogLikelihood),
+            1e-12);
+    }
+
+    /// <summary>
+    /// Verifies that mixed one-parameter and Normal risks apply Jeffreys' rule only to the Normal scale.
+    /// </summary>
+    [TestMethod]
+    public void Test_JeffreysPrior_MixedComponents_AppliesOnlyAvailableScaleContribution()
+    {
+        var model = CreateModelWithManualPriors(
+            new Poisson(2000.0),
+            new Normal(2000.0, 500.0));
+        model.UseJeffreysRuleForScale = true;
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+        double scalar = model.PriorLogLikelihood(parameters.ToArray());
+        var pointwise = model.PointwisePriorLogLikelihood(parameters);
+
+        Assert.AreEqual(
+            1,
+            pointwise.Count(component =>
+                component.Type == PriorComponentType.JeffreysScalePrior));
+        Assert.AreEqual(
+            scalar,
+            pointwise.Sum(component => component.LogLikelihood),
+            1e-12);
+    }
+
     #endregion
 
     #region Edge Cases
@@ -980,7 +1063,7 @@ public class CompetingRisksModelTests
     [TestMethod]
     public void Test_CompetingRisks_SingleDataPoint()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         df.ExactSeries = new ExactSeries(new List<ExactData>
         {
             new ExactData { Index = 2000, Value = 1000 }
@@ -996,7 +1079,7 @@ public class CompetingRisksModelTests
     [TestMethod]
     public void Test_CompetingRisks_LargeValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {
@@ -1015,7 +1098,7 @@ public class CompetingRisksModelTests
     [TestMethod]
     public void Test_CompetingRisks_SmallValues()
     {
-        var df = new DataFrame();
+        var df = new BestFitDataFrame();
         var data = new List<ExactData>();
         for (int i = 0; i < 10; i++)
         {

@@ -1,22 +1,35 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyTitle>RMC.BestFit</AssemblyTitle>
-    <Description>Model library for the Bayesian estimation and fitting software (RMC-BestFit).</Description>
-    <Company>U.S. Army Corps of Engineers</Company>
+    <Title>RMC.BestFit</Title>
+    <Description>Portable model library for RMC-BestFit Bayesian estimation, distribution fitting, and frequency analysis in flood risk and water resources engineering.</Description>
+    <Authors>C. Haden Smith; Woodrow L. Fields; Brian Skahill</Authors>
+    <Company>USACE-RMC</Company>
     <Product>RMC-BestFit</Product>
-    <Version>2.0.0</Version>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
+    <PackageId>RMC.BestFit</PackageId>
+    <PackageProjectUrl>https://github.com/USACE-RMC/RMC-BestFit</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/USACE-RMC/RMC-BestFit</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Bayesian inference;flood frequency analysis;hydrology;probability distributions;MCMC;risk assessment;water resources engineering;.NET;C#</PackageTags>
+    <PackageLicenseExpression>0BSD</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Official RMC.BestFit 2.0.0 model-library release for Bayesian flood-frequency analysis, time series, peaks-over-threshold, mixtures, composites, bivariate/coincident frequency, rating curves, diagnostics, and API-backed workflows.</PackageReleaseNotes>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
   
-    <!-- Otherwise targets C# 7.3 which doesn't have global usings and some other syntactic sugar utilized here.  -->
+  <!-- Otherwise targets C# 7.3 which does not have global usings and some other syntactic sugar utilized here. -->
   <PropertyGroup Condition="'$(TargetFramework)' == 'net481'">
-	<LangVersion>latest</LangVersion>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="Analyses\TimeSeries\Support\**" />
     <Compile Remove="Analyses\Univariate\Support\**" />
@@ -27,9 +40,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Numerics">
-      <HintPath>..\..\..\numerics\Numerics\bin\Debug\net10.0\Numerics.dll</HintPath>
-    </Reference>
+    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="DotNet.ReproducibleBuilds">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.SourceLink.GitHub">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

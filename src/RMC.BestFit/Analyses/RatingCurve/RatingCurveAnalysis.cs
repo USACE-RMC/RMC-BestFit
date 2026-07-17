@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -108,6 +108,7 @@ namespace RMC.BestFit.Analyses
 
             // Restore analysis results
             AnalysisResults = analysisResults;
+            NormalizeRestoredEstimatedState();
         }
 
         #endregion
@@ -127,7 +128,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// When the rating curve changes, the analysis subscribes to its
-        /// <see cref="RatingCurve.PropertyChanged"/> event and updates
+        /// <c>PropertyChanged</c> event and updates
         /// the associated <see cref="BayesianAnalysis"/> model reference.
         /// </para>
         /// </remarks>
@@ -286,6 +287,32 @@ namespace RMC.BestFit.Analyses
         #region Methods
 
         /// <summary>
+        /// Repairs the persisted estimated flag when older saves contain complete Bayesian artifacts
+        /// but the outer analysis-level flag was left false.
+        /// </summary>
+        /// <remarks>
+        /// Point-estimate-only setting changes are routed through <see cref="AnalysisBase.ReprocessIfEstimated"/>.
+        /// Some persisted projects can have an estimated <see cref="BayesianAnalysis"/>, serialized
+        /// <see cref="MCMCResults"/>, and serialized <see cref="AnalysisResults"/> while the outer
+        /// <see cref="AnalysisBase.IsEstimated"/> flag is false. Treating those artifacts as authoritative
+        /// restores the intended post-processing path without rerunning MCMC.
+        /// </remarks>
+        private void NormalizeRestoredEstimatedState()
+        {
+            if (_isEstimated)
+            {
+                return;
+            }
+
+            if (BayesianAnalysis?.IsEstimated == true &&
+                BayesianAnalysis.Results != null &&
+                AnalysisResults != null)
+            {
+                _isEstimated = true;
+            }
+        }
+
+        /// <summary>
         /// Handles property changes on the <see cref="RatingCurve"/> model.
         /// Only structurally destructive changes (parameters, data, segmentation, prior
         /// toggles) clear results. All other notifications are propagated for UI binding
@@ -384,7 +411,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears all analysis results and resets the <see cref="IsEstimated"/> flag.
+        /// Clears all analysis results and resets the <c>IsEstimated</c> flag.
         /// </summary>
         public void ClearResults()
         {
@@ -395,13 +422,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only â€” the uncertainty grid output whose
+        /// Clears <see cref="AnalysisResults"/> only — the uncertainty grid output whose
         /// evaluation domain is <see cref="MinStage"/> / <see cref="MaxStage"/> /
         /// <see cref="StageBins"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results) and
-        /// <see cref="IsEstimated"/> intact. Called when the grid becomes invalid â€” the
+        /// <c>IsEstimated</c> intact. Called when the grid becomes invalid — the
         /// fit survives and can be reused once a valid grid is restored.
         /// </remarks>
         public void ClearUncertaintyAnalysisResults()
@@ -418,8 +445,8 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// Validity bounds match <see cref="Validate"/>: MinStage and MaxStage finite with
-        /// MinStage &lt; MaxStage, and 10 â‰¤ StageBins â‰¤ 1000. Reprocess is fire-and-forget
-        /// on the default task scheduler â€” exceptions are logged via <see cref="Debug"/>
+        /// MinStage &lt; MaxStage, and 10 ≤ StageBins ≤ 1000. Reprocess is fire-and-forget
+        /// on the default task scheduler — exceptions are logged via <see cref="Debug"/>
         /// and do not propagate to the setter.
         /// </remarks>
         private void ReprocessOrClearUncertaintyGrid()
@@ -462,13 +489,14 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
             {
                 ClearResults();
                 progressReporter?.IndicateTaskStart();
+                AnalysisProgress.ReportStarting(progressReporter);
 
                 bool wasCanceled = false;
                 Exception? error = null;
@@ -476,18 +504,22 @@ namespace RMC.BestFit.Analyses
                 try
                 {
                     // Run Bayesian analysis
-                    await BayesianAnalysis.RunAsync(progressReporter, false);
+                    await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process
                     if (BayesianAnalysis.IsEstimated == true)
                     {
-                        progressReporter?.ReportProgress(100);
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
                         await CreateUncertaintyAnalysisResultsAsync();
                     }
 
                     // Mirror the inner Bayesian fit's success state so a silently-failed
                     // MCMC is reported correctly to AnalysisCompleted.
                     IsEstimated = BayesianAnalysis.IsEstimated;
+                    if (IsEstimated)
+                    {
+                        AnalysisProgress.ReportComplete(progressReporter);
+                    }
                 }
                 catch (OperationCanceledException)
                 {
@@ -565,7 +597,7 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ModeCurve[i] = RatingCurve.Predict(parameters, bins[i]);
                 }
 
-                // Get goodness of fit measures â€” iterate only the date-aligned
+                // Get goodness of fit measures — iterate only the date-aligned
                 // observations so (trueValue_i, modelValue_i) correspond to the same
                 // record and BIC's n matches the fit's actual sample size.
                 var aligned = RatingCurve.GetAlignedObservations();
@@ -657,7 +689,7 @@ namespace RMC.BestFit.Analyses
                     results.ModeCurve[i] = RatingCurve.Predict(parameters, bins[i]);
 
                     var q = new double[realz];
-                    Parallel.For(0, realz, idx =>
+                    Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
                     {
                         q[idx] = RatingCurve.Predict(output[idx].Values, bins[i], seeds[idx]);
                     });
