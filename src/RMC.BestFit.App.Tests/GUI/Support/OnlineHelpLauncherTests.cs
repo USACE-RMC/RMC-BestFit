@@ -257,13 +257,13 @@ namespace RMC.BestFit.App.Tests.GUI.Support
         }
 
         /// <summary>
-        /// Verifies both linked documentation indexes display active-development note boxes.
+        /// Verifies both linked documentation indexes display release note boxes.
         /// </summary>
         /// <remarks>
         /// Keeping the warnings directly beneath each title ensures GitHub renders them before the document content.
         /// </remarks>
         [TestMethod]
-        public void DocumentationIndexes_DeclareActiveDevelopment()
+        public void DocumentationIndexes_DeclareOfficialReleaseNotes()
         {
             string technicalReference = ReadRepositoryFile("docs/index.md").Replace("\r\n", "\n");
             string exampleProjects = ReadRepositoryFile("examples/README.md").Replace("\r\n", "\n");
@@ -271,30 +271,30 @@ namespace RMC.BestFit.App.Tests.GUI.Support
             const string technicalReferenceOpening =
                 "# RMC-BestFit Library Documentation\n\n" +
                 "> [!NOTE]\n" +
-                "> This technical reference is under active development for RMC-BestFit 2.0. Content may be incomplete or change as the software and documentation are finalized.\n";
+                "> This technical reference accompanies RMC-BestFit 2.0.0 and will continue to expand as the public API, examples, and verification materials grow.\n";
             const string exampleProjectsOpening =
                 "# RMC-BestFit Example Projects\n\n" +
                 "> [!NOTE]\n" +
-                "> These example projects and tutorials are under active development for RMC-BestFit 2.0. Workflows, screenshots, output tables, and expected results may be incomplete or change as the examples are finalized.\n";
+                "> These example projects and tutorials are published for RMC-BestFit 2.0.0 and will continue to expand with additional screenshots, output tables, and validation notes.\n";
 
             Assert.IsTrue(technicalReference.StartsWith(technicalReferenceOpening, StringComparison.Ordinal));
             Assert.IsTrue(exampleProjects.StartsWith(exampleProjectsOpening, StringComparison.Ordinal));
         }
 
         /// <summary>
-        /// Verifies the README Documentation section identifies the version 2.0 materials under active development.
+        /// Verifies the README Documentation section identifies the version 2.0 release materials.
         /// </summary>
         /// <remarks>
         /// The exact section opening keeps the callout immediately below its heading and prevents an em dash from
         /// returning to the approved wording.
         /// </remarks>
         [TestMethod]
-        public void ReadmeDocumentation_DeclaresActiveDevelopmentWithoutEmDash()
+        public void ReadmeDocumentation_DeclaresOfficialReleaseWithoutEmDash()
         {
             string readme = ReadRepositoryFile("README.md").Replace("\r\n", "\n");
             const string note =
                 "> [!NOTE]\n" +
-                "> Documentation for RMC-BestFit 2.0, including the User Guide, Technical Reference, Example Projects, and verification materials, is under active development and may be incomplete or change. The Version 1.0 User's Guide and Verification Report linked below remain published references for the previous major release.";
+                "> Documentation for RMC-BestFit 2.0 is published with this release and will continue to expand with additional examples, verification materials, and API coverage. The Version 1.0 User's Guide and Verification Report linked below remain published references for the previous major release.";
             const string expectedSectionOpening =
                 "## Documentation\n\n" +
                 note +

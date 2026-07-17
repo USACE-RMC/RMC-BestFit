@@ -18,7 +18,7 @@
     <PackageLicenseExpression>0BSD</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Initial public RMC.BestFit 2.0.0 model-library package for Bayesian estimation, distribution fitting, and flood-frequency analysis workflows.</PackageReleaseNotes>
+    <PackageReleaseNotes>Official RMC.BestFit 2.0.0 model-library release for Bayesian flood-frequency analysis, time series, peaks-over-threshold, mixtures, composites, bivariate/coincident frequency, rating curves, diagnostics, and API-backed workflows.</PackageReleaseNotes>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

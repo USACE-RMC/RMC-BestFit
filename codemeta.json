@@ -5,7 +5,7 @@
   "alternateName": "RMC-BestFit",
   "description": "A free and open-source .NET codebase for Bayesian estimation, distribution fitting, and frequency analysis in flood risk and water resources engineering. The first public package target is the portable RMC.BestFit model library.",
   "version": "2.0.0",
-  "dateModified": "2026-07-10",
+  "dateModified": "2026-07-17",
   "license": "https://spdx.org/licenses/0BSD",
   "codeRepository": "https://github.com/USACE-RMC/RMC-BestFit",
   "issueTracker": "https://github.com/USACE-RMC/RMC-BestFit/issues",

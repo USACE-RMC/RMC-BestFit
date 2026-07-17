@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-07-17
+
+- Prepared v2.0.0 release metadata: switched central dependencies to `RMC.Numerics` 2.1.4 and `RMC.Wpf.Framework.*` 1.0.4, removed the local project-reference override file, and synchronized final UI/App/project metadata to `2.0.0`.
+- Added official release messaging for the PR body, GitHub Release body, LinkedIn post, and screenshot gallery suggestions in `docs/release-messaging-v2.0.0.md`.
+- Updated release-facing README, documentation index, and example index wording from beta/pre-release language to official v2.0.0 release language.
+- Added a BestFit-specific release workflow to local `AGENTS.md` and `CLAUDE.md`; both files are ignored by the repository unless force-added intentionally.
+- Validated release readiness with `dotnet restore`, Debug and Release builds, all four fast test projects, and `dotnet pack src/RMC.BestFit/RMC.BestFit.csproj -c Release -o packages /p:Version=2.0.0`.
+- Inspected `packages/RMC.BestFit.2.0.0.nupkg`: package id/version are `RMC.BestFit`/`2.0.0`, release notes are present, README and LICENSE are included, and the package dependency metadata points to `RMC.Numerics` 2.1.4.
 ## 2026-07-16
 
 - Diagnosed the B17C bootstrap regression: assigning a resampled frame through the public `Bulletin17CDistribution.DataFrame` setter ran `SetDefaultParameters`, which wiped the cloned parent initials, disabled every parameter penalty (silently dropping regional-skew prior propagation), and — when default-parameter derivation threw for threshold-heavy boot frames — emptied the parameter list so every replicate failed and fell back to the parent (uncertainty collapsed to a point mass; the progress bar sat at 1% while retries crawled).

@@ -3,7 +3,7 @@ message: "If you use this software, please cite it as below."
 type: software
 title: "RMC-BestFit: Bayesian Estimation and Fitting Software for Flood Frequency Analysis"
 version: "2.0.0"
-date-released: "2026-07-10"
+date-released: "2026-07-17"
 license: 0BSD
 repository-code: "https://github.com/USACE-RMC/RMC-BestFit"
 url: "https://github.com/USACE-RMC/RMC-BestFit"

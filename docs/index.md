@@ -1,7 +1,7 @@
 # RMC-BestFit Library Documentation
 
 > [!NOTE]
-> This technical reference is under active development for RMC-BestFit 2.0. Content may be incomplete or change as the software and documentation are finalized.
+> This technical reference accompanies RMC-BestFit 2.0.0 and will continue to expand as the public API, examples, and verification materials grow.
 
 ## Overview
 

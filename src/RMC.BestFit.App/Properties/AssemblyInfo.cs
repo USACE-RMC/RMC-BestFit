@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Resources;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -53,6 +53,6 @@ using System.Windows;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("2.0.0.0")]
 [assembly: AssemblyFileVersion("2.0.0.0")]
-[assembly: AssemblyInformationalVersion("2.0.0-beta.5")]
+[assembly: AssemblyInformationalVersion("2.0.0")]
 [assembly: SupportedOSPlatform("windows")]
 [assembly: InternalsVisibleTo("RMC.BestFit.App.Tests")]

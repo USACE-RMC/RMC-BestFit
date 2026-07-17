@@ -13,25 +13,25 @@ namespace RMC.BestFit.UI.Tests;
 public class ReleaseMetadataTests
 {
     /// <summary>
-    /// Verifies newly saved projects identify the beta.5 serialized format version.
+    /// Verifies newly saved projects identify the v2.0.0 serialized format version.
     /// </summary>
     [TestMethod]
-    public void SoftwareVersion_UsesBeta5SerializedValue()
+    public void SoftwareVersion_UsesFinalReleaseSerializedValue()
     {
-        Assert.AreEqual("2.0 Beta-5", BestFitProject.GetInstance().SoftwareVersion);
+        Assert.AreEqual("2.0.0", BestFitProject.GetInstance().SoftwareVersion);
     }
 
     /// <summary>
-    /// Verifies the UI assembly carries beta.5 informational and stable numeric versions.
+    /// Verifies the UI assembly carries v2.0.0 informational and stable numeric versions.
     /// </summary>
     [TestMethod]
-    public void UiAssemblyMetadata_UsesBeta5Values()
+    public void UiAssemblyMetadata_UsesFinalReleaseValues()
     {
         Assembly assembly = typeof(BestFitProject).Assembly;
         string informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
         string fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion!;
 
-        Assert.AreEqual("2.0.0-beta.5", informationalVersion);
+        Assert.AreEqual("2.0.0", informationalVersion);
         Assert.AreEqual(new Version(2, 0, 0, 0), assembly.GetName().Version);
         Assert.AreEqual("2.0.0.0", fileVersion);
     }

@@ -260,7 +260,7 @@ namespace RMC.BestFit.UI
         [Browsable(true)]
         public override string SoftwareVersion
         {
-            get { return "2.0 Beta-5"; }
+            get { return "2.0.0"; }
         }
 
         private static readonly System.Lazy<System.Windows.Media.ImageSource> s_projectIcon = new(() =>

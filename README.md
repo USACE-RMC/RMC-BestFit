@@ -8,7 +8,7 @@
 ***RMC-BestFit*** is free and open-source software developed by the U.S. Army Corps of Engineers Risk Management Center (USACE-RMC) for Bayesian flood-frequency analysis, distribution fitting, uncertainty quantification, rating curves, bivariate and coincident frequency analysis, time-series modeling, and related hydrologic risk workflows. Version 2.0 exposes the core statistical engine as a reusable .NET model library while retaining the desktop application, UI/project layer, and REST API source in the same repository.
 
 > [!NOTE]
-> This repository is under active development. Expect ongoing bug fixes, minor enhancements, and documentation improvements as RMC-BestFit 2.0 is prepared for broader public use.
+> RMC-BestFit 2.0.0 is the official public 2.0 release. Expect ongoing bug fixes, minor enhancements, and documentation improvements as the project continues to evolve.
 
 ![RMC-BestFit desktop application](docs/images/rmc-bestfit-gui.png)
 
@@ -36,7 +36,7 @@ Source builds include the model library, unit tests, UI/project layer, desktop a
 ## Documentation
 
 > [!NOTE]
-> Documentation for RMC-BestFit 2.0, including the User Guide, Technical Reference, Example Projects, and verification materials, is under active development and may be incomplete or change. The Version 1.0 User's Guide and Verification Report linked below remain published references for the previous major release.
+> Documentation for RMC-BestFit 2.0 is published with this release and will continue to expand with additional examples, verification materials, and API coverage. The Version 1.0 User's Guide and Verification Report linked below remain published references for the previous major release.
 
 | Document | Description |
 |----------|-------------|
@@ -121,7 +121,7 @@ The [examples](examples/README.md) folder contains tutorial `.bestfit` projects 
 
 ## Support
 
-USACE-RMC is preparing RMC-BestFit 2.0 for broader public use with regular bug fixes, documentation improvements, and validation updates. Public issues should include the RMC-BestFit version, operating system, .NET SDK version when relevant, the workflow or project file involved, and enough detail to reproduce the behavior.
+USACE-RMC maintains RMC-BestFit 2.0 with regular bug fixes, documentation improvements, and validation updates. Public issues should include the RMC-BestFit version, operating system, .NET SDK version when relevant, the workflow or project file involved, and enough detail to reproduce the behavior.
 
 The repository includes a fast model-library test suite that is intended to serve both as regression coverage and as API usage examples. Longer-running verification materials are being prepared separately for public release.
 

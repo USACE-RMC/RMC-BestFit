@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,7 +15,7 @@ namespace RMC_BestFit
     /// </summary>
     public partial class App : Application
     {
-        internal const string ProductVersion = "2.0-beta.5";
+        internal const string ProductVersion = "2.0.0";
         internal const string ProductVersionDate = "July 2026";
 
         /// <summary>
@@ -157,14 +157,14 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Resolves the current application version used by the update check. Prefers
-        /// <see cref="AssemblyInformationalVersionAttribute"/> (which can carry pre-release
-        /// suffixes such as "-beta.4"), falling back to the numeric <see cref="AssemblyName.Version"/>
+        /// <see cref="AssemblyInformationalVersionAttribute"/> (which can carry release
+        /// values such as "2.0.0"), falling back to the numeric <see cref="AssemblyName.Version"/>
         /// if the informational value is missing or malformed.
         /// </summary>
         /// <returns>A <see cref="SemanticVersion"/> representing the running application's version.</returns>
         /// <remarks>
-        /// BestFit ships tagged GitHub releases of the form <c>v2.0-beta.N</c> and later <c>v2.0</c> /
-        /// <c>v2.0.1</c>. A 4-part <c>AssemblyVersion</c> cannot express the pre-release suffix, so
+        /// BestFit ships tagged GitHub releases of the form <c>vX.Y.Z</c>. A 4-part <c>AssemblyVersion</c>
+        /// can remain stable across compatible patches while
         /// <c>AssemblyInformationalVersion</c> is the source of truth and is bumped per release.
         /// </remarks>
         internal static SemanticVersion ResolveCurrentVersion()
@@ -192,7 +192,7 @@ namespace RMC_BestFit
                 GitHubRepo = "RMC-BestFit",
                 CurrentVersion = ResolveCurrentVersion(),
                 AssetNamePattern = "RMC-BestFit.*.zip",
-                IncludePreReleases = true,
+                IncludePreReleases = false,
                 CreateBackup = true,
                 MainExecutableName = "RMC-BestFit.exe",
                 RequireSha256Checksum = true

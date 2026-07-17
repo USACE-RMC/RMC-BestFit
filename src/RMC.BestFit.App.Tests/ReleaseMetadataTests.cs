@@ -13,12 +13,12 @@ namespace RMC.BestFit.App.Tests
     public class ReleaseMetadataTests
     {
         /// <summary>
-        /// Verifies the shell displays the beta.5 product version and release month.
+        /// Verifies the shell displays the v2.0.0 product version and release month.
         /// </summary>
         [TestMethod]
-        public void ProductMetadata_UsesBeta5Values()
+        public void ProductMetadata_UsesFinalReleaseValues()
         {
-            Assert.AreEqual("2.0-beta.5", BestFitApplication.ProductVersion);
+            Assert.AreEqual("2.0.0", BestFitApplication.ProductVersion);
             Assert.AreEqual("July 2026", BestFitApplication.ProductVersionDate);
         }
 
@@ -26,28 +26,29 @@ namespace RMC.BestFit.App.Tests
         /// Verifies update checks use the assembly informational version and require checksums.
         /// </summary>
         [TestMethod]
-        public void UpdateOptions_UseBeta5AndRequireChecksum()
+        public void UpdateOptions_UseFinalReleaseAndRequireChecksum()
         {
             var options = BestFitApplication.CreateUpdateOptions();
 
-            Assert.AreEqual("2.0.0-beta.5", options.CurrentVersion.ToString());
+            Assert.AreEqual("2.0.0", options.CurrentVersion.ToString());
             Assert.IsTrue(options.RequireSha256Checksum);
             Assert.AreEqual("USACE-RMC", options.GitHubOwner);
             Assert.AreEqual("RMC-BestFit", options.GitHubRepo);
             Assert.AreEqual("RMC-BestFit.*.zip", options.AssetNamePattern);
+            Assert.IsFalse(options.IncludePreReleases);
         }
 
         /// <summary>
         /// Verifies all application assembly version attributes match the release convention.
         /// </summary>
         [TestMethod]
-        public void AppAssemblyMetadata_UsesBeta5Values()
+        public void AppAssemblyMetadata_UsesFinalReleaseValues()
         {
             Assembly assembly = typeof(BestFitApplication).Assembly;
             string informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
             string fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion!;
 
-            Assert.AreEqual("2.0.0-beta.5", informationalVersion);
+            Assert.AreEqual("2.0.0", informationalVersion);
             Assert.AreEqual(new Version(2, 0, 0, 0), assembly.GetName().Version);
             Assert.AreEqual("2.0.0.0", fileVersion);
         }
