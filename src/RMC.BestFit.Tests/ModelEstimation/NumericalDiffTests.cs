@@ -85,4 +85,57 @@ public class NumericalDiffTests
         StringAssert.Contains(exception.Message, "no finite central stencil");
         Assert.IsTrue(evaluations < 100, "The bounded step search should terminate after a small number of attempts.");
     }
+
+    /// <summary>
+    /// Verifies that Jacobian columns are still computed when the initial relative step exceeds the maximum step.
+    /// </summary>
+    [TestMethod]
+    public void ComputeJacobian_InitialStepExceedsMaxStep_UsesCappedStep()
+    {
+        var jacobian = NumericalDiff.ComputeJacobian(
+            theta => new[]
+            {
+                2.0 * theta[0] - 3.0 * theta[1],
+                theta[0] + 4.0 * theta[1]
+            },
+            new[] { 1000.0, -500.0 },
+            2);
+
+        Assert.AreEqual(2.0, jacobian[0, 0], 1e-10);
+        Assert.AreEqual(-3.0, jacobian[0, 1], 1e-10);
+        Assert.AreEqual(1.0, jacobian[1, 0], 1e-10);
+        Assert.AreEqual(4.0, jacobian[1, 1], 1e-10);
+    }
+
+    /// <summary>
+    /// Verifies that Jacobian calculation uses a one-sided stencil when a parameter is on a bound.
+    /// </summary>
+    [TestMethod]
+    public void ComputeJacobian_ParameterAtLowerBound_UsesOneSidedStep()
+    {
+        double parameter = 2.0;
+        var jacobian = NumericalDiff.ComputeJacobian(
+            theta => new[] { theta[0] * theta[0] },
+            new[] { parameter },
+            1,
+            new[] { parameter },
+            new[] { 10.0 });
+
+        double expectedForwardDifference = 2.0 * parameter + NumericalDiff.InitialStep(parameter);
+        Assert.AreEqual(expectedForwardDifference, jacobian[0, 0], 1e-10);
+    }
+
+    /// <summary>
+    /// Verifies that Jacobian calculation falls back to a one-sided stencil when one central side is non-finite.
+    /// </summary>
+    [TestMethod]
+    public void ComputeJacobian_OneCentralSideNonFinite_UsesFiniteOneSidedStep()
+    {
+        var jacobian = NumericalDiff.ComputeJacobian(
+            theta => theta[0] < 0.0 ? new[] { double.NaN } : new[] { theta[0] * theta[0] },
+            new[] { 0.0 },
+            1);
+
+        Assert.AreEqual(NumericalDiff.InitialStep(0.0), jacobian[0, 0], 1e-12);
+    }
 }

@@ -195,4 +195,46 @@ public class BootstrapDiagnosticsTests
     }
 
     #endregion
+    /// <summary>
+    /// Candidate attempts and optimizer fallback counts accumulate and survive XML persistence.
+    /// </summary>
+    [TestMethod]
+    public void Test_AttemptsAndOptimizerFallbacks_AccumulateAndRoundTrip()
+    {
+        var original = new BootstrapDiagnostics { TotalReplicates = 5 };
+        for (int i = 0; i < 7; i++) original.IncrementAttempted();
+        original.IncrementFailed();
+        original.IncrementFailed();
+        original.AddOptimizerFallbacks(3);
+        original.AddOptimizerFallbacks(2);
+
+        Assert.AreEqual(7, original.AttemptedReplicates);
+        Assert.AreEqual(5, original.ValidReplicates);
+        Assert.AreEqual(2.0 / 7.0, original.FailureRate, 1e-12);
+        Assert.AreEqual(5, original.OptimizerFallbacks);
+
+        var restored = BootstrapDiagnostics.FromXElement(original.ToXElement());
+
+        Assert.IsNotNull(restored);
+        Assert.AreEqual(7, restored!.AttemptedReplicates);
+        Assert.AreEqual(5, restored.ValidReplicates);
+        Assert.AreEqual(5, restored.OptimizerFallbacks);
+    }
+
+    /// <summary>
+    /// Diagnostics saved before attempt and fallback counters were introduced use safe legacy defaults.
+    /// </summary>
+    [TestMethod]
+    public void Test_FromLegacyXElement_UsesBackwardCompatibleCounterDefaults()
+    {
+        var legacyXml = new BootstrapDiagnostics { TotalReplicates = 12 }.ToXElement();
+        legacyXml.Attribute(nameof(BootstrapDiagnostics.AttemptedReplicates))?.Remove();
+        legacyXml.Attribute(nameof(BootstrapDiagnostics.OptimizerFallbacks))?.Remove();
+
+        var restored = BootstrapDiagnostics.FromXElement(legacyXml);
+
+        Assert.IsNotNull(restored);
+        Assert.AreEqual(12, restored!.AttemptedReplicates);
+        Assert.AreEqual(0, restored.OptimizerFallbacks);
+    }
 }

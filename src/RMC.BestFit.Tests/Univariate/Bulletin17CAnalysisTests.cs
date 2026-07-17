@@ -1,4 +1,5 @@
 using Numerics.Distributions;
+using Numerics.Functions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -615,6 +616,33 @@ public class Bulletin17CAnalysisTests
 
     #endregion
 
+    /// <summary>
+    /// Pivot bootstrap uses Numerics Yeo-Johnson links for well-behaved samples.
+    /// </summary>
+    [TestMethod]
+    public void PivotYeoJohnsonLink_ValidSamples_UsesNumericsLink()
+    {
+        var link = Bulletin17CAnalysis.CreatePivotYeoJohnsonLink(
+            new[] { -2.0, -1.0, -0.25, 0.0, 0.5, 1.0, 3.0 },
+            "location");
+
+        Assert.IsInstanceOfType(link, typeof(YeoJohnsonLink));
+    }
+
+    /// <summary>
+    /// Pivot bootstrap falls back to identity when Yeo-Johnson fitting fails.
+    /// </summary>
+    [TestMethod]
+    public void PivotYeoJohnsonLink_FitFailure_UsesIdentityLink()
+    {
+        var link = Bulletin17CAnalysis.CreatePivotYeoJohnsonLink(
+            new[] { -double.MaxValue, -double.MaxValue / 2d, -double.MaxValue / 4d },
+            "shape");
+
+        Assert.IsInstanceOfType(link, typeof(IdentityLink));
+        Assert.AreEqual(12.5, link.Link(12.5), 1e-12);
+    }
+
     #region UncertaintyMethod enum surface
 
     /// <summary>
@@ -757,4 +785,5 @@ public class Bulletin17CAnalysisTests
     }
 
     #endregion
+
 }

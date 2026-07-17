@@ -39,20 +39,24 @@ public class Bulletin17CReportDiagnosticsTests
     public void Render_BootstrapMethod_ReportsDiscardedUsedAndStatusCounts()
     {
         var diag = new BootstrapDiagnostics { TotalReplicates = 10_000 };
+        for (int i = 0; i < 10_120; i++) diag.IncrementAttempted();
         for (int i = 0; i < 120; i++) diag.IncrementFailed();
+        diag.AddOptimizerFallbacks(4);
         diag.RecordGMMStatus(OptimizationStatus.Success);
         diag.RecordGMMStatus(OptimizationStatus.MaximumIterationsReached);
-        diag.RetainedReplicates = 9_880;
+        diag.RetainedReplicates = 10_000;
 
         string text = Render(diag, UncertaintyMethod.Bootstrap);
 
         StringAssert.Contains(text, "BOOTSTRAP DIAGNOSTICS");
         StringAssert.Contains(text, "Replicates Requested:");
-        StringAssert.Contains(text, "Failed (discarded):");
+        StringAssert.Contains(text, "Candidates Attempted:");
+        StringAssert.Contains(text, "10,120");
+        StringAssert.Contains(text, "Candidate Fits Discarded:");
         StringAssert.Contains(text, "Replicates Used:");
-        StringAssert.Contains(text, "9,880");
+        StringAssert.Contains(text, "10,000");
+        StringAssert.Contains(text, "Optimizer Fallbacks:");
         StringAssert.Contains(text, "GMM Status Counts:");
-        Assert.IsFalse(text.Contains("fallback"), "The parent-fallback wording must not appear anywhere.");
     }
 
     /// <summary>
@@ -115,7 +119,8 @@ public class Bulletin17CReportDiagnosticsTests
     [TestMethod]
     public void Render_HighDiscardRate_ShowsDiscardWarning()
     {
-        var diag = new BootstrapDiagnostics { TotalReplicates = 100 };
+        var diag = new BootstrapDiagnostics { TotalReplicates = 65 };
+        for (int i = 0; i < 100; i++) diag.IncrementAttempted();
         for (int i = 0; i < 35; i++) diag.IncrementFailed();
         diag.RetainedReplicates = 65;
 

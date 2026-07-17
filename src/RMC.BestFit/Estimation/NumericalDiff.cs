@@ -54,6 +54,11 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         private const int MaxAdaptiveHessianDiagStepAttempts = 64;
 
+        /// <summary>
+        /// Maximum number of attempts used when searching for a usable Jacobian column step.
+        /// </summary>
+        private const int MaxAdaptiveJacobianStepAttempts = 64;
+
         #endregion
 
         #region Step Size Computation
@@ -430,6 +435,11 @@ namespace RMC.BestFit.Estimation
         /// <param name="lowerBounds">Optional lower bounds for parameters.</param>
         /// <param name="upperBounds">Optional upper bounds for parameters.</param>
         /// <returns>An m × p Jacobian matrix where J[i,j] = ∂g_i/∂θ_j.</returns>
+        /// <remarks>
+        /// Central differences are preferred. If a central stencil crosses a non-finite side of
+        /// the model domain but the base value and opposite side are finite, the method falls back
+        /// to the finite one-sided stencil for that column rather than silently leaving zeros.
+        /// </remarks>
         internal static double[,] ComputeJacobian(
             Func<double[], double[]> function,
             double[] parameters, int m,
@@ -440,14 +450,16 @@ namespace RMC.BestFit.Estimation
             var J = new double[m, p];
             var perturbed = (double[])parameters.Clone();
             double[] g0 = function(perturbed);
+            bool baseIsBad = IsBad(g0, m);
 
             for (int j = 0; j < p; j++)
             {
-                double h = InitialStep(parameters[j]);
+                double h = Math.Min(NormalizeStep(InitialStep(parameters[j])), MaxStep);
                 double[]? col = null;
 
-                while (h <= MaxStep)
+                for (int attempt = 0; attempt < MaxAdaptiveJacobianStepAttempts; attempt++)
                 {
+                    h = Math.Min(NormalizeStep(h), MaxStep);
                     double roomLeft = AvailableLeft(parameters, j, lowerBounds);
                     double roomRight = AvailableRight(parameters, j, upperBounds);
 
@@ -462,9 +474,9 @@ namespace RMC.BestFit.Estimation
                         double[] gMinus = function(perturbed);
                         perturbed[j] = parameters[j];
 
-                        if (IsBad(gPlus, m) || IsBad(gMinus, m))
-                        { success = false; isFlat = false; }
-                        else
+                        bool plusIsBad = IsBad(gPlus, m);
+                        bool minusIsBad = IsBad(gMinus, m);
+                        if (!plusIsBad && !minusIsBad)
                         {
                             success = true;
                             double totalDiff = 0, totalScale = 0;
@@ -478,8 +490,39 @@ namespace RMC.BestFit.Estimation
                             }
                             isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
                         }
+                        else if (!baseIsBad && !plusIsBad)
+                        {
+                            success = true;
+                            double totalDiff = 0, totalScale = 0;
+                            col = new double[m];
+                            for (int i = 0; i < m; i++)
+                            {
+                                col[i] = (gPlus[i] - g0[i]) / h;
+                                totalDiff += Math.Abs(gPlus[i] - g0[i]);
+                                totalScale += Math.Max(Math.Abs(gPlus[i]), Math.Abs(g0[i]));
+                            }
+                            isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
+                        }
+                        else if (!baseIsBad && !minusIsBad)
+                        {
+                            success = true;
+                            double totalDiff = 0, totalScale = 0;
+                            col = new double[m];
+                            for (int i = 0; i < m; i++)
+                            {
+                                col[i] = (g0[i] - gMinus[i]) / h;
+                                totalDiff += Math.Abs(g0[i] - gMinus[i]);
+                                totalScale += Math.Max(Math.Abs(gMinus[i]), Math.Abs(g0[i]));
+                            }
+                            isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
+                        }
+                        else
+                        {
+                            success = false;
+                            isFlat = false;
+                        }
                     }
-                    else if (roomRight >= h)
+                    else if (!baseIsBad && roomRight >= h)
                     {
                         perturbed[j] = Clamp(parameters[j] + h, j, lowerBounds, upperBounds);
                         double[] gPlus = function(perturbed);
@@ -501,7 +544,7 @@ namespace RMC.BestFit.Estimation
                             isFlat = totalDiff < FlatSpotRelTol * Math.Max(totalScale, 1.0);
                         }
                     }
-                    else if (roomLeft >= h)
+                    else if (!baseIsBad && roomLeft >= h)
                     {
                         perturbed[j] = Clamp(parameters[j] - h, j, lowerBounds, upperBounds);
                         double[] gMinus = function(perturbed);
@@ -525,13 +568,31 @@ namespace RMC.BestFit.Estimation
                     }
                     else
                     {
-                        h *= 0.5;
+                        double nextH = h * 0.5;
+                        if (nextH >= h || nextH < DefaultAbsStep * 0.01)
+                            break;
+
+                        h = nextH;
                         continue;
                     }
 
-                    if (!success) { h *= 0.5; continue; }
-                    if (!isFlat) break;
-                    h *= StepGrowthFactor;
+                    if (!success)
+                    {
+                        double nextH = h * 0.5;
+                        if (nextH >= h || nextH < DefaultAbsStep * 0.01)
+                            break;
+
+                        h = nextH;
+                        continue;
+                    }
+
+                    if (!isFlat)
+                        break;
+
+                    if (h >= MaxStep)
+                        break;
+
+                    h = Math.Min(h * StepGrowthFactor, MaxStep);
                 }
 
                 if (col == null)

@@ -37,6 +37,12 @@ namespace RMC.BestFit.Analyses
         private int _totalReplicates;
 
         /// <summary>
+        /// The total number of candidate replicates evaluated, including replacements.
+        /// A value of -1 indicates a legacy record where this count was not stored.
+        /// </summary>
+        private int _attemptedReplicates = -1;
+
+        /// <summary>
         /// The number of replicates that were discarded after exhausting all retry attempts.
         /// </summary>
         private int _failedReplicates;
@@ -79,6 +85,11 @@ namespace RMC.BestFit.Analyses
         private int _statusNoneCount;
 
         /// <summary>
+        /// The number of GMM optimization passes that fell back from BFGS to Nelder-Mead.
+        /// </summary>
+        private int _optimizerFallbacks;
+
+        /// <summary>
         /// The cumulative number of retry attempts across all replicates (including the successful final attempt).
         /// </summary>
         private int _totalRetries;
@@ -113,6 +124,15 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Gets the total number of candidate replicates evaluated, including replacements.
+        /// </summary>
+        /// <remarks>
+        /// Diagnostics serialized before this counter was introduced fall back to
+        /// <see cref="TotalReplicates"/>.
+        /// </remarks>
+        public int AttemptedReplicates => _attemptedReplicates >= 0 ? _attemptedReplicates : _totalReplicates;
+
+        /// <summary>
         /// Gets the number of replicates discarded after exhausting all retry attempts.
         /// Discarded replicates are excluded from the delivered sample.
         /// </summary>
@@ -121,7 +141,7 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Gets the number of valid (successfully estimated) replicates.
         /// </summary>
-        public int ValidReplicates => _totalReplicates - _failedReplicates;
+        public int ValidReplicates => Math.Max(0, AttemptedReplicates - _failedReplicates);
 
         /// <summary>
         /// Gets or sets the number of parameter sets actually delivered to the results.
@@ -178,9 +198,14 @@ namespace RMC.BestFit.Analyses
         public int StatusNoneCount => _statusNoneCount;
 
         /// <summary>
+        /// Gets the number of GMM optimization passes that fell back from BFGS to Nelder-Mead.
+        /// </summary>
+        public int OptimizerFallbacks => _optimizerFallbacks;
+
+        /// <summary>
         /// Gets the failure rate as a fraction (0 to 1).
         /// </summary>
-        public double FailureRate => _totalReplicates > 0 ? (double)_failedReplicates / _totalReplicates : 0.0;
+        public double FailureRate => AttemptedReplicates > 0 ? (double)_failedReplicates / AttemptedReplicates : 0.0;
 
         /// <summary>
         /// Gets the cumulative number of retry attempts across all replicates.
@@ -190,7 +215,7 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Gets the average number of retries per replicate.
         /// </summary>
-        public double AverageRetries => _totalReplicates > 0 ? (double)_totalRetries / _totalReplicates : 0.0;
+        public double AverageRetries => AttemptedReplicates > 0 ? (double)_totalRetries / AttemptedReplicates : 0.0;
 
         /// <summary>
         /// Gets the cumulative number of GMM function evaluations across all bootstrap replicates.
@@ -200,7 +225,7 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Gets the average number of GMM function evaluations per replicate.
         /// </summary>
-        public double AverageFunctionEvaluations => _totalReplicates > 0 ? (double)_totalFunctionEvaluations / _totalReplicates : 0.0;
+        public double AverageFunctionEvaluations => AttemptedReplicates > 0 ? (double)_totalFunctionEvaluations / AttemptedReplicates : 0.0;
 
         /// <summary>
         /// Gets the number of pivot draws rejected because standardized pivots exceeded the z-limit.
@@ -253,6 +278,31 @@ namespace RMC.BestFit.Analyses
         public void IncrementFailed()
         {
             Interlocked.Increment(ref _failedReplicates);
+        }
+
+        /// <summary>
+        /// Atomically increments the attempted candidate counter by one.
+        /// </summary>
+        public void IncrementAttempted()
+        {
+            if (Volatile.Read(ref _attemptedReplicates) < 0)
+            {
+                Interlocked.CompareExchange(ref _attemptedReplicates, 0, -1);
+            }
+
+            Interlocked.Increment(ref _attemptedReplicates);
+        }
+
+        /// <summary>
+        /// Atomically adds optimizer fallback events to the diagnostic counter.
+        /// </summary>
+        /// <param name="count">The number of fallback events to add.</param>
+        public void AddOptimizerFallbacks(int count)
+        {
+            if (count > 0)
+            {
+                Interlocked.Add(ref _optimizerFallbacks, count);
+            }
         }
 
         /// <summary>
@@ -343,6 +393,7 @@ namespace RMC.BestFit.Analyses
         {
             var element = new XElement(nameof(BootstrapDiagnostics));
             element.SetAttributeValue(nameof(TotalReplicates), _totalReplicates.ToString(CultureInfo.InvariantCulture));
+            element.SetAttributeValue(nameof(AttemptedReplicates), _attemptedReplicates.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(FailedReplicates), _failedReplicates.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(TotalRetries), _totalRetries.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(TotalFunctionEvaluations), _totalFunctionEvaluations.ToString(CultureInfo.InvariantCulture));
@@ -357,6 +408,7 @@ namespace RMC.BestFit.Analyses
             element.SetAttributeValue(nameof(StatusMaximumFunctionEvaluationsCount), _statusMaximumFunctionEvaluationsCount.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(StatusFailureCount), _statusFailureCount.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(StatusNoneCount), _statusNoneCount.ToString(CultureInfo.InvariantCulture));
+            element.SetAttributeValue(nameof(OptimizerFallbacks), _optimizerFallbacks.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(Phase1Time), Phase1Time.Ticks.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(Phase2Time), Phase2Time.Ticks.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(Phase3Time), Phase3Time.Ticks.ToString(CultureInfo.InvariantCulture));
@@ -376,6 +428,8 @@ namespace RMC.BestFit.Analyses
 
             if (int.TryParse(element.Attribute(nameof(TotalReplicates))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int total))
                 diag._totalReplicates = total;
+            if (int.TryParse(element.Attribute(nameof(AttemptedReplicates))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int attempted))
+                diag._attemptedReplicates = attempted;
             if (int.TryParse(element.Attribute(nameof(FailedReplicates))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int failed))
                 diag._failedReplicates = failed;
             if (int.TryParse(element.Attribute(nameof(TotalRetries))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int retries))
@@ -402,6 +456,8 @@ namespace RMC.BestFit.Analyses
                 diag._statusFailureCount = statusFailure;
             if (int.TryParse(element.Attribute(nameof(StatusNoneCount))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int statusNone))
                 diag._statusNoneCount = statusNone;
+            if (int.TryParse(element.Attribute(nameof(OptimizerFallbacks))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int optimizerFallbacks))
+                diag._optimizerFallbacks = optimizerFallbacks;
             if (long.TryParse(element.Attribute(nameof(Phase1Time))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out long p1Ticks))
                 diag.Phase1Time = TimeSpan.FromTicks(p1Ticks);
             if (long.TryParse(element.Attribute(nameof(Phase2Time))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out long p2Ticks))
