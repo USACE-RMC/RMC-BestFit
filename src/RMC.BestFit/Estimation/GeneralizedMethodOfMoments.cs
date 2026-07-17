@@ -209,6 +209,17 @@ namespace RMC.BestFit.Estimation
         private double _relativeTolerance = 1E-8;
         private int _maxFunctionEvaluations = 2000;
         private bool _useFallbackOptimizer = true;
+        private bool _useNelderMeadForRemainingIterations;
+        private int _optimizerFallbackCount;
+
+        /// <summary>
+        /// Gets the number of optimizer fallback transitions recorded by the current estimate.
+        /// </summary>
+        /// <remarks>
+        /// The counter increments when a BFGS pass fails and the configured fallback optimizer is invoked.
+        /// Subsequent passes in the same estimate use Nelder-Mead directly.
+        /// </remarks>
+        internal int OptimizerFallbackCount => _optimizerFallbackCount;
 
         /// <summary>
         /// Identification status for a GMM specification based on the counts of moment conditions (q) and parameters (p).
@@ -429,18 +440,21 @@ namespace RMC.BestFit.Estimation
         /// discarded — including after Open() via <see cref="RestoreFromXElement"/>. Returns
         /// <see cref="OptimizationStatus.None"/> before any estimation has run, and after
         /// <see cref="ClearResults"/>. This status always describes the optimization pass that
-        /// produced <see cref="BestParameterSet"/>: when a multi-pass strategy (two-step or
-        /// iterative) abandons a failed refinement pass and returns the solution from an earlier
-        /// successful pass, the status is restored to <see cref="OptimizationStatus.Success"/>
-        /// rather than reporting the abandoned pass. Consequently <see cref="IsEstimated"/> being
-        /// <c>true</c> implies <see cref="OptimizationStatus.Success"/>; use
-        /// <see cref="ConvergedWithinTolerance"/> to distinguish tolerance-confirmed convergence.
+        /// produced <see cref="BestParameterSet"/>. A usable best point is retained for
+        /// non-failure terminations such as maximum function evaluations or maximum iterations;
+        /// use <see cref="ConvergedWithinTolerance"/> to distinguish tolerance-confirmed
+        /// convergence from a best-effort optimizer result.
         /// </remarks>
         public OptimizationStatus Status { get; private set; } = OptimizationStatus.None;
 
         /// <summary>
-        /// Gets a value indicating whether the model has been successfully estimated.
+        /// Gets a value indicating whether estimation produced a usable best parameter set.
         /// </summary>
+        /// <remarks>
+        /// This can be <c>true</c> for non-failure optimizer terminations that do not meet strict
+        /// convergence tolerance. Inspect <see cref="Status"/> and <see cref="ConvergedWithinTolerance"/>
+        /// when strict optimizer convergence matters.
+        /// </remarks>
         public bool IsEstimated { get; private set; }
 
         /// <summary>
@@ -781,6 +795,68 @@ namespace RMC.BestFit.Estimation
                 Debug.WriteLine($"Failed to compute GMM covariance matrix: {ex.Message}");
                 return new Matrix(NumberOfParameters, NumberOfParameters);
             }
+        }
+
+        /// <summary>
+        /// Attempts to compute a finite, non-degenerate parameter covariance matrix.
+        /// </summary>
+        /// <param name="parameters">Parameter values at which to evaluate covariance.</param>
+        /// <param name="sandwich">Whether to use the robust sandwich estimator.</param>
+        /// <param name="covariance">The computed covariance matrix when usable; otherwise a zero matrix.</param>
+        /// <returns><see langword="true"/> when covariance construction produces a usable finite matrix.</returns>
+        /// <remarks>
+        /// This wrapper lets bootstrap collectors reject covariance failures without changing the
+        /// existing public <see cref="GetCovariance(double[], bool)"/> behavior.
+        /// </remarks>
+        internal bool TryGetCovariance(double[] parameters, bool sandwich, out Matrix covariance)
+        {
+            try
+            {
+                covariance = GetCovariance(parameters, sandwich);
+                return MatrixIsFinite(covariance) && HasPositiveFiniteDiagonal(covariance);
+            }
+            catch
+            {
+                covariance = new Matrix(NumberOfParameters, NumberOfParameters);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether every matrix entry is finite.
+        /// </summary>
+        /// <param name="matrix">Matrix to inspect.</param>
+        /// <returns><see langword="true"/> when every entry is finite.</returns>
+        private static bool MatrixIsFinite(Matrix matrix)
+        {
+            for (int i = 0; i < matrix.NumberOfRows; i++)
+            {
+                for (int j = 0; j < matrix.NumberOfColumns; j++)
+                {
+                    if (!Tools.IsFinite(matrix[i, j]))
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether a covariance matrix has positive finite diagonal entries.
+        /// </summary>
+        /// <param name="matrix">Covariance matrix to inspect.</param>
+        /// <returns><see langword="true"/> when every diagonal variance is finite and positive.</returns>
+        private static bool HasPositiveFiniteDiagonal(Matrix matrix)
+        {
+            int count = Math.Min(matrix.NumberOfRows, matrix.NumberOfColumns);
+            if (count == 0)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (!Tools.IsFinite(matrix[i, i]) || matrix[i, i] <= 0.0)
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -2071,29 +2147,30 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// Configures the optimizer based on the selected optimization method.
         /// </summary>
-        private void SetUpOptimizer()
+        /// <param name="optimizerMethod">The optimizer method to configure for this pass.</param>
+        private void SetUpOptimizer(OptimizationMethod optimizerMethod)
         {
-            if (OptimizerMethod == OptimizationMethod.Brent)
+            if (optimizerMethod == OptimizationMethod.Brent)
             {
                 Optimizer = new BrentSearch(x => { return Q(new[] { x }); }, LowerBounds[0], UpperBounds[0]);
             }
-            else if (OptimizerMethod == OptimizationMethod.BFGS)
+            else if (optimizerMethod == OptimizationMethod.BFGS)
             {
                 Optimizer = new BFGS(Q, NumberOfParameters, InitialValues, LowerBounds, UpperBounds, x => { return GetGradient(x).Array; });
             }
-            else if (OptimizerMethod == OptimizationMethod.NelderMead)
+            else if (optimizerMethod == OptimizationMethod.NelderMead)
             {
                 Optimizer = new NelderMead(Q, NumberOfParameters, InitialValues, LowerBounds, UpperBounds) { EnableStartPointProbe = true };
             }
-            else if (OptimizerMethod == OptimizationMethod.Powell)
+            else if (optimizerMethod == OptimizationMethod.Powell)
             {
                 Optimizer = new Powell(Q, NumberOfParameters, InitialValues, LowerBounds, UpperBounds);
             }
-            else if (OptimizerMethod == OptimizationMethod.DifferentialEvolution)
+            else if (optimizerMethod == OptimizationMethod.DifferentialEvolution)
             {
                 Optimizer = new DifferentialEvolution(Q, NumberOfParameters, LowerBounds, UpperBounds);
             }
-            else if (OptimizerMethod == OptimizationMethod.MultilevelSingleLinkage)
+            else if (optimizerMethod == OptimizationMethod.MultilevelSingleLinkage)
             {
                 Optimizer = new MLSL(Q, NumberOfParameters, InitialValues, LowerBounds, UpperBounds, LocalMethod.NelderMead);
             }
@@ -2110,42 +2187,53 @@ namespace RMC.BestFit.Estimation
         /// Runs the primary optimizer with optional BFGS-to-NelderMead fallback.
         /// </summary>
         /// <param name="enableStartPointProbe">Whether to enable NelderMead start-point probing. Default = true for first iteration.</param>
-        /// <returns>True if optimization succeeded; false otherwise.</returns>
+        /// <returns>
+        /// <c>true</c> when the optimizer produces a usable best parameter set without reporting
+        /// <see cref="OptimizationStatus.Failure"/>; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// GMM keeps the best finite optimizer point from every pass. Hitting maximum function
+        /// evaluations or maximum iterations is not treated as a failed estimate when a finite
+        /// best point is available; callers can inspect <see cref="Status"/> and
+        /// <see cref="ConvergedWithinTolerance"/> when they need strict convergence.
+        /// </remarks>
         private bool MinimizeWithFallback(bool enableStartPointProbe = true)
         {
-            // Run primary optimizer
-            SetUpOptimizer();
+            var primaryMethod = _useNelderMeadForRemainingIterations
+                ? OptimizationMethod.NelderMead
+                : OptimizerMethod;
+
+            // Run primary optimizer.
+            SetUpOptimizer(primaryMethod);
             if (Optimizer is NelderMead nm)
                 nm.EnableStartPointProbe = enableStartPointProbe;
 
-            bool primarySucceeded = false;
             try
             {
                 Optimizer.Minimize();
                 Status = Optimizer.Status;
-                primarySucceeded = Optimizer.Status == OptimizationStatus.Success;
             }
             catch (Exception ex)
             {
                 Status = OptimizationStatus.Failure;
-                Debug.WriteLine($"Primary optimizer ({OptimizerMethod}) threw exception: {ex.Message}");
+                Debug.WriteLine($"Primary optimizer ({primaryMethod}) threw exception: {ex.Message}");
             }
 
             TotalFunctionEvaluations += Optimizer.FunctionEvaluations;
 
-            if (primarySucceeded)
+            if (TryCaptureBestParameterSet(Optimizer) && IsNonFailureTermination(Status))
                 return true;
 
-            // Fallback only if enabled and primary was BFGS
-            if (!UseFallbackOptimizer || OptimizerMethod != OptimizationMethod.BFGS)
+            // Fallback only if enabled and primary was BFGS.
+            if (!UseFallbackOptimizer || primaryMethod != OptimizationMethod.BFGS)
                 return false;
 
             Debug.WriteLine("BFGS failed, falling back to NelderMead with start-point probe.");
+            _useNelderMeadForRemainingIterations = true;
+            _optimizerFallbackCount++;
 
-            // Use BFGS best point if it found anything reasonable, otherwise use InitialValues
-            var fallbackInitials = (Optimizer.BestParameterSet.Values != null &&
-                                    Tools.IsFinite(Optimizer.BestParameterSet.Fitness) &&
-                                    Optimizer.BestParameterSet.Fitness < double.MaxValue)
+            // Use the BFGS best point if it found a finite candidate, otherwise use InitialValues.
+            var fallbackInitials = HasUsableBestParameterSet(Optimizer)
                 ? Optimizer.BestParameterSet.Values.ToArray()
                 : InitialValues.ToArray();
 
@@ -2173,14 +2261,55 @@ namespace RMC.BestFit.Estimation
             }
 
             TotalFunctionEvaluations += fallback.FunctionEvaluations;
+            Optimizer = fallback;
 
-            if (fallback.Status == OptimizationStatus.Success)
+            return TryCaptureBestParameterSet(fallback) && IsNonFailureTermination(Status);
+        }
+
+        /// <summary>
+        /// Copies an optimizer's best finite parameter set onto the GMM result state.
+        /// </summary>
+        /// <param name="optimizer">The optimizer whose best parameter set should be captured.</param>
+        /// <returns><c>true</c> when a finite, correctly sized parameter set was captured; otherwise, <c>false</c>.</returns>
+        private bool TryCaptureBestParameterSet(Optimizer optimizer)
+        {
+            if (!HasUsableBestParameterSet(optimizer))
+                return false;
+
+            BestParameterSet = optimizer.BestParameterSet.Clone();
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether an optimizer has a finite best parameter set that matches this GMM problem.
+        /// </summary>
+        /// <param name="optimizer">The optimizer to inspect.</param>
+        /// <returns><c>true</c> when the optimizer has usable parameter values and fitness; otherwise, <c>false</c>.</returns>
+        private bool HasUsableBestParameterSet(Optimizer optimizer)
+        {
+            if (optimizer?.BestParameterSet.Values == null || optimizer.BestParameterSet.Values.Length != NumberOfParameters)
+                return false;
+
+            if (!Tools.IsFinite(optimizer.BestParameterSet.Fitness) || optimizer.BestParameterSet.Fitness >= double.MaxValue)
+                return false;
+
+            foreach (double value in optimizer.BestParameterSet.Values)
             {
-                Optimizer = fallback;
-                return true;
+                if (!Tools.IsFinite(value))
+                    return false;
             }
 
-            return false;
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether an optimizer termination status can supply a usable best-effort result.
+        /// </summary>
+        /// <param name="status">The optimizer status to inspect.</param>
+        /// <returns><c>true</c> when the status is neither <see cref="OptimizationStatus.None"/> nor <see cref="OptimizationStatus.Failure"/>; otherwise, <c>false</c>.</returns>
+        private static bool IsNonFailureTermination(OptimizationStatus status)
+        {
+            return status != OptimizationStatus.None && status != OptimizationStatus.Failure;
         }
 
         /// <summary>
@@ -2206,8 +2335,11 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         private void EstimateOneStep()
         {
+            GMMIterations = 1;
+
             if (!MinimizeWithFallback())
                 return;
+
             BestParameterSet = Optimizer.BestParameterSet.Clone();
         }
 
@@ -2215,34 +2347,30 @@ namespace RMC.BestFit.Estimation
         /// Perform the Two-Step optimization using the updated weighting matrix.
         /// </summary>
         /// <remarks>
-        /// When the second optimization step fails, the valid first-step solution is retained in
-        /// <see cref="BestParameterSet"/> and <see cref="Status"/> is restored to
-        /// <see cref="OptimizationStatus.Success"/> so the reported status describes the returned
-        /// solution rather than the abandoned second pass.
+        /// The first optimizer pass records <see cref="GMMIterations"/> as 1 and the second pass
+        /// records it as 2. Non-failure optimizer terminations retain the best finite parameter
+        /// set even when strict convergence tolerance was not reached.
         /// </remarks>
         private void EstimateTwoStep()
         {
-            GMMIterations = 0;
             TotalFunctionEvaluations = 0;
 
-            // Perform the 1st optimization step
+            // Perform the 1st optimization step.
+            GMMIterations = 1;
             if (!MinimizeWithFallback())
                 return;
 
-            // Update results
+            // Update results.
             BestParameterSet = Optimizer.BestParameterSet.Clone();
             S = GetS(BestParameterSet.Values);
             W = S.Inverse();
 
-            // Perform the 2nd optimization step
+            // Perform the 2nd optimization step.
+            GMMIterations = 2;
             InitialValues = Optimizer.BestParameterSet.Values;
             if (!MinimizeWithFallback())
-            {
-                // The second step failed, but BestParameterSet still holds the valid
-                // first-step solution. Restore Status so it describes the returned solution.
-                Status = OptimizationStatus.Success;
                 return;
-            }
+
             BestParameterSet = Optimizer.BestParameterSet.Clone();
         }
 
@@ -2250,12 +2378,10 @@ namespace RMC.BestFit.Estimation
         /// Perform the 'iterative method' that iteratively improves the weighting matrix until convergence.
         /// </summary>
         /// <remarks>
-        /// When a later refinement pass fails or hits an iteration cap, the loop is abandoned and
-        /// the solution from the last successful pass is retained in <see cref="BestParameterSet"/>;
-        /// <see cref="Status"/> is restored to <see cref="OptimizationStatus.Success"/> so it
-        /// describes the returned solution. Abandoned runs report
-        /// <see cref="ConvergedWithinTolerance"/> as <c>false</c>, preserving the distinction
-        /// between best-effort termination and tolerance-confirmed convergence.
+        /// <see cref="GMMIterations"/> records the optimizer pass currently being attempted.
+        /// Non-failure optimizer terminations retain their best finite parameter set even when
+        /// strict convergence tolerance was not reached; <see cref="ConvergedWithinTolerance"/>
+        /// preserves the distinction between best-effort termination and tolerance-confirmed convergence.
         /// </remarks>
         private void EstimateIterative()
         {
@@ -2276,19 +2402,11 @@ namespace RMC.BestFit.Estimation
             double oldQ = Q(oldValues);
             ConvergenceHistory.Add(oldQ);
 
-            for (int iteration = 2; iteration <= MaxGMMIterations; iteration++)
+            for (GMMIterations = 2; GMMIterations <= MaxGMMIterations; GMMIterations++)
             {
-                GMMIterations = iteration;
-
-                // Subsequent iterations: no start-point probe needed
+                // Subsequent iterations: no start-point probe needed.
                 if (!MinimizeWithFallback(enableStartPointProbe: false))
-                {
-                    // The refinement pass failed or hit an iteration cap, but BestParameterSet
-                    // still holds the solution from the last successful pass. Restore Status so
-                    // it describes the returned solution rather than the abandoned pass.
-                    Status = OptimizationStatus.Success;
                     break;
-                }
 
                 // Update results
                 BestParameterSet = Optimizer.BestParameterSet.Clone();
@@ -2314,12 +2432,18 @@ namespace RMC.BestFit.Estimation
                 oldValues = newValues.ToArray();
                 oldQ = newQ;
             }
+
+            if (GMMIterations > MaxGMMIterations)
+                GMMIterations = MaxGMMIterations;
         }
 
         /// <summary>
         /// Estimates the model parameters using the configured GMM estimation strategy.
         /// </summary>
-        /// <returns>True if estimation was successful; otherwise, false.</returns>
+        /// <returns>
+        /// <c>true</c> if estimation produced a usable best parameter set; otherwise, <c>false</c>.
+        /// A <c>true</c> return does not necessarily imply strict optimizer convergence.
+        /// </returns>
         /// <exception cref="InvalidOperationException">
         /// Thrown when the GMM problem is under-identified without a penalty function,
         /// or when using one-step estimation on an over-identified problem.
@@ -2329,6 +2453,8 @@ namespace RMC.BestFit.Estimation
             IsEstimated = false;
 
             _convergedWithinTolerance = false;
+            _useNelderMeadForRemainingIterations = false;
+            _optimizerFallbackCount = 0;
             // Reset prior outputs so a failed run can never return a stale solution
             // from an earlier Estimate() call on the same instance.
             Status = OptimizationStatus.None;
@@ -2414,6 +2540,8 @@ namespace RMC.BestFit.Estimation
             GMMIterations = 0;
             TotalFunctionEvaluations = 0;
             _convergedWithinTolerance = false;
+            _useNelderMeadForRemainingIterations = false;
+            _optimizerFallbackCount = 0;
             JStat = double.NaN;
             JStatPval = double.NaN;
             W = null;
