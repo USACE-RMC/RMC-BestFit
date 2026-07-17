@@ -2099,7 +2099,6 @@ namespace RMC.BestFit.Models
             {
                 double value = useLog10Values ? ExactSeries[i].Log10Value : ExactSeries[i].Value;
                 double z = stdNormal.InverseCDF(ExactSeries[i].PlottingPositionComplement);
-
                 if (!((ExactData)ExactSeries[i]).IsLowOutlier)
                 {
                     uncensoredValues.Add(value);
@@ -2821,6 +2820,7 @@ namespace RMC.BestFit.Models
 
             // ── Post-processing ─────────────────────────────────────────────────
             dataframe.ProcessThresholdSeries();
+            dataframe.CalculatePlottingPositions();
             if (createFullTimeSeries) dataframe.CreateFullTimeSeries();
 
             // Un-suppress collection change events
