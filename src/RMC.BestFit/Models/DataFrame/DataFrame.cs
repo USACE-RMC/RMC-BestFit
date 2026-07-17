@@ -1507,6 +1507,8 @@ namespace RMC.BestFit.Models
                         }
                     }
                 }
+
+                EnsureDistinctPlottingPositions(explicitData);
             }
             finally
             {
@@ -1578,6 +1580,142 @@ namespace RMC.BestFit.Models
                 throw new InvalidOperationException("A detected observation falls below every arranged threshold.");
 
             return levelIndex;
+        }
+
+        /// <summary>
+        /// Separates duplicate plotting positions produced by independent censored threshold bands.
+        /// </summary>
+        /// <param name="explicitData">Explicit observations whose H-S positions have been assigned.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when a duplicate run cannot be separated into finite open-interval positions.
+        /// </exception>
+        /// <remarks>
+        /// <para>
+        /// PeakFQ's PPLOT2 equations rank censored observations independently within each threshold
+        /// band, so distinct bands can algebraically produce the same plotting position. All PeakFQ
+        /// values remain unchanged when no exact or numerical tie exists.
+        /// </para>
+        /// <para>
+        /// A tied run is ordered by decreasing observed value and spread symmetrically within the local
+        /// interval bounded by the midpoints to its neighboring untied positions. This preserves the
+        /// H-S tie center, global exceedance ordering, and the strict probability ordering required by
+        /// empirical-distribution consumers.
+        /// </para>
+        /// </remarks>
+        private static void EnsureDistinctPlottingPositions(IList<Data> explicitData)
+        {
+            if (explicitData.Count < 2)
+                return;
+
+
+            var positions = new double[explicitData.Count];
+            for (int i = 0; i < explicitData.Count; i++)
+                positions[i] = explicitData[i].PlottingPosition;
+            Array.Sort(positions);
+
+            bool hasDuplicate = false;
+            for (int i = 1; i < positions.Length; i++)
+            {
+                if (positions[i - 1].AlmostEquals(positions[i]))
+                {
+                    hasDuplicate = true;
+                    break;
+                }
+            }
+
+            if (!hasDuplicate)
+                return;
+
+            var ordered = new (Data Source, double Position, int Ordinal)[explicitData.Count];
+            for (int i = 0; i < explicitData.Count; i++)
+                ordered[i] = (explicitData[i], explicitData[i].PlottingPosition, i);
+
+            Array.Sort(ordered, (left, right) =>
+            {
+                int comparison = left.Position.CompareTo(right.Position);
+                if (comparison != 0)
+                    return comparison;
+
+                comparison = right.Source.Value.CompareTo(left.Source.Value);
+                if (comparison != 0)
+                    return comparison;
+
+                comparison = left.Source.Index.CompareTo(right.Source.Index);
+                return comparison != 0 ? comparison : left.Ordinal.CompareTo(right.Ordinal);
+            });
+
+            int tieStart = 0;
+            while (tieStart < ordered.Length)
+            {
+                int tieEnd = tieStart;
+                while (tieEnd + 1 < ordered.Length &&
+                       ordered[tieEnd].Position.AlmostEquals(ordered[tieEnd + 1].Position))
+                {
+                    tieEnd++;
+                }
+
+                int tieCount = tieEnd - tieStart + 1;
+                if (tieCount > 1)
+                {
+                    Array.Sort(
+                        ordered,
+                        tieStart,
+                        tieCount,
+                        Comparer<(Data Source, double Position, int Ordinal)>.Create((left, right) =>
+                        {
+                            int comparison = right.Source.Value.CompareTo(left.Source.Value);
+                            if (comparison != 0)
+                                return comparison;
+
+                            comparison = left.Source.Index.CompareTo(right.Source.Index);
+                            return comparison != 0
+                                ? comparison
+                                : left.Ordinal.CompareTo(right.Ordinal);
+                        }));
+
+                    double tieCenter = 0d;
+                    for (int i = tieStart; i <= tieEnd; i++)
+                        tieCenter += ordered[i].Position;
+                    tieCenter /= tieCount;
+
+                    double lowerBoundary = tieStart == 0
+                        ? 0d
+                        : (ordered[tieStart - 1].Position + tieCenter) / 2d;
+                    double upperBoundary = tieEnd == ordered.Length - 1
+                        ? 1d
+                        : (tieCenter + ordered[tieEnd + 1].Position) / 2d;
+                    double halfSpan = Math.Min(tieCenter - lowerBoundary, upperBoundary - tieCenter);
+                    double increment = (2d * halfSpan) / (tieCount + 1d);
+                    double firstBoundary = tieCenter - halfSpan;
+
+                    if (!double.IsFinite(increment) || increment <= 0d)
+                    {
+                        throw new InvalidOperationException(
+                            "Duplicate Hirsch-Stedinger plotting positions could not be separated.");
+                    }
+
+                    for (int i = 0; i < tieCount; i++)
+                    {
+                        double plottingPosition = firstBoundary + ((i + 1d) * increment);
+                        SetStrictPlottingPosition(ordered[tieStart + i].Source, plottingPosition);
+                    }
+                }
+
+                tieStart = tieEnd + 1;
+            }
+
+            double previous = ordered[0].Source.PlottingPosition;
+            for (int i = 1; i < ordered.Length; i++)
+            {
+                double current = ordered[i].Source.PlottingPosition;
+                if (current <= previous || current.AlmostEquals(previous))
+                {
+                    throw new InvalidOperationException(
+                        "Duplicate Hirsch-Stedinger plotting positions could not be separated.");
+                }
+
+                previous = current;
+            }
         }
 
         /// <summary>

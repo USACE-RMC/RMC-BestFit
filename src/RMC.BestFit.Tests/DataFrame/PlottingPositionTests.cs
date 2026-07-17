@@ -1,3 +1,4 @@
+using Numerics;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
@@ -460,6 +461,93 @@ public class PlottingPositionTests
             "CalculatePlottingPositions must restore the caller's prior suppression state.");
         Assert.IsTrue(dataFrame.ThresholdSeries.SuppressCollectionChanged,
             "CalculatePlottingPositions must restore the caller's prior suppression state.");
+    }
+
+    /// <summary>
+    /// Verifies a frozen Example 5 bootstrap sample cannot retain duplicate H-S plotting positions.
+    /// </summary>
+    /// <remarks>
+    /// Seed 1 previously assigned the exact same probability to events at indexes 1975 and 1998.
+    /// Freezing the generated values keeps this regression isolated from bootstrap mechanics.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_Example5BootstrapSample_TiesAreSeparated()
+    {
+        int[] years =
+        [
+            1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974,
+            1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984,
+            1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994,
+            1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
+            2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014
+        ];
+        double[] values =
+        [
+            1398.5976334510967, 966.59552180918161, 1974.3223495966256, 2891.8338540508757, 2505.9334402560103,
+            1885.0116761582647, 1680.6543191030453, 3847.0027056032231, 930.55140459080849, 2460.2531376046609,
+            564.28401727153459, 1396.8182016011826, 1591.5650583425017, 4578.067551996458, 2582.6599531978427,
+            2497.8881953825239, 1491.8593917890207, 2380.1796316909777, 2654.2379192321528, 2646.1646459149301,
+            3905.9886563585524, 899.41749596844386, 1138.9218977761075, 1753.1788985139399, 2995.6252828849888,
+            1166.0571810678148, 2978.705067413357, 1557.4501735296865, 3102.3195776956154, 3424.0748502645079,
+            2213.4043771087458, 2695.8435706029095, 2637.9755363911408, 429.59797890129613, 4654.4548499288721,
+            3030.215825029497, 3272.014817282608, 763.26237263475105, 2099.7317325275308, 2128.9063276074667,
+            1465.0224395732935, 4738.3332968838067, 2611.3950878331016, 1765.2295530597592, 1889.0450114112809,
+            2561.4319968329551, 2567.6539372706479, 1989.7098547510266, 1387.028035261912, 1679.0903337032385
+        ];
+
+        var source = new BestFitDataFrame
+        {
+            LowOutlierThreshold = 1200d,
+            PlottingParameter = 0.4d
+        };
+        source.ExactSeries.SuppressCollectionChanged = true;
+        source.ThresholdSeries.SuppressCollectionChanged = true;
+        for (int i = 0; i < years.Length; i++)
+            source.ExactSeries.Add(new ExactData(years[i], values[i]));
+
+        source.ThresholdSeries.Add(new BestFitThresholdData(1965, 1972, 1180));
+        source.ThresholdSeries.Add(new BestFitThresholdData(1973, 1991, 705));
+        source.ThresholdSeries.Add(new BestFitThresholdData(1992, 2001, 714));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2002, 2002, 743));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2003, 2003, 560));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2004, 2005, 700));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2006, 2009, 710));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2010, 2012, 661));
+        source.ThresholdSeries.Add(new BestFitThresholdData(2013, 2014, 700));
+        source.CalculatePlottingPositions();
+
+        double[] positions = source.ExactSeries
+            .Select(data => data.PlottingPosition)
+            .OrderBy(position => position)
+            .ToArray();
+
+        const int higherValueIndex = 1975;
+        const int lowerValueIndex = 1998;
+        const double expectedCenter = 0.97714285714285709d;
+        Data higherValueEvent = source.ExactSeries.Single(data => data.Index == higherValueIndex);
+        Data lowerValueEvent = source.ExactSeries.Single(data => data.Index == lowerValueIndex);
+
+        Assert.IsTrue(higherValueEvent.Value > lowerValueEvent.Value);
+        Assert.IsTrue(
+            higherValueEvent.PlottingPosition < lowerValueEvent.PlottingPosition,
+            $"Higher event {higherValueEvent.PlottingPosition:G17}; lower event {lowerValueEvent.PlottingPosition:G17}.");
+        Assert.AreEqual(
+            expectedCenter,
+            (higherValueEvent.PlottingPosition + lowerValueEvent.PlottingPosition) / 2d,
+            1E-15,
+            "Separating a tie must preserve its original H-S probability center.");
+
+        for (int i = 1; i < positions.Length; i++)
+        {
+            Assert.IsFalse(
+                positions[i - 1].AlmostEquals(positions[i]),
+                $"Positions {positions[i - 1]:G17} and {positions[i]:G17} must be distinct.");
+        }
+
+        Assert.AreEqual(
+            positions.Length,
+            positions.Select(position => Math.Round(position, 6)).Distinct().Count(),
+            "Plotting positions must remain distinct in the app's six-decimal display.");
     }
 
     /// <summary>
