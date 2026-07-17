@@ -1752,10 +1752,12 @@ namespace RMC.BestFit.Models
                 logValues.AddRange(IntervalSeries.Select(x => x.Log10Value).ToList());
                 logValues.Sort();
 
-                var dist = new EmpiricalDistribution(values, probs);
-                var moments = dist.CentralMoments(1000);
-                var logDist = new EmpiricalDistribution(logValues, probs);
-                var logMoments = logDist.CentralMoments(1000);
+                var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+                var moments = dist?.CentralMoments(1000)
+                    ?? new[] { double.NaN, double.NaN, double.NaN, double.NaN };
+                var logDist = CreateEmpiricalDistributionWithUniqueValues(logValues, probs);
+                var logMoments = logDist?.CentralMoments(1000)
+                    ?? new[] { double.NaN, double.NaN, double.NaN, double.NaN };
 
                 CreateFullTimeSeries();
                 result.Add("Record Length", FullTimeSeries.Count);
@@ -1771,16 +1773,70 @@ namespace RMC.BestFit.Models
                 result.Add("Std Dev (of log)", logMoments[1]);
                 result.Add("Skewness (of log)", logMoments[2]);
                 result.Add("Kurtosis (of log)", logMoments[3]);
-                result.Add("1%", dist.InverseCDF(0.01));
-                result.Add("5%", dist.InverseCDF(0.05));
-                result.Add("25%", dist.InverseCDF(0.25));
-                result.Add("50%", dist.InverseCDF(0.5));
-                result.Add("75%", dist.InverseCDF(0.75));
-                result.Add("95%", dist.InverseCDF(0.95));
-                result.Add("99%", dist.InverseCDF(0.99));
+                result.Add("1%", dist?.InverseCDF(0.01) ?? double.NaN);
+                result.Add("5%", dist?.InverseCDF(0.05) ?? double.NaN);
+                result.Add("25%", dist?.InverseCDF(0.25) ?? double.NaN);
+                result.Add("50%", dist?.InverseCDF(0.5) ?? double.NaN);
+                result.Add("75%", dist?.InverseCDF(0.75) ?? double.NaN);
+                result.Add("95%", dist?.InverseCDF(0.95) ?? double.NaN);
+                result.Add("99%", dist?.InverseCDF(0.99) ?? double.NaN);
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Creates an empirical distribution after collapsing repeated sorted values.
+        /// </summary>
+        /// <param name="sortedValues">Empirical X-values in ascending order.</param>
+        /// <param name="sortedProbabilities">Cumulative probabilities in ascending order.</param>
+        /// <returns>
+        /// An empirical distribution with unique X-values, or <c>null</c> when fewer than two
+        /// distinct values remain.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown when the value and probability collections have different lengths.
+        /// </exception>
+        /// <remarks>
+        /// Repeated X-values represent a single CDF step. The largest cumulative probability in
+        /// each repeated-value run is retained so the resulting curve remains right-continuous.
+        /// </remarks>
+        private static EmpiricalDistribution? CreateEmpiricalDistributionWithUniqueValues(
+            IList<double> sortedValues,
+            IList<double> sortedProbabilities)
+        {
+            if (sortedValues.Count != sortedProbabilities.Count)
+            {
+                throw new ArgumentException(
+                    "The empirical value and probability collections must have the same length.",
+                    nameof(sortedProbabilities));
+            }
+
+            var uniqueValues = new List<double>(sortedValues.Count);
+            var uniqueProbabilities = new List<double>(sortedProbabilities.Count);
+            for (int i = 0; i < sortedValues.Count; i++)
+            {
+                double value = sortedValues[i];
+                double probability = sortedProbabilities[i];
+                int lastIndex = uniqueValues.Count - 1;
+
+                if (lastIndex >= 0 && value == uniqueValues[lastIndex])
+                {
+                    // A CDF is right-continuous, so a repeated value retains the largest
+                    // cumulative probability assigned to that value.
+                    if (probability > uniqueProbabilities[lastIndex])
+                        uniqueProbabilities[lastIndex] = probability;
+                }
+                else
+                {
+                    uniqueValues.Add(value);
+                    uniqueProbabilities.Add(probability);
+                }
+            }
+
+            return uniqueValues.Count < 2
+                ? null
+                : new EmpiricalDistribution(uniqueValues, uniqueProbabilities);
         }
 
         /// <summary>
@@ -1837,7 +1893,8 @@ namespace RMC.BestFit.Models
             probs.AddRange(IntervalSeries.Select(x => x.PlottingPositionComplement));
             probs.Sort();
 
-            var dist = new EmpiricalDistribution(values, probs);
+            var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+            if (dist is null) return null;
             return dist.CentralMoments(1000);
         }
 
@@ -1960,7 +2017,8 @@ namespace RMC.BestFit.Models
             probs.AddRange(IntervalSeries.Select(x => x.PlottingPositionComplement));
             probs.Sort();
 
-            var dist = new EmpiricalDistribution(values, probs);
+            var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+            if (dist is null) return null;
             return dist.CentralMoments(1000);
         }
 
@@ -1986,9 +2044,29 @@ namespace RMC.BestFit.Models
             logValues.AddRange(IntervalSeries.Select(x => x.Log10Value).ToList());
             logValues.Sort();
 
-            var dist = new EmpiricalDistribution(values, probs);
+            var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
+            var logDist = CreateEmpiricalDistributionWithUniqueValues(logValues, probs);
+            if (dist is null || logDist is null)
+            {
+                for (int i = 0; i < ExactSeries.Count; i++)
+                {
+                    ExactSeries[i].StandardizedValue = double.NaN;
+                    ExactSeries[i].StandardizedLog10Value = double.NaN;
+                }
+                for (int i = 0; i < UncertainSeries.Count; i++)
+                {
+                    UncertainSeries[i].StandardizedValue = double.NaN;
+                    UncertainSeries[i].StandardizedLog10Value = double.NaN;
+                }
+                for (int i = 0; i < IntervalSeries.Count; i++)
+                {
+                    IntervalSeries[i].StandardizedValue = double.NaN;
+                    IntervalSeries[i].StandardizedLog10Value = double.NaN;
+                }
+                return;
+            }
+
             var moments = dist.CentralMoments(200);
-            var logDist = new EmpiricalDistribution(logValues, probs);
             var logMoments = logDist.CentralMoments(200);
 
             // Check if moments are invalid
