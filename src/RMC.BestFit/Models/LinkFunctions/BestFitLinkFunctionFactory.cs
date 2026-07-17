@@ -1,5 +1,6 @@
 using Numerics.Functions;
 using System;
+using System.Diagnostics;
 using System.Xml.Linq;
 
 namespace RMC.BestFit.Models.LinkFunctions
@@ -7,7 +8,7 @@ namespace RMC.BestFit.Models.LinkFunctions
     /// <summary>
     /// Factory for creating <see cref="ILinkFunction"/> instances from serialized <see cref="XElement"/> representations,
     /// supporting both standard Numerics link types and BestFit-specific types (ASinHLink, SESLink, LogSESLink,
-    /// LogASinHLink, CenteredLink, YeoJohnsonLink).
+    /// LogASinHLink, CenteredLink).
     /// </summary>
     /// <remarks>
     /// <para>
@@ -46,10 +47,36 @@ namespace RMC.BestFit.Models.LinkFunctions
                 case nameof(CenteredLink):
                     return new CenteredLink(xElement);
                 case nameof(YeoJohnsonLink):
-                    return new YeoJohnsonLink(xElement);
+                    return CreateYeoJohnsonLinkOrIdentity(xElement);
                 // Fall through to Numerics factory for standard types
                 default:
                     return LinkFunctionFactory.CreateFromXElement(xElement);
+            }
+        }
+
+        /// <summary>
+        /// Creates a Numerics Yeo-Johnson link from XML, falling back to identity for legacy BestFit XML.
+        /// </summary>
+        /// <param name="xElement">The serialized Yeo-Johnson link element.</param>
+        /// <returns>
+        /// A <see cref="YeoJohnsonLink"/> when <paramref name="xElement"/> contains a valid lambda;
+        /// otherwise an <see cref="IdentityLink"/>.
+        /// </returns>
+        /// <remarks>
+        /// Older BestFit projects could persist a <c>YeoJohnsonLink</c> element without a valid
+        /// <c>Lambda</c> attribute because the removed BestFit implementation defaulted to lambda = 1.
+        /// Mapping those legacy forms to identity preserves that behavior while using the Numerics link.
+        /// </remarks>
+        private static ILinkFunction CreateYeoJohnsonLinkOrIdentity(XElement xElement)
+        {
+            try
+            {
+                return new YeoJohnsonLink(xElement);
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is FormatException || ex is OverflowException)
+            {
+                Debug.WriteLine($"BestFitLinkFunctionFactory: YeoJohnsonLink XML could not be restored; using IdentityLink. {ex.Message}");
+                return new IdentityLink();
             }
         }
     }

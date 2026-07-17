@@ -247,6 +247,9 @@ public class LinkFunctionSerializationTests
         Assert.IsInstanceOfType(BestFitLinkFunctionFactory.CreateFromXElement(new XElement("LogitLink")), typeof(LogitLink));
         Assert.IsInstanceOfType(BestFitLinkFunctionFactory.CreateFromXElement(new XElement("ProbitLink")), typeof(ProbitLink));
         Assert.IsInstanceOfType(BestFitLinkFunctionFactory.CreateFromXElement(new XElement("ComplementaryLogLogLink")), typeof(ComplementaryLogLogLink));
+        Assert.IsInstanceOfType(
+            BestFitLinkFunctionFactory.CreateFromXElement(new XElement("YeoJohnsonLink", new XAttribute("Lambda", "0.5"))),
+            typeof(YeoJohnsonLink));
 
         // BestFit types
         Assert.IsInstanceOfType(BestFitLinkFunctionFactory.CreateFromXElement(new XElement("SESLink")), typeof(SESLink));
@@ -256,6 +259,20 @@ public class LinkFunctionSerializationTests
         // CenteredLink needs at minimum a valid element (will default to IdentityLink inner)
         var centeredXml = new XElement("CenteredLink");
         Assert.IsInstanceOfType(BestFitLinkFunctionFactory.CreateFromXElement(centeredXml), typeof(CenteredLink));
+    }
+
+    /// <summary>
+    /// Verify legacy Yeo-Johnson XML without a valid lambda falls back to identity.
+    /// </summary>
+    [TestMethod]
+    public void BestFitLinkFunctionFactory_LegacyYeoJohnsonXml_ReturnsIdentity()
+    {
+        Assert.IsInstanceOfType(
+            BestFitLinkFunctionFactory.CreateFromXElement(new XElement("YeoJohnsonLink")),
+            typeof(IdentityLink));
+        Assert.IsInstanceOfType(
+            BestFitLinkFunctionFactory.CreateFromXElement(new XElement("YeoJohnsonLink", new XAttribute("Lambda", "not-a-number"))),
+            typeof(IdentityLink));
     }
 
     /// <summary>
