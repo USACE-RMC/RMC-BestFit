@@ -406,4 +406,192 @@ public class PlottingPositionTests
         }
     }
 
+    /// <summary>
+    /// Verifies the Example 5 bootstrap edge shape keeps every resampled value unchanged
+    /// and assigns only open-interval plotting positions.
+    /// </summary>
+    /// <remarks>
+    /// The arranged counts intentionally reproduce the former K=43/K=6 condition that
+    /// made the prior recurrence calculate Q=1 at the 743-cfs level. Two observations
+    /// fall below their own perception thresholds and are classified as censored only
+    /// for plotting; they remain exact observations with their original values.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_Example5BootstrapEdge_RemainsStrictWithoutChangingSample()
+    {
+        var values = new double[50];
+        for (int i = 0; i < 8; i++)
+            values[i] = i == 7 ? 1000d : 2000d + i;
+        for (int i = 8; i < 44; i++)
+            values[i] = 3000d + i;
+        for (int i = 44; i < 49; i++)
+            values[i] = 800d + (10d * (i - 44));
+        values[49] = 500d;
+
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+
+        for (int i = 0; i < values.Length; i++)
+            dataFrame.ExactSeries.Add(new ExactData(1965 + i, values[i]));
+
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(1965, 1972, 1180));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(1973, 1991, 705));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(1992, 2001, 714));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2002, 2002, 743));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2003, 2003, 560));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2004, 2005, 700));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2006, 2009, 710));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2010, 2012, 661));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(2013, 2014, 700));
+
+        double[] originalValues = dataFrame.ExactSeries.Select(data => data.Value).ToArray();
+        dataFrame.PlottingParameter = 0.4;
+        dataFrame.CalculatePlottingPositions();
+
+        CollectionAssert.AreEqual(originalValues, dataFrame.ExactSeries.Select(data => data.Value).ToArray());
+        Assert.AreEqual(50, dataFrame.ExactSeries.Count);
+        Assert.IsTrue(dataFrame.ExactSeries.All(
+            data => double.IsFinite(data.PlottingPosition) &&
+                    data.PlottingPosition > 0d &&
+                    data.PlottingPosition < 1d));
+        Assert.IsTrue(dataFrame.ExactSeries.Any(data => data.PlottingPosition > 0.98d));
+        Assert.IsTrue(dataFrame.ExactSeries.SuppressCollectionChanged,
+            "CalculatePlottingPositions must restore the caller's prior suppression state.");
+        Assert.IsTrue(dataFrame.ThresholdSeries.SuppressCollectionChanged,
+            "CalculatePlottingPositions must restore the caller's prior suppression state.");
+    }
+
+    /// <summary>
+    /// Verifies explicit values below their own thresholds use the ARRANGE2 censored branch.
+    /// </summary>
+    /// <remarks>
+    /// With one detection and one censored observation at a common threshold, Weibull
+    /// plotting positions are 0.25 and 0.75 exceedance probability, respectively.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_ValueBelowOwnThreshold_UsesCensoredBranch()
+    {
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ExactSeries.Add(new ExactData(0, 50d));
+        dataFrame.ExactSeries.Add(new ExactData(1, 200d));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 1, 100d));
+
+        dataFrame.CalculatePlottingPositions();
+
+        Assert.AreEqual(0.75d, dataFrame.ExactSeries[0].PlottingPosition, 1E-12);
+        Assert.AreEqual(0.25d, dataFrame.ExactSeries[1].PlottingPosition, 1E-12);
+        Assert.AreEqual(50d, dataFrame.ExactSeries[0].Value);
+        Assert.AreEqual(200d, dataFrame.ExactSeries[1].Value);
+    }
+
+    /// <summary>
+    /// Verifies aggregate below- and above-threshold counts participate in PPLOT2 ranks.
+    /// </summary>
+    /// <remarks>
+    /// Three left-censored placeholders, one finite detection, and one right-censored
+    /// placeholder give a detection probability of 2/(2+3). The finite detection is
+    /// ordered before the right-censored placeholder.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_AggregateThresholdCounts_AffectRanks()
+    {
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ExactSeries.Add(new ExactData(2, 150d));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100d) { NumberAbove = 1 });
+
+        dataFrame.CalculatePlottingPositions();
+
+        Assert.AreEqual(4d / 15d, dataFrame.ExactSeries[0].PlottingPosition, 1E-12);
+        Assert.AreEqual(3, ((BestFitThresholdData)dataFrame.ThresholdSeries[0]).NumberBelow);
+        Assert.AreEqual(1, ((BestFitThresholdData)dataFrame.ThresholdSeries[0]).NumberAbove);
+    }
+
+    /// <summary>
+    /// Verifies observations outside perception windows receive the synthetic unbounded threshold.
+    /// </summary>
+    /// <remarks>
+    /// An outside observation is detected regardless of whether its magnitude is below an
+    /// unrelated finite threshold. The two threshold-only years remain left-censored.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_OutsideThresholdWindow_IsDetected()
+    {
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ExactSeries.Add(new ExactData(10, 50d));
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 1, 100d));
+
+        dataFrame.CalculatePlottingPositions();
+
+        Assert.AreEqual(0.5d, dataFrame.ExactSeries[0].PlottingPosition, 1E-12);
+    }
+
+    /// <summary>
+    /// Verifies invalid plotting parameters and impossible processed threshold counts are rejected.
+    /// </summary>
+    /// <remarks>
+    /// Rejecting invalid inputs prevents zero denominators and boundary probabilities; the
+    /// routine does not clamp or silently substitute denominators.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_InvalidInputs_Throw()
+    {
+        var dataFrame = new BestFitDataFrame();
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = double.NaN);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = -0.01d);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = 1d);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => dataFrame.PlottingParameter = double.PositiveInfinity);
+
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 0, 100d) { NumberAbove = 2 });
+        Assert.ThrowsException<InvalidOperationException>(() => dataFrame.CalculatePlottingPositions());
+
+        var overlappingFrame = new BestFitDataFrame();
+        overlappingFrame.ThresholdSeries.SuppressCollectionChanged = true;
+        overlappingFrame.ThresholdSeries.Add(new BestFitThresholdData(0, 2, 100d));
+        overlappingFrame.ThresholdSeries.Add(new BestFitThresholdData(2, 4, 200d));
+        Assert.ThrowsException<InvalidOperationException>(
+            () => overlappingFrame.CalculatePlottingPositions());
+    }
+
+    /// <summary>
+    /// Verifies plotting positions remain fast enough for interactive data-entry recalculation.
+    /// </summary>
+    /// <remarks>
+    /// The two-second ceiling for 25,000 observations is intentionally generous to avoid
+    /// machine-sensitive microbenchmark failures while guarding against accidental nested
+    /// observation-by-threshold scans or other order-of-magnitude regressions.
+    /// </remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_LargeInteractiveFrame_CompletesPromptly()
+    {
+        const int observationCount = 25000;
+        var dataFrame = new BestFitDataFrame();
+        dataFrame.ExactSeries.SuppressCollectionChanged = true;
+        dataFrame.ThresholdSeries.SuppressCollectionChanged = true;
+
+        for (int i = 0; i < observationCount; i++)
+            dataFrame.ExactSeries.Add(new ExactData(i, 1d + ((i * 7919L) % 100003L)));
+
+        for (int i = 0; i < 25; i++)
+            dataFrame.ThresholdSeries.Add(
+                new BestFitThresholdData(i * 1000, ((i + 1) * 1000) - 1, 100d + i));
+
+        dataFrame.CalculatePlottingPositions();
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        dataFrame.CalculatePlottingPositions();
+        stopwatch.Stop();
+
+        Assert.IsTrue(stopwatch.Elapsed < TimeSpan.FromSeconds(2),
+            $"Plotting {observationCount:N0} observations took {stopwatch.Elapsed.TotalMilliseconds:N0} ms.");
+        Assert.IsTrue(dataFrame.ExactSeries.All(
+            data => data.PlottingPosition > 0d && data.PlottingPosition < 1d));
+    }
 }
