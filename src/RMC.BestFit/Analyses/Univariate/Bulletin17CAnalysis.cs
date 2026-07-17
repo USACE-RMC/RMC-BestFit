@@ -11,7 +11,7 @@ using Numerics.Utilities;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
-using BestFitYeoJohnsonLink = RMC.BestFit.Models.LinkFunctions.YeoJohnsonLink;
+
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -218,7 +218,7 @@ namespace RMC.BestFit.Analyses
                 }
             }
 
-            // Restore uncertainty sampling diagnostics when present. The element is optional —
+            // Restore uncertainty sampling diagnostics when present. The element is optional;
             // projects saved by earlier versions restore with null diagnostics.
             BootstrapResults = BootstrapDiagnostics.FromXElement(xElement.Element(nameof(BootstrapDiagnostics)));
         }
@@ -390,9 +390,8 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Gets the sampling diagnostics from the most recent uncertainty analysis
-        /// (bootstrap methods and plain multivariate normal sampling).
-        /// Null when no uncertainty quantification has run or for the linked MVN method.
+        /// Gets the bootstrap diagnostics from the most recent bootstrap uncertainty analysis.
+        /// Null if the uncertainty method is not a bootstrap method.
         /// </summary>
         public BootstrapDiagnostics? BootstrapResults { get; private set; }
 
@@ -609,11 +608,6 @@ namespace RMC.BestFit.Analyses
                         cancellationToken.ThrowIfCancellationRequested();
 
                         // Preprocess data and run the CPU-bound GMM fit off the UI thread.
-                        // ProcessThresholdSeries stays here for headless/API correctness — the
-                        // model must not rely on a UI wrapper's pre-processing. It is idempotent
-                        // and only raises "ThresholdSeries" when effective counts actually change
-                        // (the UI wrapper suppresses that self-inflicted notification while a run
-                        // is in flight).
                         Bulletin17CDistribution.DataFrame.ProcessThresholdSeries();
                         Bulletin17CDistribution.LinkController = LinkController.ForLocationScaleShape();
                         Bulletin17CDistribution.SetInitialParameters();
@@ -744,7 +738,7 @@ namespace RMC.BestFit.Analyses
                     UncertaintyMethod.MultivariateNormal       => GetParameterSetsFromMultivariateNormal(progressReporter),
                     UncertaintyMethod.LinkedMultivariateNormal => GetParameterSetsFromLinkedMultivariateNormal(progressReporter),
                     UncertaintyMethod.Bootstrap                => GetParameterSetsFromParametricBootstrap(progressReporter),
-                    UncertaintyMethod.BiasCorrectedBootstrap   => GetParameterSetsFromPivotBootstrap(progressReporter),
+                    UncertaintyMethod.BiasCorrectedBootstrap   => GetParameterSetsFromPivotalBootstrap(progressReporter),
                     _                                          => GetParameterSetsFromMultivariateNormal(progressReporter)
                 };
 
@@ -772,11 +766,25 @@ namespace RMC.BestFit.Analyses
                 return;
             }
 
-            // Filter out unset entries (default ParameterSet has Values == null).
-            // Every sampling method can produce these — failed or rejected realizations are
-            // discarded rather than substituted with the parent parameter vector, so the
-            // delivered ensemble may be smaller than the requested output length.
-            var validSets = rawSets.Where(ps => ps.Values != null).ToArray();
+            // Filter out unset, dimensionally invalid, or non-finite entries.
+            // MVN samplers may discard invalid draws. Bootstrap collectors replace failed
+            // candidates and therefore must satisfy the exact-count invariant below.
+            int expectedParameterCount = Bulletin17CDistribution.NumberOfParameters;
+            var validSets = rawSets
+                .Where(ps => ps.Values != null &&
+                             ps.Values.Length == expectedParameterCount &&
+                             ps.Values.All(double.IsFinite))
+                .ToArray();
+            bool isBootstrapMethod = UncertaintyMethod == UncertaintyMethod.Bootstrap ||
+                                     UncertaintyMethod == UncertaintyMethod.BiasCorrectedBootstrap;
+            if (isBootstrapMethod &&
+                (rawSets.Length != BayesianAnalysis.OutputLength || validSets.Length != BayesianAnalysis.OutputLength))
+            {
+                SetUncertaintyDiagnosticMessage(
+                    $"Bootstrap uncertainty requires exactly {BayesianAnalysis.OutputLength:N0} valid parameter sets, " +
+                    $"but received {validSets.Length:N0}. No partial uncertainty result was published.");
+                return;
+            }
             if (validSets.Length < 2)
             {
                 SetUncertaintyDiagnosticMessage(
@@ -879,12 +887,8 @@ namespace RMC.BestFit.Analyses
 
             var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
-            // Sampling diagnostics: requested draws, rejected (discarded) draws, and the count
-            // actually delivered — reported alongside the bootstrap methods.
-            var diag = new BootstrapDiagnostics { TotalReplicates = B };
-            var samplingStopwatch = Stopwatch.StartNew();
-
             int iteration = 0;
+            int rejectionCount = 0;
 
             try
             {
@@ -921,7 +925,7 @@ namespace RMC.BestFit.Analyses
                             catch (Exception ex) { Debug.WriteLine($"B17C MVN sampling: rejected parameter set (idx={idx}): {ex.Message}"); }
                         }
                         if (acceptedTheta == null)
-                            diag.IncrementFailed();
+                            Interlocked.Increment(ref rejectionCount);
                     }
 
                     // Rejected draws stay as default(ParameterSet) (Values == null) and are
@@ -935,29 +939,22 @@ namespace RMC.BestFit.Analyses
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
-                samplingStopwatch.Stop();
-                diag.Phase1Time = samplingStopwatch.Elapsed;
-
                 // Check the rejection rate — persistent rejection signals the MVN approximation
                 // places most of its mass outside the valid parameter space, not sampling noise.
-                if (diag.FailureRate > 0.50)
+                double rejectionRate = (double)rejectionCount / B;
+                if (rejectionRate > 0.50)
                 {
-                    diag.RetainedReplicates = 0;
-                    BootstrapResults = diag;
                     SetUncertaintyDiagnosticMessage(
-                        $"Multivariate Normal sampling: {diag.FailedReplicates:N0} of {B:N0} requested draws were rejected as invalid parameter sets " +
-                        $"({diag.FailureRate:P0} rejection rate). Uncertainty quantification was aborted. " +
+                        $"Multivariate Normal sampling: {rejectionCount:N0} of {B:N0} requested draws were rejected as invalid parameter sets " +
+                        $"({rejectionRate:P0} rejection rate). Uncertainty quantification was aborted. " +
                         "Consider the Bootstrap uncertainty method, which does not rely on the asymptotic covariance.");
                     return null;
                 }
 
                 // Filter out rejected draws (default-initialized entries have Values == null).
                 var validResults = results.Where(ps => ps.Values != null).ToArray();
-                diag.RetainedReplicates = validResults.Length;
-                BootstrapResults = diag;
                 if (validResults.Length < 2)
                 {
-                    diag.RetainedReplicates = 0;
                     SetUncertaintyDiagnosticMessage(
                         $"Multivariate Normal sampling: only {validResults.Length:N0} of {B:N0} requested draws were valid. " +
                         "Uncertainty quantification was aborted.");
@@ -1146,38 +1143,6 @@ namespace RMC.BestFit.Analyses
             // Step 7: Delta-method covariance in link space: V^_? = G � S^_? � G'
             var VetaHat = GHat * sigmaHat * GHat.Transpose();
             VetaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(VetaHat);
-
-            // Step 7b: Shift MVN center for s and ? using influence-function skewness.
-            // ParameterSkewness[j] has flipped sign due to the negative diagonal of the GMM
-            // Jacobian D = ?g/?? propagating through ?_i = Bread?��D'W�m_i. Negate to recover
-            // the actual skewness of the parameter sampling distribution.
-            // The shift approximates BCa z0 bias correction: it offsets the MVN center toward
-            // the median of the sampling distribution, rebalancing miss-above/miss-below rates.
-            // The ASinH links handle asymmetric shape (BCa acceleration); this handles centering.
-            // Capped at �0.3 SD to prevent noisy third-moment estimates from creating extreme shifts.
-            // � (index 0) is not shifted � its centering is handled by the ASinH epsilon.
-            var influenceStats = ComputeInfluenceStatistics(thetaHat, 0.999);
-            if (influenceStats.ParameterSkewness != null)
-            {
-                // s shift (index 1)
-                if (p >= 2)
-                {
-                    double skewSigma = -influenceStats.ParameterSkewness[1];
-                    double sdEtaSigma = Math.Sqrt(VetaHat[1, 1]);
-                    double shiftSigma = (skewSigma / 6.0) * sdEtaSigma;
-                    shiftSigma = Math.Clamp(shiftSigma, -0.5 * sdEtaSigma, 0.5 * sdEtaSigma);
-                    //etaHat[1] += shiftSigma;
-                }
-                // ? shift (index 2)
-                if (p >= 3)
-                {
-                    double skewGamma = -influenceStats.ParameterSkewness[2];
-                    double sdEtaGamma = Math.Sqrt(VetaHat[2, 2]);
-                    double shiftGamma = (skewGamma / 6.0) * sdEtaGamma;
-                    shiftGamma = Math.Clamp(shiftGamma, -0.5 * sdEtaGamma, 0.5 * sdEtaGamma);
-                    //etaHat[2] += shiftGamma;
-                }
-            }
 
             // Step 8: Sample ? draws from N(?^, V^_?) via Latin Hypercube
             MultivariateNormal mvn;
@@ -1952,6 +1917,80 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Collects exactly the requested number of valid results from deterministic candidate batches.
+        /// </summary>
+        /// <typeparam name="T">Candidate result type.</typeparam>
+        /// <param name="targetCount">Number of valid results required.</param>
+        /// <param name="batchFactory">Factory that evaluates the requested number of replacement candidates.</param>
+        /// <param name="isValid">Predicate identifying valid candidate results.</param>
+        /// <param name="cancellationToken">Cancellation token checked between and within batches.</param>
+        /// <param name="acceptedCallback">Optional callback invoked after each accepted result with the total accepted count.</param>
+        /// <returns>An array containing exactly <paramref name="targetCount"/> valid results in deterministic batch order.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="targetCount"/> is negative.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when a batch factory returns no candidates.</exception>
+        internal static T[] CollectExactBatchResults<T>(
+            int targetCount,
+            Func<int, T[]> batchFactory,
+            Func<T, bool> isValid,
+            CancellationToken cancellationToken,
+            Action<int>? acceptedCallback = null)
+        {
+            if (targetCount < 0)
+                throw new ArgumentOutOfRangeException(nameof(targetCount));
+
+            var results = new T[targetCount];
+            int acceptedCount = 0;
+            while (acceptedCount < targetCount)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                int remaining = targetCount - acceptedCount;
+                var batch = batchFactory(remaining);
+                if (batch == null || batch.Length == 0)
+                    throw new InvalidOperationException("The exact-count batch factory returned no candidates.");
+
+                for (int i = 0; i < batch.Length && acceptedCount < targetCount; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!isValid(batch[i]))
+                        continue;
+
+                    results[acceptedCount++] = batch[i];
+                    acceptedCallback?.Invoke(acceptedCount);
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Stores a valid pivotal-bootstrap parameter estimate, covariance matrix, and deterministic seed.
+        /// </summary>
+        private sealed class PivotBootstrapReplicate
+        {
+            /// <summary>
+            /// Initializes a pivotal-bootstrap replicate.
+            /// </summary>
+            /// <param name="theta">Estimated parameter vector.</param>
+            /// <param name="covariance">Finite positive-definite parameter covariance.</param>
+            /// <param name="seed">Seed associated with this candidate.</param>
+            public PivotBootstrapReplicate(double[] theta, Matrix covariance, int seed)
+            {
+                Theta = theta;
+                Covariance = covariance;
+                Seed = seed;
+            }
+
+            /// <summary>Gets the estimated parameter vector.</summary>
+            public double[] Theta { get; }
+
+            /// <summary>Gets the finite positive-definite parameter covariance.</summary>
+            public Matrix Covariance { get; }
+
+            /// <summary>Gets the deterministic candidate seed.</summary>
+            public int Seed { get; }
+        }
+
+        /// <summary>
         /// Generates distributions using parametric bootstrap resampling.
         /// </summary>
         /// <param name="progressReporter">Optional progress reporter. Progress is reported from 10% to 100%.</param>
@@ -1961,7 +2000,7 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        ///     For each bootstrap replicate b = 1, �, B:
+        ///     For each bootstrap replicate b = 1, …, B:
         /// </para>
         /// <list type="number">
         ///     <item><description>Generate a bootstrap data frame by resampling from the fitted parent distribution
@@ -1970,16 +2009,12 @@ namespace RMC.BestFit.Analyses
         ///         set a randomized penalty function via <see cref="Bulletin17CDistribution.SetPenaltyFunction"/>
         ///         to propagate prior uncertainty.</description></item>
         ///     <item><description>Estimate parameters using GMM. If GMM fails, retry up to
-        ///         <c>maxRetries</c> times with fresh bootstrap samples; a replicate that fails every
-        ///         attempt is discarded and excluded from the delivered sample. Discarded replicates are
-        ///         counted in <see cref="BootstrapResults"/>, matching the drop semantics of
-        ///         <c>Numerics.Sampling.Bootstrap</c>. No parent-parameter substitution is performed —
-        ///         that would inject zero-variance mass at the parent fit and bias the intervals narrow.</description></item>
+        ///         <c>maxRetries</c> times with fresh bootstrap samples before falling back to parent parameters.</description></item>
         /// </list>
         /// </remarks>
         private ParameterSet[]? GetParameterSetsFromParametricBootstrap(SafeProgressReporter? progressReporter)
         {
-            const int maxRetries = 5;
+            const int maxRetries = 10;
             int B = BayesianAnalysis.OutputLength;
             int p = Bulletin17CDistribution.NumberOfParameters;
             var results = new ParameterSet[B];
@@ -1998,7 +2033,8 @@ namespace RMC.BestFit.Analyses
                 Debug.WriteLine($"Bulletin17CAnalysis.GenerateBootstrapDistributions: covariance singular, regularizing: {ex.Message}");
                 sigmaInv = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat).Inverse();
             }
-            double mahalThreshold = new ChiSquared(p).InverseCDF(0.9999);
+            double mahalPvalue = 1.0 - 1.0 / (B * 5); // reject extreme draws with p-value < 1/(5B)
+            double mahalThreshold = new ChiSquared(p).InverseCDF(mahalPvalue);
 
             // Initialize bootstrap diagnostics
             var diag = new BootstrapDiagnostics { TotalReplicates = B };
@@ -2007,6 +2043,14 @@ namespace RMC.BestFit.Analyses
             var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
 
             int iteration = 0;
+
+            // Determine if we should clone with the parent data frame or not.
+            // If there are any low outliers, uncertain series, interval series, or threshold series,
+            // we need to clone with the data frame to improve the initial guess of the solver
+            bool cloneWithDataFrame = Bulletin17CDistribution.DataFrame.NumberOfLowOutliers > 0 || 
+                Bulletin17CDistribution.DataFrame.UncertainSeries.Count > 0 ||
+                Bulletin17CDistribution.DataFrame.IntervalSeries.Count > 0 ||
+                Bulletin17CDistribution.DataFrame.ThresholdSeries.Count > 0;
 
             try
             {
@@ -2021,36 +2065,35 @@ namespace RMC.BestFit.Analyses
                     {
                         try
                         {
-                            // BootstrapDataFrame uses the parent distribution as the data-generating
-                            // model; clone with parent params for the resampling step only.
+                            // BootstrapDataFrame uses the parent distribution as the data-generatingmodel.
                             var samplingDist = parentDistribution.Clone();
                             var bootDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(samplingDist, prng);
-                            // CloneWithDataFrame preserves the parent's parameter bounds, priors, and
-                            // penalty configuration; the explicit warm start makes the GMM initial
-                            // values the parent fit rather than boot-data-derived defaults.
-                            var bootB17CDistribution = Bulletin17CDistribution.CloneWithDataFrame(bootDataFrame);
-                            bootB17CDistribution.SetParameterValues(thetaHat);
+                            // Clone the Bulletin17CDistribution with the bootstrap data frame.
+                            Bulletin17CDistribution? bootB17CDistribution = null;
+                            if (cloneWithDataFrame)
+                            {
+                                // clone with parent params for the resampling step only.
+                                bootB17CDistribution = Bulletin17CDistribution.CloneWithDataFrame(bootDataFrame);
+                                bootB17CDistribution.SetParameterValues(thetaHat);
+                            }
+                            else
+                            {
+                                // clone and set params from the boostrap data frame.
+                                bootB17CDistribution = (Bulletin17CDistribution)Bulletin17CDistribution.Clone();
+                                bootB17CDistribution.DataFrame = bootDataFrame;
+                            }
+                            // Resample the penalty function
                             bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
+
+                            // Re-estimate. 
                             var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution);
                             bootGMM.Estimate();
-                            diag.RecordGMMStatus(bootGMM.Status);
+                            if (bootGMM.Status != OptimizationStatus.Success)
+                                throw new Exception("The bootstrap GMM solver failed for realization " + idx.ToString() + ".");
 
-                            // Accept any terminal state that produced a usable solution — the same
-                            // gate the parent fit uses (only a hard Failure rejects the replicate).
-                            if (!bootGMM.IsEstimated || bootGMM.Status == OptimizationStatus.Failure)
-                                throw new InvalidOperationException($"The bootstrap GMM solver failed for realization {idx} (status: {bootGMM.Status}).");
-
+                            // Reject degenerate fits via Mahalanobis distance from parent.
+                            // This is a conservative check to avoid extreme bootstrap draws that are far from the parent distribution.
                             var bootParams = bootGMM.BestParameterSet.Values;
-                            // A non-finite parameter would make the Mahalanobis distance NaN, and NaN
-                            // threshold comparisons are false, so the screen below would silently
-                            // accept the vector. Reject it explicitly.
-                            for (int j = 0; j < p; j++)
-                            {
-                                if (!double.IsFinite(bootParams[j]))
-                                    throw new InvalidOperationException($"Bootstrap replicate {idx} produced a non-finite parameter estimate.");
-                            }
-
-                            // Reject degenerate fits via Mahalanobis distance from parent
                             double mahalDist = 0;
                             for (int j = 0; j < p; j++)
                             {
@@ -2075,46 +2118,103 @@ namespace RMC.BestFit.Analyses
                         }
                     }
 
-                    // Discard the replicate if every retry failed. The slot stays as
-                    // default(ParameterSet) (Values == null) and is filtered out downstream,
-                    // matching the drop semantics of Numerics.Sampling.Bootstrap. Substituting
-                    // the parent vector here would inject zero-variance mass at the parent fit
-                    // and bias the uncertainty bounds narrow.
+                    // Fall back to parent parameter vector if all retries failed — preserves prior
+                    // behavior where bootDistribution retained parent params after a Clone() with
+                    // no successful SetParameters call.
                     if (acceptedParams == null)
+                    {
                         diag.IncrementFailed();
-                    else
-                        results[idx] = new ParameterSet(acceptedParams, double.NaN);
+                        acceptedParams = thetaHat;
+                    }
+
+                    results[idx] = new ParameterSet(acceptedParams, double.NaN);
 
                     int current = Interlocked.Increment(ref iteration);
-                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
+                    if (current % Math.Max(1, B * 0.01) == 0)
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
                 phase1Stopwatch.Stop();
                 diag.Phase1Time = phase1Stopwatch.Elapsed;
-                int retained = results.Count(ps => ps.Values != null);
-                diag.RetainedReplicates = retained;
                 BootstrapResults = diag;
-
-                // Abort when the delivered ensemble is unusable: nearly empty, or dominated
-                // by fit failures. A >50% discard rate signals a structurally unstable fit
-                // rather than sampling noise, and the surviving subset would not be a
-                // representative bootstrap sample.
-                if (retained < 2 || diag.FailedReplicates > B / 2)
-                {
-                    diag.RetainedReplicates = 0;
-                    SetUncertaintyDiagnosticMessage(
-                        $"Parametric bootstrap: only {retained:N0} of {B:N0} requested replicates produced a valid GMM fit " +
-                        $"({diag.FailedReplicates:N0} discarded after {maxRetries} attempts each). Uncertainty quantification was aborted. " +
-                        "Review the fitted model and data, or use the Multivariate Normal uncertainty method.");
-                    return null;
-                }
 
                 return results;
             }
             catch (OperationCanceledException)
             {
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a phase-1 pivot bootstrap replicate has a complete parameter vector and covariance matrix.
+        /// </summary>
+        /// <param name="theta">The bootstrap parameter vector.</param>
+        /// <param name="covariance">The bootstrap covariance matrix.</param>
+        /// <param name="parameterCount">The expected number of parameters.</param>
+        /// <returns><see langword="true"/> when both objects are present, dimensionally compatible, and finite; otherwise, <see langword="false"/>.</returns>
+        internal static bool IsUsablePivotBootstrapReplicate(double[]? theta, Matrix? covariance, int parameterCount)
+        {
+            if (parameterCount <= 0 || theta is null || covariance is null)
+                return false;
+            if (theta.Length != parameterCount || covariance.NumberOfRows != parameterCount || covariance.NumberOfColumns != parameterCount)
+                return false;
+
+            for (int i = 0; i < parameterCount; i++)
+            {
+                if (!double.IsFinite(theta[i]))
+                    return false;
+                for (int j = 0; j < parameterCount; j++)
+                {
+                    if (!double.IsFinite(covariance[i, j]))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Creates a Yeo-Johnson pivot link, falling back to identity when fitting or validation fails.
+        /// </summary>
+        /// <param name="samples">The accepted bootstrap samples for one parameter.</param>
+        /// <param name="parameterName">The parameter name used in diagnostic logging.</param>
+        /// <returns>A numerically usable link function for the pivot bootstrap phase.</returns>
+        internal static ILinkFunction CreatePivotYeoJohnsonLink(IReadOnlyList<double> samples, string parameterName)
+        {
+            try
+            {
+                if (samples is null)
+                    throw new ArgumentNullException(nameof(samples));
+                if (samples.Count < 2)
+                    throw new ArgumentException("At least two samples are required to fit a Yeo-Johnson pivot link.", nameof(samples));
+
+                var values = samples.ToArray();
+                for (int i = 0; i < values.Length; i++)
+                {
+                    if (!double.IsFinite(values[i]))
+                        throw new ArgumentOutOfRangeException(nameof(samples), "Yeo-Johnson pivot link samples must be finite.");
+                }
+
+                var link = new YeoJohnsonLink(values);
+                if (Math.Abs(link.Lambda) >= 4.999d)
+                    throw new InvalidOperationException("Yeo-Johnson pivot link lambda fit railed at the optimizer boundary.");
+
+                for (int i = 0; i < values.Length; i++)
+                {
+                    double eta = link.Link(values[i]);
+                    double derivative = link.DLink(values[i]);
+                    double roundTrip = link.InverseLink(eta);
+                    if (!double.IsFinite(eta) || !double.IsFinite(derivative) || !double.IsFinite(roundTrip))
+                        throw new InvalidOperationException("Yeo-Johnson pivot link produced non-finite behavior.");
+                }
+
+                return link;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Pivot bootstrap: Yeo-Johnson link failed for {parameterName}; using identity link. {ex.Message}");
+                return new IdentityLink();
             }
         }
 
@@ -2150,7 +2250,7 @@ namespace RMC.BestFit.Analyses
         /// <para>
         ///     <b>Phase 3 � Generate pivot draws</b> (parallel): For each accepted replicate b, compute
         ///     the standardized pivot z = L*_b?� � (?^ - ?*_b) in link-space, add smoothing jitter,
-        ///     reject extreme pivots (|z_j| &gt; 6), and map back to real-space via
+        ///     clip extreme pivots (|z_j| &gt; 8), and map back to real-space via
         ///     ?_draw = InverseLink(?^ + L^ � z). Rejected or failed draws are dropped from the
         ///     delivered sample — never substituted with the parent parameters.
         /// </para>
@@ -2159,124 +2259,141 @@ namespace RMC.BestFit.Analyses
         ///     Statistical Science, 11(3), 189�228.
         /// </para>
         /// </remarks>
-        private ParameterSet[]? GetParameterSetsFromPivotBootstrap(SafeProgressReporter? progressReporter)
+        private ParameterSet[]? GetParameterSetsFromPivotalBootstrap(SafeProgressReporter? progressReporter)
         {
             const int maxRetries = 5;
+            const int maxTransformRetries = 5;
             const double smoothStdScale = 0.01;
-            const double zLimit = 6.0;
+            const double zLimit = 8.0;
+            const int transformSeedMask = 0x5F3759DF;
 
-            int B = BayesianAnalysis.OutputLength;
-            int p = Bulletin17CDistribution.NumberOfParameters;
-            var results = new ParameterSet[B];
-            var masterPRNG = new MersenneTwister(BayesianAnalysis.PRNGSeed);
-            var seeds = masterPRNG.NextIntegers(B);
-
+            int targetCount = BayesianAnalysis.OutputLength;
+            int parameterCount = Bulletin17CDistribution.NumberOfParameters;
+            var masterPrng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
+            var thetaHat = _gmm!.BestParameterSet.Values.ToArray();
             var parentDistribution = Bulletin17CDistribution.Distribution.Clone();
-            var thetaHat = _gmm!.BestParameterSet.Values;
             parentDistribution.SetParameters(thetaHat);
-            var sigmaHat = _gmm!.GetCovariance(thetaHat);
 
-            // Mahalanobis distance rejection: compute inverse covariance from parent GMM
-            Matrix sigmaInv;
-            try { sigmaInv = sigmaHat.Inverse(); }
-            catch (Exception ex)
+            if (!_gmm.TryGetCovariance(thetaHat, true, out var sigmaHat))
             {
-                Debug.WriteLine($"Bulletin17CAnalysis.GenerateAsymptoticDistributions: covariance singular, regularizing: {ex.Message}");
-                sigmaInv = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat).Inverse();
+                SetUncertaintyDiagnosticMessage(
+                    "Pivot bootstrap could not compute a finite covariance matrix for the parent GMM fit. " +
+                    "Use the plain Bootstrap uncertainty method for this analysis.");
+                return null;
             }
-            double mahalThreshold = new ChiSquared(p).InverseCDF(0.999);
 
-            // Initialize bootstrap diagnostics
-            var diag = new BootstrapDiagnostics { TotalReplicates = B };
-
-            var options = AnalysisProgress.CreateParallelOptions(_cancellationTokenSource?.Token ?? CancellationToken.None);
-
-            // -------------------------------------------------------------------
-            // Phase 1: Collect bootstrap fits (?*_b and S*_b for each replicate)
-            // -------------------------------------------------------------------
-            var bootTheta = new double[B][];
-            var bootSigma = new Matrix[B];
-            int phase1Iteration = 0;
-            var phase1Stopwatch = Stopwatch.StartNew();
-
+            sigmaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat);
+            Matrix sigmaInverse;
             try
             {
-                Parallel.For(0, B, options, idx =>
+                _ = new CholeskyDecomposition(sigmaHat);
+                sigmaInverse = sigmaHat.Inverse();
+            }
+            catch
+            {
+                SetUncertaintyDiagnosticMessage(
+                    "Pivot bootstrap could not factor the parent GMM covariance matrix. " +
+                    "Use the plain Bootstrap uncertainty method for this analysis.");
+                return null;
+            }
+
+            double mahalanobisThreshold = new ChiSquared(parameterCount).InverseCDF(0.9999);
+            var diagnostics = new BootstrapDiagnostics { TotalReplicates = targetCount };
+            CancellationToken cancellationToken = _cancellationTokenSource?.Token ?? CancellationToken.None;
+            var options = AnalysisProgress.CreateParallelOptions(cancellationToken);
+
+            PivotBootstrapReplicate?[] CreatePivotFitBatch(int batchSize)
+            {
+                var seeds = masterPrng.NextIntegers(batchSize);
+                var batch = new PivotBootstrapReplicate?[batchSize];
+
+                Parallel.For(0, batchSize, options, candidateIndex =>
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
+                    diagnostics.IncrementAttempted();
+                    var prng = new MersenneTwister(seeds[candidateIndex]);
 
-                    var prng = new MersenneTwister(seeds[idx]);
-                    bool estimated = false;
-
-                    for (int attempt = 0; attempt < maxRetries && !estimated; attempt++)
+                    for (int attempt = 0; attempt < maxRetries; attempt++)
                     {
                         try
                         {
-                            var bootDist = parentDistribution.Clone();
-                            var bootDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(bootDist, prng);
-                            // CloneWithDataFrame preserves the parent's parameter bounds, priors, and
-                            // penalty configuration; the explicit warm start makes the GMM initial
-                            // values the parent fit rather than boot-data-derived defaults.
-                            var bootB17CDistribution = Bulletin17CDistribution.CloneWithDataFrame(bootDataFrame);
-                            bootB17CDistribution.SetParameterValues(thetaHat);
-                            bootB17CDistribution.SetRandomPenaltyFunction(thetaHat, prng);
-                            var bootGMM = new GeneralizedMethodOfMoments(bootB17CDistribution) { PenaltyIsRandom = false };
-                            bootGMM.Estimate();
-                            diag.RecordGMMStatus(bootGMM.Status);
+                            var samplingDistribution = parentDistribution.Clone();
+                            var bootstrapDataFrame = Bulletin17CDistribution.DataFrame.BootstrapDataFrame(samplingDistribution, prng);
+                            var bootstrapModel = Bulletin17CDistribution.CloneWithDataFrame(bootstrapDataFrame);
+                            bootstrapModel.SetParameterValues(thetaHat);
+                            bootstrapModel.SetRandomPenaltyFunction(thetaHat, prng);
 
-                            // Accept any terminal state that produced a usable solution — the same
-                            // gate the parent fit uses (only a hard Failure rejects the replicate).
-                            if (!bootGMM.IsEstimated || bootGMM.Status == OptimizationStatus.Failure)
-                                throw new InvalidOperationException($"The bootstrap GMM solver failed for realization {idx} (status: {bootGMM.Status}).");
-
-                            var bootParams = bootGMM.BestParameterSet.Values;
-                            // A non-finite parameter would make the Mahalanobis distance NaN, and NaN
-                            // threshold comparisons are false, so the screen below would silently
-                            // accept the vector. Reject it explicitly.
-                            for (int j = 0; j < p; j++)
+                            var bootstrapGmm = new GeneralizedMethodOfMoments(bootstrapModel)
                             {
-                                if (!double.IsFinite(bootParams[j]))
-                                    throw new InvalidOperationException($"Pivot bootstrap replicate {idx} produced a non-finite parameter estimate.");
+                                PenaltyIsRandom = false
+                            };
+                            bool estimated = bootstrapGmm.Estimate();
+                            diagnostics.RecordGMMStatus(bootstrapGmm.Status);
+                            diagnostics.AddFunctionEvaluations(bootstrapGmm.TotalFunctionEvaluations);
+                            diagnostics.AddOptimizerFallbacks(bootstrapGmm.OptimizerFallbackCount);
+
+                            if (!estimated || !bootstrapGmm.IsEstimated || bootstrapGmm.Status != OptimizationStatus.Success)
+                                throw new InvalidOperationException("The pivotal-bootstrap GMM solver did not produce a successful estimate.");
+
+                            var parameters = bootstrapGmm.BestParameterSet.Values.ToArray();
+                            if (parameters.Length != parameterCount || parameters.Any(value => !double.IsFinite(value)))
+                                throw new InvalidOperationException("The pivotal-bootstrap GMM solver produced non-finite parameters.");
+                            parentDistribution.ValidateParameters(parameters, true);
+
+                            double mahalanobisDistance = 0.0;
+                            for (int j = 0; j < parameterCount; j++)
+                            {
+                                double weightedDifference = 0.0;
+                                for (int k = 0; k < parameterCount; k++)
+                                    weightedDifference += sigmaInverse[j, k] * (parameters[k] - thetaHat[k]);
+                                mahalanobisDistance += (parameters[j] - thetaHat[j]) * weightedDifference;
+                            }
+                            if (!double.IsFinite(mahalanobisDistance) || mahalanobisDistance > mahalanobisThreshold)
+                            {
+                                diagnostics.IncrementMahalanobisRejection();
+                                throw new InvalidOperationException("The pivotal-bootstrap estimate failed the Mahalanobis screen.");
                             }
 
-                            // Reject degenerate fits via Mahalanobis distance from parent
-                            double mahalDist = 0;
-                            for (int j = 0; j < p; j++)
-                            {
-                                double tmp = 0;
-                                for (int k = 0; k < p; k++)
-                                    tmp += sigmaInv[j, k] * (bootParams[k] - thetaHat[k]);
-                                mahalDist += (bootParams[j] - thetaHat[j]) * tmp;
-                            }
-                            if (mahalDist > mahalThreshold)
-                            {
-                                diag.IncrementMahalanobisRejection();
-                                throw new Exception($"Pivot bootstrap replicate {idx} rejected: Mahalanobis distance {mahalDist:F1} exceeds threshold {mahalThreshold:F1}.");
-                            }
+                            if (!bootstrapGmm.TryGetCovariance(parameters, true, out var covariance))
+                                throw new InvalidOperationException("The pivotal-bootstrap GMM covariance could not be computed.");
 
-                            bootTheta[idx] = bootParams;
-                            bootSigma[idx] = bootGMM.GetCovariance(bootTheta[idx]);
-                            diag.AddFunctionEvaluations(bootGMM.TotalFunctionEvaluations);
-                            estimated = true;
+                            covariance = MatrixRegularization.MakeSymmetricPositiveDefinite(covariance);
+                            _ = new CholeskyDecomposition(covariance);
+                            if (!IsUsablePivotBootstrapReplicate(parameters, covariance, parameterCount))
+                                throw new InvalidOperationException("The pivotal-bootstrap theta/covariance pair is unusable.");
+
+                            batch[candidateIndex] = new PivotBootstrapReplicate(parameters, covariance, seeds[candidateIndex]);
+                            return;
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            Debug.WriteLine($"Pivot bootstrap Phase 1, replicate {idx}, attempt {attempt}: {ex.Message}");
-                            if (attempt < maxRetries - 1) diag.AddRetries(1);
+                            if (attempt < maxRetries - 1)
+                                diagnostics.AddRetries(1);
                         }
                     }
 
-                    // Discard the replicate if every retry failed — the null slot is excluded
-                    // from link fitting and pivot generation below. Substituting the parent fit
-                    // (theta-hat with the parent covariance) would make the pivot z ≈ 0 and
-                    // re-deliver the parent draw, biasing the uncertainty bounds narrow.
-                    if (!estimated)
-                        diag.IncrementFailed();
-
-                    int current = Interlocked.Increment(ref phase1Iteration);
-                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
-                        progressReporter?.ReportProgress((int)(55.0 * current / B));
+                    diagnostics.IncrementFailed();
                 });
+
+                return batch;
+            }
+
+            var phase1Stopwatch = Stopwatch.StartNew();
+            PivotBootstrapReplicate[] initialReplicates;
+            try
+            {
+                initialReplicates = CollectExactBatchResults(
+                        targetCount,
+                        CreatePivotFitBatch,
+                        replicate => replicate != null,
+                        cancellationToken,
+                        acceptedCount =>
+                        {
+                            if (AnalysisProgress.ShouldReportLoopProgress(acceptedCount, targetCount))
+                                progressReporter?.ReportProgress((int)(98.0 * acceptedCount / targetCount));
+                        })
+                    .Select(replicate => replicate!)
+                    .ToArray();
             }
             catch (OperationCanceledException)
             {
@@ -2284,182 +2401,145 @@ namespace RMC.BestFit.Analyses
             }
 
             phase1Stopwatch.Stop();
-            diag.Phase1Time = phase1Stopwatch.Elapsed;
+            diagnostics.Phase1Time = phase1Stopwatch.Elapsed;
 
-            // Compact to the accepted replicates. Phase 2 fits the link functions from
-            // accepted samples only, and Phase 3 maps k -> acceptedIdx[k] so per-replicate
-            // seeding stays keyed to the ORIGINAL replicate index — an accepted replicate
-            // produces the identical pivot draw regardless of how many others were discarded.
-            int[] acceptedIdx = Enumerable.Range(0, B).Where(i => bootTheta[i] != null).ToArray();
-
-            // Abort when the accepted ensemble is unusable: nearly empty, or dominated by
-            // fit failures. A >50% discard rate signals a structurally unstable fit rather
-            // than sampling noise.
-            if (acceptedIdx.Length < 2 || diag.FailedReplicates > B / 2)
-            {
-                diag.RetainedReplicates = 0;
-                BootstrapResults = diag;
-                SetUncertaintyDiagnosticMessage(
-                    $"Pivot bootstrap: only {acceptedIdx.Length:N0} of {B:N0} requested replicates produced a valid GMM fit " +
-                    $"({diag.FailedReplicates:N0} discarded after {maxRetries} attempts each). Uncertainty quantification was aborted. " +
-                    "Review the fitted model and data, or use the Multivariate Normal uncertainty method.");
-                return null;
-            }
-
-            // -------------------------------------------------------------------
-            // Phase 2: Fit link functions from bootstrap parameter samples
-            // -------------------------------------------------------------------
             var phase2Stopwatch = Stopwatch.StartNew();
-            progressReporter?.ReportProgress(56);
-
-            // Location (index 0): Yeo-Johnson fitted to accepted bootstrap location estimates
-            var locationSamples = acceptedIdx.Select(i => bootTheta[i][0]).ToArray();
-            ILinkFunction locationLink = new BestFitYeoJohnsonLink(locationSamples);
-
-            // Scale (index 1): Log link (scale is strictly positive)
-            var scaleSamples = acceptedIdx.Select(i => bootTheta[i][1]).ToArray();
-            //ILinkFunction scaleLink = new BestFitYeoJohnsonLink(scaleSamples);
+            progressReporter?.ReportProgress(98);
+            ILinkFunction locationLink = CreatePivotYeoJohnsonLink(
+                initialReplicates.Select(replicate => replicate.Theta[0]).ToArray(), "location");
             ILinkFunction scaleLink = new LogLink();
+            ILinkFunction? shapeLink = parameterCount >= 3
+                ? CreatePivotYeoJohnsonLink(initialReplicates.Select(replicate => replicate.Theta[2]).ToArray(), "shape")
+                : null;
 
-            // Shape (index 2, if present): Yeo-Johnson fitted to accepted bootstrap shape estimates
-            ILinkFunction? shapeLink = null;
-            if (p >= 3)
-            {
-                var shapeSamples = acceptedIdx.Select(i => bootTheta[i][2]).ToArray();
-                shapeLink = new BestFitYeoJohnsonLink(shapeSamples);
-            }
-
-            // Build link controller
-            var links = new ILinkFunction?[p];
+            var links = new ILinkFunction?[parameterCount];
             links[0] = locationLink;
             links[1] = scaleLink;
-            if (p >= 3) links[2] = shapeLink;
+            if (parameterCount >= 3)
+                links[2] = shapeLink;
             var linkController = new LinkController(links);
 
-            // Transform parent to link-space and compute Cholesky factor
             var etaHat = linkController.Link(thetaHat);
-            var GHat = linkController.LinkJacobian(thetaHat);
-            var VetaHat = GHat * sigmaHat * GHat.Transpose();
-            VetaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(VetaHat);
-            Matrix LHat;
+            var parentJacobian = linkController.LinkJacobian(thetaHat);
+            var linkedParentCovariance = parentJacobian * sigmaHat * parentJacobian.Transpose();
+            linkedParentCovariance = MatrixRegularization.MakeSymmetricPositiveDefinite(linkedParentCovariance);
+
+            Matrix parentCholesky;
             try
             {
-                var choleskyHat = new CholeskyDecomposition(VetaHat);
-                LHat = choleskyHat.L;
+                parentCholesky = new CholeskyDecomposition(linkedParentCovariance).L;
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"Pivot bootstrap: parent Cholesky failed, falling back to parametric bootstrap. {ex.Message}");
                 return GetParameterSetsFromParametricBootstrap(progressReporter);
             }
 
             phase2Stopwatch.Stop();
-            diag.Phase2Time = phase2Stopwatch.Elapsed;
+            diagnostics.Phase2Time = phase2Stopwatch.Elapsed;
 
-            // -------------------------------------------------------------------
-            // Phase 3: Generate pivot draws (parallel)
-            // -------------------------------------------------------------------
+            double smoothStandardDeviation = smoothStdScale / Math.Sqrt(parameterCount);
+            bool useInitialReplicates = true;
             var phase3Stopwatch = Stopwatch.StartNew();
-            double smoothStd = smoothStdScale / Math.Sqrt(p);
-            int phase3Iteration = 0;
 
-            try
+            ParameterSet[] CreatePivotDrawBatch(int batchSize)
             {
-                Parallel.For(0, acceptedIdx.Length, options, k =>
+                PivotBootstrapReplicate[] replicateBatch;
+                if (useInitialReplicates)
+                {
+                    replicateBatch = initialReplicates;
+                    useInitialReplicates = false;
+                }
+                else
+                {
+                    replicateBatch = CollectExactBatchResults(
+                            batchSize,
+                            CreatePivotFitBatch,
+                            replicate => replicate != null,
+                            cancellationToken)
+                        .Select(replicate => replicate!)
+                        .ToArray();
+                }
+
+                var batch = new ParameterSet[replicateBatch.Length];
+                Parallel.For(0, replicateBatch.Length, options, index =>
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
-
-                    // Map back to the original replicate index so seeding, result slots, and
-                    // reproducibility stay keyed to the requested replicate identity.
-                    int idx = acceptedIdx[k];
-
-                    var prng = new MersenneTwister(seeds[idx] + B);
-                    // Per-thread validator (ValidateParameters is an instance method).
+                    var replicate = replicateBatch[index];
                     var validator = parentDistribution.Clone();
-                    double[]? acceptedTheta = null;
 
                     try
                     {
-                        // Transform bootstrap fit to link-space
-                        var etaStar = linkController.Link(bootTheta[idx]);
-                        var GStar = linkController.LinkJacobian(bootTheta[idx]);
-                        var VetaStar = GStar * bootSigma[idx] * GStar.Transpose();
-                        VetaStar = MatrixRegularization.MakeSymmetricPositiveDefinite(VetaStar);
+                        var etaStar = linkController.Link(replicate.Theta);
+                        var replicateJacobian = linkController.LinkJacobian(replicate.Theta);
+                        var linkedReplicateCovariance =
+                            replicateJacobian * replicate.Covariance * replicateJacobian.Transpose();
+                        linkedReplicateCovariance =
+                            MatrixRegularization.MakeSymmetricPositiveDefinite(linkedReplicateCovariance);
+                        var replicateCholeskyInverse =
+                            new CholeskyDecomposition(linkedReplicateCovariance).L.Inverse();
 
-                        var cholStar = new CholeskyDecomposition(VetaStar);
-                        var LStar = cholStar.L;
-                        var LStarInv = LStar.Inverse();
+                        var difference = new Matrix(parameterCount, 1);
+                        for (int j = 0; j < parameterCount; j++)
+                            difference[j, 0] = etaHat[j] - etaStar[j];
+                        var standardizedPivot = replicateCholeskyInverse * difference;
+                        var prng = new MersenneTwister(unchecked(replicate.Seed ^ transformSeedMask));
 
-                        // Compute pivot: z = L*^{-1} * (etaHat - etaStar)
-                        var diff = new double[p];
-                        for (int j = 0; j < p; j++)
-                            diff[j] = etaHat[j] - etaStar[j];
-                        var diffMatrix = new Matrix(p, 1);
-                        for (int j = 0; j < p; j++)
-                            diffMatrix[j, 0] = diff[j];
-                        var zMatrix = LStarInv * diffMatrix;
-
-                        // Extract z, add smoothing jitter, and check bounds
-                        var z = new double[p];
-                        bool badPivot = false;
-                        for (int j = 0; j < p; j++)
+                        for (int attempt = 0; attempt < maxTransformRetries; attempt++)
                         {
-                            z[j] = zMatrix[j, 0] + Normal.StandardZ(prng.NextDouble()) * smoothStd;
-                            if (Math.Abs(z[j]) > zLimit)
+                            try
                             {
-                                badPivot = true;
-                                break;
+                                var pivotColumn = new Matrix(parameterCount, 1);
+                                for (int j = 0; j < parameterCount; j++)
+                                {
+                                    double pivot = standardizedPivot[j, 0] +
+                                        Normal.StandardZ(prng.NextDouble()) * smoothStandardDeviation;
+                                    pivotColumn[j, 0] = Math.Max(-zLimit, Math.Min(zLimit, pivot));
+                                }
+
+                                var linkedOffset = parentCholesky * pivotColumn;
+                                var linkedDraw = new double[parameterCount];
+                                for (int j = 0; j < parameterCount; j++)
+                                    linkedDraw[j] = etaHat[j] + linkedOffset[j, 0];
+
+                                var parameters = linkController.InverseLink(linkedDraw);
+                                if (parameters.Any(value => !double.IsFinite(value)))
+                                    throw new InvalidOperationException("The pivot transform produced non-finite parameters.");
+                                validator.ValidateParameters(parameters, true);
+                                batch[index] = new ParameterSet(parameters, double.NaN);
+                                return;
+                            }
+                            catch
+                            {
+                                diagnostics.IncrementTransformFailure();
                             }
                         }
-
-                        if (badPivot)
-                        {
-                            // z-limit rejection: deliberate tail truncation, counted separately
-                            // from transform failures. The slot stays unset and is filtered out.
-                            diag.IncrementPivotRejection();
-                        }
-                        else
-                        {
-                            // Map back: etaDraw = etaHat + LHat * z
-                            var zCol = new Matrix(p, 1);
-                            for (int j = 0; j < p; j++)
-                                zCol[j, 0] = z[j];
-                            var LzMatrix = LHat * zCol;
-
-                            var etaDraw = new double[p];
-                            for (int j = 0; j < p; j++)
-                                etaDraw[j] = etaHat[j] + LzMatrix[j, 0];
-
-                            // Inverse transform back to real-space
-                            var theta = linkController.InverseLink(etaDraw);
-
-                            // Validate then accept
-                            validator.ValidateParameters(theta, true);
-                            acceptedTheta = theta;
-                        }
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        diag.IncrementTransformFailure();
-                        Debug.WriteLine($"Pivot bootstrap Phase 3, replicate {idx}: {ex.Message}");
-                        // The draw is discarded — the slot stays unset (Values == null) and is
-                        // filtered out downstream. No parent substitution: the z-limit and
-                        // transform guards exist to remove invalid draws, not to recentre them.
+                        diagnostics.IncrementTransformFailure();
                     }
-
-                    if (acceptedTheta != null)
-                        results[idx] = new ParameterSet(acceptedTheta, double.NaN);
-
-                    int current = Interlocked.Increment(ref phase3Iteration);
-                    if (AnalysisProgress.ShouldReportLoopProgress(current, acceptedIdx.Length))
-                        progressReporter?.ReportProgress(56 + (int)(44.0 * current / acceptedIdx.Length));
                 });
 
-                phase3Stopwatch.Stop();
-                diag.Phase3Time = phase3Stopwatch.Elapsed;
-                diag.RetainedReplicates = results.Count(ps => ps.Values != null);
-                BootstrapResults = diag;
+                return batch;
+            }
 
+            try
+            {
+                var results = CollectExactBatchResults(
+                    targetCount,
+                    CreatePivotDrawBatch,
+                    parameterSet => parameterSet.Values != null,
+                    cancellationToken,
+                    acceptedCount =>
+                    {
+                        if (AnalysisProgress.ShouldReportLoopProgress(acceptedCount, targetCount))
+                            progressReporter?.ReportProgress(98 + (int)(2.0 * acceptedCount / targetCount));
+                    });
+
+                phase3Stopwatch.Stop();
+                diagnostics.Phase3Time = phase3Stopwatch.Elapsed;
+                diagnostics.RetainedReplicates = results.Length;
+                BootstrapResults = diagnostics;
                 return results;
             }
             catch (OperationCanceledException)
@@ -2467,7 +2547,6 @@ namespace RMC.BestFit.Analyses
                 return null;
             }
         }
-
         /// <summary>
         /// Returns the distribution for a given posterior sample index.
         /// </summary>
@@ -2599,8 +2678,7 @@ namespace RMC.BestFit.Analyses
             if (_gmm != null && _gmm.IsEstimated)
                 root.Add(_gmm.ToXElement());
 
-            // Uncertainty sampling diagnostics — persisted so the report's diagnostics
-            // section survives Save/Open instead of silently disappearing.
+            // Uncertainty sampling diagnostics
             if (BootstrapResults != null)
                 root.Add(BootstrapResults.ToXElement());
 
@@ -3459,7 +3537,7 @@ namespace RMC.BestFit.Analyses
             }
 
             // Section 6: Bootstrap Diagnostics (bootstrap methods only)
-            if (BootstrapResults != null)
+            if (isBootstrap && BootstrapResults != null)
             {
                 ReportAppendBootstrapDiagnostics(sb, BootstrapResults, labelWidth, UncertaintyMethod);
             }
@@ -3553,100 +3631,100 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Appends uncertainty sampling diagnostics to the report.
+        /// Appends bootstrap or sampling diagnostics to the report.
         /// </summary>
         /// <param name="sb">The string builder to append to.</param>
-        /// <param name="diag">The sampling diagnostics.</param>
+        /// <param name="diag">The bootstrap diagnostics.</param>
         /// <param name="labelWidth">The label padding width.</param>
         /// <param name="method">The uncertainty method that produced the diagnostics.</param>
-        /// <remarks>
-        /// Internal so the report text can be unit tested. Failed or rejected realizations are
-        /// discarded from the delivered sample rather than substituted with the parent fit, so
-        /// the section reports the requested, valid, discarded, and used counts separately —
-        /// plus the distribution of replicate GMM optimizer outcomes for the bootstrap methods.
-        /// </remarks>
         internal static void ReportAppendBootstrapDiagnostics(StringBuilder sb, BootstrapDiagnostics diag, int labelWidth, UncertaintyMethod method)
         {
-            bool isBootstrapMethod = method == UncertaintyMethod.Bootstrap ||
-                                     method == UncertaintyMethod.BiasCorrectedBootstrap;
-            ReportAppendSectionHeader(sb, isBootstrapMethod ? "BOOTSTRAP DIAGNOSTICS" : "SAMPLING DIAGNOSTICS");
-            string requestedLabel = isBootstrapMethod ? "Replicates Requested:" : "Draws Requested:";
-            string validLabel = isBootstrapMethod ? "Valid Replicates:" : "Valid Draws:";
-            string usedLabel = isBootstrapMethod ? "Replicates Used:" : "Draws Used:";
-            sb.AppendLine($"  {requestedLabel.PadRight(labelWidth)}{diag.TotalReplicates:N0}");
-            sb.AppendLine($"  {validLabel.PadRight(labelWidth)}{diag.ValidReplicates:N0}");
-            sb.AppendLine($"  {"Failed (discarded):".PadRight(labelWidth)}{diag.FailedReplicates:N0} ({diag.FailureRate * 100:F1}%)");
-            sb.AppendLine($"  {usedLabel.PadRight(labelWidth)}{diag.RetainedReplicates:N0}");
-            if (isBootstrapMethod)
+            bool isMvn = method == UncertaintyMethod.MultivariateNormal;
+            int requested = diag.TotalReplicates;
+            int retained = diag.RetainedReplicates;
+            int attempted = isMvn ? requested : diag.AttemptedReplicates;
+            int discarded = isMvn ? Math.Max(0, requested - retained) : diag.FailedReplicates;
+            double discardRate = attempted > 0 ? (double)discarded / attempted : 0.0;
+
+            ReportAppendSectionHeader(sb, isMvn ? "SAMPLING DIAGNOSTICS" : "BOOTSTRAP DIAGNOSTICS");
+            sb.AppendLine($"  {(isMvn ? "Draws Requested:" : "Replicates Requested:").PadRight(labelWidth)}{requested:N0}");
+            if (isMvn)
             {
+                sb.AppendLine($"  {"Draws Failed:".PadRight(labelWidth)}{discarded:N0} ({discardRate * 100:F1}%)");
+                sb.AppendLine($"  {"Draws Used:".PadRight(labelWidth)}{retained:N0}");
+            }
+            else
+            {
+                sb.AppendLine($"  {"Candidates Attempted:".PadRight(labelWidth)}{attempted:N0}");
+                sb.AppendLine($"  {"Candidate Fits Discarded:".PadRight(labelWidth)}{discarded:N0} ({discardRate * 100:F1}%)");
+                sb.AppendLine($"  {"Replicates Used:".PadRight(labelWidth)}{retained:N0}");
+            }
+
+            if (!isMvn)
+            {
+                sb.AppendLine($"  {"Optimizer Fallbacks:".PadRight(labelWidth)}{diag.OptimizerFallbacks:N0}");
                 sb.AppendLine($"  {"Total Retries:".PadRight(labelWidth)}{diag.TotalRetries:N0}");
                 sb.AppendLine($"  {"Avg Retries/Replicate:".PadRight(labelWidth)}{diag.AverageRetries:F2}");
                 sb.AppendLine($"  {"Avg Func Evals/Repl:".PadRight(labelWidth)}{diag.AverageFunctionEvaluations:F0}");
                 sb.AppendLine($"  {"Total Boot Func Evals:".PadRight(labelWidth)}{diag.TotalFunctionEvaluations:N0}");
 
-                // Per-attempt optimizer outcome distribution — makes the acceptance gate observable.
                 int statusTotal = diag.StatusSuccessCount + diag.StatusMaximumIterationsCount +
-                    diag.StatusMaximumFunctionEvaluationsCount + diag.StatusFailureCount + diag.StatusNoneCount;
+                                  diag.StatusMaximumFunctionEvaluationsCount + diag.StatusFailureCount + diag.StatusNoneCount;
                 if (statusTotal > 0)
                 {
-                    sb.AppendLine($"  {"GMM Status Counts:".PadRight(labelWidth)}" +
-                        $"Success {diag.StatusSuccessCount:N0} / MaxIter {diag.StatusMaximumIterationsCount:N0} / " +
-                        $"MaxEvals {diag.StatusMaximumFunctionEvaluationsCount:N0} / Failure {diag.StatusFailureCount:N0}");
+                    sb.AppendLine("  GMM Status Counts:");
+                    sb.AppendLine($"    {"Success:".PadRight(labelWidth - 2)}{diag.StatusSuccessCount:N0}");
+                    sb.AppendLine($"    {"Maximum Iterations:".PadRight(labelWidth - 2)}{diag.StatusMaximumIterationsCount:N0}");
+                    sb.AppendLine($"    {"Maximum Evaluations:".PadRight(labelWidth - 2)}{diag.StatusMaximumFunctionEvaluationsCount:N0}");
+                    sb.AppendLine($"    {"Failure:".PadRight(labelWidth - 2)}{diag.StatusFailureCount:N0}");
+                    sb.AppendLine($"    {"None:".PadRight(labelWidth - 2)}{diag.StatusNoneCount:N0}");
                 }
             }
-            if (diag.PivotRejections > 0)
-                sb.AppendLine($"  {"Pivot Rejections:".PadRight(labelWidth)}{diag.PivotRejections:N0} ({diag.PivotRejectionRate * 100:F1}%)");
+
             if (diag.TransformFailures > 0)
                 sb.AppendLine($"  {"Transform Failures:".PadRight(labelWidth)}{diag.TransformFailures:N0}");
+            if (diag.PivotRejections > 0)
+                sb.AppendLine($"  {"Pivot Rejections:".PadRight(labelWidth)}{diag.PivotRejections:N0} ({diag.PivotRejectionRate * 100:F1}%)");
             if (diag.MahalanobisRejections > 0)
                 sb.AppendLine($"  {"Outlier Rejections:".PadRight(labelWidth)}{diag.MahalanobisRejections:N0} ({diag.MahalanobisRejectionRate * 100:F1}%)");
 
-            // Phase timing
             if (diag.Phase1Time.TotalMilliseconds > 0)
-                sb.AppendLine($"  {(isBootstrapMethod ? "Phase 1 (fitting):" : "Sampling Time:").PadRight(labelWidth)}{diag.Phase1Time:hh\\:mm\\:ss\\.fff}");
+                sb.AppendLine($"  {"Phase 1 (fitting):".PadRight(labelWidth)}{diag.Phase1Time:hh\\:mm\\:ss\\.fff}");
             if (diag.Phase2Time.TotalMilliseconds > 0)
                 sb.AppendLine($"  {"Phase 2 (link fit):".PadRight(labelWidth)}{diag.Phase2Time:hh\\:mm\\:ss\\.fff}");
             if (diag.Phase3Time.TotalMilliseconds > 0)
                 sb.AppendLine($"  {"Phase 3 (pivot draw):".PadRight(labelWidth)}{diag.Phase3Time:hh\\:mm\\:ss\\.fff}");
 
-            // Advice
-            if (diag.FailureRate > 0.30)
+            if (requested > 0 && retained < requested / 2.0)
             {
                 sb.AppendLine();
-                sb.AppendLine("  WARNING: Very high discard rate (>30%). Uncertainty estimates may be");
-                sb.AppendLine("  unreliable. Consider using the Multivariate Normal method instead.");
+                sb.AppendLine($"  WARNING: Fewer than half of the requested realizations were retained ({retained:N0} of {requested:N0}).");
+                sb.AppendLine("  Uncertainty estimates may be unstable. Review the fitted model and data.");
             }
-            else if (diag.FailureRate > 0.10)
+            else if (retained > 0 && retained < 1000)
             {
                 sb.AppendLine();
-                sb.AppendLine("  WARNING: High discard rate (>10%). The fitted model may be near a");
-                sb.AppendLine("  parameter boundary or poorly identified.");
+                sb.AppendLine($"  Note: Only {retained:N0} realizations were retained. Tail quantile resolution may be limited.");
             }
 
-            if (diag.RetainedReplicates < diag.TotalReplicates / 2)
+            if (discardRate > 0.30)
             {
                 sb.AppendLine();
-                sb.AppendLine("  WARNING: Fewer than half of the requested realizations were retained");
-                sb.AppendLine($"  ({diag.RetainedReplicates:N0} of {diag.TotalReplicates:N0}). Confidence intervals are based on the");
-                sb.AppendLine("  retained subset and may be unreliable.");
+                sb.AppendLine("  WARNING: Very high discard rate (>30%). Uncertainty estimates may be unreliable.");
             }
-            else if (diag.RetainedReplicates < 1000)
+            else if (discardRate > 0.10)
             {
                 sb.AppendLine();
-                sb.AppendLine($"  Note: Only {diag.RetainedReplicates:N0} realizations were retained. Extreme-quantile");
-                sb.AppendLine("  confidence limits may be poorly resolved; consider increasing the");
-                sb.AppendLine("  output length.");
+                sb.AppendLine("  WARNING: High discard rate (>10%). The fitted model may be near a parameter boundary or poorly identified.");
             }
 
-            if (isBootstrapMethod && diag.AverageRetries > 2.0)
+            if (!isMvn && diag.AverageRetries > 2.0)
             {
-                sb.AppendLine("  Note: Bootstrap replicates frequently need retries. The model may be");
-                sb.AppendLine("  sensitive to data perturbations.");
+                sb.AppendLine("  Note: Bootstrap replicates frequently need retries. The model may be sensitive to data perturbations.");
             }
 
             sb.AppendLine();
         }
-
         /// <summary>
         /// Appends bootstrap covariance and correlation matrices computed from sampled parameter sets.
         /// </summary>
