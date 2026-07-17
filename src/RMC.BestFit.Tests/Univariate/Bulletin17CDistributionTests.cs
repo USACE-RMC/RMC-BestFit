@@ -84,6 +84,48 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
+    /// Duplicate bootstrap-like values must not poison the ROS moment path used by B17C
+    /// default parameter setup when low outliers are present.
+    /// </summary>
+    [TestMethod]
+    public void SetDefaultParameters_DuplicateLowOutlierSample_ComputesFiniteInitials()
+    {
+        var df = new BestFitDataFrame
+        {
+            ExactSeries = new ExactSeries(
+            [
+                10d,
+                100d,
+                100d,
+                125d,
+                125d,
+                150d,
+                150d,
+                200d,
+                200d,
+                250d
+            ])
+        };
+        df.LowOutlierThreshold = 50d;
+        df.SetLowOutliersFromThreshold();
+        df.CalculatePlottingPositions();
+
+        var moments = df.GetNonparametricMomentsROS(useLog10Values: true);
+
+        Assert.AreEqual(1, df.NumberOfLowOutliers);
+        Assert.IsNotNull(moments, "ROS moments should be computed for the duplicate bootstrap-like fixture.");
+        Assert.IsTrue(moments.All(x => !double.IsNaN(x) && !double.IsInfinity(x)),
+            "ROS moments must remain finite when duplicate values are present.");
+
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
+        model.SetDefaultParameters();
+
+        Assert.AreEqual(3, model.NumberOfParameters);
+        Assert.IsTrue(model.Parameters.All(p => !double.IsNaN(p.Value) && !double.IsInfinity(p.Value)),
+            "B17C default parameters must remain finite when the ROS empirical distribution contains duplicate values.");
+    }
+
+    /// <summary>
     /// The (BestFitDataFrame, distribution) overload clones the supplied distribution to avoid aliasing.
     /// </summary>
     [TestMethod]

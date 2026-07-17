@@ -635,10 +635,7 @@ namespace RMC.BestFit.Models
                 // Override initials with nonparametric moment estimates when censored/uncertain data exists.
                 // Use ROS (Regression on Order Statistics) to impute low-outlier values, which avoids
                 // the severe moment distortion caused by log-transforming near-zero or zero flows.
-                if (DataFrame.NumberOfLowOutliers > 0 ||
-                    DataFrame.UncertainSeries.Count > 0 ||
-                    DataFrame.IntervalSeries.Count > 0 ||
-                    DataFrame.ThresholdSeries.Count > 0)
+                if (DataFrame.NumberOfLowOutliers > 0 || DataFrame.ThresholdSeries.Count > 0)
                 {
                     bool useLog10 = DistributionType == UnivariateDistributionType.LogNormal ||
                                     DistributionType == UnivariateDistributionType.LogPearsonTypeIII;
@@ -747,13 +744,11 @@ namespace RMC.BestFit.Models
                 // Override initials with nonparametric moment estimates when censored/uncertain data exists.
                 // Use ROS (Regression on Order Statistics) to impute low-outlier values, which avoids
                 // the severe moment distortion caused by log-transforming near-zero or zero flows.
-                if (DataFrame.NumberOfLowOutliers > 0 ||
-                    DataFrame.UncertainSeries.Count > 0 ||
-                    DataFrame.IntervalSeries.Count > 0 ||
-                    DataFrame.ThresholdSeries.Count > 0)
+                if (DataFrame.NumberOfLowOutliers > 0 || DataFrame.ThresholdSeries.Count > 0)
                 {
                     bool useLog10 = DistributionType == UnivariateDistributionType.LogNormal ||
                                     DistributionType == UnivariateDistributionType.LogPearsonTypeIII;
+
                     var npMoments = DataFrame.GetNonparametricMomentsROS(useLog10);
 
                     if (npMoments != null)
