@@ -52,6 +52,7 @@ This dataset represents a reservoir routing simulation for Grapevine Dam (Trinit
 4. The Project Explorer will show 2 elements under **Time Series Data**
 
 ![RMC-BestFit Project Explorer showing the 2 HEC-DSS time series elements](../images/hec-dss-project-explorer.png)
+
 *Figure 1: Project Explorer with HEC-DSS time series elements*
 
 ### Exploring the Inflow Hydrograph
@@ -61,6 +62,7 @@ This dataset represents a reservoir routing simulation for Grapevine Dam (Trinit
 3. Notice the sharp flood peak followed by a gradual recession
 
 ![Time series plot showing the hourly inflow hydrograph for Grapevine Dam](../images/hec-dss-inflow-ts-plot.png)
+
 *Figure 2: Hourly inflow hydrograph for Grapevine Dam*
 
 ### Comparing Inflow and Outflow with Alternative Time Series
@@ -73,6 +75,7 @@ RMC-BestFit's **Alternative Time Series** feature lets you overlay another time 
 4. The outflow hydrograph will be overlaid on the inflow plot, visually demonstrating the reservoir's flood attenuation effect
 
 ![Time series plot showing inflow and outflow hydrographs overlaid using the Alternative Time Series feature](../images/hec-dss-inflow-outflow-comparison.png)
+
 *Figure 3: Inflow vs. outflow -- the Alternative Time Series feature shows how the reservoir attenuates the flood peak*
 
 ### Viewing the Properties Panel
@@ -85,20 +88,22 @@ RMC-BestFit's **Alternative Time Series** feature lets you overlay another time 
    - **Import** button to re-import from the DSS file
 
 ![Properties panel showing HEC-DSS file path, DSS pathname, and Import button](../images/hec-dss-properties-panel.png)
+
 *Figure 4: Properties panel for a HEC-DSS time series element*
 
 ### Importing Your Own HEC-DSS Data
 
 To create a new HEC-DSS time series element:
 
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **HEC-DSS**
-3. Click **Browse** to select a `.dss` file
-4. The **DSS Path Selector** window will open, displaying all available pathnames in the file
-5. Select the desired dataset and click **OK**
+1. Right-click **Time Series Data** in the Project Explorer and select **New Time Series**
+2. After naming the time series, in the Properties panel, set **Entry Method** to **HEC-DSS**
+3. Click the three dots (...) to the right of the **DSS Filename Selector** to browse for a `.dss` file
+4. After selecting the `.dss` file, click the three dots (...) to the right of the **DSS Path Selector** and a window will open, displaying all available pathnames in the file
+5. Select the desired dataset and click **Set Path**
 6. Click **Import** to load the data
 
 ![DSS Path Selector window showing available pathnames in the DSS file](../images/hec-dss-path-selector.png)
+
 *Figure 5: DSS Path Selector window -- browse and select datasets from a HEC-DSS file*
 
 ## Key Settings
