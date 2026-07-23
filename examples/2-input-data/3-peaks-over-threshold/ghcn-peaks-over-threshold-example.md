@@ -24,11 +24,10 @@ Open `ghcn-peaks-over-threshold-example.bestfit` in RMC-BestFit. The Project Exp
 | Element | Type | Description |
 |---------|------|-------------|
 | GHCN-USC00040741-Precipitation | Time Series Data | Daily precipitation from NOAA GHCN |
-| GHCH-USC00040741-POT | Input Data | POT series with threshold = 1.0 inch, minimum separation = 5 days |
-
-> **Note:** The Input Data element name contains a typo ("GHCH" instead of "GHCN"). This is a known issue in the example file that will be corrected in a future release. The element functions correctly despite the name.
+| GHCN-USC00040741-POT | Input Data | POT series with threshold = 1.0 inch, minimum separation = 5 days |
 
 ![Project Explorer showing time series and POT Input Data elements](../images/ghcn-pot-project-explorer.png)
+
 *Figure 1: Project Explorer with precipitation time series and POT elements*
 
 ## Step-by-Step Guide
@@ -43,23 +42,26 @@ Open `ghcn-peaks-over-threshold-example.bestfit` in RMC-BestFit. The Project Exp
 ### Exploring the Source Time Series
 
 1. Click **GHCN-USC00040741-Precipitation** in the Project Explorer
-2. The **Time Series** tab displays the full daily precipitation record -- note the episodic nature, with most days recording zero precipitation and occasional large storm events
-3. Click the **Seasonality** tab to see the Mediterranean climate pattern: precipitation is concentrated in winter (November--April) with dry summers
+2. The **Time Series** tab to the left displays the full daily precipitation record -- note the episodic nature, with most days recording zero precipitation and occasional large storm events
+3. Click the **Seasonality** tab to the left to see the Mediterranean climate pattern: precipitation is concentrated in winter (November--April) with dry summers
 
 ![Daily precipitation record for Big Bear Lake, CA](../images/ghcn-pot-daily-precipitation.png)
+
 *Figure 2: Daily precipitation at Big Bear Lake -- note the seasonal concentration in winter months*
 
 ### Exploring the POT Input Data
 
 1. Click **GHCH-USC00040741-POT** in the Project Explorer
-2. The **Chronology** tab shows all extracted storm events plotted against time
-3. Click the **Frequency** tab to see the empirical frequency curve
-4. Click the **Seasonality** tab to confirm events are concentrated in winter months
+2. The **Chronology** tab at the bottom shows all extracted storm events plotted against time
+3. Click the **Frequency** tab at the bottom to see the empirical frequency curve
+4. Click the **Seasonality** tab from the left to confirm events are concentrated in winter months
 
 ![Chronology of POT precipitation events](../images/ghcn-pot-chronology.png)
+
 *Figure 3: Chronology of precipitation events exceeding 1.0 inch*
 
 ![Frequency plot of POT precipitation events](../images/ghcn-pot-frequency.png)
+
 *Figure 4: Empirical frequency curve for POT precipitation events*
 
 ### Understanding the POT Configuration
@@ -93,19 +95,23 @@ As with the streamflow POT example, RMC-BestFit provides three threshold diagnos
 2. **Modified Scale Stability Plot** -- The adjusted scale parameter should stabilize above the threshold.
 3. **Shape Stability Plot** -- The shape parameter should stabilize above the threshold.
 
+These are under the **POT Diagnostics** tab on the left. The tabs at the bottom will switch between the 3 graphs described above.
+
 ![MRL plot for precipitation threshold selection](../images/ghcn-pot-mrl.png)
+
 *Figure 5: Mean Residual Life plot for precipitation threshold*
 
 ### Viewing the Properties Panel
 
 1. With the POT Input Data element selected, open the **Properties** panel
 2. The panel shows the POT configuration:
-   - **Exact Data Method:** Peaks-Over-Threshold Series
+   - **Data Entry Method:** Peaks-Over-Threshold Series
    - **Time Series Element:** GHCN-USC00040741-Precipitation
    - **Threshold:** 1.0 (inches)
    - **Min Steps Between Peaks:** 5 (days)
 
 ![Properties panel showing precipitation POT settings](../images/ghcn-pot-properties.png)
+
 *Figure 6: Properties panel for precipitation POT element*
 
 ### Creating Your Own Precipitation POT Element
@@ -113,12 +119,12 @@ As with the streamflow POT example, RMC-BestFit provides three threshold diagnos
 To create a POT element from precipitation data:
 
 1. First, ensure you have a daily precipitation time series element in your project (download from GHCN, ABOM, or enter manually)
-2. Right-click **Input Data** in the Project Explorer and select **Create New**
+2. Right-click **Input Data** in the Project Explorer and select **New Input Data**
 3. In the Properties panel:
-   - Set **Exact Data Method** to **Peaks-Over-Threshold Series**
-   - Select the precipitation **Time Series Element**
+   - Set **Data Entry Method** to **Peaks-Over-Threshold Series**
+   - Select the precipitation **Time Series**
    - Set an initial **Threshold** -- for daily precipitation in inches, 0.5--2.0 inches is a typical starting range depending on climate
-   - Set **Min Steps Between Peaks** to 3--5 days for daily precipitation (shorter than streamflow because precipitation events are more distinct)
+   - Set **Minimum Steps [Between Peaks]** to 3--5 days for daily precipitation (shorter than streamflow because precipitation events are more distinct)
 4. Review the threshold diagnostic plots and adjust as needed
 
 **Threshold guidance for precipitation:**
