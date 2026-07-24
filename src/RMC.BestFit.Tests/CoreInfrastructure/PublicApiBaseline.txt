@@ -1,0 +1,2299 @@
+TYPE class RMC.BestFit.Analyses.ARAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.ARAnalysis(RMC.BestFit.Models.AutoRegressive)
+  CTOR RMC.BestFit.Analyses.ARAnalysis(RMC.BestFit.Models.AutoRegressive, System.Xml.Linq.XElement)
+  METHOD System.Threading.Tasks.Task CreateUncertaintyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearResults()
+  METHOD System.Void ClearUncertaintyAnalysisResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.AutoRegressive AutoRegressive {get;}
+  PROPERTY System.Int32 ForecastingTimeSteps {get;set;}
+TYPE class RMC.BestFit.Analyses.ARIMAAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.ARIMAAnalysis(RMC.BestFit.Models.ARIMA)
+  CTOR RMC.BestFit.Analyses.ARIMAAnalysis(RMC.BestFit.Models.ARIMA, System.Xml.Linq.XElement)
+  METHOD System.Threading.Tasks.Task CreateUncertaintyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearResults()
+  METHOD System.Void ClearUncertaintyAnalysisResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.ARIMA ARIMA {get;}
+  PROPERTY System.Int32 ForecastingTimeSteps {get;set;}
+TYPE class RMC.BestFit.Analyses.ARIMAXAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.ARIMAXAnalysis(RMC.BestFit.Models.ARIMAX)
+  CTOR RMC.BestFit.Analyses.ARIMAXAnalysis(RMC.BestFit.Models.ARIMAX, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional)
+  METHOD System.Threading.Tasks.Task CreateUncertaintyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearResults()
+  METHOD System.Void ClearUncertaintyAnalysisResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.ARIMAX ARIMAX {get;}
+  PROPERTY System.Int32 ForecastingTimeSteps {get;set;}
+TYPE abstract-class RMC.BestFit.Analyses.AnalysisBase
+  BASE System.Object
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  PROPERTY System.Boolean IsEstimated {get;}
+  PROPERTY System.Threading.CancellationTokenSource CancellationTokenSource {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+  EVENT System.EventHandler<RMC.BestFit.Analyses.AnalysisRunCompletedEventArgs> AnalysisCompleted
+  EVENT System.EventHandler<System.ComponentModel.CancelEventArgs> AnalysisStarting
+TYPE class RMC.BestFit.Analyses.AnalysisRunCompletedEventArgs
+  BASE System.ComponentModel.AsyncCompletedEventArgs
+  CTOR RMC.BestFit.Analyses.AnalysisRunCompletedEventArgs(System.Boolean, System.Boolean, System.Exception)
+  PROPERTY System.Boolean Succeeded {get;}
+TYPE enum RMC.BestFit.Analyses.AverageMethod
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Analyses.AverageMethod AIC = 0
+  FIELD RMC.BestFit.Analyses.AverageMethod BIC = 1
+  FIELD RMC.BestFit.Analyses.AverageMethod DIC = 2
+  FIELD RMC.BestFit.Analyses.AverageMethod Equal = 5
+  FIELD RMC.BestFit.Analyses.AverageMethod LOOIC = 4
+  FIELD RMC.BestFit.Analyses.AverageMethod RMSE = 6
+  FIELD RMC.BestFit.Analyses.AverageMethod WAIC = 3
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Analyses.BatchAnalysisOptions
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.BatchAnalysisOptions()
+  PROPERTY System.Boolean ContinueOnError {get;set;}
+  PROPERTY System.Boolean OrderByDependency {get;set;}
+  PROPERTY System.Int32 MaxDegreeOfParallelism {get;set;}
+TYPE class RMC.BestFit.Analyses.BatchAnalysisResult
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.BatchAnalysisResult(RMC.BestFit.Analyses.IAnalysis, System.Boolean, System.Boolean, System.Exception, System.TimeSpan)
+  PROPERTY RMC.BestFit.Analyses.IAnalysis Analysis {get;}
+  PROPERTY System.Boolean Succeeded {get;}
+  PROPERTY System.Boolean WasCanceled {get;}
+  PROPERTY System.Exception Error {get;}
+  PROPERTY System.TimeSpan Duration {get;}
+TYPE class RMC.BestFit.Analyses.BatchAnalysisRunner
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.BatchAnalysisRunner()
+  METHOD System.Threading.Tasks.Task<System.Collections.Generic.List<RMC.BestFit.Analyses.BatchAnalysisResult>> RunAsync(System.Collections.Generic.IList<RMC.BestFit.Analyses.IAnalysis>, RMC.BestFit.Analyses.BatchAnalysisOptions optional, Numerics.Utilities.SafeProgressReporter optional, System.Threading.CancellationToken optional)
+  METHOD System.Void Cancel()
+  EVENT System.EventHandler<RMC.BestFit.Analyses.BatchAnalysisResult> AnalysisCompleted
+  EVENT System.EventHandler<RMC.BestFit.Analyses.IAnalysis> AnalysisStarting
+  EVENT System.EventHandler<System.Collections.Generic.List<RMC.BestFit.Analyses.BatchAnalysisResult>> BatchCompleted
+  EVENT System.EventHandler<System.ValueTuple<RMC.BestFit.Analyses.IAnalysis,System.Double>> AnalysisProgressChanged
+  EVENT System.EventHandler<System.ValueTuple<System.Int32,System.Int32>> ProgressChanged
+TYPE class RMC.BestFit.Analyses.BivariateAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.BivariateAnalysis(RMC.BestFit.Models.BivariateDistribution)
+  CTOR RMC.BestFit.Analyses.BivariateAnalysis(RMC.BestFit.Models.BivariateDistribution, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional)
+  METHOD System.Threading.Tasks.Task CreateFrequencyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearFrequencyAnalysisResults()
+  METHOD System.Void ClearResults()
+  METHOD System.Void ReprocessOrClearXYOrdinates()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.UncertainOrderedPairedData XYOrdinates {get;set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.BivariateDistribution BivariateDistribution {get;}
+TYPE class RMC.BestFit.Analyses.BootstrapDiagnostics
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.BootstrapDiagnostics()
+  METHOD RMC.BestFit.Analyses.BootstrapDiagnostics FromXElement(System.Xml.Linq.XElement)
+  METHOD System.Void AddFunctionEvaluations(System.Int32)
+  METHOD System.Void AddOptimizerFallbacks(System.Int32)
+  METHOD System.Void AddRetries(System.Int32)
+  METHOD System.Void IncrementAttempted()
+  METHOD System.Void IncrementFailed()
+  METHOD System.Void IncrementMahalanobisRejection()
+  METHOD System.Void IncrementPivotRejection()
+  METHOD System.Void IncrementTransformFailure()
+  METHOD System.Void RecordGMMStatus(Numerics.Mathematics.Optimization.OptimizationStatus)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Double AverageFunctionEvaluations {get;}
+  PROPERTY System.Double AverageRetries {get;}
+  PROPERTY System.Double FailureRate {get;}
+  PROPERTY System.Double MahalanobisRejectionRate {get;}
+  PROPERTY System.Double PivotRejectionRate {get;}
+  PROPERTY System.Int32 AttemptedReplicates {get;}
+  PROPERTY System.Int32 FailedReplicates {get;}
+  PROPERTY System.Int32 MahalanobisRejections {get;}
+  PROPERTY System.Int32 OptimizerFallbacks {get;}
+  PROPERTY System.Int32 PivotRejections {get;}
+  PROPERTY System.Int32 RetainedReplicates {get;set;}
+  PROPERTY System.Int32 StatusFailureCount {get;}
+  PROPERTY System.Int32 StatusMaximumFunctionEvaluationsCount {get;}
+  PROPERTY System.Int32 StatusMaximumIterationsCount {get;}
+  PROPERTY System.Int32 StatusNoneCount {get;}
+  PROPERTY System.Int32 StatusSuccessCount {get;}
+  PROPERTY System.Int32 TotalFunctionEvaluations {get;}
+  PROPERTY System.Int32 TotalReplicates {get;set;}
+  PROPERTY System.Int32 TotalRetries {get;}
+  PROPERTY System.Int32 TransformFailures {get;}
+  PROPERTY System.Int32 ValidReplicates {get;}
+  PROPERTY System.TimeSpan Phase1Time {get;set;}
+  PROPERTY System.TimeSpan Phase2Time {get;set;}
+  PROPERTY System.TimeSpan Phase3Time {get;set;}
+TYPE class RMC.BestFit.Analyses.Bulletin17CAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.Analyses.IUnivariateAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.Bulletin17CAnalysis(RMC.BestFit.Models.Bulletin17CDistribution)
+  CTOR RMC.BestFit.Analyses.Bulletin17CAnalysis(RMC.BestFit.Models.Bulletin17CDistribution, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution(RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType)
+  METHOD RMC.BestFit.Analyses.CohnConfidenceIntervalResult ComputeCohnStyleConfidenceIntervals()
+  METHOD System.String GenerateGMMReport()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearFrequencyAnalysisResults()
+  METHOD System.Void ClearResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Analyses.BootstrapDiagnostics BootstrapResults {get;}
+  PROPERTY RMC.BestFit.Analyses.UncertaintyMethod UncertaintyMethod {get;set;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments GMM {get;}
+  PROPERTY RMC.BestFit.Models.Bulletin17CDistribution Bulletin17CDistribution {get;}
+  PROPERTY System.Func<System.Double,System.Int32,System.Double> AFormulaOverride {get;set;}
+  PROPERTY System.Nullable<System.TimeSpan> ElapsedTime {get;}
+  PROPERTY System.Nullable<System.TimeSpan> GMMElapsedTime {get;}
+  PROPERTY System.Nullable<System.TimeSpan> UncertaintyElapsedTime {get;}
+  PROPERTY System.String UncertaintyDiagnosticMessage {get;}
+TYPE class RMC.BestFit.Analyses.CohnConfidenceIntervalResult
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.CohnConfidenceIntervalResult()
+  PROPERTY System.Double ConfidenceLevel {get;set;}
+  PROPERTY System.Double[] Beta1 {get;set;}
+  PROPERTY System.Double[] ExceedanceProbabilities {get;set;}
+  PROPERTY System.Double[] LowerCI {get;set;}
+  PROPERTY System.Double[] Nu {get;set;}
+  PROPERTY System.Double[] PointEstimates {get;set;}
+  PROPERTY System.Double[] QuantileVariance {get;set;}
+  PROPERTY System.Double[] UpperCI {get;set;}
+TYPE class RMC.BestFit.Analyses.CoincidentFrequencyAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.CoincidentFrequencyAnalysis()
+  CTOR RMC.BestFit.Analyses.CoincidentFrequencyAnalysis(RMC.BestFit.Analyses.BivariateAnalysis, System.Double[], System.Double[], System.Double[,])
+  CTOR RMC.BestFit.Analyses.CoincidentFrequencyAnalysis(RMC.BestFit.Analyses.BivariateAnalysis, System.Xml.Linq.XElement)
+  METHOD Numerics.Distributions.EmpiricalDistribution GetEmpiricalDistribution(System.Int32)
+  METHOD Numerics.Distributions.EmpiricalDistribution GetPointEstimateDistribution()
+  METHOD System.Threading.Tasks.Task CreateFrequencyAnalysisResultsAsync(Numerics.Utilities.SafeProgressReporter optional, System.Threading.CancellationToken optional)
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void ClearResults()
+  METHOD System.Void RestoreAnalysisResults(Numerics.Distributions.UncertaintyAnalysisResults)
+  METHOD System.Void SetAnalysisResults(Numerics.Distributions.UncertaintyAnalysisResults)
+  METHOD System.Void SetZOutputValues(System.Double[])
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY Numerics.Sampling.MCMC.MCMCResults MarginalXChain {get;set;}
+  PROPERTY Numerics.Sampling.MCMC.MCMCResults MarginalYChain {get;set;}
+  PROPERTY RMC.BestFit.Analyses.BivariateAnalysis BivariateAnalysis {get;set;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY System.Double[,] BivariateResponse {get;set;}
+  PROPERTY System.Double[] XValues {get;set;}
+  PROPERTY System.Double[] YValues {get;set;}
+  PROPERTY System.Double[] ZOutputValues {get;}
+  PROPERTY System.Int32 NumberOfBins {get;set;}
+TYPE class RMC.BestFit.Analyses.CompetingRiskAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.Analyses.IUnivariateAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.CompetingRiskAnalysis(RMC.BestFit.Models.CompetingRisksModel)
+  CTOR RMC.BestFit.Analyses.CompetingRiskAnalysis(RMC.BestFit.Models.CompetingRisksModel, System.Xml.Linq.XElement)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution(RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType)
+  METHOD System.Threading.Tasks.Task CreateFrequencyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearFrequencyAnalysisResults()
+  METHOD System.Void ClearResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.CompetingRisksModel CompetingRisksDistribution {get;}
+TYPE class RMC.BestFit.Analyses.CompositeAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.Analyses.IUnivariateAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.CompositeAnalysis()
+  CTOR RMC.BestFit.Analyses.CompositeAnalysis(System.Collections.Generic.IEnumerable<RMC.BestFit.Analyses.WeightedUnivariateAnalysis>)
+  CTOR RMC.BestFit.Analyses.CompositeAnalysis(System.Xml.Linq.XElement, System.Func<System.String,RMC.BestFit.Analyses.IUnivariateAnalysis> optional)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution(RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType)
+  METHOD System.Threading.Tasks.Task CreateFrequencyAnalysisResultsAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void ClearFrequencyAnalysisResults()
+  METHOD System.Void ClearResults()
+  METHOD System.Void EstimateModelWeights()
+  METHOD System.Void RestoreAnalysisResults(Numerics.Distributions.UncertaintyAnalysisResults)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;set;}
+  PROPERTY Numerics.Data.Statistics.Probability+DependencyType Dependency {get;set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Analyses.AverageMethod ModelAverageMethod {get;set;}
+  PROPERTY RMC.BestFit.Analyses.CompositeType CompositeDistributionType {get;set;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY System.Boolean IsMaximum {get;set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.Analyses.WeightedUnivariateAnalysis> Analyses {get;set;}
+TYPE enum RMC.BestFit.Analyses.CompositeType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Analyses.CompositeType CompetingRisks = 0
+  FIELD RMC.BestFit.Analyses.CompositeType Mixture = 1
+  FIELD RMC.BestFit.Analyses.CompositeType ModelAverage = 2
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Analyses.FittingAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.FittingAnalysis()
+  CTOR RMC.BestFit.Analyses.FittingAnalysis(RMC.BestFit.Models.DataFrame)
+  CTOR RMC.BestFit.Analyses.FittingAnalysis(RMC.BestFit.Models.DataFrame, System.Xml.Linq.XElement)
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void ClearResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;set;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
+  PROPERTY System.Collections.Generic.List<Numerics.Distributions.UnivariateDistributionBase> DistributionList {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.FittedDistribution> FittedDistributions {get;}
+TYPE interface RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  PROPERTY System.Boolean IsEstimated {get;}
+  EVENT System.EventHandler<RMC.BestFit.Analyses.AnalysisRunCompletedEventArgs> AnalysisCompleted
+  EVENT System.EventHandler<System.ComponentModel.CancelEventArgs> AnalysisStarting
+TYPE interface RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+TYPE interface RMC.BestFit.Analyses.IProbabilityOrdinates
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;}
+TYPE interface RMC.BestFit.Analyses.IUnivariateAnalysis
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution(RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType)
+TYPE class RMC.BestFit.Analyses.MAAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.MAAnalysis(RMC.BestFit.Models.MovingAverage)
+  CTOR RMC.BestFit.Analyses.MAAnalysis(RMC.BestFit.Models.MovingAverage, System.Xml.Linq.XElement)
+  METHOD System.Threading.Tasks.Task CreateUncertaintyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearResults()
+  METHOD System.Void ClearUncertaintyAnalysisResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.MovingAverage MovingAverage {get;}
+  PROPERTY System.Int32 ForecastingTimeSteps {get;set;}
+TYPE class RMC.BestFit.Analyses.MixtureAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.Analyses.IUnivariateAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.MixtureAnalysis(RMC.BestFit.Models.MixtureModel)
+  CTOR RMC.BestFit.Analyses.MixtureAnalysis(RMC.BestFit.Models.MixtureModel, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution(RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType)
+  METHOD System.Threading.Tasks.Task CreateFrequencyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearFrequencyAnalysisResults()
+  METHOD System.Void ClearResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.MixtureModel MixtureDistribution {get;}
+TYPE class RMC.BestFit.Analyses.PointProcessAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.Analyses.IUnivariateAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.PointProcessAnalysis(RMC.BestFit.Models.PointProcessModel)
+  CTOR RMC.BestFit.Analyses.PointProcessAnalysis(RMC.BestFit.Models.PointProcessModel, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution(RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType)
+  METHOD System.Threading.Tasks.Task CreateFrequencyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearFrequencyAnalysisResults()
+  METHOD System.Void ClearResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.PointProcessModel PointProcess {get;}
+TYPE class RMC.BestFit.Analyses.RatingCurveAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.RatingCurveAnalysis(RMC.BestFit.Models.RatingCurve)
+  CTOR RMC.BestFit.Analyses.RatingCurveAnalysis(RMC.BestFit.Models.RatingCurve, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional)
+  METHOD System.Threading.Tasks.Task CreateUncertaintyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearResults()
+  METHOD System.Void ClearUncertaintyAnalysisResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.RatingCurve RatingCurve {get;}
+  PROPERTY System.Boolean UseDefaultStageBins {get;set;}
+  PROPERTY System.Double MaxStage {get;set;}
+  PROPERTY System.Double MinStage {get;set;}
+  PROPERTY System.Int32 StageBins {get;set;}
+TYPE class RMC.BestFit.Analyses.SpatialGEVAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.SpatialGEVAnalysis(RMC.BestFit.Models.SpatialExtremes.SpatialGEV)
+  CTOR RMC.BestFit.Analyses.SpatialGEVAnalysis(RMC.BestFit.Models.SpatialExtremes.SpatialGEV, System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Analyses.SpatialGEVSiteResults PredictAtUngaugedLocation(System.Double[], System.Double[], System.Double[])
+  METHOD System.Double InflatePosteriorCovariance()
+  METHOD System.Double[,] ComputeGodambeCovariance(System.Double[] optional)
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task RunCrossValidationAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task RunSpatialBootstrapAsync(System.Int32 optional, System.Int32 optional, Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Double[],System.Double[],System.Double[],System.Double[]> GetRegionalGrowthCurve(System.Double[])
+  METHOD System.ValueTuple<System.Double[],System.Double[],System.Double[]> GetSiteQuantiles(System.Int32, System.Double[])
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearResults()
+  METHOD System.Void ClearUncertaintyAnalysisResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Analyses.SpatialGEVCrossValidationResults CrossValidationResults {get;}
+  PROPERTY RMC.BestFit.Analyses.SpatialGEVSiteResults[] SiteResults {get;}
+  PROPERTY RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod UncertaintyMethod {get;set;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialGEV SpatialGEV {get;}
+  PROPERTY System.Double VarianceInflationFactor {get;}
+  PROPERTY System.Double[,] GodambeCovariance {get;}
+TYPE class RMC.BestFit.Analyses.SpatialGEVCrossValidationResults
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.SpatialGEVCrossValidationResults()
+  PROPERTY System.Double MeanAbsoluteError {get;set;}
+  PROPERTY System.Double MeanBias {get;set;}
+  PROPERTY System.Double RootMeanSquareError {get;set;}
+  PROPERTY System.Double[] SiteBias {get;set;}
+  PROPERTY System.Double[] SiteCRPS {get;set;}
+  PROPERTY System.Double[] SitePredictionErrors {get;set;}
+  PROPERTY System.Double[] SiteRMSE {get;set;}
+TYPE class RMC.BestFit.Analyses.SpatialGEVSiteResults
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.SpatialGEVSiteResults()
+  PROPERTY System.Double LocationLower {get;set;}
+  PROPERTY System.Double LocationMean {get;set;}
+  PROPERTY System.Double LocationUpper {get;set;}
+  PROPERTY System.Double ScaleLower {get;set;}
+  PROPERTY System.Double ScaleMean {get;set;}
+  PROPERTY System.Double ScaleUpper {get;set;}
+  PROPERTY System.Double ShapeLower {get;set;}
+  PROPERTY System.Double ShapeMean {get;set;}
+  PROPERTY System.Double ShapeUpper {get;set;}
+  PROPERTY System.Double[] Coordinate {get;set;}
+  PROPERTY System.Double[] Probabilities {get;set;}
+  PROPERTY System.Double[] QuantileLower {get;set;}
+  PROPERTY System.Double[] QuantileMean {get;set;}
+  PROPERTY System.Double[] QuantileMode {get;set;}
+  PROPERTY System.Double[] QuantileUpper {get;set;}
+  PROPERTY System.Int32 SiteIndex {get;set;}
+TYPE enum RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod BayesianInflated = 1
+  FIELD RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod BayesianPosterior = 0
+  FIELD RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod GodambeSandwich = 2
+  FIELD RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod SpatialBootstrap = 3
+  FIELD System.Int32 value__
+TYPE enum RMC.BestFit.Analyses.UncertaintyMethod
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Analyses.UncertaintyMethod BiasCorrectedBootstrap = 3
+  FIELD RMC.BestFit.Analyses.UncertaintyMethod Bootstrap = 2
+  FIELD RMC.BestFit.Analyses.UncertaintyMethod LinkedMultivariateNormal = 1
+  FIELD RMC.BestFit.Analyses.UncertaintyMethod MultivariateNormal = 0
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Analyses.UnivariateAnalysis
+  BASE RMC.BestFit.Analyses.AnalysisBase
+  INTERFACE RMC.BestFit.Analyses.IAnalysis
+  INTERFACE RMC.BestFit.Analyses.IBayesianAnalysis
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.Analyses.IUnivariateAnalysis
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.UnivariateAnalysis(RMC.BestFit.Models.UnivariateDistribution)
+  CTOR RMC.BestFit.Analyses.UnivariateAnalysis(RMC.BestFit.Models.UnivariateDistribution, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional, Numerics.Distributions.UncertaintyAnalysisResults optional)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution(RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType)
+  METHOD System.Threading.Tasks.Task CreateChronologyResultsAsync()
+  METHOD System.Threading.Tasks.Task CreateFrequencyAnalysisResultsAsync()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional)
+  METHOD System.Threading.Tasks.Task UpdatePointEstimateResultsAsync()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelAnalysis()
+  METHOD System.Void ClearFrequencyAnalysisResults()
+  METHOD System.Void ClearResults()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults ChronologyAnalysisResults {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Models.UnivariateDistribution UnivariateDistribution {get;}
+TYPE class RMC.BestFit.Analyses.WeightedUnivariateAnalysis
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Analyses.WeightedUnivariateAnalysis()
+  CTOR RMC.BestFit.Analyses.WeightedUnivariateAnalysis(RMC.BestFit.Analyses.IUnivariateAnalysis, System.Double)
+  METHOD System.ValueTuple<System.Boolean,System.String> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Analyses.IUnivariateAnalysis UnivariateAnalysis {get;set;}
+  PROPERTY System.Double Weight {get;set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Diagnostics.InfluenceDiagnostics
+  BASE System.Object
+  CTOR RMC.BestFit.Diagnostics.InfluenceDiagnostics()
+  CTOR RMC.BestFit.Diagnostics.InfluenceDiagnostics(RMC.BestFit.Diagnostics.ObservationInfluence[])
+  CTOR RMC.BestFit.Diagnostics.InfluenceDiagnostics(System.Double[], System.Double[], System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> optional)
+  CTOR RMC.BestFit.Diagnostics.InfluenceDiagnostics(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Diagnostics.ObservationInfluence[] GetMostInfluentialObservations(System.Int32 optional)
+  METHOD RMC.BestFit.Diagnostics.ObservationInfluence[] GetProblematicObservations(System.Double optional)
+  METHOD System.String GetReliabilitySummary()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Diagnostics.ObservationInfluence Item[System.Int32] {get;}
+  PROPERTY RMC.BestFit.Diagnostics.ObservationInfluence[] Observations {get;}
+  PROPERTY System.Boolean IsReliable {get;}
+  PROPERTY System.Double MaxParetoK {get;}
+  PROPERTY System.Double MeanParetoK {get;}
+  PROPERTY System.Double ProportionProblematic {get;}
+  PROPERTY System.Int32 Count {get;}
+  PROPERTY System.Int32 CountParetoKAbove05 {get;}
+  PROPERTY System.Int32 CountParetoKAbove07 {get;}
+  PROPERTY System.Int32 CountParetoKAbove10 {get;}
+TYPE class RMC.BestFit.Diagnostics.LeverageDiagnostics
+  BASE System.Object
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics()
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics(RMC.BestFit.Diagnostics.LeverageDiagnostics+ObservationLeverage[], RMC.BestFit.Diagnostics.LeverageDiagnostics+PriorComponentLeverage[], System.Int32)
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics(RMC.BestFit.Models.IModel, System.Double[])
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics(System.Xml.Linq.XElement)
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix ComputeNumericalHessianPublic(System.Func<System.Double[],System.Double>, System.Double[], System.Int32)
+  METHOD RMC.BestFit.Diagnostics.LeverageDiagnostics+ObservationLeverage[] GetMostInfluentialObservations(System.Int32)
+  METHOD System.Double ComputeGenVarPublic(System.Func<System.Double[],System.Double>, Numerics.Mathematics.LinearAlgebra.Matrix, System.Double[], System.Int32)
+  METHOD System.String GetSummary()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Diagnostics.LeverageDiagnostics+ObservationLeverage[] Observations {get;}
+  PROPERTY RMC.BestFit.Diagnostics.LeverageDiagnostics+PriorComponentLeverage[] PriorComponents {get;}
+  PROPERTY System.Double ObservationFitInfluence {get;}
+  PROPERTY System.Double ObservationVarianceInfluence {get;}
+  PROPERTY System.Double PriorFitInfluence {get;}
+  PROPERTY System.Double PriorVarianceInfluence {get;}
+  PROPERTY System.Double TotalFitInfluence {get;}
+  PROPERTY System.Double TotalLeverage {get;}
+  PROPERTY System.Double TotalObservationLeverage {get;}
+  PROPERTY System.Double TotalPriorLeverage {get;}
+  PROPERTY System.Double TotalVarianceInfluence {get;}
+  PROPERTY System.Int32 Count {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+TYPE struct RMC.BestFit.Diagnostics.LeverageDiagnostics+ObservationLeverage
+  BASE System.ValueType
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics+ObservationLeverage(System.Int32, System.Double, System.Double, System.Double, System.Double, System.Double, System.Double, System.Double, RMC.BestFit.Models.DataComponentType, System.Int32 optional, System.String optional)
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics+ObservationLeverage(System.Xml.Linq.XElement)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.DataComponentType DataType {get;}
+  PROPERTY System.Double FitInfluence {get;}
+  PROPERTY System.Double Leverage {get;}
+  PROPERTY System.Double PercentFitOfTotal {get;}
+  PROPERTY System.Double PercentOfTotal {get;}
+  PROPERTY System.Double PercentVarianceOfTotal {get;}
+  PROPERTY System.Double Value {get;}
+  PROPERTY System.Double VarianceInfluence {get;}
+  PROPERTY System.Int32 Count {get;}
+  PROPERTY System.Int32 Index {get;}
+  PROPERTY System.String Name {get;}
+TYPE struct RMC.BestFit.Diagnostics.LeverageDiagnostics+PriorComponentLeverage
+  BASE System.ValueType
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics+PriorComponentLeverage(System.String, RMC.BestFit.Models.PriorComponentType, System.Double, System.Double, System.Double, System.Double, System.Double, System.Double)
+  CTOR RMC.BestFit.Diagnostics.LeverageDiagnostics+PriorComponentLeverage(System.Xml.Linq.XElement)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.PriorComponentType Type {get;}
+  PROPERTY System.Double FitInfluence {get;}
+  PROPERTY System.Double Leverage {get;}
+  PROPERTY System.Double PercentFitOfTotal {get;}
+  PROPERTY System.Double PercentOfTotal {get;}
+  PROPERTY System.Double PercentVarianceOfTotal {get;}
+  PROPERTY System.Double VarianceInfluence {get;}
+  PROPERTY System.String Name {get;}
+TYPE struct RMC.BestFit.Diagnostics.ObservationInfluence
+  BASE System.ValueType
+  CTOR RMC.BestFit.Diagnostics.ObservationInfluence(System.Int32, System.Double, System.Double, System.Double optional, RMC.BestFit.Models.DataComponentType optional, System.Int32 optional, System.String optional)
+  CTOR RMC.BestFit.Diagnostics.ObservationInfluence(System.Xml.Linq.XElement)
+  METHOD System.String ToString()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Diagnostics.ParetoKCategory Category {get;}
+  PROPERTY RMC.BestFit.Models.DataComponentType DataType {get;}
+  PROPERTY System.Double ElpdLoo {get;}
+  PROPERTY System.Double ParetoK {get;}
+  PROPERTY System.Double Value {get;}
+  PROPERTY System.Int32 Count {get;}
+  PROPERTY System.Int32 Index {get;}
+  PROPERTY System.String Name {get;}
+TYPE enum RMC.BestFit.Diagnostics.ParetoKCategory
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Diagnostics.ParetoKCategory Bad = 2
+  FIELD RMC.BestFit.Diagnostics.ParetoKCategory Good = 0
+  FIELD RMC.BestFit.Diagnostics.ParetoKCategory OK = 1
+  FIELD RMC.BestFit.Diagnostics.ParetoKCategory VeryBad = 3
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Diagnostics.PosteriorPredictiveCheck
+  BASE System.Object
+  CTOR RMC.BestFit.Diagnostics.PosteriorPredictiveCheck(RMC.BestFit.Models.IModel, Numerics.Sampling.MCMC.MCMCResults, System.Double[])
+  CTOR RMC.BestFit.Diagnostics.PosteriorPredictiveCheck(RMC.BestFit.Models.IModel, System.Collections.Generic.IList<Numerics.Mathematics.Optimization.ParameterSet>, System.Double[])
+  METHOD RMC.BestFit.Diagnostics.PredictiveCheckResults ComputeCommonPValues(System.Int32 optional)
+  METHOD RMC.BestFit.Diagnostics.PredictiveSummary ComputeSummary(System.Int32 optional)
+  METHOD System.Collections.Generic.List<System.Double[]> GenerateReplicates(System.Int32)
+  METHOD System.Double ComputePValue(System.Func<System.Double[],System.Double>, System.Int32 optional)
+  PROPERTY RMC.BestFit.Models.IModel Model {get;}
+  PROPERTY System.Int32 NumberOfPosteriorSamples {get;}
+  PROPERTY System.Int32 SampleSize {get;}
+  PROPERTY System.Int32 Seed {get;set;}
+TYPE class RMC.BestFit.Diagnostics.PredictiveCheckResults
+  BASE System.Object
+  CTOR RMC.BestFit.Diagnostics.PredictiveCheckResults()
+  METHOD System.Boolean HasPotentialMisfit(System.Double optional)
+  PROPERTY System.Double MaxPValue {get;set;}
+  PROPERTY System.Double MeanPValue {get;set;}
+  PROPERTY System.Double MinPValue {get;set;}
+  PROPERTY System.Double SDPValue {get;set;}
+  PROPERTY System.Double SkewnessPValue {get;set;}
+  PROPERTY System.Int32 NumberOfReplicates {get;set;}
+TYPE class RMC.BestFit.Diagnostics.PredictiveSummary
+  BASE System.Object
+  CTOR RMC.BestFit.Diagnostics.PredictiveSummary()
+  PROPERTY System.Double[] MaxQuantiles {get;set;}
+  PROPERTY System.Double[] MeanQuantiles {get;set;}
+  PROPERTY System.Double[] MinQuantiles {get;set;}
+  PROPERTY System.Double[] SDQuantiles {get;set;}
+  PROPERTY System.Int32 NumberOfValidDraws {get;set;}
+TYPE struct RMC.BestFit.Diagnostics.PriorComponentSummary
+  BASE System.ValueType
+  CTOR RMC.BestFit.Diagnostics.PriorComponentSummary(System.String, RMC.BestFit.Models.PriorComponentType, System.Double, System.Double, System.Double, System.Double)
+  CTOR RMC.BestFit.Diagnostics.PriorComponentSummary(System.Xml.Linq.XElement)
+  METHOD System.String ToString()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.PriorComponentType Type {get;}
+  PROPERTY System.Double CoefficientOfVariation {get;}
+  PROPERTY System.Double MaxLogLikelihood {get;}
+  PROPERTY System.Double MeanLogLikelihood {get;}
+  PROPERTY System.Double MinLogLikelihood {get;}
+  PROPERTY System.Double StandardDeviation {get;}
+  PROPERTY System.String Name {get;}
+TYPE class RMC.BestFit.Diagnostics.PriorInfluenceDiagnostics
+  BASE System.Object
+  CTOR RMC.BestFit.Diagnostics.PriorInfluenceDiagnostics()
+  CTOR RMC.BestFit.Diagnostics.PriorInfluenceDiagnostics(RMC.BestFit.Diagnostics.PriorComponentSummary[])
+  CTOR RMC.BestFit.Diagnostics.PriorInfluenceDiagnostics(RMC.BestFit.Models.IModel, Numerics.Sampling.MCMC.MCMCResults, System.Int32 optional)
+  CTOR RMC.BestFit.Diagnostics.PriorInfluenceDiagnostics(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Diagnostics.PriorComponentSummary[] GetComponentsByType(RMC.BestFit.Models.PriorComponentType)
+  METHOD RMC.BestFit.Diagnostics.PriorComponentSummary[] GetMostConstrainingComponents(System.Int32 optional)
+  METHOD System.Collections.Generic.Dictionary<RMC.BestFit.Models.PriorComponentType,System.Double> GetContributionByType()
+  METHOD System.String GetSummary()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Diagnostics.PriorComponentSummary Item[System.Int32] {get;}
+  PROPERTY RMC.BestFit.Diagnostics.PriorComponentSummary[] Components {get;}
+  PROPERTY System.Boolean IsPriorInfluential {get;}
+  PROPERTY System.Double MeanPriorPrecisionShare {get;}
+  PROPERTY System.Double PriorToDataRatio {get;}
+  PROPERTY System.Double TotalDataLogLikelihood {get;}
+  PROPERTY System.Double TotalPriorLogLikelihood {get;}
+  PROPERTY System.Double[] PriorPrecisionShare {get;}
+  PROPERTY System.Int32 Count {get;}
+TYPE class RMC.BestFit.Diagnostics.PriorPredictiveCheck
+  BASE System.Object
+  CTOR RMC.BestFit.Diagnostics.PriorPredictiveCheck(RMC.BestFit.Models.IModel)
+  METHOD RMC.BestFit.Diagnostics.PredictiveSummary ComputeSummary(System.Int32)
+  METHOD System.Collections.Generic.IList<Numerics.Mathematics.Optimization.ParameterSet> SampleFromPriors()
+  METHOD System.Collections.Generic.List<System.Double[]> GeneratePriorPredictive(System.Int32)
+  PROPERTY RMC.BestFit.Models.IModel Model {get;}
+  PROPERTY System.Int32 NumberOfDraws {get;set;}
+  PROPERTY System.Int32 Seed {get;set;}
+TYPE class RMC.BestFit.Estimation.BayesianAnalysis
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Estimation.BayesianAnalysis()
+  CTOR RMC.BestFit.Estimation.BayesianAnalysis(RMC.BestFit.Models.IModel)
+  CTOR RMC.BestFit.Estimation.BayesianAnalysis(RMC.BestFit.Models.IModel, RMC.BestFit.Estimation.BayesianAnalysis+SamplerType optional)
+  CTOR RMC.BestFit.Estimation.BayesianAnalysis(RMC.BestFit.Models.IModel, System.Xml.Linq.XElement, Numerics.Sampling.MCMC.MCMCResults optional)
+  CTOR RMC.BestFit.Estimation.BayesianAnalysis(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Diagnostics.InfluenceDiagnostics ComputeInfluenceDiagnostics()
+  METHOD RMC.BestFit.Diagnostics.LeverageDiagnostics ComputeLeverageDiagnostics()
+  METHOD RMC.BestFit.Diagnostics.PriorInfluenceDiagnostics ComputePriorInfluenceDiagnostics(System.Int32 optional)
+  METHOD RMC.BestFit.Estimation.BayesianAnalysis Clone()
+  METHOD System.Double[,] GetPosteriorCorrelationMatrix()
+  METHOD System.Double[,] GetPosteriorCovarianceMatrix()
+  METHOD System.String GenerateReport()
+  METHOD System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter optional, System.Boolean optional, System.Boolean optional)
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CancelSimulation()
+  METHOD System.Void ClearResults()
+  METHOD System.Void SetCustomMCMCResults(Numerics.Sampling.MCMC.MCMCResults)
+  METHOD System.Void SetCustomMCMCResults(Numerics.Sampling.MCMC.MCMCResults, System.Boolean)
+  METHOD System.Void SetCustomMCMCResults(Numerics.Sampling.MCMC.MCMCResults, System.Boolean, System.Collections.Generic.IReadOnlyList<System.String>)
+  METHOD System.Void SetDefaultAdvancedSimulationOptions()
+  METHOD System.Void SetDefaultSimulationOptions()
+  METHOD System.Void SetUpSampler()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Sampling.MCMC.MCMCResults Results {get;}
+  PROPERTY Numerics.Sampling.MCMC.MCMCSampler Sampler {get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType PointEstimator {get;set;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis+SamplerType Type {get;set;}
+  PROPERTY RMC.BestFit.Models.IModel Model {get;set;}
+  PROPERTY System.Boolean IsEstimated {get;set;}
+  PROPERTY System.Boolean UseAdvancedSimulationDefaults {get;set;}
+  PROPERTY System.Boolean UseSimulationDefaults {get;set;}
+  PROPERTY System.Collections.Generic.IReadOnlyList<System.String> ParameterNames {get;}
+  PROPERTY System.Collections.Generic.List<System.String> ModelPropertiesToIgnore {get;set;}
+  PROPERTY System.Double Beta {get;set;}
+  PROPERTY System.Double CredibleIntervalWidth {get;set;}
+  PROPERTY System.Double DIC {get;}
+  PROPERTY System.Double Jump {get;set;}
+  PROPERTY System.Double JumpThreshold {get;set;}
+  PROPERTY System.Double LOOIC {get;}
+  PROPERTY System.Double LOOIC_SE {get;}
+  PROPERTY System.Double LOO_pD {get;}
+  PROPERTY System.Double Noise {get;set;}
+  PROPERTY System.Double Scale {get;set;}
+  PROPERTY System.Double SnookerThreshold {get;set;}
+  PROPERTY System.Double WAIC {get;}
+  PROPERTY System.Double WAIC_pD {get;}
+  PROPERTY System.Double[] ParetoK {get;}
+  PROPERTY System.Exception LastError {get;}
+  PROPERTY System.Int32 InitialIterations {get;set;}
+  PROPERTY System.Int32 Iterations {get;set;}
+  PROPERTY System.Int32 MaxTreeDepth {get;set;}
+  PROPERTY System.Int32 NumberOfChains {get;set;}
+  PROPERTY System.Int32 NumberOfEstimatedParameters {get;}
+  PROPERTY System.Int32 OutputLength {get;set;}
+  PROPERTY System.Int32 PRNGSeed {get;set;}
+  PROPERTY System.Int32 ThinningInterval {get;set;}
+  PROPERTY System.Int32 WarmupIterations {get;set;}
+  PROPERTY System.Nullable<System.TimeSpan> ElapsedTime {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE enum RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType PosteriorMean = 0
+  FIELD RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType PosteriorMode = 1
+  FIELD System.Int32 value__
+TYPE enum RMC.BestFit.Estimation.BayesianAnalysis+SamplerType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Estimation.BayesianAnalysis+SamplerType ARWMH = 2
+  FIELD RMC.BestFit.Estimation.BayesianAnalysis+SamplerType DEMCz = 0
+  FIELD RMC.BestFit.Estimation.BayesianAnalysis+SamplerType DEMCzs = 1
+  FIELD RMC.BestFit.Estimation.BayesianAnalysis+SamplerType NUTS = 3
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Estimation.GeneralizedMethodOfMoments
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Estimation.GeneralizedMethodOfMoments(RMC.BestFit.Estimation.MomentConditionFunction, System.Int32, System.Int32, System.Int32, System.Collections.Generic.IList<System.Double>, System.Collections.Generic.IList<System.Double>, System.Collections.Generic.IList<System.Double>, Numerics.Mathematics.LinearAlgebra.Matrix optional, RMC.BestFit.Estimation.JacobianFunction optional, RMC.BestFit.Estimation.PenaltyFunction optional, RMC.BestFit.Estimation.PointwiseMomentConditionFunction optional)
+  CTOR RMC.BestFit.Estimation.GeneralizedMethodOfMoments(RMC.BestFit.Models.IGMMModel, RMC.BestFit.Estimation.OptimizationMethod optional)
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCorrelationMatrix()
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCovariance(System.Double[], System.Boolean optional)
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCovarianceMatrix(System.Boolean optional)
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetJacobian(System.Double[])
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetPenaltyHessian(System.Double[])
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetS(System.Double[])
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetSandwichCovarianceMatrix()
+  METHOD Numerics.Mathematics.LinearAlgebra.Vector GetG(System.Double[])
+  METHOD Numerics.Mathematics.LinearAlgebra.Vector GetGradient(System.Double[])
+  METHOD RMC.BestFit.Diagnostics.InfluenceDiagnostics GetInfluenceDiagnostics()
+  METHOD RMC.BestFit.Diagnostics.InfluenceDiagnostics GetInfluenceDiagnostics(System.Collections.Generic.IList<RMC.BestFit.Models.DataComponent>)
+  METHOD RMC.BestFit.Diagnostics.LeverageDiagnostics GetLeverageDiagnostics()
+  METHOD RMC.BestFit.Estimation.GeneralizedMethodOfMoments Clone()
+  METHOD System.Boolean Estimate()
+  METHOD System.Boolean IsValid(out System.Collections.Generic.List<System.String>)
+  METHOD System.Collections.Generic.List<System.Double[,]> ProfileQ(System.Int32 optional, System.Boolean optional)
+  METHOD System.Double Q(System.Double[])
+  METHOD System.Double[,] GetObservationInfluence()
+  METHOD System.Double[,] ProfileConfidenceIntervals(System.Double optional, System.Boolean optional)
+  METHOD System.Double[,] ProfilePercentiles(System.Double[] optional, System.Boolean optional, System.Int32 optional)
+  METHOD System.Double[] GetCooksDistance()
+  METHOD System.Double[] GetRobustStandardErrors()
+  METHOD System.Double[] GetStandardErrors()
+  METHOD System.Void ClearResults()
+  METHOD System.Void PostProcess(System.Boolean optional, System.Boolean optional)
+  METHOD System.Void RestoreFromXElement(System.Xml.Linq.XElement)
+  METHOD System.Void SetDefaultOptions()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Mathematics.LinearAlgebra.Matrix S {get;}
+  PROPERTY Numerics.Mathematics.LinearAlgebra.Matrix Sigma {get;}
+  PROPERTY Numerics.Mathematics.LinearAlgebra.Matrix W {get;}
+  PROPERTY Numerics.Mathematics.Optimization.OptimizationStatus Status {get;}
+  PROPERTY Numerics.Mathematics.Optimization.Optimizer Optimizer {get;}
+  PROPERTY Numerics.Mathematics.Optimization.ParameterSet BestParameterSet {get;}
+  PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy EstimationStrategy {get;set;}
+  PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMIdentificationStatus IdentificationStatus {get;}
+  PROPERTY RMC.BestFit.Estimation.JacobianFunction JacobianFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.MomentConditionFunction MomentConditionFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.OptimizationMethod OptimizerMethod {get;set;}
+  PROPERTY RMC.BestFit.Estimation.PenaltyFunction PenaltyFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.PointwiseMomentConditionFunction PointwiseMomentConditions {get;}
+  PROPERTY RMC.BestFit.Models.IGMMModel Model {get;}
+  PROPERTY System.Boolean ConvergedWithinTolerance {get;}
+  PROPERTY System.Boolean IsEstimated {get;}
+  PROPERTY System.Boolean PenaltyIsRandom {get;set;}
+  PROPERTY System.Boolean UseFallbackOptimizer {get;set;}
+  PROPERTY System.Collections.Generic.List<System.Double> ConvergenceHistory {get;}
+  PROPERTY System.Double AbsoluteTolerance {get;set;}
+  PROPERTY System.Double JStat {get;}
+  PROPERTY System.Double JStatPval {get;}
+  PROPERTY System.Double ObjectiveFunctionValue {get;}
+  PROPERTY System.Double RelativeTolerance {get;set;}
+  PROPERTY System.Double[] InitialValues {get;}
+  PROPERTY System.Double[] LowerBounds {get;}
+  PROPERTY System.Double[] UpperBounds {get;}
+  PROPERTY System.Int32 DegreeOfFreedom {get;}
+  PROPERTY System.Int32 GMMIterations {get;}
+  PROPERTY System.Int32 MaxFunctionEvaluations {get;set;}
+  PROPERTY System.Int32 MaxGMMIterations {get;set;}
+  PROPERTY System.Int32 NumberOfMomentConditions {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 SampleSize {get;}
+  PROPERTY System.Int32 TotalFunctionEvaluations {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE enum RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy Iterative = 2
+  FIELD RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy OneStep = 0
+  FIELD RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy TwoStep = 1
+  FIELD System.Int32 value__
+TYPE enum RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMIdentificationStatus
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMIdentificationStatus JustIdentified = 1
+  FIELD RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMIdentificationStatus OverIdentified = 2
+  FIELD RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMIdentificationStatus UnderIdentified = 0
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Estimation.JacobianFunction
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR RMC.BestFit.Estimation.JacobianFunction(System.Object, System.IntPtr)
+  METHOD System.Double[,] EndInvoke(System.IAsyncResult)
+  METHOD System.Double[,] Invoke(System.Double[])
+  METHOD System.IAsyncResult BeginInvoke(System.Double[], System.AsyncCallback, System.Object)
+TYPE class RMC.BestFit.Estimation.MaximumAPosteriori
+  BASE System.Object
+  CTOR RMC.BestFit.Estimation.MaximumAPosteriori(RMC.BestFit.Models.IModel, RMC.BestFit.Estimation.OptimizationMethod optional)
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCorrelationMatrix()
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCovarianceMatrix()
+  METHOD RMC.BestFit.Diagnostics.LeverageDiagnostics ComputeLeverageDiagnostics()
+  METHOD System.Boolean Estimate()
+  METHOD System.Collections.Generic.List<System.Double[,]> ProfileLikelihood(System.Int32 optional)
+  METHOD System.Double GetAIC()
+  METHOD System.Double GetBIC(System.Int32)
+  METHOD System.Double[,] GetObservationInfluence()
+  METHOD System.Double[,] ParameterConfidenceIntervals(System.Double optional)
+  METHOD System.Double[] GetCooksDistance()
+  METHOD System.Double[] GetStandardErrors()
+  METHOD System.Void ClearResults()
+  PROPERTY Numerics.Mathematics.Optimization.OptimizationStatus Status {get;}
+  PROPERTY Numerics.Mathematics.Optimization.Optimizer Optimizer {get;}
+  PROPERTY Numerics.Mathematics.Optimization.ParameterSet BestParameterSet {get;}
+  PROPERTY RMC.BestFit.Estimation.OptimizationMethod OptimizerMethod {get;set;}
+  PROPERTY RMC.BestFit.Models.IModel Model {get;}
+  PROPERTY System.Boolean ComputeHessian {get;set;}
+  PROPERTY System.Boolean IsEstimated {get;}
+  PROPERTY System.Boolean ReportFailure {get;set;}
+  PROPERTY System.Double MaximumLogLikelihood {get;}
+  PROPERTY System.Double[] InitialValues {get;}
+  PROPERTY System.Double[] LowerBounds {get;}
+  PROPERTY System.Double[] UpperBounds {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 TotalFunctionEvaluations {get;}
+TYPE class RMC.BestFit.Estimation.MaximumLikelihood
+  BASE System.Object
+  CTOR RMC.BestFit.Estimation.MaximumLikelihood(RMC.BestFit.Models.IModel, RMC.BestFit.Estimation.OptimizationMethod optional)
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCorrelationMatrix()
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCovarianceMatrix()
+  METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetSandwichCovarianceMatrix()
+  METHOD System.Boolean Estimate()
+  METHOD System.Collections.Generic.List<System.Double[,]> ProfileLikelihood(System.Int32 optional)
+  METHOD System.Double GetAIC()
+  METHOD System.Double GetBIC(System.Int32)
+  METHOD System.Double[,] GetObservationInfluence()
+  METHOD System.Double[,] ParameterConfidenceIntervals(System.Double optional)
+  METHOD System.Double[] GetCooksDistance()
+  METHOD System.Double[] GetRobustStandardErrors()
+  METHOD System.Double[] GetStandardErrors()
+  METHOD System.Void ClearResults()
+  PROPERTY Numerics.Mathematics.Optimization.OptimizationStatus Status {get;}
+  PROPERTY Numerics.Mathematics.Optimization.Optimizer Optimizer {get;}
+  PROPERTY Numerics.Mathematics.Optimization.ParameterSet BestParameterSet {get;}
+  PROPERTY RMC.BestFit.Estimation.OptimizationMethod OptimizerMethod {get;set;}
+  PROPERTY RMC.BestFit.Models.IModel Model {get;}
+  PROPERTY System.Boolean ComputeHessian {get;set;}
+  PROPERTY System.Boolean IsEstimated {get;}
+  PROPERTY System.Boolean ReportFailure {get;set;}
+  PROPERTY System.Double MaximumLogLikelihood {get;}
+  PROPERTY System.Double[] InitialValues {get;}
+  PROPERTY System.Double[] LowerBounds {get;}
+  PROPERTY System.Double[] UpperBounds {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 TotalFunctionEvaluations {get;}
+TYPE class RMC.BestFit.Estimation.MomentConditionFunction
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR RMC.BestFit.Estimation.MomentConditionFunction(System.Object, System.IntPtr)
+  METHOD System.IAsyncResult BeginInvoke(System.Double[], System.AsyncCallback, System.Object)
+  METHOD System.ValueTuple<Numerics.Mathematics.LinearAlgebra.Vector,Numerics.Mathematics.LinearAlgebra.Matrix> EndInvoke(System.IAsyncResult)
+  METHOD System.ValueTuple<Numerics.Mathematics.LinearAlgebra.Vector,Numerics.Mathematics.LinearAlgebra.Matrix> Invoke(System.Double[])
+TYPE enum RMC.BestFit.Estimation.OptimizationMethod
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Estimation.OptimizationMethod BFGS = 1
+  FIELD RMC.BestFit.Estimation.OptimizationMethod Brent = 0
+  FIELD RMC.BestFit.Estimation.OptimizationMethod DifferentialEvolution = 4
+  FIELD RMC.BestFit.Estimation.OptimizationMethod MultilevelSingleLinkage = 5
+  FIELD RMC.BestFit.Estimation.OptimizationMethod NelderMead = 2
+  FIELD RMC.BestFit.Estimation.OptimizationMethod Powell = 3
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Estimation.PenaltyFunction
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR RMC.BestFit.Estimation.PenaltyFunction(System.Object, System.IntPtr)
+  METHOD System.Double EndInvoke(System.IAsyncResult)
+  METHOD System.Double Invoke(System.Double[])
+  METHOD System.IAsyncResult BeginInvoke(System.Double[], System.AsyncCallback, System.Object)
+TYPE class RMC.BestFit.Estimation.PointwiseMomentConditionFunction
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR RMC.BestFit.Estimation.PointwiseMomentConditionFunction(System.Object, System.IntPtr)
+  METHOD System.Double[,] EndInvoke(System.IAsyncResult)
+  METHOD System.Double[,] Invoke(System.Double[])
+  METHOD System.IAsyncResult BeginInvoke(System.Double[], System.AsyncCallback, System.Object)
+TYPE class RMC.BestFit.Models.ARIMA
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.ARIMA()
+  CTOR RMC.BestFit.Models.ARIMA(Numerics.Data.TimeSeries, System.Int32 optional, System.Int32 optional, System.Int32 optional, System.Boolean optional)
+  CTOR RMC.BestFit.Models.ARIMA(Numerics.Data.TimeSeries, System.Xml.Linq.XElement)
+  METHOD Numerics.Data.TimeSeries GenerateRandomSeries(System.Int32, System.Int32 optional)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Boolean IsInvertible()
+  METHOD System.Boolean IsStationary()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.Double[] Predict(System.Int32 optional, System.Int32 optional)
+  METHOD System.Double[] Residuals(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Double[],System.Double[],System.Double[],System.Double[]> Predict(System.Double[], System.Int32 optional, System.Int32 optional)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetTransformParameters(System.Double optional, System.Double optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.TimeSeries DifferencedSeries {get;}
+  PROPERTY Numerics.Data.TimeSeries TimeSeries {get;set;}
+  PROPERTY Numerics.Data.TimeSeries TrainingTimeSeries {get;}
+  PROPERTY RMC.BestFit.Models.Transform TransformType {get;set;}
+  PROPERTY System.Boolean IncludeIntercept {get;set;}
+  PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
+  PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Int32 DOrder {get;set;}
+  PROPERTY System.Int32 ForecastingTimeSteps {get;}
+  PROPERTY System.Int32 POrder {get;set;}
+  PROPERTY System.Int32 QOrder {get;set;}
+  PROPERTY System.Int32 TrainingTimeSteps {get;set;}
+TYPE class RMC.BestFit.Models.ARIMAX
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.ARIMAX()
+  CTOR RMC.BestFit.Models.ARIMAX(Numerics.Data.TimeSeries)
+  CTOR RMC.BestFit.Models.ARIMAX(Numerics.Data.TimeSeries, System.Xml.Linq.XElement)
+  METHOD Numerics.Data.TimeSeries GenerateRandomSeries(System.Int32, System.Int32 optional)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional, System.Collections.Generic.List<Numerics.Data.TimeSeries> optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.Double[] Residuals(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Double[],System.Double[],System.Double[],System.Double[],System.Double[],System.Double[],System.Double[]> Predict(System.Double[], System.Int32 optional, System.Int32 optional, System.Collections.Generic.List<Numerics.Data.TimeSeries> optional)
+  METHOD System.Void SetCovariates(System.Collections.Generic.List<Numerics.Data.TimeSeries>)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetTransformParameters(System.Double optional, System.Double optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.TimeSeries DifferencedSeries {get;}
+  PROPERTY Numerics.Data.TimeSeries TimeSeries {get;set;}
+  PROPERTY Numerics.Data.TimeSeries TrainingTimeSeries {get;}
+  PROPERTY RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod CovariateExtension {get;set;}
+  PROPERTY RMC.BestFit.Models.ARIMAX+Trend TrendType {get;set;}
+  PROPERTY RMC.BestFit.Models.Transform TransformType {get;set;}
+  PROPERTY System.Boolean IncludeIntercept {get;set;}
+  PROPERTY System.Boolean IncludeSeasonality {get;set;}
+  PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
+  PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Collections.Generic.List<Numerics.Data.TimeSeries> Covariates {get;}
+  PROPERTY System.Int32 AROrderP {get;set;}
+  PROPERTY System.Int32 DiffOrderD {get;set;}
+  PROPERTY System.Int32 MAOrderQ {get;set;}
+  PROPERTY System.Int32 SeasonalPeriod {get;}
+  PROPERTY System.Int32 TrainingTimeSteps {get;set;}
+  PROPERTY System.Int32 XOrderB {get;set;}
+TYPE enum RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod BlockBootstrap = 1
+  FIELD RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod KNN = 2
+  FIELD RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod None = 0
+  FIELD System.Int32 value__
+TYPE enum RMC.BestFit.Models.ARIMAX+Trend
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.ARIMAX+Trend Cubic = 3
+  FIELD RMC.BestFit.Models.ARIMAX+Trend Linear = 1
+  FIELD RMC.BestFit.Models.ARIMAX+Trend None = 0
+  FIELD RMC.BestFit.Models.ARIMAX+Trend Quadratic = 2
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Models.AutoRegressive
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.AutoRegressive()
+  CTOR RMC.BestFit.Models.AutoRegressive(Numerics.Data.TimeSeries, System.Int32 optional, System.Boolean optional)
+  CTOR RMC.BestFit.Models.AutoRegressive(Numerics.Data.TimeSeries, System.Xml.Linq.XElement)
+  METHOD Numerics.Data.TimeSeries GenerateRandomSeries(System.Int32, System.Int32 optional)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Boolean IsStationary()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.Double[] Predict(System.Int32 optional, System.Int32 optional)
+  METHOD System.Double[] Residuals(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Double[],System.Double[],System.Double[]> Predict(System.Double[], System.Int32 optional, System.Int32 optional)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetTransformParameters(System.Double optional, System.Double optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.TimeSeries TimeSeries {get;set;}
+  PROPERTY Numerics.Data.TimeSeries TrainingTimeSeries {get;}
+  PROPERTY RMC.BestFit.Models.Transform TransformType {get;set;}
+  PROPERTY System.Boolean IncludeIntercept {get;set;}
+  PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
+  PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Int32 ForecastingTimeSteps {get;}
+  PROPERTY System.Int32 Order {get;set;}
+  PROPERTY System.Int32 TrainingTimeSteps {get;set;}
+TYPE class RMC.BestFit.Models.BivariateDistribution
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[,]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.BivariateDistribution()
+  CTOR RMC.BestFit.Models.BivariateDistribution(RMC.BestFit.Models.IUnivariateModel, RMC.BestFit.Models.IUnivariateModel, Numerics.Distributions.Copulas.CopulaType)
+  CTOR RMC.BestFit.Models.BivariateDistribution(RMC.BestFit.Models.IUnivariateModel, RMC.BestFit.Models.IUnivariateModel, System.Xml.Linq.XElement)
+  METHOD Numerics.Distributions.Copulas.BivariateCopula CreateCopula(Numerics.Distributions.Copulas.CopulaType)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double[,] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Int32,System.Int32,System.Int32> GetSampleDataAlignmentCounts()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetSampleData()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.Copulas.BivariateCopula Copula {get;set;}
+  PROPERTY Numerics.Distributions.Copulas.CopulaEstimationMethod CopulaEstimationMethod {get;set;}
+  PROPERTY Numerics.Distributions.Copulas.CopulaType CopulaType {get;set;}
+  PROPERTY RMC.BestFit.Models.IUnivariateModel MarginalX {get;set;}
+  PROPERTY RMC.BestFit.Models.IUnivariateModel MarginalY {get;set;}
+TYPE class RMC.BestFit.Models.Bulletin17CDistribution
+  BASE System.Object
+  INTERFACE RMC.BestFit.Models.IGMMModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE RMC.BestFit.Models.IUnivariateModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.Bulletin17CDistribution()
+  CTOR RMC.BestFit.Models.Bulletin17CDistribution(RMC.BestFit.Models.DataFrame, Numerics.Distributions.UnivariateDistributionBase)
+  CTOR RMC.BestFit.Models.Bulletin17CDistribution(RMC.BestFit.Models.DataFrame, Numerics.Distributions.UnivariateDistributionType)
+  CTOR RMC.BestFit.Models.Bulletin17CDistribution(RMC.BestFit.Models.DataFrame, System.Xml.Linq.XElement)
+  CTOR RMC.BestFit.Models.Bulletin17CDistribution(System.Xml.Linq.XElement)
+  METHOD Numerics.Distributions.UnivariateDistributionBase CreateDistribution(Numerics.Distributions.UnivariateDistributionType)
+  METHOD RMC.BestFit.Models.Bulletin17CDistribution CloneWithDataFrame(RMC.BestFit.Models.DataFrame)
+  METHOD RMC.BestFit.Models.IGMMModel Clone()
+  METHOD System.Boolean IsSupportedDistributionType(Numerics.Distributions.UnivariateDistributionType)
+  METHOD System.Double QuantileVariance(System.Double, System.Double[], System.Double[,])
+  METHOD System.Double[] CensoringAsymmetryScore(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] QuantileGradient(System.Double, System.Double[])
+  METHOD System.Double[] WeightedErrorDirectionScore(System.Double[])
+  METHOD System.Double[] WeightedErrorDirectionScoreFromLinked(System.Double[])
+  METHOD System.ValueTuple<Numerics.Mathematics.LinearAlgebra.Vector,Numerics.Mathematics.LinearAlgebra.Matrix> MomentConditions(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetInitialParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetPenaltyFunction(System.Random optional)
+  METHOD System.Void SetRandomPenaltyFunction(System.Double[], System.Random)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {get;set;}
+  PROPERTY Numerics.Distributions.UnivariateDistributionType DistributionType {get;set;}
+  PROPERTY Numerics.Functions.LinkController LinkController {get;set;}
+  PROPERTY RMC.BestFit.Estimation.JacobianFunction JacobianFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.MomentConditionFunction MomentConditionFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.PenaltyFunction PenaltyFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.PointwiseMomentConditionFunction PointwiseMomentConditions {get;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
+  PROPERTY System.Boolean IsNonstationary {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ParameterPenalty> ParameterPenalties {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.QuantilePenalty> QuantilePenalties {get;}
+  PROPERTY System.Int32 NumberOfMomentConditions {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 SampleSize {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Models.CompetingRisksModel
+  BASE RMC.BestFit.Models.UnivariateDistributionModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.IQuantilePriors
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.CompetingRisksModel()
+  CTOR RMC.BestFit.Models.CompetingRisksModel(RMC.BestFit.Models.DataFrame, Numerics.Distributions.CompetingRisks)
+  CTOR RMC.BestFit.Models.CompetingRisksModel(RMC.BestFit.Models.DataFrame, Numerics.Distributions.CompetingRisks, System.Xml.Linq.XElement)
+  CTOR RMC.BestFit.Models.CompetingRisksModel(RMC.BestFit.Models.DataFrame, System.Collections.Generic.List<Numerics.Distributions.UnivariateDistributionType>)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Boolean IsSupportedDistributionType(Numerics.Distributions.UnivariateDistributionType)
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double LogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void ProcessQuantilePriors()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetDefaultQuantilePriors()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.CompetingRisks CompetingRisks {get;set;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
+  PROPERTY System.Boolean UseSingleQuantile {get;set;}
+TYPE abstract-class RMC.BestFit.Models.Data
+  BASE Numerics.Data.SeriesOrdinate<System.Int32,System.Double>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IEquatable<Numerics.Data.SeriesOrdinate<System.Int32,System.Double>>
+  CTOR RMC.BestFit.Models.Data()
+  CTOR RMC.BestFit.Models.Data(System.Int32, System.Double, System.Double optional)
+  PROPERTY System.Double Log10Value {get;}
+  PROPERTY System.Double PlottingPosition {get;set;}
+  PROPERTY System.Double PlottingPositionComplement {get;}
+  PROPERTY System.Double StandardizedLog10Value {get;set;}
+  PROPERTY System.Double StandardizedValue {get;set;}
+TYPE struct RMC.BestFit.Models.DataComponent
+  BASE System.ValueType
+  CTOR RMC.BestFit.Models.DataComponent(System.Int32, System.Double, System.Double, RMC.BestFit.Models.DataComponentType, System.Int32 optional, System.String optional)
+  CTOR RMC.BestFit.Models.DataComponent(System.Int32, System.Double, System.Double, System.String optional)
+  METHOD System.String ToString()
+  PROPERTY RMC.BestFit.Models.DataComponentType Type {get;}
+  PROPERTY System.Boolean IsCensored {get;}
+  PROPERTY System.Boolean IsThreshold {get;}
+  PROPERTY System.Double LogLikelihood {get;}
+  PROPERTY System.Double Value {get;}
+  PROPERTY System.Int32 Count {get;}
+  PROPERTY System.Int32 Index {get;}
+  PROPERTY System.String Name {get;}
+TYPE enum RMC.BestFit.Models.DataComponentType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.DataComponentType Exact = 0
+  FIELD RMC.BestFit.Models.DataComponentType Interval = 2
+  FIELD RMC.BestFit.Models.DataComponentType LeftCensored = 3
+  FIELD RMC.BestFit.Models.DataComponentType RightCensored = 4
+  FIELD RMC.BestFit.Models.DataComponentType Uncertain = 1
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Models.DataFrame
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.DataFrame()
+  CTOR RMC.BestFit.Models.DataFrame(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.DataFrame BootstrapDataFrame(Numerics.Distributions.IUnivariateDistribution, System.Random, System.Boolean optional)
+  METHOD RMC.BestFit.Models.DataFrame Clone()
+  METHOD RMC.BestFit.Models.DataFrame JackKnife(System.Int32)
+  METHOD RMC.BestFit.Models.DataFrame Resample(System.Random, System.Boolean optional)
+  METHOD System.Collections.Generic.Dictionary<System.String,System.Double> SummaryHypothesisTest(System.Int32 optional, System.Boolean optional)
+  METHOD System.Collections.Generic.Dictionary<System.String,System.Double> SummaryStatisticsAllData()
+  METHOD System.Collections.Generic.Dictionary<System.String,System.Double> SummaryStatisticsExactDataOnly()
+  METHOD System.Double EqualVarianceTtest(System.Int32, System.Boolean optional)
+  METHOD System.Double Ftest(System.Int32, System.Boolean optional)
+  METHOD System.Double JarqueBeraTest(System.Boolean optional)
+  METHOD System.Double LinearTrendTest(System.Boolean optional)
+  METHOD System.Double LjungBoxTest(System.Int32 optional, System.Boolean optional)
+  METHOD System.Double MannKendallTest(System.Boolean optional)
+  METHOD System.Double MannWhitneyTest(System.Int32, System.Boolean optional)
+  METHOD System.Double UnequalVarianceTtest(System.Int32, System.Boolean optional)
+  METHOD System.Double UnimodalityTest(System.Boolean optional)
+  METHOD System.Double WaldWolfowitzTest(System.Boolean optional)
+  METHOD System.Double ZeroValueRelativeFrequency()
+  METHOD System.Double[] GetNonparametricMoments(System.Boolean optional)
+  METHOD System.Double[] GetNonparametricMomentsROS(System.Boolean optional)
+  METHOD System.Int32 TotalRecordLength()
+  METHOD System.Threading.Tasks.Task CreateFromUSGS(System.String, Numerics.Data.TimeSeriesDownload+TimeSeriesType optional, System.Threading.CancellationToken optional)
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void ApplyLangbeinConversion(System.Double)
+  METHOD System.Void CalculateLambda()
+  METHOD System.Void CalculatePlottingPositions()
+  METHOD System.Void ClearLowOutliers()
+  METHOD System.Void CreateBlockSeries(Numerics.Data.TimeSeries, Numerics.Data.TimeBlockWindow optional, Numerics.Data.BlockFunctionType optional, Numerics.Data.SmoothingFunctionType optional, System.Int32 optional, System.Int32 optional, System.Int32 optional)
+  METHOD System.Void CreateFullTimeSeries()
+  METHOD System.Void CreatePeaksOverThresholdSeries(Numerics.Data.TimeSeries, System.Double, System.Int32 optional, Numerics.Data.SmoothingFunctionType optional, System.Int32 optional)
+  METHOD System.Void ProcessThresholdSeries()
+  METHOD System.Void SetLambda(System.Double)
+  METHOD System.Void SetLowOutliersFromMGBT()
+  METHOD System.Void SetLowOutliersFromThreshold()
+  METHOD System.Void SetStandardizedValues()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.ExactSeries ExactSeries {get;set;}
+  PROPERTY RMC.BestFit.Models.IntervalSeries IntervalSeries {get;set;}
+  PROPERTY RMC.BestFit.Models.ThresholdSeries ThresholdSeries {get;set;}
+  PROPERTY RMC.BestFit.Models.UncertainSeries UncertainSeries {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.Data> FullTimeSeries {get;}
+  PROPERTY System.Double Lambda {get;}
+  PROPERTY System.Double LowOutlierThreshold {get;set;}
+  PROPERTY System.Double PlottingParameter {get;set;}
+  PROPERTY System.Int32 NumberOfLowOutliers {get;}
+  PROPERTY System.String USGSRawText {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE abstract-class RMC.BestFit.Models.DataSeries
+  BASE System.Object
+  INTERFACE System.Collections.Generic.ICollection<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IEnumerable<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IList<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.Collections.Specialized.INotifyCollectionChanged
+  METHOD System.Boolean Contains(RMC.BestFit.Models.Data)
+  METHOD System.Boolean Remove(RMC.BestFit.Models.Data)
+  METHOD System.Collections.Generic.IEnumerator<RMC.BestFit.Models.Data> GetEnumerator()
+  METHOD System.Collections.Generic.List<System.Double> PlottingPositionsToList()
+  METHOD System.Collections.Generic.List<System.Double> ValuesToList()
+  METHOD System.Collections.Generic.List<System.Int32> IndicesToList()
+  METHOD System.Double[] PlottingPositionsToArray()
+  METHOD System.Double[] ValuesToArray()
+  METHOD System.Int32 IndexOf(RMC.BestFit.Models.Data)
+  METHOD System.Int32[] IndicesToArray()
+  METHOD System.Void Add(RMC.BestFit.Models.Data)
+  METHOD System.Void Clear()
+  METHOD System.Void CopyTo(RMC.BestFit.Models.Data[], System.Int32)
+  METHOD System.Void Insert(System.Int32, RMC.BestFit.Models.Data)
+  METHOD System.Void RaiseCollectionChangedReset()
+  METHOD System.Void RemoveAt(System.Int32)
+  PROPERTY RMC.BestFit.Models.Data Item[System.Int32] {get;set;}
+  PROPERTY System.Boolean IsReadOnly {get;}
+  PROPERTY System.Boolean SuppressCollectionChanged {get;set;}
+  PROPERTY System.Int32 Count {get;}
+  EVENT System.Collections.Specialized.NotifyCollectionChangedEventHandler CollectionChanged
+TYPE class RMC.BestFit.Models.ExactData
+  BASE RMC.BestFit.Models.Data
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IEquatable<Numerics.Data.SeriesOrdinate<System.Int32,System.Double>>
+  CTOR RMC.BestFit.Models.ExactData()
+  CTOR RMC.BestFit.Models.ExactData(System.DateTime, System.Double)
+  CTOR RMC.BestFit.Models.ExactData(System.Int32, System.Double, System.Double optional, System.Boolean optional)
+  CTOR RMC.BestFit.Models.ExactData(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.ExactData Clone()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean IsLowOutlier {get;set;}
+  PROPERTY System.DateTime DateTime {get;}
+TYPE class RMC.BestFit.Models.ExactSeries
+  BASE RMC.BestFit.Models.DataSeries
+  INTERFACE System.Collections.Generic.ICollection<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IEnumerable<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IList<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.Collections.Specialized.INotifyCollectionChanged
+  CTOR RMC.BestFit.Models.ExactSeries()
+  CTOR RMC.BestFit.Models.ExactSeries(System.Collections.Generic.IList<RMC.BestFit.Models.ExactData>)
+  CTOR RMC.BestFit.Models.ExactSeries(System.Collections.Generic.IList<System.Double>)
+  CTOR RMC.BestFit.Models.ExactSeries(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.ExactSeries Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.ExactData> ToList()
+  METHOD System.Double MaximumValue()
+  METHOD System.Double MinimumValue()
+  METHOD System.Double[,] Autocorrelation()
+  METHOD System.Double[,] PartialAutocorrelation()
+  METHOD System.Int32 IndexSpan()
+  METHOD System.Int32 MaximumIndex()
+  METHOD System.Int32 MinimumIndex()
+  METHOD System.Int32 UniqueIndices()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void Sort(Numerics.Data.SortOrder optional)
+  METHOD System.Void SortByIndex(Numerics.Data.SortOrder optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean EnforceUniqueIndex {get;set;}
+  PROPERTY System.Double MedianValue {get;}
+  PROPERTY System.Double UpperMiddleValue {get;}
+TYPE class RMC.BestFit.Models.FittedDistribution
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.FittedDistribution(Numerics.Distributions.UnivariateDistributionBase, System.Double optional, System.Double optional, System.Double optional, System.Boolean optional, System.Boolean optional)
+  CTOR RMC.BestFit.Models.FittedDistribution(System.Xml.Linq.XElement)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {get;}
+  PROPERTY System.Boolean FitSucceeded {get;}
+  PROPERTY System.Boolean ShowResults {get;set;}
+  PROPERTY System.Double AIC {get;}
+  PROPERTY System.Double BIC {get;}
+  PROPERTY System.Double RMSE {get;}
+  PROPERTY System.String ErrorMessage {get;set;}
+  PROPERTY System.String ToolTip {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE interface RMC.BestFit.Models.IGMMModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD RMC.BestFit.Models.IGMMModel Clone()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Estimation.JacobianFunction JacobianFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.MomentConditionFunction MomentConditionFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.PenaltyFunction PenaltyFunction {get;}
+  PROPERTY RMC.BestFit.Estimation.PointwiseMomentConditionFunction PointwiseMomentConditions {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfMomentConditions {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 SampleSize {get;}
+TYPE interface RMC.BestFit.Models.IModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double LogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean UseDefaultFlatPriors {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+TYPE interface RMC.BestFit.Models.IQuantilePriors
+  METHOD System.Void ProcessQuantilePriors()
+  METHOD System.Void SetDefaultQuantilePriors()
+  PROPERTY System.Boolean EnableQuantilePriors {get;set;}
+  PROPERTY System.Boolean UseSingleQuantile {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.QuantilePrior> QuantilePriors {get;set;}
+TYPE interface RMC.BestFit.Models.ISimulatable<`0:TData>
+  METHOD `0:TData GenerateRandomValues(System.Int32, System.Int32 optional)
+TYPE interface RMC.BestFit.Models.IUnivariateModel
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {get;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;}
+  PROPERTY System.Boolean IsNonstationary {get;}
+TYPE class RMC.BestFit.Models.IntervalData
+  BASE RMC.BestFit.Models.Data
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IEquatable<Numerics.Data.SeriesOrdinate<System.Int32,System.Double>>
+  CTOR RMC.BestFit.Models.IntervalData()
+  CTOR RMC.BestFit.Models.IntervalData(System.Int32, System.Double, System.Double, System.Double, System.Double optional)
+  CTOR RMC.BestFit.Models.IntervalData(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.IntervalData Clone()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Double Log10LowerValue {get;}
+  PROPERTY System.Double Log10UpperValue {get;}
+  PROPERTY System.Double LowerValue {get;set;}
+  PROPERTY System.Double UpperValue {get;set;}
+TYPE class RMC.BestFit.Models.IntervalSeries
+  BASE RMC.BestFit.Models.DataSeries
+  INTERFACE System.Collections.Generic.ICollection<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IEnumerable<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IList<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.Collections.Specialized.INotifyCollectionChanged
+  CTOR RMC.BestFit.Models.IntervalSeries()
+  CTOR RMC.BestFit.Models.IntervalSeries(System.Collections.Generic.IList<RMC.BestFit.Models.IntervalData>)
+  CTOR RMC.BestFit.Models.IntervalSeries(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.IntervalSeries Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.IntervalData> ToList()
+  METHOD System.Double MaximumValue()
+  METHOD System.Double MinimumValue()
+  METHOD System.Int32 MaximumIndex()
+  METHOD System.Int32 MinimumIndex()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate(RMC.BestFit.Models.DataFrame)
+  METHOD System.Void Sort(Numerics.Data.SortOrder optional)
+  METHOD System.Void SortByIndex(Numerics.Data.SortOrder optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+TYPE class RMC.BestFit.Models.LinkFunctions.ASinHLink
+  BASE System.Object
+  INTERFACE Numerics.Functions.ILinkFunction
+  CTOR RMC.BestFit.Models.LinkFunctions.ASinHLink()
+  CTOR RMC.BestFit.Models.LinkFunctions.ASinHLink(System.Double, System.Double)
+  CTOR RMC.BestFit.Models.LinkFunctions.ASinHLink(System.Double, System.Double, System.Double, System.Double optional)
+  CTOR RMC.BestFit.Models.LinkFunctions.ASinHLink(System.Xml.Linq.XElement)
+  METHOD System.Double DLink(System.Double)
+  METHOD System.Double InverseLink(System.Double)
+  METHOD System.Double Link(System.Double)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean UseAdaptiveEpsilon {get;set;}
+  PROPERTY System.Double Delta {get;set;}
+  PROPERTY System.Double Epsilon {get;set;}
+  PROPERTY System.Double EpsilonMax {get;set;}
+  PROPERTY System.Double EpsilonSlope {get;set;}
+  PROPERTY System.Double Gamma0 {get;set;}
+  PROPERTY System.Double ParentIndicator {get;set;}
+  PROPERTY System.Double Scale {get;set;}
+TYPE static-class RMC.BestFit.Models.LinkFunctions.BestFitLinkFunctionFactory
+  BASE System.Object
+  METHOD Numerics.Functions.ILinkFunction CreateFromXElement(System.Xml.Linq.XElement)
+TYPE class RMC.BestFit.Models.LinkFunctions.CenteredLink
+  BASE System.Object
+  INTERFACE Numerics.Functions.ILinkFunction
+  CTOR RMC.BestFit.Models.LinkFunctions.CenteredLink(Numerics.Functions.ILinkFunction, System.Double, System.Double optional)
+  CTOR RMC.BestFit.Models.LinkFunctions.CenteredLink(System.Xml.Linq.XElement)
+  METHOD System.Double DLink(System.Double)
+  METHOD System.Double InverseLink(System.Double)
+  METHOD System.Double Link(System.Double)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Functions.ILinkFunction Inner {get;}
+  PROPERTY System.Double Mu0 {get;set;}
+  PROPERTY System.Double Scale {get;set;}
+TYPE class RMC.BestFit.Models.LinkFunctions.LogASinHLink
+  BASE System.Object
+  INTERFACE Numerics.Functions.ILinkFunction
+  CTOR RMC.BestFit.Models.LinkFunctions.LogASinHLink()
+  CTOR RMC.BestFit.Models.LinkFunctions.LogASinHLink(System.Double, System.Double, System.Double optional, System.Double optional)
+  CTOR RMC.BestFit.Models.LinkFunctions.LogASinHLink(System.Xml.Linq.XElement)
+  METHOD System.Double DLink(System.Double)
+  METHOD System.Double InverseLink(System.Double)
+  METHOD System.Double Link(System.Double)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean UseAdaptiveEpsilon {get;set;}
+  PROPERTY System.Double Delta {get;set;}
+  PROPERTY System.Double Eps {get;set;}
+  PROPERTY System.Double Epsilon {get;set;}
+  PROPERTY System.Double EpsilonMax {get;set;}
+  PROPERTY System.Double EpsilonSlope {get;set;}
+  PROPERTY System.Double LogScale {get;set;}
+  PROPERTY System.Double ParentIndicator {get;set;}
+  PROPERTY System.Double Sigma0 {get;set;}
+TYPE class RMC.BestFit.Models.LinkFunctions.LogSESLink
+  BASE System.Object
+  INTERFACE Numerics.Functions.ILinkFunction
+  CTOR RMC.BestFit.Models.LinkFunctions.LogSESLink()
+  CTOR RMC.BestFit.Models.LinkFunctions.LogSESLink(System.Double, System.Double optional, System.Double optional)
+  CTOR RMC.BestFit.Models.LinkFunctions.LogSESLink(System.Xml.Linq.XElement)
+  METHOD System.Double DLink(System.Double)
+  METHOD System.Double InverseLink(System.Double)
+  METHOD System.Double Link(System.Double)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean LastInverseConverged {get;}
+  PROPERTY System.Boolean UseAdaptiveLambda {get;set;}
+  PROPERTY System.Double A {get;set;}
+  PROPERTY System.Double Eps {get;set;}
+  PROPERTY System.Double Lambda {get;set;}
+  PROPERTY System.Double LambdaMax {get;set;}
+  PROPERTY System.Double LambdaSlope {get;set;}
+  PROPERTY System.Double LastInverseResidual {get;}
+  PROPERTY System.Double ParentIndicator {get;set;}
+  PROPERTY System.Double Sigma0 {get;set;}
+  PROPERTY System.Double Tolerance {get;set;}
+  PROPERTY System.Int32 MaxIterations {get;set;}
+TYPE class RMC.BestFit.Models.LinkFunctions.SESLink
+  BASE System.Object
+  INTERFACE Numerics.Functions.ILinkFunction
+  CTOR RMC.BestFit.Models.LinkFunctions.SESLink()
+  CTOR RMC.BestFit.Models.LinkFunctions.SESLink(System.Double, System.Boolean optional, System.Double optional, System.Double optional, System.Double optional, System.Int32 optional, System.Double optional)
+  CTOR RMC.BestFit.Models.LinkFunctions.SESLink(System.Xml.Linq.XElement)
+  METHOD System.Double DLink(System.Double)
+  METHOD System.Double InverseLink(System.Double)
+  METHOD System.Double Link(System.Double)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean LastInverseConverged {get;}
+  PROPERTY System.Boolean UseAdaptiveLambda {get;set;}
+  PROPERTY System.Double A {get;set;}
+  PROPERTY System.Double Lambda {get;set;}
+  PROPERTY System.Double LambdaMax {get;set;}
+  PROPERTY System.Double LambdaSlope {get;set;}
+  PROPERTY System.Double LastInverseResidual {get;}
+  PROPERTY System.Double ParentIndicator {get;set;}
+  PROPERTY System.Double Tolerance {get;set;}
+  PROPERTY System.Int32 MaxIterations {get;set;}
+TYPE class RMC.BestFit.Models.MRLPoint
+  BASE System.Object
+  CTOR RMC.BestFit.Models.MRLPoint(System.Double, System.Double, System.Double, System.Double, System.Int32)
+  PROPERTY System.Double LowerCI {get;}
+  PROPERTY System.Double MeanExcess {get;}
+  PROPERTY System.Double Threshold {get;}
+  PROPERTY System.Double UpperCI {get;}
+  PROPERTY System.Int32 ExceedanceCount {get;}
+TYPE class RMC.BestFit.Models.MeanResidualLifeResult
+  BASE System.Object
+  CTOR RMC.BestFit.Models.MeanResidualLifeResult(System.Collections.Generic.List<RMC.BestFit.Models.MRLPoint>)
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.MRLPoint> Points {get;}
+TYPE class RMC.BestFit.Models.MixtureModel
+  BASE RMC.BestFit.Models.UnivariateDistributionModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.IQuantilePriors
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE RMC.BestFit.Models.IUnivariateModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.MixtureModel()
+  CTOR RMC.BestFit.Models.MixtureModel(RMC.BestFit.Models.DataFrame, Numerics.Distributions.Mixture)
+  CTOR RMC.BestFit.Models.MixtureModel(RMC.BestFit.Models.DataFrame, System.Collections.Generic.List<Numerics.Distributions.UnivariateDistributionBase>, System.Boolean optional)
+  CTOR RMC.BestFit.Models.MixtureModel(RMC.BestFit.Models.DataFrame, System.Collections.Generic.List<Numerics.Distributions.UnivariateDistributionType>, System.Boolean optional)
+  CTOR RMC.BestFit.Models.MixtureModel(RMC.BestFit.Models.DataFrame, System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Boolean IsSupportedDistributionType(Numerics.Distributions.UnivariateDistributionType)
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double LogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void ExpectationMaximization(out System.Double[], out System.Double[,], out System.Int32, System.Int32 optional, System.Double optional)
+  METHOD System.Void ProcessQuantilePriors()
+  METHOD System.Void SetDefaultMixture(System.Collections.Generic.IList<Numerics.Distributions.UnivariateDistributionType>)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetDefaultQuantilePriors()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.Mixture Mixture {get;set;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
+  PROPERTY System.Boolean IsNonstationary {get;}
+  PROPERTY System.Boolean IsZeroInflated {get;set;}
+  PROPERTY System.Boolean UseSingleQuantile {get;set;}
+TYPE abstract-class RMC.BestFit.Models.ModelBase
+  BASE System.Object
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double LogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean UseDefaultFlatPriors {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Models.ModelParameter
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.ModelParameter()
+  CTOR RMC.BestFit.Models.ModelParameter(System.String, System.String, System.Double, System.Double, System.Double, Numerics.Distributions.UnivariateDistributionBase, System.Boolean optional, System.Boolean optional)
+  CTOR RMC.BestFit.Models.ModelParameter(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.ModelParameter Clone()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase PriorDistribution {get;set;}
+  PROPERTY System.Boolean IsFixed {get;set;}
+  PROPERTY System.Boolean IsPositive {get;set;}
+  PROPERTY System.Double LowerBound {get;set;}
+  PROPERTY System.Double UpperBound {get;set;}
+  PROPERTY System.Double Value {get;set;}
+  PROPERTY System.String DisplayName {get;}
+  PROPERTY System.String Name {get;set;}
+  PROPERTY System.String OwnerName {get;set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Models.MovingAverage
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.MovingAverage()
+  CTOR RMC.BestFit.Models.MovingAverage(Numerics.Data.TimeSeries, System.Int32 optional, System.Boolean optional)
+  CTOR RMC.BestFit.Models.MovingAverage(Numerics.Data.TimeSeries, System.Xml.Linq.XElement)
+  METHOD Numerics.Data.TimeSeries GenerateRandomSeries(System.Int32, System.Int32 optional)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Boolean IsInvertible()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.Double[] Predict(System.Int32 optional, System.Int32 optional)
+  METHOD System.Double[] Residuals(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Double[],System.Double[],System.Double[]> Predict(System.Double[], System.Int32 optional, System.Int32 optional)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetTransformParameters(System.Double optional, System.Double optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.TimeSeries TimeSeries {get;set;}
+  PROPERTY Numerics.Data.TimeSeries TrainingTimeSeries {get;}
+  PROPERTY RMC.BestFit.Models.Transform TransformType {get;set;}
+  PROPERTY System.Boolean IncludeIntercept {get;set;}
+  PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
+  PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Int32 ForecastingTimeSteps {get;}
+  PROPERTY System.Int32 Order {get;set;}
+  PROPERTY System.Int32 TrainingTimeSteps {get;set;}
+TYPE class RMC.BestFit.Models.ParameterPenalty
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.ParameterPenalty()
+  CTOR RMC.BestFit.Models.ParameterPenalty(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.ParameterPenalty Clone()
+  METHOD System.Double Function(System.Double, System.Int32)
+  METHOD System.ValueTuple<System.Boolean,System.String> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean Enabled {get;set;}
+  PROPERTY System.Boolean IsValid {get;}
+  PROPERTY System.Boolean UseLog {get;set;}
+  PROPERTY System.Double LowerValue {get;}
+  PROPERTY System.Double MSE {get;set;}
+  PROPERTY System.Double Mean {get;set;}
+  PROPERTY System.Double UpperValue {get;}
+  PROPERTY System.String Name {get;set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Models.ParameterStabilityResult
+  BASE System.Object
+  CTOR RMC.BestFit.Models.ParameterStabilityResult(System.Collections.Generic.List<RMC.BestFit.Models.StabilityPoint>)
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.StabilityPoint> Points {get;}
+TYPE class RMC.BestFit.Models.PointProcessModel
+  BASE RMC.BestFit.Models.UnivariateDistributionModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.IQuantilePriors
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE RMC.BestFit.Models.IUnivariateModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.PointProcessModel()
+  CTOR RMC.BestFit.Models.PointProcessModel(RMC.BestFit.Models.DataFrame, Numerics.Distributions.CompetingRisks)
+  CTOR RMC.BestFit.Models.PointProcessModel(RMC.BestFit.Models.DataFrame, System.Xml.Linq.XElement)
+  METHOD Numerics.Data.TimeSeries GeneratePOTTimeSeries(System.DateTime, System.Double, System.Int32 optional)
+  METHOD Numerics.Distributions.CompetingRisks GetDistribution(System.Collections.Generic.IList<System.Double>)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Boolean IsSupportedDistributionType(Numerics.Distributions.UnivariateDistributionType)
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double LogLikelihood(System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void CalculateLambda()
+  METHOD System.Void ProcessQuantilePriors()
+  METHOD System.Void SetAMSData()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetDefaultQuantilePriors()
+  METHOD System.Void SetDefaultThresholdAndTotalYears(System.Nullable<System.Double> optional, System.Boolean optional)
+  METHOD System.Void SetDistribution()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.TimeBlockWindow TimeBlock {get;set;}
+  PROPERTY Numerics.Distributions.CompetingRisks Distribution {get;set;}
+  PROPERTY RMC.BestFit.Models.DataFrame AMSDataFrame {get;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
+  PROPERTY System.Boolean IsNonstationary {get;}
+  PROPERTY System.Boolean IsSeasonal {get;set;}
+  PROPERTY System.Boolean UseDefaults {get;set;}
+  PROPERTY System.Collections.Generic.List<System.Int32> POTDays {get;}
+  PROPERTY System.Double Lambda {get;}
+  PROPERTY System.Double Threshold {get;set;}
+  PROPERTY System.Double TotalYears {get;set;}
+  PROPERTY System.Int32 StartMonth {get;set;}
+TYPE struct RMC.BestFit.Models.PriorComponent
+  BASE System.ValueType
+  CTOR RMC.BestFit.Models.PriorComponent(System.String, System.Double, RMC.BestFit.Models.PriorComponentType optional)
+  METHOD System.String ToString()
+  PROPERTY RMC.BestFit.Models.PriorComponentType Type {get;}
+  PROPERTY System.Double LogLikelihood {get;}
+  PROPERTY System.String Name {get;}
+TYPE enum RMC.BestFit.Models.PriorComponentType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.PriorComponentType Jacobian = 4
+  FIELD RMC.BestFit.Models.PriorComponentType JeffreysScalePrior = 2
+  FIELD RMC.BestFit.Models.PriorComponentType OtherPenalty = 5
+  FIELD RMC.BestFit.Models.PriorComponentType ParameterPrior = 0
+  FIELD RMC.BestFit.Models.PriorComponentType QuantilePrior = 1
+  FIELD RMC.BestFit.Models.PriorComponentType SpatialError = 3
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Models.QuantilePenalty
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.QuantilePenalty()
+  CTOR RMC.BestFit.Models.QuantilePenalty(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.QuantilePenalty Clone()
+  METHOD System.Double Function(System.Double, System.Int32)
+  METHOD System.ValueTuple<System.Boolean,System.String> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Boolean Enabled {get;set;}
+  PROPERTY System.Boolean IsValid {get;}
+  PROPERTY System.Boolean UseLog10 {get;set;}
+  PROPERTY System.Double AEP {get;set;}
+  PROPERTY System.Double LowerValue {get;}
+  PROPERTY System.Double MSE {get;set;}
+  PROPERTY System.Double MSEValue {get;}
+  PROPERTY System.Double Mean {get;set;}
+  PROPERTY System.Double MeanValue {get;}
+  PROPERTY System.Double UpperValue {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Models.QuantilePrior
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.QuantilePrior()
+  CTOR RMC.BestFit.Models.QuantilePrior(System.Double, Numerics.Distributions.UnivariateDistributionBase)
+  CTOR RMC.BestFit.Models.QuantilePrior(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.QuantilePrior Clone()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {get;set;}
+  PROPERTY System.Double Alpha {get;set;}
+  PROPERTY System.Double LowerValue {get;}
+  PROPERTY System.Double MeanValue {get;}
+  PROPERTY System.Double UpperValue {get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Models.RatingCurve
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.RatingCurve()
+  CTOR RMC.BestFit.Models.RatingCurve(Numerics.Data.TimeSeries, Numerics.Data.TimeSeries, System.Int32 optional)
+  CTOR RMC.BestFit.Models.RatingCurve(Numerics.Data.TimeSeries, Numerics.Data.TimeSeries, System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Collections.Generic.List<System.ValueTuple<System.DateTime,System.Double,System.Double>> GetAlignedObservations()
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double GetLocation(System.Int32, System.Double[])
+  METHOD System.Double GetLog10Alpha(System.Int32, System.Double[])
+  METHOD System.Double Predict(System.Double[], System.Double)
+  METHOD System.Double Predict(System.Double[], System.Double, System.Int32)
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double[,] GenerateRatingTable(System.Double[], System.Double, System.Double, System.Int32 optional)
+  METHOD System.Double[] FittedValues(System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.Double[] Residuals(System.Double[])
+  METHOD System.ValueTuple<Numerics.Data.TimeSeries,Numerics.Data.TimeSeries> GenerateSyntheticData(System.Int32, System.Double, System.Double, System.Int32 optional)
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Int32,System.Int32,System.Int32> GetDataAlignmentCounts()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Data.TimeSeries DischargeData {get;set;}
+  PROPERTY Numerics.Data.TimeSeries StageData {get;set;}
+  PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Int32 NumberOfSegments {get;set;}
+  FIELD System.Int32 MinimumAlignedObservations = 10
+TYPE class RMC.BestFit.Models.SpatialExtremes.BasicExponential
+  BASE System.Object
+  INTERFACE RMC.BestFit.Models.SpatialExtremes.ICorrelationModel
+  CTOR RMC.BestFit.Models.SpatialExtremes.BasicExponential()
+  METHOD RMC.BestFit.Models.SpatialExtremes.ICorrelationModel Clone()
+  METHOD System.Double Evaluate(System.Double)
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType Type {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+TYPE class RMC.BestFit.Models.SpatialExtremes.CachedMultivariateNormal
+  BASE System.Object
+  CTOR RMC.BestFit.Models.SpatialExtremes.CachedMultivariateNormal(System.Double[], System.Double[,])
+  CTOR RMC.BestFit.Models.SpatialExtremes.CachedMultivariateNormal(System.Int32)
+  METHOD System.Double GetLogDeterminant()
+  METHOD System.Double LogPDF(System.Double[])
+  METHOD System.Double PDF(System.Double[])
+  METHOD System.Void InvalidateCache()
+  METHOD System.Void SetCovariance(System.Double[,])
+  METHOD System.Void SetMean(System.Double[])
+  PROPERTY System.Boolean IsCacheValid {get;}
+  PROPERTY System.Int32 Dimension {get;}
+TYPE enum RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType Exponential = 0
+  FIELD RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType PoweredExponential = 1
+  FIELD RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType Spherical = 2
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Models.SpatialExtremes.GaussianCopula
+  BASE System.Object
+  CTOR RMC.BestFit.Models.SpatialExtremes.GaussianCopula(System.Double[,], RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType)
+  METHOD RMC.BestFit.Models.SpatialExtremes.GaussianCopula Clone()
+  METHOD System.Double LogPDF(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Double PDF(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.ICorrelationModel CorrelationFunction {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 Sites {get;}
+TYPE interface RMC.BestFit.Models.SpatialExtremes.ICorrelationModel
+  METHOD RMC.BestFit.Models.SpatialExtremes.ICorrelationModel Clone()
+  METHOD System.Double Evaluate(System.Double)
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType Type {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+TYPE class RMC.BestFit.Models.SpatialExtremes.PoweredExponential
+  BASE System.Object
+  INTERFACE RMC.BestFit.Models.SpatialExtremes.ICorrelationModel
+  CTOR RMC.BestFit.Models.SpatialExtremes.PoweredExponential()
+  METHOD RMC.BestFit.Models.SpatialExtremes.ICorrelationModel Clone()
+  METHOD System.Double Evaluate(System.Double)
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType Type {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialGEV
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.SpatialExtremes.SpatialGEV(System.Double[,], System.Double[,], RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction, RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction, RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction)
+  CTOR RMC.BestFit.Models.SpatialExtremes.SpatialGEV(System.Double[,], System.Double[,], RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction, RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction, RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction, System.Xml.Linq.XElement)
+  METHOD Numerics.Distributions.GeneralizedExtremeValue GetGEVAtUngauged(System.Double[], System.Double[] optional)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double CDF(System.Double, System.Int32)
+  METHOD System.Double ComputeEffectiveSampleSize(System.Double[,] optional)
+  METHOD System.Double ComputeVarianceInflationFactor(System.Double[,] optional)
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double InverseCDF(System.Double, System.Int32)
+  METHOD System.Double PDF(System.Double, System.Int32)
+  METHOD System.Double[,] ComputeIntersiteCorrelation()
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] GetGEVParameters(System.Int32)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.ValueTuple<System.Double[],System.Double[]> PredictAtUngauged(System.Double[], System.Double[] optional)
+  METHOD System.Void ComputeEffectiveSampleSizeWeights(System.Double[,] optional)
+  METHOD System.Void ConfigureForProperCoverage(RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType optional, System.Boolean optional, System.Boolean optional, System.Boolean optional)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.GaussianCopula SpatialDependence {get;set;}
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors LocationErrors {get;set;}
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors ScaleErrors {get;set;}
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors ShapeErrors {get;set;}
+  PROPERTY RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction Location {get;set;}
+  PROPERTY RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction Scale {get;set;}
+  PROPERTY RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction Shape {get;set;}
+  PROPERTY System.Boolean UseCopulaDependence {get;set;}
+  PROPERTY System.Boolean UseLocationErrors {get;set;}
+  PROPERTY System.Boolean UseLogLinkForLocation {get;set;}
+  PROPERTY System.Boolean UseLogLinkForScale {get;set;}
+  PROPERTY System.Boolean UseScaleErrors {get;set;}
+  PROPERTY System.Boolean UseShapeErrors {get;set;}
+  PROPERTY System.Double[,] AtSiteData {get;}
+  PROPERTY System.Double[,] Coordinates {get;}
+  PROPERTY System.Double[] SiteWeights {get;set;}
+  PROPERTY System.Int32 Observations {get;}
+  PROPERTY System.Int32 Sites {get;}
+TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors
+  BASE System.Object
+  CTOR RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors(System.Double[,], RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType, System.Double optional)
+  METHOD RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors Clone()
+  METHOD System.Double GetError(System.Int32)
+  METHOD System.Double LogPDF()
+  METHOD System.Double PDF()
+  METHOD System.ValueTuple<System.Double,System.Double> GetIDWPrediction(System.Double[])
+  METHOD System.ValueTuple<System.Double,System.Double> GetKrigingPrediction(System.Double[])
+  METHOD System.Void SetDefaultParameters(System.Double)
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.ICorrelationModel CorrelationFunction {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> ErrorParameters {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Double[,] Coordinates {get;}
+  PROPERTY System.Double[,] DistanceMatrix {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 Sites {get;}
+TYPE class RMC.BestFit.Models.SpatialExtremes.Spherical
+  BASE System.Object
+  INTERFACE RMC.BestFit.Models.SpatialExtremes.ICorrelationModel
+  CTOR RMC.BestFit.Models.SpatialExtremes.Spherical()
+  METHOD RMC.BestFit.Models.SpatialExtremes.ICorrelationModel Clone()
+  METHOD System.Double Evaluate(System.Double)
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType Type {get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+TYPE class RMC.BestFit.Models.StabilityPoint
+  BASE System.Object
+  CTOR RMC.BestFit.Models.StabilityPoint(System.Double, System.Double, System.Double, System.Double, System.Double, System.Double, System.Double, System.Int32)
+  PROPERTY System.Double ModifiedScale {get;}
+  PROPERTY System.Double ModifiedScaleLowerCI {get;}
+  PROPERTY System.Double ModifiedScaleUpperCI {get;}
+  PROPERTY System.Double Shape {get;}
+  PROPERTY System.Double ShapeLowerCI {get;}
+  PROPERTY System.Double ShapeUpperCI {get;}
+  PROPERTY System.Double Threshold {get;}
+  PROPERTY System.Int32 ExceedanceCount {get;}
+TYPE static-class RMC.BestFit.Models.SubscriptFormatter
+  BASE System.Object
+  METHOD System.String ToSubscript(System.Int32)
+TYPE class RMC.BestFit.Models.ThresholdData
+  BASE RMC.BestFit.Models.Data
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IEquatable<Numerics.Data.SeriesOrdinate<System.Int32,System.Double>>
+  CTOR RMC.BestFit.Models.ThresholdData()
+  CTOR RMC.BestFit.Models.ThresholdData(System.Int32, System.Int32, System.Double)
+  CTOR RMC.BestFit.Models.ThresholdData(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.ThresholdData Clone()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY System.Int32 Duration {get;}
+  PROPERTY System.Int32 EndIndex {get;set;}
+  PROPERTY System.Int32 NumberAbove {get;set;}
+  PROPERTY System.Int32 NumberBelow {get;}
+  PROPERTY System.Int32 StartIndex {get;set;}
+TYPE static-class RMC.BestFit.Models.ThresholdDiagnostics
+  BASE System.Object
+  METHOD RMC.BestFit.Models.MeanResidualLifeResult ComputeMeanResidualLife(System.Collections.Generic.IList<System.Double>, System.Double, System.Double, System.Int32 optional, System.Double optional)
+  METHOD RMC.BestFit.Models.ParameterStabilityResult ComputeParameterStability(System.Collections.Generic.IList<System.Double>, System.Double, System.Double, System.Int32 optional, System.Double optional)
+TYPE class RMC.BestFit.Models.ThresholdSeries
+  BASE RMC.BestFit.Models.DataSeries
+  INTERFACE System.Collections.Generic.ICollection<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IEnumerable<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IList<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.Collections.Specialized.INotifyCollectionChanged
+  CTOR RMC.BestFit.Models.ThresholdSeries()
+  CTOR RMC.BestFit.Models.ThresholdSeries(System.Collections.Generic.IList<RMC.BestFit.Models.ThresholdData>)
+  CTOR RMC.BestFit.Models.ThresholdSeries(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.ThresholdSeries Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.ThresholdData> ToList()
+  METHOD System.Double MaximumValue()
+  METHOD System.Double MinimumValue()
+  METHOD System.Int32 MaximumIndex()
+  METHOD System.Int32 MinimumIndex()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void Sort(Numerics.Data.SortOrder optional)
+  METHOD System.Void SortByIndex(Numerics.Data.SortOrder optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+TYPE enum RMC.BestFit.Models.Transform
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.Transform BoxCox = 2
+  FIELD RMC.BestFit.Models.Transform Logarithmic = 1
+  FIELD RMC.BestFit.Models.Transform None = 0
+  FIELD RMC.BestFit.Models.Transform YeoJohnson = 3
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Models.TrendFunctions.ConstantTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.ConstantTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.ConstantTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.CubicTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.CubicTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.CubicTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.ExponentialTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.ExponentialTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.ExponentialTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction
+  BASE System.Object
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction()
+  CTOR RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction(System.String, System.Double[,] optional)
+  CTOR RMC.BestFit.Models.TrendFunctions.GeneralLinearFunction(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Double PredictWithCovariates(System.Double[])
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+  PROPERTY System.Boolean UseDefaultFlatPriors {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Double[,] Covariates {get;set;}
+  PROPERTY System.Int32 NumberOfCovariates {get;}
+  PROPERTY System.Int32 NumberOfObservations {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 StartIndex {get;set;}
+  PROPERTY System.String OwnerName {get;set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE class RMC.BestFit.Models.TrendFunctions.LinearTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.LinearTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.LinearTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.LogisticTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.LogisticTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.LogisticTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.PowerTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.PowerTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.PowerTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.QuadraticTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.QuadraticTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.QuadraticTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.ReciprocalTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.ReciprocalTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.ReciprocalTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.SinusoidalTrend
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.SinusoidalTrend()
+  CTOR RMC.BestFit.Models.TrendFunctions.SinusoidalTrend(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE class RMC.BestFit.Models.TrendFunctions.StepFunction
+  BASE RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.TrendFunctions.StepFunction()
+  CTOR RMC.BestFit.Models.TrendFunctions.StepFunction(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+TYPE interface RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+  PROPERTY System.Boolean UseDefaultFlatPriors {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 StartIndex {get;set;}
+  PROPERTY System.String OwnerName {get;set;}
+TYPE abstract-class RMC.BestFit.Models.TrendFunctions.Support.TrendModelBase
+  BASE System.Object
+  INTERFACE RMC.BestFit.Models.TrendFunctions.Support.ITrendModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD RMC.BestFit.Models.TrendFunctions.Support.ITrendModel Clone()
+  METHOD System.Double Predict(System.Int32)
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Type {get;}
+  PROPERTY System.Boolean UseDefaultFlatPriors {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
+  PROPERTY System.Int32 NumberOfParameters {get;}
+  PROPERTY System.Int32 StartIndex {get;set;}
+  PROPERTY System.String OwnerName {get;set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
+TYPE enum RMC.BestFit.Models.TrendFunctions.Support.TrendModelType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Constant = 0
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Cubic = 1
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Exponential = 2
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType GeneralLinear = 10
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Linear = 3
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Logistic = 4
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Power = 5
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Quadratic = 6
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Reciprocal = 7
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Sinusoidal = 8
+  FIELD RMC.BestFit.Models.TrendFunctions.Support.TrendModelType StepFunction = 9
+  FIELD System.Int32 value__
+TYPE class RMC.BestFit.Models.UncertainData
+  BASE RMC.BestFit.Models.Data
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IEquatable<Numerics.Data.SeriesOrdinate<System.Int32,System.Double>>
+  CTOR RMC.BestFit.Models.UncertainData()
+  CTOR RMC.BestFit.Models.UncertainData(System.Int32, Numerics.Distributions.UnivariateDistributionBase, System.Double optional)
+  CTOR RMC.BestFit.Models.UncertainData(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.UncertainData Clone()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {get;set;}
+  PROPERTY System.Double Log10LowerValue {get;}
+  PROPERTY System.Double Log10UpperValue {get;}
+  PROPERTY System.Double LowerValue {get;}
+  PROPERTY System.Double UpperValue {get;}
+  PROPERTY System.Double Value {get;set;}
+TYPE class RMC.BestFit.Models.UncertainSeries
+  BASE RMC.BestFit.Models.DataSeries
+  INTERFACE System.Collections.Generic.ICollection<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IEnumerable<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.Generic.IList<RMC.BestFit.Models.Data>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.Collections.Specialized.INotifyCollectionChanged
+  CTOR RMC.BestFit.Models.UncertainSeries()
+  CTOR RMC.BestFit.Models.UncertainSeries(System.Collections.Generic.IList<RMC.BestFit.Models.UncertainData>)
+  CTOR RMC.BestFit.Models.UncertainSeries(System.Xml.Linq.XElement)
+  METHOD RMC.BestFit.Models.UncertainSeries Clone()
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.UncertainData> ToList()
+  METHOD System.Double MaximumValue()
+  METHOD System.Double MinimumValue()
+  METHOD System.Int32 MaximumIndex()
+  METHOD System.Int32 MinimumIndex()
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate(RMC.BestFit.Models.DataFrame)
+  METHOD System.Void Sort(Numerics.Data.SortOrder optional)
+  METHOD System.Void SortByIndex(Numerics.Data.SortOrder optional)
+  METHOD System.Xml.Linq.XElement ToXElement()
+TYPE class RMC.BestFit.Models.UnivariateDistribution
+  BASE RMC.BestFit.Models.UnivariateDistributionModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.IQuantilePriors
+  INTERFACE RMC.BestFit.Models.ISimulatable<System.Double[]>
+  INTERFACE RMC.BestFit.Models.IUnivariateModel
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR RMC.BestFit.Models.UnivariateDistribution()
+  CTOR RMC.BestFit.Models.UnivariateDistribution(RMC.BestFit.Models.DataFrame, Numerics.Distributions.UnivariateDistributionBase)
+  CTOR RMC.BestFit.Models.UnivariateDistribution(RMC.BestFit.Models.DataFrame, Numerics.Distributions.UnivariateDistributionType)
+  CTOR RMC.BestFit.Models.UnivariateDistribution(RMC.BestFit.Models.DataFrame, System.Xml.Linq.XElement)
+  METHOD Numerics.Distributions.UnivariateDistributionBase CreateDistribution(Numerics.Distributions.UnivariateDistributionType)
+  METHOD RMC.BestFit.Models.IModel Clone()
+  METHOD System.Boolean IsSupportedDistributionType(Numerics.Distributions.UnivariateDistributionType)
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> PointwiseDataLogLikelihoodComponents(System.Double[])
+  METHOD System.Collections.Generic.List<RMC.BestFit.Models.PriorComponent> PointwisePriorLogLikelihood(System.Double[])
+  METHOD System.Double DataLogLikelihood(System.Double[])
+  METHOD System.Double LogLikelihood(System.Double[])
+  METHOD System.Double NonstationaryData_LogLikelihood(Numerics.Distributions.UnivariateDistributionBase, System.Double[])
+  METHOD System.Double PriorLogLikelihood(System.Double[])
+  METHOD System.Double Prior_LogLikelihood(Numerics.Distributions.UnivariateDistributionBase, System.Double[])
+  METHOD System.Double StationaryData_LogLikelihood(Numerics.Distributions.UnivariateDistributionBase, System.Double[])
+  METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
+  METHOD System.Double[] GetNonstationaryReturnLevel()
+  METHOD System.Double[] GetParameterValues(System.Int32)
+  METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
+  METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
+  METHOD System.Void ProcessQuantilePriors()
+  METHOD System.Void SetDefaultParameters()
+  METHOD System.Void SetDefaultQuantilePriors()
+  METHOD System.Void SetDistributionParameterValues(System.Int32)
+  METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Void SetTrendModel(System.Int32, RMC.BestFit.Models.TrendFunctions.Support.TrendModelType)
+  METHOD System.Xml.Linq.XElement ToXElement()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {get;set;}
+  PROPERTY Numerics.Distributions.UnivariateDistributionType DistributionType {get;set;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
+  PROPERTY System.Boolean IsNonstationary {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.TrendFunctions.Support.ITrendModel> TrendModels {get;}
+  PROPERTY System.Double Alpha {get;set;}
+  PROPERTY System.Int32 ParameterTimeIndex {get;set;}
+TYPE abstract-class RMC.BestFit.Models.UnivariateDistributionModelBase
+  BASE RMC.BestFit.Models.ModelBase
+  INTERFACE RMC.BestFit.Models.IModel
+  INTERFACE RMC.BestFit.Models.IQuantilePriors
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD System.Void ProcessQuantilePriors()
+  METHOD System.Void SetDefaultQuantilePriors()
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
+  PROPERTY System.Boolean EnableQuantilePriors {get;set;}
+  PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Boolean UseSingleQuantile {get;set;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.QuantilePrior> QuantilePriors {get;set;}

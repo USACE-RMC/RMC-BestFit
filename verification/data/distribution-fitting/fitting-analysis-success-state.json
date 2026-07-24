@@ -1,0 +1,35 @@
+{
+    "finding":  "TR-010",
+    "classification":  "Fast behavioral regression",
+    "baseline":  {
+                     "outcome":  "Confirmed defect",
+                     "is_estimated":  true,
+                     "successful_candidates":  0,
+                     "total_candidates":  15
+                 },
+    "implementation":  {
+                           "public_api_changed":  false,
+                           "success_rule":  "IsEstimated is true if and only if at least one FittedDistribution has FitSucceeded equal to true.",
+                           "all_failed":  {
+                                              "test":  "RMC.BestFit.Tests.DistributionFitting.FittingAnalysisRegressionTests.RunAsync_AllCandidatesFail_ReportsFailure",
+                                              "successful_candidates":  0,
+                                              "is_estimated":  false,
+                                              "completion_succeeded":  false
+                                          },
+                           "partial_success":  {
+                                                   "test":  "RMC.BestFit.Tests.DistributionFitting.FittingAnalysisRegressionTests.RunAsync_PartialCandidateSuccess_ReportsSuccess",
+                                                   "condition":  "0 \u003c successful candidates \u003c total candidates",
+                                                   "is_estimated":  true,
+                                                   "completion_succeeded":  true
+                                               }
+                       },
+    "core_test_gate":  {
+                           "target_framework":  "net10.0",
+                           "passed":  3030,
+                           "failed":  0,
+                           "skipped":  0
+                       },
+    "verification_project_test_added":  false,
+    "reason":  "The finding concerns deterministic state semantics rather than a numerical scientific claim.",
+    "status":  "Fixed and verified by regression"
+}

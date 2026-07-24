@@ -4,8 +4,6 @@
 
 [Distribution index](index.md) · [Scientific review findings](../review-findings.md) · [Parameterization crosswalk](../appendices/parameterization-crosswalk.md)
 
-> **Completion blocker.** The theoretical family and the implemented general-case CDF are documented below, but the pinned RMC.Numerics 2.1.4 density and one inverse-CDF limiting branch are inconsistent at $\kappa=0$. See TR-001. This chapter cannot be classified complete until intended behavior is established and separately authorized production work is verified.
-
 ## Purpose and Parameterization
 
 The four-parameter Kappa family is a flexible location-scale-shape family that contains several distributions used in frequency analysis. RMC.Numerics constructor order is $(\xi,\alpha,\kappa,h)$, where $\alpha>0$; $\xi$ and $\alpha$ have observation units, while both shapes are dimensionless. Numerics calls the second shape `Hondo`.
@@ -44,11 +42,11 @@ $$
 Q(p)=\xi-\alpha\log\left(\frac{1-p^h}{h}\right). \tag{K4.4}
 $$
 
-The current source instead evaluates $\xi-\alpha\log(1-p^h/h)$, which is generally different. The implemented and theoretical forms coincide for $h=1$.
+The zero-primary-shape branch evaluates (K4.4) directly and is the algebraic inverse of the corresponding CDF branch.
 
 The source reports the lower endpoint as $\xi+\alpha/\kappa$ for $h\le0,\kappa<0$; $\xi+(\alpha/\kappa)(1-h^{-\kappa})$ for $h>0,\kappa\ne0$; $\xi+\alpha\log h$ for $h>0,\kappa=0$; and $-\infty$ for $h\le0,\kappa\ge0$. The upper endpoint is infinite for $\kappa\le0$ and $\xi+\alpha/\kappa$ otherwise.
 
-## Density, Moments, and Current Discrepancy
+## Density and Moments
 
 For $\kappa\ne0$ the implemented density is
 
@@ -56,7 +54,7 @@ $$
 f(x)=\frac{1}{\alpha}u^{1/\kappa-1}F(x)^{1-h}. \tag{K4.5}
 $$
 
-The production `PDF` evaluates (K4.5) unchanged when $\kappa=0$. In .NET, the factor with base $u=1$ and infinite exponent evaluates as one, so the result omits the required $\exp[-(x-\xi)/\alpha]$ limiting factor and is generally finite but wrong. Together with the inverse-CDF parentheses error above, this is the confirmed [TR-001](../review-findings.md#tr-001) defect. A re-audit found that the broad shape validation is not itself defective: the support changes with $(\kappa,h)$, and all finite shape pairs define a Kappa distribution when $\alpha>0$; moment existence is a separate condition. The earlier validation concern is closed as [TR-002](../review-findings.md#tr-002).
+For $\kappa=0$, the continuous density limit is $f(x)=\exp(-z)F(x)^{1-h}/\alpha$. The implementation evaluates this branch directly. Distribution support changes with $(\kappa,h)$, and all finite shape pairs define a Kappa distribution when $\alpha>0$; moment existence is a separate condition.
 
 Numerics computes mean, standard deviation, skewness, and kurtosis by a cached 1,000-interval numerical central-moment calculation, and finds the mode by Brent maximization between the 0.001 and 0.999 quantiles. Tail-dominated moments and boundary modes require independent checks.
 
@@ -76,11 +74,11 @@ private static (double Density, double Cdf, double Quantile) EvaluateKappaFour()
 }
 ```
 
-The example deliberately uses nonzero shapes, avoiding the unresolved $\kappa=0$ branch. It demonstrates API shape, not suitability or numerical validation.
+The example uses nonzero shapes to illustrate the general branch. It demonstrates API shape, not suitability for a particular dataset.
 
-## Validation Required to Close the Chapter
+## Validation
 
-Closure requires focused tests for density normalization, CDF/quantile inversion in all four branches, continuity as either shape tends to zero, all special-family identities, support validity, and comparison with Hosking's Kappa formulation. No validation claim is made for the affected limiting branch pending that work.
+Analytical tests verify the zero-$\kappa$ density as the derivative of the CDF, CDF/quantile inversion, support, normalization, and two-sided continuity at the limiting branch. A finite-shape regression spans all four sign combinations of $(\kappa,h)$ and verifies admissibility, monotone quantiles, CDF/quantile round trips, positive interior density, and support endpoints. Independent full-family comparisons cover nonzero-shape behavior, zero-$h$ branches, special-family identities, and tail support against Hosking's formulation.
 
 ## References
 

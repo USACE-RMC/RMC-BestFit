@@ -24,7 +24,7 @@ $$
 
 `FittingAnalysis` constructs a `UnivariateDistribution`, applies its data-derived defaults and bounds, disables the optional Jeffreys scale term, and invokes `MaximumLikelihood` with `OptimizationMethod.DifferentialEvolution`. The optimizer receives `DataLogLikelihood`, not `LogLikelihood`, so parameter and quantile priors are excluded. For this workflow, Hessian computation is disabled, the iteration limit is 10,000, and the function-evaluation limit is 100,000. A successful optimizer status is necessary but not sufficient for a published result: AIC, BIC, and RMSE must all also be finite.
 
-Each candidate is fitted in a separate `Parallel.For` iteration. A failure in one family is caught and stored in that candidate's `ErrorMessage`; it does not abort the remaining fits. Consequently, reviewers must inspect `FitSucceeded` for every candidate instead of treating the outer `IsEstimated` flag as evidence that all—or any—families fitted successfully. This run-state issue is tracked in [TR-010](../review-findings.md#tr-010).
+Each candidate is fitted in a separate `Parallel.For` iteration. A failure in one family is caught and stored in that candidate's `ErrorMessage`; it does not abort the remaining fits. `IsEstimated` is true when at least one candidate has `FitSucceeded == true`. Partial success therefore produces a usable screening result, while an all-failed run leaves `IsEstimated` false and reports an unsuccessful completion event. Reviewers should inspect each candidate because the outer flag does not imply that every family fitted successfully.
 
 ## Comparison Statistics
 
@@ -50,7 +50,7 @@ $$
 \left(y_i-q_i\right)^2\right]^{1/2}. \tag{4}
 $$
 
-The pinned helper currently sums only indices (0,\ldots,n-k_m-1), thereby dropping the last (k_m) residuals instead of merely changing the denominator. That implementation discrepancy is [TR-009](../review-findings.md#tr-009). Until resolved, use the reported RMSE only as an implementation-specific screening statistic, and do not reproduce equation (4) from the current value without an independent calculation.
+The Numerics helper includes all \(n\) residuals in the numerator and applies the parameter adjustment only through the \(n-k_m\) denominator. It rejects parameter counts that are negative or do not leave positive residual degrees of freedom. Because paired row permutations leave the complete squared-residual sum unchanged, the reported RMSE is invariant to storage order when values and probabilities are permuted together.
 
 Neither AIC nor BIC measures tail plausibility, structural adequacy, or compliance with a regulatory method. RMSE is in the units of the modeled variable and therefore cannot be compared across differently scaled datasets.
 
@@ -105,7 +105,7 @@ Changing the data frame clears fits. Changing `ProbabilityOrdinates` does not re
 | Result DTO and XML | `Models/DistributionFitting/FittedDistribution.cs` |
 | MLE objective and status | `Estimation/MaximumLikelihood.cs` |
 | Family likelihoods | `Models/UnivariateDistribution/UnivariateDistribution.cs` |
-| AIC, BIC, RMSE helpers | pinned `Numerics/Data/Statistics/GoodnessOfFit.cs` |
+| AIC, BIC, RMSE helpers | `Numerics/Data/Statistics/GoodnessOfFit.cs` |
 | Documentation compile gate | `RMC.BestFit.Tests/Documentation/TechnicalReferenceDocumentationTests.cs` |
 
 The existing computational verification project contains family-specific estimator comparisons, but it is intentionally not executed by the documentation gate. See the [distribution verification matrix](../distributions/verification-matrix.md) for the evidence map.

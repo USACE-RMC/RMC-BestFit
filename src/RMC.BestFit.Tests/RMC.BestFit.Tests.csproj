@@ -31,11 +31,16 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Numerics" Condition="'$(UseLocalRmcNumerics)' != 'true'" />
+    <ProjectReference Include="$(RmcNumericsProjectPath)" Condition="'$(UseLocalRmcNumerics)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="CoreInfrastructure\PublicApiBaseline.txt"
+                      LogicalName="RMC.BestFit.Tests.CoreInfrastructure.PublicApiBaseline.txt" />
+  </ItemGroup>
 </Project>

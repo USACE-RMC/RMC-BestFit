@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "artifact_id": "DF-LMOMCO-FAMILY-ORACLES-001",
+    "generated_utc": "2026-07-24",
+    "command": "scripts/generate-verification-data.ps1 -Family distribution-fitting",
+    "generator": "verification/r/distribution-fitting/generate_lmomco_oracles.R",
+    "generator_sha256": "8e3349791012ac7f019e46fde4f083e0c9ebf97bf4c5619219bcf47db917e9bd",
+    "bestfit_source_commit": "25f7b3c32f8a27b4a6877342fa777c05313aef8e",
+    "numerics_source_commit": "bc11849c762d7b87d06aa64a3f3706ecf118fc13",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "lmomco_version": "2.5.7",
+    "jsonlite_version": "2.0.0",
+    "probabilities": "39 equally spaced nonexceedance probabilities from 0.025 through 0.975",
+    "absolute_tolerance": 1e-08,
+    "relative_tolerance": 1e-07,
+    "scaled_parameter_tolerance": 1e-05
+  },
+  "families": {
+    "GeneralizedLogistic": {
+      "data": [26.1702708066983, 37.9802702271554, 44.4880279061201, 48.9740553122727, 52.4032621327693, 55.1882178568649, 57.5424320512191, 59.5903724436722, 61.4108314816745, 63.0568236212422, 64.5657506446941, 65.9650317943714, 67.2754258342354, 68.5130945424447, 69.690940798976, 70.8195092562131, 71.9076133690073, 72.9627861769729, 73.9916151549336, 75, 75.9933595148591, 76.9768061701965, 77.955302559127, 78.9338117873167, 79.9174534303258, 80.9116780121504, 81.9224764271772, 82.9566473660004, 84.0221577067751, 85.1286521857544, 86.2882080885476, 87.5165069095843, 88.8347512886417, 90.2730014747825, 91.8764478457311, 93.718460445009, 95.9318786398885, 98.8023701238, 103.18542739204],
+      "lmomco_parameter_order": ["xi", "alpha", "kappa"],
+      "lmomco_parameters": [75.1223255353218, 9.21982607117144, 0.157629112594381],
+      "numerics_parameter_order": ["xi", "alpha", "kappa"],
+      "numerics_parameters": [75.1223255353218, 9.21982607117144, 0.157629112594381],
+      "parameter_crosswalk": "Direct lmomco-to-Numerics mapping (xi, alpha, kappa); the Hosking shape sign and support convention are identical.",
+      "fit_method": "lmomco::mle2par 2.5.7 with R optim Nelder-Mead, reltol=1e-13, maxit=100000, L-moment initialization",
+      "convergence_code": 0,
+      "maximum_log_likelihood": -164.065063655803,
+      "evaluation": {
+        "x": 68.5130945424447,
+        "pdf": 0.0217558735654546,
+        "cdf": 0.336448162279132,
+        "probability": 0.9,
+        "quantile": 92.2444435426636
+      }
+    },
+    "GeneralizedNormal": {
+      "data": [35.1814350008891, 37.0170919320999, 38.3100211712195, 39.3604818313208, 40.2715375289967, 41.0921718430036, 41.8499675121938, 42.5622267135273, 43.240669197647, 43.8937168800718, 44.5277223342612, 45.1476821951008, 45.7576780784427, 46.3611641106573, 46.9611639475408, 47.5604125981488, 48.1614640399606, 48.7667778332516, 49.3787936180854, 50, 50.6330031498075, 51.2806000996368, 51.9458620823921, 52.6322343765648, 53.3436611983631, 54.0847476834231, 54.8609767710356, 55.6790084141662, 56.5471049518339, 57.4757555103806, 58.4786259233035, 59.574065043085, 60.7876148269814, 62.156457075896, 63.7379307964902, 65.627632597229, 68.0039540948878, 71.265580282414, 76.6788197249012],
+      "lmomco_parameter_order": ["xi", "alpha", "kappa"],
+      "lmomco_parameters": [49.8855628471772, 9.18855534692628, -0.301109426012295],
+      "numerics_parameter_order": ["xi", "alpha", "kappa"],
+      "numerics_parameters": [49.8855628471772, 9.18855534692628, -0.301109426012295],
+      "parameter_crosswalk": "Direct lmomco-to-Numerics mapping (xi, alpha, kappa); the Hosking shape sign and support convention are identical.",
+      "fit_method": "lmomco::mle2par 2.5.7 with R optim Nelder-Mead, reltol=1e-13, maxit=100000, L-moment initialization",
+      "convergence_code": 0,
+      "maximum_log_likelihood": -141.839003295522,
+      "evaluation": {
+        "x": 46.3611641106573,
+        "pdf": 0.0451740700887526,
+        "cdf": 0.341790265797729,
+        "probability": 0.9,
+        "quantile": 64.2559654661179
+      }
+    }
+  }
+}

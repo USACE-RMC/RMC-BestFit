@@ -6,6 +6,10 @@
     <HecDssAssemblyPath>$(HecDssRoot)bin\Debug\net10.0\Hec.Dss.dll</HecDssAssemblyPath>
     <HecDssNativeWin>$(HecDssRoot)native-lib\win\hecdss.dll</HecDssNativeWin>
     <HecDssNativeLinux>$(HecDssRoot)native-lib\linux\libhecdss.so</HecDssNativeLinux>
+    <!-- Prefer a sibling Numerics source checkout for local cross-repository verification. -->
+    <RmcNumericsProjectPath Condition="'$(RmcNumericsProjectPath)' == ''">$(RepositoryRoot)..\Numerics\Numerics\Numerics.csproj</RmcNumericsProjectPath>
+    <UseLocalRmcNumerics Condition="'$(UseLocalRmcNumerics)' == '' and Exists('$(RmcNumericsProjectPath)')">true</UseLocalRmcNumerics>
+    <UseLocalRmcNumerics Condition="'$(UseLocalRmcNumerics)' == ''">false</UseLocalRmcNumerics>
     <Version>2.0.0</Version>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <FileVersion>2.0.0.0</FileVersion>

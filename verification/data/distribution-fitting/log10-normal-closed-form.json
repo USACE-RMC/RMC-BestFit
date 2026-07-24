@@ -1,0 +1,40 @@
+{
+  "family": "Log10-Normal",
+  "oracle": "Closed-form normal MLE in base-10 log space with original-measure Jacobian",
+  "data_log10": [1.1, 1.4, 1.7, 2.0, 2.3, 2.6, 2.9],
+  "expected": {
+    "mu": 2.0,
+    "sigma_mle": 0.6,
+    "sum_squared_log_residuals": 2.5199999999999996,
+    "jacobian_log_sum": 38.07441841865233,
+    "data_log_likelihood": -44.431208784723104,
+    "cdf_at_100": 0.5,
+    "quantile_0_9": 587.3959385303014
+  },
+  "formula": {
+    "mu": "mean(log10(y))",
+    "sigma_squared": "sum((log10(y)-mu)^2)/n",
+    "log_likelihood": "-n*log(sigma*sqrt(2*pi))-SSE/(2*sigma^2)-sum(log(y*ln(10)))"
+  },
+  "tolerances": {
+    "optimizer_parameters_absolute": 1E-5,
+    "optimizer_log_likelihood_absolute": 1E-8,
+    "analytical_log_likelihood_absolute": 1E-10,
+    "cdf_absolute": 1E-12,
+    "analytical_quantile_absolute": 1E-9,
+    "fitted_quantile_relative": 5E-5
+  },
+  "provenance": {
+    "bestfit_base_commit": "25f7b3c32f8a27b4a6877342fa777c05313aef8e",
+    "numerics_commit": "bc11849c762d7b87d06aa64a3f3706ecf118fc13",
+    "test_source_sha256": "a51d45c76ea7abf16386754c78f4e1645aa9c39a581d5a902a0e486e953a4309",
+    "test": "RMC.BestFit.Verification.DistributionFitting.Log10NormalFittingVerificationTests.ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle",
+    "trx": "TestResults/VerificationFocused/20260724-142251-RMC_BestFit_Verification_DistributionFitting_Log10NormalFittingVerificationTests_ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle/haden_HADEN_2026-07-24_20_22_57.860.trx"
+  },
+  "outcome": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "status": "Passed"
+}

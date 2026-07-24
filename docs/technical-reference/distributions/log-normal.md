@@ -60,7 +60,7 @@ The mean 3.20 and standard deviation 0.20 describe $\log_{10}$ discharge. This i
 
 ## Validation and Limitations
 
-Required checks include the Jacobian, normalization, CDF/quantile inversion, base-10 transformed moments, and explicit crosswalks to natural-log and natural-space parameterizations. The compile gate verifies API conformance. Zero and negative observations have no support and must be represented through censoring or another family rather than silently transformed.
+Closed-form verification uses a symmetric deterministic sample in base-10 log space. It verifies the population-divisor MLEs for $\mu_Y$ and $\sigma_Y$, the original-measure log likelihood including the $(x\ln 10)^{-1}$ Jacobian, equality of scalar and pointwise likelihood sums, the median CDF, and a selected analytical quantile. Parameter estimates agree within $10^{-5}$ and the maximized log likelihood within $10^{-8}$; direct likelihood identities use $10^{-10}$. Zero and negative observations have no support and must be represented through censoring or another family rather than silently transformed.
 
 ## References
 

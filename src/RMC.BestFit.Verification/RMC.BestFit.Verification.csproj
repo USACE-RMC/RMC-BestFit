@@ -1,0 +1,47 @@
+<Project Sdk="MSTest.Sdk/3.6.4">
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>RMC.BestFit.Verification</AssemblyTitle>
+    <Description>Long-running computational verification and validation tests for RMC-BestFit. Validates the math against R packages, published results, and Bulletin 17C reference data. Not built in Release configuration.</Description>
+    <Company>U.S. Army Corps of Engineers</Company>
+    <Product>RMC-BestFit</Product>
+    <!--
+      Displays error on console in addition to the log file. Note that this feature comes with a performance impact.
+      For more information, visit https://learn.microsoft.com/dotnet/core/testing/unit-testing-platform-integration-dotnet-test#show-failure-per-test
+      -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Datasets\Bivariate\**" />
+    <EmbeddedResource Remove="Datasets\Bivariate\**" />
+    <None Remove="Datasets\Bivariate\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="RMC.Numerics" Condition="'$(UseLocalRmcNumerics)' != 'true'" />
+    <ProjectReference Include="$(RmcNumericsProjectPath)" Condition="'$(UseLocalRmcNumerics)' == 'true'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\verification\data\distribution-fitting\scipy-family-oracles.json"
+          Link="VerificationData\scipy-family-oracles.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\distribution-fitting\lmomco-family-oracles.json"
+          Link="VerificationData\lmomco-family-oracles.json"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

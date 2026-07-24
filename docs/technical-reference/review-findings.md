@@ -8,36 +8,80 @@ This is the canonical register for disagreements among statistical theory, the p
 
 ## Summary
 
-| ID | Area | Scientific consequence | Status |
-|---|---|---|---|
-| TR-001 | Kappa Four, \(\kappa=0\) | Density and inverse CDF disagree with the implemented CDF | Open—high |
-| TR-002 | Kappa Four shape validation | Re-audit found no missing general shape restriction | Closed—non-defect |
-| TR-003 | Nonstationary threshold chronology | Likelihood depends on chronology not identified by grouped counts | Open—methodological |
-| TR-004 | Point-process event-rate summaries | Public rate uses a different event count from simulation and likelihood | Open—high |
-| TR-005 | Point-process simulation | Synthetic counts/seasonal marks are not generated from the fitted PP intensity | Open—high |
-| TR-006 | Mixture weight parameterization | Redundant weights and in-place proposal mutation undermine identification | Open—high |
-| TR-007 | Zero-inflated mixture | PDF, CDF, and simulation do not define one coherent mixed distribution | Open—high |
-| TR-008 | Mixture EM invalid rows | Impossible observations can be skipped instead of failing the objective | Open—high |
-| TR-009 | RMSE helper | Last \(k\) residuals are omitted | Open—high |
-| TR-010 | Fitting run status | Outer analysis can report success when every candidate failed | Open—medium |
-| TR-011 | Univariate AIC/BIC | Labels use posterior-at-MAP rather than data likelihood at MLE | Open—high |
-| TR-012 | Competing-risk simulation | Non-independent dependence setting is ignored by BestFit simulation | Open—high |
-| TR-013 | Composite criterion weights | Non-finite child criteria can contaminate every weight | Open—medium |
-| TR-014 | Composite posterior coupling | Separate child draws are paired by raw index without a joint model | Open—methodological |
-| TR-015 | Composite correlation matrix | Correlation-matrix dependence is selectable but cannot be configured | Open—high |
-| TR-016 | Bulletin 17C result terminology | Frequentist GMM ensembles are exposed through Bayesian/MCMC names | Open—medium |
-| TR-017 | Bulletin 17C bootstrap naming | `BiasCorrectedBootstrap` implements a studentized pivotal algorithm, not BC/BCa | Open—high |
-| TR-018 | Bulletin 17C failed bootstrap fits | Parent parameters replace exhausted refit failures | Open—high |
-| TR-019 | Bulletin 17C bootstrap truncation | Asymptotic Mahalanobis rejection truncates the refit distribution | Open—methodological |
-| TR-020 | Bulletin 17C Cohn diagnostics | Public method is hard-coded to LP3 log space for every supported parent | Open—high |
-| TR-021 | Bulletin 17C release evidence | Legacy EMA report validates a different Bayesian workflow | Open—evidence |
-| TR-022 | MCMC sampler inventory | BestFit exposes NUTS, while planning and legacy material name HMC | Open—documentation/API |
-| TR-023 | MLE/MAP profile likelihood | Public methods compute coordinate slices, not profile likelihoods | Open—high |
-| TR-024 | PSIS tail smoothing | Tail fit and order-statistic replacement do not implement PSIS correctly | Open—high |
-| TR-025 | ARWMH covariance adaptation | Warmup covariance records accepted states but omits rejected repeats | Open—high |
-
+| ID | Finding | Severity | Review disposition | Implementation | Verification | Evidence | Updated |
+|---|---|---|---|---|---|---|---|
+| [TR-001](#tr-001) | Kappa Four zero-shape PDF and quantile | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-001---kappa-four-zero-primary-shape) · [Artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json) | 2026-07-24 |
+| [TR-002](#tr-002) | Kappa Four shape validation | Closed | Rejected non-defect | N/A | Passed - regression | [Report](../verification/distribution-fitting.md#tr-002---finite-kappa-shape-pairs) / [Artifact](../../verification/data/distribution-fitting/kappa-four-finite-shapes.json) | 2026-07-24 |
+| [TR-003](#tr-003) | Nonstationary threshold chronology | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-004](#tr-004) | Point-process rate definitions | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-005](#tr-005) | Point-process fitted-model simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-006](#tr-006) | Mixture weights and proposal mutation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-007](#tr-007) | Zero-inflated mixed distribution | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-008](#tr-008) | Mixture EM impossible rows | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-009](#tr-009) | RMSE residual omission | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) / [Artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json) | 2026-07-24 |
+| [TR-010](#tr-010) | FittingAnalysis all-failed status | Medium | Confirmed defect | Fixed | Passed - regression | [Report](../verification/distribution-fitting.md#tr-010---all-candidate-failure-reports-overall-success) · [Artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json) | 2026-07-24 |
+| [TR-011](#tr-011) | Univariate AIC/BIC posterior kernel | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-012](#tr-012) | Competing-risk dependent simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-013](#tr-013) | Non-finite composite criteria | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-014](#tr-014) | Composite posterior draw coupling | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-015](#tr-015) | Composite correlation matrix configuration | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-017](#tr-017) | Bulletin 17C bootstrap naming | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-018](#tr-018) | Bulletin 17C failed bootstrap fits | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-019](#tr-019) | Bulletin 17C bootstrap truncation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-020](#tr-020) | Bulletin 17C Cohn diagnostics scope | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-021](#tr-021) | Bulletin 17C release evidence | Evidence | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-022](#tr-022) | NUTS versus HMC inventory | Documentation/API | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-023](#tr-023) | MLE/MAP coordinate slices | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-024](#tr-024) | PSIS tail smoothing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-025](#tr-025) | ARWMH covariance adaptation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-026](#tr-026) | GMM Hansen J statistic | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-027](#tr-027) | Zero covariance on numerical failure | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-028](#tr-028) | Joint prior-predictive sampling | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-029](#tr-029) | MCMC diagnostic claims | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-030](#tr-030) | NUTS acceptance reporting | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-031](#tr-031) | Leverage interpretation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-032](#tr-032) | GMM influence labeled Pareto k | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-033](#tr-033) | GMM objective/gradient scale | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-036](#tr-036) | Transform fitting holdout leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-046](#tr-046) | Manual transform state rebuild | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-048](#tr-048) | Spatial missing-site marginalization | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-049](#tr-049) | Spatial likelihood decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-050](#tr-050) | Spatial cross-validation result retention | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-051](#tr-051) | Spatial held-out-site leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-052](#tr-052) | Spatial held-out covariates | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-057](#tr-057) | Spatial Godambe decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-058](#tr-058) | Regional posterior interval construction | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-059](#tr-059) | Spatial site-weight interpretation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-060](#tr-060) | Spatial distance units | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-061](#tr-061) | Spatial dependent simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-062](#tr-062) | Spatial uncertainty-method dispatch | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API changes in RMC.Numerics commit `3e058ebe5917817f3dde5e3b2ed6574d6bab083e`.
+
+**Verification status.** Passed. The two exact analytical Verification methods pass independently against the corrected Numerics source.
+
+**Report evidence.** [Distribution fitting verification](../verification/distribution-fitting.md#tr-001---kappa-four-zero-primary-shape) and [committed result artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json).
 
 **Evidence.** At pinned Numerics commit `828664650c9327b309ee8332e707ccca73588e93`, `KappaFour.CDF` uses
 
@@ -55,17 +99,33 @@ but `InverseCDF` evaluates `Xi - Alpha * Log(1 - p^h / h)`. `PDF` also evaluates
 
 A compiled local probe with \((\xi,\alpha,\kappa)=(0,1,0)\) found, at \(x=1\): for \(h=0.2\), CDF `0.6824160756`, PDF `0.7366130339`, central numerical CDF derivative `0.2709847914`, and inverse-CDF at that CDF `NaN`. The existing Numerics Kappa test exercises construction at zero but not zero-shape density or CDF/quantile inversion.
 
-**Impact.** Likelihoods and quantiles are wrong for the \(\kappa=0,h\ne0\) branch. The \(h=1\) inverse happens to coincide algebraically, but its density still lacks the limiting factor.
+The corrected source adds the exact zero-kappa density factor and fixes the inverse-CDF grouping. Four upstream regressions cover the analytical derivative, inverse/CDF round trip, support and normalization, and two-sided continuity. The complete Numerics .NET 10 gate passed 1,905 tests with no failures or skips. Both exact BestFit verification methods pass independently at absolute tolerance `1e-10`.
 
-**Follow-up.** Implement analytic zero-shape PDF and inverse branches; add density/CDF derivative, CDF/quantile round-trip, normalization, and two-sided continuity tests around zero. Run the narrowly filtered Numerics tests and BestFit unit gates; publish parity only after the user runs any required verification command.
+**Impact.** The defect affected zero-primary-shape likelihoods and quantiles. The corrected implementation restores the analytical density and inverse CDF for this branch.
+
+**Follow-up.** Retain the two exact BestFit methods and four upstream regressions as permanent release gates.
 
 <a id="tr-002"></a>
 ## TR-002 — Kappa Shape Validation Re-audit (Closed)
 
+**Review disposition.** Rejected non-defect.
+
+**Implementation status.** No production change required.
+
+**Verification status.** Passed by the Numerics finite-shape/support regression on .NET 10. The complete Kappa Four class passed 12 tests with zero failures or skips. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-002---finite-kappa-shape-pairs) and [result artifact](../../verification/data/distribution-fitting/kappa-four-finite-shapes.json).
+
 The initial audit suspected that finite \((\kappa,h)\) pairs needed additional rejection. Re-reading `Minimum`, `Maximum`, CDF branches, and the Hosking formulation showed that the support changes with the two shapes and that all finite shape pairs are admissible distribution parameters when \(\alpha>0\). Existence of particular moments is a separate question. No general shape-combination validation defect was established, so this item is closed as a non-defect.
+
+**Evidence.** The regression spans positive and negative values of both shape parameters. It verifies admissibility, monotone finite quantiles, CDF/quantile round trips at (10^{-10}), positive interior density, and the reported finite support endpoints. No production change was required; the regression is committed in RMC.Numerics commit `bc11849c762d7b87d06aa64a3f3706ecf118fc13`.
 
 <a id="tr-003"></a>
 ## TR-003 — Nonstationary Threshold Chronology
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `DataFrame.FullTimeSeries` expands a perception period after removing explicit observations, places below-threshold records from the beginning of the remaining period, and places above-threshold records from its end.
 
@@ -76,6 +136,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-004"></a>
 ## TR-004 — Point-Process Rate Definitions
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `PointProcessModel.CalculateLambda()` divides the count of exact, uncertain, and interval records by `TotalYears`. `GeneratePOTTimeSeries()` divides exact count only by `TotalYears`. The fitted point-process likelihood does not use the public `Lambda`; its expected exceedance rate is the GEV-compatible tail intensity determined by \((\mu,\sigma,\xi,u)\).
 
 **Impact.** Three values can be described as “rate”: the public summary, the simulator rate, and the fitted intensity. They need not agree, particularly with uncertain/interval observations.
@@ -84,6 +150,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-005"></a>
 ## TR-005 — Point-Process Simulation Is Not Fitted-Model Predictive Simulation
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `GeneratePOTTimeSeries()` samples event count from `ExactSeries.Count / TotalYears`, not from the fitted intensity measure at the threshold. Seasonal mark distributions receive the raw six GEV parameters, while annual frequency output uses seasonal-fraction location/scale transforms. Dates are uniform over the requested span.
 
@@ -94,6 +166,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-006"></a>
 ## TR-006 — Mixture Weights Are Redundant and Mutate Candidate Arrays
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** For \(K>1\), `MixtureModel` exposes all \(K\) weights with independent Uniform(0,1) priors. Numerics `Mixture.SetParameters(ref double[])` normalizes those weights and writes the normalized values back into the caller's array. `DataLogLikelihood` and `PriorLogLikelihood` pass the supplied array by reference.
 
 **Impact.** Multiplying all raw weights by a common positive constant leaves the likelihood unchanged after normalization, creating a nonidentified radial direction. Objective evaluation also mutates optimizer/MCMC proposals, violating the normal pure-function contract and making the stated raw-weight priors hard to interpret.
@@ -102,6 +180,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-007"></a>
 ## TR-007 — Zero-Inflated Mixture Probability Functions
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** With zero inflation enabled, pinned Numerics `Mixture.PDF(x)` returns `ZeroWeight` for every \(x\le0\); `CDF(x)` starts at `ZeroWeight` even for \(x<0\); and `InverseCDF(p)` returns zero for \(p\le\)`ZeroWeight`. Simulation uses a deterministic mass at exactly zero.
 
@@ -112,6 +196,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-008"></a>
 ## TR-008 — Mixture EM Skips Impossible Rows
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** In `MixtureModel.ExpectationMaximization`, if every component log contribution for a row is non-finite, or its log-sum-exp is nonpositive, the E-step executes `continue`. The row adds nothing to the objective and retains no valid responsibilities.
 
 **Impact.** A data row outside every component support can disappear from the EM objective instead of making the candidate likelihood impossible. The returned parameters/covariance can therefore appear finite for an invalid fit.
@@ -121,23 +211,41 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-009"></a>
 ## TR-009 — RMSE Omits the Last \(k\) Residuals
 
-**Evidence.** Numerics `GoodnessOfFit.RMSE(observed, modeled, k)` sets `n = observed.Count - k` and loops only from zero through `n-1`. The conventional degrees-of-freedom adjustment uses all residuals in the numerator and \(n-k\) only in the denominator.
+**Review disposition.** Confirmed defect.
 
-**Impact.** `FittingAnalysis` and Bayesian univariate point-result RMSE depend on input ordering and omit exactly as many tail entries as there are parameters. Ranking and inverse-MSE model weights can change.
+**Implementation status.** Fixed without public API changes in RMC.Numerics commit `24bf9f98139b23400bf008df413b0d97330ccfd3`. The numerator now includes every residual, and only the denominator uses the residual degrees of freedom \(n-k\). Invalid parameter counts that do not leave positive residual degrees of freedom are rejected.
 
-**Follow-up.** Sum all residuals, validate \(n>k\), choose and document either denominator \(n\) or \(n-k\), and add order-invariance and hand-calculation tests.
+**Verification status.** Passed by an analytical hand calculation and paired-permutation test at absolute tolerance \(10^{-12}\). The complete Numerics .NET 10 gate passed 1,907 tests with zero failures or skips. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) and [result artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json).
+
+**Evidence.** For observed values \([0,0,0,0]\), modeled values \([1,2,3,4]\), and \(k=1\), the analytical value is \(\sqrt{30/3}=3.1622776601683795\). The baseline implementation returned \(2.160246899469287\) because it summed only the first three squared residuals. The same exact verification method passes after the correction and proves invariance to paired row permutation.
+
+**Impact.** `FittingAnalysis` and Bayesian univariate point-result RMSE are now independent of paired input ordering. Rankings and inverse-MSE model weights use the complete residual vector.
+
+**Follow-up.** Retain the hand-calculated, paired-permutation, and invalid-parameter-count regressions. Family-level fitting verification must continue to compare the resulting RMSE and rankings with independent distribution oracles.
 
 <a id="tr-010"></a>
 ## TR-010 — FittingAnalysis Overall Success State
 
-**Evidence.** Candidate exceptions are caught inside the parallel loop and recorded per `FittedDistribution`. If the outer loop is not canceled and raises no outer exception, `FittingAnalysis` sets `IsEstimated = true` without requiring any `FitSucceeded` result.
+**Review disposition.** Confirmed defect.
 
-**Impact.** An all-failed screening run can emit a successful completion state.
+**Implementation status.** Fixed without public API changes. Overall success now requires at least one candidate with `FitSucceeded == true`.
 
-**Follow-up.** Define partial-success semantics, require at least one successful candidate for overall success, and surface failed-count diagnostics in the completion result.
+**Verification status.** Passed by two deterministic fast regressions and the complete .NET 10 core gate. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-010---all-candidate-failure-reports-overall-success) and [result artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json).
+
+**Evidence.** Candidate exceptions are caught inside the parallel loop and recorded per `FittedDistribution`. If the outer loop is not canceled and raises no outer exception, `FittingAnalysis` sets `IsEstimated = true` without requiring any `FitSucceeded` result. On 24 July 2026, the isolated outlier smoke fixture reproduced exactly that state: `IsEstimated` was true and all 15 candidates had `FitSucceeded == false`.
+
+**Impact.** An all-failed screening run now reports failure, while a partial-success run remains successful and preserves every candidate result.
+
+**Follow-up.** Retain the zero-success and partial-success regressions as permanent state-semantic gates. Candidate counts remain directly available from `FittedDistributions` without adding API.
 
 <a id="tr-011"></a>
 ## TR-011 — Univariate AIC/BIC Use Posterior at MAP
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `UnivariateAnalysis.UpdatePointEstimateResultsAsync()` evaluates `UnivariateDistribution.LogLikelihood(MAP)`, which includes priors, then passes that value to AIC and BIC helpers. Conventional AIC/BIC use maximized data log likelihood; priors make the reported value sensitive to prior density and parameterization.
 
@@ -148,6 +256,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-012"></a>
 ## TR-012 — Competing-Risk Simulation Ignores Dependency
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `CompetingRisksModel.GenerateRandomValues()` calls Numerics `CompetingRisks.GenerateRandomValues()`, which samples each marginal with an independent uniform draw. Numerics has a separate `GenerateRandomValuesWithDependency()` implementation, but BestFit does not call it.
 
 **Impact.** Simulations from perfectly dependent or correlation-matrix models do not follow the fitted/configured composite CDF.
@@ -156,6 +270,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-013"></a>
 ## TR-013 — Non-Finite Composite Criteria
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `CompositeAnalysis.EstimateModelWeights()` filters on estimated/non-null child results but does not filter or reject non-finite criterion values before calling `AICWeights` or `RMSEWeights`.
 
@@ -166,6 +286,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-014"></a>
 ## TR-014 — Composite Posterior Draw Coupling
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** For separately fitted children, `CompositeAnalysis` takes the minimum output length and combines child distribution at raw index \(b\) with every other child's raw index \(b\). It does not establish a joint posterior, permute draws, or independently resample indices.
 
 **Impact.** Nonlinear composite uncertainty depends on arbitrary chain ordering and possibly common pseudo-random seeds. The resulting interval encodes an undocumented cross-child coupling.
@@ -174,6 +300,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-015"></a>
 ## TR-015 — Composite Correlation Matrix Cannot Be Supplied
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `CompositeAnalysis.Dependency` can be set to `CorrelationMatrix`, but the analysis exposes no matrix property and constructs fresh Numerics `CompetingRisks` objects without assigning `CorrelationMatrix`. Numerics dereferences that matrix when creating its multivariate normal.
 
@@ -184,6 +316,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-016"></a>
 ## TR-016 — Bulletin 17C Frequentist Results Use Bayesian/MCMC Terminology
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `Bulletin17CDistribution` implements `IGMMModel`, not `IModel`, and defines no likelihood, prior, posterior, or MCMC target. `Bulletin17CAnalysis` nevertheless exposes a `BayesianAnalysis` property and stores GMM uncertainty draws in `MCMCResults`; the GMM estimate is placed in `MAP`, ensemble averages are exposed as `PosteriorMean`, and `CredibleIntervalWidth` controls frequentist confidence limits.
 
 **Impact.** API consumers and generated reports can incorrectly describe a sampling distribution as a posterior, a GMM estimate as a posterior mode, and confidence intervals as credible intervals. Bayesian diagnostics and information criteria are not defined for these draws.
@@ -192,6 +330,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-017"></a>
 ## TR-017 — `BiasCorrectedBootstrap` Does Not Implement BC or BCa
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** The enum XML describes bias-corrected intervals, but `GetParameterSetsFromPivotalBootstrap()` collects bootstrap estimates and covariances, fits Yeo-Johnson/log links, forms a studentized multivariate pivot with replicate Cholesky factors, adds smoothing, clips pivot components to `[-6,6]`, and maps them through the parent covariance. It does not compute the BC bias constant, BC percentile mapping, jackknife acceleration, or BCa endpoints.
 
@@ -202,6 +346,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-018"></a>
 ## TR-018 — Failed Bulletin 17C Bootstrap Refits Become Parent-Estimate Mass
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** Both bootstrap branches retry each replicate at most ten times. When ordinary bootstrap attempts are exhausted, the parent parameter vector is inserted. In the pivotal branch, the parent parameters and parent covariance replace an exhausted phase-one refit. These entries are finite and satisfy the exact-output-count publishing check.
 
 **Impact.** Refit failures create artificial point mass at the fitted estimate and can narrow confidence limits. A method may publish the requested ensemble size even when some nominal replicates contain no successful resampled fit.
@@ -210,6 +360,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-019"></a>
 ## TR-019 — Bulletin 17C Bootstrap Uses Asymptotic Mahalanobis Truncation
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** Both bootstrap collectors reject a successful refit when its squared distance from the parent estimate, measured with the parent GMM covariance, exceeds the `1 - 1/(5B)` quantile of a chi-squared distribution with `p` degrees of freedom. Rejected candidates are retried; exhausted candidates then receive the fallback described in TR-018.
 
@@ -220,6 +376,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-020"></a>
 ## TR-020 — Cohn-Style Bulletin 17C Diagnostics Are Unguarded LP3 Calculations
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `ComputeCohnStyleConfidenceIntervals()` is public for every supported Bulletin 17C parent, but `EvaluateQuantileSafe()` always constructs `PearsonTypeIII`, interprets the supplied parameter vector in LP3 log space, and the caller always applies `Math.Pow(10, ...)` to interval endpoints. `ComputeAsymptoticQuantileVariance()` reuses the same helper. No distribution-type guard restricts these paths to `LogPearsonTypeIII`.
 
 **Impact.** Cohn-style intervals and reported asymptotic quantile variances are nonsensical or fail for Exponential, Gamma, Log-Normal, Normal, and Pearson III analyses while appearing to be generally available.
@@ -228,6 +390,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-021"></a>
 ## TR-021 — Legacy EMA Verification Report Does Not Validate the Current GMM Path
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** The repository PDF “Comparison with EMA - Verification Report” compares EMA with the version 1 Bayesian likelihood/posterior workflow and expressly states that the comparisons do not validate either method. The current specialized `Bulletin17CDistribution`/`Bulletin17CAnalysis` GMM path is different. Current Verification source contains seven-example parity and coverage tests, but those long-running tests were not executed during this documentation program.
 
@@ -238,6 +406,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-022"></a>
 ## TR-022 — BestFit Exposes NUTS, Not Plain HMC
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `BayesianAnalysis.SamplerType` contains `DEMCz`, `DEMCzs`, `ARWMH`, and `NUTS`. `SetUpSampler()` constructs the matching Numerics sampler. The pinned Numerics source also contains a separate `HMC` class, but BestFit has no `HMC` enum member or configuration branch. Planning material and older documentation name HMC as a selectable BestFit sampler.
 
 **Impact.** A reviewer or API consumer could look for a nonexistent `SamplerType.HMC`, while the actual gradient-based option—adaptive NUTS—would be undocumented or described under the wrong algorithm.
@@ -246,6 +420,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-023"></a>
 ## TR-023 — MLE and MAP “Profile Likelihoods” Are Coordinate Slices
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `MaximumLikelihood.ProfileLikelihood()` and `MaximumAPosteriori.ProfileLikelihood()` vary one parameter over a grid while holding all other parameters at the fitted values. Their interval methods solve cutoffs on the same fixed-coordinate slices. A statistical profile likelihood instead reoptimizes all nuisance parameters at every fixed value of the parameter of interest. The MAP version additionally slices the full log posterior and applies a chi-squared likelihood-ratio cutoff.
 
@@ -256,6 +436,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-024"></a>
 ## TR-024 — PSIS Tail Smoothing Does Not Preserve the Required Tail Model or Ordering
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `ParetoSmoothWeights()` selects the largest raw importance weights, divides them by the cutoff in log space, and fits Numerics GPD MLE to ratios whose minimum is one. Numerics fixes the GPD location at that minimum, but BestFit discards the fitted location and evaluates a zero-location quantile. It also sorts indices from largest to smallest while assigning quantiles from smallest to largest, reversing the tail ranks. The routine does not form positive excesses above the cutoff as required by the generalized-Pareto tail approximation.
 
 **Impact.** Smoothed importance weights, Pareto \(k\), pointwise ELPD, LOOIC, effective parameter count, standard error, and influence rankings may all be wrong. This directly affects model comparison and diagnostic conclusions.
@@ -264,6 +450,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-025"></a>
 ## TR-025 — ARWMH Warmup Covariance Omits Repeated States
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** In pinned Numerics `ARWMH.ChainIteration()`, accepted proposals are always pushed into the running covariance. Rejected or out-of-bounds proposals push the retained state only when `SampleCount > ThinningInterval * WarmupIterations`. Thus the warmup covariance is calculated from accepted states only, whereas repeated states are added only after warmup. The proposal begins using that covariance after `100 * d` transitions.
 
@@ -274,6 +466,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-026"></a>
 ## TR-026 — The Reported GMM J-Statistic Is Not Hansen's J-Test
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `GeneralizedMethodOfMoments.PostProcess(computeJstat: true)` does not evaluate $J=n\mathbf g(\widehat{\boldsymbol\theta})^\mathsf T\widehat{\mathbf S}^{-1}\mathbf g(\widehat{\boldsymbol\theta})$. It instead projects the moment covariance, divides by $n$, attempts to invert the projected matrix, and forms a different quadratic. The projection is rank deficient under the usual overidentified geometry.
 
 **Impact.** `JStatistic` and `JStatisticPValue` do not have the documented Hansen-test interpretation or its chi-squared reference distribution.
@@ -282,6 +480,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-027"></a>
 ## TR-027 — Covariance and Influence Failures Are Represented as Zeros
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** MLE, MAP, and GMM covariance routines catch inversion or factorization failures and return zero matrices. Related influence paths can consequently return zero-valued diagnostics. The result carries no status distinguishing a genuine zero from numerical failure.
 
@@ -292,6 +496,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-028"></a>
 ## TR-028 — Prior-Predictive Sampling Does Not Draw from the Full Model Prior
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `PriorPredictiveCheck.SampleFromPriors()` independently samples each `ModelParameter.PriorDistribution`, clamps values to bounds, and filters sets whose full prior is non-finite. It does not sample or reweight coupled quantile priors, Jeffreys factors, transformation Jacobians, spatial terms, or other contributions implemented only in `IModel.PriorLogLikelihood`. Clamping also creates boundary point masses rather than a truncated distribution.
 
 **Impact.** The ensemble generally is not the prior predictive distribution for models with non-marginal prior structure, so apparent prior-data conflict can be created or hidden.
@@ -300,6 +510,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-029"></a>
 ## TR-029 — MCMC Documentation Claims Diagnostics That Are Not Implemented
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** Numerics `MCMCResults` computes an unsplit between/within-chain Gelman–Rubin statistic and one autocorrelation ESS truncated at the first negative lag. It does not split or rank-normalize chains, fold draws, or calculate separate bulk and tail ESS. Comments and report wording nevertheless refer to split R-hat and bulk/tail ESS.
 
@@ -310,6 +526,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-030"></a>
 ## TR-030 — NUTS Acceptance Rate Is Always Reported as One
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** Pinned Numerics NUTS increments the generic accepted-transition counter on every completed iteration because the tree always returns a retained state. `MCMCResults.AcceptanceRates` therefore reports 1.0 rather than the Hamiltonian acceptance statistic used for dual averaging. BestFit applies generic 0.65–0.90 guidance to that value.
 
 **Impact.** Healthy NUTS runs are labeled as excessive-acceptance, while poor Hamiltonian behavior is not diagnosed by the reported rate.
@@ -318,6 +540,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-031"></a>
 ## TR-031 — Leverage Components Lack the Claimed Hat-Matrix Interpretation
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `LeverageDiagnostics` adds a score-displacement quadratic to an absolute trace curvature term. Observation curvature uses diagonal second derivatives only, while prior components include a log-determinant ratio. These heterogeneous quantities have not been derived as one hat-matrix decomposition, yet comments and warnings compare their sum with the parameter count $p$.
 
@@ -328,6 +556,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-032"></a>
 ## TR-032 — GMM Cook-Like Influence Is Stored and Classified as Pareto k
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` calculates a moment-based Cook-distance-like quadratic but stores it in `ObservationInfluence.ParetoK`. The shared DTO then applies PSIS thresholds 0.5, 0.7, and 1.0 and a PSIS reliability summary to that unrelated scalar.
 
 **Impact.** GMM observations can be declared PSIS-problematic or reliable using thresholds that have no meaning for the computed diagnostic.
@@ -336,6 +570,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-033"></a>
 ## TR-033 — The Unpenalized GMM Objective and Gradient Have Different Scale
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** Without a penalty, `ObjectiveFunction()` returns $Q=\mathbf g^\mathsf T\mathbf W\mathbf g$, whose derivative is $2\mathbf D^\mathsf T\mathbf W\mathbf g$. `GetGradient()` returns $\mathbf D^\mathsf T\mathbf W\mathbf g+\nabla P$, the gradient of $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$. The objective uses that half-scaled convention only when a penalty delegate exists.
 
@@ -346,6 +586,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-034"></a>
 ## TR-034 — Overidentified One-Step GMM Is Artificially Prohibited
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** Constructor validation rejects `GMMEstimationMethod.OneStep` whenever moments outnumber parameters. Standard one-step GMM is defined for overidentified systems given a fixed positive-definite initial weighting matrix.
 
 **Impact.** The API excludes a standard estimator in the setting where weighting choices matter most, and the validation message teaches an incorrect identification rule.
@@ -354,6 +600,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-035"></a>
 ## TR-035 — Time-Series Jeffreys Terms Are Misclassified in Pointwise Prior Output
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** AR, MA, and ARIMA pointwise-prior methods type their Jeffreys scale contribution as `ParameterPrior` rather than `JeffreysScalePrior`. The scalar sum can remain correct, but downstream grouping relies on the component type.
 
@@ -364,6 +616,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-036"></a>
 ## TR-036 — Time-Series Transform Fitting Leaks Holdout Data
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** AR, MA, ARIMA, and ARIMAX call `BoxCox.FitLambda(TimeSeries.ValuesToList(), ...)` or the Yeo-Johnson equivalent on the entire response series. `TrainingTimeSteps` is applied only afterward. ARIMAX also transforms the entire response before selecting the training prefix.
 
 **Impact.** Transformation choice uses validation/holdout observations, so reported out-of-sample performance is not genuinely out of sample. Forecast-era additions can change calibration without changing the training window.
@@ -372,6 +630,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-037"></a>
 ## TR-037 — ARIMA and ARIMAX Reintegration Is Off by One
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** For first differences, `Difference` stores `d[0]=x[1]-x[0]`. `Predict()` allocates `TrainingTimeSteps + forecastSteps` differenced entries, then overwrites `integrated[0]` with `x[0]` and evaluates `integrated[i]=anchor[i-1]+integrated[i]`. Thus `d[0]` is discarded and output index 1 uses `d[1]`; the differenced vector is also `d` entries too long for an output of the requested undifferenced length. ARIMA and ARIMAX share this integration pattern.
 
@@ -382,6 +646,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-038"></a>
 ## TR-038 — ARIMA Simulation Ignores Differencing and Transformations
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `ARIMA.GenerateRandomValues()` simulates a stationary ARMA recursion from intercept, AR, MA, and scale, then returns it directly. It does not apply `DOrder`, inverse Box-Cox/Yeo-Johnson transformation, or the configured initial conditions.
 
 **Impact.** Prior/posterior predictive checks and any `ISimulatable<double[]>` consumer generate from a different model whenever `d>0` or `TransformType != None`.
@@ -390,6 +660,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-039"></a>
 ## TR-039 — ARIMAX Simulation Mixes Original and Transformed Scales
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `ARIMAX.GenerateRandomValues()` constructs its deterministic mean and ARMA recursion on the fitted transformed/differenced parameter scale. For Box-Cox or Yeo-Johnson it then calls `Transform(deterministic)` again, adds noise, and immediately inverse-transforms each value. Subsequent AR/MA residual recursion combines those original-scale values with transformed-scale means, and differencing is reversed only after the inverse transform.
 
@@ -400,6 +676,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-040"></a>
 ## TR-040 — Pointwise Time-Series Likelihoods Can Throw at Invalid Scale
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** Scalar AR, MA, ARIMA, and ARIMAX data likelihoods reject `sigma<=0` before constructing a Numerics `Normal`. Their pointwise likelihood and component methods construct `Normal(0,sigma)` without the same guard.
 
 **Impact.** A parameter set that correctly returns negative infinity from the scalar likelihood can throw from WAIC/LOO or influence diagnostics, violating scalar/pointwise decomposition behavior.
@@ -408,6 +690,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-041"></a>
 ## TR-041 — Differenced ARIMAX Raw-Time Alignment Is Inconsistent
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** With `DiffOrderD=d`, differenced response index `t` corresponds to raw response index `t+d`. Residual regression nevertheless uses covariate index `t`. The transform Jacobian ends at raw index `TrainingTimeSteps-1`, although a training prefix of that many differenced values extends through raw index `TrainingTimeSteps+d-1`.
 
@@ -418,6 +706,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-042"></a>
 ## TR-042 — Phase 6 Analyses Compute AIC/BIC from a Posterior Kernel
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** AR, MA, ARIMA, ARIMAX, and rating-curve analyses evaluate `Model.LogLikelihood(Results.MAP.Values)`—data plus priors—and pass it to conventional `GoodnessOfFit.AIC/BIC`. This generalizes the issue recorded for univariate analysis in TR-011.
 
 **Impact.** Values labeled AIC/BIC depend on prior density and parameterization and are not conventional likelihood criteria; comparisons across models or prior choices are invalid.
@@ -426,6 +720,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-043"></a>
 ## TR-043 — Rating-Curve Likelihood Omits the Log10 Change-of-Variables Term
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** The rating curve assumes `Z=log10(Q)` is Normal and sums `Normal.LogPDF(log10(q)-log10(qhat))`. As a density for observed discharge `Q`, the likelihood also requires `-log(q ln 10)` per observation. The code omits this Jacobian while transformed time-series likelihoods include their corresponding Jacobians.
 
@@ -436,6 +736,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-044"></a>
 ## TR-044 — Rating-Curve Continuity Claim Fails at the Allowed Zero Exponent
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** Each added control contributes zero at `h=h_k` because activation requires `h>h_k`. Its exponent prior and bound allow `beta_k=0`; immediately above the breakpoint, `(h-h_k)^0=1`, so discharge jumps by `alpha_k` rather than approaching zero.
 
 **Impact.** The implementation and documentation claim automatic continuity over a parameter space that includes discontinuous boundary models.
@@ -444,6 +750,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-045"></a>
 ## TR-045 — Rating-Curve Validation Rejects Unused Discharge Records
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** The likelihood uses only the date-inner-joined stage/discharge pairs, but `Validate()` rejects the model if any value in the entire discharge series is nonpositive, including dates with no matching stage that never enter the likelihood.
 
@@ -454,6 +766,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-046"></a>
 ## TR-046 — Manual Transform Parameters Do Not Rebuild Model Data
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `SetTransformParameters(lambda1,lambda2)` in AR, MA, ARIMA, and ARIMAX only assigns backing fields. It does not re-transform the training series, recompute differences or Jacobians, reset parameters, or clear analysis results. The stored `lambda2` offset is not used by the shown transform calls.
 
 **Impact.** Calling the public method can leave the reported transform parameters inconsistent with the data and likelihood actually evaluated; `lambda2` suggests an unsupported offset capability.
@@ -462,6 +780,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-047"></a>
 ## TR-047 — Bivariate AIC and BIC Use the Posterior Kernel
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `BivariateAnalysis.UpdatePointEstimateResultsAsync` evaluates `BivariateDistribution.LogLikelihood` at the MAP estimate. That method includes parameter priors, whereas conventional AIC and BIC require the maximized data log-likelihood. The code comment says this prior-sensitive definition is intentional.
 
@@ -472,6 +796,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-048"></a>
 ## TR-048 — Spatial Copula Does Not Marginalize Missing Sites
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** In both scalar and pointwise `SpatialGEV` likelihoods, a missing site is assigned latent Gaussian score `z[j] = 0.0`, after which the full-dimensional Gaussian-copula density is evaluated. The correct observed-data likelihood uses the correlation submatrix for the sites observed in that row.
 
 **Impact.** Missing observations are treated as if their latent normal score were exactly zero, altering the likelihood for every observed site correlated with them and potentially biasing dependence and GEV regression estimates.
@@ -480,6 +810,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-049"></a>
 ## TR-049 — Spatial Likelihood Decomposition Is Internally Inconsistent
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `SpatialGEV.DataLogLikelihood` includes Gaussian-process spatial-error densities. `PointwiseDataLogLikelihoodComponents` omits them, while `PointwisePriorLogLikelihood` emits them even though the inherited scalar `PriorLogLikelihood` does not. Source remarks acknowledge that the scalar/pointwise sum identities are broken and that WAIC/LOO omit the spatial-error process.
 
@@ -490,6 +826,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-050"></a>
 ## TR-050 — Spatial Leave-One-Site-Out Results Are Cleared Before Return
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `RunCrossValidationAsync` populates `CrossValidationResults`, restores site weights, and then calls `RunAsync` to refit the full model. `RunAsync` begins with `ClearResults`, which sets `CrossValidationResults = null`; the method therefore raises its final property-change notification after discarding the result it just computed.
 
 **Impact.** A successful cross-validation run does not leave the documented result available to callers.
@@ -498,6 +840,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-051"></a>
 ## TR-051 — Spatial Leave-One-Site-Out Does Not Fully Exclude the Site
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** Cross-validation sets only the held-out site's marginal `SiteWeight` to zero. With copula dependence enabled, the held-out observations remain in the full Gaussian-copula vector and its copula log density is unweighted. Enabled spatial-error vectors also retain the held-out site's latent error and Gaussian-process contribution.
 
@@ -508,6 +856,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-052"></a>
 ## TR-052 — Spatial Cross-Validation Omits Held-Out Covariates
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `RunCrossValidationAsync` calls `PredictAtUngaugedLocation(coords, null, probs)`. `GeneralLinearFunction.PredictWithCovariates` requires a covariate vector whenever the fitted trend has covariates.
 
 **Impact.** Cross-validation fails for the principal regional-regression use case or cannot evaluate the trend model actually fitted.
@@ -516,6 +870,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-053"></a>
 ## TR-053 — Failed Spatial Cross-Validation Folds Are Counted as Zero Error
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** Site error arrays are initialized to zero. A failed Bayesian fit, missing Bayesian analysis, or site with no finite observations executes `continue` without marking the fold invalid. Overall MAE, RMSE, and bias then average all array entries.
 
@@ -526,6 +886,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-054"></a>
 ## TR-054 — Analysis-Level Ungauged Prediction Uses IDW and Omits Conditional Spatial Variance
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `SpatialGEV.PredictAtUngauged` uses simple kriging and returns kriging variances. `SpatialGEVAnalysis.PredictAtUngaugedLocation`, which provides posterior summaries, instead interpolates each latent error with inverse-distance weights proportional to `1/d` and never samples or propagates the conditional spatial-error variance.
 
 **Impact.** The main posterior prediction API disagrees with the model-level predictor and produces intervals that omit an important source of ungauged-site uncertainty.
@@ -534,6 +900,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-055"></a>
 ## TR-055 — Spatial AIC and BIC Use the Posterior Kernel and Nominal Cell Count
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `SpatialGEVAnalysis.CreateUncertaintyAnalysisResultsAsync` evaluates `SpatialGEV.LogLikelihood` at the MAP estimate and uses `Sites * Observations` as the BIC sample size. The score includes priors and spatial-error densities, while the cell count includes missing values and does not represent the independent predictive unit under copula dependence.
 
@@ -544,6 +916,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-056"></a>
 ## TR-056 — Spatial Bootstrap Does Not Fit the Resampled Data
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `RunSpatialBootstrapAsync` constructs a `bootData` matrix from resampled site blocks, but then creates `bootModel` by cloning `SpatialGEV`; the clone retains the original `AtSiteData`, and `bootData` is never passed to any model. Consequently each replicate refits the original data with a short stochastic MCMC run. If a run returns `IsEstimated == false` without throwing, its zero-initialized result entries are also treated as valid bootstrap values.
 
 **Impact.** The reported "spatial bootstrap" intervals are not bootstrap intervals and can be dominated by MCMC variability or artificial zeros.
@@ -552,6 +930,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-057"></a>
 ## TR-057 — Godambe Covariance Mixes Incompatible Likelihood Decompositions
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `ComputeGodambeCovariance` forms its Hessian from scalar `SpatialGEV.DataLogLikelihood`, which includes spatial-error Gaussian-process densities, but forms its score outer products from `PointwiseDataLogLikelihood`, which omits those densities. If the Hessian is singular, the method returns the variability matrix `J` itself as though it were a covariance matrix.
 
@@ -562,6 +946,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-058"></a>
 ## TR-058 — Regional Spatial Bounds Average Sitewise Endpoints
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `CreateUncertaintyAnalysisResultsAsync` computes the regional curve by averaging each site's posterior mean, lower endpoint, and upper endpoint separately. It does not compute the regional mean quantile for each joint posterior draw and then take quantiles of that derived sample.
 
 **Impact.** The displayed lower and upper regional curves are descriptive averages of marginal interval endpoints, not a credible interval for the regional-average quantile; cross-site posterior dependence is discarded.
@@ -570,6 +960,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-059"></a>
 ## TR-059 — Spatial Site Weights Are Not an Effective-Sample-Size or Pairwise Composite Likelihood
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `ComputeEffectiveSampleSizeWeights` first computes \(w_j^\star=[1+(S-1)\bar\rho_j]^{-1}\), but then rescales the weights so that \(\sum_j w_j=S\). The likelihood uses those weights only on marginal GEV log densities; it retains one unweighted full-dimensional Gaussian-copula density per row. `ConfigureForProperCoverage` nevertheless describes this option as composite-likelihood weighting.
 
@@ -580,6 +976,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-060"></a>
 ## TR-060 — Spatial Distance Is Euclidean Despite Latitude/Longitude Being Advertised
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** Spatial constructors and prediction methods accept coordinates described as `(X,Y) or (Lat,Lon)`. Both `GaussianCopula` and `SpatialRegressionErrors` call pinned Numerics `Tools.Distance`, which is \(\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}\). Correlation-range priors are hard-coded to \((\epsilon,500)\), with source comments interpreting 500 as kilometres.
 
 **Impact.** Supplying unprojected longitude/latitude produces distances in degrees, ignores Earth geometry and longitude scaling, and makes the range prior's units inconsistent. Fitted spatial dependence and ungauged interpolation can therefore be materially wrong.
@@ -588,6 +990,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 <a id="tr-061"></a>
 ## TR-061 — Spatial Simulation Ignores Enabled Dependence
+
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
 
 **Evidence.** `SpatialGEV.GenerateRandomValues` samples each site's GEV independently and groups the result by site. It does not consult `UseCopulaDependence` or `SpatialDependence`. Its remarks refer users to “copula-based simulation methods,” but no correlated simulation method exists in the spatial model namespace.
 
@@ -598,6 +1006,12 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-062"></a>
 ## TR-062 — Spatial Uncertainty-Method Selection Does Not Control Result Construction
 
+**Review disposition.** Unreviewed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Planned; no verification claim has been accepted.
+
 **Evidence.** `SpatialGEVAnalysis.UncertaintyMethod` exposes `BayesianPosterior`, `BayesianInflated`, `GodambeSandwich`, and `SpatialBootstrap`, but no production branch reads the property after assignment. `RunAsync` always constructs Bayesian posterior site summaries. Variance inflation, Godambe covariance, and bootstrap require independent method calls and do not replace the normal result-construction path automatically.
 
 **Impact.** Selecting an advertised uncertainty method can leave outputs unchanged, so callers may report a method that was not applied.
@@ -606,7 +1020,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 ## Resolution Rule
 
-A documentation-only clarification may close a finding when the implementation is intentional and mathematically coherent. A defect in production behavior is never silently corrected by documentation. It moves to a separately authorized code-change task, receives focused unit tests, and uses the repository's mandated build/test gates. Long-running `RMC.BestFit.Verification` commands remain user-run only.
+A documentation-only clarification may close a finding when the implementation is intentional and mathematically coherent. A defect in production behavior is never silently corrected by documentation. It moves to a separately authorized code-change task, receives focused unit tests, and uses the repository's mandated build/test gates. The complete `RMC.BestFit.Verification` suite is never run as one command; verification executes one exact fully qualified method at a time through the guarded runner.
 
 ---
 

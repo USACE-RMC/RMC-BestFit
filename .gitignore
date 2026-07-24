@@ -92,6 +92,11 @@ MSBuild_Logs/
 __pycache__/
 *.pyc
 
+# Local verification runtimes and document-rendering scratch
+verification/python/.venv/
+verification/r/renv/
+tmp/
+
 # Local AI-assistant metadata and scratch files. These stay on developer machines.
 AGENTS.md
 **/AGENTS.md
@@ -101,6 +106,3 @@ CLAUDE.md
 .claude/
 .codex/
 .codex-tmp/
-
-# Verification project is not ready for the public repository yet.
-src/RMC.BestFit.Verification/
