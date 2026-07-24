@@ -1,467 +1,201 @@
-# Analyses Overview
+<!-- technical-reference-status: complete -->
 
-[<- Previous: Diagnostics](../estimation/diagnostics.md) | [Back to Index](../../index.md) | [Next: Distribution Fitting ->](distribution-fitting.md)
+# Analysis Architecture and Lifecycle
 
-An **Analysis** in ***RMC-BestFit*** coordinates the estimation of a model and manages the results. While models define the mathematical relationship between parameters and data, analyses handle the workflow: configuring estimation settings, running MCMC or MLE, storing results, computing derived quantities, and providing event notifications for GUI integration.
+[<- Link functions](../support/link-functions.md) | [Technical reference index](../index.md) | [Next: Distribution fitting ->](distribution-fitting.md)
 
-This chapter introduces the analysis architecture, surveys the pre-built analyses available in the library, and demonstrates how to create custom analyses for specialized applications.
+## Model fitting versus analysis
 
-## Why Analyses Matter
+An RMC.BestFit model defines a data-generating distribution, likelihood, priors, parameters, and validation. An analysis coordinates work around that model: initialization, estimation, cancellation, progress, uncertainty propagation, construction of frequency or forecast outputs, serialization, and completion notification.
 
-Consider fitting a GEV distribution to flood data. You could manually:
-1. Create the model
-2. Configure the Bayesian sampler
-3. Run MCMC
-4. Extract posterior summaries
-5. Compute return level estimates
-6. Generate uncertainty bands
+This separation prevents three common category errors:
 
-Or you could use `UnivariateAnalysis`, which handles all of this with sensible defaults:
+1. A sampler configuration is not a probability model.
+2. A fitted point estimate is not an uncertainty analysis.
+3. A plotted return-level curve is a derived result, not an additional likelihood contribution.
 
-```cs
-var analysis = new UnivariateAnalysis(model);
-await analysis.RunAsync();
+The exact scientific sequence is analysis-specific. Later chapters document what each `RunAsync` implementation performs and which outputs it builds.
 
-// Results are ready
-var rl100 = analysis.GetReturnLevel(100);  // 100-year return level with uncertainty
+## `IAnalysis` contract
+
+All scientific analysis classes implement `IAnalysis`, which also implements `INotifyPropertyChanged`.
+
+| Member | Contract | Interpretation |
+|---|---|---|
+| `Validate()` | Returns `(IsValid, ValidationMessages)` | Preflight assessment of configured state; no successful estimate is implied |
+| `RunAsync(progressReporter)` | Executes asynchronously | Orchestrates the analysis-specific estimation and result pipeline |
+| `CancelAnalysis()` | Requests cancellation | Cooperative signal; it does not synchronously abort executing numerical code |
+| `IsEstimated` | Read-only through the interface | Indicates that the analysis considers usable estimation results available |
+| `AnalysisStarting` | Event with `CancelEventArgs` | Allows a handler to cancel before work begins |
+| `AnalysisCompleted` | Event with `AnalysisRunCompletedEventArgs` | Reports success, cancellation, or an exception after termination |
+
+Contrary to the former reference page, `IAnalysis` does not expose `ClearResults`, and callers cannot set `IsEstimated` through the interface. Individual concrete analyses may expose additional result-reset or post-processing methods.
+
+`AnalysisRunCompletedEventArgs` derives from `AsyncCompletedEventArgs`. `Succeeded` is the explicit success flag; inherited `Cancelled` and `Error` describe the other terminal states. A reliable handler considers these states together rather than assuming that a completed task produced results.
+
+## Base-class lifecycle support
+
+`AnalysisBase` supplies event invocation, `IsEstimated` state, property notification, and a lazily created `CancellationTokenSource`. `ResetCancellationToken()` disposes any previous source and creates a fresh token for a new run. `CancelAnalysis()` signals the current source.
+
+Derived analyses remain responsible for observing or forwarding the token, setting terminal state, and raising completion consistently. Cancellation latency therefore depends on where the underlying optimizer, sampler, bootstrap, or output loop checks its token. A cancellation request should be treated as pending until the run terminates and its completion state is known.
+
+`AnalysisStarting` is a final pre-run hook, not a replacement for `Validate()`. A typical lifecycle is
+
+```text
+configured model/data
+    -> Validate()
+    -> AnalysisStarting (may cancel)
+    -> reset cancellation token
+    -> initialize estimator/model state
+    -> estimate
+    -> construct derived uncertainty/results
+    -> set IsEstimated only when usable
+    -> AnalysisCompleted(success | cancelled | error)
 ```
 
-Analyses encapsulate best practices and provide consistent interfaces across different model types.
+A concrete chapter must identify deviations from this sequence. Consumers should not use partially populated objects after a cancelled or failed run unless that concrete API explicitly guarantees their meaning.
 
-## The Analysis Architecture
+## Bayesian analysis contract
 
-### The `IAnalysis` Interface
+`IBayesianAnalysis` extends `IAnalysis` with two members:
 
-All analyses implement the `IAnalysis` interface:
+| Member | Meaning |
+|---|---|
+| `BayesianAnalysis` | Estimator configuration, MCMC results, and diagnostics owned by `RMC.BestFit.Estimation` |
+| `AnalysisResults` | Nullable `UncertaintyAnalysisResults` constructed from the Bayesian output |
 
+These objects answer different questions. `BayesianAnalysis` describes posterior sampling in parameter space. `AnalysisResults` contains analysis-specific propagated outputs. The latter can remain null if estimation or result construction does not complete.
+
+For a derived scalar $g(\theta)$, full posterior propagation uses draws $\theta^{(s)}$:
+
+$$
+g^{(s)}=g\!\left(\theta^{(s)}\right),
+\qquad s=1,\ldots,S.
+\tag{1}
+$$
+
+Credible intervals and posterior summaries are calculated from $\{g^{(s)}\}$. In general,
+
+$$
+E[g(\theta)\mid y]\ne g(E[\theta\mid y]),
+\tag{2}
+$$
+
+so a curve evaluated only at mean or MAP parameters does not represent posterior output uncertainty.
+
+## Compile-checked validated run
+
+The following workflow compiles against the current API. It performs explicit validation, awaits the analysis, and verifies both the lifecycle flag and propagated results.
+
+<!-- snippet: analysis-validated-run -->
 ```cs
-public interface IAnalysis
+private static async Task<UnivariateAnalysis> RunValidatedAnalysis(
+    UnivariateDistribution model)
 {
-    /// <summary>
-    /// Gets or sets whether the analysis has been estimated.
-    /// </summary>
-    bool IsEstimated { get; set; }
-
-    /// <summary>
-    /// Validates the analysis configuration.
-    /// </summary>
-    (bool IsValid, List<string> ValidationMessages) Validate();
-
-    /// <summary>
-    /// Runs the analysis asynchronously.
-    /// </summary>
-    Task RunAsync(SafeProgressReporter? progressReporter = null);
-
-    /// <summary>
-    /// Cancels a running analysis.
-    /// </summary>
-    void CancelAnalysis();
-
-    /// <summary>
-    /// Clears the analysis results.
-    /// </summary>
-    void ClearResults();
-
-    /// <summary>
-    /// Event raised before analysis starts (allows cancellation).
-    /// </summary>
-    event EventHandler<CancelEventArgs>? AnalysisStarting;
-
-    /// <summary>
-    /// Event raised when analysis completes.
-    /// </summary>
-    event EventHandler<AnalysisRunCompletedEventArgs>? AnalysisCompleted;
-}
-```
-
-### The `IBayesianAnalysis` Interface
-
-Analyses that support Bayesian MCMC implement additional functionality:
-
-```cs
-public interface IBayesianAnalysis : IAnalysis
-{
-    /// <summary>
-    /// Gets the Bayesian analysis configuration and results.
-    /// </summary>
-    BayesianAnalysis BayesianAnalysis { get; }
-}
-```
-
-### The `IProbabilityOrdinates` Interface
-
-Many analyses produce results at specific probability levels:
-
-```cs
-public interface IProbabilityOrdinates
-{
-    /// <summary>
-    /// Gets the collection of probability ordinates for computing return levels.
-    /// </summary>
-    ProbabilityOrdinates ProbabilityOrdinates { get; }
-}
-```
-
----
-
-## Pre-Built Analyses
-
-***RMC-BestFit*** provides analyses for all major model types:
-
-### Univariate Distribution Analyses
-
-| Analysis | Model | Description |
-|----------|-------|-------------|
-| `FittingAnalysis` | Multiple | Fits all 15 distributions, ranks by AIC/BIC |
-| `UnivariateAnalysis` | `UnivariateDistribution` | Full Bayesian analysis of single distribution |
-| `MixtureAnalysis` | `MixtureModel` | Two-population mixture models |
-| `CompetingRiskAnalysis` | `CompetingRisksModel` | Annual max of multiple processes |
-| `PointProcessAnalysis` | `PointProcessModel` | Peaks-over-threshold |
-| `Bulletin17CAnalysis` | `LogPearsonTypeIII` | Bulletin 17C-compliant analysis |
-| `CompositeAnalysis` | Multiple estimated univariate analyses | Competing risks, mixtures, and model averaging |
-
-### Time Series Analyses
-
-| Analysis | Model | Description |
-|----------|-------|-------------|
-| `ARAnalysis` | `AutoRegressive` | Autoregressive models |
-| `MAAnalysis` | `MovingAverage` | Moving average models |
-| `ARIMAAnalysis` | `ARIMA` | Integrated ARMA models |
-| `ARIMAXAnalysis` | `ARIMAX` | ARIMA with covariates |
-
-### Other Analyses
-
-| Analysis | Model | Description |
-|----------|-------|-------------|
-| `RatingCurveAnalysis` | `RatingCurve` | Stage-discharge relationships |
-| `BivariateAnalysis` | `BivariateDistribution` | Joint distribution of two variables |
-| `CoincidentFrequencyAnalysis` | Fitted `BivariateAnalysis` + response surface | Coincident response-frequency curve |
-| `SpatialGEVAnalysis` | `SpatialGEV` | Regional frequency analysis |
-
----
-
-## Analysis Workflow
-
-### Basic Workflow
-
-```cs
-using RMC.BestFit.Analyses;
-using RMC.BestFit.Models;
-
-// 1. Create model
-var df = new DataFrame();
-df.ExactSeries = new ExactSeries(annualPeaks);
-var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedExtremeValue);
-
-// 2. Create analysis
-var analysis = new UnivariateAnalysis(model);
-
-// 3. Configure (optional - defaults are usually good)
-analysis.BayesianAnalysis.Iterations = 10000;
-analysis.BayesianAnalysis.WarmupIterations = 5000;
-
-// 4. Run
-await analysis.RunAsync();
-
-// 5. Check results
-if (analysis.IsEstimated)
-{
-    // Access posterior summaries
-    var results = analysis.BayesianAnalysis.Results;
-    // ... use results
-}
-```
-
-### With Progress Reporting
-
-For GUI applications, use `SafeProgressReporter`:
-
-```cs
-using RMC.BestFit.Support;
-
-var progressReporter = new SafeProgressReporter();
-
-// Subscribe to progress updates
-progressReporter.ProgressChanged += (sender, progress) =>
-{
-    Console.WriteLine($"Progress: {progress:P0}");
-};
-
-await analysis.RunAsync(progressReporter);
-```
-
-### With Cancellation
-
-```cs
-// Start analysis in background
-var analysisTask = analysis.RunAsync();
-
-// Later, if user requests cancellation:
-analysis.CancelAnalysis();
-
-// Wait for task to complete (it will be cancelled)
-try
-{
-    await analysisTask;
-}
-catch (OperationCanceledException)
-{
-    Console.WriteLine("Analysis was cancelled.");
-}
-```
-
-### With Event Handlers
-
-```cs
-// Before analysis starts (can cancel)
-analysis.AnalysisStarting += (sender, args) =>
-{
-    Console.WriteLine("Analysis starting...");
-    // args.Cancel = true;  // Set to cancel before starting
-};
-
-// After analysis completes
-analysis.AnalysisCompleted += (sender, args) =>
-{
-    if (args.Succeeded)
+    var analysis = new UnivariateAnalysis(model);
+    var validation = analysis.Validate();
+    if (!validation.IsValid)
     {
-        Console.WriteLine("Analysis completed successfully.");
-    }
-    else if (args.Cancelled)
-    {
-        Console.WriteLine("Analysis was cancelled.");
-    }
-    else
-    {
-        Console.WriteLine($"Analysis failed: {args.Error?.Message}");
-    }
-};
-
-await analysis.RunAsync();
-```
-
----
-
-## Computing Return Levels
-
-Most distribution analyses support computing return levels with uncertainty:
-
-```cs
-// After running analysis
-if (analysis.IsEstimated)
-{
-    // Get MAP (Maximum A Posteriori) return level
-    var mapParams = analysis.BayesianAnalysis.Results.MAP.Values;
-    model.SetParameterValues(mapParams);
-    double rl100_map = model.Distribution.InverseCDF(1 - 1.0/100);
-
-    Console.WriteLine($"100-year return level (MAP): {rl100_map:F0}");
-
-    // Get posterior distribution of return levels
-    var posteriorSamples = analysis.BayesianAnalysis.Results.Output;
-    var rl100_samples = new double[posteriorSamples.Count];
-
-    for (int i = 0; i < posteriorSamples.Count; i++)
-    {
-        model.SetParameterValues(posteriorSamples[i].Values);
-        rl100_samples[i] = model.Distribution.InverseCDF(1 - 1.0/100);
+        throw new InvalidOperationException(
+            string.Join(Environment.NewLine, validation.ValidationMessages));
     }
 
-    // Compute posterior summary
-    Array.Sort(rl100_samples);
-    double rl100_median = rl100_samples[rl100_samples.Length / 2];
-    double rl100_lower = rl100_samples[(int)(0.025 * rl100_samples.Length)];
-    double rl100_upper = rl100_samples[(int)(0.975 * rl100_samples.Length)];
+    await analysis.RunAsync();
+    if (!analysis.IsEstimated || analysis.AnalysisResults is null)
+    {
+        throw new InvalidOperationException(
+            "The analysis did not produce uncertainty results.");
+    }
 
-    Console.WriteLine($"100-year return level (median): {rl100_median:F0}");
-    Console.WriteLine($"95% CI: [{rl100_lower:F0}, {rl100_upper:F0}]");
+    return analysis;
 }
 ```
 
----
+This is an orchestration example, not a recommended MCMC length or convergence decision. The Bayesian MCMC chapter defines sampler configuration and acceptance gates. A production application should also observe `AnalysisCompleted`, report progress, preserve cancellation state, and persist versions and seeds.
 
-## XML Serialization
+## Scientific analysis inventory
 
-Analyses can be saved and restored:
+| Domain | Analysis classes | Principal responsibility |
+|---|---|---|
+| Distribution screening | `FittingAnalysis` | Fit candidate families and construct point-estimate comparison outputs |
+| Univariate frequency | `UnivariateAnalysis` | Bayesian parameter inference, probability ordinates, frequency results, diagnostics |
+| Peaks over threshold | `PointProcessAnalysis` | Point-process model estimation and exceedance-frequency outputs |
+| Multiple populations/processes | `MixtureAnalysis`, `CompetingRiskAnalysis` | Propagate component posterior realizations into combined distributions |
+| Synthesis/averaging | `CompositeAnalysis` | Combine already estimated alternatives using the selected composite rule |
+| Bulletin 17C | `Bulletin17CAnalysis` | Specialized EMA/GMM and uncertainty workflow for its supported parent families |
+| Bivariate dependence | `BivariateAnalysis` | Marginal/dependence fitting and joint uncertainty outputs |
+| Coincident frequency | `CoincidentFrequencyAnalysis` | Integrate bivariate uncertainty through a response surface |
+| Rating curve | `RatingCurveAnalysis` | Fit stage-discharge model and propagate rating uncertainty |
+| Time series | `ARAnalysis`, `MAAnalysis`, `ARIMAAnalysis`, `ARIMAXAnalysis` | Fit dynamics and construct forecast/training outputs |
+| Spatial extremes | `SpatialGEVAnalysis` | Fit regional GEV hierarchy, dependence, and site predictions |
 
-```cs
-// Save analysis configuration and results
-var xElement = analysis.ToXElement();
-xElement.Save("analysis_results.xml");
+The table states orchestration roles only. It does not imply that every class uses the same estimator, likelihood, result layout, or serialization constructor.
 
-// Restore (requires the original model/data)
-var loadedXml = XElement.Load("analysis_results.xml");
-var restoredAnalysis = new UnivariateAnalysis(model, loadedXml);
-```
+## Initialization and multiple optima
 
----
+Many analyses use preliminary estimates to initialize Bayesian sampling or complex optimization. This is computational scaffolding, not a second source of data. A failed initializer can prevent a run even when the mathematical posterior exists; conversely, a successful initializer does not establish global optimality or posterior convergence.
 
-## Creating Custom Analyses
+Mixture, competing-risk, spatial, nonstationary, and high-order time-series models can have symmetric modes, label switching, boundary modes, or strongly correlated parameters. An analysis chapter must identify its initialization strategy, bounds, restart behavior, and what happens when an optimizer reports a non-success status.
 
-When the pre-built analyses don't meet your needs, you can create custom analyses by inheriting from `AnalysisBase`:
+## Derived outputs and uncertainty
 
-```cs
-using RMC.BestFit.Analyses;
-using RMC.BestFit.Estimation;
+Analysis-specific post-processing can include:
 
-public class MyCustomAnalysis : AnalysisBase, IBayesianAnalysis
-{
-    private readonly MyCustomModel _model;
-    private BayesianAnalysis _bayesianAnalysis;
+- probability ordinates and plotting positions;
+- return levels, frequency curves, and credible bands;
+- forecasts and predictive intervals;
+- posterior predictive simulations;
+- model comparison criteria and averaging weights;
+- influence, leverage, and prior-sensitivity components;
+- serialization-ready result objects.
 
-    public MyCustomAnalysis(MyCustomModel model)
-    {
-        _model = model ?? throw new ArgumentNullException(nameof(model));
-        _bayesianAnalysis = new BayesianAnalysis(model);
-    }
+Each output has its own conditioning statement. A parameter credible interval describes posterior parameter uncertainty. A credible interval for a latent frequency curve propagates parameter uncertainty. A posterior predictive interval additionally includes new-event variability. These intervals are not interchangeable and must be labeled precisely.
 
-    public BayesianAnalysis BayesianAnalysis => _bayesianAnalysis;
+## Validation and failure-state discipline
 
-    public override (bool IsValid, List<string> ValidationMessages) Validate()
-    {
-        var messages = new List<string>();
-        bool isValid = true;
+Before `RunAsync`, check at least:
 
-        // Add custom validation logic
-        if (_model.SomeProperty < 0)
-        {
-            messages.Add("SomeProperty must be non-negative.");
-            isValid = false;
-        }
+- the concrete analysis `Validate()` result;
+- model/data units, indexes, support, bounds, and priors;
+- estimator settings and reproducibility controls;
+- requested output probabilities and extrapolation range;
+- upstream dependencies for composite or coincident analyses.
 
-        return (isValid, messages);
-    }
+After termination, check:
 
-    public override async Task RunAsync(SafeProgressReporter? progressReporter = null)
-    {
-        var validation = Validate();
-        if (!validation.IsValid)
-            throw new InvalidOperationException("Analysis is not valid.");
+- `AnalysisCompleted.Succeeded`, `Cancelled`, and `Error` where events are used;
+- `IsEstimated` and required non-null result objects;
+- optimizer or sampler status, not only absence of an exception;
+- convergence and effective sample diagnostics for MCMC;
+- invalid posterior realizations excluded during output construction;
+- warnings generated by model-specific validation and diagnostics.
 
-        var previewArgs = new CancelEventArgs();
-        OnAnalysisStarting(previewArgs);
-        if (previewArgs.Cancel)
-        {
-            OnAnalysisCompleted(new AnalysisRunCompletedEventArgs(true, false, null));
-            return;
-        }
+Do not serialize a failed analysis and later infer success merely from the presence of some result arrays. Terminal state and result completeness are part of reproducibility metadata.
 
-        try
-        {
-            // Run Bayesian analysis
-            await _bayesianAnalysis.RunAsync(progressReporter);
+## Batch execution
 
-            IsEstimated = true;
-            OnAnalysisCompleted(new AnalysisRunCompletedEventArgs(false, true, null));
-        }
-        catch (Exception ex)
-        {
-            OnAnalysisCompleted(new AnalysisRunCompletedEventArgs(false, false, ex));
-            throw;
-        }
-    }
-}
-```
+`BatchAnalysisRunner` coordinates multiple `IAnalysis` instances with `BatchAnalysisOptions`, per-analysis `BatchAnalysisResult`, progress, cancellation, and dependency checks. It can detect missing estimated prerequisites for composite and coincident analyses. Batch execution changes scheduling, not statistical independence: sharing data or upstream analyses still induces dependence among outputs.
 
----
+For peer-review runs, record the input ordering, options, dependency graph, individual durations/statuses, and software versions. A batch-level success count must not conceal one failed life-safety analysis.
 
-## Analysis Class Reference
+## Serialization boundary
 
-### UnivariateAnalysis Properties
+Concrete analyses own their XML representation and reconstruction rules; neither `IAnalysis` nor `AnalysisBase` declares a universal `ToXElement`. Configuration, estimator output, and derived results may have different persistence semantics. A chapter that shows serialization must use that concrete class's actual constructor and methods and state whether stored results are trusted, recomputed, or invalidated when inputs change.
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `UnivariateDistribution` | `UnivariateDistribution` | The distribution model |
-| `BayesianAnalysis` | `BayesianAnalysis` | MCMC configuration and results |
-| `ProbabilityOrdinates` | `ProbabilityOrdinates` | Probability levels for output |
-| `IsEstimated` | `bool` | Whether analysis has completed |
+## Implementation and evidence
 
-### RatingCurveAnalysis Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `RatingCurve` | `RatingCurve` | The rating curve model |
-| `BayesianAnalysis` | `BayesianAnalysis` | MCMC configuration and results |
-| `NumberOfSegments` | `int` | 1, 2, or 3 segment model |
-
-### TimeSeriesAnalysis Properties (AR, MA, ARIMA, ARIMAX)
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `Model` | varies | The time series model |
-| `BayesianAnalysis` | `BayesianAnalysis` | MCMC configuration and results |
-| `ForecastHorizon` | `int` | Number of periods to forecast |
-
----
-
-## Best Practices
-
-### Validation
-
-Always validate before running:
-
-```cs
-var validation = analysis.Validate();
-if (!validation.IsValid)
-{
-    foreach (var msg in validation.ValidationMessages)
-    {
-        Console.WriteLine($"Error: {msg}");
-    }
-    return;
-}
-```
-
-### MCMC Settings
-
-For routine analyses:
-- `Iterations`: 10,000
-- `WarmupIterations`: 5,000
-
-For complex models (mixture, spatial):
-- `Iterations`: 50,000
-- `WarmupIterations`: 25,000
-
-### Checking Convergence
-
-After running, always check R-hat and ESS:
-
-```cs
-var results = analysis.BayesianAnalysis.Results;
-bool converged = true;
-
-for (int i = 0; i < model.Parameters.Count; i++)
-{
-    var stats = results.ParameterResults[i].SummaryStatistics;
-    if (stats.Rhat > 1.1 || stats.ESS < 400)
-    {
-        Console.WriteLine($"Warning: {model.Parameters[i].Name} may not have converged.");
-        converged = false;
-    }
-}
-
-if (!converged)
-{
-    Console.WriteLine("Consider increasing iterations.");
-}
-```
-
----
-
-## Implementation Sources
-
-Primary source paths: `src/RMC.BestFit/Analyses/Support`, `src/RMC.BestFit/Analyses/Univariate`, `src/RMC.BestFit/Analyses/Bivariate`, `src/RMC.BestFit/Analyses/DistributionFitting`, `src/RMC.BestFit/Analyses/RatingCurve`, `src/RMC.BestFit/Analyses/TimeSeries`, and `src/RMC.BestFit/Analyses/SpatialExtremes`.
-
----
+| Concern | Implementation source | Evidence |
+|---|---|---|
+| Public lifecycle | `src/RMC.BestFit/Analyses/Support/IAnalysis.cs` | lifecycle tests for concrete analyses |
+| Base cancellation/events | `AnalysisBase.cs`, `AnalysisRunCompletedEventArgs.cs` | analysis support unit tests |
+| Bayesian outputs | `IBayesianAnalysis.cs`, `src/RMC.BestFit/Estimation/BayesianAnalysis.cs` | Bayesian analysis unit/verification tests |
+| Batch orchestration | `BatchAnalysisRunner.cs`, `BatchAnalysisOptions.cs`, `BatchAnalysisResult.cs` | batch runner unit tests |
+| Compile-checked example | `src/RMC.BestFit.Tests/Documentation/Examples/AnalysisExamples.cs` | `TechnicalReferenceDocumentationTests` |
 
 ## References
 
-<a id="1">[1]</a>
-Gelman, A., Carlin, J.B., Stern, H.S., Dunson, D.B., Vehtari, A., and Rubin, D.B. (2013). *Bayesian Data Analysis*, Third Edition. CRC Press.
+<a id="ref-1"></a>[1] A. Gelman et al., *Bayesian Data Analysis*, 3rd ed. Boca Raton, FL, USA: CRC Press, 2013.
 
-<a id="2">[2]</a>
-ter Braak, C.J.F. and Vrugt, J.A. (2008). "Differential Evolution Markov Chain with snooker updater and fewer chains." *Statistics and Computing*, 18(4), 435-446.
+<a id="ref-2"></a>[2] A. Vehtari, A. Gelman, and J. Gabry, "Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC," *Statistics and Computing*, vol. 27, pp. 1413-1432, 2017. doi: 10.1007/s11222-016-9696-4.
 
----
-
-[<- Previous: Diagnostics](../estimation/diagnostics.md) | [Back to Index](../../index.md) | [Next: Distribution Fitting ->](distribution-fitting.md)
+[<- Link functions](../support/link-functions.md) | [Technical reference index](../index.md) | [Next: Distribution fitting ->](distribution-fitting.md)

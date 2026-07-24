@@ -1,157 +1,168 @@
-# Influence Diagnostics
+<!-- technical-reference-status: complete -->
 
-[<- Previous: Diagnostics](diagnostics.md) | [Back to Index](../../index.md) | [Next: Analyses Overview ->](../analysis/overview.md)
+# Observation, Prior, and Leverage Diagnostics
 
-BestFit exposes influence diagnostics for Bayesian MCMC, maximum likelihood, maximum a posteriori estimation, and generalized method of moments. The key implementation rule is that diagnostics are computed from the model's actual pointwise likelihood methods, so exact observations, uncertain observations, interval data, and threshold data enter the diagnostics through the same likelihood decomposition used during estimation.
+[Estimation index](index.md) | [Diagnostics](diagnostics.md) | [Model comparison](model-comparison.md) | [Technical Reference](../index.md)
 
-## Diagnostic Map
+Influence diagnostics identify observations or prior components that materially affect fitted parameters, local uncertainty, or predictive accuracy. They are investigation tools, not automatic deletion rules. Extreme floods, paleoflood intervals, perception thresholds, and regional-skew information can be influential precisely because they contain the tail information the analysis was designed to use.
 
-| Estimation Method | Diagnostics |
-|-------------------|-------------|
-| Bayesian MCMC | PSIS-LOO influence, Pareto `k`, MAP leverage decomposition, prior influence |
-| Maximum Likelihood | Cook's distance, DFBETAS-like observation influence |
-| Maximum A Posteriori | Cook's distance, DFBETAS-like observation influence, MAP leverage decomposition |
-| Generalized Method of Moments | Cook's distance, observation influence, influence diagnostics |
+## PSIS-LOO Observation Influence
 
-## MAP Leverage
+For posterior draws $\boldsymbol\theta^{(s)}$, deleting observation $i$ changes the posterior by an importance ratio proportional to
 
-At the MAP estimate $\hat{\boldsymbol{\theta}}$, BestFit computes the posterior observed information from the negative Hessian of `Model.LogLikelihood`:
+$$
+r_i^{(s)}=\frac{1}{p(y_i\mid\boldsymbol\theta^{(s)})}. \tag{INF.1}
+$$
 
-$$\mathbf{J}_{\text{post}} = -\nabla^2 \left[\log p(\mathbf{y}\mid\boldsymbol{\theta}) + \log p(\boldsymbol{\theta})\right]_{\boldsymbol{\theta}=\hat{\boldsymbol{\theta}}} \tag{1}$$
+Pareto-smoothed importance sampling fits a generalized Pareto distribution to the largest excess ratios. The fitted shape $k_i$ diagnoses how heavy that importance-weight tail is. A valid implementation combines smoothed normalized weights with pointwise likelihoods to estimate
 
-For observation $i$, the score vector is obtained by central differences on `Model.PointwiseDataLogLikelihood`:
+$$
+\widehat{\mathrm{elpd}}_{\mathrm{loo},i}
+=\log\sum_s\widetilde w_i^{(s)}
+p(y_i\mid\boldsymbol\theta^{(s)}). \tag{INF.2}
+$$
 
-$$\mathbf{g}_i = \nabla_{\boldsymbol{\theta}}\log p(y_i\mid\boldsymbol{\theta})\big|_{\hat{\boldsymbol{\theta}}}. \tag{2}$$
+`BayesianAnalysis.ComputeInfluenceDiagnostics()` attaches the stored `ParetoK` and recomputed pointwise ELPD to `DataComponent` metadata. `InfluenceDiagnostics` summarizes counts above 0.5, 0.7, and 1.0 and calls the result reliable only when fewer than 1% exceed 0.7 and none exceed 1.0.
 
-The fit-influence component is Cook's-distance-like:
+Those thresholds are meaningful only for correctly calculated PSIS with its sample-size/version rules. BestFit's current tail smoother fits cutoff ratios rather than excesses, ignores the fitted location, and reverses tail order-statistic replacement. Under [TR-024](../review-findings.md#tr-024), all BestFit `ParetoK`, ELPD-LOO, reliability flags, and PSIS observation rankings are scientifically unavailable until corrected.
 
-$$D_i = \frac{1}{p}\mathbf{g}_i^\top\mathbf{J}_{\text{post}}^{-1}\mathbf{g}_i. \tag{3}$$
+## MLE and MAP Score-Displacement Diagnostics
 
-The variance-influence component uses the diagonal finite-difference information contribution $\mathbf{J}_i$ for the observation:
+At an MLE or MAP point $\widehat{\boldsymbol\theta}$, let $\mathbf J$ be the negative Hessian of the relevant full objective and let
 
-$$V_i = \frac{1}{p}\left|\operatorname{tr}\left(\mathbf{J}_{\text{post}}^{-1}\mathbf{J}_i\right)\right|. \tag{4}$$
+$$
+\mathbf s_i=
+\left.\frac{\partial\ell_i}{\partial\boldsymbol\theta}
+\right|_{\widehat{\boldsymbol\theta}}. \tag{INF.3}
+$$
 
-The displayed observation leverage is:
+A first-order one-case deletion displacement is proportional to $\mathbf J^{-1}\mathbf s_i$. BestFit's `GetObservationInfluence()` returns each component standardized by its local standard error:
 
-$$\ell_i = D_i + V_i. \tag{5}$$
+$$
+I_{ij}=\frac{(\mathbf J^{-1}\mathbf s_i)_j}
+{\sqrt{(\mathbf J^{-1})_{jj}}}. \tag{INF.4}
+$$
 
-Prior components use the same fit-influence quadratic form with scores from `Model.PointwisePriorLogLikelihood`. For prior variance influence, BestFit removes one prior component from the posterior log likelihood, recomputes the local covariance, and reports the generalized-variance change. `LeverageDiagnostics` sums all observation and prior leverages and reports percentages of that computed total; it logs a debug warning if the total differs from the parameter count $p$ by more than 50 percent, but it does not rescale the values to force equality.
+`GetCooksDistance()` returns the score quadratic
 
-## Numerical Differentiation
+$$
+D_i^{\mathrm{API}}=
+\frac{\mathbf s_i^{\mathsf T}\mathbf J^{-1}\mathbf s_i}{p}. \tag{INF.5}
+$$
 
-The Hessian and score calculations route through `NumericalDiff` where possible. The initial step for parameter $j$ is:
+MLE uses the data-likelihood Hessian; MAP uses the full posterior Hessian but still uses a data score in (INF.3). These are local approximations and do not refit after deletion. The familiar linear-model suggestions $D_i>1$ or $4/n$ have no universal calibration for censored nonlinear flood-frequency models. Hessian inversion failure returns arrays of zeros, so “no influence” can also mean “diagnostic unavailable.”
 
-$$h_j = \max\!\left(10^{-4}(|\theta_j| + 1),\;10^{-8}\right). \tag{6}$$
+Grouped threshold contributions require care. A pointwise unit with count $m$ represents a group, not one interchangeable exact observation. Its score and any deletion approximation correspond to removing that entire contribution as implemented.
 
-Flat finite-difference directions are escalated by a factor of 4 up to $10^{-2}$. This is important for hydrologic distributions with near-zero shape or skew parameters, where too-small perturbations can numerically land on the same approximation branch.
+## GMM Influence
 
-Diagonal Hessian entries use the three-point central formula:
+For pointwise moment vector $\mathbf g_i$, Jacobian $\mathbf D$, weighting matrix $\mathbf W$, and bread $\mathbf B$, BestFit forms an influence-function-like vector
 
-$$H_{jj} = \frac{f(\boldsymbol{\theta}+h_j\mathbf{e}_j)-2f(\boldsymbol{\theta})+f(\boldsymbol{\theta}-h_j\mathbf{e}_j)}{h_j^2}. \tag{7}$$
+$$
+\boldsymbol\psi_i=
+\mathbf B^{-1}\mathbf D^{\mathsf T}\mathbf W\mathbf g_i. \tag{INF.6}
+$$
 
-Off-diagonal entries use the four-point cross-partial formula:
+For Bulletin 17C grouped components, row-level vectors are summed before a covariance quadratic is calculated. The returned scalar is a Cook-distance-like GMM measure. However, `GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` stores that scalar in `ObservationInfluence.ParetoK`, because it reuses the PSIS-oriented DTO. Consequently, `GetProblematicObservations(0.7)`, Pareto threshold counts, and `GetReliabilitySummary()` apply PSIS semantics to a non-PSIS Cook measure. This is a production/API defect recorded in the review findings. Inspect the raw scalar only with a GMM-specific calibration; do not call it Pareto $k$.
 
-$$H_{jk} = \frac{f(\boldsymbol{\theta}+h_j\mathbf{e}_j+h_k\mathbf{e}_k)-f(\boldsymbol{\theta}+h_j\mathbf{e}_j-h_k\mathbf{e}_k)-f(\boldsymbol{\theta}-h_j\mathbf{e}_j+h_k\mathbf{e}_k)+f(\boldsymbol{\theta}-h_j\mathbf{e}_j-h_k\mathbf{e}_k)}{4h_jh_k}. \tag{8}$$
+## Prior-Component Diagnostics
 
-If direct inversion of $\mathbf{J}_{\text{post}}$ fails, `LeverageDiagnostics` applies `MatrixRegularization.MakeSymmetricPositiveDefinite` and retries the inversion.
+`PriorInfluenceDiagnostics` evaluates `PointwisePriorLogLikelihood` over every `thinEvery`-th posterior draw. For component $k$, it reports the mean, sample standard deviation, minimum, and maximum of
 
-## PSIS-LOO Influence
+$$
+\log\pi_k(\boldsymbol\theta^{(s)}). \tag{INF.7}
+$$
 
-For posterior draw $s$ and data component $i$, BestFit forms raw log importance weights:
+It also computes the heuristic magnitude ratio
 
-$$\log r_{is} = -\log p(y_i\mid\boldsymbol{\theta}^{(s)}). \tag{9}$$
+$$
+R_{\pi}=
+\frac{|E_s\log\pi(\boldsymbol\theta^{(s)})|}
+{|E_s\log\pi(\boldsymbol\theta^{(s)})|+
+|E_s\ell(\boldsymbol\theta^{(s)})|}. \tag{INF.8}
+$$
 
-Weights are shifted by their maximum log weight to avoid overflow. For each observation, the number of upper-tail weights used in Pareto smoothing is:
+`IsPriorInfluential` uses $R_\pi>0.2$. Equation (INF.8) is not invariant to data units, likelihood constants, prior normalization constants, sample size, or parameterization. A bounded flat prior can constrain inference while contributing a constant log density; an improper prior's constant is arbitrary. Treat this as a descriptive log-kernel decomposition only.
 
-$$M = \min\!\left(\left\lfloor S/5 \right\rfloor,\left\lfloor 3\sqrt{S} \right\rfloor\right), \qquad 3 \le M \le S-1. \tag{10}$$
+For parameter $j$, the class additionally reports
 
-BestFit fits the upper tail with `Numerics.Distributions.GeneralizedPareto.MLE`. Numerics uses Hosking's shape parameter $\kappa$, whose sign is opposite the PSIS convention, so the reported diagnostic is:
+$$
+S_{\pi,j}=
+\frac{1/V_{\pi,j}}
+{\max(1/V_{\mathrm{post},j},,1/V_{\pi,j})}, \tag{INF.9}
+$$
 
-$$\hat{k}_{\text{PSIS}} = -\hat{\kappa}_{\text{Numerics}}. \tag{11}$$
+clamped to $[0,1]$, with zero assigned when analytical prior variance is unavailable. This is invariant to a separate linear rescaling of one parameter, but not to general reparameterization or posterior correlation. It uses only `ModelParameter.PriorDistribution`; quantile, Jeffreys, coupled, and spatial prior components in (INF.7) are absent from (INF.9). The name “precision share” should therefore be read as a marginal heuristic, not a formal fraction of posterior information.
 
-If the GPD MLE throws, the implementation falls back to a moment estimate from the tail weights. The final $k$ is clamped to $[-0.5, 1.5]$; smoothing is applied only when $-0.5 < k < 1$. Tail weights are replaced by GPD expected order-statistic quantiles:
+Time-series `AutoRegressive`, `MovingAverage`, and `ARIMA` pointwise methods currently classify their Jeffreys scale component as `ParameterPrior` rather than `JeffreysScalePrior`; type-filtered summaries undercount Jeffreys contributions for those models.
 
-$$Q(p_j)=\frac{\hat{\sigma}}{\hat{k}}\left[(1-p_j)^{-\hat{k}}-1\right],\qquad p_j=\frac{j+0.5}{M}. \tag{12}$$
+## Custom Leverage Decomposition
 
-When $|\hat{k}|<10^{-8}$, BestFit uses the exponential limit:
+`LeverageDiagnostics` evaluates the full posterior Hessian at the supplied MCMC MAP state or MAP optimizer result. For observation $i$, it defines fit influence using (INF.5) and an observation curvature term
 
-$$Q(p_j)=-\hat{\sigma}\log(1-p_j). \tag{13}$$
+$$
+V_i^{\mathrm{API}}=
+\frac{1}{p}\left|
+\operatorname{tr}(\mathbf J_{\mathrm{post}}^{-1}\mathbf J_i^{\mathrm{diag}})
+\right|, \tag{INF.10}
+$$
 
-The pointwise expected log predictive density is:
+where the code constructs $\mathbf J_i^{\mathrm{diag}}$ from only the diagonal second derivatives of the pointwise log likelihood. Cross-parameter curvature is omitted. It then defines `Leverage = FitInfluence + VarianceInfluence`.
 
-$$\widehat{\operatorname{elpd}}_{\text{loo},i} = \log \sum_{s=1}^{S} w_{is}p(y_i\mid\boldsymbol{\theta}^{(s)}), \tag{14}$$
+For a prior component, variance influence is instead the absolute log determinant ratio between a covariance with that prior removed and the full posterior covariance, divided by $p$. Adding this determinant metric to the score quadratic produces a useful exploratory ranking only if empirically validated; the two terms do not share a standard additive information identity. The documented expectation that total leverage approximately equals $p$ is not established for this implementation.
 
-where $w_{is}$ are the smoothed and normalized importance weights.
+Numerical differentiation can also cross bounds or discontinuous model branches. Regularization or caught exceptions can return empty/zero diagnostics. Do not report percentages without retaining the raw Hessian condition, finite-difference scale, and failure state.
 
-## Aggregate LOO Statistics
+## Compile-Checked API Workflow
 
-`BayesianAnalysis` stores:
+<!-- snippet: bayesian-diagnostics-workflow -->
+```csharp
+private static (
+    InfluenceDiagnostics Influence,
+    PriorInfluenceDiagnostics PriorInfluence,
+    LeverageDiagnostics Leverage) ComputeBayesianDiagnostics(
+        BayesianAnalysis analysis)
+{
+    if (!analysis.IsEstimated || analysis.Results is null)
+    {
+        throw new InvalidOperationException(
+            "Run the Bayesian analysis before computing diagnostics.");
+    }
 
-$$\operatorname{LOOIC} = -2\sum_i \widehat{\operatorname{elpd}}_{\text{loo},i}, \tag{15}$$
+    return (
+        analysis.ComputeInfluenceDiagnostics(),
+        analysis.ComputePriorInfluenceDiagnostics(thinEvery: 10),
+        analysis.ComputeLeverageDiagnostics());
+}
+```
 
-$$p_{\text{loo}} = \sum_i \operatorname{lppd}_i - \sum_i \widehat{\operatorname{elpd}}_{\text{loo},i}, \tag{16}$$
+Use the returned metadata to locate observations in the source record, then investigate chronology, measurement quality, censoring definitions, and model assumptions. Do not delete an observation solely because it ranks highly. Refit-with-and-without sensitivity analysis should preserve a documented scientific reason and distinguish data correction from robustness analysis.
 
-$$\operatorname{SE}(\operatorname{LOOIC}) = 2\sqrt{n\,\operatorname{Var}(\widehat{\operatorname{elpd}}_{\text{loo},i})}. \tag{17}$$
+## Interpretation Checklist
 
-The variance in (17) is the sample variance across pointwise ELPD values with denominator $n-1$.
+- Confirm that pointwise components correspond to independent deletion units.
+- Exclude PSIS results while TR-024 is open.
+- Distinguish exact refitting from first-order score approximations.
+- Never interpret zero arrays without checking Hessian/covariance failure.
+- Treat prior log-magnitude and marginal precision ratios as heuristics.
+- Treat GMM Cook measures as GMM quantities, not Pareto $k$.
+- Preserve hydrologic context: an influential extreme may be correct and indispensable.
+- Report sensitivity of design quantiles, not only parameter displacement.
 
-## Pareto K Categories
+## Verification and Traceability
 
-| Category | Rule | Interpretation |
-|----------|------|----------------|
-| Good | $k < 0.5$ | PSIS approximation is stable |
-| OK | $0.5 \le k < 0.7$ | Moderate influence; monitor |
-| Bad | $0.7 \le k < 1.0$ | High influence; exact LOO may be needed |
-| Very Bad | $k \ge 1.0$ | Observation dominates the importance weights |
+Fast tests exercise serialization, sorting, thresholds, component mapping, and deterministic numerical helpers. They do not validate nominal influence thresholds or deletion approximations across model families. Release-grade verification requires exact leave-one-out/refit comparisons and reference PSIS parity; those long-running checks were not executed here.
 
-## MLE And MAP Influence
-
-`MaximumLikelihood.GetCooksDistance()` computes equation (3) using the data-only Hessian from `Model.DataLogLikelihood`. `MaximumAPosteriori.GetCooksDistance()` uses the full posterior Hessian from `Model.LogLikelihood`.
-
-Both `GetObservationInfluence()` methods return DFBETAS-like parameter influence:
-
-$$\operatorname{DFBETAS}_{ij} = \frac{(\mathbf{J}^{-1}\mathbf{g}_i)_j}{\operatorname{SE}_j}, \tag{18}$$
-
-where $\operatorname{SE}_j$ is the square root of the $j$th diagonal element of the covariance approximation.
-
-## Data Components
-
-Each observation's pointwise likelihood contribution comes from the model implementation:
-
-| Type | Contribution |
-|------|--------------|
-| Exact | $\log f(y_i\mid\boldsymbol{\theta})$ |
-| Uncertain | $\log \int f(q\mid\boldsymbol{\theta})g_i(q)\,dq$ evaluated by the model's quadrature routine |
-| Interval | $\log [F(b_i\mid\boldsymbol{\theta}) - F(a_i\mid\boldsymbol{\theta})]$ |
-| Threshold below | $n_{\text{below}}\log F(c_i\mid\boldsymbol{\theta})$ |
-| Threshold above | $n_{\text{above}}\log[1-F(c_i\mid\boldsymbol{\theta})]$ |
-
-Threshold data contributes one diagnostic row per threshold component with `Count` set to the number of represented years.
-
-## Implementation Classes
-
-| Class | Purpose |
-|-------|---------|
-| `InfluenceDiagnostics` | Container for PSIS-LOO results, Pareto `k`, ELPD-LOO, and observation metadata |
-| `LeverageDiagnostics` | Computes and stores MAP leverage decomposition |
-| `PriorInfluenceDiagnostics` | Summarizes prior components across thinned posterior samples |
-| `BayesianAnalysis` | Entry points: `ComputeInfluenceDiagnostics()`, `ComputeLeverageDiagnostics()`, `ComputePriorInfluenceDiagnostics()` |
-| `MaximumLikelihood` | MLE Cook's distance and DFBETAS-like influence |
-| `MaximumAPosteriori` | MAP Cook's distance, DFBETAS-like influence, and leverage |
-| `GeneralizedMethodOfMoments` | GMM Cook's distance and influence summaries |
+Implementation symbols: `InfluenceDiagnostics`, `ObservationInfluence`, `PriorInfluenceDiagnostics`, `PriorComponentSummary`, `LeverageDiagnostics`, `MaximumLikelihood.GetObservationInfluence`, `MaximumLikelihood.GetCooksDistance`, matching MAP methods, and `GeneralizedMethodOfMoments.GetInfluenceDiagnostics`.
 
 ## References
 
-<a id="1">[1]</a> A. Vehtari, A. Gelman, and J. Gabry, "Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC," *Statistics and Computing*, vol. 27, no. 5, pp. 1413-1432, 2017.
+<a id="ref-1"></a>[1] R. D. Cook, “Detection of influential observation in linear regression,” *Technometrics*, vol. 19, no. 1, pp. 15–18, 1977.
 
-<a id="2">[2]</a> R. D. Cook, "Detection of influential observation in linear regression," *Technometrics*, vol. 19, no. 1, pp. 15-18, 1977.
+<a id="ref-2"></a>[2] S. Chatterjee and A. S. Hadi, “Influential observations, high leverage points, and outliers in linear regression,” *Statistical Science*, vol. 1, no. 3, pp. 379–393, 1986.
 
-<a id="3">[3]</a> B. C. Wei, Y. Q. Hu, and W. K. Fung, "Generalized leverage and its applications," *Scandinavian Journal of Statistics*, vol. 25, no. 1, pp. 25-36, 1998.
-
-## Implementation Sources
-
-Primary source paths: `src/RMC.BestFit/Estimation/BayesianAnalysis.cs`, `src/RMC.BestFit/Estimation/MaximumLikelihood.cs`, `src/RMC.BestFit/Estimation/MaximumAPosteriori.cs`, `src/RMC.BestFit/Estimation/GeneralizedMethodOfMoments.cs`, `src/RMC.BestFit/Estimation/NumericalDiff.cs`, `src/RMC.BestFit/Diagnostics/InfluenceDiagnostics.cs`, `src/RMC.BestFit/Diagnostics/LeverageDiagnostics.cs`, and `src/RMC.BestFit/Diagnostics/PriorInfluenceDiagnostics.cs`.
+<a id="ref-3"></a>[3] A. Vehtari et al., “Pareto smoothed importance sampling,” *Journal of Machine Learning Research*, vol. 25, no. 72, pp. 1–58, 2024.
 
 ---
 
-[<- Previous: Diagnostics](diagnostics.md) | [Back to Index](../../index.md) | [Next: Analyses Overview ->](../analysis/overview.md)
+[Previous: diagnostics](diagnostics.md) | [Estimation index](index.md)

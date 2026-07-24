@@ -42,7 +42,6 @@ The documentation is organized to mirror the Numerics library: a short getting-s
 
 ```cs
 using Numerics.Distributions;
-using RMC.BestFit;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 
@@ -80,7 +79,6 @@ if (results is not null)
 ### Fast MLE Distribution Screening
 
 ```cs
-using RMC.BestFit;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 
@@ -135,7 +133,6 @@ The following support types are covered as part of the 90% API map. They are usu
 
 | Namespace | Purpose |
 |-----------|---------|
-| `RMC.BestFit` | Data-series and observation types |
 | `RMC.BestFit.Models` | Models, data frame, parameters, trends, rating curves, time series, spatial types |
 | `RMC.BestFit.Analyses` | Analysis workflows and result orchestration |
 | `RMC.BestFit.Estimation` | MLE, MAP, GMM, Bayesian MCMC |
