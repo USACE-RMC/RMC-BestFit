@@ -299,7 +299,7 @@ const style = [
     "th { background: var(--navy); color: white; font-weight: 650; text-align: left; }",
     "th, td { border: 0.6px solid #b9c6cf; padding: 0.045in 0.055in; vertical-align: top; overflow-wrap: anywhere; }",
     "tbody tr:nth-child(even) { background: #f5f8fa; }",
-    "code { font-family: 'Cascadia Mono', Consolas, monospace; font-size: 0.88em; background: #eef2f5; padding: 0.01in 0.025in; border-radius: 2px; overflow-wrap: anywhere; }",
+    "code { font-family: 'Cascadia Mono', Consolas, monospace; font-size: 0.88em; background: #eef2f5; padding: 0.01in 0.025in; border-radius: 2px; overflow-wrap: anywhere; word-break: break-all; }",
     "pre { margin: 0.12in 0 0.16in; padding: 0.11in 0.13in; color: #edf5f8; background: #172936; border-left: 3px solid #4f9fc5; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 7.9pt; line-height: 1.34; page-break-inside: avoid; }",
     "pre code { color: inherit; background: transparent; padding: 0; }",
     ".inline-equation { display: inline-block; width: auto; max-width: none; vertical-align: -0.24em; margin: 0 0.025em; }",

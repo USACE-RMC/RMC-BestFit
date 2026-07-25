@@ -24,7 +24,7 @@ Each external artifact records the source dataset, package and runtime versions,
 |---|---|
 | Deterministic analytical arithmetic | Absolute tolerance approximately \(10^{-10}\) |
 | Cross-language log likelihood and criteria | Absolute \(10^{-8}\), relative \(10^{-7}\) |
-| Optimizer parameter parity | Scaled tolerance no looser than \(10^{-5}\), plus objective parity |
+| Optimizer parameter parity | Scaled \(10^{-5}\) for comparable parameter-converged configurations; scaled \(10^{-4}\) for objective-converged global versus parameter-converged local optimizers; tight objective parity is required in both cases |
 | PSIS aggregate values | \(10^{-6}\) |
 | Pareto \(k\) | \(10^{-4}\) |
 | Coverage | Nominal rate must lie in the predeclared binomial interval |

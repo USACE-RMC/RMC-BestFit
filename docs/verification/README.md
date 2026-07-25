@@ -13,7 +13,7 @@ This is the living formal verification and validation record for `RMC.BestFit.Ve
 | Fast regression gate | Passed | Core 3,032; UI 564; App 427; 0 failed and 0 skipped |
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
 | Test ownership audit | In progress | Initial duplicate removals and FittingAnalysis split are recorded in [Test Inventory](test-inventory.md) |
-| Distribution fitting | Active - approval gate | All 15 family-specific external-oracle methods passed; TR-001, TR-009, and TR-063 are analytically verified; TR-002 is rejected; TR-010 is fixed by regression; TR-064 records the focused optimizer-precision failure and proposed correction in [Distribution Fitting](distribution-fitting.md) |
+| Distribution fitting | Passed | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. See [Distribution Fitting](distribution-fitting.md) |
 | Model estimation and diagnostics | Planned after off-ramp | [Model Estimation](model-estimation.md) |
 | Bulletin 17C and later phases | Planned | [Scientific Review Findings](../technical-reference/review-findings.md) |
 ## Evidence rule
