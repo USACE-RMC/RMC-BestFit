@@ -42,7 +42,7 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-030](#tr-030) | NUTS acceptance reporting | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-031](#tr-031) | Leverage interpretation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-032](#tr-032) | GMM influence labeled Pareto k | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-033](#tr-033) | GMM objective/gradient scale | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-033](#tr-033) | GMM objective/gradient scale | High | Rejected non-defect | No change required | Passed | [Model-estimation verification](../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) | 2026-07-25 |
 | [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-036](#tr-036) | Transform fitting holdout leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -573,17 +573,17 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-033"></a>
 ## TR-033 — The Unpenalized GMM Objective and Gradient Have Different Scale
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Rejected non-defect.
 
-**Implementation status.** Not started.
+**Implementation status.** No production change required.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by focused analytical verification.
 
-**Evidence.** Without a penalty, `ObjectiveFunction()` returns $Q=\mathbf g^\mathsf T\mathbf W\mathbf g$, whose derivative is $2\mathbf D^\mathsf T\mathbf W\mathbf g$. `GetGradient()` returns $\mathbf D^\mathsf T\mathbf W\mathbf g+\nabla P$, the gradient of $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$. The objective uses that half-scaled convention only when a penalty delegate exists.
+**Evidence.** Independent central differences confirm that the unpenalized estimating-equation gradient is one half of the derivative of the conventional reported objective $\mathbf g^\mathsf T\mathbf W\mathbf g$, while the penalized objective $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$ and supplied gradient agree exactly. Multiplication by the positive constant preserves the unpenalized stationary point. The reported GMM covariance is constructed from $\mathbf D^\mathsf T\mathbf W\mathbf D$ and the sandwich meat, not from the scalar objective Hessian. A deterministic Log10-Normal experiment further verifies that the current half-quadratic parameter penalty, gradient, penalty Hessian, and default Bulletin 17C covariance path reproduce both the inverse-variance posterior mean and posterior variance for wide-centered, narrow-centered, and narrow-shifted Gaussian information. The B17C GMM scale remains the intended unbiased $n-1$ moment estimate, while MAP retains its $n$-denominator MLE scale.
 
-**Impact.** The unpenalized minimizer is unchanged in exact arithmetic, but gradient-based line searches receive an inconsistent objective-gradient pair.
+**Impact.** No point-estimate or covariance defect is present in the verified Log10-Normal path. The unpenalized constant factor is an optimizer-direction convention and is not a covariance multiplier. The penalized path, where relative data/prior scaling matters, is internally consistent and produces the required Gaussian inverse-precision inference.
 
-**Follow-up.** Adopt one convention and its exact gradient, then add finite-difference gradient tests with and without penalties.
+**Follow-up.** Retain the two independent gradient-scale tests and the MAP/GMM inverse-variance test as permanent verification evidence. Any future change to the objective, gradient, penalty definition, or covariance bread/meat must preserve their joint equations.
 
 <a id="tr-034"></a>
 ## TR-034 — Overidentified One-Step GMM Is Artificially Prohibited

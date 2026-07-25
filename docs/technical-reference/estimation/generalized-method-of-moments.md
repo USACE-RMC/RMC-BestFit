@@ -55,9 +55,35 @@ $$
 \mathbf D=\frac{\partial\mathbf g_n}{\partial\boldsymbol\theta^{\mathsf T}}, \tag{GMM.5}
 $$
 
-consistent with (GMM.4). Without a penalty, `GetGradient()` still returns $\mathbf D^{\mathsf T}\mathbf W\mathbf g_n$, one half of the derivative of (GMM.3). The minimizer is unchanged under a constant objective scaling, but an objective/gradient scale mismatch can affect BFGS line-search behavior and should be corrected or explicitly validated before claiming optimizer parity.
+consistent with (GMM.4). Without a penalty, `GetGradient()` returns $\mathbf D^{\mathsf T}\mathbf W\mathbf g_n$, one half of the derivative of (GMM.3). This is the estimating-equation direction. Multiplying it by two changes neither its roots nor the GMM point estimate. GMM covariance is computed from the estimating-equation bread and meat, not from a numerical Hessian of the scalar optimizer objective, so this constant is not propagated into covariance. When a penalty is present, equations (GMM.4) and (GMM.5) are an exact objective-gradient pair; this is the scale that combines data curvature with penalty curvature.
 
-Penalties are generic deterministic functions. In Bulletin 17C they encode external parameter or quantile information with an $n^{-1}$-scaled half-quadratic form. `PenaltyIsRandom` determines whether the penalty Hessian also enters the sandwich meat; it does not transform the penalty into a normalized Bayesian prior.
+### Gaussian parameter penalties
+
+For a Gaussian prior or regional estimate on one parameter,
+
+$$
+\mu\sim N(m,\tau^2),
+$$
+
+`ParameterPenalty` contributes
+
+$$
+P_\mu(\mu)=\frac{1}{2n}\frac{(\mu-m)^2}{\tau^2},
+\qquad
+\nabla P_\mu=\frac{\mu-m}{n\tau^2},
+\qquad
+H_\mu=\frac{1}{n\tau^2}. \tag{GMM.5a}
+$$
+
+Therefore `ParameterPenalty.MSE` is the Gaussian variance $\tau^2$ itself. The division by $n$ already occurs inside the penalty; callers must not divide the prior variance by $n$ again. Multiplying the complete objective (GMM.4) by $n$ gives the usual negative-log-posterior kernel,
+
+$$
+nQ_{n,P}
+=\frac n2\mathbf g_n^{\mathsf T}\mathbf W\mathbf g_n
++\frac12\frac{(\mu-m)^2}{\tau^2}. \tag{GMM.5b}
+$$
+
+Bulletin 17C parameter penalties use this Gaussian information interpretation. Quantile penalties apply the same half-quadratic construction after mapping parameters to the selected quantile.
 
 ## Weighting Strategies and Optimization
 
@@ -95,7 +121,28 @@ $$
 +\mathbb I_{\mathrm{random\ penalty}}\mathbf H_P. \tag{GMM.8}
 $$
 
-The extra penalty term in (GMM.8) is intended for a random external target such as regional skew. A fixed ridge-type penalty should set `PenaltyIsRandom = false`. Both $\mathbf S$ and $\mathbf B$ are regularized before inversion. A caught covariance failure returns a zero matrix through the public API, so zero variances require failure review rather than scientific interpretation.
+For efficient weighting, $\mathbf W=\mathbf S^{-1}$. With the default Bulletin 17C external-information interpretation (`PenaltyIsRandom = true`),
+
+$$
+\mathbf M=\mathbf D^{\mathsf T}\mathbf W\mathbf D+\mathbf H_P=\mathbf B,
+\qquad
+\widehat{\mathbf V}_S=\frac1n\mathbf B^{-1}. \tag{GMM.8a}
+$$
+
+This is also the inverse posterior curvature for the Gaussian penalty in (GMM.5a). For an independent location block with unpenalized estimate $\widehat\mu_L$ and variance $V_L$, the prior and data precisions add:
+
+$$
+V_{\mathrm{post}}
+=\left(\frac1{V_L}+\frac1{\tau^2}\right)^{-1},
+\qquad
+\widehat\mu_{\mathrm{post}}
+=V_{\mathrm{post}}
+\left(\frac{\widehat\mu_L}{V_L}+\frac m{\tau^2}\right). \tag{GMM.8b}
+$$
+
+A wide centered prior leaves both quantities effectively unchanged; a narrow centered prior leaves the location unchanged while contracting its variance; and a narrow displaced prior changes both. The Log10-Normal verification reproduces all three cases for MAP and Bulletin 17C GMM while reestimating $\sigma$ in every fit.
+
+Setting `PenaltyIsRandom = false` instead reports the frequentist sampling covariance of a fixed regularized estimator: the penalty curvature remains in the bread but not in the meat. That quantity is not the Gaussian posterior variance in (GMM.8b). Both $\mathbf S$ and $\mathbf B$ are regularized before inversion. A caught covariance failure returns a zero matrix through the public API, so zero variances require failure review rather than scientific interpretation.
 
 ## Overidentification Statistic
 
@@ -145,9 +192,10 @@ After configuration, call `IsValid(out errors)`, `Estimate()`, inspect both `Sta
 - Optimal weighting is asymptotic and estimated; small-sample behavior can be poor.
 - Strongly collinear moments make $\mathbf S$ and $\mathbf B$ ill-conditioned, so regularization can materially affect estimates and intervals.
 - Penalized estimates require a declared fixed-versus-random interpretation.
-- Source verification includes GMM and Bulletin 17C cases, but the long-running Verification suite was not executed in this documentation pass.
+- Focused analytical verification confirms the unpenalized estimating-gradient factor, exact penalized objective gradient, unbiased Log10-Normal moment solution, and Gaussian inverse-variance posterior mean and variance. Verification is performed one exact method at a time; no conclusion depends on executing the complete long-running suite.
 
 Implementation symbols: `IGMMModel`, `GeneralizedMethodOfMoments`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `Q`, `GetS`, `GetJacobian`, `GetCovariance`, `ProfileQ`, `Estimate`, and `PostProcess`.
+Verification evidence: [Model Estimation and Diagnostics Verification](../../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling).
 
 ## References
 

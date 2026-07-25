@@ -14,7 +14,7 @@ This is the living formal verification and validation record for `RMC.BestFit.Ve
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
 | Test ownership audit | In progress | Initial duplicate removals and FittingAnalysis split are recorded in [Test Inventory](test-inventory.md) |
 | Distribution fitting | Passed | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. See [Distribution Fitting](distribution-fitting.md) |
-| Model estimation and diagnostics | Planned after off-ramp | [Model Estimation](model-estimation.md) |
+| Model estimation and diagnostics | In progress | Log10-Normal MLE/MAP/GMM baselines, Gaussian inverse-variance mean and variance, and objective/covariance scaling passed; TR-033 rejected as a non-defect. Influence, leverage, and external model-comparison oracles remain active. See [Model Estimation](model-estimation.md) |
 | Bulletin 17C and later phases | Planned | [Scientific Review Findings](../technical-reference/review-findings.md) |
 ## Evidence rule
 

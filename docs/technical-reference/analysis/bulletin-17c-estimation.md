@@ -4,7 +4,7 @@
 
 [Bulletin 17C overview](bulletin-17c.md) | [Technical Reference](../index.md) | [Next: uncertainty and diagnostics](bulletin-17c-uncertainty.md)
 
-`Bulletin17CDistribution` implements a stationary expected-moments estimator through the `IGMMModel` contract. It is not an `IModel`: the class exposes moment conditions, their covariance, optional penalties, parameter bounds, and simulation, but it exposes no data log likelihood, prior log density, posterior, or pointwise log likelihood. Consequently, `Bulletin17CAnalysis` is a frequentist GMM workflow even though it reuses a `BayesianAnalysis` object as an uncertainty-results container.
+`Bulletin17CDistribution` implements a stationary expected-moments estimator through the `IGMMModel` contract. It is not an `IModel`: the class exposes moment conditions, their covariance, optional penalties, parameter bounds, and simulation, but it exposes no general data log likelihood or pointwise log likelihood. Its quadratic penalties encode Gaussian external information and produce inverse-precision penalized inference; they do not turn the estimator into a likelihood-based MCMC model. `Bulletin17CAnalysis` reuses a `BayesianAnalysis` object as an uncertainty-results container.
 
 ## Applicability and Supported Parents
 
@@ -153,7 +153,7 @@ Q_P(\boldsymbol\eta)
 +P(\boldsymbol\theta). \tag{12}
 $$
 
-For parameter information with target $a_j$ and mean-squared error $v_j$, an enabled natural-space penalty is
+For Gaussian parameter information with target $a_j$ and variance $v_j$, an enabled natural-space penalty is
 
 $$
 P_j(\theta_j)=\frac{(\theta_j-a_j)^2}{2v_j n}. \tag{13}
@@ -176,7 +176,18 @@ P_r(\boldsymbol\theta)=
 z_r=F_X^{-1}(1-\alpha_r\mid\boldsymbol\theta), \tag{15}
 $$
 
-with both $z_r$ and the configured target interpreted in base-10 log space when `UseLog10` is true. These are quadratic external-information penalties, not normalized prior densities. Calling them priors or deriving a posterior from equations (12)--(15) would overstate the implementation.
+with both $z_r$ and the configured target interpreted in base-10 log space when `UseLog10` is true. Up to an additive normalizing constant, equation (13) is the negative log density of $N(a_j,v_j)$ divided by $n$. Therefore `ParameterPenalty.MSE` is $v_j$ itself; it is not divided by $n$ before assignment. Multiplying equation (12) by $n$ gives the Gaussian prior kernel on the same scale as the moment information. Equation (15) applies the corresponding Gaussian information statement to a derived quantile.
+
+Let $\widehat\theta_L$ have unpenalized variance $V_L$. For an independent parameter block, the combined estimate and variance are
+
+$$
+V_P=\left(\frac1{V_L}+\frac1{v_j}\right)^{-1},
+\qquad
+\widehat\theta_P
+=V_P\left(\frac{\widehat\theta_L}{V_L}+\frac{a_j}{v_j}\right). \tag{16}
+$$
+
+The penalty Hessian is $1/(nv_j)$. With efficient $\mathbf W=\mathbf S^{-1}$ and the default external-information covariance path, it enters both the GMM bread and meat, so the sandwich covariance reduces to the inverse total precision in equation (16). This is the same Gaussian information-combination rule used by MAP. It is a posterior-curvature statement for the penalized parameters, not a claim that `Bulletin17CDistribution` supplies a complete data likelihood or MCMC posterior.
 
 ## Initialization and Optimization
 
@@ -203,11 +214,12 @@ One-step and two-step strategies also exist on the estimator, but `Bulletin17CAn
 
 ## Verification and Traceability
 
-The prohibited long-running Verification project contains parameter assertions for all seven Bulletin 17C worked examples, including systematic-only, low-outlier, broken-record, historical, crest-stage threshold, combined historical/outlier, and paleoflood cases. Those source assertions use an absolute parameter tolerance of $10^{-3}$ for the published LP3 examples. Separate source tests cover covariance for six parents, external-information penalties, uncertain-data variants, pointwise/aggregate moment consistency, and coverage experiments. This documentation pass inspected those assertions but did **not** execute `RMC.BestFit.Verification`; no new numerical validation claim is made here.
+Focused .NET 10 verification confirms the Log10-Normal unbiased moment solution, the exact penalized objective gradient, and equation (16) for both the posterior parameter estimate and variance under wide-centered, narrow-centered, and narrow-shifted Gaussian information. Each exact method was executed independently; the complete long-running Verification project was not run. The remaining source suite contains parameter assertions for all seven Bulletin 17C worked examples, covariance checks for six parents, uncertain-data variants, pointwise/aggregate moment consistency, and coverage experiments; those broader claims require their own focused executions before acceptance.
 
 The repository's legacy “Comparison with EMA” PDF evaluates the earlier Bayesian likelihood workflow against EMA and expressly says the comparison does not validate either method. It is useful historical context but is not validation evidence for the current specialized GMM implementation. This evidence gap is recorded in the review-findings register.
 
 Implementation symbols: `Bulletin17CDistribution.MomentConditions`, `PointwiseMomentConditions`, `SetPenaltyFunction`, `SetRandomPenaltyFunction`, `GeneralizedMethodOfMoments.Q`, `GetS`, `GetJacobian`, and `Estimate`.
+Verification evidence: [Model Estimation and Diagnostics Verification](../../verification/model-estimation.md#gaussian-prior-and-quadratic-penalty-equivalence).
 
 ## References
 

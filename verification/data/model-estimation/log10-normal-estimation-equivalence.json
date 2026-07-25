@@ -1,0 +1,75 @@
+{
+  "family": "Log10-Normal estimation equivalence",
+  "classification": "Closed-form analytical sufficient-statistic oracle",
+  "runtime": ".NET 10",
+  "production_source_commit": "ebb640aafab9c2e9f8fea5430a76bf851e48f955",
+  "local_numerics_commit": "bc11849c762d7b87d06aa64a3f3706ecf118fc13",
+  "data_log10": [1.1, 1.4, 1.7, 2.0, 2.3, 2.6, 2.9],
+  "expected": {
+    "sample_size": 7,
+    "mu_mle": 2.0,
+    "sum_squared_log_residuals": 2.5199999999999996,
+    "variance_mle": 0.36,
+    "sigma_mle": 0.6,
+    "variance_gmm_unbiased": 0.41999999999999993,
+    "sigma_gmm_unbiased": 0.648074069840786
+  },
+  "formula": {
+    "mu_mle": "sum(log10(y))/n",
+    "variance_mle": "sum((log10(y)-mu_mle)^2)/n",
+    "variance_gmm_unbiased": "sum((log10(y)-mu_mle)^2)/(n-1)",
+    "parameter_penalty": "0.5*(mu-prior_mean)^2/(prior_variance*n)",
+    "posterior_variance": "1/(1/likelihood_variance+1/prior_variance)",
+    "posterior_mu": "posterior_variance*(likelihood_mu/likelihood_variance+prior_mean/prior_variance)",
+    "unpenalized_estimating_gradient": "0.5*central_difference(g'Wg)",
+    "penalized_gradient": "central_difference(0.5*g'Wg+penalty)"
+  },
+  "predeclared_tolerances": {
+    "parameter_absolute": 1e-5,
+    "data_log_likelihood_absolute": 1e-8,
+    "just_identified_objective_absolute": 1e-10,
+    "gradient_absolute": 1e-8,
+    "inverse_variance_centered_mu_absolute": 1e-4,
+    "inverse_variance_shifted_mu_standard_error_fraction": 0.01,
+    "inverse_variance_centered_variance_relative": 0.002,
+    "inverse_variance_shifted_map_variance_relative": 0.015,
+    "inverse_variance_shifted_gmm_variance_relative": 0.005
+  },
+  "tests": [
+    "RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.FlatPriorMap_MatchesClosedFormLog10NormalMle",
+    "RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.UnpenalizedB17CGmm_MatchesExactSampleMoments",
+    "RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.MapMuPriorRegimes_MatchAnalyticalFitAndVarianceInfluence",
+    "RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence",
+    "RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.MapAndGmmMuPosterior_MatchesInverseVarianceWeighting",
+    "RMC.BestFit.Verification.ModelEstimation.GmmObjectiveGradientVerificationTests.PenalizedObjectiveGradient_MatchesIndependentCentralDifference",
+    "RMC.BestFit.Verification.ModelEstimation.GmmObjectiveGradientVerificationTests.UnpenalizedEstimatingGradient_IsHalfConventionalObjectiveDerivative"
+  ],
+  "focused_runs": [
+    {
+      "test": "MapAndGmmMuPosterior_MatchesInverseVarianceWeighting",
+      "timestamp_local": "2026-07-25T12:29:15-06:00",
+      "trx": "TestResults/VerificationFocused/20260725-122915-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_MapAndGmmMuPosterior_MatchesInverseVarianceWeighting/haden_HADEN_2026-07-25_18_29_21.858.trx",
+      "result": "Passed"
+    },
+    {
+      "test": "GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence",
+      "timestamp_local": "2026-07-25T12:29:37-06:00",
+      "trx": "TestResults/VerificationFocused/20260725-122937-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence/haden_HADEN_2026-07-25_18_29_41.357.trx",
+      "result": "Passed"
+    },
+    {
+      "test": "UnpenalizedEstimatingGradient_IsHalfConventionalObjectiveDerivative",
+      "timestamp_local": "2026-07-25T12:30:44-06:00",
+      "trx": "TestResults/VerificationFocused/20260725-123044-RMC_BestFit_Verification_ModelEstimation_GmmObjectiveGradientVerificationTests_UnpenalizedEstimatingGradient_IsHalfConventionalObjectiveDerivative/haden_HADEN_2026-07-25_18_30_48.556.trx",
+      "result": "Passed"
+    },
+    {
+      "test": "PenalizedObjectiveGradient_MatchesIndependentCentralDifference",
+      "timestamp_local": "2026-07-25T12:30:51-06:00",
+      "trx": "TestResults/VerificationFocused/20260725-123051-RMC_BestFit_Verification_ModelEstimation_GmmObjectiveGradientVerificationTests_PenalizedObjectiveGradient_MatchesIndependentCentralDifference/haden_HADEN_2026-07-25_18_30_55.058.trx",
+      "result": "Passed"
+    }
+  ],
+  "interpretation": "MLE and GMM intentionally retain n and n-1 scale conventions. With each estimator's unpenalized mu variance, MAP Gaussian priors and B17C quadratic penalties reproduce the same inverse-precision posterior mean and variance rule. The current penalized objective, gradient, penalty Hessian, and covariance scaling require no production change.",
+  "status": "Passed"
+}
