@@ -4,6 +4,8 @@
 
 This is the living formal verification and validation record for `RMC.BestFit.Verification`. It separates scientific numerical evidence from fast unit and regression coverage.
 
+The active handoff and batching plan is maintained in [Verification Finalization Plan](verification-finalization-plan.md). Start there when continuing this program in a new session.
+
 ## Current status
 
 | Program area | Status | Evidence |
@@ -38,4 +40,4 @@ The runner rejects broad filters and requires exactly one TRX result.
 - **Failed:** the focused test contradicted the claim or exposed a defect.
 - **Blocked:** an external dependency, upstream correction, or scientific decision prevents completion.
 
-[Methodology](methodology.md) | [References](references.md)
+[Finalization Plan](verification-finalization-plan.md) | [Methodology](methodology.md) | [References](references.md)

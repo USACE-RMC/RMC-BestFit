@@ -4,6 +4,8 @@
 
 [Technical Reference](index.md)
 
+The active continuation and batching plan is maintained in the [Verification Finalization Plan](../verification/verification-finalization-plan.md).
+
 This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Production behavior is not changed during the documentation program. Each open item requires a separately authorized correction session, focused unit tests, and—where scientific parity is claimed—approved verification evidence.
 
 ## Summary
