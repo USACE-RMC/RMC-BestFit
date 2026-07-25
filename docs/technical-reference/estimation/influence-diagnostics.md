@@ -56,14 +56,40 @@ Grouped threshold contributions require care. A pointwise unit with count $m$ re
 
 ## GMM Influence
 
-For pointwise moment vector $\mathbf g_i$, Jacobian $\mathbf D$, weighting matrix $\mathbf W$, and bread $\mathbf B$, BestFit forms an influence-function-like vector
+For pointwise moment vector $\mathbf g_i$, Jacobian $\mathbf D$, weighting matrix $\mathbf W$, and penalized bread $\mathbf B$, define
 
 $$
-\boldsymbol\psi_i=
-\mathbf B^{-1}\mathbf D^{\mathsf T}\mathbf W\mathbf g_i. \tag{INF.6}
+\mathbf e_i=\mathbf D^{\mathsf T}\mathbf W\mathbf g_i,
+\qquad
+\mathbf B=\mathbf D^{\mathsf T}\mathbf W\mathbf D+\mathbf H_P. \tag{INF.6}
 $$
 
-For Bulletin 17C grouped components, row-level vectors are summed before a covariance quadratic is calculated. The returned scalar is a Cook-distance-like GMM measure. However, `GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` stores that scalar in `ObservationInfluence.ParetoK`, because it reuses the PSIS-oriented DTO. Consequently, `GetProblematicObservations(0.7)`, Pareto threshold counts, and `GetReliabilitySummary()` apply PSIS semantics to a non-PSIS Cook measure. This is a production/API defect recorded in the review findings. Inspect the raw scalar only with a GMM-specific calibration; do not call it Pareto $k$.
+`GeneralizedMethodOfMoments.GetLeverageDiagnostics()` reports observation Cook fit influence and variance influence as
+
+$$
+D_i^{\mathrm{GMM}}
+=\frac{\mathbf e_i^{\mathsf T}\boldsymbol\Sigma_Q\mathbf e_i}{n^2p},
+\qquad
+V_i^{\mathrm{GMM}}
+=\frac{|\mathbf e_i^{\mathsf T}\mathbf B^{-1}\mathbf e_i|}{np}, \tag{INF.6a}
+$$
+
+where
+
+$$
+\boldsymbol\Sigma_Q=
+\left\{\nabla^2\left(
+\frac12\mathbf g_n^{\mathsf T}\mathbf W\mathbf g_n+P
+\right)\right\}^{-1}. \tag{INF.6b}
+$$
+
+The diagnostic objective in (INF.6b) always uses the half-quadratic moment term, whether or not a penalty is enabled. This keeps observation scores, bread, Cook influence, and penalty curvature on one scale. It does not alter the optimizer's public `Q` convention, its estimating gradient, fitted parameters, penalty Hessian, or reported GMM covariance.
+
+For Bulletin 17C grouped components, row-level $\mathbf e_i$ vectors are summed before either quadratic form is calculated, so removing a threshold group retains its full count effect. Penalty Cook influence uses its score quadratic; penalty variance influence uses the finite generalized-variance change described below. `Leverage` is the sum $D+V$ and supplies an estimator-specific ranking. MAP and GMM Cook magnitudes are not compared because their likelihood and estimating-equation objectives differ.
+
+The seven-point Log10-Normal fixture is independently reproduced by R `gmm` 1.9.1 and `sandwich` 3.1.2. BestFit matches every observation and the aggregate values $\sum D_i=0.0880102040816327$, $\sum V_i=0.616071428571429$, and $\sum(D_i+V_i)=0.704081632653061$ within $10^{-5}$. A centered penalty with width $100SE_L$ leaves the observation scale unchanged within $10^{-4}$.
+
+`GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` is a legacy compatibility path that stores a different GMM Cook-like scalar in the PSIS-oriented `ObservationInfluence.ParetoK` member. Its Pareto thresholds and reliability summary are not GMM diagnostics. Use `GetLeverageDiagnostics()` for the fit/variance/combined GMM display, and do not interpret the legacy value as Pareto $k$.
 
 ## Prior-Component Diagnostics
 
@@ -89,29 +115,49 @@ For parameter $j$, the class additionally reports
 $$
 S_{\pi,j}=
 \frac{1/V_{\pi,j}}
-{\max(1/V_{\mathrm{post},j},,1/V_{\pi,j})}, \tag{INF.9}
+{\max(1/V_{\mathrm{post},j},1/V_{\pi,j})}, \tag{INF.9}
 $$
 
 clamped to $[0,1]$, with zero assigned when analytical prior variance is unavailable. This is invariant to a separate linear rescaling of one parameter, but not to general reparameterization or posterior correlation. It uses only `ModelParameter.PriorDistribution`; quantile, Jeffreys, coupled, and spatial prior components in (INF.7) are absent from (INF.9). The name “precision share” should therefore be read as a marginal heuristic, not a formal fraction of posterior information.
 
 Time-series `AutoRegressive`, `MovingAverage`, and `ARIMA` pointwise methods currently classify their Jeffreys scale component as `ParameterPrior` rather than `JeffreysScalePrior`; type-filtered summaries undercount Jeffreys contributions for those models.
 
-## Custom Leverage Decomposition
+## MAP Fit, Variance, and Combined Influence
 
-`LeverageDiagnostics` evaluates the full posterior Hessian at the supplied MCMC MAP state or MAP optimizer result. For observation $i$, it defines fit influence using (INF.5) and an observation curvature term
+`LeverageDiagnostics` evaluates the posterior Hessian at the supplied MCMC MAP state or MAP optimizer result. For observation $i$, fit influence is the Cook score quadratic in (INF.5). Observation variance influence is the local curvature trace
 
 $$
-V_i^{\mathrm{API}}=
+V_i^{\mathrm{MAP}}=
 \frac{1}{p}\left|
 \operatorname{tr}(\mathbf J_{\mathrm{post}}^{-1}\mathbf J_i^{\mathrm{diag}})
 \right|, \tag{INF.10}
 $$
 
-where the code constructs $\mathbf J_i^{\mathrm{diag}}$ from only the diagonal second derivatives of the pointwise log likelihood. Cross-parameter curvature is omitted. It then defines `Leverage = FitInfluence + VarianceInfluence`.
+where $\mathbf J_i^{\mathrm{diag}}$ contains the diagonal second derivatives of the pointwise log likelihood. This first-order observation calculation is inexpensive because it reuses the forward and backward evaluations used for scores.
 
-For a prior component, variance influence is instead the absolute log determinant ratio between a covariance with that prior removed and the full posterior covariance, divided by $p$. Adding this determinant metric to the score quadratic produces a useful exploratory ranking only if empirically validated; the two terms do not share a standard additive information identity. The documented expectation that total leverage approximately equals $p$ is not established for this implementation.
+For prior component $k$, the component can supply a substantial share of posterior curvature, so variance influence uses the finite log generalized-variance change
 
-Numerical differentiation can also cross bounds or discontinuous model branches. Regularization or caught exceptions can return empty/zero diagnostics. Do not report percentages without retaining the raw Hessian condition, finite-difference scale, and failure state.
+$$
+V_k^{\mathrm{prior}}
+=\frac1p\left|
+\log\det(\boldsymbol\Sigma_{-k})-
+\log\det(\boldsymbol\Sigma)
+\right|. \tag{INF.11}
+$$
+
+Here $\boldsymbol\Sigma_{-k}$ is the inverse reduced posterior curvature evaluated at the fitted mode after removing component $k$. Prior fit influence remains the Cook score quadratic. The displayed combined leverage is
+
+$$
+L_k=D_k+V_k. \tag{INF.12}
+$$
+
+This is an additive ranking index, not classical hat-matrix leverage or a conserved information decomposition. It is not expected to sum to $p$. The plot therefore labels each stacked bar as a percentage of total combined influence.
+
+The deterministic Log10-Normal tests establish the intended interpretation. A wide centered Gaussian prior has negligible fit and variance influence; a narrow centered prior has negligible fit influence and strong variance influence; and a narrow prior shifted by $2SE_L$ has both. With the centered prior held fixed, variance influence decreases as the sample grows. Sigma is reestimated jointly in every fit.
+
+For the displaced narrow-prior fixture, replacing $\mathbf J_i^{\mathrm{diag}}$ in (INF.10) with the analytical full Log10-Normal observation Hessian changes every reported value by less than $0.003$ and preserves the leading three observations. That result supports the local approximation for this verified case, not for every model family.
+
+Numerical differentiation can cross bounds or discontinuous model branches. Regularization or caught exceptions can return empty or zero diagnostics. Retain the raw values, fitted model, finite-difference configuration, and covariance status when using rankings in an engineering review.
 
 ## Compile-Checked API Workflow
 
@@ -145,13 +191,13 @@ Use the returned metadata to locate observations in the source record, then inve
 - Distinguish exact refitting from first-order score approximations.
 - Never interpret zero arrays without checking Hessian/covariance failure.
 - Treat prior log-magnitude and marginal precision ratios as heuristics.
-- Treat GMM Cook measures as GMM quantities, not Pareto $k$.
+- Use GMM Cook measures only on the GMM scale; never relabel the legacy compatibility value as Pareto $k$.
 - Preserve hydrologic context: an influential extreme may be correct and indispensable.
 - Report sensitivity of design quantiles, not only parameter displacement.
 
 ## Verification and Traceability
 
-Fast tests exercise serialization, sorting, thresholds, component mapping, and deterministic numerical helpers. They do not validate nominal influence thresholds or deletion approximations across model families. Release-grade verification requires exact leave-one-out/refit comparisons and reference PSIS parity; those long-running checks were not executed here.
+Fast tests exercise serialization, sorting, percentages, component mapping, and UI labels. Focused Log10-Normal methods verify MAP prior regimes, GMM penalty regimes, sample-size attenuation, MAP curvature materiality, and pointwise/aggregate parity with R `gmm`. These results do not establish universal Cook thresholds, exact deletion parity, or PSIS validity for other models.
 
 Implementation symbols: `InfluenceDiagnostics`, `ObservationInfluence`, `PriorInfluenceDiagnostics`, `PriorComponentSummary`, `LeverageDiagnostics`, `MaximumLikelihood.GetObservationInfluence`, `MaximumLikelihood.GetCooksDistance`, matching MAP methods, and `GeneralizedMethodOfMoments.GetInfluenceDiagnostics`.
 

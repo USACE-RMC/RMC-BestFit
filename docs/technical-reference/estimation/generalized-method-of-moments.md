@@ -144,6 +144,39 @@ A wide centered prior leaves both quantities effectively unchanged; a narrow cen
 
 Setting `PenaltyIsRandom = false` instead reports the frequentist sampling covariance of a fixed regularized estimator: the penalty curvature remains in the bread but not in the meat. That quantity is not the Gaussian posterior variance in (GMM.8b). Both $\mathbf S$ and $\mathbf B$ are regularized before inversion. A caught covariance failure returns a zero matrix through the public API, so zero variances require failure review rather than scientific interpretation.
 
+## Fit, Variance, and Combined Influence
+
+Observation diagnostics use the pointwise estimating-equation score
+
+$$
+\mathbf e_i=\mathbf D^{\mathsf T}\mathbf W\mathbf g_i. \tag{GMM.8c}
+$$
+
+Cook fit influence and variance influence are
+
+$$
+D_i=\frac{\mathbf e_i^{\mathsf T}\boldsymbol\Sigma_Q\mathbf e_i}{n^2p},
+\qquad
+V_i=\frac{|\mathbf e_i^{\mathsf T}\mathbf B^{-1}\mathbf e_i|}{np}, \tag{GMM.8d}
+$$
+
+where $\mathbf B$ is (GMM.6) and
+
+$$
+\boldsymbol\Sigma_Q=
+\left\{\nabla^2\left(
+\frac12\mathbf g_n^{\mathsf T}\mathbf W\mathbf g_n+P
+\right)\right\}^{-1}. \tag{GMM.8e}
+$$
+
+The half-quadratic diagnostic objective is used whether or not a penalty exists. That fixed convention keeps the numerical Hessian on the same scale as the estimating score and bread; enabling an effectively flat penalty cannot double or halve observation Cook values. It is isolated to diagnostics and does not change `Q`, `GetGradient`, estimation, covariance, or penalty propagation.
+
+Penalty fit influence uses the penalty score with $\boldsymbol\Sigma_Q$. Penalty variance influence uses the finite log generalized-variance change after removing that penalty. `LeverageDiagnostics.Leverage` is $D+V$, an estimator-specific combined ranking index. It is not a hat-matrix diagonal and is not expected to sum to $p$.
+
+For the seven-point Log10-Normal moment fixture, R `gmm` 1.9.1 gives aggregate observation values $\sum D_i=0.0880102040816327$ and $\sum V_i=0.616071428571429$. BestFit reproduces every pointwise and aggregate value within $10^{-5}$. Wide-centered, narrow-centered, and narrow-shifted quadratic penalties respectively show negligible influence, variance-only influence, and both fit and variance influence. A fixed centered penalty contributes less variance influence as sample size increases.
+
+See [Observation, Prior, and Leverage Diagnostics](influence-diagnostics.md#gmm-influence) for interpretation and UI behavior.
+
 ## Overidentification Statistic
 
 In efficient unpenalized GMM, Hansen's statistic is

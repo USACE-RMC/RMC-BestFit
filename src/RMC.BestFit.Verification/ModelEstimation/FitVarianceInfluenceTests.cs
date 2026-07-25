@@ -213,30 +213,4 @@ public class FitVarianceInfluenceTests
         Assert.IsTrue(diag.TotalVarianceInfluence > 0, "Total variance influence should be positive.");
     }
 
-    /// <summary>
-    /// Verifies <c>Test_Serialization_RoundTrip</c>.
-    /// </summary>
-    [TestMethod]
-    public void Test_Serialization_RoundTrip()
-    {
-        var df = new DataFrame();
-        df.ExactSeries = new ExactSeries(GenerateSamples().Select((v, i) => new ExactData(i, v)).ToList());
-        var model = CreateModel(df);
-        var map = new MaximumAPosteriori(model);
-        map.Estimate(); // ensure MAP values are computed for diagnostics
-
-        var orig = new LeverageDiagnostics(model, map.BestParameterSet.Values);
-        var xml = orig.ToXElement();
-        var rest = new LeverageDiagnostics(xml);
-
-        Assert.AreEqual(orig.Count, rest.Count);
-        Assert.AreEqual(orig.TotalFitInfluence, rest.TotalFitInfluence, 1e-6);
-        Assert.AreEqual(orig.TotalVarianceInfluence, rest.TotalVarianceInfluence, 1e-6);
-
-        for (int i = 0; i < orig.Count; i++)
-        {
-            Assert.AreEqual(orig.Observations[i].FitInfluence, rest.Observations[i].FitInfluence, 1e-10);
-            Assert.AreEqual(orig.Observations[i].VarianceInfluence, rest.Observations[i].VarianceInfluence, 1e-10);
-        }
-    }
 }

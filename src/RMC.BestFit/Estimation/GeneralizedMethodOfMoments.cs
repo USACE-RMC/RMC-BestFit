@@ -1873,8 +1873,8 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// Computes leverage diagnostics for the GMM estimator, analogous to the Bayesian leverage
         /// computation in <see cref="Diagnostics.LeverageDiagnostics"/>. Returns the same
-        /// <see cref="LeverageDiagnostics"/> type so the UI can display "% of Total Information"
-        /// consistently across both Bayesian and GMM analyses.
+        /// <see cref="LeverageDiagnostics"/> type so the UI can display combined fit and variance
+        /// influence consistently across both Bayesian and GMM analyses.
         /// </summary>
         /// <returns>A <see cref="LeverageDiagnostics"/> object with per-observation leverages and percentages.</returns>
         /// <remarks>
@@ -1941,11 +1941,25 @@ namespace RMC.BestFit.Estimation
                 }
             }
 
-            // 3. Compute exact Hessian inverse of Q for Cook's Distance.
-            //    -Q is the GMM analog of LogLikelihood (Q is minimized, -Q is maximized).
-            //    fullSigma = [Hessian(Q)]^{-1} is the GMM analog of J_post^{-1}.
-            Func<double[], double> negQ = parms => -Q(parms);
-            var fullHess = LeverageDiagnostics.ComputeNumericalHessianPublic(negQ, BestParameterSet.Values, p);
+            // 3. Compute the Hessian inverse for Cook's Distance using one consistent
+            //    half-quadratic diagnostic objective: (1/2)g'Wg + penalty.
+            //    Q intentionally retains the conventional unhalved g'Wg form when no
+            //    penalty is present. The diagnostic score and bread equations use the
+            //    half-quadratic convention in both cases, so their numerical Hessian must
+            //    not change scale merely because a penalty was enabled.
+            Func<double[], double> negDiagnosticObjective = parameters =>
+            {
+                var meanMoments = GetG(parameters);
+                double diagnosticObjective = 0.5d * meanMoments.Multiply(W!).Multiply(meanMoments).Sum();
+                if (PenaltyFunction != null)
+                    diagnosticObjective += PenaltyFunction(parameters);
+
+                return Tools.IsFinite(diagnosticObjective)
+                    ? -diagnosticObjective
+                    : double.MinValue;
+            };
+            var fullHess = LeverageDiagnostics.ComputeNumericalHessianPublic(
+                negDiagnosticObjective, BestParameterSet.Values, p);
             Matrix fullNegHess = fullHess * -1d;
             Matrix fullSigma;
             try
@@ -2077,7 +2091,8 @@ namespace RMC.BestFit.Estimation
                     };
 
                     // GenVar: -Q without this penalty = -(Q - penalty_k) = -Q + penalty_k
-                    Func<double[], double> negQWithout = parms => negQ(parms) + penaltyFunc(parms);
+                    Func<double[], double> negQWithout = parameters =>
+                        negDiagnosticObjective(parameters) + penaltyFunc(parameters);
                     double varInfl = LeverageDiagnostics.ComputeGenVarPublic(negQWithout, fullSigma, theta, p);
 
                     // Fit (Cook's D): grad' * fullSigma * grad / p
@@ -2112,7 +2127,8 @@ namespace RMC.BestFit.Estimation
                         return penalty.Function(dist.InverseCDF(1 - penalty.AEP), nt);
                     };
 
-                    Func<double[], double> negQWithout = parms => negQ(parms) + penaltyFunc(parms);
+                    Func<double[], double> negQWithout = parameters =>
+                        negDiagnosticObjective(parameters) + penaltyFunc(parameters);
                     double varInfl = LeverageDiagnostics.ComputeGenVarPublic(negQWithout, fullSigma, theta, p);
 
                     // Fit (Cook's D): grad' * fullSigma * grad / p

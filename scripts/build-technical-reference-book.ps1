@@ -146,11 +146,23 @@ $browserArguments = @(
     "--print-to-pdf=$rawPdfPath",
     $htmlUri
 )
-& $browserExecutable $browserArguments
-if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $rawPdfPath -PathType Leaf)) {
-    throw "Chromium did not produce the raw technical-reference PDF."
+if (Test-Path -LiteralPath $rawPdfPath -PathType Leaf) {
+    Remove-Item -LiteralPath $rawPdfPath -Force
 }
 
+& $browserExecutable $browserArguments
+if ($LASTEXITCODE -ne 0) {
+    throw "Chromium failed while printing the technical-reference PDF."
+}
+
+$pdfDeadline = [DateTime]::UtcNow.AddSeconds(15)
+while (!(Test-Path -LiteralPath $rawPdfPath -PathType Leaf) -and [DateTime]::UtcNow -lt $pdfDeadline) {
+    Start-Sleep -Milliseconds 100
+}
+
+if (!(Test-Path -LiteralPath $rawPdfPath -PathType Leaf)) {
+    throw "Chromium did not produce the raw technical-reference PDF within 15 seconds."
+}
 & $pythonExecutable (Join-Path $PSScriptRoot "finalize-technical-reference-pdf.py") $rawPdfPath $finalPdfPath
 if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $finalPdfPath -PathType Leaf)) {
     throw "The final technical-reference PDF was not produced."

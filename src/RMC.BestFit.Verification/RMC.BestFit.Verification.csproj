@@ -42,6 +42,9 @@
     <None Include="..\..\verification\data\distribution-fitting\lmomco-family-oracles.json"
           Link="VerificationData\lmomco-family-oracles.json"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\gmm-influence-oracle.json"
+          Link="VerificationData\gmm-influence-oracle.json"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

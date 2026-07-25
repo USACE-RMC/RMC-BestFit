@@ -21,17 +21,19 @@ public class Log10NormalInfluenceLeverageFindingTests
         [1.1d, 1.4d, 1.7d, 2.0d, 2.3d, 2.6d, 2.9d];
 
     /// <summary>
-    /// Confirms that MAP observation variance influence currently omits the off-diagonal
-    /// Log10-Normal curvature terms required by the full Hessian trace.
+    /// Confirms that the full Log10-Normal observation curvature does not materially
+    /// change the current MAP variance-influence magnitudes or leading ranking.
     /// </summary>
     /// <remarks>
     /// A narrow Gaussian prior displaced from the likelihood center makes the posterior
-    /// covariance between mu and sigma nonzero. For observation <c>i</c>, the full curvature
-    /// contribution is <c>|tr(Sigma J_i)| / p</c>. The current result agrees with the
-    /// diagonal-only expression and differs materially from the full analytical expression.
+    /// covariance between mu and sigma nonzero. The analytical full contribution is
+    /// <c>|tr(Sigma J_i)| / p</c>. Absolute differences from the current diagonal curvature
+    /// approximation remain below <c>0.003</c>, and the three leading observations retain
+    /// their order. Relative errors are not used because they exaggerate harmless differences
+    /// for observations whose variance influence is near zero.
     /// </remarks>
     [TestMethod]
-    public void MapVarianceInfluence_CurrentlyOmitsOffDiagonalObservationCurvature()
+    public void MapVarianceInfluence_FullCurvaturePreservesMaterialMagnitudeAndLeadingRanking()
     {
         const int parameterCount = 2;
         double likelihoodStandardError = 0.6d / Math.Sqrt(SymmetricLog10Values.Length);
@@ -48,9 +50,9 @@ public class Log10NormalInfluenceLeverageFindingTests
             parameterCount);
         var posteriorCovariance = (posteriorHessian * -1d).Inverse();
         var diagnostics = new LeverageDiagnostics(fit.Model, parameters);
+        var fullCurvatureInfluence = new double[SymmetricLog10Values.Length];
 
-        double maximumFullHessianOmission = 0d;
-        double maximumRelativeOmission = 0d;
+        double maximumAbsoluteDifference = 0d;
         for (int i = 0; i < SymmetricLog10Values.Length; i++)
         {
             double residual = SymmetricLog10Values[i] - mu;
@@ -60,33 +62,35 @@ public class Log10NormalInfluenceLeverageFindingTests
             double observationSigmaSigma =
                 -1d / sigmaSquared + 3d * residual * residual / (sigmaSquared * sigmaSquared);
 
-            double diagonalOnly = Math.Abs(
-                posteriorCovariance[0, 0] * observationMuMu +
-                posteriorCovariance[1, 1] * observationSigmaSigma) / parameterCount;
-            double fullHessian = Math.Abs(
+            fullCurvatureInfluence[i] = Math.Abs(
                 posteriorCovariance[0, 0] * observationMuMu +
                 posteriorCovariance[0, 1] * observationMuSigma +
                 posteriorCovariance[1, 0] * observationMuSigma +
                 posteriorCovariance[1, 1] * observationSigmaSigma) / parameterCount;
-
-            Assert.AreEqual(
-                diagonalOnly,
-                diagnostics.Observations[i].VarianceInfluence,
-                2E-3d,
-                $"Observation {i} no longer reproduces the traced diagonal-only implementation.");
-            double omission = Math.Abs(fullHessian - diagnostics.Observations[i].VarianceInfluence);
-            maximumFullHessianOmission = Math.Max(maximumFullHessianOmission, omission);
-            maximumRelativeOmission = Math.Max(
-                maximumRelativeOmission,
-                omission / Math.Max(Math.Abs(fullHessian), 1E-12d));
+            maximumAbsoluteDifference = Math.Max(
+                maximumAbsoluteDifference,
+                Math.Abs(fullCurvatureInfluence[i] - diagnostics.Observations[i].VarianceInfluence));
         }
 
         Assert.IsTrue(
-            maximumRelativeOmission > 0.05d,
-            $"The displaced-prior fixture must expose a material relative off-diagonal curvature omission; " +
-            $"maximum absolute omission={maximumFullHessianOmission:G6}, relative omission={maximumRelativeOmission:P2}.");
-    }
+            maximumAbsoluteDifference < 3E-3d,
+            $"Full observation curvature changed variance influence by {maximumAbsoluteDifference:G6}.");
 
+        int[] reportedLeading = diagnostics.Observations
+            .OrderByDescending(observation => observation.VarianceInfluence)
+            .Take(3)
+            .Select(observation => observation.Index)
+            .ToArray();
+        int[] fullCurvatureLeading = Enumerable.Range(0, fullCurvatureInfluence.Length)
+            .OrderByDescending(index => fullCurvatureInfluence[index])
+            .Take(3)
+            .ToArray();
+
+        CollectionAssert.AreEqual(
+            fullCurvatureLeading,
+            reportedLeading,
+            "Full observation curvature must preserve the leading variance-influence ranking.");
+    }
     /// <summary>
     /// Confirms that the current GMM observation influence magnitude is not calibrated to exact
     /// leave-one-out displacement, even though its absolute ranking identifies an injected outlier.

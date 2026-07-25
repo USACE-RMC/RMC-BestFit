@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 2 is active. The Log10-Normal MLE/MAP/GMM baseline, Gaussian prior and quadratic-penalty equivalence, and GMM objective/covariance scaling are verified. Observation influence, leverage, model-comparison criteria, profile likelihood, and overidentified GMM remain in progress and are not covered by the conclusions below.
+Phase 2 is active. The Log10-Normal MLE/MAP/GMM baseline, Gaussian prior and quadratic-penalty equivalence, GMM objective/covariance scaling, and the scoped fit/variance/combined-influence diagnostics are verified. Pareto-k/leave-one-out diagnostics, model-comparison criteria, profile likelihood, and overidentified GMM remain in progress and are not covered by the conclusions below.
 
 ## Log10-Normal fixture
 
@@ -103,12 +103,97 @@ The corresponding timeless implementation treatment is in [Generalized Method of
 | `MapAndGmmMuPosterior_MatchesInverseVarianceWeighting` | Equation (ME.6), mean and variance | $10^{-4}$ centered means; shifted mean $0.01SE_L$; variance 0.2%-1.5% | Passed |
 | `PenalizedObjectiveGradient_MatchesIndependentCentralDifference` | Independently coded central difference | $10^{-8}$ absolute | Passed |
 | `UnpenalizedEstimatingGradient_IsHalfConventionalObjectiveDerivative` | Independently coded central difference and exact factor $1/2$ | $10^{-8}$ absolute | Passed |
+| `Log10NormalObservationInfluence_MatchesRGmmOracle` | R `gmm` 1.9.1 score and bread | $10^{-5}$ absolute | Passed |
+| `VanishingCenteredPenalty_PreservesObservationInfluenceScale` | Objective-scale invariance | $10^{-4}$ absolute for finite wide penalty | Passed |
+| `MapMuPriorRegimes_SeparateFitAndVarianceInfluence` | Gaussian score and generalized variance | Predeclared qualitative separations | Passed |
+| `GmmMuPenaltyRegimes_SeparateFitAndVarianceInfluence` | Gaussian-equivalent penalty score and generalized variance | Predeclared qualitative separations | Passed |
+| `CenteredPriorAndPenalty_VarianceInfluenceDeclinesWithSampleSize` | Information scaling from $n=7$ to $n=70$ | Strict ordering and negligible centered Cook influence | Passed |
+| `MapVarianceInfluence_FullCurvaturePreservesMaterialMagnitudeAndLeadingRanking` | Analytical Log10-Normal observation Hessian | $0.003$ absolute; exact leading-three order | Passed |
 
 Each method was run separately through `scripts/run-verification-test.ps1`; the complete Verification project was not executed. All focused builds used the local Numerics project and .NET 10, with zero build warnings and errors.
 
-## Influence and leverage work in progress
+## Fit influence, variance influence, and combined leverage
 
-Exact leave-one-out refits will provide the observation-influence oracle. Full-Hessian and deletion-covariance comparisons will provide the leverage oracle; no sum-to-$p$ assertion is accepted without a derivation. GMM-specific diagnostics will not be labeled Pareto $k$.
+The diagnostics deliberately keep two effects separate. At a MAP estimate, component $k$ has local score $\mathbf s_k$ and posterior covariance $\boldsymbol\Sigma$. Its fit influence is the Cook score quadratic
+
+$$
+D_k^{\mathrm{MAP}}
+=\frac{\mathbf s_k^{\mathsf T}\boldsymbol\Sigma\mathbf s_k}{p}. \tag{ME.7}
+$$
+
+Observation variance influence uses the local curvature trace. Prior variance influence uses the finite generalized-variance change evaluated at the fitted mode,
+
+$$
+V_k^{\mathrm{prior}}
+=\frac1p\left|
+\log\det(\boldsymbol\Sigma_{-k})-
+\log\det(\boldsymbol\Sigma)
+\right|. \tag{ME.8}
+$$
+
+The displayed combined leverage is the additive ranking index
+
+$$
+L_k=D_k+V_k. \tag{ME.9}
+$$
+
+It is not classical hat-matrix leverage and is not expected to sum to $p$. Plot percentages are each component's share of total combined influence. The same definitions are used for observations and prior or penalty components, while the variance calculation remains appropriate to the component size: a first-order trace for one observation and a finite log-determinant change for a prior or penalty that can supply substantial curvature.
+
+For the displaced narrow-prior Log10-Normal fixture, replacing the current observation diagonal-curvature trace with the analytical full Hessian changes every variance-influence value by less than $0.003$ and preserves the three leading observations exactly. This establishes that cross-curvature does not materially alter the scoped ranking; it is not a universal claim for other models.
+
+### GMM calibration against R
+
+For GMM, define
+
+$$
+\mathbf e_i=\mathbf D^{\mathsf T}\mathbf W\mathbf g_i,
+\qquad
+\mathbf B=\mathbf D^{\mathsf T}\mathbf W\mathbf D+\mathbf H_P. \tag{ME.10}
+$$
+
+The diagnostic curvature always uses the half-quadratic objective
+
+$$
+Q_{\mathrm{diag}}(\boldsymbol\theta)
+=\frac12\mathbf g_n^{\mathsf T}\mathbf W\mathbf g_n+P(\boldsymbol\theta),
+\qquad
+\boldsymbol\Sigma_Q=\{\nabla^2 Q_{\mathrm{diag}}\}^{-1}. \tag{ME.11}
+$$
+
+This diagnostic convention is independent of whether a penalty is enabled. It does not change the public optimizer objective, estimating gradient, point estimate, penalty Hessian, or reported GMM covariance. Observation fit and variance influence are
+
+$$
+D_i^{\mathrm{GMM}}
+=\frac{\mathbf e_i^{\mathsf T}\boldsymbol\Sigma_Q\mathbf e_i}{n^2p},
+\qquad
+V_i^{\mathrm{GMM}}
+=\frac{|\mathbf e_i^{\mathsf T}\mathbf B^{-1}\mathbf e_i|}{np}. \tag{ME.12}
+$$
+
+The independent artifact [gmm-influence-oracle.json](../../verification/data/model-estimation/gmm-influence-oracle.json), generated by [generate_gmm_influence_oracle.R](../../verification/r/model-estimation/generate_gmm_influence_oracle.R) with R 4.4.3, `gmm` 1.9.1, and `sandwich` 3.1.2, gives
+
+$$
+\sum_i D_i^{\mathrm{GMM}}=0.0880102040816327,
+\quad
+\sum_i V_i^{\mathrm{GMM}}=0.616071428571429,
+\quad
+\sum_i L_i=0.704081632653061. \tag{ME.13}
+$$
+
+Every pointwise and aggregate BestFit value agrees within the predeclared $10^{-5}$ numerical-Hessian tolerance. Enabling a centered penalty with width $100SE_L$ leaves the observation diagnostics unchanged within $10^{-4}$, proving that diagnostic scale does not depend on the presence of a negligible penalty.
+
+### Prior and penalty behavior
+
+MAP priors and GMM penalties reproduce the intended regimes on their respective Cook scales:
+
+- wide and centered: negligible fit and variance influence;
+- narrow and centered: negligible fit influence and strong variance influence;
+- narrow and shifted by $2SE_L$: both fit and variance influence;
+- fixed centered prior or penalty: variance influence decreases from $n=7$ to $n=70$, while fit influence remains negligible.
+
+MAP and GMM Cook magnitudes are not compared to each other because one derives from likelihood scores and the other from least-squares estimating equations. The tests compare rankings and prior/penalty behavior within each estimator.
+
+Pareto $k$, PSIS, and exact leave-one-out diagnostics are intentionally outside this result and remain separate work.
 
 ## External model-comparison oracles
 

@@ -40,7 +40,7 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-028](#tr-028) | Joint prior-predictive sampling | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-029](#tr-029) | MCMC diagnostic claims | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-030](#tr-030) | NUTS acceptance reporting | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-031](#tr-031) | Leverage interpretation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-031](#tr-031) | Combined influence interpretation | Methodological | Confirmed defect | Fixed | Passed - analytical and R parity | [Report](../verification/model-estimation.md#fit-influence-variance-influence-and-combined-leverage) | 2026-07-25 |
 | [TR-032](#tr-032) | GMM influence labeled Pareto k | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-033](#tr-033) | GMM objective/gradient scale | High | Rejected non-defect | No change required | Passed | [Model-estimation verification](../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) | 2026-07-25 |
 | [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -74,6 +74,7 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-062](#tr-062) | Spatial uncertainty-method dispatch | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-063](#tr-063) | Whole-series replacement leaves plotting positions stale | Medium | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-063---whole-series-replacement-refresh) / [Artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json) | 2026-07-24 |
 | [TR-064](#tr-064) | DE/BFGS optimizer tolerance parity | Medium | Rejected non-defect | N/A | Passed - SciPy parity | [Report](../verification/distribution-fitting.md#tr-064---distribution-fitting-optimizer-tolerance) / [Artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json) | 2026-07-25 |
+| [TR-065](#tr-065) | GMM influence Hessian scale depends on penalty presence | High | Confirmed defect | Fixed | Passed - R `gmm` parity | [Report](../verification/model-estimation.md#gmm-calibration-against-r) / [Artifact](../../verification/data/model-estimation/gmm-influence-oracle.json) | 2026-07-25 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -541,20 +542,25 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 **Follow-up.** Expose sampler-specific acceptance probability, divergences, maximum-tree-depth hits, and energy diagnostics; use sampler-specific report rules.
 
 <a id="tr-031"></a>
-## TR-031 — Leverage Components Lack the Claimed Hat-Matrix Interpretation
+## TR-031 — Combined Influence Was Presented as Hat-Matrix Information
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed without public API or serialization changes.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by focused analytical Log10-Normal tests and the R `gmm` oracle associated with TR-065.
 
-**Evidence.** `LeverageDiagnostics` adds a score-displacement quadratic to an absolute trace curvature term. Observation curvature uses diagonal second derivatives only, while prior components include a log-determinant ratio. These heterogeneous quantities have not been derived as one hat-matrix decomposition, yet comments and warnings compare their sum with the parameter count $p$.
+**Report evidence.** [Model-estimation verification](../verification/model-estimation.md#fit-influence-variance-influence-and-combined-leverage).
 
-**Impact.** Values can be mistaken for classical hat values or a proven Bayesian effective-parameter decomposition; rankings and thresholds have no established calibration.
+**Evidence.** `LeverageDiagnostics` intentionally combines a Cook score quadratic with variance influence. Observation variance uses a local curvature trace, while prior and penalty variance uses a finite log generalized-variance change. Their sum is a useful ranking index but is not a hat-matrix diagonal or conserved information decomposition. The former sum-to-$p$ warning and “% of Total Information” plot labels asserted an identity that these definitions do not possess.
 
-**Follow-up.** Derive a coherent quantity, compute the full required Hessians, state invariance/additivity properties, and validate analytical Gaussian cases. Until then, label outputs experimental and remove the sum-to-$p$ assertion.
+The displaced-prior Log10-Normal calculation also tested the observation trace approximation directly. Replacing its diagonal observation curvature with the full analytical Hessian changed every variance-influence value by less than `0.003` and preserved the three leading observations. This does not justify a universal hat interpretation; it confirms that the current local approximation is materially adequate for the scoped fixture.
 
+**Correction.** The unsupported sum-to-$p$ warning was removed. MAP and GMM plots now say “Combined Leverage (% of Total Influence),” and summaries say “total combined influence.” XML documentation identifies the observation trace and prior/penalty generalized-variance definitions separately. The DTO and public members remain source- and serialization-compatible.
+
+**Impact.** The combined plot can be used to rank fit and variance effects without implying a classical leverage identity. No universal threshold or cross-estimator magnitude comparison is claimed.
+
+**Follow-up.** Retain the regime, sample-size, and full-curvature tests. Extend model-family-specific calibration before adopting numerical intervention thresholds.
 <a id="tr-032"></a>
 ## TR-032 — GMM Cook-Like Influence Is Stored and Classified as Pareto k
 
@@ -1035,7 +1041,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Correction.** A valid programmatic whole-series replacement now refreshes plotting positions after the new collection and item handlers are attached. Exact-series replacement also refreshes `Lambda`. Invalid transient frames retain the previous non-throwing setter behavior and defer derived-state calculation. XML construction suppresses all four intermediate replacement refreshes, preserves serialized plotting positions exactly, and reprocesses effective threshold counts once after loading.
 
-**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The complete Debug regression gate passed Core 3,032, UI 564, and App 427 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed.
+**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The complete Debug regression gate passed Core 3,032, UI 564, and App 428 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed.
 
 **Impact.** Programmatic replacement now leaves a valid data frame immediately ready for distribution fitting without an extra manual `CalculatePlottingPositions()` call. Persisted projects retain their stored plotting positions and avoid redundant deserialization work.
 
@@ -1060,6 +1066,26 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 
 **Follow-up.** Retain `1e-4` scaled parameter tolerance for comparisons between objective-converged global optimizers and parameter-converged local optimizers. Continue to enforce tight likelihood parity, exact criterion formulas, and exact candidate rankings.
 
+<a id="tr-065"></a>
+## TR-065 - GMM Influence Hessian Scale Depended on Penalty Presence
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API, optimizer, objective, gradient, penalty, covariance, or serialization changes.
+
+**Verification status.** Passed every pointwise and aggregate comparison against R `gmm` 1.9.1 at the predeclared `1e-5` absolute tolerance. A second focused method passed the `1e-4` finite-wide-penalty invariance tolerance.
+
+**Report evidence.** [Model-estimation verification](../verification/model-estimation.md#gmm-calibration-against-r), [R generator](../../verification/r/model-estimation/generate_gmm_influence_oracle.R), and [oracle artifact](../../verification/data/model-estimation/gmm-influence-oracle.json).
+
+**Evidence.** GMM observation scores and bread use the half-quadratic estimating-equation convention. `GetLeverageDiagnostics()` formerly obtained Cook curvature from the public `Q` method, which returns $\mathbf g^\mathsf T\mathbf W\mathbf g$ when no penalty exists but $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$ when a penalty exists. The unpenalized numerical Hessian was therefore twice the score-consistent Hessian, and its inverse halved every Cook value. On the seven-point Log10-Normal fixture, observation zero was `0.0138256180` rather than R's `0.0276512391`; total Cook influence was `0.0440051` rather than `0.0880102`. Merely enabling an effectively flat centered penalty restored the R scale, proving that the diagnostic changed units based only on penalty presence. Variance influence already matched R at `0.6160714`.
+
+**Correction.** `GetLeverageDiagnostics()` now differentiates a private local diagnostic objective $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$ in both penalized and unpenalized cases. Penalty-deletion generalized variance uses that same diagnostic objective. The estimator's public `Q`, `GetGradient`, parameter estimates, penalty Hessian, and covariance bread/meat are unchanged.
+
+**Regression control.** `Log10NormalObservationInfluence_MatchesRGmmOracle` verifies all seven observation Cook, variance, and combined values plus all totals. `VanishingCenteredPenalty_PreservesObservationInfluenceScale` proves that a centered penalty at $100SE_L$ does not change observation diagnostic scale. MAP and GMM regime tests separately verify wide-centered, narrow-centered, and narrow-shifted behavior, and the fixed-centered sample-size test verifies declining variance influence.
+
+**Impact.** GMM fit influence now has one estimator-consistent scale regardless of penalty configuration. The combined leverage plot and percentages no longer jump by a factor of two when a negligible penalty is toggled.
+
+**Follow-up.** Retain the pinned R artifact and focused methods. Do not compare GMM Cook magnitudes directly with likelihood-based MAP Cook magnitudes.
 ## Resolution Rule
 
 A documentation-only clarification may close a finding when the implementation is intentional and mathematically coherent. A defect in production behavior is never silently corrected by documentation. It moves to a separately authorized code-change task, receives focused unit tests, and uses the repository's mandated build/test gates. The complete `RMC.BestFit.Verification` suite is never run as one command; verification executes one exact fully qualified method at a time through the guarded runner.

@@ -10,8 +10,8 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Diagnostics
 {
     /// <summary>
-    /// Provides influence diagnostics that decompose each observation's and prior's impact at the MAP estimate
-    /// into two dimensions: fit influence (Cook's Distance) and variance influence (normalized leverage).
+    /// Provides fitted-estimate diagnostics that decompose each observation's and prior's impact
+    /// into fit influence (Cook's Distance) and variance influence.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -29,8 +29,8 @@ namespace RMC.BestFit.Diagnostics
     /// </para>
     /// <list type="bullet">
     /// <item><description>
-    /// <b>Leverage (Total)</b> = FitInfluence + VarianceInfluence. The combined effect of a component
-    /// on the analysis. Displayed as stacked bars showing the fit and variance decomposition.
+    /// <b>Combined Leverage</b> = FitInfluence + VarianceInfluence. This additive ranking index
+    /// is displayed as stacked bars; it is not classical hat-matrix leverage and need not sum to p.
     /// </description></item>
     /// <item><description>
     /// <b>Fit Influence (Cook's Distance)</b> = gᵢᵀ J⁻¹_post gᵢ / p, where gᵢ = ∇θ log f(yᵢ|θ)
@@ -38,10 +38,10 @@ namespace RMC.BestFit.Diagnostics
     /// Zero when the component is perfectly consistent with the model.
     /// </description></item>
     /// <item><description>
-    /// <b>Variance Influence (Generalized Variance Change)</b> = log det(J_post) − log det(J_post − Jᵢ).
-    /// Measures how much removing the component inflates the generalized variance (determinant of
-    /// the posterior covariance). Always non-negative. Large for threshold data with many counts,
-    /// strong priors, and any component that contributes substantial precision.
+    /// <b>Variance Influence</b> measures a component's effect on parameter uncertainty.
+    /// Observation entries use the local curvature trace; prior and penalty entries use the
+    /// finite change in log generalized variance after removing that component. The reported
+    /// magnitudes are non-negative and remain distinct from Cook fit influence.
     /// </description></item>
     /// </list>
     /// <para>
@@ -171,7 +171,7 @@ namespace RMC.BestFit.Diagnostics
         public PriorComponentLeverage[] PriorComponents { get; private set; }
 
         /// <summary>
-        /// Gets the number of model parameters (p). All leverages sum approximately to this value.
+        /// Gets the number of fitted model parameters (p), used to scale the diagnostic quadratics.
         /// </summary>
         public int NumberOfParameters { get; private set; }
 
@@ -258,8 +258,8 @@ namespace RMC.BestFit.Diagnostics
             double priorVarPct = totalFV > 0 ? PriorVarianceInfluence / totalFV * 100.0 : 0;
             double priorFitPct = totalFV > 0 ? PriorFitInfluence / totalFV * 100.0 : 0;
 
-            return $"p = {NumberOfParameters}. Data: {obsVarPct:F1}% of variance info, {obsFitPct:F1}% of fit influence. " +
-                   $"Priors: {priorVarPct:F1}% of variance info, {priorFitPct:F1}% of fit influence.";
+            return $"p = {NumberOfParameters}. Data: {obsVarPct:F1}% of variance influence, {obsFitPct:F1}% of fit influence. " +
+                   $"Priors: {priorVarPct:F1}% of variance influence, {priorFitPct:F1}% of fit influence.";
         }
 
         /// <summary>
@@ -630,8 +630,8 @@ namespace RMC.BestFit.Diagnostics
         /// <param name="p">Number of parameters.</param>
         /// <returns>The generalized variance influence: |log(|det(Sigma_{-k})| / |det(Sigma)|)| / p.</returns>
         /// <remarks>
-        /// This method is used for prior components because priors can contribute a large fraction of
-        /// the total information, making the linear trace approximation inaccurate. For individual
+        /// This method is used for prior components because priors can contribute substantial posterior curvature,
+        /// making the linear trace approximation inaccurate. For individual
         /// observations (small perturbations), the trace method is used instead — see
         /// <see cref="ComputeObservationLeverages"/>.
         /// </remarks>
@@ -717,11 +717,6 @@ namespace RMC.BestFit.Diagnostics
             TotalFitInfluence = ObservationFitInfluence + PriorFitInfluence;
             TotalVarianceInfluence = ObservationVarianceInfluence + PriorVarianceInfluence;
 
-            // Warn if leverage sum deviates significantly from p
-            if (NumberOfParameters > 0 && Math.Abs(TotalLeverage - NumberOfParameters) > 0.5 * NumberOfParameters)
-            {
-                Debug.WriteLine($"WARNING: Total leverage {TotalLeverage:G6} deviates significantly from p={NumberOfParameters}.");
-            }
         }
 
         /// <summary>
@@ -770,9 +765,9 @@ namespace RMC.BestFit.Diagnostics
             /// </summary>
             /// <param name="index">The zero-based observation index.</param>
             /// <param name="leverage">The total leverage (FitInfluence + VarianceInfluence).</param>
-            /// <param name="percentOfTotal">The leverage as a percentage of total information.</param>
+            /// <param name="percentOfTotal">The leverage as a percentage of total combined influence.</param>
             /// <param name="fitInfluence">Cook's Distance: gᵢᵀ J⁻¹ gᵢ / p.</param>
-            /// <param name="varianceInfluence">Normalized leverage: tr(J⁻¹ Jᵢ) / p.</param>
+            /// <param name="varianceInfluence">Observation variance influence: tr(J⁻¹ Jᵢ) / p.</param>
             /// <param name="percentFitOfTotal">Fit influence as a percentage of total (fit + variance).</param>
             /// <param name="percentVarianceOfTotal">Variance influence as a percentage of total (fit + variance).</param>
             /// <param name="value">The representative data value.</param>
@@ -828,7 +823,7 @@ namespace RMC.BestFit.Diagnostics
             public double Leverage { get; }
 
             /// <summary>
-            /// Gets the leverage as a percentage of total information.
+            /// Gets the leverage as a percentage of total combined influence.
             /// </summary>
             public double PercentOfTotal { get; }
 
@@ -910,7 +905,7 @@ namespace RMC.BestFit.Diagnostics
             /// <param name="name">The prior component name.</param>
             /// <param name="type">The prior component type.</param>
             /// <param name="leverage">The total leverage (FitInfluence + VarianceInfluence).</param>
-            /// <param name="percentOfTotal">The leverage as a percentage of total information.</param>
+            /// <param name="percentOfTotal">The leverage as a percentage of total combined influence.</param>
             /// <param name="fitInfluence">Cook's Distance for this prior component.</param>
             /// <param name="varianceInfluence">Normalized leverage for this prior component.</param>
             /// <param name="percentFitOfTotal">Fit influence as a percentage of total.</param>
@@ -963,7 +958,7 @@ namespace RMC.BestFit.Diagnostics
             public double Leverage { get; }
 
             /// <summary>
-            /// Gets the leverage as a percentage of total information.
+            /// Gets the leverage as a percentage of total combined influence.
             /// </summary>
             public double PercentOfTotal { get; }
 

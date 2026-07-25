@@ -1943,7 +1943,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <returns>
         /// A <see cref="LeverageDiagnostics"/> object containing per-observation and per-prior-component
-        /// leverage values that decompose the total information at the MAP.
+        /// fit influence, variance influence, and their combined ranking at the MAP.
         /// </returns>
         /// <remarks>
         /// <para>
@@ -1952,9 +1952,10 @@ namespace RMC.BestFit.Estimation
         /// MCMC posterior samples (<see cref="Numerics.Sampling.MCMC.MCMCResults.MAP"/>).
         /// </para>
         /// <para>
-        /// This is the Bayesian analogue of Cook's distance. The leverage of each component (observation or prior)
-        /// measures its share of the total information: l? = g?? H?� g?. All leverages sum approximately
-        /// to p (the number of parameters), providing a unified ranking across observations and priors.
+        /// Fit influence is a Cook score quadratic. Observation variance influence uses a local
+        /// curvature trace, while prior variance influence uses the finite log generalized-variance
+        /// change after removing that prior. Their sum is a combined ranking index; it is not a
+        /// hat-matrix diagonal and is not expected to sum to the number of parameters.
         /// </para>
         /// </remarks>
         /// <exception cref="InvalidOperationException">Thrown when estimation has not been completed.</exception>

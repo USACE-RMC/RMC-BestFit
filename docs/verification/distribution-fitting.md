@@ -124,7 +124,7 @@ The focused analytical method is:
 
 - `RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.ExactSeriesReplacement_ProducesAnalyticalWeibullPositions`
 
-**Verification:** Passed for all 39 oracle observations at absolute tolerance `1e-12`. Fast regressions also prove that deliberately non-derived serialized positions survive a round trip and that non-finite transient input retains the previous non-throwing behavior. The complete Debug regression gate passed Core 3,032, UI 564, and App 427 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed. See the [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
+**Verification:** Passed for all 39 oracle observations at absolute tolerance `1e-12`. Fast regressions also prove that deliberately non-derived serialized positions survive a round trip and that non-finite transient input retains the previous non-throwing behavior. The complete Debug regression gate passed Core 3,032, UI 564, and App 428 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed. See the [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
 
 ## TR-064 - distribution-fitting optimizer tolerance
 

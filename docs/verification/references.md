@@ -3,6 +3,7 @@
 - Asquith, W. H. `lmomco`: L-moments and hydrologic distributions, CRAN package 2.5.7.
 - Bolker, B. and R Development Core Team. `bbmle`: tools for general maximum likelihood estimation, CRAN package 1.0.25.1.
 - Chausse, P. `gmm`: generalized method of moments and generalized empirical likelihood, CRAN package 1.9-1.
+- Zeileis, A. et al. `sandwich`: robust covariance matrix estimators, CRAN package 3.1.2.
 - Hartig, F. et al. `BayesianTools`: general-purpose MCMC, SMC, and Bayesian diagnostics, CRAN package 0.1.9.
 - Vehtari, A. et al. `loo`: efficient leave-one-out cross-validation and WAIC, CRAN package 2.10.0.
 - SciPy community. `scipy.stats` reference, version 1.17.1.
