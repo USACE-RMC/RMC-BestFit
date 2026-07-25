@@ -72,6 +72,8 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-060](#tr-060) | Spatial distance units | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-061](#tr-061) | Spatial dependent simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-062](#tr-062) | Spatial uncertainty-method dispatch | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-063](#tr-063) | Whole-series replacement leaves plotting positions stale | Medium | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-063---whole-series-replacement-refresh) / [Artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json) | 2026-07-24 |
+| [TR-064](#tr-064) | DE-only fitting precision misses declared parity tolerance | Medium | Confirmed defect | Approval required | Failed - SciPy parity | [Report](../verification/distribution-fitting.md#tr-064---distribution-fitting-optimizer-precision) / [Artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json) | 2026-07-24 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -1017,6 +1019,44 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 **Impact.** Selecting an advertised uncertainty method can leave outputs unchanged, so callers may report a method that was not applied.
 
 **Follow-up.** Either dispatch the selected method through `RunAsync` with method-specific validation and result metadata, or replace the enum property with explicit operations whose outputs cannot be confused with the Bayesian results.
+
+<a id="tr-063"></a>
+## TR-063 - Whole-Series Replacement Leaves Plotting Positions Stale
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API or serialization-schema changes.
+
+**Verification status.** Passed by exact analytical verification at absolute tolerance `1e-12` and by focused serialization and invalid-input regressions.
+
+**Report evidence.** [Distribution fitting verification](../verification/distribution-fitting.md#tr-063---whole-series-replacement-refresh) and [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
+
+**Evidence.** Assigning a complete `ExactSeries` detached and attached collection handlers and incremented `PlottingPositionVersion`, but did not calculate plotting positions. Newly constructed observations therefore retained `PlottingPosition == 0`. `FittingAnalysis` complements the stored value and evaluated candidate quantiles at probability one, so finite MLE fits acquired infinite RMSE values and were classified as failed. The deterministic three-family fixture reproduced zero successful candidates before the correction.
+
+**Correction.** A valid programmatic whole-series replacement now refreshes plotting positions after the new collection and item handlers are attached. Exact-series replacement also refreshes `Lambda`. Invalid transient frames retain the previous non-throwing setter behavior and defer derived-state calculation. XML construction suppresses all four intermediate replacement refreshes, preserves serialized plotting positions exactly, and reprocesses effective threshold counts once after loading.
+
+**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The complete Debug regression gate passed Core 3,032, UI 564, and App 427 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed.
+
+**Impact.** Programmatic replacement now leaves a valid data frame immediately ready for distribution fitting without an extra manual `CalculatePlottingPositions()` call. Persisted projects retain their stored plotting positions and avoid redundant deserialization work.
+
+**Follow-up.** Retain the analytical and serialization regressions as permanent release gates.
+
+<a id="tr-064"></a>
+## TR-064 - Distribution Fitting Optimizer Precision
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Approval required; production behavior is unchanged.
+
+**Verification status.** Failed external SciPy parity at the predeclared scaled tolerance of `1e-5`.
+
+**Report evidence.** [Distribution fitting verification](../verification/distribution-fitting.md#tr-064---distribution-fitting-optimizer-precision) and [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json).
+
+**Evidence.** The deterministic common-data `FittingAnalysis` run uses differential evolution alone. For Gumbel, SciPy returned location `93.11234799935337` and scale `13.157628567998076`; BestFit returned location `93.1129321294911` and scale `13.157823249599968`. The scale relative error is `1.4796101051624737e-5`, beyond the declared `1e-5` threshold. The resulting RMSE is `3.106522984310708` rather than `3.10635330619202`, a relative error of `5.4622929835356626e-5`. AIC and BIC reach their looser cross-language criterion tolerance before the RMSE assertion fails, so the finding concerns the reproducibility of the fitted parameter vector and parameter-derived diagnostics rather than identification of a different likelihood basin.
+
+**Impact.** Candidate likelihood rankings can remain stable while reported parameters, quantiles, RMSE values, and inverse-RMSE weights miss the verification program's numerical acceptance threshold.
+
+**Focused fix plan.** Retain differential evolution as the global search, polish each successful candidate from its best point with a bounded deterministic local optimizer, and accept the polished point only when it is finite, within bounds, and does not reduce the data log likelihood. Preserve all public signatures and candidate ordering. Add fast selection/fallback regressions, rerun the two exact SciPy methods, then run the three unit projects, API baseline, and XML documentation gate.
 
 ## Resolution Rule
 

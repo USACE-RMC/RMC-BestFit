@@ -1,0 +1,29 @@
+{
+  "finding": "TR-063",
+  "classification": "Analytical plotting-position verification and serialization regression",
+  "baseline": {
+    "outcome": "Confirmed defect",
+    "behavior": "Replacing ExactSeries incremented the plotting-position version but left every new observation at its default plotting position of zero.",
+    "effect": "FittingAnalysis consumed probability one after complementing each zero, producing infinite quantiles and RMSE for otherwise successful MLE candidates."
+  },
+  "implementation": {
+    "public_api_changed": false,
+    "programmatic_replacement": "A valid whole-series replacement performs one derived-state refresh after event handlers are attached.",
+    "invalid_transient_replacement": "The replacement remains accepted without throwing and derived-state refresh is deferred until the frame is valid.",
+    "xml_deserialization": "All four series replacements suppress derived-state refresh, preserve persisted plotting positions, and rebuild effective threshold counts once after loading."
+  },
+  "analytical_verification": {
+    "test": "RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.ExactSeriesReplacement_ProducesAnalyticalWeibullPositions",
+    "sample_size": 39,
+    "formula": "Nonexceedance probability for ascending order statistic i is i/(n+1).",
+    "absolute_tolerance": 1e-12,
+    "outcome": "Passed",
+    "trx": "TestResults/VerificationFocused/20260724-171314-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisCriteriaVerificationTests_ExactSeriesReplacement_ProducesAnalyticalWeibullPositions/haden_HADEN_2026-07-24_23_13_19.729.trx"
+  },
+  "fast_regressions": [
+    "RMC.BestFit.Tests.DataFrame.DataFrameTests.ExactSeries_Replacement_CalculatesWeibullPlottingPositions",
+    "RMC.BestFit.Tests.DataFrame.DataFrameTests.XmlRoundTrip_PreservesCustomPlottingPositionsWithoutRecalculation",
+    "RMC.BestFit.Tests.DataFrame.DataFrameTests.DataFrame_SpecialDoubleValues_HandlesCorrectly"
+  ],
+  "status": "Fixed and verified"
+}

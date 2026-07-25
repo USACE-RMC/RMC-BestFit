@@ -2,27 +2,27 @@
 
 ## Scope
 
-The first phase verifies the 15 supported univariate families, the fitting pipeline, goodness-of-fit metrics, and findings TR-001, TR-002, TR-009, and TR-010.
+The first phase verifies the 15 supported univariate families, the fitting pipeline, goodness-of-fit metrics, and findings TR-001, TR-002, TR-009, TR-010, TR-063, and TR-064.
 
 ## Distribution matrix
 
 | Family | Primary oracle | Secondary oracle | Status |
 |---|---|---|---|
-| Normal | Closed-form MLE | SciPy | Planned |
-| Log10-Normal | Closed-form transformed MLE | SciPy | Analytical verification passed; SciPy secondary pending |
-| Ln-Normal | Closed-form transformed MLE | SciPy | Planned |
-| Exponential | Closed form / published data | SciPy | Planned |
-| Gamma | lmomco | SciPy | Planned |
-| GEV | lmomco | SciPy | Planned |
-| Generalized Logistic | lmomco | Published hydrology example | Planned |
-| Generalized Normal | lmomco | Published hydrology example | Planned |
-| Generalized Pareto | lmomco | SciPy | Planned |
-| Gumbel | lmomco | SciPy | Planned |
-| Kappa Four | Analytical branch identities | SciPy and lmomco | Zero-shape branch verified; family validation active |
-| Logistic | Closed form / published data | SciPy | Planned |
-| Log-Pearson III | Transformed Pearson III | lmomco | Planned |
-| Pearson III | lmomco | SciPy | Planned |
-| Weibull | lmomco | SciPy | Planned |
+| Normal | Closed-form MLE | SciPy | Passed - SciPy parameter, likelihood, CDF, and quantile parity |
+| Log10-Normal | Closed-form transformed MLE | SciPy | Passed - analytical and SciPy parity |
+| Ln-Normal | Closed-form transformed MLE | SciPy | Passed - SciPy parity |
+| Exponential | Closed form | SciPy | Passed - SciPy parity |
+| Gamma | SciPy | lmomco | Passed - SciPy parity |
+| GEV | SciPy | lmomco | Passed - SciPy parity |
+| Generalized Logistic | lmomco | Published hydrology formulation | Passed - lmomco parity |
+| Generalized Normal | lmomco | Published hydrology formulation | Passed - lmomco parity |
+| Generalized Pareto | SciPy differential evolution | lmomco | Passed - global-optimum SciPy parity |
+| Gumbel | SciPy | lmomco | Passed - SciPy parity |
+| Kappa Four | Analytical branch identities | SciPy | Passed - zero-shape identities and SciPy finite-shape parity |
+| Logistic | Closed form | SciPy | Passed - SciPy parity |
+| Log-Pearson III | Transformed Pearson III | SciPy differential evolution | Passed - global-optimum SciPy parity |
+| Pearson III | SciPy | lmomco | Passed - SciPy parity |
+| Weibull | SciPy | lmomco | Passed - SciPy parity |
 
 ## TR-001 - Kappa Four zero primary shape
 
@@ -106,6 +106,45 @@ A deterministic outlier fixture completed with `IsEstimated == true` while all 1
 
 **Verification:** Passed by deterministic all-failed and partial-success regressions. The complete .NET 10 core gate passed 3,030 tests with zero failures or skips. No Verification-project method was added because this is a state-semantic regression, not a numerical validation claim. See the [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json).
 
+## TR-063 - whole-series replacement refresh
+
+For an uncensored exact sample with \(n\) observations and default Weibull plotting parameter, ascending order statistic \(i\) has nonexceedance probability
+
+$$
+p_i=\frac{i}{n+1}. \tag{5}
+$$
+
+The baseline whole-series setter left every new `ExactData.PlottingPosition` at zero. `FittingAnalysis` therefore consumed complemented probability one, evaluated infinite candidate quantiles, and assigned infinite RMSE even when MLE and information criteria were finite.
+
+**Disposition:** Confirmed defect.
+
+**Implementation:** Fixed without public API or XML-schema changes. A valid programmatic series replacement performs one derived-state refresh after attaching the new handlers. Invalid transient frames remain assignable and defer refresh. The XML constructor suppresses all four replacement refreshes, preserves serialized positions exactly, and reprocesses effective threshold counts once.
+
+The focused analytical method is:
+
+- `RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.ExactSeriesReplacement_ProducesAnalyticalWeibullPositions`
+
+**Verification:** Passed for all 39 oracle observations at absolute tolerance `1e-12`. Fast regressions also prove that deliberately non-derived serialized positions survive a round trip and that non-finite transient input retains the previous non-throwing behavior. The complete Debug regression gate passed Core 3,032, UI 564, and App 427 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed. See the [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
+
+## TR-064 - distribution-fitting optimizer precision
+
+The common-data external validation fits Gumbel, Normal, and Logistic to one deterministic sample. Differential evolution identifies the same Gumbel likelihood region as SciPy, but the returned point does not meet the predeclared `1e-5` scaled parameter and optimizer-derived tolerances:
+
+| Quantity | SciPy oracle | BestFit | Relative error | Acceptance |
+|---|---:|---:|---:|---|
+| Gumbel location | 93.11234799935337 | 93.1129321294911 | 6.27e-6 | Passed |
+| Gumbel scale | 13.157628567998076 | 13.157823249599968 | 1.4796e-5 | Failed |
+| Gumbel RMSE | 3.10635330619202 | 3.106522984310708 | 5.4623e-5 | Failed |
+
+The exact failing methods are:
+
+- `RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.FittedParameters_MatchIndependentOracle`
+- `RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.CriteriaRankingWeightsAndConfiguredOrder_MatchIndependentOracle`
+
+**Disposition:** Confirmed defect. Production behavior is unchanged pending approval of a focused fix.
+
+**Planned correction:** Retain bounded differential evolution as the global search and apply a deterministic bounded local polish from its best point. Accept the polished point only when it remains finite and within bounds and does not reduce data log likelihood. This changes no public signatures or result ordering. See the [failure artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json).
+
 ## Log10-Normal analytical verification
 
 For \(x_i=\log_{10}(y_i)\),
@@ -131,3 +170,15 @@ The focused method is:
 - `RMC.BestFit.Verification.DistributionFitting.Log10NormalFittingVerificationTests.ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle`
 
 **Verification:** Passed. BFGS used verification-only absolute and relative convergence tolerances of `1e-12`. Parameters passed at absolute tolerance `1e-5`, maximum log likelihood at `1e-8`, the direct and pointwise analytical likelihood at `1e-10`, the median CDF at `1e-12`, and the analytical quantile at `1e-9`. The fitted quantile uses the declared optimizer-scale relative tolerance. See the [evidence artifact](../../verification/data/distribution-fitting/log10-normal-closed-form.json).
+
+## External family-oracle execution
+
+Thirteen exact methods in `ScipyDistributionFittingVerificationTests` and two exact methods in `LmomcoDistributionFittingVerificationTests` were run separately through the guarded runner. Each method verifies the fitted parameter vector, maximized data log likelihood, representative CDF values, and representative quantiles. The C# tests consume only committed JSON and never invoke Python or R at runtime.
+
+SciPy 1.16.1 supplies the overlapping family implementations. Generalized Pareto and Log-Pearson III use deterministic differential evolution in the generator because SciPy's default local start converged to an inferior stationary point for the declared fixtures. R 4.4.3 with `lmomco` 2.5.7 supplies Generalized Logistic and Generalized Normal. Parameter conversions, package versions, seeds, generator commands, and source hashes are recorded in:
+
+- [SciPy family oracles](../../verification/data/distribution-fitting/scipy-family-oracles.json)
+- [lmomco family oracles](../../verification/data/distribution-fitting/lmomco-family-oracles.json)
+- [Verification data manifest](../../verification/data/MANIFEST.md)
+
+All 15 family-specific methods passed. This result verifies the individual family implementations on their declared fixtures; it does not override the open TR-064 failure in the multi-candidate `FittingAnalysis` orchestration path.

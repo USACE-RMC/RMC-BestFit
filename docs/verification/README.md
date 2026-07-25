@@ -10,10 +10,10 @@ This is the living formal verification and validation record for `RMC.BestFit.Ve
 |---|---|---|
 | Repository integration | Validated 24 July 2026 | Debug Verification rebuild: 0 warnings/errors; Release solution log: 0 Verification project references |
 | Public API baseline | Captured | Exact exported type/member/enum baseline enforced by `PublicApiCompatibilityTests` |
-| Fast regression gate | Passed | Core 3,030; UI 564; App 427; 0 failed and 0 skipped |
+| Fast regression gate | Passed | Core 3,032; UI 564; App 427; 0 failed and 0 skipped |
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
 | Test ownership audit | In progress | Initial duplicate removals and FittingAnalysis split are recorded in [Test Inventory](test-inventory.md) |
-| Distribution fitting | Active | TR-001 and TR-009 are analytically verified; TR-002 is rejected by finite-shape regression; TR-010 is fixed by regression; the 15-family oracle matrix remains active in [Distribution Fitting](distribution-fitting.md) |
+| Distribution fitting | Active - approval gate | All 15 family-specific external-oracle methods passed; TR-001, TR-009, and TR-063 are analytically verified; TR-002 is rejected; TR-010 is fixed by regression; TR-064 records the focused optimizer-precision failure and proposed correction in [Distribution Fitting](distribution-fitting.md) |
 | Model estimation and diagnostics | Planned after off-ramp | [Model Estimation](model-estimation.md) |
 | Bulletin 17C and later phases | Planned | [Scientific Review Findings](../technical-reference/review-findings.md) |
 ## Evidence rule

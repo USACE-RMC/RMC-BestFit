@@ -226,7 +226,7 @@ public class FittingAnalysisRegressionTests
     {
         var dataFrame = new BestFitDataFrame
         {
-            ExactSeries = new ExactSeries(SampleAnnualPeaks.Concat([150000d]).ToArray())
+            ExactSeries = new ExactSeries([100d])
         };
         var analysis = new FittingAnalysis(dataFrame);
         bool? eventSucceeded = null;
@@ -330,7 +330,8 @@ public class FittingAnalysisRegressionTests
         await analysis.RunAsync();
 
         var successfulFits = analysis.FittedDistributions.Where(fd => fd.FitSucceeded).ToList();
-        Assert.IsTrue(successfulFits.All(fd => !double.IsNaN(fd.BIC)), "All successful fits should have finite BIC.");
+        Assert.IsTrue(successfulFits.Count > 0, "At least one distribution should fit successfully.");
+        Assert.IsTrue(successfulFits.All(fd => double.IsFinite(fd.BIC)), "All successful fits should have finite BIC.");
     }
 
     /// <summary>
@@ -344,7 +345,8 @@ public class FittingAnalysisRegressionTests
         await analysis.RunAsync();
 
         var successfulFits = analysis.FittedDistributions.Where(fd => fd.FitSucceeded).ToList();
-        Assert.IsTrue(successfulFits.All(fd => !double.IsNaN(fd.RMSE) && fd.RMSE >= 0),
+        Assert.IsTrue(successfulFits.Count > 0, "At least one distribution should fit successfully.");
+        Assert.IsTrue(successfulFits.All(fd => double.IsFinite(fd.RMSE) && fd.RMSE >= 0),
             "All successful fits should have non-negative finite RMSE.");
     }
 

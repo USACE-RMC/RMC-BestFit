@@ -51,16 +51,24 @@ namespace RMC.BestFit.Models
             var plottingParameterAttr = xElement.Attribute(nameof(PlottingParameter));
             if (plottingParameterAttr != null) double.TryParse(plottingParameterAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _plottingParameter);
 
-            foreach (XElement xEl in xElement.Elements())
+            _suppressSeriesReplacementRefresh = true;
+            try
             {
-                if (xEl.Name == nameof(ExactSeries))
-                    ExactSeries = new ExactSeries(xEl);
-                if (xEl.Name == nameof(UncertainSeries))
-                    UncertainSeries = new UncertainSeries(xEl);
-                if (xEl.Name == nameof(IntervalSeries))
-                    IntervalSeries = new IntervalSeries(xEl);
-                if (xEl.Name == nameof(ThresholdSeries))
-                    ThresholdSeries = new ThresholdSeries(xEl);
+                foreach (XElement xEl in xElement.Elements())
+                {
+                    if (xEl.Name == nameof(ExactSeries))
+                        ExactSeries = new ExactSeries(xEl);
+                    if (xEl.Name == nameof(UncertainSeries))
+                        UncertainSeries = new UncertainSeries(xEl);
+                    if (xEl.Name == nameof(IntervalSeries))
+                        IntervalSeries = new IntervalSeries(xEl);
+                    if (xEl.Name == nameof(ThresholdSeries))
+                        ThresholdSeries = new ThresholdSeries(xEl);
+                }
+            }
+            finally
+            {
+                _suppressSeriesReplacementRefresh = false;
             }
 
             var lambdaAttr = xElement.Attribute(nameof(Lambda));
@@ -110,6 +118,7 @@ namespace RMC.BestFit.Models
         private double _plottingParameter = 0.0;
         private long _plottingPositionVersion;
         private string _usgsRawText = "";
+        private bool _suppressSeriesReplacementRefresh;
 
         /// <summary>
         /// The exact data series collection.
@@ -126,7 +135,7 @@ namespace RMC.BestFit.Models
                 _exactSeries.CollectionChanged += ExactSeriesCollectionChanged;
                 for (int i = 0; i < _exactSeries.Count; i++)
                     _exactSeries[i].PropertyChanged += ExactDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: true);
                 RaisePropertyChange(nameof(ExactSeries));
             }
         }
@@ -146,7 +155,7 @@ namespace RMC.BestFit.Models
                 _uncertainSeries.CollectionChanged += UncertainSeriesCollectionChanged;
                 for (int i = 0; i < _uncertainSeries.Count; i++)
                     _uncertainSeries[i].PropertyChanged += UncertainDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: false);
                 RaisePropertyChange(nameof(UncertainSeries));
             }
         }
@@ -166,7 +175,7 @@ namespace RMC.BestFit.Models
                 _intervalSeries.CollectionChanged += IntervalSeriesCollectionChanged;
                 for (int i = 0; i < _intervalSeries.Count; i++)
                     _intervalSeries[i].PropertyChanged += IntervalDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: false);
                 RaisePropertyChange(nameof(IntervalSeries));
             }
         }
@@ -186,7 +195,7 @@ namespace RMC.BestFit.Models
                 _thresholdSeries.CollectionChanged += ThresholdSeriesCollectionChanged;
                 for (int i = 0; i < _thresholdSeries.Count; i++)
                     _thresholdSeries[i].PropertyChanged += ThresholdDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: false);
                 RaisePropertyChange(nameof(ThresholdSeries));
             }
         }
@@ -1144,6 +1153,40 @@ namespace RMC.BestFit.Models
         #endregion
 
         #region Plotting Positions
+
+        /// <summary>
+        /// Refreshes derived plotting state after a complete data-series replacement.
+        /// </summary>
+        /// <param name="recalculateLambda">
+        /// <see langword="true"/> to refresh the exact-series event rate; otherwise,
+        /// <see langword="false"/>.
+        /// </param>
+        /// <remarks>
+        /// XML construction suppresses recalculation so persisted plotting positions remain exact and
+        /// the four series assignments do not trigger redundant full-frame calculations. Programmatic
+        /// replacement performs one plotting-position calculation after a valid new series is subscribed.
+        /// Invalid transient frames retain their data and defer the derived-state refresh.
+        /// </remarks>
+        private void RefreshAfterSeriesReplacement(bool recalculateLambda)
+        {
+            if (_suppressSeriesReplacementRefresh)
+            {
+                Interlocked.Increment(ref _plottingPositionVersion);
+                return;
+            }
+
+            if (recalculateLambda)
+                CalculateLambda();
+
+            if (!Validate().IsValid)
+            {
+                Interlocked.Increment(ref _plottingPositionVersion);
+                Debug.WriteLine("Plotting positions were deferred until the replacement data are valid.");
+                return;
+            }
+
+            RecalculatePlottingPositionsAfterEdit();
+        }
 
         /// <summary>
         /// Recalculates plotting positions after an interactive data edit when threshold inputs are valid.

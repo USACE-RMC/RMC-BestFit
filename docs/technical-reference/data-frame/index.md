@@ -208,15 +208,27 @@ Required namespaces are `RMC.BestFit.Models` and `Numerics.Distributions`. The v
 
 Do not use informal minimum-sample-size rules as proof of adequacy. Identifiability depends on family, tail information, censoring, prior strength, and target return period. Report likelihood profiles or posterior diagnostics and quantify sensitivity to influential historical evidence.
 
+## Plotting positions and derived state
+
+For an uncensored exact sample of size \(n\), let \(r=1\) denote the largest observation. With plotting parameter \(\alpha\), the stored exceedance plotting position is
+
+$$
+p_{E,r}=\frac{r-\alpha}{n+1-2\alpha}. \tag{10}
+$$
+
+The default \(\alpha=0\) is the Weibull convention, \(p_{E,r}=r/(n+1)\). Distribution fitting evaluates quantiles at the nonexceedance complement \(1-p_{E,r}\). Threshold, interval, uncertain, and low-outlier records use the grouped historical-data arrangement implemented by `CalculatePlottingPositions()` rather than the uncensored shortcut in Equation (10).
+
+Replacing a complete series through `ExactSeries`, `UncertainSeries`, `IntervalSeries`, or `ThresholdSeries` attaches the new collection and item handlers before refreshing derived plotting state. A valid replacement performs one refresh; exact-series replacement also refreshes the event rate `Lambda`. Invalid transient data remain assignable so callers can assemble a frame incrementally, and the derived refresh is deferred until the frame is valid.
+
 ## Serialization and reproducibility
 
-`ToXElement()` serializes the collections, low-outlier state, plotting parameter, event-rate metadata, and threshold source counts. `new DataFrame(xElement)` reconstructs collections and reprocesses effective threshold counts. Serialize units and provenance in the surrounding project/report because a raw `DataFrame` does not encode a formal unit system or source citation.
+`ToXElement()` serializes the collections, each observation's plotting position, low-outlier state, plotting parameter, event-rate metadata, and threshold source counts. `new DataFrame(xElement)` reconstructs all four collections while suppressing intermediate derived-state refreshes, preserving the serialized plotting positions exactly. It then reprocesses effective threshold counts once. This avoids four redundant full-frame plotting-position calculations during project loading and preserves reproducibility when positions were intentionally persisted. Serialize units and provenance in the surrounding project/report because a raw `DataFrame` does not encode a formal unit system or source citation.
 
 ## Implementation and evidence
 
 | Concern | Implementation source | Evidence |
 |---|---|---|
-| Collections, overlap, chronology, validation | `src/RMC.BestFit/Models/DataFrame/DataFrame.cs` | data-frame unit tests in `src/RMC.BestFit.Tests` |
+| Collections, overlap, chronology, validation | `src/RMC.BestFit/Models/DataFrame/DataFrame.cs` | data-frame unit tests in `src/RMC.BestFit.Tests` and analytical Weibull verification |
 | Record semantics | `src/RMC.BestFit/Models/DataFrame/DataTypes/` and `DataCollections/` | constructor, clone, serialization, and validation tests |
 | Likelihood and quadrature | `src/RMC.BestFit/Models/UnivariateDistribution/UnivariateDistribution.cs` | `src/RMC.BestFit.Verification/ModelEstimation/PointwiseLogLikelihoodTests.cs` and univariate validation tests |
 | Compile-checked example | `src/RMC.BestFit.Tests/Documentation/Examples/FoundationExamples.cs` | `TechnicalReferenceDocumentationTests` |

@@ -1,0 +1,44 @@
+{
+  "finding": "TR-064",
+  "classification": "External-package optimizer parity",
+  "oracle": {
+    "package": "SciPy",
+    "artifact": "verification/data/distribution-fitting/scipy-family-oracles.json",
+    "candidate": "Gumbel",
+    "expected_parameters": [
+      93.11234799935337,
+      13.157628567998076
+    ],
+    "expected_rmse": 3.10635330619202
+  },
+  "bestfit": {
+    "optimizer": "DifferentialEvolution",
+    "actual_parameters": [
+      93.1129321294911,
+      13.157823249599968
+    ],
+    "actual_rmse": 3.106522984310708
+  },
+  "declared_tolerances": {
+    "scaled_parameter": 1e-5,
+    "scaled_optimizer_derived_quantity": 1e-5
+  },
+  "failures": [
+    {
+      "test": "RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.FittedParameters_MatchIndependentOracle",
+      "quantity": "Gumbel scale",
+      "absolute_error": 0.00019468160189184402,
+      "relative_error": 0.000014796101051624737,
+      "trx": "TestResults/VerificationFocused/20260724-171536-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisCriteriaVerificationTests_FittedParameters_MatchIndependentOracle/haden_HADEN_2026-07-24_23_15_39.721.trx"
+    },
+    {
+      "test": "RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.CriteriaRankingWeightsAndConfiguredOrder_MatchIndependentOracle",
+      "quantity": "Gumbel RMSE",
+      "absolute_error": 0.0001696781186879548,
+      "relative_error": 0.000054622929835356626,
+      "trx": "TestResults/VerificationFocused/20260724-171515-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisCriteriaVerificationTests_CriteriaRankingWeightsAndConfiguredOrder_MatchIndependentOracle/haden_HADEN_2026-07-24_23_15_22.368.trx"
+    }
+  ],
+  "public_api_change_required": false,
+  "status": "Confirmed defect; fix approval required"
+}
