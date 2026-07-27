@@ -2122,61 +2122,30 @@ namespace RMC.BestFit.Estimation
             // Section 3: Sampler Diagnostics
             double overallAcceptance = double.NaN;
             bool acceptanceWarning = false;
-            if (Type == SamplerType.NUTS)
+            if (Type == SamplerType.NUTS &&
+                Results.AcceptanceRates != null && Results.AcceptanceRates.Length > 0)
             {
                 AppendReportSectionHeader(sb, "NUTS SAMPLER DIAGNOSTICS");
-                if (HasCompleteNutsDiagnostics(Results))
+                for (int i = 0; i < Results.AcceptanceRates.Length; i++)
                 {
-                    int chainCount = Results.AcceptanceRates.Length;
-                    for (int i = 0; i < chainCount; i++)
-                    {
-                        sb.AppendLine(
-                            $"  Chain {i + 1}: acceptance {Results.AcceptanceRates[i] * 100.0:F1}%; " +
-                            $"divergences {Results.NUTSDivergenceCounts![i]:N0}; " +
-                            $"max-depth {Results.NUTSMaxTreeDepthHitCounts![i]:N0}/{Results.NUTSDiagnosticSampleCounts![i]:N0}; " +
-                            $"mean depth {Results.NUTSMeanTreeDepths![i]:F2}; " +
-                            $"mean leapfrog {Results.NUTSMeanLeapfrogSteps![i]:F2}; " +
-                            $"step size {Results.NUTSStepSizes![i]:G4}; " +
-                            $"E-BFMI {Results.NUTSEnergyBayesianFractionOfMissingInformation![i]:F3}");
-                    }
-
-                    overallAcceptance = Results.AcceptanceRates.Average();
-                    int diagnosticTransitions = Results.NUTSDiagnosticSampleCounts!.Sum();
-                    int divergences = Results.NUTSDivergenceCounts!.Sum();
-                    int maximumDepthHits = Results.NUTSMaxTreeDepthHitCounts!.Sum();
-                    double minimumEnergyBfmi = Results.NUTSEnergyBayesianFractionOfMissingInformation!
-                        .Where(double.IsFinite)
-                        .DefaultIfEmpty(double.NaN)
-                        .Min();
-                    double targetAcceptanceRate = Sampler is NUTS nuts
-                        ? nuts.TargetAcceptanceRate
-                        : 0.80d;
-                    sb.AppendLine($"  Overall Hamiltonian Acceptance: {overallAcceptance * 100.0:F1}%");
-                    sb.AppendLine($"  Divergences:                    {divergences:N0}/{diagnosticTransitions:N0}");
-                    sb.AppendLine($"  Maximum Tree Depth Hits:        {maximumDepthHits:N0}/{diagnosticTransitions:N0}");
-                    sb.AppendLine($"  Minimum E-BFMI:                 {minimumEnergyBfmi:F3}");
-
-                    var acceptance = AssessAcceptanceRate(overallAcceptance, Type);
-                    bool chainAcceptanceWarning = AppendChainAcceptanceWarnings(sb, Results.AcceptanceRates, Type);
-                    acceptanceWarning = acceptance.Status == ReportDiagnosticStatus.Warning || chainAcceptanceWarning;
-                    sb.AppendLine($"  Target:    {targetAcceptanceRate * 100.0:F0}% Hamiltonian acceptance");
-                    sb.AppendLine($"  Preferred: {acceptance.PreferredRangeLabel}");
-                    sb.AppendLine($"  Buffer:    {acceptance.AcceptableRangeLabel}");
-                    sb.AppendLine($"  Status:    {GetStatusLabel(acceptance.Status)} - {acceptance.Message}");
-                    if (divergences > 0)
-                        sb.AppendLine("  WARNING - divergent transitions detected; review parameterization and posterior geometry.");
-                    if (maximumDepthHits > 0)
-                        sb.AppendLine("  WARNING - one or more trajectories reached the configured maximum tree depth.");
-                    if (double.IsFinite(minimumEnergyBfmi) && minimumEnergyBfmi < 0.2)
-                        sb.AppendLine("  WARNING - E-BFMI below 0.2 indicates poor exploration of the Hamiltonian energy distribution.");
-                    AppendAcceptanceAdvice(sb, acceptance, Type);
-                }
-                else
-                {
-                    sb.AppendLine("  Sampler-specific NUTS diagnostics are unavailable for this legacy result.");
-                    sb.AppendLine("  Re-run the analysis to obtain Hamiltonian acceptance, divergence, tree, step-size, and energy diagnostics.");
+                    sb.AppendLine(
+                        $"  Chain {i + 1}:   {Results.AcceptanceRates[i] * 100.0:F1}% Hamiltonian acceptance");
                 }
 
+                overallAcceptance = Results.AcceptanceRates.Average();
+                double targetAcceptanceRate = Sampler is NUTS nuts
+                    ? nuts.TargetAcceptanceRate
+                    : 0.80d;
+                sb.AppendLine($"  Overall Hamiltonian Acceptance: {overallAcceptance * 100.0:F1}%");
+
+                var acceptance = AssessAcceptanceRate(overallAcceptance, Type);
+                bool chainAcceptanceWarning = AppendChainAcceptanceWarnings(sb, Results.AcceptanceRates, Type);
+                acceptanceWarning = acceptance.Status == ReportDiagnosticStatus.Warning || chainAcceptanceWarning;
+                sb.AppendLine($"  Target:    {targetAcceptanceRate * 100.0:F0}% Hamiltonian acceptance");
+                sb.AppendLine($"  Preferred: {acceptance.PreferredRangeLabel}");
+                sb.AppendLine($"  Buffer:    {acceptance.AcceptableRangeLabel}");
+                sb.AppendLine($"  Status:    {GetStatusLabel(acceptance.Status)} - {acceptance.Message}");
+                AppendAcceptanceAdvice(sb, acceptance, Type);
                 sb.AppendLine();
             }
             else if (Results.AcceptanceRates != null && Results.AcceptanceRates.Length > 0)
@@ -2367,28 +2336,6 @@ namespace RMC.BestFit.Estimation
                 sb.AppendLine();
             }
             sb.AppendLine();
-        }
-
-        /// <summary>
-        /// Determines whether a result contains the complete additive NUTS diagnostic contract.
-        /// </summary>
-        /// <param name="results">The MCMC result to inspect.</param>
-        /// <returns><c>true</c> when every NUTS diagnostic array is present and chain-aligned; otherwise, <c>false</c>.</returns>
-        /// <remarks>
-        /// Results serialized before the additive Numerics diagnostic fields were introduced
-        /// deserialize those fields as null and are intentionally treated as legacy results.
-        /// </remarks>
-        private static bool HasCompleteNutsDiagnostics(MCMCResults results)
-        {
-            int chainCount = results.AcceptanceRates?.Length ?? 0;
-            return chainCount > 0
-                && results.NUTSDiagnosticSampleCounts?.Length == chainCount
-                && results.NUTSDivergenceCounts?.Length == chainCount
-                && results.NUTSMaxTreeDepthHitCounts?.Length == chainCount
-                && results.NUTSMeanTreeDepths?.Length == chainCount
-                && results.NUTSMeanLeapfrogSteps?.Length == chainCount
-                && results.NUTSStepSizes?.Length == chainCount
-                && results.NUTSEnergyBayesianFractionOfMissingInformation?.Length == chainCount;
         }
 
         /// <summary>
@@ -2835,6 +2782,9 @@ namespace RMC.BestFit.Estimation
             var thresholds = GetAcceptanceRateThresholds(type);
             bool hasWarnings = false;
             string bufferLabel = FormatPercentRange(thresholds.AcceptableMin, thresholds.AcceptableMax);
+            string statisticLabel = type == SamplerType.NUTS
+                ? "Hamiltonian acceptance"
+                : "acceptance";
 
             for (int i = 0; i < acceptanceRates.Length; i++)
             {
@@ -2848,7 +2798,7 @@ namespace RMC.BestFit.Estimation
                     }
 
                     string direction = rate < thresholds.AcceptableMin ? "below" : "above";
-                    sb.AppendLine($"    - Chain {i + 1} acceptance {rate * 100.0:F1}% is {direction} acceptable buffer {bufferLabel}.");
+                    sb.AppendLine($"    - Chain {i + 1} {statisticLabel} {rate * 100.0:F1}% is {direction} acceptable buffer {bufferLabel}.");
                     hasWarnings = true;
                 }
             }
@@ -2912,7 +2862,7 @@ namespace RMC.BestFit.Estimation
             else if (type == SamplerType.ARWMH)
                 sb.AppendLine("    - Decrease the Scale parameter to make smaller adaptive random-walk proposals.");
             else if (type == SamplerType.NUTS)
-                sb.AppendLine("    - Inspect divergences and posterior geometry; low Hamiltonian acceptance often accompanies inaccurate trajectories.");
+                sb.AppendLine("    - Review posterior geometry; low Hamiltonian acceptance often accompanies inaccurate trajectories.");
 
             sb.AppendLine("    - Check that priors and parameter bounds are consistent with the data.");
             sb.AppendLine("    - Review highly correlated parameters or poorly identified model structure.");
@@ -2930,7 +2880,7 @@ namespace RMC.BestFit.Estimation
             else if (type == SamplerType.ARWMH)
                 sb.AppendLine("    - Increase the Scale parameter to make larger adaptive random-walk proposals.");
             else if (type == SamplerType.NUTS)
-                sb.AppendLine("    - Compare step size, leapfrog count, ESS, and autocorrelation for inefficient trajectories.");
+                sb.AppendLine("    - Review ESS and autocorrelation for inefficient trajectories.");
 
             sb.AppendLine("    - The chain may be exploring the posterior too slowly.");
             sb.AppendLine("    - Prefer improving proposal efficiency before increasing thinning.");

@@ -89,7 +89,7 @@ Completed Phase 2 findings:
 - TR-028: confirmed joint-prior sampling limitation, documented and passed source/contract audit.
 - TR-029: rank-normalized split/folded R-hat and conservative bulk/tail ESS implemented in existing fields and passed R `posterior` 1.7.0 parity without public API or serialization changes.
 - TR-025: complete realized-state ARWMH covariance fixed and passed focused Numerics/BestFit regression.
-- TR-030: NUTS Hamiltonian diagnostics, gradient routes, serialization, and sampler-specific report integration fixed and passed focused regression.
+- TR-030: generic and Hamiltonian acceptance contracts, gradient routes, stale-JSON compatibility, and acceptance-only report integration fixed and passed focused regression.
 - TR-026: selected-weight Hansen J fixed and passed R `gmm::specTest` parameter, objective, J, and p-value parity.
 - TR-031: confirmed defect, fixed, passed analytical and R-parity evidence.
 - TR-032: legacy PSIS-shaped GMM overloads marked obsolete; supported Cook and leverage APIs retain correct labels and compatibility regressions pass.
@@ -101,7 +101,7 @@ Accepted Phase 2 limitation:
 
 - TR-028 remains an accepted documented joint-prior-sampling limitation rather than an active fix.
 
-DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, explicit covariance failure status, selected-weight Hansen J, overidentified GMM fitting/covariance, GMM Cook labeling, ARWMH realized-state covariance, NUTS sampler-specific diagnostics, and modern R-hat/ESS are corrected and verified. Joint-prior sampling remains the documented Phase 2 limitation.
+DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, explicit covariance failure status, selected-weight Hansen J, overidentified GMM fitting/covariance, GMM Cook labeling, ARWMH realized-state covariance, NUTS acceptance/gradient routing and live-sampler diagnostics, and modern R-hat/ESS are corrected and verified. Joint-prior sampling remains the documented Phase 2 limitation.
 
 ## Phase 0 - Repository and Documentation Foundation
 
@@ -209,7 +209,7 @@ Current scoped external parity is complete. ArviZ would be redundant secondary W
 - TR-027: fixed. MLE, MAP, and GMM now expose public covariance status and diagnostics plus non-throwing `Try` paths; existing getters throw when covariance is unavailable, and covariance-dependent MLE/MAP influence paths no longer substitute zeros. Deterministic fast tests cover failure, available, regularized, and enum-stability contracts.
 - TR-028: a 20,000-draw coupled-prior fixture confirms the documented independent-marginal behavior. Any general solution should add optional joint-prior-sampling capability without changing `IModel`; coupled-prior models must implement it or report prior-predictive sampling as unavailable.
 - TR-029: fixed. Existing R-hat/ESS internals now use rank-normalized split/folded R-hat and the minimum of rank-normalized bulk and pooled 0.05/0.95 tail ESS. Existing public methods, fields, serialization, concise report labels, and the 51-lag plotting ACF are preserved. The readiness threshold is 1.01, FFT/Geyer processing adds no target evaluations, and deterministic fixtures pass R `posterior` 1.7.0 parity.
-- TR-030: fixed. NUTS exposes post-warmup Hamiltonian acceptance, divergence, maximum-depth, tree/leapfrog, step-size, and E-BFMI diagnostics through additive serialized result fields. BestFit reports those diagnostics without generic Metropolis descriptors; legacy results report diagnostics unavailable. Analytic-gradient initialization routing and BestFit's complete-posterior finite-difference route are both focused-tested.
+- TR-030: fixed surgically. `MCMCSampler.AcceptanceRates` retains accepted-transition/sample-count semantics, while `NUTS.HamiltonianAcceptanceRates` exposes the post-warmup Hamiltonian statistic. `MCMCResults` has no NUTS-specific properties; its existing acceptance field receives Hamiltonian acceptance for NUTS so BestFit can persist and report only that value. Other constant-memory diagnostics remain on the live sampler. Analytic-gradient initialization routing, stale-JSON compatibility, baseline result nullability, and BestFit's complete-posterior finite-difference route are focused-tested.
 - TR-031: fixed. Unsupported hat-matrix claims were removed; combined leverage is an additive fit-plus-variance ranking index.
 - TR-032: fixed compatibly. The two legacy PSIS-shaped GMM overloads remain callable but emit non-error obsolete warnings directing users to correctly labeled leverage or raw Cook APIs.
 - TR-033: rejected non-defect. The optimized GMM/penalty stack must preserve the Gaussian-prior inverse-variance weighting behavior. Do not change the gradient or penalty Hessian without tracing the full stack and obtaining approval.
@@ -359,7 +359,7 @@ Completed findings:
 - TR-030
 - TR-029
 
-TR-025 records every realized ARWMH state while preserving continual adaptation. TR-030 adds constant-memory NUTS Hamiltonian acceptance, divergence, tree/leapfrog, step-size, and E-BFMI diagnostics; carries them through additive serialized result fields; and uses sampler-specific BestFit reporting with a legacy-result fallback. The NUTS trajectory-selection algorithm is unchanged. The existing Numerics analytic-gradient initialization regression and a BestFit coupled-prior finite-difference verification cover both gradient routes. TR-029 modernizes only existing diagnostic internals and the report threshold, retaining public and serialization compatibility.
+TR-025 records every realized ARWMH state while preserving continual adaptation. TR-030 preserves generic accepted-transition rates, exposes Hamiltonian acceptance and other constant-memory diagnostics on `NUTS`, transfers only Hamiltonian acceptance through the existing result field, and uses acceptance-only BestFit reporting. The NUTS trajectory-selection algorithm is unchanged. The existing Numerics analytic-gradient initialization regression and a BestFit coupled-prior finite-difference verification cover both gradient routes. TR-029 modernizes only existing diagnostic internals and the report threshold, retaining public and serialization compatibility.
 
 TR-029 uses pooled midranks, inverse-normal scores, split and folded chains, and FFT/Geyer autocorrelation processing. Its committed R `posterior` fixtures cover IID, autocorrelated, shifted, scale-mismatched, sticky-tail, tied, constant, warmup, and permutation cases. The implementation performs no model-target evaluations.
 
@@ -394,7 +394,7 @@ Read docs/verification/verification-finalization-plan.md first, then docs/techni
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, GMM Hansen J/fitting/covariance, ARWMH realized-state covariance, NUTS gradient/report diagnostics, GMM influence labeling, and rank-normalized R-hat/conservative bulk-tail ESS are corrected and focused-verified. TR-028 remains the accepted documented joint-prior limitation. Do not start Phase 3 without explicit direction.
+Current checkpoint: DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, GMM Hansen J/fitting/covariance, ARWMH realized-state covariance, NUTS gradient/acceptance contracts, GMM influence labeling, and rank-normalized R-hat/conservative bulk-tail ESS are corrected and focused-verified. TR-028 remains the accepted documented joint-prior limitation. Do not start Phase 3 without explicit direction.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.

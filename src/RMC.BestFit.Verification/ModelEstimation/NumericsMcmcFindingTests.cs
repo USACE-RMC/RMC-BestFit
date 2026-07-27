@@ -12,7 +12,7 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 
 /// <summary>
 /// Verifies the BestFit integration of the corrected Numerics ARWMH state history,
-/// NUTS gradient route, and sampler-specific diagnostics.
+/// NUTS gradient route, and acceptance-rate contracts.
 /// </summary>
 /// <remarks>
 /// The fixtures use deterministic inline targets and require no R or Python runtime.
@@ -57,11 +57,11 @@ public class NumericsMcmcFindingTests
     }
 
     /// <summary>
-    /// Confirms that BestFit carries the corrected Hamiltonian acceptance and additive
-    /// NUTS diagnostics into results and the generated report.
+    /// Confirms that BestFit persists and reports NUTS Hamiltonian acceptance while the
+    /// generic sampler property retains accepted-transition semantics.
     /// </summary>
     [TestMethod]
-    public void Nuts_BestFitReportUsesHamiltonianDiagnostics()
+    public void Nuts_BestFitResultsUseHamiltonianAcceptanceWithoutDetailedDiagnostics()
     {
         BayesianAnalysis analysis = CreateAnalysis(
             new SyntheticMcmcModel(useSpikeTarget: false),
@@ -69,32 +69,31 @@ public class NumericsMcmcFindingTests
         MCMCSampler sampler = SeedSampler(analysis);
 
         sampler.Sample();
+        var nuts = (NUTS)sampler;
         var results = new MCMCResults(sampler, alpha: 0.10);
         analysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
         string report = analysis.GenerateReport();
 
-        int expectedRawTransitions = analysis.Iterations
-            + (int)Math.Ceiling(analysis.OutputLength / (double)analysis.NumberOfChains);
-        int expectedDiagnosticTransitions = expectedRawTransitions - analysis.WarmupIterations;
-        Assert.IsTrue(results.AcceptanceRates.All(rate => rate > 0d && rate < 1d));
-        Assert.IsNotNull(results.NUTSDiagnosticSampleCounts);
-        Assert.IsTrue(results.NUTSDiagnosticSampleCounts.All(count => count == expectedDiagnosticTransitions));
-        Assert.IsNotNull(results.NUTSDivergenceCounts);
-        Assert.IsNotNull(results.NUTSMaxTreeDepthHitCounts);
-        Assert.IsNotNull(results.NUTSMeanTreeDepths);
-        Assert.IsNotNull(results.NUTSMeanLeapfrogSteps);
-        Assert.IsNotNull(results.NUTSStepSizes);
-        Assert.IsNotNull(results.NUTSEnergyBayesianFractionOfMissingInformation);
+        for (int chainIndex = 0; chainIndex < sampler.NumberOfChains; chainIndex++)
+        {
+            double transitionRate = (double)sampler.AcceptCount[chainIndex] /
+                sampler.SampleCount[chainIndex];
+            Assert.AreEqual(transitionRate, sampler.AcceptanceRates[chainIndex], 0d);
+            Assert.AreEqual(1d, sampler.AcceptanceRates[chainIndex], 0d);
+            Assert.IsTrue(nuts.HamiltonianAcceptanceRates[chainIndex] > 0d);
+            Assert.IsTrue(nuts.HamiltonianAcceptanceRates[chainIndex] < 1d);
+        }
+
+        CollectionAssert.AreEqual(nuts.HamiltonianAcceptanceRates, results.AcceptanceRates);
         StringAssert.Contains(report, "NUTS SAMPLER DIAGNOSTICS");
         StringAssert.Contains(report, "Overall Hamiltonian Acceptance:");
-        StringAssert.Contains(report, "Divergences:");
-        StringAssert.Contains(report, "Maximum Tree Depth Hits:");
-        StringAssert.Contains(report, "Minimum E-BFMI:");
         Assert.IsFalse(report.Contains("Overall:   100.0%"));
-        Assert.IsFalse(report.Contains("NUTS is accepting almost every proposal"));
+        Assert.IsFalse(report.Contains("Divergences:"));
+        Assert.IsFalse(report.Contains("Maximum Tree Depth Hits:"));
+        Assert.IsFalse(report.Contains("E-BFMI"));
+        Assert.IsFalse(report.Contains("legacy result"));
         Assert.IsFalse(report.Contains("Proposals are too timid"));
     }
-
     /// <summary>
     /// Confirms that BestFit's default NUTS gradient differentiates the complete model
     /// log posterior supplied through the production setup path.

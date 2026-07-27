@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 2 is complete for its approved scope. The Log10-Normal MLE/MAP/GMM baseline, Gaussian prior and quadratic-penalty equivalence, GMM objective/covariance scaling, scoped fit/variance/combined-influence diagnostics, DIC, WAIC, PSIS-LOO, Hansen J, overidentified one-step fitting, MLE/MAP nuisance profiling, fixed-weight and efficient GMM sandwich covariance, ARWMH realized-state covariance, NUTS gradient/diagnostic/report integration, and rank-normalized R-hat and conservative bulk/tail ESS are verified. TR-023 and TR-032 retain their public signatures; TR-027 exposes explicit covariance status and failure contracts; TR-028 remains a documented, verified limitation.
+Phase 2 is complete for its approved scope. The Log10-Normal MLE/MAP/GMM baseline, Gaussian prior and quadratic-penalty equivalence, GMM objective/covariance scaling, scoped fit/variance/combined-influence diagnostics, DIC, WAIC, PSIS-LOO, Hansen J, overidentified one-step fitting, MLE/MAP nuisance profiling, fixed-weight and efficient GMM sandwich covariance, ARWMH realized-state covariance, NUTS gradient and acceptance-contract integration, and rank-normalized R-hat and conservative bulk/tail ESS are verified. TR-023 and TR-032 retain their public signatures; TR-027 exposes explicit covariance status and failure contracts; TR-028 remains a documented, verified limitation.
 
 ## Log10-Normal fixture
 
@@ -154,8 +154,8 @@ The Numerics fixtures force every proposal to be rejected at the origin. Both 12
 
 Focused Numerics methods:
 
-- `Test_MCMCSamplerFindings.ARWMH_RejectedWarmupTransitionsEnterCovariance`
-- `Test_MCMCSamplerFindings.ARWMH_RejectedPostWarmupTransitionsContinueEnteringCovariance`
+- `Test_MCMCSamplerDiagnostics.ARWMH_RejectedWarmupTransitionsEnterCovariance`
+- `Test_MCMCSamplerDiagnostics.ARWMH_RejectedPostWarmupTransitionsContinueEnteringCovariance`
 
 Focused BestFit method:
 
@@ -165,17 +165,19 @@ Focused BestFit method:
 
 Hoffman and Gelman's NUTS dual averaging uses a trajectory acceptance statistic, not a count of whether each completed transition returned a retained state. PyMC exposes mean tree acceptance, divergences, energy and energy change, depth, tree size, and step size. BlackJAX exposes acceptance rate, divergence, energy, expansion count, and integration-step count. These independently implemented interfaces establish the diagnostic quantities expected from NUTS; exact paths are not a portable cross-package oracle because random-number streams and trajectory implementations differ.
 
-A seeded two-dimensional Gaussian Numerics fixture confirms that public `AcceptanceRates` now equals the mean post-warmup Hamiltonian statistic and is distinct from the retained-transition counter. It verifies diagnostic counts, divergence and maximum-depth arrays, tree/leapfrog means, step sizes, finite E-BFMI, and JSON round-trip. A direct identity test matches Stan's `mean(diff(E)^2) / var(E)` convention. The streaming accumulators require constant memory and no extra target or gradient evaluations.
+A seeded two-dimensional Gaussian Numerics fixture confirms that `MCMCSampler.AcceptanceRates` retains its established accepted-transition/sample-count meaning while `NUTS.HamiltonianAcceptanceRates` exposes the distinct mean post-warmup trajectory statistic. When `MCMCResults` is constructed from NUTS, its existing `AcceptanceRates` field stores the Hamiltonian statistic so BestFit can persist and report it. Divergence, maximum-depth, tree/leapfrog, step-size, and E-BFMI arrays remain non-null live-sampler diagnostics on `NUTS`; they are not `MCMCResults` properties and are not serialized or displayed by BestFit. Interim JSON containing the removed fields remains readable because unknown properties are ignored. A direct identity test matches Stan's `mean(diff(E)^2) / var(E)` convention. The streaming accumulators require constant memory and no extra target or gradient evaluations.
 
 Focused Numerics methods:
 
-- `Test_MCMCSamplerFindings.NUTS_AcceptanceRatesAndDiagnosticsUsePostWarmupHamiltonianStatistics`
-- `Test_MCMCSamplerFindings.NUTS_EnergyBayesianFractionOfMissingInformationMatchesStanFormula`
+- `Test_MCMCSamplerDiagnostics.NUTS_DiagnosticArraysAreNonNullAndEmptyBeforeSampling`
+- `Test_MCMCSamplerDiagnostics.NUTS_AcceptanceContractsRemainSeparatedAndResultsPersistHamiltonianRates`
+- `Test_MCMCSamplerDiagnostics.MCMCResults_RetainsBaselineNullabilityAndOmitsNutsDiagnostics`
+- `Test_MCMCSamplerDiagnostics.NUTS_EnergyBayesianFractionOfMissingInformationMatchesStanFormula`
 - `Test_MCMCInitialization.NutsInitializationUsesConfiguredGradientAndReducesLikelihoodWork`
 
 Focused BestFit methods:
 
-- `NumericsMcmcFindingTests.Nuts_BestFitReportUsesHamiltonianDiagnostics`
+- `NumericsMcmcFindingTests.Nuts_BestFitResultsUseHamiltonianAcceptanceWithoutDetailedDiagnostics`
 - `NumericsMcmcFindingTests.Nuts_BestFitNumericalGradientMatchesPosteriorGradient`
 
 The historical NUTS gradient-routing issue was narrower than the reporting defect: the reasonable-step-size initialization heuristic once bypassed a caller-supplied analytic gradient. Numerics commit `33dc1af` corrected that route, and its permanent unit regression passes. BestFit intentionally supplies no analytic gradient; its focused coupled-prior method confirms the default bounded finite differences differentiate the complete posterior passed by `BayesianAnalysis.SetUpSampler()`. All C# methods use deterministic inline targets and require no R or Python runtime.

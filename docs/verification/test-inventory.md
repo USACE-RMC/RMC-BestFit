@@ -78,10 +78,12 @@ The first four methods consume the committed [GMM specification oracle](../../ve
 
 | Test method | Test project | External contract or traced behavior | Status |
 |---|---|---|---|
-| `Test_MCMCSamplerFindings.ARWMH_RejectedWarmupTransitionsEnterCovariance` | Numerics | Haario Adaptive Metropolis realized-chain covariance | Passed - focused .NET 10 method |
-| `Test_MCMCSamplerFindings.ARWMH_RejectedPostWarmupTransitionsContinueEnteringCovariance` | Numerics | Original continual-adaptation schedule with complete realized states | Passed - focused .NET 10 method |
-| `Test_MCMCSamplerFindings.NUTS_AcceptanceRatesAndDiagnosticsUsePostWarmupHamiltonianStatistics` | Numerics | Hoffman-Gelman acceptance plus PyMC/BlackJAX diagnostic contract and JSON round-trip | Passed - focused .NET 10 method |
-| `Test_MCMCSamplerFindings.NUTS_EnergyBayesianFractionOfMissingInformationMatchesStanFormula` | Numerics | Stan E-BFMI identity | Passed - focused .NET 10 method |
+| `Test_MCMCSamplerDiagnostics.ARWMH_RejectedWarmupTransitionsEnterCovariance` | Numerics | Haario Adaptive Metropolis realized-chain covariance | Passed - focused .NET 10 method |
+| `Test_MCMCSamplerDiagnostics.ARWMH_RejectedPostWarmupTransitionsContinueEnteringCovariance` | Numerics | Original continual-adaptation schedule with complete realized states | Passed - focused .NET 10 method |
+| `Test_MCMCSamplerDiagnostics.NUTS_DiagnosticArraysAreNonNullAndEmptyBeforeSampling` | Numerics | Non-null empty live-sampler NUTS diagnostic arrays before initialization | Passed - focused .NET 10 method |
+| `Test_MCMCSamplerDiagnostics.NUTS_AcceptanceContractsRemainSeparatedAndResultsPersistHamiltonianRates` | Numerics | Generic transition ratio, separate Hamiltonian acceptance, existing result-field transfer, and stale-JSON compatibility | Passed - focused .NET 10 method |
+| `Test_MCMCSamplerDiagnostics.MCMCResults_RetainsBaselineNullabilityAndOmitsNutsDiagnostics` | Numerics | Baseline result nullability and absence of NUTS-specific persisted properties | Passed - focused .NET 10 method |
+| `Test_MCMCSamplerDiagnostics.NUTS_EnergyBayesianFractionOfMissingInformationMatchesStanFormula` | Numerics | Stan E-BFMI identity on the live NUTS sampler | Passed - focused .NET 10 method |
 | `Test_MCMCInitialization.NutsInitializationUsesConfiguredGradientAndReducesLikelihoodWork` | Numerics | Configured analytic gradient used by reasonable-step-size initialization | Passed - focused .NET 10 method |
 | `Test_MCMCDiagnostics.Test_ModernDiagnostics_MatchRPosteriorReference` | Numerics | R `posterior` 1.7.0 rank-normalized R-hat and conservative bulk/tail ESS | Passed - focused .NET 10 method |
 | `Test_MCMCDiagnostics.Test_GelmanRubin_FoldedRanksDetectScaleMismatch` | Numerics | R `posterior` 1.7.0 folded rank-normalized R-hat | Passed - focused .NET 10 method |
@@ -89,7 +91,7 @@ The first four methods consume the committed [GMM specification oracle](../../ve
 | `NumericsMcmcFindingTests.RankNormalizedRhat_MatchesRPosteriorOracle` | BestFit Verification | Committed R `posterior` 1.7.0 oracle across nine fixtures | Passed - exact focused method |
 | `NumericsMcmcFindingTests.ConservativeEss_MatchesRPosteriorBulkAndTailOracle` | BestFit Verification | Committed R bulk/lower-tail/upper-tail ESS and conservative minimum | Passed - exact focused method |
 | `NumericsMcmcFindingTests.Arwmh_BestFitWiringRecordsEveryRealizedStateInAdaptiveCovariance` | BestFit Verification | Production sampler setup and complete per-chain covariance counts | Passed - exact focused method |
-| `NumericsMcmcFindingTests.Nuts_BestFitReportUsesHamiltonianDiagnostics` | BestFit Verification | Production setup, result transfer, and sampler-specific report | Passed - exact focused method |
+| `NumericsMcmcFindingTests.Nuts_BestFitResultsUseHamiltonianAcceptanceWithoutDetailedDiagnostics` | BestFit Verification | Generic sampler acceptance, Hamiltonian result transfer, and acceptance-only BestFit report | Passed - exact focused method |
 | `NumericsMcmcFindingTests.Nuts_BestFitNumericalGradientMatchesPosteriorGradient` | BestFit Verification | Bound-aware finite differences of the complete coupled-prior posterior | Passed - exact focused method |
 
 The BestFit methods were run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the full Verification project was not executed. The Numerics methods passed by exact fully qualified filter on the .NET 10 target, and the isolated complete Numerics .NET 10 Release project passed all 1,960 tests with zero failures or skips. The TR-029 BestFit methods consume the committed [MCMC diagnostics oracle](../../verification/data/model-estimation/mcmc-diagnostics-oracle.json), so C# tests require no R or Python runtime. Fast report tests `GenerateReport_Rhat1005_PassesModernThreshold` and `GenerateReport_Rhat102_WarnsAtModernThreshold` verify the 1.01 readiness rule without changing the concise `R-hat` label.

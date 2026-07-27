@@ -90,52 +90,52 @@ public class BayesianAnalysisReportTests
     }
 
     /// <summary>
-    /// Verifies that NUTS reports sampler-specific diagnostics without generic Metropolis descriptors.
+    /// Verifies that NUTS reports only the persisted Hamiltonian acceptance statistic.
     /// </summary>
     [TestMethod]
-    public void GenerateReport_NutsDiagnostics_ReportSamplerSpecificValues()
+    public void GenerateReport_NutsAcceptance_ReportsHamiltonianRatesOnly()
+    {
+        var analysis = CreateEstimatedAnalysis(
+            BayesianAnalysis.SamplerType.NUTS,
+            new[] { 0.80, 0.81, 0.79, 0.80 },
+            ess: 250.0,
+            retainedDrawCount: 1000);
+
+        string report = analysis.GenerateReport();
+
+        StringAssert.Contains(report, "NUTS SAMPLER DIAGNOSTICS");
+        StringAssert.Contains(report, "Chain 1:   80.0% Hamiltonian acceptance");
+        StringAssert.Contains(report, "Overall Hamiltonian Acceptance: 80.0%");
+        StringAssert.Contains(report, "Target:    80% Hamiltonian acceptance");
+        Assert.IsFalse(report.Contains("Divergences:"));
+        Assert.IsFalse(report.Contains("Maximum Tree Depth Hits:"));
+        Assert.IsFalse(report.Contains("E-BFMI"));
+        Assert.IsFalse(report.Contains("step size"));
+        Assert.IsFalse(report.Contains("legacy result"));
+        Assert.IsFalse(report.Contains("Proposals are too timid"));
+    }
+
+    /// <summary>
+    /// Verifies that high NUTS Hamiltonian acceptance uses NUTS-specific concise advice.
+    /// </summary>
+    [TestMethod]
+    public void GenerateReport_NutsHighAcceptance_UsesHamiltonianAdviceOnly()
     {
         var analysis = CreateEstimatedAnalysis(
             BayesianAnalysis.SamplerType.NUTS,
             new[] { 0.97, 0.97, 0.97, 0.97 },
             ess: 250.0,
             retainedDrawCount: 1000);
-        SetNutsDiagnostics(analysis.Results!);
 
         string report = analysis.GenerateReport();
 
-        StringAssert.Contains(report, "NUTS SAMPLER DIAGNOSTICS");
-        StringAssert.Contains(report, "Overall Hamiltonian Acceptance: 97.0%");
-        StringAssert.Contains(report, "Divergences:                    1/1,000");
-        StringAssert.Contains(report, "Maximum Tree Depth Hits:        2/1,000");
-        StringAssert.Contains(report, "Minimum E-BFMI:                 0.150");
-        StringAssert.Contains(report, "WARNING - divergent transitions detected");
-        StringAssert.Contains(report, "WARNING - E-BFMI below 0.2");
+        StringAssert.Contains(report, "Status:    WARNING - above acceptable buffer");
         StringAssert.Contains(report, "Advice: Hamiltonian acceptance is above the acceptable range.");
+        StringAssert.Contains(report, "Review ESS and autocorrelation for inefficient trajectories.");
         Assert.IsFalse(report.Contains("Proposals are too timid"));
-        Assert.IsFalse(report.Contains("NUTS is accepting almost every proposal"));
+        Assert.IsFalse(report.Contains("leapfrog"));
+        Assert.IsFalse(report.Contains("Divergences:"));
     }
-
-    /// <summary>
-    /// Verifies that legacy NUTS results do not reuse an always-one transition counter.
-    /// </summary>
-    [TestMethod]
-    public void GenerateReport_NutsLegacyResult_SuppressesGenericAcceptanceAdvice()
-    {
-        var analysis = CreateEstimatedAnalysis(
-            BayesianAnalysis.SamplerType.NUTS,
-            new[] { 1.0, 1.0, 1.0, 1.0 },
-            ess: 250.0,
-            retainedDrawCount: 1000);
-
-        string report = analysis.GenerateReport();
-
-        StringAssert.Contains(report, "Sampler-specific NUTS diagnostics are unavailable for this legacy result.");
-        Assert.IsFalse(report.Contains("Overall:   100.0%"));
-        Assert.IsFalse(report.Contains("above acceptable buffer"));
-        Assert.IsFalse(report.Contains("Proposals are too timid"));
-    }
-
     /// <summary>
     /// Verifies that a single chain outside the acceptable buffer is called out even
     /// when the overall acceptance rate remains acceptable.
@@ -327,37 +327,6 @@ public class BayesianAnalysisReportTests
 
         var map = new ParameterSet(new[] { 16000.0, 5000.0 }, 0.0);
         return new MCMCResults(map, output, alpha: 0.10);
-    }
-
-    /// <summary>
-    /// Injects a complete, chain-aligned NUTS diagnostic fixture.
-    /// </summary>
-    /// <param name="results">The MCMC results to update.</param>
-    private static void SetNutsDiagnostics(MCMCResults results)
-    {
-        SetResultProperty(results, nameof(MCMCResults.NUTSDiagnosticSampleCounts), new[] { 250, 250, 250, 250 });
-        SetResultProperty(results, nameof(MCMCResults.NUTSDivergenceCounts), new[] { 0, 1, 0, 0 });
-        SetResultProperty(results, nameof(MCMCResults.NUTSMaxTreeDepthHitCounts), new[] { 0, 2, 0, 0 });
-        SetResultProperty(results, nameof(MCMCResults.NUTSMeanTreeDepths), new[] { 2.1, 2.2, 2.3, 2.4 });
-        SetResultProperty(results, nameof(MCMCResults.NUTSMeanLeapfrogSteps), new[] { 4.0, 4.2, 4.4, 4.6 });
-        SetResultProperty(results, nameof(MCMCResults.NUTSStepSizes), new[] { 0.12, 0.11, 0.10, 0.09 });
-        SetResultProperty(results, nameof(MCMCResults.NUTSEnergyBayesianFractionOfMissingInformation),
-            new[] { 0.75, 0.60, 0.15, 0.55 });
-    }
-
-    /// <summary>
-    /// Assigns a private-set MCMC result property for a synthetic report fixture.
-    /// </summary>
-    /// <typeparam name="T">The property value type.</typeparam>
-    /// <param name="results">The result instance to update.</param>
-    /// <param name="propertyName">The public property name.</param>
-    /// <param name="value">The synthetic value.</param>
-    private static void SetResultProperty<T>(MCMCResults results, string propertyName, T value)
-    {
-        PropertyInfo? property = typeof(MCMCResults).GetProperty(propertyName);
-        MethodInfo? setter = property?.GetSetMethod(nonPublic: true);
-        Assert.IsNotNull(setter, $"Unable to inject synthetic {propertyName} into MCMCResults.");
-        setter.Invoke(results, new object?[] { value });
     }
 
     /// <summary>

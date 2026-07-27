@@ -51,7 +51,7 @@ Every fitted result should state:
 
 ## Open Findings Affecting Interpretation
 
-The canonical [review-findings register](../review-findings.md) is part of this reference. MLE and MAP nuisance profiling, PSIS tail smoothing, covariance failure signaling, GMM Hansen J, overidentified one-step fitting and covariance, ARWMH realized-state adaptation, NUTS gradient/report diagnostics, rank-normalized R-hat and conservative bulk/tail ESS, and combined-influence terminology are corrected and verified. The legacy GMM PSIS-shaped compatibility overloads are explicitly obsolete. Joint-prior sampling remains a documented limitation. The chapters describe current implemented behavior and identify any output whose scientific interpretation remains limited.
+The canonical [review-findings register](../review-findings.md) is part of this reference. MLE and MAP nuisance profiling, PSIS tail smoothing, covariance failure signaling, GMM Hansen J, overidentified one-step fitting and covariance, ARWMH realized-state adaptation, NUTS acceptance/gradient routing, rank-normalized R-hat and conservative bulk/tail ESS, and combined-influence terminology are corrected and verified. The legacy GMM PSIS-shaped compatibility overloads are explicitly obsolete. Joint-prior sampling remains a documented limitation. The chapters describe current implemented behavior and identify any output whose scientific interpretation remains limited.
 
 ## Validation Boundary
 
