@@ -91,10 +91,10 @@ While in the **Distribution Results** tab to the left, select Tabular Results to
 
 ### Plots
 
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](...images/sinnemahoning-b17c-frequency.png)
+![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](.../images/sinnemahoning-b17c-frequency.png)
 *Figure 1: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
 
-![Posterior kernel density for mean parameter (µ).](...images/sinnemahoning-b17c-kernel-density-mean.png)
+![Posterior kernel density for mean parameter (µ).](.../images/sinnemahoning-b17c-kernel-density-mean.png)
 *Figure 2: Posterior kernel density for mean parameter (µ).*
 
 ## Next Steps
