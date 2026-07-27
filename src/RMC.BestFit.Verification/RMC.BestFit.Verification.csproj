@@ -45,6 +45,21 @@
     <None Include="..\..\verification\data\model-estimation\gmm-influence-oracle.json"
           Link="VerificationData\gmm-influence-oracle.json"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\gmm-specification-oracle.json"
+          Link="VerificationData\gmm-specification-oracle.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\mcmc-diagnostics-oracle.json"
+          Link="VerificationData\mcmc-diagnostics-oracle.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\profile-likelihood-oracle.json"
+          Link="VerificationData\profile-likelihood-oracle.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\model-comparison-oracle.json"
+          Link="VerificationData\model-comparison-oracle.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\psis-loo-oracle.json"
+          Link="VerificationData\psis-loo-oracle.json"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

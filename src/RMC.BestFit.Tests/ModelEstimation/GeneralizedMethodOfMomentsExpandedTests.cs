@@ -42,6 +42,29 @@ public class GeneralizedMethodOfMomentsExpandedTests
             upperBounds: upper);
     }
 
+    /// <summary>
+    /// The two legacy PSIS-shaped GMM influence overloads remain callable but explicitly obsolete.
+    /// </summary>
+    [TestMethod]
+    public void LegacyInfluenceDiagnosticsOverloads_AreObsoleteCompatibilityApis()
+    {
+        var overloads = typeof(GeneralizedMethodOfMoments)
+            .GetMethods()
+            .Where(method => method.Name == "GetInfluenceDiagnostics")
+            .ToArray();
+
+        Assert.AreEqual(2, overloads.Length);
+        foreach (var overload in overloads)
+        {
+            var attribute = overload.GetCustomAttributes(typeof(ObsoleteAttribute), inherit: false)
+                .Cast<ObsoleteAttribute>()
+                .SingleOrDefault();
+            Assert.IsNotNull(attribute, $"{overload} must be marked obsolete.");
+            Assert.IsFalse(attribute.IsError, "The compatibility API must remain callable in the current major version.");
+            StringAssert.Contains(attribute.Message, "not a Pareto-k diagnostic");
+        }
+    }
+
     #region Property round-trip
 
     /// <summary>
@@ -157,15 +180,11 @@ public class GeneralizedMethodOfMomentsExpandedTests
     /// JStat is NaN before estimation.
     /// </summary>
     [TestMethod]
-    public void JStat_BeforeEstimation_IsZero()
+    public void JStat_BeforeEstimation_IsNaN()
     {
-        // JStat is initialized to 0 (default double); the contract is that it is meaningful
-        // only when IsEstimated == true. Here we simply check the pre-estimation invariant
-        // alongside the IsEstimated guard.
         var gmm = MakeStubGmm();
         Assert.IsFalse(gmm.IsEstimated);
-        // JStat is a default double (0); the meaningful invariant is on IsEstimated.
-        Assert.AreEqual(0.0, gmm.JStat);
+        Assert.IsTrue(double.IsNaN(gmm.JStat));
     }
 
     /// <summary>

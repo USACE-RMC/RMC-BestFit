@@ -140,15 +140,25 @@ public class Log10NormalInfluenceLeverageFindingTests
     }
 
     /// <summary>
-    /// Confirms that GMM Cook-like values are currently placed in the PSIS-only Pareto-k data
-    /// contract and therefore receive PSIS reliability labels without a Pareto-tail calculation.
+    /// Confirms that the legacy PSIS-shaped GMM adapter is obsolete while preserving compatibility.
     /// </summary>
     [TestMethod]
-    public void GmmCookInfluence_CurrentlyReceivesPsisParetoKLabels()
+    public void GmmCookInfluence_LegacyPsisAdapterIsObsoleteCompatibilityOnly()
     {
         var gmm = FitGmm(SymmetricLog10Values);
         double[] cooksDistance = gmm.GetCooksDistance();
-        InfluenceDiagnostics diagnostics = gmm.GetInfluenceDiagnostics();
+        var legacyMethod = typeof(GeneralizedMethodOfMoments).GetMethod(
+            "GetInfluenceDiagnostics",
+            Type.EmptyTypes);
+        Assert.IsNotNull(legacyMethod);
+        var obsolete = legacyMethod.GetCustomAttributes(typeof(ObsoleteAttribute), inherit: false)
+            .Cast<ObsoleteAttribute>()
+            .SingleOrDefault();
+        Assert.IsNotNull(obsolete, "The misleading legacy adapter must not remain a supported API path.");
+        StringAssert.Contains(obsolete.Message, "not a Pareto-k diagnostic");
+
+        var diagnostics = (InfluenceDiagnostics?)legacyMethod.Invoke(gmm, null);
+        Assert.IsNotNull(diagnostics, "The obsolete adapter must remain callable for compatibility.");
 
         Assert.AreEqual(cooksDistance.Length, diagnostics.Count, "GMM diagnostic observation count mismatch.");
         for (int i = 0; i < cooksDistance.Length; i++)
@@ -164,7 +174,7 @@ public class Log10NormalInfluenceLeverageFindingTests
         StringAssert.Contains(
             diagnostics.GetReliabilitySummary(),
             "PSIS-LOO",
-            "The shared result currently applies a PSIS reliability interpretation to GMM Cook-like values.");
+            "The retained compatibility object must preserve its historical serialized behavior.");
     }
 
     /// <summary>

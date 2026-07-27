@@ -2522,10 +2522,14 @@ namespace RMC.BestFit.Analyses
                        - Bulletin17CDistribution.DataFrame.NumberOfLowOutliers
                        + Bulletin17CDistribution.DataFrame.IntervalSeries.Count;
 
+                // Bulletin 17C is estimated by GMM, not likelihood maximization. These
+                // fields are pseudo-AIC and pseudo-BIC: evaluate the data likelihood at
+                // the GMM solution stored in MAP, then apply the usual penalties.
+
                 var univariateDist = new UnivariateDistribution(Bulletin17CDistribution.DataFrame, Bulletin17CDistribution.Distribution);
-                double logLH = univariateDist.LogLikelihood(bayesianResults.MAP.Values);
-                analysisResults.AIC = GoodnessOfFit.AIC(Bulletin17CDistribution.NumberOfParameters, logLH);
-                analysisResults.BIC = GoodnessOfFit.BIC(nt, Bulletin17CDistribution.NumberOfParameters, logLH);
+                double pseudoLogLikelihood = univariateDist.DataLogLikelihood(bayesianResults.MAP.Values);
+                analysisResults.AIC = GoodnessOfFit.AIC(Bulletin17CDistribution.NumberOfParameters, pseudoLogLikelihood);
+                analysisResults.BIC = GoodnessOfFit.BIC(nt, Bulletin17CDistribution.NumberOfParameters, pseudoLogLikelihood);
 
                 // RMSE
                 var values = Bulletin17CDistribution.DataFrame.ExactSeries.ValuesToList();

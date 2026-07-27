@@ -22,10 +22,11 @@ $$
 p(y_i\mid\boldsymbol\theta^{(s)}). \tag{INF.2}
 $$
 
-`BayesianAnalysis.ComputeInfluenceDiagnostics()` attaches the stored `ParetoK` and recomputed pointwise ELPD to `DataComponent` metadata. `InfluenceDiagnostics` summarizes counts above 0.5, 0.7, and 1.0 and calls the result reliable only when fewer than 1% exceed 0.7 and none exceed 1.0.
+`BayesianAnalysis.ComputeInfluenceDiagnostics()` attaches the cached `ParetoK` and pointwise ELPD values to `DataComponent` metadata. Default Bayesian completion evaluates the pointwise likelihood once per retained draw, shares the transient matrix between WAIC and PSIS, and retains only the $O(n)$ LOO summaries needed here.
 
-Those thresholds are meaningful only for correctly calculated PSIS with its sample-size/version rules. BestFit's current tail smoother fits cutoff ratios rather than excesses, ignores the fitted location, and reverses tail order-statistic replacement. Under [TR-024](../review-findings.md#tr-024), all BestFit `ParetoK`, ELPD-LOO, reliability flags, and PSIS observation rankings are scientifically unavailable until corrected.
+For $S$ retained draws, Bayesian diagnostics use the R `loo` 2.10.0 limit $\min(1-1/\log_{10}S,0.7)$. Values below the limit are categorized as good; values from the limit to 0.7 are categorized as OK; values from 0.7 to 1.0 are bad; and values at or above 1.0 are very bad. The public fixed-threshold constructors, fixed 0.5/0.7/1.0 count properties, and legacy XML remain available for compatibility, while Bayesian reliability uses the draw-count limit and stores that limit in new XML.
 
+The 40-draw external fixture has threshold $0.375803649418215$. Its third observation has $k=0.411627035764065$ and is correctly flagged. Aggregate and pointwise LOO, all five Pareto-$k$ values, six tail regimes, and single-pass evaluation behavior match the pinned R oracle. A high value means the PSIS approximation for that pointwise unit needs investigation; it is not an automatic outlier or deletion rule. The current implementation assumes `r_eff = 1` for tail-length selection and does not automatically perform exact or moment-matched refits.
 ## MLE and MAP Score-Displacement Diagnostics
 
 At an MLE or MAP point $\widehat{\boldsymbol\theta}$, let $\mathbf J$ be the negative Hessian of the relevant full objective and let
@@ -89,7 +90,7 @@ For Bulletin 17C grouped components, row-level $\mathbf e_i$ vectors are summed 
 
 The seven-point Log10-Normal fixture is independently reproduced by R `gmm` 1.9.1 and `sandwich` 3.1.2. BestFit matches every observation and the aggregate values $\sum D_i=0.0880102040816327$, $\sum V_i=0.616071428571429$, and $\sum(D_i+V_i)=0.704081632653061$ within $10^{-5}$. A centered penalty with width $100SE_L$ leaves the observation scale unchanged within $10^{-4}$.
 
-`GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` is a legacy compatibility path that stores a different GMM Cook-like scalar in the PSIS-oriented `ObservationInfluence.ParetoK` member. Its Pareto thresholds and reliability summary are not GMM diagnostics. Use `GetLeverageDiagnostics()` for the fit/variance/combined GMM display, and do not interpret the legacy value as Pareto $k$.
+`GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` is a legacy compatibility path that stores a different GMM Cook-like scalar in the PSIS-oriented `ObservationInfluence.ParetoK` member. Both overloads are marked `[Obsolete]` with a non-error compatibility warning. Their Pareto thresholds and reliability summaries are not GMM diagnostics. Use `GetLeverageDiagnostics()` for labeled fit/variance/combined GMM diagnostics or `GetCooksDistance()` for the raw Cook-like values; do not interpret the legacy compatibility value as Pareto $k$.
 
 ## Prior-Component Diagnostics
 
@@ -187,7 +188,7 @@ Use the returned metadata to locate observations in the source record, then inve
 ## Interpretation Checklist
 
 - Confirm that pointwise components correspond to independent deletion units.
-- Exclude PSIS results while TR-024 is open.
+- Inspect each Pareto $k$ against the draw-count reliability limit before using PSIS results.
 - Distinguish exact refitting from first-order score approximations.
 - Never interpret zero arrays without checking Hessian/covariance failure.
 - Treat prior log-magnitude and marginal precision ratios as heuristics.
@@ -197,8 +198,7 @@ Use the returned metadata to locate observations in the source record, then inve
 
 ## Verification and Traceability
 
-Fast tests exercise serialization, sorting, percentages, component mapping, and UI labels. Focused Log10-Normal methods verify MAP prior regimes, GMM penalty regimes, sample-size attenuation, MAP curvature materiality, and pointwise/aggregate parity with R `gmm`. These results do not establish universal Cook thresholds, exact deletion parity, or PSIS validity for other models.
-
+Fast tests exercise serialization, draw-count threshold persistence, legacy XML shape, sorting, percentages, component mapping, and UI labels. Focused Log10-Normal methods verify MAP prior regimes, GMM penalty regimes, sample-size attenuation, MAP curvature materiality, and pointwise/aggregate parity with R `gmm`. Six exact R `loo` 2.10.0 methods verify PSIS identities, corrected BestFit aggregate and pointwise output, every tail-regime weight and Pareto $k$, diagnostic classification, and the single-pass pointwise-likelihood contract. These results do not establish universal Cook thresholds or exact deletion parity.
 Implementation symbols: `InfluenceDiagnostics`, `ObservationInfluence`, `PriorInfluenceDiagnostics`, `PriorComponentSummary`, `LeverageDiagnostics`, `MaximumLikelihood.GetObservationInfluence`, `MaximumLikelihood.GetCooksDistance`, matching MAP methods, and `GeneralizedMethodOfMoments.GetInfluenceDiagnostics`.
 
 ## References

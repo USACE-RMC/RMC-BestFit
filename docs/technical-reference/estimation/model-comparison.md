@@ -4,7 +4,7 @@
 
 [Estimation index](index.md) | [MLE](maximum-likelihood.md) | [Bayesian MCMC](bayesian-mcmc.md) | [Influence diagnostics](influence-diagnostics.md) | [Technical Reference](../index.md)
 
-Model comparison in BestFit spans likelihood criteria (AIC/BIC), posterior criteria (DIC/WAIC), and an intended Pareto-smoothed leave-one-out criterion (LOOIC). These quantities answer different questions. They are comparable only when candidates use the same observations, observation process, pointwise partition, response transformation including Jacobian, and likelihood constants.
+Model comparison in BestFit spans likelihood criteria (AIC/BIC), posterior criteria (DIC/WAIC), and Pareto-smoothed leave-one-out cross-validation (LOOIC). These quantities answer different questions. They are comparable only when candidates use the same observations, observation process, pointwise partition, response transformation including Jacobian, and likelihood constants.
 
 ## Pointwise Predictive Basis
 
@@ -24,7 +24,7 @@ $$
 
 `MaximumLikelihood.GetAIC()` and `GetBIC(n)` implement (MC.1). AIC estimates relative expected out-of-sample deviance under regularity conditions; BIC is a large-sample approximation related to a particular marginal-likelihood regime. Lower is preferred only relative to the candidate set. Neither is a goodness-of-fit test.
 
-The similarly named methods on `MaximumAPosteriori` and some analysis summaries substitute the posterior kernel at a MAP. Those values are nonstandard and must not be mixed with (MC.1); see [TR-011](../review-findings.md#tr-011) and the MAP chapter.
+`MaximumAPosteriori` and the Bayesian analysis summaries use the same formulas with the data log likelihood evaluated at the posterior mode, $\ell_D(\widehat{\boldsymbol\theta}_{\mathrm{MAP}})$; prior log densities are excluded. When every active prior is constant over the relevant parameter region, MAP coincides with the constrained MLE and these values are comparable with (MC.1). With informative, Jeffreys, quantile, or other nonconstant priors, MAP generally differs from MLE and the classical AIC/BIC penalties do not account for the prior. In that setting, use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than interpreting the MAP-evaluated fields as conventional AIC/BIC. See [TR-011](../review-findings.md#tr-011) and the MAP chapter.
 
 ## Deviance Information Criterion
 
@@ -44,6 +44,8 @@ p_D=\overline D-D(\overline{\boldsymbol\theta}). \tag{MC.3}
 $$
 
 The public API exposes `DIC` but not its $p_D$ separately. DIC can behave poorly for skewed or multimodal posteriors, mixture label switching, constrained parameters, and cases where the posterior mean is a low-density or invalid representative point. WAIC or valid LOO is generally preferable for prediction-focused comparison.
+
+A deterministic 40-draw Normal fixture verifies the full calculation against R `BayesianTools` 0.1.9. BestFit agrees within $10^{-10}$ for $\overline D$, $D(\overline{\boldsymbol\theta})$, $p_D$, and DIC. See the [verification report](../../verification/model-estimation.md#dic-and-waic-external-package-parity) and [committed oracle](../../../verification/data/model-estimation/model-comparison-oracle.json).
 
 ## WAIC
 
@@ -66,6 +68,8 @@ p_{\mathrm{WAIC}}
 $$
 
 The properties are `WAIC_pD` and `WAIC`. Large pointwise variance signals weak WAIC reliability. Serial correlation among retained MCMC draws reduces Monte Carlo precision even though (MC.5) uses all output draws as supplied.
+
+The same deterministic fixture verifies every pointwise data-log-likelihood value and the aggregate lppd, $p_{\mathrm{WAIC}}$, expected log predictive density, and WAIC against R `loo` 2.10.0 within $10^{-10}$. See the [verification report](../../verification/model-estimation.md#dic-and-waic-external-package-parity) and [committed oracle](../../../verification/data/model-estimation/model-comparison-oracle.json).
 
 ## Leave-One-Out Cross-Validation and PSIS
 
@@ -96,10 +100,17 @@ $$
 
 BestFit exposes `LOOIC`, `LOO_pD = lppd - elpd_loo`, `LOOIC_SE`, and one `ParetoK` per pointwise unit. Its standard error is $2\sqrt{n\widehat{\operatorname{Var}}_i(\widehat{\mathrm{elpd}}_{\mathrm{loo},i})}$.
 
-The current `ParetoSmoothWeights()` is not a valid implementation of the PSIS tail replacement: it fits raw cutoff ratios rather than positive excesses, discards the fitted nonzero GPD location, and assigns ascending quantiles to descending tail indices. This is [TR-024](../review-findings.md#tr-024). Until corrected and verified against a reference implementation, treat `LOOIC`, `LOO_pD`, `LOOIC_SE`, `ParetoK`, and PSIS-based influence outputs as unavailable for scientific decisions.
+BestFit's smoothing path follows R `loo` 2.10.0 for independent draws (`r_eff = 1`): it selects the reference tail length, fits positive cutoff excesses with the bounded fixed-grid `posterior::gpdfit` 1.7.0 estimator and shrinkage, replaces ordered tail ratios with monotone expected order statistics, and applies the reference truncation. The same transient pointwise matrix supplies WAIC and PSIS, so the model is evaluated once per retained draw. Pointwise ELPD and Pareto-$k$ arrays are cached for later influence reporting without retaining the $n\times S$ matrix.
 
-After correction, $k$ thresholds must be tied to the implemented PSIS version and finite $S$, not treated as universal constants. Problematic observations should receive exact or moment-matched LOO refits rather than defaulting to WAIC without investigation.
+The pinned R fixture verifies aggregate and pointwise LOO values, every smoothed weight, importance-sampling effective sample size, Pareto $k$, six bounded-through-degenerate tail regimes, and the sample-size reliability threshold. See [TR-024](../review-findings.md#tr-024), the [verification report](../../verification/model-estimation.md#psis-loo-and-pareto-diagnostics), and the [committed oracle](../../../verification/data/model-estimation/psis-loo-oracle.json).
 
+For $S$ retained draws, BestFit uses the `loo` 2.10.0 reliability limit
+
+$$
+k_{\mathrm{threshold}}=\min\left(1-\frac{1}{\log_{10}S},0.7\right). \tag{MC.9}
+$$
+
+A pointwise value at or above this limit means the approximation needs investigation; $k\ge1$ lacks the usual finite-mean guarantee. A large Pareto $k$ diagnoses the importance-sampling approximation, not whether an observation is erroneous. BestFit does not run exact or moment-matched LOO refits automatically, and it does not currently estimate chain-relative efficiency for tail-length selection. If important observations exceed the limit, use an explicit sensitivity or refitting workflow.
 ## Comparing Models Responsibly
 
 For criterion $C_m$ where lower is better, BestFit composite/model-average workflows can form relative weights of the familiar form
@@ -107,7 +118,7 @@ For criterion $C_m$ where lower is better, BestFit composite/model-average workf
 $$
 \Delta_m=C_m-\min_r C_r,
 \qquad
-w_m=\frac{\exp(-\Delta_m/2)}{\sum_r\exp(-\Delta_r/2)}. \tag{MC.9}
+w_m=\frac{\exp(-\Delta_m/2)}{\sum_r\exp(-\Delta_r/2)}. \tag{MC.10}
 $$
 
 These are normalized relative scores, not posterior model probabilities unless the assumptions of a specific derivation are satisfied. AIC, BIC, DIC, WAIC, LOOIC, RMSE, and equal weights must not be mixed in one weighting calculation. Nonfinite child criteria and separately indexed posterior draws have additional composite-model caveats documented in the composite chapter.
@@ -141,12 +152,10 @@ private static (
 }
 ```
 
-The example reflects the API but does not endorse every returned value. Under TR-024, use DIC/WAIC only with their documented limitations and do not use the LOO fields for peer-reviewed decisions. Always pair a relative criterion with posterior predictive checks, parameter/tail plausibility, convergence diagnostics, and engineering consequences of extrapolation.
-
+The example reflects the API. Interpret DIC and WAIC with their documented posterior and pointwise limitations, and inspect Pareto $k$ before using LOOIC. Always pair a relative criterion with posterior predictive checks, parameter and tail plausibility, convergence diagnostics, and the engineering consequences of extrapolation.
 ## Verification and Traceability
 
-The documentation test compiles the API example and checks its exact source region. Unit tests exercise arithmetic and state behavior. A release-grade acceptance test for PSIS must compare pointwise ELPD and $k$ against a named primary implementation over light-tailed, heavy-tailed, degenerate, and high-$k$ cases. That production correction requires separate authorization; no such validation claim is made here.
-
+The documentation test compiles the API example and checks its exact source region. Unit tests exercise arithmetic, threshold interpretation, legacy serialization compatibility, and state behavior. Focused verification establishes deterministic external-package parity for DIC, WAIC, and PSIS-LOO. The PSIS artifact independently verifies R `loo` 2.10.0 weights, effective sample size, pointwise and aggregate LOO values, standard errors, Pareto $k$, six tail regimes, and sample-size diagnostic thresholds. Call-count tests establish one pointwise evaluation per retained draw for default WAIC plus PSIS and no repeated evaluation when influence diagnostics are requested.
 Implementation symbols: `MaximumLikelihood.GetAIC`, `GetBIC`, `BayesianAnalysis.ComputeDIC`, `ComputeWAIC`, `ComputePSISLOO`, `ParetoSmoothWeights`, `DIC`, `WAIC`, `WAIC_pD`, `LOOIC`, `LOO_pD`, `LOOIC_SE`, and `ParetoK`.
 
 ## References

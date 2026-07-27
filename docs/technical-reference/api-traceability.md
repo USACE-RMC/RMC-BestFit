@@ -41,11 +41,11 @@ This matrix assigns every exported scientific type to a technical-reference chap
 
 | Public API | Technical treatment | Primary implementation | Verification evidence | Status |
 |---|---|---|---|---|
-| `OptimizationMethod`, `MaximumLikelihood`, `MaximumAPosteriori` | MLE and MAP chapters | Estimation classes | Estimator tests; compiled workflows | Complete |
-| `GeneralizedMethodOfMoments`, `GMMIdentificationStatus`, `GMMEstimationStrategy`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `JacobianFunction`, `PenaltyFunction` | GMM chapter | GMM estimator | GMM test sources; compiled workflow | Complete with TR-026, TR-033, TR-034 |
-| `BayesianAnalysis`, `SamplerType`, `PointEstimateType` | Bayesian MCMC and model comparison | Bayesian analysis and pinned Numerics samplers | Bayesian/MCMC test sources; compiled workflow | Complete with TR-024, TR-025, TR-029, TR-030 |
+| `OptimizationMethod`, `CovarianceComputationStatus`, `MaximumLikelihood`, `MaximumAPosteriori` | MLE and MAP chapters | Estimation classes and explicit covariance status | R `bbmle` profile, analytical posterior-profile, covariance-status tests, and compiled workflows | Complete with TR-023 |
+| `GeneralizedMethodOfMoments`, `GMMIdentificationStatus`, `GMMEstimationStrategy`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `JacobianFunction`, `PenaltyFunction` | GMM chapter | GMM estimator | R `gmm` fit/specification/covariance sources; compiled workflow | Fixed-weight and efficient fit/covariance verified with TR-026, TR-033, and TR-034 |
+| `BayesianAnalysis`, `SamplerType`, `PointEstimateType` | Bayesian MCMC and model comparison | Bayesian analysis and pinned Numerics samplers | R `loo` and `posterior` parity; Bayesian/MCMC test sources; compiled workflow | PSIS, ARWMH adaptation, NUTS diagnostics/gradient routes, and rank-normalized R-hat/bulk-tail ESS verified |
 | `NumericalDiff` | MLE, MAP, GMM, and leverage diagnostics | Numerical differentiation helper | Numerical-difference tests | Complete |
-| `InfluenceDiagnostics`, `ObservationInfluence`, `ParetoKCategory` | Influence diagnostics | Influence diagnostics | Influence test sources; compiled workflow | Complete with TR-024 |
+| `InfluenceDiagnostics`, `ObservationInfluence`, `ParetoKCategory` | Influence diagnostics | Influence diagnostics | R `loo` threshold parity, serialization tests, compiled workflow | Complete; TR-024 fixed |
 | `LeverageDiagnostics`, `ObservationLeverage`, `PriorComponentLeverage` | Influence diagnostics | Leverage diagnostics | Leverage unit tests; compiled workflow | Complete with TR-031 |
 | `PriorInfluenceDiagnostics`, `PriorComponentSummary` | Influence diagnostics | Prior-influence diagnostics | Prior-influence tests; compiled workflow | Complete |
 | `PosteriorPredictiveCheck`, `PriorPredictiveCheck`, `PredictiveCheckResults`, `PredictiveSummary` | Predictive checks | Predictive diagnostics | Predictive-check test sources; compiled workflow | Complete with TR-028 |

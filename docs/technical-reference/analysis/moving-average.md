@@ -63,7 +63,7 @@ to lie outside the unit circle under the sign convention in (MA.1). `IsInvertibl
 
 Inside the training window, `Predict` reconstructs innovations from observations. After the window, a deterministic forecast sets future innovations to zero; a seeded predictive realization injects new Gaussian innovations and feeds them through the finite MA recursion. Consequently, the conditional mean reaches $\mu$ after at most $q$ future steps. Inverse-transformed deterministic paths are conditional medians without bias correction.
 
-`MAAnalysis` propagates joint posterior parameter uncertainty and innovations by calling `Predict` for posterior draws. Its bands are posterior predictive. AIC/BIC exposed by the analysis are currently computed from the MAP posterior kernel and are not conventional criteria ([TR-042](../review-findings.md#tr-042)).
+`MAAnalysis` propagates joint posterior parameter uncertainty and innovations by calling `Predict` for posterior draws. Its bands are posterior predictive. Its AIC/BIC fields use the data log likelihood at the stored MAP and exclude prior-density terms. They are comparable with MLE criteria only when all active priors are constant; with the Jeffreys scale option or another nonconstant prior, use posterior criteria instead ([TR-042](../review-findings.md#tr-042)).
 
 ## Compile-Checked Workflow
 

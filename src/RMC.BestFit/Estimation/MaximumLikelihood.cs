@@ -109,6 +109,7 @@ namespace RMC.BestFit.Estimation
                 _computeHessian = value;
                 if (!value)
                     _hessian = null;
+                ResetCovarianceStatus();
             }
         }
 
@@ -123,6 +124,23 @@ namespace RMC.BestFit.Estimation
         /// optimizer threw an exception.
         /// </remarks>
         public OptimizationStatus Status { get; private set; } = OptimizationStatus.None;
+        /// <summary>
+        /// Gets the outcome of the most recent covariance computation.
+        /// </summary>
+        /// <remarks>
+        /// The value resets to <see cref="CovarianceComputationStatus.NotComputed"/> whenever
+        /// estimation results are cleared or a new estimation run begins.
+        /// </remarks>
+        public CovarianceComputationStatus CovarianceStatus { get; private set; } = CovarianceComputationStatus.NotComputed;
+
+        /// <summary>
+        /// Gets a diagnostic message for the most recent covariance computation.
+        /// </summary>
+        /// <remarks>
+        /// This is <c>null</c> for an unregularized successful computation and before any
+        /// covariance attempt. Failed and regularized computations provide concise details.
+        /// </remarks>
+        public string? CovarianceDiagnostic { get; private set; }
 
         /// <summary>
         /// Gets the number of model parameters.
@@ -226,6 +244,7 @@ namespace RMC.BestFit.Estimation
             IsEstimated = false;
             Status = OptimizationStatus.None;
             TotalFunctionEvaluations = 0;
+            ResetCovarianceStatus();
             // Reset cached Hessian from any prior successful run so a subsequent failed
             // Estimate() doesn't leave GetCovarianceMatrix returning stale covariance
             // computed from a different parameter vector.
@@ -252,6 +271,7 @@ namespace RMC.BestFit.Estimation
                         {
                             Debug.WriteLine($"Hessian computation failed: {ex.Message}");
                             _hessian = null;
+                            SetCovarianceFailure($"Hessian computation failed: {ex.Message}");
                         }
                     }
 
@@ -277,6 +297,7 @@ namespace RMC.BestFit.Estimation
             TotalFunctionEvaluations = 0;
             BestParameterSet = new ParameterSet();
             _hessian = null;
+            ResetCovarianceStatus();
         }
 
         /// <summary>
@@ -293,35 +314,69 @@ namespace RMC.BestFit.Estimation
             if (bins < 2)
                 throw new ArgumentOutOfRangeException(nameof(bins), "Number of bins must be at least 2.");
 
-            var list = new List<double[,]>();
+            var profiles = new List<double[,]>();
 
-            for (int i = 0; i < NumberOfParameters; i++)
+            for (int parameterIndex = 0; parameterIndex < NumberOfParameters; parameterIndex++)
             {
-                var seq = Stratify.XValues(new StratificationOptions(Model.Parameters[i].LowerBound, Model.Parameters[i].UpperBound, bins));
-                var parms = new double[NumberOfParameters];
-                BestParameterSet.Values.CopyTo(parms, 0);
+                var sequence = Stratify.XValues(new StratificationOptions(
+                    Model.Parameters[parameterIndex].LowerBound,
+                    Model.Parameters[parameterIndex].UpperBound,
+                    bins));
                 var profile = new double[bins, 2];
+                int centerIndex = Enumerable.Range(0, bins)
+                    .OrderBy(index => Math.Abs(sequence[index].Midpoint - BestParameterSet.Values[parameterIndex]))
+                    .First();
 
-                for (int j = 0; j < bins; j++)
+                var centerResult = MaximizeProfileDataLogLikelihood(
+                    parameterIndex,
+                    sequence[centerIndex].Midpoint,
+                    BestParameterSet.Values);
+                profile[centerIndex, 0] = sequence[centerIndex].Midpoint;
+                profile[centerIndex, 1] = centerResult.LogLikelihood;
+
+                double[] lowerStart = centerResult.Parameters;
+                for (int gridIndex = centerIndex - 1; gridIndex >= 0; gridIndex--)
                 {
-                    parms[i] = seq[j].Midpoint;
-                    profile[j, 0] = seq[j].Midpoint;
-                    profile[j, 1] = Model.DataLogLikelihood(parms);
+                    var result = MaximizeProfileDataLogLikelihood(
+                        parameterIndex,
+                        sequence[gridIndex].Midpoint,
+                        lowerStart);
+                    profile[gridIndex, 0] = sequence[gridIndex].Midpoint;
+                    profile[gridIndex, 1] = result.LogLikelihood;
+                    lowerStart = result.Parameters;
                 }
 
-                list.Add(profile);
+                double[] upperStart = centerResult.Parameters;
+                for (int gridIndex = centerIndex + 1; gridIndex < bins; gridIndex++)
+                {
+                    var result = MaximizeProfileDataLogLikelihood(
+                        parameterIndex,
+                        sequence[gridIndex].Midpoint,
+                        upperStart);
+                    profile[gridIndex, 0] = sequence[gridIndex].Midpoint;
+                    profile[gridIndex, 1] = result.LogLikelihood;
+                    upperStart = result.Parameters;
+                }
+
+                profiles.Add(profile);
             }
 
-            return list;
+            return profiles;
         }
 
         /// <summary>
-        /// Returns the parameter confidence intervals based on profile likelihood using the chi-squared threshold.
+        /// Returns parameter confidence intervals based on true profile likelihood using the chi-squared threshold.
         /// </summary>
         /// <param name="alpha">The significance level. Default = 0.1 (90% confidence). Must be between 0 and 1.</param>
         /// <returns>A matrix where each row contains [lower bound, upper bound] for each parameter.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated.</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the model has not been estimated or nuisance-parameter optimization fails.
+        /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when alpha is not between 0 and 1.</exception>
+        /// <remarks>
+        /// At every candidate value of the parameter of interest, all non-fixed nuisance
+        /// parameters are reoptimized against the data log-likelihood.
+        /// </remarks>
         public double[,] ParameterConfidenceIntervals(double alpha = 0.1)
         {
             if (!IsEstimated)
@@ -330,48 +385,201 @@ namespace RMC.BestFit.Estimation
                 throw new ArgumentOutOfRangeException(nameof(alpha), "Alpha must be between 0 and 1.");
 
             var chiSquared = new ChiSquared(1);
-            double threshold = -BestParameterSet.Fitness - 0.5 * chiSquared.InverseCDF(1 - alpha);
-            var CIs = new double[NumberOfParameters, 2];
+            double threshold = MaximumLogLikelihood - 0.5 * chiSquared.InverseCDF(1 - alpha);
+            var confidenceIntervals = new double[NumberOfParameters, 2];
 
-            for (int i = 0; i < NumberOfParameters; i++)
+            for (int parameterIndex = 0; parameterIndex < NumberOfParameters; parameterIndex++)
             {
-                var parms = new double[NumberOfParameters];
-                BestParameterSet.Values.CopyTo(parms, 0);
+                double lowerBound = Model.Parameters[parameterIndex].LowerBound;
+                double upperBound = Model.Parameters[parameterIndex].UpperBound;
 
-                // Lower limit: Check if lower bound exceeds threshold
-                parms[i] = Model.Parameters[i].LowerBound;
-                var LLH = Model.DataLogLikelihood(parms);
-                if (LLH < threshold)
+                var lowerResult = MaximizeProfileDataLogLikelihood(
+                    parameterIndex,
+                    lowerBound,
+                    BestParameterSet.Values);
+                if (lowerResult.LogLikelihood < threshold)
                 {
-                    CIs[i, 0] = Brent.Solve((x) =>
-                    {
-                        parms[i] = x;
-                        return Model.DataLogLikelihood(parms) - threshold;
-                    }, Model.Parameters[i].LowerBound, BestParameterSet.Values[i]);
+                    double[] lowerStart = lowerResult.Parameters;
+                    confidenceIntervals[parameterIndex, 0] = Brent.Solve(
+                        value =>
+                        {
+                            var result = MaximizeProfileDataLogLikelihood(parameterIndex, value, lowerStart);
+                            lowerStart = result.Parameters;
+                            return result.LogLikelihood - threshold;
+                        },
+                        lowerBound,
+                        BestParameterSet.Values[parameterIndex]);
                 }
                 else
                 {
-                    CIs[i, 0] = Model.Parameters[i].LowerBound;
+                    confidenceIntervals[parameterIndex, 0] = lowerBound;
                 }
 
-                // Upper limit: Check if upper bound exceeds threshold
-                parms[i] = Model.Parameters[i].UpperBound;
-                var ULH = Model.DataLogLikelihood(parms);
-                if (ULH < threshold)
+                var upperResult = MaximizeProfileDataLogLikelihood(
+                    parameterIndex,
+                    upperBound,
+                    BestParameterSet.Values);
+                if (upperResult.LogLikelihood < threshold)
                 {
-                    CIs[i, 1] = Brent.Solve((x) =>
-                    {
-                        parms[i] = x;
-                        return Model.DataLogLikelihood(parms) - threshold;
-                    }, BestParameterSet.Values[i], Model.Parameters[i].UpperBound);
+                    double[] upperStart = upperResult.Parameters;
+                    confidenceIntervals[parameterIndex, 1] = Brent.Solve(
+                        value =>
+                        {
+                            var result = MaximizeProfileDataLogLikelihood(parameterIndex, value, upperStart);
+                            upperStart = result.Parameters;
+                            return result.LogLikelihood - threshold;
+                        },
+                        BestParameterSet.Values[parameterIndex],
+                        upperBound);
                 }
                 else
                 {
-                    CIs[i, 1] = Model.Parameters[i].UpperBound;
+                    confidenceIntervals[parameterIndex, 1] = upperBound;
                 }
             }
 
-            return CIs;
+            return confidenceIntervals;
+        }
+
+        /// <summary>
+        /// Maximizes the data log-likelihood over all free nuisance parameters while fixing one parameter.
+        /// </summary>
+        /// <param name="parameterIndex">Index of the parameter held fixed.</param>
+        /// <param name="fixedValue">Value assigned to the parameter of interest.</param>
+        /// <param name="startingParameters">Full parameter vector used to initialize nuisance optimization.</param>
+        /// <returns>The profiled data log-likelihood and the optimized full parameter vector.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when both bounded BFGS and bounded Nelder-Mead fail to produce a finite nuisance optimum.
+        /// </exception>
+        /// <remarks>
+        /// BFGS supplies the efficient primary solve. Nelder-Mead is a deterministic fallback for
+        /// nonsmooth or numerically difficult likelihoods. Fixed model parameters remain fixed.
+        /// </remarks>
+        private (double LogLikelihood, double[] Parameters) MaximizeProfileDataLogLikelihood(
+            int parameterIndex,
+            double fixedValue,
+            IReadOnlyList<double> startingParameters)
+        {
+            var fullStart = startingParameters.ToArray();
+            fullStart[parameterIndex] = fixedValue;
+            int[] nuisanceIndices = Enumerable.Range(0, NumberOfParameters)
+                .Where(index => index != parameterIndex && !Model.Parameters[index].IsFixed)
+                .ToArray();
+
+            if (nuisanceIndices.Length == 0)
+                return (Model.DataLogLikelihood(fullStart), fullStart);
+
+            double[] reducedStart = nuisanceIndices.Select(index => fullStart[index]).ToArray();
+            double[] reducedLower = nuisanceIndices.Select(index => Model.Parameters[index].LowerBound).ToArray();
+            double[] reducedUpper = nuisanceIndices.Select(index => Model.Parameters[index].UpperBound).ToArray();
+
+            double Objective(double[] nuisanceValues)
+            {
+                var fullParameters = fullStart.ToArray();
+                for (int index = 0; index < nuisanceIndices.Length; index++)
+                    fullParameters[nuisanceIndices[index]] = nuisanceValues[index];
+                return Model.DataLogLikelihood(fullParameters);
+            }
+
+            try
+            {
+                var bfgs = new BFGS(
+                    Objective,
+                    nuisanceIndices.Length,
+                    reducedStart,
+                    reducedLower,
+                    reducedUpper)
+                {
+                    ReportFailure = false,
+                    RecordTraces = false,
+                    ComputeHessian = false
+                };
+                bfgs.Maximize();
+                if (TryCreateProfileResult(
+                    bfgs,
+                    nuisanceIndices,
+                    fullStart,
+                    Objective,
+                    out var bfgsResult))
+                {
+                    return bfgsResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Profile-likelihood BFGS nuisance optimization failed: {ex.Message}");
+            }
+
+            try
+            {
+                var nelderMead = new NelderMead(
+                    Objective,
+                    nuisanceIndices.Length,
+                    reducedStart,
+                    reducedLower,
+                    reducedUpper)
+                {
+                    ReportFailure = false,
+                    RecordTraces = false,
+                    ComputeHessian = false,
+                    EnableStartPointProbe = true
+                };
+                nelderMead.Maximize();
+                if (TryCreateProfileResult(
+                    nelderMead,
+                    nuisanceIndices,
+                    fullStart,
+                    Objective,
+                    out var nelderMeadResult))
+                {
+                    return nelderMeadResult;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Profile-likelihood Nelder-Mead nuisance optimization failed: {ex.Message}");
+            }
+
+            throw new InvalidOperationException(
+                $"Unable to profile parameter {parameterIndex}: nuisance-parameter optimization failed.");
+        }
+
+        /// <summary>
+        /// Converts a finite optimizer result into a full profiled parameter vector.
+        /// </summary>
+        /// <param name="optimizer">Completed nuisance optimizer.</param>
+        /// <param name="nuisanceIndices">Indices represented by the reduced optimizer vector.</param>
+        /// <param name="fullStart">Full parameter vector containing fixed values.</param>
+        /// <param name="objective">Reduced data log-likelihood objective.</param>
+        /// <param name="result">The completed profile result when successful.</param>
+        /// <returns><see langword="true"/> when the optimizer supplied finite values and likelihood.</returns>
+        private static bool TryCreateProfileResult(
+            Optimizer optimizer,
+            IReadOnlyList<int> nuisanceIndices,
+            IReadOnlyList<double> fullStart,
+            Func<double[], double> objective,
+            out (double LogLikelihood, double[] Parameters) result)
+        {
+            result = default;
+            double[] nuisanceValues = optimizer.BestParameterSet.Values;
+            if (optimizer.Status != OptimizationStatus.Success ||
+                nuisanceValues == null ||
+                nuisanceValues.Length != nuisanceIndices.Count ||
+                nuisanceValues.Any(value => !double.IsFinite(value)))
+            {
+                return false;
+            }
+
+            double logLikelihood = objective(nuisanceValues);
+            if (!double.IsFinite(logLikelihood))
+                return false;
+
+            var fullParameters = fullStart.ToArray();
+            for (int index = 0; index < nuisanceIndices.Count; index++)
+                fullParameters[nuisanceIndices[index]] = nuisanceValues[index];
+
+            result = (logLikelihood, fullParameters);
+            return true;
         }
 
         /// <summary>
@@ -381,37 +589,185 @@ namespace RMC.BestFit.Estimation
         /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters, the model has not been estimated, or the Hessian is null.</exception>
         public Matrix GetCovarianceMatrix()
         {
+            if (!TryGetCovarianceMatrix(out Matrix covariance))
+            {
+                throw new InvalidOperationException(
+                    CovarianceDiagnostic ?? "The covariance matrix is unavailable.");
+            }
+
+            return covariance;
+        }
+
+        /// <summary>
+        /// Attempts to compute a finite parameter covariance matrix.
+        /// </summary>
+        /// <param name="covariance">
+        /// The covariance matrix when successful; otherwise, a zero matrix that must not
+        /// be interpreted as estimated uncertainty.
+        /// </param>
+        /// <returns><see langword="true"/> when a usable covariance matrix is available.</returns>
+        /// <remarks>
+        /// Inspect <see cref="CovarianceStatus"/> and <see cref="CovarianceDiagnostic"/> after
+        /// this method returns. Positive-definite regularization is reported explicitly.
+        /// </remarks>
+        public bool TryGetCovarianceMatrix(out Matrix covariance)
+        {
+            covariance = new Matrix(NumberOfParameters, NumberOfParameters);
             if (NumberOfParameters < 2)
-                throw new InvalidOperationException("Cannot compute the covariance matrix with fewer than two parameters.");
+                return SetCovarianceFailure("Cannot compute the covariance matrix with fewer than two parameters.");
             if (!IsEstimated)
-                throw new InvalidOperationException("The model has not been estimated.");
+                return SetCovarianceFailure("The model has not been estimated.");
             if (_hessian == null)
-                throw new InvalidOperationException("The Hessian is null. Estimation may have failed.");
+                return SetCovarianceFailure("The Hessian is unavailable. Estimation or Hessian computation may have failed.");
 
             try
             {
-                // Fisher Information Matrix is the negative Hessian
                 Matrix fisher = _hessian * -1d;
-                // Invert to get covariance matrix
-                var covariance = fisher.Inverse();
-                // Regularize to ensure positive definiteness, logging if the regularization
-                // produced a non-trivial change so users with crash-dump or trace logs can tell
-                // a "real" covariance from a regularized one.
-                var regularized = MatrixRegularization.MakeSymmetricPositiveDefinite(covariance);
-                double maxAbsDelta = 0.0;
-                int n = covariance.NumberOfRows;
-                for (int i = 0; i < n; i++)
-                    for (int j = 0; j < n; j++)
-                        maxAbsDelta = Math.Max(maxAbsDelta, Math.Abs(regularized[i, j] - covariance[i, j]));
-                if (maxAbsDelta > 0.0)
-                    Debug.WriteLine($"MaximumLikelihood.GetCovarianceMatrix: matrix regularized to ensure positive-definiteness (max |?| = {maxAbsDelta:G6}).");
-                return regularized;
+                Matrix candidate = fisher.Inverse();
+                return TryRegularizeAndValidateCovariance(
+                    candidate,
+                    "Maximum-likelihood covariance",
+                    out covariance);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to compute covariance matrix: {ex.Message}");
-                return new Matrix(NumberOfParameters, NumberOfParameters);
+                return SetCovarianceFailure($"Maximum-likelihood covariance computation failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Regularizes and validates a covariance candidate while recording its status.
+        /// </summary>
+        /// <param name="candidate">Unregularized covariance candidate.</param>
+        /// <param name="context">Description used in diagnostic messages.</param>
+        /// <param name="covariance">Validated covariance matrix when successful.</param>
+        /// <returns><see langword="true"/> when the resulting covariance is finite and non-degenerate.</returns>
+        private bool TryRegularizeAndValidateCovariance(
+            Matrix candidate,
+            string context,
+            out Matrix covariance)
+        {
+            covariance = new Matrix(NumberOfParameters, NumberOfParameters);
+            if (MatrixIsUsableCovariance(candidate) && MatrixIsSymmetricPositiveDefinite(candidate))
+            {
+                covariance = candidate;
+                CovarianceStatus = CovarianceComputationStatus.Available;
+                CovarianceDiagnostic = null;
+                return true;
+            }
+
+            Matrix regularized = MatrixRegularization.MakeSymmetricPositiveDefinite(candidate);
+            if (!MatrixIsUsableCovariance(regularized))
+                return SetCovarianceFailure($"{context} is non-finite or has a non-positive diagonal variance.");
+
+            double maxAbsDelta = MaximumAbsoluteDifference(candidate, regularized);
+            covariance = regularized;
+            CovarianceStatus = CovarianceComputationStatus.Regularized;
+            CovarianceDiagnostic =
+                $"{context} was regularized to positive definiteness (maximum absolute adjustment {maxAbsDelta:G6}).";
+            Debug.WriteLine(CovarianceDiagnostic);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Records an unavailable covariance result.
+        /// </summary>
+        /// <param name="diagnostic">Diagnostic explaining the failure.</param>
+        /// <returns><see langword="false"/> for direct use by Try methods.</returns>
+        private bool SetCovarianceFailure(string diagnostic)
+        {
+            CovarianceStatus = CovarianceComputationStatus.Failed;
+            CovarianceDiagnostic = diagnostic;
+            return false;
+        }
+
+        /// <summary>
+        /// Resets covariance status for a new or cleared estimator state.
+        /// </summary>
+        private void ResetCovarianceStatus()
+        {
+            CovarianceStatus = CovarianceComputationStatus.NotComputed;
+            CovarianceDiagnostic = null;
+        }
+
+        /// <summary>
+        /// Determines whether a covariance matrix is finite with positive diagonal variances.
+        /// </summary>
+        /// <param name="matrix">Matrix to validate.</param>
+        /// <returns><see langword="true"/> when the covariance matrix is usable.</returns>
+        private static bool MatrixIsUsableCovariance(Matrix matrix)
+        {
+            if (matrix.NumberOfRows == 0 || matrix.NumberOfRows != matrix.NumberOfColumns)
+                return false;
+
+            for (int row = 0; row < matrix.NumberOfRows; row++)
+            {
+                for (int column = 0; column < matrix.NumberOfColumns; column++)
+                {
+                    if (!double.IsFinite(matrix[row, column]))
+                        return false;
+                }
+
+                if (matrix[row, row] <= 0.0)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether a covariance candidate is symmetric positive definite without modifying it.
+        /// </summary>
+        /// <param name="matrix">Matrix to inspect.</param>
+        /// <returns><see langword="true"/> when the matrix is symmetric positive definite.</returns>
+        private static bool MatrixIsSymmetricPositiveDefinite(Matrix matrix)
+        {
+            double scale = 0.0;
+            for (int row = 0; row < matrix.NumberOfRows; row++)
+            {
+                for (int column = 0; column < matrix.NumberOfColumns; column++)
+                    scale = Math.Max(scale, Math.Abs(matrix[row, column]));
+            }
+
+            double symmetryTolerance = 1e-10 * Math.Max(scale, 1e-12);
+            for (int row = 0; row < matrix.NumberOfRows; row++)
+            {
+                for (int column = row + 1; column < matrix.NumberOfColumns; column++)
+                {
+                    if (Math.Abs(matrix[row, column] - matrix[column, row]) > symmetryTolerance)
+                        return false;
+                }
+            }
+
+            try
+            {
+                _ = new CholeskyDecomposition(matrix);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Computes the maximum absolute elementwise difference between two matrices.
+        /// </summary>
+        /// <param name="left">First matrix.</param>
+        /// <param name="right">Second matrix.</param>
+        /// <returns>The maximum absolute elementwise difference.</returns>
+        private static double MaximumAbsoluteDifference(Matrix left, Matrix right)
+        {
+            double maximum = 0.0;
+            for (int row = 0; row < left.NumberOfRows; row++)
+            {
+                for (int column = 0; column < left.NumberOfColumns; column++)
+                    maximum = Math.Max(maximum, Math.Abs(left[row, column] - right[row, column]));
+            }
+
+            return maximum;
         }
 
         /// <summary>
@@ -460,7 +816,7 @@ namespace RMC.BestFit.Estimation
         /// <returns>The robust covariance matrix using the sandwich estimator.</returns>
         /// <remarks>
         /// <para>
-        /// The sandwich estimator is: Var(?^) = H?¹ J H?¹
+        /// The sandwich estimator is: Var(?^) = H?ï¿½ J H?ï¿½
         /// </para>
         /// <para>
         /// Where H is the negative Hessian (Fisher Information Matrix) and J is the "meat" matrix:
@@ -479,33 +835,52 @@ namespace RMC.BestFit.Estimation
         /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters, the model has not been estimated, or the Hessian is null.</exception>
         public Matrix GetSandwichCovarianceMatrix()
         {
+            if (!TryGetSandwichCovarianceMatrix(out Matrix covariance))
+            {
+                throw new InvalidOperationException(
+                    CovarianceDiagnostic ?? "The sandwich covariance matrix is unavailable.");
+            }
+
+            return covariance;
+        }
+
+        /// <summary>
+        /// Attempts to compute the robust sandwich covariance matrix.
+        /// </summary>
+        /// <param name="covariance">
+        /// The robust covariance matrix when successful; otherwise, a zero matrix that must
+        /// not be interpreted as estimated uncertainty.
+        /// </param>
+        /// <returns><see langword="true"/> when a usable robust covariance matrix is available.</returns>
+        /// <remarks>
+        /// The result updates <see cref="CovarianceStatus"/> and <see cref="CovarianceDiagnostic"/>.
+        /// </remarks>
+        public bool TryGetSandwichCovarianceMatrix(out Matrix covariance)
+        {
+            covariance = new Matrix(NumberOfParameters, NumberOfParameters);
             if (NumberOfParameters < 2)
-                throw new InvalidOperationException("Cannot compute the covariance matrix with fewer than two parameters.");
+                return SetCovarianceFailure("Cannot compute the sandwich covariance matrix with fewer than two parameters.");
             if (!IsEstimated)
-                throw new InvalidOperationException("The model has not been estimated.");
+                return SetCovarianceFailure("The model has not been estimated.");
             if (_hessian == null)
-                throw new InvalidOperationException("The Hessian is null. Estimation may have failed.");
+                return SetCovarianceFailure("The Hessian is unavailable. Estimation or Hessian computation may have failed.");
 
             try
             {
-                // "Bread": H?¹ = inverse of negative Hessian (Fisher Information Matrix)
                 Matrix fisher = _hessian * -1d;
-                Matrix fisherInv = fisher.Inverse();
-
-                // "Meat": J = S? g? g?? (outer product of gradients)
+                Matrix fisherInverse = fisher.Inverse();
                 Matrix meat = ComputeMeatMatrix(BestParameterSet.Values);
-
-                // Sandwich: H?¹ J H?¹
-                Matrix sandwich = fisherInv * meat * fisherInv;
-
-                // Regularize to ensure positive definiteness
-                sandwich = MatrixRegularization.MakeSymmetricPositiveDefinite(sandwich);
-                return sandwich;
+                Matrix candidate = fisherInverse * meat * fisherInverse;
+                return TryRegularizeAndValidateCovariance(
+                    candidate,
+                    "Maximum-likelihood sandwich covariance",
+                    out covariance);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to compute sandwich covariance matrix: {ex.Message}");
-                return new Matrix(NumberOfParameters, NumberOfParameters);
+                return SetCovarianceFailure(
+                    $"Maximum-likelihood sandwich covariance computation failed: {ex.Message}");
             }
         }
 
@@ -571,8 +946,8 @@ namespace RMC.BestFit.Estimation
         /// <returns>A jagged array where gradients[i][j] is ?log f(y?|?)/???.</returns>
         /// <remarks>
         /// <para>
-        /// Uses the central difference formula: ?f/??? ˜ [f(?+h?e?) - f(?-h?e?)] / (2h?),
-        /// where h? = max(|??| × 1e-4, 1e-3). The 1e-3 minimum step size is critical for
+        /// Uses the central difference formula: ?f/??? ï¿½ [f(?+h?e?) - f(?-h?e?)] / (2h?),
+        /// where h? = max(|??| ï¿½ 1e-4, 1e-3). The 1e-3 minimum step size is critical for
         /// distributions that use Normal approximations near zero (e.g., LP3 switches to Normal
         /// when |?| &lt; 1e-4).
         /// </para>
@@ -592,11 +967,11 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Computes influence[i,j] = (H?¹ g?)? / SE?, where:
+        /// Computes influence[i,j] = (H?ï¿½ g?)? / SE?, where:
         /// </para>
         /// <list type="bullet">
         /// <item><description>g? is the score vector (gradient of log f(y?|?)) for observation i</description></item>
-        /// <item><description>H?¹ is the inverse Fisher information matrix (-Hessian)?¹, using data-only Hessian</description></item>
+        /// <item><description>H?ï¿½ is the inverse Fisher information matrix (-Hessian)?ï¿½, using data-only Hessian</description></item>
         /// <item><description>SE? is the standard error of parameter j</description></item>
         /// </list>
         /// <para>
@@ -616,29 +991,17 @@ namespace RMC.BestFit.Estimation
 
             double[][] gradients = ComputePointwiseGradients(BestParameterSet.Values, n);
 
-            // Get inverse Fisher information from adaptive Hessian
-            if (_hessian == null)
-                return new double[n, NumberOfParameters];
-            Matrix fisher = _hessian * -1d;
-            Matrix fisherInv;
-            try
-            {
-                fisherInv = fisher.Inverse();
-            }
-            catch (Exception ex)
-            {
-                // Fisher matrix inversion failed - likely singular or ill-conditioned matrix
-                Debug.WriteLine($"Fisher matrix inversion failed in GetObservationInfluence: {ex.Message}");
-                return new double[n, NumberOfParameters];
-            }
-
-            // Compute influence: I_ij = (H?¹ g?)_j / SE_j
+            // Use the validated covariance path so numerical failure is explicit.
+            Matrix fisherInv = GetCovarianceMatrix();
+            // Compute influence: I_ij = (H?ï¿½ g?)_j / SE_j
             var influence = new double[n, NumberOfParameters];
-            var se = GetStandardErrors();
+            var se = Enumerable.Range(0, NumberOfParameters)
+                .Select(index => Math.Sqrt(fisherInv[index, index]))
+                .ToArray();
 
             for (int i = 0; i < n; i++)
             {
-                // Compute H?¹ g?
+                // Compute H?ï¿½ g?
                 for (int j = 0; j < NumberOfParameters; j++)
                 {
                     double inflJ = 0;
@@ -663,11 +1026,11 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Computes D_i = g?? H?¹ g? / p, where:
+        /// Computes D_i = g?? H?ï¿½ g? / p, where:
         /// </para>
         /// <list type="bullet">
         /// <item><description>g? is the score vector (gradient of log f(y?|?)) for observation i</description></item>
-        /// <item><description>H?¹ is the inverse Fisher information matrix (-Hessian)?¹, using data-only Hessian</description></item>
+        /// <item><description>H?ï¿½ is the inverse Fisher information matrix (-Hessian)?ï¿½, using data-only Hessian</description></item>
         /// <item><description>p is the number of parameters</description></item>
         /// </list>
         /// <para>
@@ -691,27 +1054,14 @@ namespace RMC.BestFit.Estimation
 
             double[][] gradients = ComputePointwiseGradients(BestParameterSet.Values, n);
 
-            // Get inverse Fisher information from adaptive Hessian
-            if (_hessian == null)
-                return new double[n];
-            Matrix fisher = _hessian * -1d;
-            Matrix fisherInv;
-            try
-            {
-                fisherInv = fisher.Inverse();
-            }
-            catch (Exception ex)
-            {
-                // Fisher matrix inversion failed - likely singular or ill-conditioned matrix
-                Debug.WriteLine($"Fisher matrix inversion failed in GetCooksDistance: {ex.Message}");
-                return new double[n];
-            }
+            // Use the validated covariance path so numerical failure is explicit.
+            Matrix fisherInv = GetCovarianceMatrix();
 
             var cooksD = new double[n];
 
             for (int i = 0; i < n; i++)
             {
-                // Compute g?? H?¹ g?
+                // Compute g?? H?ï¿½ g?
                 double quadForm = 0;
                 for (int j = 0; j < NumberOfParameters; j++)
                 {

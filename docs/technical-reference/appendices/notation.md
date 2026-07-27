@@ -64,7 +64,7 @@ All logarithms are natural logarithms unless `log10`, $\log_{10}$, or a distribu
 | $p_{\mathrm{WAIC}}$ | sum of posterior variances of pointwise log likelihoods |
 | $\mathrm{WAIC}$ | $-2(\mathrm{lppd}-p_{\mathrm{WAIC}})$ |
 | $\mathrm{elpd}_{\mathrm{loo}}$ | expected log predictive density under leave-one-out prediction |
-| $k$ | generalized-Pareto tail shape used by valid PSIS; current BestFit values are affected by TR-024 |
+| $k$ | generalized-Pareto tail shape used by PSIS; compare it with the draw-count reliability limit |
 | $T(y)$ | discrepancy statistic in a predictive check |
 | $p_B$ | one-sided predictive tail proportion $\Pr\{T(\widetilde y)\ge T(y)\}$ |
 

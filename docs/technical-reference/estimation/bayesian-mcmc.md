@@ -96,7 +96,7 @@ s=2.38^2/d,
 \quad \beta=0.05. \tag{MCMC.7}
 $$
 
-The symmetric Metropolis ratio is (MCMC.6). Pinned Numerics currently updates the running covariance with every accepted state, but adds repeated rejected states only *after* the nominal warmup boundary. Thus warmup covariance is based on accepted states rather than the realized chain and adaptation continues afterward. This is [TR-025](../review-findings.md#tr-025); ARWMH results require additional scrutiny until the schedule is corrected and verified.
+The symmetric Metropolis ratio is (MCMC.6). The Adaptive Metropolis construction estimates covariance from the complete realized-chain history, so a rejection or infeasible proposal contributes the repeated retained state. Numerics performs exactly one covariance update after every transition and retains the original continual-adaptation schedule. Proposal covariance begins using the accumulated history after the existing `100 * d` transition threshold. This corrected contract is verified under [TR-025](../review-findings.md#tr-025).
 
 ## No-U-Turn Sampler
 
@@ -110,9 +110,9 @@ $$
 
 Leapfrog integration builds a binary tree in randomly selected forward/backward directions. Tree doubling stops at a U-turn, invalid/divergent subtree, or `MaxTreeDepth`; the maximum trajectory contains $2^{\texttt{MaxTreeDepth}}$ leapfrog steps. A candidate is selected by multinomial Hamiltonian weights. During `WarmupIterations * ThinningInterval` raw transitions, dual averaging targets an average Metropolis statistic of 0.80. Numerics can adapt a diagonal mass matrix in windows, but its `AdaptMassMatrix` default is false and `BayesianAnalysis.SetUpSampler()` does not enable or expose that property; the BestFit path therefore retains an identity diagonal mass matrix.
 
-BestFit supplies no analytic gradient, so Numerics uses finite differences. Sampling occurs in the bounded API parameterization rather than an unconstrained transformed space. Nondifferentiable likelihood branches, hard support boundaries, interval-probability underflow, and strongly different parameter scales can impair Hamiltonian trajectories. NUTS should be used only after comparing trace behavior and ESS with DEMCzs on the same posterior.
+BestFit supplies no analytic gradient, so Numerics applies bound-aware finite differences to the complete `Model.LogLikelihood` posterior target. A coupled-prior verification confirms both data and prior derivatives enter this path. When a Numerics caller supplies an analytic `GradientFunction`, both ordinary leapfrog integration and the reasonable-step-size initialization heuristic use it; the latter route has a permanent regression because an earlier implementation bypassed the configured function. Sampling still occurs in the bounded API parameterization rather than an unconstrained transformed space. Nondifferentiable likelihood branches, hard support boundaries, interval-probability underflow, and strongly different parameter scales can impair Hamiltonian trajectories.
 
-Numerics increments its generic acceptance counter on every NUTS iteration, so `MCMCResults.AcceptanceRates` is one rather than the dual-averaging acceptance statistic. BestFit's report currently interprets that generic rate using a 0.65–0.90 NUTS target and can issue a spurious high-acceptance warning. This discrepancy is recorded in the review findings and must not be used as a NUTS tuning diagnostic.
+For NUTS, `MCMCResults.AcceptanceRates` is the mean post-warmup Hamiltonian acceptance statistic, not the generic retained-transition count. Additive result fields expose diagnostic transition counts, divergences, maximum-tree-depth hits, mean tree depth, mean leapfrog steps, final step size, and energy Bayesian fraction of missing information (E-BFMI) per chain. These quantities are accumulated online with constant memory and no additional target or gradient evaluations. BestFit renders them in a compact sampler-specific section and does not apply generic Metropolis advice. Results serialized before the additive fields were introduced remain readable and report that NUTS diagnostics are unavailable. This correction is verified under [TR-030](../review-findings.md#tr-030).
 
 ## Posterior Summaries
 
@@ -131,26 +131,26 @@ Posterior quantile/return-level uncertainty must be obtained by transforming eve
 
 ## R-hat and Effective Sample Size
 
-Pinned Numerics computes the classical, unsplit Gelman–Rubin statistic. After discarding the first $w_0$ recorded main-chain states, with $m$ chains of length $n$, within-chain variance $W$, and between-chain variance $B$,
+Numerics discards the first $w_0$ recorded main-chain states, splits every retained chain into equal half-chains, and applies pooled midranks and Blom's inverse-normal transform. With within-half-chain variance $W$ and between-half-chain variance $B$, the rank-normalized statistic is
 
 $$
-\widehat V=\frac{n-1}{n}W+\frac1nB,
-\qquad
-\widehat R=\sqrt{\widehat V/W}. \tag{MCMC.10}
+\widehat R_{\mathrm{rank}}
+=\sqrt{\frac{(n-1)W/n+B/n}{W}}. \tag{MCMC.10}
 $$
 
-It does not split chains, rank-normalize draws, fold tails, or report separate bulk/tail R-hat. The report threshold is $\widehat R<1.10$. A passing value is evidence against one class of nonconvergence, not proof of convergence.
+The same calculation is repeated after folding draws about their pooled median and rank normalizing again. The stored `Rhat` is $\max(\widehat R_{\mathrm{rank}},\widehat R_{\mathrm{folded\ rank}})$. The concise report threshold is $\widehat R<1.01$. Single-chain, insufficient, constant, and nonfinite diagnostic input yields `NaN`.
 
-ESS is calculated from the separate output draws. Numerics computes each chain's autocorrelation and sums positive lags until the first negative value, averages that sum across chains, and returns
+Rank normalization improves behavior for heavy-tailed marginals, splitting detects within-chain drift, and folding detects scale disagreement. A value near one remains necessary but not sufficient: chains can agree on these marginal diagnostics while sharing the same incomplete region or missing multimodal structure.
+
+ESS is calculated from the separate output draws. Numerics rank-normalizes and splits the chains, estimates autocovariances with zero-padded FFTs, and applies Geyer's multi-chain initial-positive and initial-monotone paired sequence. If $S$ is the total number of split draws and $\widehat\tau$ is the estimated integrated autocorrelation time,
 
 $$
-\widehat N_{\mathrm{eff}}
-=\min\left\{
-\frac{mn}{1+2\bar\rho_+},,mn
-\right\}. \tag{MCMC.11}
+\widehat N_{\mathrm{eff}}=\frac{S}{\widehat\tau}. \tag{MCMC.11}
 $$
 
-This is not modern rank-normalized bulk or tail ESS. BestFit reports warnings below 400 and relative-efficiency guidance, but reviewers should inspect tail-specific Monte Carlo precision for extreme quantiles separately. The source comments that cite split R-hat and bulk/tail ESS do not match the implemented diagnostics.
+Bulk ESS uses rank-normalized draws. Lower- and upper-tail ESS use pooled 0.05 and 0.95 quantile indicators. The existing scalar `ESS` stores the minimum of these three estimates without adding result or serialization fields. Unequal chains are trimmed to a common retained length for ESS; invalid or constant diagnostic input yields `NaN`. The 51-lag original-scale averaged ACF remains unchanged for plots.
+
+ESS expresses correlated-chain precision as an approximate number of independent draws. The stored value is conservative across central and 5%/95% tail behavior, but it is not a guarantee for more extreme flood quantiles or exceedance probabilities. Negative autocorrelation can legitimately produce ESS above the retained draw count.
 
 ## Compile-Checked API Workflow
 
@@ -184,7 +184,7 @@ private static BayesianAnalysis ConfigureBayesianMcmc(IModel model)
 }
 ```
 
-Before `RunAsync`, call `Validate()` and treat warnings separately from errors. The validation result intentionally includes a “not estimated” warning before a first run but can still be valid. `RunAsync` rethrows cancellation, stores other failures in `LastError`, clears partial results, and otherwise computes DIC, WAIC, and the current PSIS-LOO implementation. Report the seed, sampler, every simulation setting, dependency version/commit, R-hat/ESS limitations, trace plots, and posterior predictive checks.
+Before `RunAsync`, call `Validate()` and treat warnings separately from errors. The validation result intentionally includes a “not estimated” warning before a first run but can still be valid. `RunAsync` rethrows cancellation, stores other failures in `LastError`, clears partial results, and otherwise computes DIC, WAIC, and verified PSIS-LOO. Report the seed, sampler, every simulation setting, dependency version/commit, R-hat/ESS, trace plots, and posterior predictive checks.
 
 ## Assumptions, Failure Modes, and Verification
 
@@ -193,7 +193,7 @@ Before `RunAsync`, call `Validate()` and treat warnings separately from errors. 
 - Label switching and redundant weights invalidate ordinary component-wise summaries in mixtures.
 - Thinning reduces stored autocorrelation but usually discards information; it does not repair a poorly mixing chain.
 - Parallel chains are deterministic for a fixed seed and configuration only to the extent guaranteed by the pinned implementation and runtime.
-- Classical R-hat and ESS are weaker than current rank-normalized diagnostics.
+- Rank-normalized R-hat and bulk/tail ESS are screening diagnostics, not proof of convergence or model adequacy.
 - Compile checking verifies configuration syntax. Computational recovery, coverage, and cross-package parity remain Verification work and were not run during this pass.
 
 Implementation source: `RMC.BestFit.Estimation.BayesianAnalysis`; pinned Numerics commit `828664650c9327b309ee8332e707ccca73588e93`, files `MCMCSampler.cs`, `DEMCz.cs`, `DEMCzs.cs`, `ARWMH.cs`, `NUTS.cs`, `MCMCResults.cs`, and `MCMCDiagnostics.cs`.
@@ -213,6 +213,10 @@ Implementation source: `RMC.BestFit.Estimation.BayesianAnalysis`; pinned Numeric
 <a id="ref-6"></a>[6] M. D. Hoffman and A. Gelman, “The No-U-Turn Sampler: adaptively setting path lengths in Hamiltonian Monte Carlo,” *Journal of Machine Learning Research*, vol. 15, pp. 1593–1623, 2014.
 
 <a id="ref-7"></a>[7] A. Vehtari et al., “Rank-normalization, folding, and localization: an improved $\widehat R$ for assessing convergence of MCMC,” *Bayesian Analysis*, vol. 16, no. 2, pp. 667–718, 2021.
+
+<a id="ref-8"></a>[8] PyMC Developers, “`pymc.NUTS`,” PyMC API documentation, sampler-statistics interface. <https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.NUTS.html>
+
+<a id="ref-9"></a>[9] BlackJAX Developers, “No-U-Turn Sampling,” BlackJAX API documentation, `NUTSInfo` interface. <https://blackjax-devs.github.io/blackjax/autoapi/blackjax/mcmc/nuts/index.html>
 
 ---
 

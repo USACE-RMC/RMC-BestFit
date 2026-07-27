@@ -13,12 +13,12 @@ For MLE and MAP, `Estimate()` is successful only when the Numerics optimizer ret
 - optimizer method, start, bounds, status, and function-evaluation count;
 - fitted objective and parameter vector;
 - whether numerical Hessian construction succeeded;
-- covariance regularization or zero-matrix fallback;
+- covariance status and any regularization or failure diagnostic;
 - results from materially different starts or global-search seeds.
 
 A value at a bound, an ill-conditioned Hessian, or large disagreement across starts is a substantive finding. `ReportFailure = false` prevents the underlying optimizer from throwing for some terminations; it does not convert them into successful fits.
 
-GMM uses a broader best-effort contract. `IsEstimated` can be true when a finite best vector survives a nonfailure termination, while `ConvergedWithinTolerance` remains false. Report `Status`, `GMMIterations`, `ConvergenceHistory`, final $Q$, $\mathbf S$, $\mathbf W$, covariance condition, and fallback count where available. Do not publish the current `JStat` as Hansen's overidentification statistic until the discrepancy documented in the review register is resolved.
+GMM uses a broader best-effort contract. `IsEstimated` can be true when a finite best vector survives a nonfailure termination, while `ConvergedWithinTolerance` remains false. Report `Status`, `GMMIterations`, `ConvergenceHistory`, final $Q$, $\mathbf S$, $\mathbf W$, covariance condition, and fallback count where available. `JStat` has the Hansen chi-squared interpretation only for unpenalized overidentified `TwoStep` or `Iterative` fits, where BestFit evaluates the selected efficient-weight objective; generic fixed-weight `OneStep` and penalized fits leave `JStat` and its p-value unset.
 
 ## Trace and Chain Inspection
 
@@ -31,36 +31,39 @@ BestFit stores two related collections:
 
 Plotting only `Output` hides the warmup trajectory. Plotting all of `MarkovChains` without marking warmup can make a stable calculation appear nonstationary. A reviewer-facing diagnostic package should show both roles explicitly.
 
-## Implemented R-hat
+## Rank-Normalized Split and Folded R-hat
 
-Pinned Numerics computes classical unsplit Gelman–Rubin R-hat. With $m$ chains and $n$ post-warmup states per chain, define chain means $\bar\theta_c$, overall mean $\bar\theta$, within-chain variance $W$, and between-chain variance
-
-$$
-B=\frac{n}{m-1}\sum_{c=1}^{m}(\bar\theta_c-\bar\theta)^2. \tag{DGN.1}
-$$
-
-Then
+Numerics implements the rank-normalized split and folded R-hat of Vehtari et al. Each post-warmup chain is divided into two half-chains; the middle draw is discarded when the retained length is odd. Pooled midranks $r_s$ are converted to normal scores with Blom's transform
 
 $$
-\widehat V=\frac{n-1}{n}W+\frac{B}{n},
-\qquad
-\widehat R=\sqrt{\widehat V/W}. \tag{DGN.2}
+z_s=\Phi^{-1}\!\left(\frac{r_s-3/8}{S+1/4}\right), \tag{DGN.1}
 $$
 
-BestFit's generated report uses $\widehat R<1.10$ as its readiness threshold. The implementation does not split chains, rank-normalize, fold tails, or localize diagnostics. Source comments that refer to split R-hat and bulk/tail ESS are therefore inaccurate. A value below 1.10 is not proof of convergence, especially for heavy tails, multimodality, or scale differences that do not change first two moments.
+where $S$ is the pooled number of split-chain draws. The usual between/within-chain variance ratio is calculated from these scores. A second value is calculated after folding the original draws around their pooled median. The stored diagnostic is
 
-For external peer review, supplement the current output with rank-normalized split R-hat and folded/tail diagnostics calculated from the serialized chains, or correct Numerics in a separately authorized task.
+$$
+\widehat R=\max\!\left(\widehat R_{\mathrm{rank}},
+\widehat R_{\mathrm{folded\ rank}}\right). \tag{DGN.2}
+$$
 
-## Implemented Effective Sample Size
+Rank normalization improves behavior for heavy-tailed marginals, splitting detects within-chain drift, and folding detects scale disagreement even when chains have similar centers. BestFit's concise generated report uses $\widehat R<1.01$ as its readiness threshold.
 
-Numerics calculates autocorrelation within each `Output` chain and, for each chain, sums lags until the first negative autocorrelation. If $\bar\rho_+$ is the average of those positive sums,
+A value near one means the split chains have comparable rank and folded-rank variation. A value at or above 1.01 identifies unresolved location, scale, or nonstationarity disagreement. It remains a screening diagnostic rather than proof of convergence; trace plots and sampler-specific diagnostics remain necessary. A single original chain, an insufficient retained length, constant draws, or nonfinite draws produce `NaN` rather than a reassuring value.
+
+## Rank-Normalized Bulk and Tail Effective Sample Size
+
+Numerics rank-normalizes and splits the retained chains, estimates each chain's autocovariance with zero-padded FFTs, and combines them with the multi-chain between/within-chain variance estimate. Geyer's initial-positive and initial-monotone paired autocorrelation sequence gives the integrated autocorrelation time $\widehat\tau$ and
 
 $$
 \widehat N_{\mathrm{eff}}
-=\min\left\{\frac{mn}{1+2\bar\rho_+},mn\right\}. \tag{DGN.3}
+=\frac{mn}{\widehat\tau}. \tag{DGN.3}
 $$
 
-This is one scalar ESS per parameter. It is not rank-normalized bulk ESS or tail ESS. BestFit warns below 400, below 10% retained-draw efficiency, and gives a note below 25% efficiency. These thresholds are pragmatic report rules, not a guarantee that a 0.99 flood quantile or 0.005 tail probability has adequate Monte Carlo precision.
+Bulk ESS is computed from rank-normalized draws. Lower- and upper-tail ESS use indicators at the pooled 0.05 and 0.95 quantiles. The existing scalar `ESS` field stores the conservative minimum of bulk, lower-tail, and upper-tail ESS, so downstream APIs and serialized results remain unchanged. BestFit warns below 400, below 10% retained-draw efficiency, and gives a note below 25% efficiency. These report rules do not guarantee adequate precision for more extreme probabilities.
+
+The stored scalar is deliberately conservative across central and tail behavior. The existing 51-lag original-scale averaged autocorrelation output remains available for plots; it is not reused as the modern ESS estimator. ESS is an estimated precision equivalence, not a count of unique or accepted draws.
+
+Interpret both the absolute ESS and the efficiency ratio `ESS / retained draws`. Negative autocorrelation can legitimately produce ESS above the retained draw count, so the implementation follows the `posterior` estimator rather than imposing a draw-count cap. Stability across longer runs and independent seeds remains the practical check for the quantity being reported.
 
 For an estimated posterior mean with marginal standard deviation $s_j$, a rough Monte Carlo standard error is
 
@@ -75,13 +78,13 @@ Quantile MCSE needs a quantile-specific method. Report reproducibility across in
 
 For DEMCz, DEMCzs, and ARWMH, `AcceptanceRates[c]` is accepted raw transitions divided by attempted transitions for chain $c$. BestFit report bands are 0.23–0.44 for DE-MC and 0.20–0.30 for ARWMH, with wider warning buffers. Acceptance is an efficiency diagnostic, not a convergence test; an apparently good rate can coexist with mode trapping.
 
-NUTS requires different diagnostics: average Hamiltonian acceptance statistic, divergences, maximum-tree-depth saturation, energy behavior, and step size. Pinned Numerics internally accumulates the acceptance statistic for dual averaging, but its generic counter increments on every NUTS iteration. Consequently, the exposed acceptance rate is one. BestFit currently compares that value with a 0.65–0.90 band and can issue a spurious warning. Do not use `AcceptanceRates` for NUTS tuning until this is corrected.
+For NUTS, `AcceptanceRates[c]` is the mean post-warmup Hamiltonian acceptance statistic for chain $c$. `MCMCResults` also exposes post-warmup diagnostic transition count, divergences, maximum-tree-depth hits, mean tree depth, mean leapfrog steps, final step size, and E-BFMI. BestFit applies NUTS-specific report wording and uses a target Hamiltonian acceptance of 0.80 rather than interpreting the retained-state counter as a Metropolis rate.
 
-The public BestFit result also does not expose divergence counts or tree-depth saturation. A NUTS run without those diagnostics is incomplete for peer-review purposes. DEMCzs remains the defensible default until gradient-based diagnostics and bounded-parameter treatment are strengthened.
+E-BFMI is computed per chain as $\operatorname{mean}(\Delta E^2)/\operatorname{var}(E)$ from streaming post-warmup energies. BestFit warns below 0.2, matching the current [`rstan::check_energy()`](https://mc-stan.org/rstan/reference/check_hmc_diagnostics.html) diagnostic. CmdStan's [`diagnose`](https://mc-stan.org/docs/2_39/cmdstan-guide/diagnose_utility.html) command uses the more conservative nominal threshold of 0.3, so values between 0.2 and 0.3 still merit scrutiny. Any divergence, repeated maximum-depth saturation, low E-BFMI, poor R-hat/ESS, or posterior mass against parameter bounds requires investigation. These diagnostics improve visibility but do not remove the limitations of finite differences and direct bounded-parameter integration; compare trace behavior and ESS with DEMCzs when the NUTS result is sensitive or consequential.
 
 ## Posterior Summary Checks
 
-`MCMCResults.ParameterResults` reports mean, sample standard deviation, median, equal-tailed credible limits, classical R-hat, ESS, and an averaged autocorrelation function. Check:
+`MCMCResults.ParameterResults` reports mean, sample standard deviation, median, equal-tailed credible limits, rank-normalized split/folded R-hat, conservative bulk/tail ESS, and an averaged original-scale autocorrelation function. Check:
 
 - support and units for every marginal summary;
 - whether posterior mass touches API bounds;
@@ -103,7 +106,9 @@ $$
 
 and the estimator classes return standardized displacement approximations based on $\mathbf J^{-1}\mathbf s_i$. `GetCooksDistance()` uses $\mathbf s_i^{\mathsf T}\mathbf J^{-1}\mathbf s_i/p$; it is Cook's-distance-like, not the exact deletion diagnostic from linear regression, so familiar cutoffs such as 1 or $4/n$ are heuristics only.
 
-`LeverageDiagnostics` defines an observation fit term and a curvature term, then adds them into a custom “total leverage.” Its observation curvature matrix retains only diagonal second derivatives, omitting cross-parameter curvature. Prior components use a different determinant-ratio variance measure. Adding these heterogeneous quantities does not have a demonstrated identity that sums to $p$, despite current property comments. Treat this display as exploratory and see the influence chapter and review findings before using it in a report.
+`LeverageDiagnostics` reports fit influence, variance influence, and their sum as combined leverage. Fit influence is the Cook score quadratic described above. Observation variance influence is a local curvature-trace approximation, while prior and penalty variance influence use the change in finite log generalized variance when that component is removed.
+
+Combined leverage is an additive ranking index for those two effects. It is not a classical hat-matrix diagonal, is not expected to sum to the parameter count, and has no universal intervention threshold. Use it to compare components within the same fitted analysis, with fit and variance contributions shown separately; do not compare its absolute magnitude across estimators or model families without model-specific calibration. See the [influence chapter](influence-diagnostics.md) and [model-estimation verification](../../verification/model-estimation.md#fit-influence-variance-influence-and-combined-leverage) for definitions and scoped validation.
 
 ## Model Adequacy
 
@@ -116,7 +121,7 @@ Convergence establishes only that the algorithm appears to sample its target. It
 5. review influential observations without deleting them automatically;
 6. assess sensitivity to priors, censoring thresholds, outlier treatment, parent family, and nonstationarity.
 
-The current PSIS-LOO implementation is defective under TR-024, so PSIS-based influence and LOO model comparison are not acceptance evidence until corrected.
+PSIS-LOO is externally verified against pinned R `loo` 2.10.0 for aggregate and pointwise results, six tail regimes, draw-count thresholds, and single-pass evaluation. Inspect every Pareto $k$ before using LOO model comparison or observation influence; values at or above the draw-count reliability limit require investigation, and the default path does not perform exact refits.
 
 ## Compile-Checked Diagnostic Workflow
 
@@ -141,14 +146,14 @@ private static (
 }
 ```
 
-The example shows the exact API, not an endorsement of all three outputs. `Influence` inherits TR-024, `PriorInfluence` contains scale-dependent exploratory summaries, and `Leverage` is a custom local decomposition. A defensible workflow retains these objects for investigation while basing release readiness on trace review, corrected modern convergence diagnostics, predictive checks, and model-specific verification.
+The example shows the exact API. `Influence` uses verified PSIS numerics but still requires Pareto-k review; `PriorInfluence` contains scale-dependent exploratory summaries; and `Leverage` is a custom local decomposition. A defensible workflow retains these objects for investigation while basing release readiness on trace review, appropriately interpreted convergence diagnostics, predictive checks, and model-specific verification.
 
 ## Minimum Reviewer Checklist
 
 - Target decomposition (`DataLogLikelihood` plus every prior component) is reconciled.
 - At least four chains and their warmup/post-warmup traces are shown.
 - No unexplained bound contact, divergent target values, or label switching remains.
-- Classical versus rank-normalized diagnostic definitions are stated accurately.
+- Rank-normalized split/folded R-hat and conservative bulk/tail ESS definitions are stated accurately.
 - ESS is adequate for the actual posterior functional, especially extreme quantiles.
 - Predictive checks reproduce the observation process and hydrologic structure.
 - Criterion and influence outputs affected by open findings are excluded from decisions.

@@ -1514,10 +1514,10 @@ public class GeneralizedMethodOfMomentsTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_GetInfluenceDiagnostics_ReturnsValidObject</c>.
+    /// Verifies the obsolete influence adapter remains callable for compatibility.
     /// </summary>
     [TestMethod]
-    public void Test_GetInfluenceDiagnostics_ReturnsValidObject()
+    public void Test_LegacyInfluenceDiagnosticsAdapter_RemainsCallable()
     {
         var data = GenerateNormalData(mean: 50, stddev: 5, n: 100);
         var model = new TestGMMModel(data);
@@ -1525,7 +1525,16 @@ public class GeneralizedMethodOfMomentsTests
         gmm.EstimationStrategy = GeneralizedMethodOfMoments.GMMEstimationStrategy.TwoStep;
         gmm.Estimate();
 
-        var diag = gmm.GetInfluenceDiagnostics();
+        var legacyMethod = typeof(GeneralizedMethodOfMoments).GetMethod(
+            "GetInfluenceDiagnostics",
+            Type.EmptyTypes);
+        Assert.IsNotNull(legacyMethod);
+        Assert.IsNotNull(
+            legacyMethod.GetCustomAttributes(typeof(ObsoleteAttribute), inherit: false)
+                .Cast<ObsoleteAttribute>()
+                .SingleOrDefault());
+
+        var diag = (InfluenceDiagnostics?)legacyMethod.Invoke(gmm, null);
 
         Assert.IsNotNull(diag);
         Assert.AreEqual(data.Length, diag.Count);

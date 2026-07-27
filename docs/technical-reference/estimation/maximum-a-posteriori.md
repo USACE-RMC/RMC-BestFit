@@ -59,29 +59,31 @@ $$
 =(-\mathbf H_{\mathrm{post}})^{-1}. \tag{MAP.5}
 $$
 
-Equation (MAP.5) is the covariance of a local Gaussian/Laplace approximation only when the posterior is sufficiently regular and the mode is interior. BestFit regularizes the matrix to positive definiteness. On inversion failure it returns a zero matrix after diagnostic logging, so callers must not interpret zero diagonal entries as exact posterior certainty.
+Equation (MAP.5) is the covariance of a local Gaussian/Laplace approximation only when the posterior is sufficiently regular and the mode is interior. `TryGetCovarianceMatrix(out covariance)` returns `false` when curvature is unavailable or cannot produce finite positive variances; its zero-valued out placeholder is not an uncertainty estimate. `GetCovarianceMatrix()` and dependent standard-error and influence methods throw `InvalidOperationException` for that failure. `CovarianceStatus` distinguishes `NotComputed`, `Available`, `Regularized`, and `Failed`, and `CovarianceDiagnostic` records a repair or failure. A positive-definite repair is returned only after validation and is reported as `Regularized`.
 
-## Coordinate Slices Are Not Intervals
+## Profile Posterior Kernel and Interval Interpretation
 
-`MaximumAPosteriori.ProfileLikelihood()` varies one coordinate while fixing all others at the MAP. `ParameterConfidenceIntervals()` finds a chi-squared cutoff on those same posterior-kernel slices. These products are neither true likelihood profiles nor Bayesian credible intervals:
+`MaximumAPosteriori.ProfileLikelihood()` fixes one parameter and reoptimizes every free nuisance parameter against the complete posterior kernel in (MAP.3). Profiling proceeds outward from the fitted mode and warm-starts each nuisance optimization from the preceding solution. `ParameterConfidenceIntervals()` applies its chi-squared cutoff to the same nuisance-optimized posterior profile.
 
-- nuisance parameters are not reoptimized;
-- the prior is included in the sliced objective;
-- posterior probability mass is not integrated;
-- the chi-squared likelihood-ratio approximation is not justified merely by replacing likelihood with posterior density.
+These methods now preserve parameter correlation, but they are not Bayesian credible intervals: the prior is included, posterior probability mass is not integrated, and the chi-squared likelihood-ratio calibration is only a local asymptotic convention for this posterior-kernel profile. Use MCMC marginal quantiles for Bayesian credible intervals. With constant flat priors, the profiled posterior differs from the MLE data-likelihood profile only by an additive constant and the two interval calculations agree apart from numerical error.
 
-This behavior is recorded as [TR-023](../review-findings.md#tr-023). Use MCMC marginal quantiles for implemented Bayesian credible intervals, and use a corrected MLE profile implementation for frequentist likelihood-ratio intervals.
+The correlated-quadratic verification under [TR-023](../review-findings.md#tr-023) checks every profile ordinate and the 90% interval against R `bbmle` and a closed-form nuisance optimum. A second analytical fixture confirms that an informative nuisance prior participates in the reoptimization.
 
 ## AIC and BIC Methods
 
-The class exposes `GetAIC()` and `GetBIC(sampleSize)`, but they substitute the full posterior-kernel value at the MAP into the familiar formulas:
+`GetAIC()` and `GetBIC(sampleSize)` evaluate the data log likelihood at the MAP parameter vector:
 
 $$
-\mathrm{AIC}_{\mathrm{API}}=-2\{\ell(\widehat{\boldsymbol\theta}_{\mathrm{MAP}})+
-\log\pi(\widehat{\boldsymbol\theta}_{\mathrm{MAP}})\}+2p, \tag{MAP.6}
+\mathrm{AIC}_{\mathrm{MAP}}=-2\ell_D(\widehat{\boldsymbol\theta}_{\mathrm{MAP}})+2p,
+\qquad
+\mathrm{BIC}_{\mathrm{MAP}}=-2\ell_D(\widehat{\boldsymbol\theta}_{\mathrm{MAP}})+p\log n. \tag{MAP.6}
 $$
 
-with the analogous $p\log n$ BIC penalty. These are not conventional AIC or BIC. Normalized prior-density constants and parameterization can shift (MAP.6), even when the prior is flat over finite bounds. Do not compare models with these values. Use MLE likelihood AIC/BIC or posterior predictive criteria computed from pointwise data likelihoods. The broader criterion-label issue is tracked in [TR-011](../review-findings.md#tr-011).
+Parameter-prior, Jeffreys, and quantile-prior log densities are excluded from both criteria. This prevents normalized prior constants and prior parameterization from directly shifting the reported values.
+
+When every active prior is constant over the relevant parameter region, the MAP and constrained MLE coincide. Equation (MAP.6) is then the same likelihood criterion used by `MaximumLikelihood`, apart from numerical error in locating the mode. `UseDefaultFlatPriors=true` is not sufficient by itself if a Jeffreys scale term, quantile prior, or another nonconstant prior remains active.
+
+With informative or otherwise nonconstant priors, the MAP generally differs from the MLE. The reported value remains the data-likelihood score at that prior-influenced point, but it is not conventional AIC or BIC because the classical penalty does not account for the prior. Use DIC, WAIC, or verified PSIS-LOO for Bayesian model comparison, subject to their documented assumptions and diagnostics.
 
 ## Compile-Checked API Workflow
 
@@ -117,7 +119,7 @@ In practice, validate prior support and units before fitting, retain the decompo
 - A local Gaussian approximation can be seriously misleading for skewed, heavy-tailed, truncated, weakly identified, or multimodal posteriors.
 - Compile checking verifies the API example. Numerical parameter-recovery and posterior-comparison tests reside in the prohibited long-running Verification project and were not executed here.
 
-Implementation symbols: `MaximumAPosteriori`, `IModel.LogLikelihood`, `IModel.DataLogLikelihood`, `IModel.PriorLogLikelihood`, `NumericalDiff.ComputeHessian`, `GetCovarianceMatrix`, `ProfileLikelihood`, `ParameterConfidenceIntervals`, `GetAIC`, and `GetBIC`.
+Implementation symbols: `MaximumAPosteriori`, `CovarianceComputationStatus`, `IModel.LogLikelihood`, `IModel.DataLogLikelihood`, `IModel.PriorLogLikelihood`, `NumericalDiff.ComputeHessian`, `TryGetCovarianceMatrix`, `GetCovarianceMatrix`, `ProfileLikelihood`, `ParameterConfidenceIntervals`, `GetAIC`, and `GetBIC`.
 
 ## References
 

@@ -159,7 +159,7 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 
 - Child fits must refer to compatible data, units, block definitions, AEP semantics, and time index.
 - Criterion weights ignore uncertainty in the criteria themselves.
-- AIC/BIC values from **UnivariateAnalysis** currently use a posterior-at-MAP convention tracked in [TR-011](../review-findings.md#tr-011); do not mix those uncritically with conventional MLE criteria.
+- AIC/BIC values from **UnivariateAnalysis** use the data log likelihood at MAP. They are comparable with conventional MLE criteria only when all active priors are constant; with nonconstant priors, select DIC, WAIC, or verified PSIS-LOO weighting instead. See [TR-011](../review-findings.md#tr-011).
 - DIC, WAIC, and LOOIC require comparable pointwise likelihood definitions and priors.
 - LOOIC exponential weights are not PSIS stacking and do not use Pareto-\(k\) diagnostics in weight optimization.
 - Correlated competing sources require a valid joint model; merely choosing a dependency enum is insufficient.

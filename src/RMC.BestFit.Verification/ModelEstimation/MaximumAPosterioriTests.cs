@@ -520,7 +520,7 @@ public class MaximumAPosterioriTests
     #region Information Criteria Tests
 
     /// <summary>
-    /// Verifies <c>Test_GetAIC_ReturnsFiniteValue</c>.
+    /// Verifies that AIC uses the data likelihood at MAP and excludes prior density.
     /// </summary>
     [TestMethod]
     public void Test_GetAIC_ReturnsFiniteValue()
@@ -531,14 +531,18 @@ public class MaximumAPosterioriTests
         var map = new MaximumAPosteriori(model);
         map.Estimate();
 
+        double dataLogLikelihood = model.DataLogLikelihood(map.BestParameterSet.Values);
+        double posteriorLogLikelihood = model.LogLikelihood(map.BestParameterSet.Values);
         double aic = map.GetAIC();
+        double expectedAic = -2.0 * dataLogLikelihood + 2.0 * map.NumberOfParameters;
+        double posteriorKernelAic = -2.0 * posteriorLogLikelihood + 2.0 * map.NumberOfParameters;
 
-        Assert.IsFalse(double.IsNaN(aic));
-        Assert.IsFalse(double.IsInfinity(aic));
+        Assert.AreEqual(expectedAic, aic, 1e-10);
+        Assert.IsTrue(Math.Abs(aic - posteriorKernelAic) > 1e-6);
     }
 
     /// <summary>
-    /// Verifies <c>Test_GetBIC_ReturnsFiniteValue</c>.
+    /// Verifies that BIC uses the data likelihood at MAP and excludes prior density.
     /// </summary>
     [TestMethod]
     public void Test_GetBIC_ReturnsFiniteValue()
@@ -549,10 +553,14 @@ public class MaximumAPosterioriTests
         var map = new MaximumAPosteriori(model);
         map.Estimate();
 
+        double dataLogLikelihood = model.DataLogLikelihood(map.BestParameterSet.Values);
+        double posteriorLogLikelihood = model.LogLikelihood(map.BestParameterSet.Values);
         double bic = map.GetBIC(sampleSize: data.Length);
+        double expectedBic = -2.0 * dataLogLikelihood + map.NumberOfParameters * Math.Log(data.Length);
+        double posteriorKernelBic = -2.0 * posteriorLogLikelihood + map.NumberOfParameters * Math.Log(data.Length);
 
-        Assert.IsFalse(double.IsNaN(bic));
-        Assert.IsFalse(double.IsInfinity(bic));
+        Assert.AreEqual(expectedBic, bic, 1e-10);
+        Assert.IsTrue(Math.Abs(bic - posteriorKernelBic) > 1e-6);
     }
 
     /// <summary>

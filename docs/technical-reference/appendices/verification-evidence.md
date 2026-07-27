@@ -14,8 +14,8 @@ This matrix distinguishes evidence that passed the fast release gate from long-r
 | POT/point-process | Threshold-diagnostic and lifecycle tests; compiled workflow | Estimator/threshold verification sources | Formulation complete; verification sources not run |
 | Mixture and competing risks | Fixed composition, validation, and lifecycle tests | Recovery sources where present | Complete with registered findings |
 | Bulletin 17C | Fast configuration/result tests and source traceability | Bulletin examples, calibration, and coverage studies in `RMC.BestFit.Verification` | Documentation complete; computational suite user-run |
-| MLE, MAP, and GMM | Objective-sign, bounds, state, and compiled-workflow tests | Recovery and published-result sources | Source-audited with TR-023, TR-026, TR-033, TR-034 |
-| Bayesian MCMC and diagnostics | Configuration, output mapping, fixed diagnostic, and compiled-workflow tests | Sampler recovery, influence, and predictive verification sources | Source-audited with TR-024, TR-025, TR-028 through TR-031 |
+| MLE, MAP, and GMM | Objective-sign, bounds, state, profile, covariance, and compiled-workflow tests | R `bbmle` profile and self-checking R `gmm` fit/specification/covariance oracles | MLE/MAP profiling and GMM fixed-weight/two-step fit and covariance verified |
+| Bayesian MCMC and diagnostics | Configuration, output mapping, threshold, and compiled-workflow tests | R `loo` PSIS parity plus sampler, influence, and predictive verification sources | PSIS-LOO verified; remaining sampler findings source-audited |
 | Rating curves | Fixed prediction/validation and compiled-workflow tests | Rating-curve recovery sources and cited hydrometry standards | Source-audited with TR-042 through TR-045 |
 | AR, MA, ARIMA, ARIMAX | Constructor, likelihood, recursion, transform, and compiled-workflow tests | Parameter recovery and forecasting verification sources | Restricted configurations identified in TR-035 through TR-046 |
 | Bivariate copulas | Pair matching, likelihood, simulation shape, and compiled workflow | Copula recovery/integration sources and pinned Numerics tests | Source-audited with TR-047 |

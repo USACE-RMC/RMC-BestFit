@@ -80,7 +80,7 @@ These mechanisms represent empirical continuation scenarios, not a probabilistic
 
 For $d=0$ and no transform, `Predict` uses observed response/residual history inside training and recursive response/noise afterward. `ARIMAXAnalysis` combines posterior parameter and innovation draws. Its bands also include whichever covariate extension is invoked, so clearly state that scenario.
 
-For $d>0$, forecast reintegration is shifted ([TR-037](../review-findings.md#tr-037)). `GenerateRandomValues` additionally mixes transformed and original scales and inverse-transforms before integration ([TR-039](../review-findings.md#tr-039)). Therefore transformed/differenced posterior predictive checks and forecasts are unavailable. Analysis AIC/BIC are posterior-kernel quantities rather than conventional criteria ([TR-042](../review-findings.md#tr-042)).
+For $d>0$, forecast reintegration is shifted ([TR-037](../review-findings.md#tr-037)). `GenerateRandomValues` additionally mixes transformed and original scales and inverse-transforms before integration ([TR-039](../review-findings.md#tr-039)). Therefore transformed/differenced posterior predictive checks and forecasts are unavailable. Analysis AIC/BIC use the data log likelihood at the stored MAP and exclude prior-density terms; they are comparable with MLE criteria only when every active prior is constant ([TR-042](../review-findings.md#tr-042)).
 
 AR stationarity and MA invertibility are warned using sums of absolute coefficients, not enforced by roots or reparameterization. Polynomial trends extrapolate without bound, empirical covariate extension can leave the historical support, and collinear lag blocks can make $\beta$, trend, seasonality, and AR persistence weakly identifiable.
 

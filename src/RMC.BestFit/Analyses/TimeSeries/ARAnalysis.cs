@@ -473,8 +473,9 @@ namespace RMC.BestFit.Analyses
                 var modelValues = AnalysisResults.ModeCurve.Subset(0, dataLength - 1);
                 var rmse = GoodnessOfFit.RMSE(trueValues, modelValues);
 
-                // AIC/BIC at MAP using full LogLikelihood (data + prior).
-                double mapLogLH = AutoRegressive.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
+                double mapLogLH = AutoRegressive.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 AnalysisResults.AIC = GoodnessOfFit.AIC(AutoRegressive.NumberOfParameters, mapLogLH);
                 AnalysisResults.BIC = GoodnessOfFit.BIC(dataLength, AutoRegressive.NumberOfParameters, mapLogLH);
                 AnalysisResults.DIC = BayesianAnalysis.DIC;

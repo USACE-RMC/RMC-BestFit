@@ -77,11 +77,11 @@ $$
 \ell_P(\theta)=\sum_j\log\pi_j(\theta_j)-\log\sigma. \tag{RC.6}
 $$
 
-The posterior is proportional to $\exp\{\ell_Z+\ell_P\}$. Uniform density constants matter to the posterior kernel reported by the API even though they do not change a within-model posterior. `RatingCurveAnalysis` currently passes the MAP full target to AIC/BIC ([TR-042](../review-findings.md#tr-042)); those fields are not conventional criteria.
+The posterior is proportional to $\exp\{\ell_Z+\ell_P\}$. `RatingCurveAnalysis` computes AIC/BIC from the discharge-data log likelihood at the stored MAP and excludes parameter-prior and Jeffreys terms. The criteria are comparable with MLE only when every active prior is constant and MAP coincides with the constrained MLE. Because `UseJeffreysRuleForScale=true` is the default, the ordinary default analysis does not meet that condition unless the Jeffreys option is disabled; use DIC, WAIC, or verified PSIS-LOO when it or any informative prior is active ([TR-042](../review-findings.md#tr-042)).
 
 ## Identifiability and Extrapolation
 
-Addition does not guarantee separable parameters. Identification requires observations below and above every activation stage, enough depth range to distinguish $a_k$ from $\beta_k$, and informative data near breakpoints. Strong posterior correlations commonly occur among $h_k$, $a_k$, and $\beta_k$; an activation stage outside dense data leaves the new control weakly identified. Compare one-, two-, and three-control structures only with valid data-likelihood criteria or held-out prediction, not the affected analysis AIC/BIC fields.
+Addition does not guarantee separable parameters. Identification requires observations below and above every activation stage, enough depth range to distinguish $a_k$ from $\beta_k$, and informative data near breakpoints. Strong posterior correlations commonly occur among $h_k$, $a_k$, and $\beta_k$; an activation stage outside dense data leaves the new control weakly identified. Compare one-, two-, and three-control structures with these MAP-evaluated AIC/BIC fields only under flat priors; otherwise use posterior criteria or held-out prediction.
 
 High-stage extrapolation is dominated by the largest active exponent and coefficient. A narrow posterior over calibration stages can still produce enormous uncertainty beyond the highest gauging. Report the maximum gauged stage, the requested extrapolation ratio/depth, hydraulic plausibility of each control, and sensitivity to priors. Do not interpret statistical smoothness as evidence that channel geometry, roughness, backwater, or control regime remains fixed during an extreme flood.
 

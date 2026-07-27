@@ -170,7 +170,7 @@ For every requested \((x_k,y_k)\) ordinate, the point curve uses (3) at the conf
 
 The reported RMSE compares \(C(F_{nX},F_{nY})\) with the empirical bivariate CDF at each matched pseudo-observation and divides the squared-error sum by \(n_p-1\). It requires at least two pairs. `GenerateRandomValues(sampleSize, seed)` delegates to the Numerics copula's Latin-hypercube simulation and transforms both uniforms through the attached marginal inverse CDFs.
 
-The current AIC/BIC outputs use the posterior kernel at MAP rather than a maximized data likelihood. They do not have the conventional AIC/BIC interpretation; see [TR-047](../review-findings.md#tr-047). DIC is available through the Bayesian analysis. Use WAIC or PSIS-LOO only after confirming that the event pair is the scientifically appropriate predictive unit and that the chain diagnostics are satisfactory.
+The AIC/BIC outputs use the copula data log likelihood at the stored MAP and the number of matched event pairs for BIC; copula-prior densities are excluded. When the copula prior is constant over the relevant region, MAP coincides with the constrained copula MLE and the criteria have their usual likelihood interpretation conditional on the already-fitted marginals. With an informative copula prior, use DIC, WAIC, or verified PSIS-LOO instead. All comparisons remain conditional on the fixed marginal distributions and require the same paired events and likelihood convention; see [TR-047](../review-findings.md#tr-047).
 
 ## Compile-Checked Workflow
 

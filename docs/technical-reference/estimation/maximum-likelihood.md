@@ -71,7 +71,7 @@ $$
 =\mathbf J_{\mathrm{obs}}^{-1}. \tag{MLE.5}
 $$
 
-`GetCovarianceMatrix()` symmetrizes/regularizes the inverse to be positive definite. If inversion or regularization throws, the current API writes a diagnostic message and returns a zero matrix. A zero standard error is therefore not automatically evidence of certainty; inspect the Hessian path and logs. This failure-signaling concern is tracked in the [review findings](../review-findings.md).
+`TryGetCovarianceMatrix(out covariance)` provides the non-throwing covariance path. It returns `false` when the Hessian is unavailable, inversion fails, or the result is non-finite or degenerate; the out value is then only a zero-valued placeholder and must not be interpreted as uncertainty. `GetCovarianceMatrix()` and dependent standard-error and influence methods throw `InvalidOperationException` for the same failure. `CovarianceStatus` distinguishes `NotComputed`, `Available`, `Regularized`, and `Failed`, while `CovarianceDiagnostic` describes a repair or failure. The sandwich covariance has the same `TryGetSandwichCovarianceMatrix` contract. A positive-definite repair is returned only after validation and is reported as `Regularized`.
 
 For pointwise score $\mathbf s_i=\partial\log L_i/\partial\boldsymbol\theta$, the implemented sandwich estimator is
 
@@ -84,7 +84,7 @@ $$
 
 BestFit obtains each score by central finite differences of `PointwiseDataLogLikelihood`. Equation (MLE.6) is a model-misspecification-robust large-sample approximation, not a correction for serial dependence or clustered observations. It assumes the pointwise units are the independent estimating units. Threshold counts and grouped records must therefore be interpreted using the model's pointwise decomposition rather than as an arbitrary row count.
 
-## Likelihood-Ratio Intervals and a Naming Limitation
+## Likelihood-Ratio Profile Intervals
 
 For a genuine profile likelihood, nuisance parameters must be reoptimized:
 
@@ -96,7 +96,7 @@ $$
 \overset{a}{\sim}\chi^2_1. \tag{MLE.7}
 $$
 
-The current `ProfileLikelihood()` and `ParameterConfidenceIntervals()` methods do **not** calculate (MLE.7). They vary $\theta_j$ while holding every nuisance parameter at its joint optimum. The resulting conditional coordinate slice can differ materially from a profile when parameters are correlated. This is [TR-023](../review-findings.md#tr-023); do not label those intervals as peer-review-grade profile-likelihood intervals.
+`ProfileLikelihood()` and `ParameterConfidenceIntervals()` calculate (MLE.7) from the data likelihood. At each fixed value of $\theta_j$, BestFit reoptimizes every non-fixed nuisance parameter within its model bounds. Bounded BFGS is the primary nuisance optimizer and bounded Nelder-Mead is the deterministic fallback; grid profiles proceed outward from the fitted value and reuse the neighboring nuisance optimum as a warm start. Interval endpoints solve the one-degree-of-freedom chi-squared cutoff with Brent's method; when the profile remains above the cutoff throughout an allowed side of parameter space, that model bound is returned. A failed nuisance solve throws rather than substituting a coordinate slice. The correlated-quadratic verification matches R `bbmle` and its closed-form profile at every oracle point and reproduces the 90% interval to $10^{-8}$. As with all likelihood-ratio intervals, the chi-squared approximation can be unreliable at boundaries, under weak identification, or in small samples.
 
 ## Information Criteria
 
@@ -142,9 +142,9 @@ This helper deliberately checks the Boolean result and `Status`. In an engineeri
 - Standard curvature and sandwich results are asymptotic and can be unreliable at parameter boundaries, with weak identification, or for short flood records.
 - Finite bounds can determine the optimum. A fitted value on a bound requires scientific review, not merely optimizer acceptance.
 - Numerical Hessians are sensitive to scale, flat regions, discontinuities, and finite-difference steps.
-- The compile-checked example verifies API conformance only. Computational verification belongs in `RMC.BestFit.Verification`; that suite was not run during this documentation pass.
+- The compile-checked example verifies API conformance. Focused computational verification of nuisance reoptimization uses a committed R `bbmle` oracle and is run by exact method only; the complete Verification suite is not required.
 
-Implementation symbols: `MaximumLikelihood`, `OptimizationMethod`, `IModel.DataLogLikelihood`, `IModel.PointwiseDataLogLikelihood`, `NumericalDiff.ComputeHessian`, `GetCovarianceMatrix`, `GetSandwichCovarianceMatrix`, `GetAIC`, and `GetBIC`.
+Implementation symbols: `MaximumLikelihood`, `OptimizationMethod`, `CovarianceComputationStatus`, `IModel.DataLogLikelihood`, `IModel.PointwiseDataLogLikelihood`, `NumericalDiff.ComputeHessian`, `TryGetCovarianceMatrix`, `GetCovarianceMatrix`, `TryGetSandwichCovarianceMatrix`, `GetSandwichCovarianceMatrix`, `ProfileLikelihood`, `ParameterConfidenceIntervals`, `GetAIC`, and `GetBIC`.
 
 ## References
 

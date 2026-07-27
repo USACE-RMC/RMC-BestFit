@@ -663,13 +663,9 @@ namespace RMC.BestFit.Analyses
                 for (int i = 0; i < ProbabilityOrdinates.Count; i++)
                     AnalysisResults.ModeCurve[i] = UnivariateDistribution.Distribution.InverseCDF(1 - ProbabilityOrdinates[i]);
 
-                // Information criteria. AIC/BIC are computed at the MAP estimate
-                // using the full log-likelihood (data + prior) — with uniform priors
-                // this matches the conventional MLE-based AIC/BIC; with informative
-                // priors the metric reflects the prior contribution as well, which
-                // is intentional in a Bayesian-first framework where model
-                // comparison includes the priors.
-                var logL = UnivariateDistribution.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
+                var logL = UnivariateDistribution.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 var k = UnivariateDistribution.NumberOfParameters;
                 var n = UnivariateDistribution.DataFrame.TotalRecordLength();
                 var aic = GoodnessOfFit.AIC(k, logL);

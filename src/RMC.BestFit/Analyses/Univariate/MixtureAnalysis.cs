@@ -644,11 +644,11 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ModeCurve[i] = MixtureDistribution.Mixture!.InverseCDF(1 - ProbabilityOrdinates[i]);
 
                 // Information criteria
-                var logL = MixtureDistribution.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                var logL = MixtureDistribution.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 var k = MixtureDistribution.NumberOfParameters;
                 var n = MixtureDistribution.DataFrame.TotalRecordLength();
-                // AIC/BIC at MAP using full LogLikelihood (data + prior); see
-                // UnivariateAnalysis for the convention rationale.
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
                 var aic = GoodnessOfFit.AIC(k, logL);
                 var bic = GoodnessOfFit.BIC(n, k, logL);
                 var dic = BayesianAnalysis.DIC;

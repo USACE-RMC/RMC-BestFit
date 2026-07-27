@@ -90,21 +90,50 @@ public class BayesianAnalysisReportTests
     }
 
     /// <summary>
-    /// Verifies that a NUTS acceptance rate above 95 percent is reported as a warning.
+    /// Verifies that NUTS reports sampler-specific diagnostics without generic Metropolis descriptors.
     /// </summary>
     [TestMethod]
-    public void GenerateReport_NutsAcceptanceAboveBuffer_ReportsWarning()
+    public void GenerateReport_NutsDiagnostics_ReportSamplerSpecificValues()
     {
         var analysis = CreateEstimatedAnalysis(
             BayesianAnalysis.SamplerType.NUTS,
             new[] { 0.97, 0.97, 0.97, 0.97 },
             ess: 250.0,
             retainedDrawCount: 1000);
+        SetNutsDiagnostics(analysis.Results!);
 
         string report = analysis.GenerateReport();
 
-        StringAssert.Contains(report, "Status:    WARNING - above acceptable buffer");
-        StringAssert.Contains(report, "NUTS is accepting almost every proposal");
+        StringAssert.Contains(report, "NUTS SAMPLER DIAGNOSTICS");
+        StringAssert.Contains(report, "Overall Hamiltonian Acceptance: 97.0%");
+        StringAssert.Contains(report, "Divergences:                    1/1,000");
+        StringAssert.Contains(report, "Maximum Tree Depth Hits:        2/1,000");
+        StringAssert.Contains(report, "Minimum E-BFMI:                 0.150");
+        StringAssert.Contains(report, "WARNING - divergent transitions detected");
+        StringAssert.Contains(report, "WARNING - E-BFMI below 0.2");
+        StringAssert.Contains(report, "Advice: Hamiltonian acceptance is above the acceptable range.");
+        Assert.IsFalse(report.Contains("Proposals are too timid"));
+        Assert.IsFalse(report.Contains("NUTS is accepting almost every proposal"));
+    }
+
+    /// <summary>
+    /// Verifies that legacy NUTS results do not reuse an always-one transition counter.
+    /// </summary>
+    [TestMethod]
+    public void GenerateReport_NutsLegacyResult_SuppressesGenericAcceptanceAdvice()
+    {
+        var analysis = CreateEstimatedAnalysis(
+            BayesianAnalysis.SamplerType.NUTS,
+            new[] { 1.0, 1.0, 1.0, 1.0 },
+            ess: 250.0,
+            retainedDrawCount: 1000);
+
+        string report = analysis.GenerateReport();
+
+        StringAssert.Contains(report, "Sampler-specific NUTS diagnostics are unavailable for this legacy result.");
+        Assert.IsFalse(report.Contains("Overall:   100.0%"));
+        Assert.IsFalse(report.Contains("above acceptable buffer"));
+        Assert.IsFalse(report.Contains("Proposals are too timid"));
     }
 
     /// <summary>
@@ -124,6 +153,46 @@ public class BayesianAnalysisReportTests
 
         StringAssert.Contains(report, "Chain-level warnings:");
         StringAssert.Contains(report, "Chain 1 acceptance 10.0% is below acceptable buffer 15-50%.");
+    }
+
+    /// <summary>
+    /// Verifies rank-normalized R-hat below 1.01 passes without expanding report labels.
+    /// </summary>
+    [TestMethod]
+    public void GenerateReport_Rhat1005_PassesModernThreshold()
+    {
+        var analysis = CreateEstimatedAnalysis(
+            BayesianAnalysis.SamplerType.DEMCzs,
+            new[] { 0.30, 0.30, 0.30, 0.30 },
+            ess: 2500.0,
+            retainedDrawCount: 10000);
+
+        string report = analysis.GenerateReport();
+
+        StringAssert.Contains(report, "Max R-hat:   1.0050   (target < 1.01)   OK");
+        StringAssert.Contains(report, "R-hat Verdict: OK - chains mixed across parameters");
+        StringAssert.Contains(report, "Overall Readiness: READY");
+    }
+
+    /// <summary>
+    /// Verifies rank-normalized R-hat above 1.01 produces the existing concise warning.
+    /// </summary>
+    [TestMethod]
+    public void GenerateReport_Rhat102_WarnsAtModernThreshold()
+    {
+        var analysis = CreateEstimatedAnalysis(
+            BayesianAnalysis.SamplerType.DEMCzs,
+            new[] { 0.30, 0.30, 0.30, 0.30 },
+            ess: 2500.0,
+            retainedDrawCount: 10000);
+        foreach (ParameterResults parameterResult in analysis.Results!.ParameterResults)
+            parameterResult.SummaryStatistics.Rhat = 1.02;
+
+        string report = analysis.GenerateReport();
+
+        StringAssert.Contains(report, "Max R-hat:   1.0200   (target < 1.01)   WARNING");
+        StringAssert.Contains(report, "R-hat Verdict: WARNING - chain mixing problem detected");
+        StringAssert.Contains(report, "Overall Readiness: NOT READY");
     }
 
     /// <summary>
@@ -258,6 +327,37 @@ public class BayesianAnalysisReportTests
 
         var map = new ParameterSet(new[] { 16000.0, 5000.0 }, 0.0);
         return new MCMCResults(map, output, alpha: 0.10);
+    }
+
+    /// <summary>
+    /// Injects a complete, chain-aligned NUTS diagnostic fixture.
+    /// </summary>
+    /// <param name="results">The MCMC results to update.</param>
+    private static void SetNutsDiagnostics(MCMCResults results)
+    {
+        SetResultProperty(results, nameof(MCMCResults.NUTSDiagnosticSampleCounts), new[] { 250, 250, 250, 250 });
+        SetResultProperty(results, nameof(MCMCResults.NUTSDivergenceCounts), new[] { 0, 1, 0, 0 });
+        SetResultProperty(results, nameof(MCMCResults.NUTSMaxTreeDepthHitCounts), new[] { 0, 2, 0, 0 });
+        SetResultProperty(results, nameof(MCMCResults.NUTSMeanTreeDepths), new[] { 2.1, 2.2, 2.3, 2.4 });
+        SetResultProperty(results, nameof(MCMCResults.NUTSMeanLeapfrogSteps), new[] { 4.0, 4.2, 4.4, 4.6 });
+        SetResultProperty(results, nameof(MCMCResults.NUTSStepSizes), new[] { 0.12, 0.11, 0.10, 0.09 });
+        SetResultProperty(results, nameof(MCMCResults.NUTSEnergyBayesianFractionOfMissingInformation),
+            new[] { 0.75, 0.60, 0.15, 0.55 });
+    }
+
+    /// <summary>
+    /// Assigns a private-set MCMC result property for a synthetic report fixture.
+    /// </summary>
+    /// <typeparam name="T">The property value type.</typeparam>
+    /// <param name="results">The result instance to update.</param>
+    /// <param name="propertyName">The public property name.</param>
+    /// <param name="value">The synthetic value.</param>
+    private static void SetResultProperty<T>(MCMCResults results, string propertyName, T value)
+    {
+        PropertyInfo? property = typeof(MCMCResults).GetProperty(propertyName);
+        MethodInfo? setter = property?.GetSetMethod(nonPublic: true);
+        Assert.IsNotNull(setter, $"Unable to inject synthetic {propertyName} into MCMCResults.");
+        setter.Invoke(results, new object?[] { value });
     }
 
     /// <summary>

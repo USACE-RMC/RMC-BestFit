@@ -231,6 +231,26 @@ public class InfluenceDiagnosticsTests
 
         Assert.IsTrue(diag.IsReliable);
     }
+    /// <summary>
+    /// Bayesian diagnostics must flag values above the draw-count-specific limit even when
+    /// they remain below the historical 0.5 category boundary.
+    /// </summary>
+    [TestMethod]
+    public void InternalBayesianThreshold_FlagsValueBelowLegacyBoundary()
+    {
+        const double diagnosticThreshold = 0.375803649418215;
+        var diag = new InfluenceDiagnostics(
+            new[] { 0.1, 0.411627035764065 },
+            new[] { -1.0, -2.0 },
+            dataComponents: null,
+            diagnosticThreshold);
+
+        Assert.IsFalse(diag.IsReliable);
+        Assert.AreEqual(0, diag.CountParetoKAbove05);
+        Assert.AreEqual(ParetoKCategory.OK, diag[1].Category);
+        StringAssert.Contains(diag.GetReliabilitySummary(), "CAUTION");
+        StringAssert.Contains(diag.GetReliabilitySummary(), diagnosticThreshold.ToString("F3"));
+    }
 
     #endregion
 
@@ -392,6 +412,35 @@ public class InfluenceDiagnosticsTests
             Assert.AreEqual(original[i].ParetoK, restored[i].ParetoK, 1e-12);
             Assert.AreEqual(original[i].ElpdLoo, restored[i].ElpdLoo, 1e-12);
         }
+    }
+    /// <summary>
+    /// XML round-trip must retain the draw-count threshold used by Bayesian diagnostics while
+    /// legacy instances continue to omit the additive threshold attribute.
+    /// </summary>
+    [TestMethod]
+    public void XmlSerialization_BayesianThreshold_RoundTripsWithoutChangingLegacyShape()
+    {
+        const double diagnosticThreshold = 0.375803649418215;
+        var bayesian = new InfluenceDiagnostics(
+            new[] { 0.1, 0.411627035764065 },
+            new[] { -1.0, -2.0 },
+            dataComponents: null,
+            diagnosticThreshold);
+
+        XElement bayesianXml = bayesian.ToXElement();
+        var restored = new InfluenceDiagnostics(bayesianXml);
+        XElement legacyXml = new InfluenceDiagnostics(
+            new[] { 0.1 },
+            new[] { -1.0 }).ToXElement();
+
+        Assert.AreEqual(
+            diagnosticThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            bayesianXml.Attribute("ParetoKDiagnosticThreshold")?.Value);
+        Assert.IsFalse(restored.IsReliable);
+        Assert.AreEqual(ParetoKCategory.OK, restored[1].Category);
+        Assert.IsNull(legacyXml.Attribute("ParetoKDiagnosticThreshold"));
+        Assert.IsTrue(legacyXml.Elements("Observation")
+            .All(element => element.Attribute("ParetoKDiagnosticThreshold") == null));
     }
 
     /// <summary>

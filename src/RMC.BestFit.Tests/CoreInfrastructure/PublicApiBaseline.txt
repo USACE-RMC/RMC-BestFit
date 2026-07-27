@@ -795,6 +795,17 @@ TYPE enum RMC.BestFit.Estimation.BayesianAnalysis+SamplerType
   FIELD RMC.BestFit.Estimation.BayesianAnalysis+SamplerType DEMCzs = 1
   FIELD RMC.BestFit.Estimation.BayesianAnalysis+SamplerType NUTS = 3
   FIELD System.Int32 value__
+TYPE enum RMC.BestFit.Estimation.CovarianceComputationStatus
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Estimation.CovarianceComputationStatus Available = 1
+  FIELD RMC.BestFit.Estimation.CovarianceComputationStatus Failed = 3
+  FIELD RMC.BestFit.Estimation.CovarianceComputationStatus NotComputed = 0
+  FIELD RMC.BestFit.Estimation.CovarianceComputationStatus Regularized = 2
+  FIELD System.Int32 value__
 TYPE class RMC.BestFit.Estimation.GeneralizedMethodOfMoments
   BASE System.Object
   INTERFACE System.ComponentModel.INotifyPropertyChanged
@@ -815,6 +826,7 @@ TYPE class RMC.BestFit.Estimation.GeneralizedMethodOfMoments
   METHOD RMC.BestFit.Estimation.GeneralizedMethodOfMoments Clone()
   METHOD System.Boolean Estimate()
   METHOD System.Boolean IsValid(out System.Collections.Generic.List<System.String>)
+  METHOD System.Boolean TryGetCovariance(System.Double[], System.Boolean, out Numerics.Mathematics.LinearAlgebra.Matrix)
   METHOD System.Collections.Generic.List<System.Double[,]> ProfileQ(System.Int32 optional, System.Boolean optional)
   METHOD System.Double Q(System.Double[])
   METHOD System.Double[,] GetObservationInfluence()
@@ -834,6 +846,7 @@ TYPE class RMC.BestFit.Estimation.GeneralizedMethodOfMoments
   PROPERTY Numerics.Mathematics.Optimization.OptimizationStatus Status {get;}
   PROPERTY Numerics.Mathematics.Optimization.Optimizer Optimizer {get;}
   PROPERTY Numerics.Mathematics.Optimization.ParameterSet BestParameterSet {get;}
+  PROPERTY RMC.BestFit.Estimation.CovarianceComputationStatus CovarianceStatus {get;}
   PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy EstimationStrategy {get;set;}
   PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMIdentificationStatus IdentificationStatus {get;}
   PROPERTY RMC.BestFit.Estimation.JacobianFunction JacobianFunction {get;}
@@ -863,6 +876,7 @@ TYPE class RMC.BestFit.Estimation.GeneralizedMethodOfMoments
   PROPERTY System.Int32 NumberOfParameters {get;}
   PROPERTY System.Int32 SampleSize {get;}
   PROPERTY System.Int32 TotalFunctionEvaluations {get;}
+  PROPERTY System.String CovarianceDiagnostic {get;}
   EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
 TYPE enum RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy
   BASE System.Enum
@@ -899,6 +913,7 @@ TYPE class RMC.BestFit.Estimation.MaximumAPosteriori
   METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCovarianceMatrix()
   METHOD RMC.BestFit.Diagnostics.LeverageDiagnostics ComputeLeverageDiagnostics()
   METHOD System.Boolean Estimate()
+  METHOD System.Boolean TryGetCovarianceMatrix(out Numerics.Mathematics.LinearAlgebra.Matrix)
   METHOD System.Collections.Generic.List<System.Double[,]> ProfileLikelihood(System.Int32 optional)
   METHOD System.Double GetAIC()
   METHOD System.Double GetBIC(System.Int32)
@@ -910,6 +925,7 @@ TYPE class RMC.BestFit.Estimation.MaximumAPosteriori
   PROPERTY Numerics.Mathematics.Optimization.OptimizationStatus Status {get;}
   PROPERTY Numerics.Mathematics.Optimization.Optimizer Optimizer {get;}
   PROPERTY Numerics.Mathematics.Optimization.ParameterSet BestParameterSet {get;}
+  PROPERTY RMC.BestFit.Estimation.CovarianceComputationStatus CovarianceStatus {get;}
   PROPERTY RMC.BestFit.Estimation.OptimizationMethod OptimizerMethod {get;set;}
   PROPERTY RMC.BestFit.Models.IModel Model {get;}
   PROPERTY System.Boolean ComputeHessian {get;set;}
@@ -921,6 +937,7 @@ TYPE class RMC.BestFit.Estimation.MaximumAPosteriori
   PROPERTY System.Double[] UpperBounds {get;}
   PROPERTY System.Int32 NumberOfParameters {get;}
   PROPERTY System.Int32 TotalFunctionEvaluations {get;}
+  PROPERTY System.String CovarianceDiagnostic {get;}
 TYPE class RMC.BestFit.Estimation.MaximumLikelihood
   BASE System.Object
   CTOR RMC.BestFit.Estimation.MaximumLikelihood(RMC.BestFit.Models.IModel, RMC.BestFit.Estimation.OptimizationMethod optional)
@@ -928,6 +945,8 @@ TYPE class RMC.BestFit.Estimation.MaximumLikelihood
   METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetCovarianceMatrix()
   METHOD Numerics.Mathematics.LinearAlgebra.Matrix GetSandwichCovarianceMatrix()
   METHOD System.Boolean Estimate()
+  METHOD System.Boolean TryGetCovarianceMatrix(out Numerics.Mathematics.LinearAlgebra.Matrix)
+  METHOD System.Boolean TryGetSandwichCovarianceMatrix(out Numerics.Mathematics.LinearAlgebra.Matrix)
   METHOD System.Collections.Generic.List<System.Double[,]> ProfileLikelihood(System.Int32 optional)
   METHOD System.Double GetAIC()
   METHOD System.Double GetBIC(System.Int32)
@@ -940,6 +959,7 @@ TYPE class RMC.BestFit.Estimation.MaximumLikelihood
   PROPERTY Numerics.Mathematics.Optimization.OptimizationStatus Status {get;}
   PROPERTY Numerics.Mathematics.Optimization.Optimizer Optimizer {get;}
   PROPERTY Numerics.Mathematics.Optimization.ParameterSet BestParameterSet {get;}
+  PROPERTY RMC.BestFit.Estimation.CovarianceComputationStatus CovarianceStatus {get;}
   PROPERTY RMC.BestFit.Estimation.OptimizationMethod OptimizerMethod {get;set;}
   PROPERTY RMC.BestFit.Models.IModel Model {get;}
   PROPERTY System.Boolean ComputeHessian {get;set;}
@@ -951,6 +971,7 @@ TYPE class RMC.BestFit.Estimation.MaximumLikelihood
   PROPERTY System.Double[] UpperBounds {get;}
   PROPERTY System.Int32 NumberOfParameters {get;}
   PROPERTY System.Int32 TotalFunctionEvaluations {get;}
+  PROPERTY System.String CovarianceDiagnostic {get;}
 TYPE class RMC.BestFit.Estimation.MomentConditionFunction
   BASE System.MulticastDelegate
   INTERFACE System.ICloneable

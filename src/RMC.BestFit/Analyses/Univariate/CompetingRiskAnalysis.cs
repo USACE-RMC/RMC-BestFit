@@ -481,8 +481,9 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ModeCurve[i] = CompetingRisksDistribution.CompetingRisks!.InverseCDF(1 - ProbabilityOrdinates[i]);
 
                 // Information criteria
-                // AIC/BIC at MAP using full LogLikelihood (data + prior).
-                var logL = CompetingRisksDistribution.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
+                var logL = CompetingRisksDistribution.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 var k = CompetingRisksDistribution.NumberOfParameters;
                 var n = CompetingRisksDistribution.DataFrame.TotalRecordLength();
                 var aic = GoodnessOfFit.AIC(k, logL);

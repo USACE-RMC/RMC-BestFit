@@ -120,7 +120,7 @@ Changing `ParameterTimeIndex` reprocesses frequency results from the existing ch
 
 ## Point-Estimate Criteria and an Important Convention
 
-`UpdatePointEstimateResultsAsync()` computes the displayed AIC and BIC using `UnivariateDistribution.LogLikelihood(...)` evaluated at the MAP, which includes the prior, rather than the data log-likelihood at an MLE. That is not the conventional AIC/BIC definition in equations (2)–(3) of the fitting chapter and can change under prior reparameterization. The behavior is tracked as [TR-011](../review-findings.md#tr-011). DIC, WAIC, and LOOIC are posterior criteria and are treated separately in the estimation chapters.
+`UpdatePointEstimateResultsAsync()` computes the displayed AIC and BIC from `UnivariateDistribution.DataLogLikelihood(...)` evaluated at the stored MAP parameter vector; parameter, Jeffreys, and quantile-prior densities are excluded. When every active prior is constant over the relevant parameter region, MAP coincides with the constrained MLE and these values are comparable with the fitting-analysis criteria. With any informative or otherwise nonconstant prior—including the optional Jeffreys scale term—the MAP is prior-influenced and these fields should not be interpreted as conventional AIC/BIC. Use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison in that setting. See [TR-011](../review-findings.md#tr-011).
 
 The displayed RMSE uses the same pinned Numerics helper discussed in [TR-009](../review-findings.md#tr-009).
 

@@ -119,7 +119,7 @@ namespace RMC.BestFit.Diagnostics
         /// <returns>
         /// A list of <see cref="ParameterSet"/> objects, one for each prior draw.
         /// Each ParameterSet.Values has length equal to the number of model parameters.
-        /// The Fitness field contains the prior log-likelihood for that parameter set.
+        /// The <c>Fitness</c> field contains the negative prior log-likelihood for that parameter set.
         /// </returns>
         /// <remarks>
         /// <para>

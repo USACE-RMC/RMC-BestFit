@@ -18,11 +18,11 @@ A new session should read these files in this order:
 6. `verification/data/MANIFEST.md`
 7. The relevant technical-reference chapter for the current finding
 
-Current completed checkpoint: commit `4f91691 Verify MAP and GMM influence diagnostics`.
+Dependency checkpoint: Numerics commit `76f7dd0 Modernize MCMC convergence diagnostics`, which follows `5c693a8 Fix adaptive MCMC diagnostics and covariance tracking`. The approved BestFit Phase 2 work is consolidated in repository history.
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. The program began with repository integration, test ownership, external oracle infrastructure, and distribution fitting. Phase 2 is active and covers model estimation and diagnostics.
+The verification program is building a traceable numerical validation record for RMC.BestFit. The program began with repository integration, test ownership, external oracle infrastructure, and distribution fitting. Phase 2 model estimation and diagnostics are complete for the approved scope; Phase 3 remains planned.
 
 The report is a living Markdown book under `docs/verification/`. Every scientific claim must link to a test, oracle artifact, package/version, tolerance, result, review finding, and relevant technical-reference chapter. Markdown is the source of truth during development. PDF rendering is deferred until explicit release or visual-QA checkpoints.
 
@@ -76,21 +76,32 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 - Phase 1 distribution fitting is complete for the currently scoped claims.
 - Phase 2 fit influence, variance influence, and combined leverage for MAP/GMM are complete for the scoped Log10-Normal prior/penalty tests.
 
-### Current Active Phase
+### Current Phase Checkpoint
 
-Phase 2 - Model Estimation and Diagnostics.
+Phase 2 - Model Estimation and Diagnostics - complete for the approved scope. Phase 3 remains planned and has not started.
 
 Completed Phase 2 findings:
 
+- TR-011: confirmed defect, fixed, passed focused regression and source audit.
+- TR-022: confirmed documentation/API inventory defect, fixed and passed source/API inventory.
+- TR-023: MLE and MAP nuisance profiling fixed and passed R `bbmle`, closed-form, and informative-prior posterior-profile parity.
+- TR-027: covariance failure signaling fixed and passed deterministic failure, available, and regularized paths.
+- TR-028: confirmed joint-prior sampling limitation, documented and passed source/contract audit.
+- TR-029: rank-normalized split/folded R-hat and conservative bulk/tail ESS implemented in existing fields and passed R `posterior` 1.7.0 parity without public API or serialization changes.
+- TR-025: complete realized-state ARWMH covariance fixed and passed focused Numerics/BestFit regression.
+- TR-030: NUTS Hamiltonian diagnostics, gradient routes, serialization, and sampler-specific report integration fixed and passed focused regression.
+- TR-026: selected-weight Hansen J fixed and passed R `gmm::specTest` parameter, objective, J, and p-value parity.
 - TR-031: confirmed defect, fixed, passed analytical and R-parity evidence.
+- TR-032: legacy PSIS-shaped GMM overloads marked obsolete; supported Cook and leverage APIs retain correct labels and compatibility regressions pass.
 - TR-033: rejected non-defect, passed objective/gradient/covariance scaling evidence.
+- TR-034: overidentified fixed-weight one-step fitting and covariance fixed; parameter, objective, fixed-weight sandwich, and efficient two-step covariance pass R plus analytical parity.
 - TR-065: confirmed defect, fixed in the GMM diagnostic Hessian path only, passed R `gmm` parity.
 
-Deferred Phase 2 items:
+Accepted Phase 2 limitation:
 
-- TR-011, TR-022, TR-023, TR-024, TR-025, TR-026, TR-027, TR-028, TR-029, TR-030, TR-032, and TR-034.
+- TR-028 remains an accepted documented joint-prior-sampling limitation rather than an active fix.
 
-Pareto-k, PSIS, LOO, DIC, WAIC, profile likelihood, Hansen J, covariance status, joint-prior sampling, and MCMC diagnostic parity remain active Phase 2 work.
+DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, explicit covariance failure status, selected-weight Hansen J, overidentified GMM fitting/covariance, GMM Cook labeling, ARWMH realized-state covariance, NUTS sampler-specific diagnostics, and modern R-hat/ESS are corrected and verified. Joint-prior sampling remains the documented Phase 2 limitation.
 
 ## Phase 0 - Repository and Documentation Foundation
 
@@ -154,7 +165,7 @@ Use deterministic symmetric data in log10 space plus an injected high-outlier va
 Required checks:
 
 1. Establish unpenalized MLE, MAP-with-flat-prior, and B17C GMM baselines.
-2. Match a Gaussian prior on `mu` to the B17C quadratic penalty. Under the current penalty definition, begin with `MSE = tau_mu^2 / n` and confirm objective scaling through TR-033 evidence.
+2. Match a Gaussian prior on `mu` to the B17C quadratic penalty using `MSE = tau_mu^2`; the penalty performs its own division by $n$. Preserve the objective, gradient, Hessian, and covariance scaling verified under TR-033.
 3. Exercise three prior regimes relative to the likelihood standard error:
    - wide and centered: `tau_mu = 100 SE_L`, no material location or variance effect;
    - narrow and centered: `tau_mu = 0.1 SE_L`, no location shift but large variance contraction;
@@ -175,41 +186,43 @@ Completed for this experiment:
 
 ### External Model-Comparison Validation
 
-Create deterministic posterior-draw and pointwise-log-likelihood fixtures so package comparisons do not depend on MCMC randomness.
+Use deterministic posterior-draw and pointwise-log-likelihood fixtures so package comparisons do not depend on MCMC randomness.
 
-Required external parity:
+Completed 25 July 2026:
 
-- DIC against R `BayesianTools`, including `D(theta_bar)`, `D_bar`, `p_D`, and the documented DIC convention.
-- WAIC against R `loo::waic`.
-- PSIS-LOO, LOOIC, `p_loo`, standard error, pointwise ELPD, and Pareto-k against R `loo`.
-- Optional ArviZ agreement as a secondary implementation after the R oracle is stable.
-- True profile likelihood by nuisance-parameter reoptimization against R `bbmle`, not coordinate slices.
-- Overidentified GMM estimates, covariance, and Hansen J against R `gmm` and `specTest`.
+- DIC agrees with R `BayesianTools` for `D(theta_bar)`, `D_bar`, `p_D`, and the documented DIC convention.
+- WAIC agrees with R `loo::waic` for the complete pointwise log-likelihood matrix, lppd, `p_waic`, expected log predictive density, and WAIC. The artifact also records the R package standard error for traceability; BestFit does not currently expose a WAIC standard-error field.
+- The versioned [oracle artifact](../../verification/data/model-estimation/model-comparison-oracle.json) is consumed by two exact focused C# methods with a `1e-10` absolute tolerance.
+- R `loo::psis` and `loo::loo` 2.10.0 independently define PSIS weights, effective sample size, pointwise and aggregate LOO quantities, standard errors, Pareto $k$, tail length, and sample-size diagnostic thresholds over the 40-draw matrix and six 256-ratio tail regimes.
+- The versioned [PSIS-LOO oracle](../../verification/data/model-estimation/psis-loo-oracle.json) passes all R identities and six exact focused C# methods establish corrected BestFit aggregate, pointwise, tail, classification, and single-pass performance parity.
+
+Current scoped external parity is complete. ArviZ would be redundant secondary WAIC/LOO evidence, not a Phase 2 exit requirement. The overidentified GMM artifact now covers fixed-weight and efficient sandwich covariance with analytical self-checks.
 
 ### Phase 2 Findings
 
-- TR-011: conventional AIC/BIC must be computed from maximized data likelihood; posterior criteria remain separate.
-- TR-022: correct capability documentation to NUTS. Do not add plain HMC merely to match legacy wording.
-- TR-023: MLE `ProfileLikelihood` must perform nuisance reoptimization. MAP coordinate-slice functionality must be explicitly named and must not be presented as frequentist confidence intervals. Preserve legacy signatures through wrappers where possible.
-- TR-024: PSIS implementation must match reference-compatible cutoff excesses, stabilized GPD fitting, ordered expected statistics, and truncation.
-- TR-025: upstream RMC.Numerics issue; covariance adaptation must update with every realized warmup state and use a documented diminishing/frozen schedule.
-- TR-026: implement selected-weighting Hansen `J = n g^T W g` and chi-squared degrees of freedom.
-- TR-027: add explicit covariance status/diagnostics and a `Try` path; existing public covariance methods must no longer silently return false zero uncertainty.
-- TR-028: add optional joint-prior-sampling capability without changing `IModel`; coupled-prior models must implement it or report prior-predictive sampling as unavailable.
-- TR-029: immediately correct diagnostic labels; then plan upstream rank-normalized split/folded R-hat and bulk/tail ESS with external parity.
-- TR-030: add upstream NUTS-specific acceptance probability, divergence, tree-depth, and energy diagnostics; stop applying generic Metropolis thresholds to NUTS.
+- TR-011: Bayesian AIC/BIC use the data likelihood evaluated at MAP, never the posterior kernel. They are comparable with MLE criteria only when every active prior is flat; posterior criteria remain the appropriate choice with informative priors.
+- TR-022: fixed. Capability documentation now lists DEMCz, DEMCzs, ARWMH, and NUTS; plain HMC remains a Numerics-only capability.
+- TR-023: fixed. MLE reoptimizes nuisance parameters against the data likelihood; MAP performs the same bounded profiling against the full posterior kernel. Flat-prior MAP matches the R/analytical MLE profile up to an additive constant, and an informative-prior fixture verifies full posterior nuisance optimization. MAP cutoff intervals are not Bayesian credible intervals.
+- TR-024: fixed. The PSIS tail matches pinned R `loo` 2.10.0 and `posterior` 1.7.0 for `r_eff = 1`; WAIC/PSIS share one pointwise evaluation pass and influence reuses cached $O(n)$ summaries.
+- TR-025: fixed. The original continual Adaptive Metropolis schedule is preserved, and covariance receives every realized state from accepted, rejected, and infeasible transitions.
+- TR-026: fixed. Unpenalized overidentified two-step/iterative fits use selected-weighting Hansen `J = n g^T W g` with chi-squared degrees of freedom; generic fixed-weight one-step and penalized fits leave Hansen fields unset.
+- TR-027: fixed. MLE, MAP, and GMM now expose public covariance status and diagnostics plus non-throwing `Try` paths; existing getters throw when covariance is unavailable, and covariance-dependent MLE/MAP influence paths no longer substitute zeros. Deterministic fast tests cover failure, available, regularized, and enum-stability contracts.
+- TR-028: a 20,000-draw coupled-prior fixture confirms the documented independent-marginal behavior. Any general solution should add optional joint-prior-sampling capability without changing `IModel`; coupled-prior models must implement it or report prior-predictive sampling as unavailable.
+- TR-029: fixed. Existing R-hat/ESS internals now use rank-normalized split/folded R-hat and the minimum of rank-normalized bulk and pooled 0.05/0.95 tail ESS. Existing public methods, fields, serialization, concise report labels, and the 51-lag plotting ACF are preserved. The readiness threshold is 1.01, FFT/Geyer processing adds no target evaluations, and deterministic fixtures pass R `posterior` 1.7.0 parity.
+- TR-030: fixed. NUTS exposes post-warmup Hamiltonian acceptance, divergence, maximum-depth, tree/leapfrog, step-size, and E-BFMI diagnostics through additive serialized result fields. BestFit reports those diagnostics without generic Metropolis descriptors; legacy results report diagnostics unavailable. Analytic-gradient initialization routing and BestFit's complete-posterior finite-difference route are both focused-tested.
 - TR-031: fixed. Unsupported hat-matrix claims were removed; combined leverage is an additive fit-plus-variance ranking index.
-- TR-032: introduce a GMM-specific Cook/influence DTO and prevent Pareto-k labels, thresholds, and summaries from being applied.
+- TR-032: fixed compatibly. The two legacy PSIS-shaped GMM overloads remain callable but emit non-error obsolete warnings directing users to correctly labeled leverage or raw Cook APIs.
 - TR-033: rejected non-defect. The optimized GMM/penalty stack must preserve the Gaussian-prior inverse-variance weighting behavior. Do not change the gradient or penalty Hessian without tracing the full stack and obtaining approval.
-- TR-034: permit overidentified one-step GMM when supplied a valid positive-definite weighting matrix.
+- TR-034: fixed. Overidentified one-step GMM uses the initial identity or caller-supplied fixed weighting matrix for fit, bread, and meat. Two-step/iterative covariance refreshes the efficient weight at the final parameters. Both covariance strategies match the self-checking R `gmm` oracle.
 - TR-065: fixed. GMM influence Hessian scale no longer depends on penalty presence.
 
 Phase exit criteria:
 
 - Log10-Normal prior/penalty behavior is demonstrated.
 - MAP/GMM equivalence is resolved for the intended Gaussian-prior/quadratic-penalty questions.
-- DIC, WAIC, and LOO have reproducible external artifacts.
+- DIC, WAIC, and PSIS-LOO have reproducible external artifacts and corrected BestFit aggregate, pointwise, Pareto-k, and performance parity.
 - Every TR-011 and TR-022 through TR-034 finding has a disposition and linked evidence.
+- Rank-normalized R-hat and conservative bulk/tail ESS have a reproducible R `posterior` artifact, focused Numerics/BestFit parity, and report-threshold regressions.
 
 ## Phase 3 - Data Handling and Bulletin 17C
 
@@ -262,10 +275,10 @@ Findings and required direction:
 - TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
 - TR-040: apply identical invalid-scale guards to scalar and pointwise likelihoods.
 - TR-041: align ARIMAX covariates and Jacobians by date and the exact differencing index map.
-- TR-042: compute conventional AIC/BIC from MLE data likelihood for AR, MA, ARIMA, ARIMAX, and rating-curve analyses.
+- TR-042: compute AIC/BIC from the data likelihood at MAP for AR, MA, ARIMA, ARIMAX, and rating-curve analyses; document flat-prior MLE comparability and informative-prior limitations.
 - TR-046: make transform updates atomic: rebuild transformed/differenced data, reset parameters/results, and either implement or compatibility-deprecate the unused offset.
 
-Verification must include algebraic fixtures, scalar/pointwise decomposition, training/holdout isolation, seeded Monte Carlo moments, transformed simulation, and prior-invariance of conventional criteria.
+Verification must include algebraic fixtures, scalar/pointwise decomposition, training/holdout isolation, seeded Monte Carlo moments, transformed simulation, exclusion of prior-density terms from AIC/BIC, and flat-prior parity with MLE criteria.
 
 Phase exit criteria:
 
@@ -280,7 +293,7 @@ Findings and required direction:
 - TR-043: include the base-10 change-of-variables term in discharge-space scalar and pointwise likelihoods.
 - TR-044: enforce a defensible strictly positive exponent lower bound and test two-sided continuity.
 - TR-045: validate only date-aligned likelihood pairs; report unrelated invalid records separately.
-- TR-047: compute bivariate AIC/BIC from MLE data likelihood and retain Bayesian criteria for posterior comparison.
+- TR-047: compute bivariate AIC/BIC from the copula data likelihood at MAP; document that MLE comparability requires flat copula priors and fixed, common marginal fits.
 - TR-048: marginalize missing spatial sites with observed-site correlation submatrices cached by missingness pattern.
 - TR-049: use row/year observed-data contributions for marginals and copula terms; classify latent Gaussian-process density as prior structure and enforce scalar/pointwise identities.
 - TR-050: preserve completed cross-validation results across the restoration refit.
@@ -288,7 +301,7 @@ Findings and required direction:
 - TR-052: pass held-out covariates consistently for location, scale, and shape trends.
 - TR-053: record failed folds as failed/NaN, aggregate successful folds only, and report the success count.
 - TR-054: use conditional Gaussian-process prediction per posterior draw and propagate conditional spatial variance.
-- TR-055: suppress classical AIC/BIC where no defensible independent spatial observation unit exists; use explicitly defined posterior-predictive criteria instead.
+- TR-055: use the spatial data likelihood at MAP and nonempty row/year blocks for BIC, while documenting the remaining Gaussian-process, missing-site, weighting, dependence, and MAP-versus-MLE caveats; prefer explicitly defined posterior-predictive criteria.
 - TR-056: fit each bootstrap replicate to its resampled data and reject incomplete replicate sets.
 - TR-057: derive Hessian and score variability from the same estimating equations; report failure rather than substitute `J`.
 - TR-058: compute regional statistics within each joint posterior draw before taking interval quantiles.
@@ -303,57 +316,52 @@ Phase exit criteria:
 
 ## Recommended Phase 2 Batch Workflow
 
-Phase 2 should not continue one issue at a time. Use read-only audits and then obtain batch approval.
+Phase 2 proceeds only through explicit user-approved surgical scopes. Read-only audits may group related evidence, but production changes require approval for the named finding and fix.
 
 ### Batch 1 - Criteria, Profiles, GMM, and Covariance
 
-Candidate findings:
+Completed through surgical approvals:
 
-- TR-011
-- TR-022
-- TR-023
-- TR-026
-- TR-027
-- TR-034
+- TR-011 and TR-022 documentation/API inventory corrections;
+- TR-023 MLE and MAP nuisance profiling;
+- TR-026 selected-weight Hansen J;
+- TR-027 explicit covariance status/failure contracts;
+- TR-032 obsolete compatibility adapters for mislabeled GMM influence;
+- TR-034 overidentified one-step fit plus fixed-weight and efficient covariance parity.
 
-First action: perform a read-only audit of the relevant code, tests, verification tests, technical-reference chapters, and oracle infrastructure. Produce an implementation ledger grouped into:
-
-1. docs-only or wording-only changes;
-2. API-compatible BestFit production fixes;
-3. Numerics upstream fixes;
-4. verification-oracle/test additions;
-5. user decisions required before implementation.
-
-Do not implement production fixes until the user approves the batch.
+Retain the focused regressions and committed artifacts. No production item in this batch remains open.
 
 ### Batch 2 - External Model-Comparison Oracles
 
-Candidate work:
+Completed 25-27 July 2026:
 
 - DIC against R `BayesianTools`.
 - WAIC against R `loo`.
-- PSIS-LOO aggregate and pointwise values against R `loo`.
-- Optional ArviZ parity after the R oracle is stable.
+- PSIS-LOO aggregate/pointwise values, smoothed weights, effective sample size, Pareto $k$, tail regimes, and diagnostic thresholds against R `loo`.
+- True profile likelihood against R `bbmle` and closed-form nuisance optimization.
+- GMM fitting, Hansen J, and fixed-weight/efficient covariance against R `gmm` plus analytical sandwiches.
 
-First action: create deterministic posterior-draw and pointwise-log-likelihood fixtures, generate committed oracle artifacts, and add exact focused C# verification methods.
+Retain the pinned artifacts and exact focused regressions. Optional ArviZ agreement is not required.
 
 ### Batch 3 - PSIS Implementation
 
-Candidate finding:
+Completed 26 July 2026:
 
-- TR-024
-
-First action: prove the current BestFit PSIS behavior against pinned R `loo` fixtures. If it fails, present a focused algorithmic fix plan before editing production code.
-
+- TR-024 fixed without public API or Numerics changes.
+- Pinned R `loo` and `posterior` parity passed for aggregate and pointwise LOO, six tail regimes, Pareto-k thresholds, and XML classification persistence.
+- Default WAIC and PSIS share one transient pointwise matrix; influence diagnostics reuse $O(n)$ cached summaries.
+- Exact and moment-matched refits remain outside the default runtime path; `r_eff = 1` is documented.
 ### Batch 4 - Numerics MCMC Diagnostics
 
-Candidate findings:
+Completed findings:
 
 - TR-025
-- TR-029
 - TR-030
+- TR-029
 
-First action: audit `C:\GIT\Numerics` and BestFit integration using .NET 10 only. Separate documentation label corrections from sampler or diagnostic algorithm changes.
+TR-025 records every realized ARWMH state while preserving continual adaptation. TR-030 adds constant-memory NUTS Hamiltonian acceptance, divergence, tree/leapfrog, step-size, and E-BFMI diagnostics; carries them through additive serialized result fields; and uses sampler-specific BestFit reporting with a legacy-result fallback. The NUTS trajectory-selection algorithm is unchanged. The existing Numerics analytic-gradient initialization regression and a BestFit coupled-prior finite-difference verification cover both gradient routes. TR-029 modernizes only existing diagnostic internals and the report threshold, retaining public and serialization compatibility.
+
+TR-029 uses pooled midranks, inverse-normal scores, split and folded chains, and FFT/Geyer autocorrelation processing. Its committed R `posterior` fixtures cover IID, autocorrelated, shifted, scale-mismatched, sticky-tail, tied, constant, warmup, and permutation cases. The implementation performs no model-target evaluations.
 
 ### Batch 5 - Joint Prior Sampling
 
@@ -361,14 +369,14 @@ Candidate finding:
 
 - TR-028
 
-First action: design an additive optional capability that does not change `IModel`. Coupled-prior models should implement the capability explicitly or report prior-predictive sampling as unavailable.
+Characterization is complete. Next action, if approved: design an additive optional capability that does not change `IModel`. Coupled-prior models should implement the capability explicitly or report prior-predictive sampling as unavailable.
 
 ## Verification and Documentation Acceptance
 
 - Deterministic algebra uses approximately `1e-10` absolute tolerance.
 - Cross-language likelihood and criterion comparisons use `1e-8` absolute and `1e-7` relative tolerance unless the oracle manifest documents a stricter or algorithmically necessary exception.
 - Optimizer parity uses scaled parameter tolerances no looser than `1e-5`, plus maximum-log-likelihood parity. When comparing objective-converged global optimizers with parameter-converged local optimizers, documented exceptions such as `1e-4` scaled parameter tolerance are allowed if likelihood parity and scientific conclusions are unaffected.
-- PSIS totals target `1e-6`; Pareto-k targets `1e-4` against the pinned reference implementation.
+- PSIS aggregate and pointwise values use `1e-10` absolute tolerance; smoothed weights, Pareto-k, and importance-sampling effective sample size use `1e-8`.
 - Coverage studies pass only when nominal coverage lies within the predeclared binomial confidence interval and the minimum successful-replicate count is met.
 - Seeds, runtime versions, package versions, source commit, generation command, dataset hash, and tolerance rationale are recorded before observing C# results.
 - Every confirmed production fix updates, in the same completed batch, its `review-findings.md` row and detailed section, corresponding technical-reference chapter, relevant verification-report chapter, and traceability table.
@@ -380,17 +388,17 @@ First action: design an additive optional capability that does not change `IMode
 Use this prompt to continue from a clean session:
 
 ```text
-We are continuing RMC.BestFit verification finalization from commit 4f91691.
+We are continuing RMC.BestFit verification finalization after completing and consolidating the approved Phase 2 model-estimation and diagnostics scope. Numerics dependency checkpoint: 76f7dd0.
 
 Read docs/verification/verification-finalization-plan.md first, then docs/technical-reference/review-findings.md, docs/verification/README.md, docs/verification/model-estimation.md, docs/verification/test-inventory.md, and verification/data/MANIFEST.md.
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current scope: Phase 2 model estimation and diagnostics. Work in batches, not one finding at a time.
+Current checkpoint: DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, GMM Hansen J/fitting/covariance, ARWMH realized-state covariance, NUTS gradient/report diagnostics, GMM influence labeling, and rank-normalized R-hat/conservative bulk-tail ESS are corrected and focused-verified. TR-028 remains the accepted documented joint-prior limitation. Do not start Phase 3 without explicit direction.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
-- You may run exact focused verification methods only.
+- Run verification only with scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>.
 - Run the three unit-test projects after any RMC.BestFit/UI/App code change.
 - Do not change RMC.BestFit, UI, App, or Numerics production code until you first explain the proposed fix and I approve it.
 - Preserve public API signatures wherever possible.
@@ -401,14 +409,7 @@ Constraints:
 - Preserve unrelated modified/untracked files.
 
 First task:
-Perform a read-only Phase 2 audit for TR-011 and TR-022 through TR-034. Inspect existing code, unit tests, verification tests, docs, and oracle infrastructure. Produce a batch implementation ledger grouping findings into:
-1. docs-only or wording-only,
-2. BestFit API-compatible fixes,
-3. Numerics upstream fixes,
-4. verification-oracle/test additions,
-5. items requiring my decision.
-
-Do not implement production fixes until I approve the batch.
+Inspect the active worktrees without disturbing unrelated changes, confirm the recorded focused/fast gates and oracle hashes, and report any reconciliation discrepancy before beginning new work. Do not start Phase 3 or change production code without direction.
 ```
 
 ## Off-Ramps

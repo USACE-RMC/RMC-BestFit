@@ -211,6 +211,15 @@ namespace RMC.BestFit.Estimation
         private bool _useFallbackOptimizer = true;
         private bool _useNelderMeadForRemainingIterations;
         private int _optimizerFallbackCount;
+        /// <summary>
+        /// Stores the unpenalized moment objective evaluated with the weighting matrix
+        /// selected by the completed estimation strategy.
+        /// </summary>
+        /// <remarks>
+        /// Covariance post-processing may replace <see cref="W"/>. Preserving this scalar
+        /// ensures Hansen's J statistic continues to use the fit's selected weight.
+        /// </remarks>
+        private double _selectedWeightMomentObjective = double.NaN;
 
         /// <summary>
         /// Gets the number of optimizer fallback transitions recorded by the current estimate.
@@ -484,6 +493,23 @@ namespace RMC.BestFit.Estimation
         /// <c>PostProcess()</c> see the previous run's value (or null).
         /// </remarks>
         public Matrix? Sigma { get; private set; }
+        /// <summary>
+        /// Gets the outcome of the most recent covariance computation.
+        /// </summary>
+        /// <remarks>
+        /// The value resets to <see cref="CovarianceComputationStatus.NotComputed"/> whenever
+        /// estimation results are cleared or a new estimation run begins.
+        /// </remarks>
+        public CovarianceComputationStatus CovarianceStatus { get; private set; } = CovarianceComputationStatus.NotComputed;
+
+        /// <summary>
+        /// Gets a diagnostic message for the most recent covariance computation.
+        /// </summary>
+        /// <remarks>
+        /// This is <c>null</c> for an unregularized successful computation and before any
+        /// covariance attempt. Failed and regularized computations provide concise details.
+        /// </remarks>
+        public string? CovarianceDiagnostic { get; private set; }
 
         /// <summary>
         /// Gets the best parameter set found during estimation. Initialized to an empty
@@ -496,12 +522,12 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// Gets the J-statistic value for model fit.
         /// </summary>
-        public double JStat { get; private set; }
+        public double JStat { get; private set; } = double.NaN;
 
         /// <summary>
         /// Gets the p-value for the J-statistic.
         /// </summary>
-        public double JStatPval { get; private set; }
+        public double JStatPval { get; private set; } = double.NaN;
 
         /// <summary>
         /// Gets the number of iterations used for iterative estimation.
@@ -592,8 +618,7 @@ namespace RMC.BestFit.Estimation
             if (W == null)
                 throw new InvalidOperationException("Weighting matrix W must be set before computing Q. Call Estimate() or set W directly.");
 
-            var gtmean = GetG(parameters);
-            var q = gtmean.Multiply(W).Multiply(gtmean).Sum();
+            double q = GetUnpenalizedMomentObjective(parameters, W);
 
             if (PenaltyFunction != null)
             {
@@ -606,6 +631,22 @@ namespace RMC.BestFit.Estimation
             }
 
             return Tools.IsFinite(q) ? q : double.MaxValue;
+        }
+
+        /// <summary>
+        /// Evaluates the unpenalized GMM moment quadratic with an explicit weighting matrix.
+        /// </summary>
+        /// <param name="parameters">Parameter values at which to evaluate the mean moments.</param>
+        /// <param name="weightingMatrix">Weighting matrix defining the quadratic form.</param>
+        /// <returns>The scalar value <c>g(theta)' W g(theta)</c>.</returns>
+        /// <remarks>
+        /// This method intentionally excludes <see cref="PenaltyFunction"/> so model-specification
+        /// diagnostics are never contaminated by parameter regularization terms.
+        /// </remarks>
+        private double GetUnpenalizedMomentObjective(double[] parameters, Matrix weightingMatrix)
+        {
+            Vector meanMoments = GetG(parameters);
+            return meanMoments.Multiply(weightingMatrix).Multiply(meanMoments).Sum();
         }
 
         /// <summary>
@@ -725,6 +766,8 @@ namespace RMC.BestFit.Estimation
         /// <para>For efficient two-step GMM with W = S⁻¹:</para>
         /// <para>Σ = n⁻¹(D'S⁻¹D)⁻¹ where D = ∂g/∂θ.</para>
         /// <para>Sandwich estimator (robust): Σ = n⁻¹ Bread⁻¹ Meat Bread⁻¹.</para>
+        /// <para>For fixed-weight one-step GMM, the configured weight is retained in both bread and meat.</para>
+        /// <para>For two-step and iterative GMM, covariance uses S⁻¹ evaluated at the fitted parameters.</para>
         /// <para>
         /// Penalty Hessian H = P/n always appears in the bread: Bread = D'WD + H.
         /// Whether H appears in the meat depends on <see cref="PenaltyIsRandom"/>:
@@ -748,53 +791,13 @@ namespace RMC.BestFit.Estimation
         /// </remarks>
         public Matrix GetCovariance(double[] parameters, bool sandwich = true)
         {
-            try
+            if (!TryGetCovariance(parameters, sandwich, out Matrix covariance))
             {
-                // 1) S and W — regularize S before inversion to handle ill-conditioning
-                // under heavy censoring (few observations in some moment conditions).
-                S = GetS(parameters);
-                S = MatrixRegularization.Regularize(S);
-                W = S.Inverse();
-
-                // 2) Jacobian and penalty Hessian
-                var d = GetJacobian(parameters);
-                var dT = d.Transpose();
-                var H = GetPenaltyHessian(parameters);
-
-                // 3) Bread: D'WD + H always includes penalty curvature.
-                // Regularize before inversion to handle near-singular information matrices.
-                var bread = dT * W * d + H;
-                bread = MatrixRegularization.MakeSymmetricPositiveDefinite(bread);
-                var breadInv = bread.Inverse();
-
-                // 4) Non-sandwich shortcut: Σ = Bread⁻¹ / n
-                if (!sandwich)
-                {
-                    breadInv /= (double)SampleSize;
-                    breadInv = MatrixRegularization.MakeSymmetricPositiveDefinite(breadInv);
-                    return breadInv;
-                }
-
-                // 5) Sandwich meat: D'WSWD, plus H when penalty parameters are random.
-                // When PenaltyIsRandom = true (B17C regional estimates), the penalty target
-                // θ₀ is itself a random variable with variance MSE, adding P/n to the meat.
-                // When false (deterministic regularization), only data variability contributes.
-                var meat = dT * W * S * W * d;
-                if (PenaltyIsRandom)
-                    meat += H;
-
-                // 6) Sandwich covariance: Σ = Bread⁻¹ Meat Bread⁻¹ / n
-                var covariance = breadInv * meat * breadInv;
-                covariance /= (double)SampleSize;
-                covariance = MatrixRegularization.MakeSymmetricPositiveDefinite(covariance);
-
-                return covariance;
+                throw new InvalidOperationException(
+                    CovarianceDiagnostic ?? "The GMM covariance matrix is unavailable.");
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to compute GMM covariance matrix: {ex.Message}");
-                return new Matrix(NumberOfParameters, NumberOfParameters);
-            }
+
+            return covariance;
         }
 
         /// <summary>
@@ -802,24 +805,168 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <param name="parameters">Parameter values at which to evaluate covariance.</param>
         /// <param name="sandwich">Whether to use the robust sandwich estimator.</param>
-        /// <param name="covariance">The computed covariance matrix when usable; otherwise a zero matrix.</param>
+        /// <param name="covariance">
+        /// The computed covariance matrix when usable; otherwise, a zero matrix that must
+        /// not be interpreted as estimated uncertainty.
+        /// </param>
         /// <returns><see langword="true"/> when covariance construction produces a usable finite matrix.</returns>
         /// <remarks>
-        /// This wrapper lets bootstrap collectors reject covariance failures without changing the
-        /// existing public <see cref="GetCovariance(double[], bool)"/> behavior.
+        /// Inspect <see cref="CovarianceStatus"/> and <see cref="CovarianceDiagnostic"/> after
+        /// this method returns. Regularization of moment, bread, or covariance matrices is
+        /// reported explicitly.
         /// </remarks>
-        internal bool TryGetCovariance(double[] parameters, bool sandwich, out Matrix covariance)
+        public bool TryGetCovariance(double[] parameters, bool sandwich, out Matrix covariance)
         {
+            covariance = new Matrix(NumberOfParameters, NumberOfParameters);
             try
             {
-                covariance = GetCovariance(parameters, sandwich);
-                return MatrixIsFinite(covariance) && HasPositiveFiniteDiagonal(covariance);
+                covariance = ComputeCovariance(parameters, sandwich, out bool wasRegularized);
+                if (!MatrixIsFinite(covariance) || !HasPositiveFiniteDiagonal(covariance))
+                {
+                    covariance = new Matrix(NumberOfParameters, NumberOfParameters);
+                    return SetCovarianceFailure(
+                        "GMM covariance is non-finite or has a non-positive diagonal variance.");
+                }
+
+                CovarianceStatus = wasRegularized
+                    ? CovarianceComputationStatus.Regularized
+                    : CovarianceComputationStatus.Available;
+                CovarianceDiagnostic = wasRegularized
+                    ? "GMM covariance computation required positive-definite regularization."
+                    : null;
+                if (CovarianceDiagnostic != null)
+                    Debug.WriteLine(CovarianceDiagnostic);
+                return true;
             }
-            catch
+            catch (Exception ex)
             {
                 covariance = new Matrix(NumberOfParameters, NumberOfParameters);
-                return false;
+                Debug.WriteLine($"Failed to compute GMM covariance matrix: {ex.Message}");
+                return SetCovarianceFailure($"GMM covariance computation failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Computes GMM covariance and records whether any matrix regularization changed an input.
+        /// </summary>
+        /// <param name="parameters">Parameter values at which to evaluate covariance.</param>
+        /// <param name="sandwich">Whether to use the robust sandwich estimator.</param>
+        /// <param name="wasRegularized">
+        /// Set to <see langword="true"/> when moment, bread, or covariance regularization
+        /// changed at least one matrix element.
+        /// </param>
+        /// <returns>The computed covariance matrix.</returns>
+        private Matrix ComputeCovariance(
+            double[] parameters,
+            bool sandwich,
+            out bool wasRegularized)
+        {
+            wasRegularized = false;
+
+            Matrix rawMomentCovariance = MomentConditionFunction(parameters).S;
+            Matrix positiveDefiniteS = MatrixRegularization.MakeSymmetricPositiveDefinite(rawMomentCovariance);
+            wasRegularized |= MatricesDifferMaterially(rawMomentCovariance, positiveDefiniteS);
+            Matrix regularizedS = MatrixRegularization.Regularize(positiveDefiniteS);
+            wasRegularized |= MatricesDifferMaterially(positiveDefiniteS, regularizedS);
+            S = regularizedS;
+
+            Matrix covarianceWeight;
+            if (EstimationStrategy == GMMEstimationStrategy.OneStep)
+            {
+                covarianceWeight = W ?? throw new InvalidOperationException(
+                    "The fixed one-step weighting matrix is unavailable for covariance computation.");
+            }
+            else
+            {
+                covarianceWeight = S.Inverse();
+                W = covarianceWeight;
+            }
+
+            Matrix jacobian = GetJacobian(parameters);
+            Matrix jacobianTranspose = jacobian.Transpose();
+            Matrix penaltyHessian = GetPenaltyHessian(parameters);
+
+            Matrix rawBread = jacobianTranspose * covarianceWeight * jacobian + penaltyHessian;
+            Matrix bread = MatrixRegularization.MakeSymmetricPositiveDefinite(rawBread);
+            wasRegularized |= MatricesDifferMaterially(rawBread, bread);
+            Matrix breadInverse = bread.Inverse();
+
+            if (!sandwich)
+            {
+                breadInverse /= (double)SampleSize;
+                Matrix regularizedCovariance =
+                    MatrixRegularization.MakeSymmetricPositiveDefinite(breadInverse);
+                wasRegularized |= MatricesDifferMaterially(breadInverse, regularizedCovariance);
+                return regularizedCovariance;
+            }
+
+            Matrix meat = jacobianTranspose * covarianceWeight * S * covarianceWeight * jacobian;
+            if (PenaltyIsRandom)
+                meat += penaltyHessian;
+
+            Matrix rawCovariance = breadInverse * meat * breadInverse;
+            rawCovariance /= (double)SampleSize;
+            Matrix covariance = MatrixRegularization.MakeSymmetricPositiveDefinite(rawCovariance);
+            wasRegularized |= MatricesDifferMaterially(rawCovariance, covariance);
+            return covariance;
+        }
+
+        /// <summary>
+        /// Records an unavailable covariance result.
+        /// </summary>
+        /// <param name="diagnostic">Diagnostic explaining the failure.</param>
+        /// <returns><see langword="false"/> for direct use by Try methods.</returns>
+        private bool SetCovarianceFailure(string diagnostic)
+        {
+            CovarianceStatus = CovarianceComputationStatus.Failed;
+            CovarianceDiagnostic = diagnostic;
+            return false;
+        }
+
+        /// <summary>
+        /// Resets covariance status for a new or cleared estimator state.
+        /// </summary>
+        private void ResetCovarianceStatus()
+        {
+            CovarianceStatus = CovarianceComputationStatus.NotComputed;
+            CovarianceDiagnostic = null;
+        }
+
+        /// <summary>
+        /// Computes the maximum absolute elementwise difference between two matrices.
+        /// </summary>
+        /// <param name="left">First matrix.</param>
+        /// <param name="right">Second matrix.</param>
+        /// <returns>The maximum absolute elementwise difference.</returns>
+        private static double MaximumAbsoluteDifference(Matrix left, Matrix right)
+        {
+            double maximum = 0.0;
+            for (int row = 0; row < left.NumberOfRows; row++)
+            {
+                for (int column = 0; column < left.NumberOfColumns; column++)
+                    maximum = Math.Max(maximum, Math.Abs(left[row, column] - right[row, column]));
+            }
+
+            return maximum;
+        }
+
+        /// <summary>
+        /// Determines whether regularization changed a matrix beyond numerical reconstruction noise.
+        /// </summary>
+        /// <param name="left">Matrix before regularization.</param>
+        /// <param name="right">Matrix after regularization.</param>
+        /// <returns><see langword="true"/> when the maximum adjustment is material relative to matrix scale.</returns>
+        private static bool MatricesDifferMaterially(Matrix left, Matrix right)
+        {
+            double scale = 0.0;
+            for (int row = 0; row < left.NumberOfRows; row++)
+            {
+                for (int column = 0; column < left.NumberOfColumns; column++)
+                    scale = Math.Max(scale, Math.Abs(left[row, column]));
+            }
+
+            double tolerance = 1e-8 * Math.Max(scale, 1e-12);
+            return MaximumAbsoluteDifference(left, right) > tolerance;
         }
 
         /// <summary>
@@ -869,7 +1016,22 @@ namespace RMC.BestFit.Estimation
         {
             if (!IsEstimated)
                 throw new InvalidOperationException("The model has not been estimated.");
-            return Sigma ?? GetCovariance(BestParameterSet.Values, sandwich);
+
+            if (Sigma != null)
+            {
+                if (!MatrixIsFinite(Sigma) || !HasPositiveFiniteDiagonal(Sigma))
+                {
+                    SetCovarianceFailure(
+                        "The stored GMM covariance is non-finite or has a non-positive diagonal variance.");
+                    throw new InvalidOperationException(CovarianceDiagnostic);
+                }
+
+                if (CovarianceStatus == CovarianceComputationStatus.NotComputed)
+                    CovarianceStatus = CovarianceComputationStatus.Available;
+                return Sigma;
+            }
+
+            return GetCovariance(BestParameterSet.Values, sandwich);
         }
 
         /// <summary>
@@ -930,49 +1092,6 @@ namespace RMC.BestFit.Estimation
             for (int i = 0; i < NumberOfParameters; i++)
                 se[i] = Math.Sqrt(Math.Max(0, sandwich[i, i]));
             return se;
-        }
-
-        /// <summary>
-        /// Computes the residual covariance matrix of the moment conditions after projection.
-        /// </summary>
-        /// <param name="parameters">The parameter values to evaluate.</param>
-        /// <returns>The q×q residual moment covariance matrix V = Var[g(θ̂)].</returns>
-        /// <remarks>
-        /// <para>For two-step/iterative GMM: V = S - D(D'S⁻¹D)⁻¹D'.</para>
-        /// <para>For one-step GMM: V = (I - P)S(I - P)' where P = D(D'D)⁻¹D'.</para>
-        /// <para>Used in computing J-statistic for one-step estimation.</para>
-        /// </remarks>
-        private Matrix GetMomentResidualCovariance(double[] parameters)
-        {
-            var d = GetJacobian(parameters);
-            var dT = d.Transpose();
-            var currentS = this.S!;
-
-            try
-            {
-                if (EstimationStrategy == GMMEstimationStrategy.TwoStep || EstimationStrategy == GMMEstimationStrategy.Iterative)
-                {
-                    var Sinv = currentS.Inverse();
-                    var middle = (dT * Sinv * d).Inverse();
-                    var projection = d * middle * dT;
-                    var result = currentS - projection;
-                    return result / SampleSize;
-                }
-                else
-                {
-                    var I = Matrix.Identity(currentS.NumberOfRows);
-                    var middle = (dT * d).Inverse();
-                    var projection = d * middle * dT;
-                    var residual = I - projection;
-                    var result = residual * currentS * residual.Transpose();
-                    return result / SampleSize;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Matrix inversion failed in GetMomentResidualCovariance: {ex.Message}");
-                return new Matrix(currentS.NumberOfRows, currentS.NumberOfRows);
-            }
         }
 
         #endregion
@@ -1634,13 +1753,19 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
-        /// Returns influence diagnostics for GMM using Cook's distance as the influence metric.
+        /// Returns the legacy PSIS-shaped compatibility representation of GMM Cook-like influence.
         /// </summary>
         /// <returns>
-        /// An <see cref="InfluenceDiagnostics"/> object with Cook's distance values mapped to the ParetoK field
-        /// for compatibility with the diagnostics framework.
+        /// A legacy <see cref="InfluenceDiagnostics"/> object with Cook-like values mapped to its
+        /// Pareto-k field. New code must not interpret its categories or summaries as PSIS diagnostics.
         /// </returns>
+        /// <remarks>
+        /// This method is retained for source and binary compatibility. Use
+        /// <see cref="GetLeverageDiagnostics"/> for labeled GMM diagnostics or
+        /// <see cref="GetCooksDistance"/> for the raw Cook-like values.
+        /// </remarks>
         /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or pointwise moment conditions are not available.</exception>
+        [Obsolete("GMM Cook-like influence is not a Pareto-k diagnostic. Use GetLeverageDiagnostics() for labeled diagnostics or GetCooksDistance() for raw Cook-like values.")]
         public InfluenceDiagnostics GetInfluenceDiagnostics()
         {
             // Try to get aggregated data component metadata and row mapping
@@ -1845,10 +1970,19 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
-        /// Computes influence diagnostics (Cook's Distance) with data component metadata for labeling.
+        /// Returns the legacy PSIS-shaped compatibility representation of GMM Cook-like influence with labels.
         /// </summary>
         /// <param name="dataComponents">Data component metadata for observation labels (type, name, value).</param>
-        /// <returns>An <see cref="InfluenceDiagnostics"/> object with Cook's Distance stored in ParetoK.</returns>
+        /// <returns>
+        /// A legacy <see cref="InfluenceDiagnostics"/> object with Cook-like values mapped to its
+        /// Pareto-k field. New code must not interpret its categories or summaries as PSIS diagnostics.
+        /// </returns>
+        /// <remarks>
+        /// This overload is retained for source and binary compatibility. Use
+        /// <see cref="GetLeverageDiagnostics"/> for labeled GMM diagnostics or
+        /// <see cref="GetCooksDistance"/> for the raw Cook-like values.
+        /// </remarks>
+        [Obsolete("GMM Cook-like influence is not a Pareto-k diagnostic. Use GetLeverageDiagnostics() for labeled diagnostics or GetCooksDistance() for raw Cook-like values.")]
         public InfluenceDiagnostics GetInfluenceDiagnostics(IList<DataComponent> dataComponents)
         {
             var cooksD = GetCooksDistance();
@@ -2461,12 +2595,15 @@ namespace RMC.BestFit.Estimation
         /// A <c>true</c> return does not necessarily imply strict optimizer convergence.
         /// </returns>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the GMM problem is under-identified without a penalty function,
-        /// or when using one-step estimation on an over-identified problem.
+        /// Thrown when the GMM problem is under-identified without a penalty function.
         /// </exception>
         public bool Estimate()
         {
             IsEstimated = false;
+            ResetCovarianceStatus();
+            _selectedWeightMomentObjective = double.NaN;
+            JStat = double.NaN;
+            JStatPval = double.NaN;
 
             _convergedWithinTolerance = false;
             _useNelderMeadForRemainingIterations = false;
@@ -2478,8 +2615,6 @@ namespace RMC.BestFit.Estimation
             // Validation
             if (IdentificationStatus == GMMIdentificationStatus.UnderIdentified && PenaltyFunction == null)
                 throw new InvalidOperationException("The GMM problem is under-identified and cannot be estimated without a penalty function.");
-            if (IdentificationStatus == GMMIdentificationStatus.OverIdentified && EstimationStrategy == GMMEstimationStrategy.OneStep)
-                throw new InvalidOperationException("The GMM problem is over-identified, so you cannot use the one-step estimation method. Use TwoStep or Iterative instead.");
 
             GMMIterations = 0;
             TotalFunctionEvaluations = 0;
@@ -2499,6 +2634,10 @@ namespace RMC.BestFit.Estimation
             // Check if estimation succeeded
             if (BestParameterSet.Values != null && BestParameterSet.Values.Length > 0)
             {
+                double momentObjective = GetUnpenalizedMomentObjective(BestParameterSet.Values, W!);
+                _selectedWeightMomentObjective = Tools.IsFinite(momentObjective) && momentObjective >= 0d
+                    ? momentObjective
+                    : double.NaN;
                 IsEstimated = true;
                 return true;
             }
@@ -2510,27 +2649,45 @@ namespace RMC.BestFit.Estimation
         /// Post-process estimation results to compute model covariance and optional J-statistic.
         /// </summary>
         /// <param name="useSandwich">If true, uses robust sandwich estimator for covariance. Default = true.</param>
-        /// <param name="computeJstat">If true, computes Hansen's J-statistic for overidentification test. Default = false.</param>
+        /// <param name="computeJstat">
+        /// If true, computes Hansen's J-statistic for an unpenalized overidentified two-step
+        /// or iterative fit. Default = false.
+        /// </param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the selected-weight moment objective is unavailable or non-finite.
+        /// </exception>
         /// <remarks>
-        /// <para>J-statistic: J = n · g(θ̂)' V⁻¹ g(θ̂), distributed as χ²(q-p) under null hypothesis of correct specification.</para>
-        /// <para>Only valid for over-identified models (q &gt; p).</para>
+        /// <para>
+        /// The statistic is <c>J = n * g(thetaHat)' W g(thetaHat)</c>, using the weighting
+        /// matrix selected by the completed fit, and is compared with <c>chi-square(q-p)</c>.
+        /// </para>
+        /// <para>
+        /// A generic fixed-weight one-step fit and a penalized fit do not automatically have
+        /// the efficient-weight Hansen chi-square interpretation. Their J-statistic fields
+        /// remain <see cref="double.NaN"/>.
+        /// </para>
         /// </remarks>
         public void PostProcess(bool useSandwich = true, bool computeJstat = false)
         {
             // Compute covariance
             Sigma = GetCovariance(BestParameterSet.Values, useSandwich);
-            if (!computeJstat) return;
+            if (!computeJstat)
+                return;
 
-            // Compute J-statistic
-            var gtMean = GetG(BestParameterSet.Values);
-            var V = GetMomentResidualCovariance(BestParameterSet.Values);
-            var Vinv = V.Inverse();
-            var jstatMatrix = gtMean * Vinv * gtMean;
-            JStat = jstatMatrix.Sum();
+            JStat = double.NaN;
+            JStatPval = double.NaN;
+            if (DegreeOfFreedom <= 0 ||
+                EstimationStrategy == GMMEstimationStrategy.OneStep ||
+                PenaltyFunction != null)
+                return;
 
-            // Compute p-value (only valid if over-identified)
+            if (!Tools.IsFinite(_selectedWeightMomentObjective) || _selectedWeightMomentObjective < 0d)
+                throw new InvalidOperationException(
+                    "Hansen's J statistic is unavailable because the selected-weight moment objective was not preserved by a completed estimate.");
+
+            JStat = SampleSize * _selectedWeightMomentObjective;
             var chiSquared = new ChiSquared(DegreeOfFreedom);
-            JStatPval = DegreeOfFreedom > 0 ? 1.0 - chiSquared.CDF(JStat) : double.NaN;
+            JStatPval = 1.0 - chiSquared.CDF(JStat);
         }
 
         #endregion
@@ -2560,9 +2717,11 @@ namespace RMC.BestFit.Estimation
             _optimizerFallbackCount = 0;
             JStat = double.NaN;
             JStatPval = double.NaN;
+            _selectedWeightMomentObjective = double.NaN;
             W = null;
             S = null;
             Sigma = null;
+            ResetCovarianceStatus();
             BestParameterSet = new ParameterSet();
             ConvergenceHistory.Clear();
         }
@@ -2581,11 +2740,6 @@ namespace RMC.BestFit.Estimation
             {
                 valid = false;
                 errors.Add("The GMM problem is under-identified and cannot be estimated.");
-            }
-            if (IdentificationStatus == GMMIdentificationStatus.OverIdentified && EstimationStrategy == GMMEstimationStrategy.OneStep)
-            {
-                valid = false;
-                errors.Add("The GMM problem is over-identified, so you cannot use the one-step estimation method.");
             }
             if (MaxGMMIterations < 1 || MaxGMMIterations > 1000)
             {
@@ -2700,6 +2854,9 @@ namespace RMC.BestFit.Estimation
             if (xElement == null) return;
 
             _convergedWithinTolerance = false;
+            _selectedWeightMomentObjective = double.NaN;
+            JStat = double.NaN;
+            JStatPval = double.NaN;
             // Restore configuration attributes
             var stratAttr = xElement.Attribute(nameof(EstimationStrategy));
             if (stratAttr != null && Enum.TryParse(stratAttr.Value, out GMMEstimationStrategy strat))
@@ -2762,6 +2919,15 @@ namespace RMC.BestFit.Estimation
 
             var sigmaElement = xElement.Element(nameof(Sigma));
             if (sigmaElement != null) Sigma = DeserializeMatrix(sigmaElement.Element(nameof(Matrix)));
+
+            ResetCovarianceStatus();
+            if (Sigma != null)
+            {
+                if (MatrixIsFinite(Sigma) && HasPositiveFiniteDiagonal(Sigma))
+                    CovarianceStatus = CovarianceComputationStatus.Available;
+                else
+                    SetCovarianceFailure("The restored GMM covariance is non-finite or degenerate.");
+            }
 
             // Set model parameter values from best parameter set
             if (BestParameterSet.Values != null && Model != null)

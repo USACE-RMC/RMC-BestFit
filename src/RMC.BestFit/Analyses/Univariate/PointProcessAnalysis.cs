@@ -522,9 +522,9 @@ namespace RMC.BestFit.Analyses
                 for (int i = 0; i < ProbabilityOrdinates.Count; i++)
                     AnalysisResults.ModeCurve[i] = PointProcess.Distribution!.InverseCDF(1 - ProbabilityOrdinates[i]);
 
-                // Information criteria. AIC/BIC at MAP using full LogLikelihood
-                // (data + prior); see UnivariateAnalysis for the convention rationale.
-                var logL = PointProcess.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the data likelihood at MAP and are comparable with MLE
+                // criteria only when all active priors are flat.
+                var logL = PointProcess.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
                 var k = PointProcess.NumberOfParameters;
                 var n = PointProcess.DataFrame.TotalRecordLength();
                 var aic = GoodnessOfFit.AIC(k, logL);

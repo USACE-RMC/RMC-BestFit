@@ -699,11 +699,16 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ConfidenceIntervals[p, 2] = sumUpper / SpatialGEV.Sites;
                 }
 
-                // Goodness-of-fit metrics
-                // AIC/BIC at MAP using full LogLikelihood (data + prior).
-                double mapLogLH = SpatialGEV.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                // AIC/BIC use the data likelihood at MAP. Each row is one
+                // multivariate observation block for BIC, excluding fully missing rows.
+                double mapLogLH = SpatialGEV.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
+                int effectiveSampleSize = Enumerable.Range(0, SpatialGEV.Observations)
+                    .Count(observation => Enumerable.Range(0, SpatialGEV.Sites)
+                        .Any(site => !double.IsNaN(SpatialGEV.AtSiteData[observation, site])));
                 AnalysisResults.AIC = GoodnessOfFit.AIC(SpatialGEV.NumberOfParameters, mapLogLH);
-                AnalysisResults.BIC = GoodnessOfFit.BIC(SpatialGEV.Sites * SpatialGEV.Observations, SpatialGEV.NumberOfParameters, mapLogLH);
+                AnalysisResults.BIC = effectiveSampleSize > 0
+                    ? GoodnessOfFit.BIC(effectiveSampleSize, SpatialGEV.NumberOfParameters, mapLogLH)
+                    : double.NaN;
                 AnalysisResults.DIC = BayesianAnalysis.DIC;
             });
 

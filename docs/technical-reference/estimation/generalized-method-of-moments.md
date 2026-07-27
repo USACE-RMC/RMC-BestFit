@@ -26,7 +26,7 @@ $$
 
 The `MomentConditionFunction` delegate returns both `G` and `S`; an `IGMMModel` supplies the same quantities through its scientific implementation. `PointwiseMomentConditionFunction`, when present, supports observation-level influence calculations. `SampleSize` is $n$, `NumberOfMomentConditions` is $q$, and `NumberOfParameters` is $p$.
 
-Identification is classified as underidentified ($q<p$), just identified ($q=p$), or overidentified ($q>p$). BestFit refuses an underidentified fit unless a penalty delegate is present. The current API also refuses `OneStep` for an overidentified problem, although one-step GMM with a fixed positive-definite weight is defined in standard theory; users must select `TwoStep` or `Iterative` for such specifications.
+Identification is classified as underidentified ($q<p$), just identified ($q=p$), or overidentified ($q>p$). BestFit refuses an underidentified fit unless a penalty delegate is present. `OneStep` supports just-identified and overidentified systems using the initial identity or caller-supplied fixed weighting matrix; `TwoStep` and `Iterative` estimate an efficient weight from the moment covariance.
 
 ## Objective and Penalties
 
@@ -142,7 +142,9 @@ $$
 
 A wide centered prior leaves both quantities effectively unchanged; a narrow centered prior leaves the location unchanged while contracting its variance; and a narrow displaced prior changes both. The Log10-Normal verification reproduces all three cases for MAP and Bulletin 17C GMM while reestimating $\sigma$ in every fit.
 
-Setting `PenaltyIsRandom = false` instead reports the frequentist sampling covariance of a fixed regularized estimator: the penalty curvature remains in the bread but not in the meat. That quantity is not the Gaussian posterior variance in (GMM.8b). Both $\mathbf S$ and $\mathbf B$ are regularized before inversion. A caught covariance failure returns a zero matrix through the public API, so zero variances require failure review rather than scientific interpretation.
+Setting `PenaltyIsRandom = false` instead reports the frequentist sampling covariance of a fixed regularized estimator: the penalty curvature remains in the bread but not in the meat. That quantity is not the Gaussian posterior variance in (GMM.8b). Both $\mathbf S$ and $\mathbf B$ are regularized before inversion. `TryGetCovariance(parameters, sandwich, out covariance)` returns `false` when a finite covariance with positive diagonal variances cannot be produced; its zero-valued out placeholder is not an uncertainty estimate. `GetCovariance(...)`, `GetCovarianceMatrix()`, and downstream paths that require covariance throw `InvalidOperationException` for the same failure. `CovarianceStatus` records `Available`, materially `Regularized`, or `Failed`, and `CovarianceDiagnostic` supplies the corresponding explanation.
+
+Fixed-weight one-step and efficient two-step covariance are externally verified against R `gmm` 1.9.1 and direct analytical reconstruction of (GMM.8). `OneStep` recomputes $\mathbf S$ at the fitted parameters but retains the configured fixed $\mathbf W$ in both bread and meat; the identity-weight fixture gives variance $0.145652392138090$. `TwoStep` and `Iterative` use $\mathbf S^{-1}$ recomputed at the final fitted parameters for covariance; the two-step fixture gives $0.132600447299456$. Both BestFit results agree within $10^{-8}$. The R generator uses `vcov="iid"` for the arbitrary fixed weight; `vcov="TrueFixed"` would instead assert that the supplied matrix is already the inverse moment covariance.
 
 ## Fit, Variance, and Combined Influence
 
@@ -188,11 +190,11 @@ J=n\,\mathbf g_n(\widehat{\boldsymbol\theta})^{\mathsf T}
 \overset{a}{\sim}\chi^2_{q-p}. \tag{GMM.9}
 $$
 
-The current `PostProcess(computeJstat: true)` does not evaluate (GMM.9). It forms a projected residual-moment covariance divided by $n$, inverts it, and calculates $\mathbf g_n^{\mathsf T}\mathbf V^{-1}\mathbf g_n$. The projection is rank deficient in exact arithmetic, and the implementation catches some inversion failures by returning a zero matrix. Until this path is independently reconciled with Hansen's statistic, do not publish `JStat` or `JStatPval` as a standard overidentification test. This discrepancy is recorded in the review register.
+`PostProcess(computeJstat: true)` evaluates (GMM.9) with the unpenalized moment objective and the weighting matrix selected by the completed fit. It populates `JStat` and `JStatPval` only for unpenalized overidentified `TwoStep` or `Iterative` fits. A generic fixed-weight `OneStep` fit and any penalized fit leave both fields as `NaN`, because those cases do not automatically carry the efficient-weight Hansen chi-squared interpretation. The deterministic R `gmm` 1.9.1 fixture gives $J=10.0755078518454$ and $p=0.00150253202968641$; BestFit agrees within the declared oracle tolerances.
 
 ## Profile-Q Products
 
-`ProfileQ(trueProfile: true)` fixes one parameter and reoptimizes the remainder using Brent for one nuisance dimension or Nelder-Mead otherwise. Unlike the MLE/MAP coordinate-slice methods, this is structurally a profile objective. `trueProfile: false` evaluates a fixed-nuisance slice. `ProfileConfidenceIntervals` and `ProfilePercentiles` inherit the GMM quadratic/chi-squared approximation and remain asymptotic; boundaries, penalties, weak identification, and regularization can invalidate nominal coverage.
+`ProfileQ(trueProfile: true)` fixes one parameter and reoptimizes the remainder using Brent for one nuisance dimension or Nelder-Mead otherwise. Like the corrected MLE and MAP methods, this is structurally a profile objective; nuisance parameters are not held at their joint fit. `trueProfile: false` evaluates a fixed-nuisance slice. `ProfileConfidenceIntervals` and `ProfilePercentiles` inherit the GMM quadratic/chi-squared approximation and remain asymptotic; boundaries, penalties, weak identification, and regularization can invalidate nominal coverage.
 
 ## Compile-Checked API Workflow
 
@@ -227,8 +229,8 @@ After configuration, call `IsValid(out errors)`, `Estimate()`, inspect both `Sta
 - Penalized estimates require a declared fixed-versus-random interpretation.
 - Focused analytical verification confirms the unpenalized estimating-gradient factor, exact penalized objective gradient, unbiased Log10-Normal moment solution, and Gaussian inverse-variance posterior mean and variance. Verification is performed one exact method at a time; no conclusion depends on executing the complete long-running suite.
 
-Implementation symbols: `IGMMModel`, `GeneralizedMethodOfMoments`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `Q`, `GetS`, `GetJacobian`, `GetCovariance`, `ProfileQ`, `Estimate`, and `PostProcess`.
-Verification evidence: [Model Estimation and Diagnostics Verification](../../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling).
+Implementation symbols: `IGMMModel`, `GeneralizedMethodOfMoments`, `CovarianceComputationStatus`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `Q`, `GetS`, `GetJacobian`, `TryGetCovariance`, `GetCovariance`, `ProfileQ`, `Estimate`, and `PostProcess`.
+Verification evidence: [GMM objective and covariance scaling](../../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) and [GMM specification/covariance tests](../../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification).
 
 ## References
 

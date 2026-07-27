@@ -23,17 +23,17 @@ namespace RMC.BestFit.Diagnostics
     /// <item><description>Understanding which data points drive model conclusions</description></item>
     /// </list>
     /// <para>
-    /// The key diagnostic is the Pareto k value from PSIS-LOO (Pareto Smoothed Importance Sampling
-    /// Leave-One-Out cross-validation). This value indicates how influential each observation is
-    /// on the posterior distribution:
+    /// The key diagnostic is the Pareto-k value from Pareto-smoothed importance-sampling
+    /// leave-one-out cross-validation. For Bayesian results with <c>S</c> retained draws,
+    /// the reliability limit is <c>min(1 - 1 / log10(S), 0.7)</c>. A value at or above
+    /// this limit signals that the PSIS approximation for that pointwise unit requires
+    /// investigation; a value at or above 1.0 lacks the usual finite-mean guarantee.
     /// </para>
-    /// <list type="bullet">
-    /// <item><description>k &lt; 0.5: Good - observation is not overly influential</description></item>
-    /// <item><description>0.5 ≤ k &lt; 0.7: OK - moderate influence, estimates may be slightly biased</description></item>
-    /// <item><description>0.7 ≤ k &lt; 1.0: Bad - high influence, PSIS-LOO estimates may be unreliable</description></item>
-    /// <item><description>k ≥ 1.0: Very bad - observation dominates posterior, consider exact LOO-CV</description></item>
-    /// </list>
     /// <para>
+    /// Public constructors retain the historical fixed category thresholds for source and
+    /// serialization compatibility. Diagnostics produced by <c>BayesianAnalysis</c> use the
+    /// draw-count-specific limit.
+    /// </para>    /// <para>
     /// References:
     /// </para>
     /// <list type="bullet">
@@ -49,8 +49,13 @@ namespace RMC.BestFit.Diagnostics
     /// </remarks>
     public class InfluenceDiagnostics
     {
-        #region Constructors
+        private const double LegacyDiagnosticThreshold = 0.7;
+        private const string DiagnosticThresholdAttribute = "ParetoKDiagnosticThreshold";
+        private double _diagnosticThreshold = LegacyDiagnosticThreshold;
+        private bool _usesSampleSizeDiagnosticThreshold;
+        private int _countParetoKAboveDiagnosticThreshold;
 
+        #region Constructors
         /// <summary>
         /// Creates an empty influence diagnostics instance.
         /// </summary>
@@ -73,14 +78,46 @@ namespace RMC.BestFit.Diagnostics
         }
 
         /// <summary>
-        /// Creates influence diagnostics from PSIS-LOO results.
+        /// Creates influence diagnostics from PSIS-LOO results using the legacy fixed thresholds.
         /// </summary>
         /// <param name="paretoK">The Pareto k diagnostic values for each observation.</param>
-        /// <param name="elpdLoo">The pointwise expected log predictive density (ELPD-LOO) contributions.</param>
+        /// <param name="elpdLoo">The pointwise expected log predictive density contributions.</param>
         /// <param name="dataComponents">Optional data component metadata for each observation.</param>
-        /// <exception cref="ArgumentNullException">Thrown when paretoK or elpdLoo is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when array lengths don't match.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="paretoK"/> or <paramref name="elpdLoo"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when array lengths do not match.</exception>
         public InfluenceDiagnostics(double[] paretoK, double[] elpdLoo, List<DataComponent>? dataComponents = null)
+            : this(paretoK, elpdLoo, dataComponents, LegacyDiagnosticThreshold, false)
+        {
+        }
+
+        /// <summary>
+        /// Creates Bayesian influence diagnostics with a sample-size-dependent Pareto-k threshold.
+        /// </summary>
+        /// <param name="paretoK">The Pareto k diagnostic values for each observation.</param>
+        /// <param name="elpdLoo">The pointwise expected log predictive density contributions.</param>
+        /// <param name="dataComponents">Optional data component metadata for each observation.</param>
+        /// <param name="diagnosticThreshold">The draw-count-specific Pareto-k reliability threshold.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="paretoK"/> or <paramref name="elpdLoo"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when array lengths do not match or the threshold is NaN.</exception>
+        internal InfluenceDiagnostics(double[] paretoK, double[] elpdLoo,
+            List<DataComponent>? dataComponents, double diagnosticThreshold)
+            : this(paretoK, elpdLoo, dataComponents, diagnosticThreshold, true)
+        {
+        }
+
+        /// <summary>
+        /// Initializes influence diagnostics with either legacy or sample-size-dependent interpretation.
+        /// </summary>
+        /// <param name="paretoK">The Pareto k diagnostic values for each observation.</param>
+        /// <param name="elpdLoo">The pointwise expected log predictive density contributions.</param>
+        /// <param name="dataComponents">Optional data component metadata for each observation.</param>
+        /// <param name="diagnosticThreshold">The active Pareto-k reliability threshold.</param>
+        /// <param name="usesSampleSizeDiagnosticThreshold">Whether the threshold came from posterior draw count.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="paretoK"/> or <paramref name="elpdLoo"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when array lengths do not match or the threshold is NaN.</exception>
+        private InfluenceDiagnostics(double[] paretoK, double[] elpdLoo,
+            List<DataComponent>? dataComponents, double diagnosticThreshold,
+            bool usesSampleSizeDiagnosticThreshold)
         {
             if (paretoK == null) throw new ArgumentNullException(nameof(paretoK));
             if (elpdLoo == null) throw new ArgumentNullException(nameof(elpdLoo));
@@ -88,64 +125,62 @@ namespace RMC.BestFit.Diagnostics
                 throw new ArgumentException("Array lengths must match.", nameof(elpdLoo));
             if (dataComponents != null && dataComponents.Count != paretoK.Length)
                 throw new ArgumentException("DataComponents count must match array lengths.", nameof(dataComponents));
+            if (double.IsNaN(diagnosticThreshold))
+                throw new ArgumentException("Diagnostic threshold cannot be NaN.", nameof(diagnosticThreshold));
 
-            int n = paretoK.Length;
-            Observations = new ObservationInfluence[n];
+            _diagnosticThreshold = Math.Min(diagnosticThreshold, LegacyDiagnosticThreshold);
+            _usesSampleSizeDiagnosticThreshold = usesSampleSizeDiagnosticThreshold;
+            int observationCount = paretoK.Length;
+            Observations = new ObservationInfluence[observationCount];
 
-            for (int i = 0; i < n; i++)
+            for (int observationIndex = 0; observationIndex < observationCount; observationIndex++)
             {
-                var dataComp = dataComponents?[i];
-                Observations[i] = new ObservationInfluence(
-                    index: i,
-                    paretoK: paretoK[i],
-                    elpdLoo: elpdLoo[i],
-                    value: dataComp?.Value ?? double.NaN,
-                    dataType: dataComp?.Type ?? DataComponentType.Exact,
-                    count: dataComp?.Count ?? 1,
-                    name: dataComp?.Name
-                );
+                DataComponent? dataComponent = dataComponents?[observationIndex];
+                Observations[observationIndex] = new ObservationInfluence(
+                    index: observationIndex,
+                    paretoK: paretoK[observationIndex],
+                    elpdLoo: elpdLoo[observationIndex],
+                    diagnosticThreshold: _diagnosticThreshold,
+                    usesSampleSizeDiagnosticThreshold: usesSampleSizeDiagnosticThreshold,
+                    value: dataComponent?.Value ?? double.NaN,
+                    dataType: dataComponent?.Type ?? DataComponentType.Exact,
+                    count: dataComponent?.Count ?? 1,
+                    name: dataComponent?.Name);
             }
 
             ComputeSummaryStatistics();
         }
-
         /// <summary>
         /// Deserializes influence diagnostics from an <see cref="XElement"/>.
         /// </summary>
         /// <param name="xElement">The XML element to deserialize.</param>
-        /// <exception cref="ArgumentNullException">Thrown when xElement is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="xElement"/> is null.</exception>
         public InfluenceDiagnostics(XElement xElement)
         {
             if (xElement == null) throw new ArgumentNullException(nameof(xElement));
 
-            var observationElements = xElement.Elements("Observation").ToList();
+            XAttribute? thresholdAttribute = xElement.Attribute(DiagnosticThresholdAttribute);
+            if (thresholdAttribute != null
+                && double.TryParse(thresholdAttribute.Value, NumberStyles.Any,
+                    CultureInfo.InvariantCulture, out double diagnosticThreshold)
+                && !double.IsNaN(diagnosticThreshold))
+            {
+                _diagnosticThreshold = Math.Min(diagnosticThreshold, LegacyDiagnosticThreshold);
+                _usesSampleSizeDiagnosticThreshold = true;
+            }
+
+            List<XElement> observationElements = xElement.Elements("Observation").ToList();
             Observations = new ObservationInfluence[observationElements.Count];
-
-            for (int i = 0; i < observationElements.Count; i++)
+            for (int observationIndex = 0; observationIndex < observationElements.Count; observationIndex++)
             {
-                Observations[i] = new ObservationInfluence(observationElements[i]);
+                Observations[observationIndex] = new ObservationInfluence(
+                    observationElements[observationIndex],
+                    _diagnosticThreshold,
+                    _usesSampleSizeDiagnosticThreshold);
             }
 
-            // Read summary statistics if present, otherwise recompute
-            if (xElement.Attribute(nameof(MeanParetoK)) != null)
-            {
-                double.TryParse(xElement.Attribute(nameof(MeanParetoK))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var meanK);
-                MeanParetoK = meanK;
-                double.TryParse(xElement.Attribute(nameof(MaxParetoK))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var maxK);
-                MaxParetoK = maxK;
-                int.TryParse(xElement.Attribute(nameof(CountParetoKAbove05))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var count05);
-                CountParetoKAbove05 = count05;
-                int.TryParse(xElement.Attribute(nameof(CountParetoKAbove07))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var count07);
-                CountParetoKAbove07 = count07;
-                int.TryParse(xElement.Attribute(nameof(CountParetoKAbove10))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var count10);
-                CountParetoKAbove10 = count10;
-            }
-            else
-            {
-                ComputeSummaryStatistics();
-            }
+            ComputeSummaryStatistics();
         }
-
         #endregion
 
         #region Properties
@@ -208,13 +243,16 @@ namespace RMC.BestFit.Diagnostics
         public double ProportionProblematic => Count > 0 ? (double)CountParetoKAbove07 / Count : 0.0;
 
         /// <summary>
-        /// Gets whether the PSIS-LOO estimates are reliable based on Pareto k diagnostics.
+        /// Gets whether all PSIS-LOO pointwise estimates satisfy the active Pareto-k reliability limit.
         /// </summary>
         /// <remarks>
-        /// Returns true if fewer than 1% of observations have k ≥ 0.7 and no observations
-        /// have k ≥ 1.0. This is a conservative threshold; some practitioners use k ≥ 0.5.
+        /// Bayesian-analysis results use the draw-count-specific limit
+        /// <c>min(1 - 1 / log10(S), 0.7)</c>. Instances created through the historical public
+        /// constructors retain the earlier aggregate rule for compatibility.
         /// </remarks>
-        public bool IsReliable => ProportionProblematic < 0.01 && CountParetoKAbove10 == 0;
+        public bool IsReliable => _usesSampleSizeDiagnosticThreshold
+            ? _countParetoKAboveDiagnosticThreshold == 0
+            : ProportionProblematic < 0.01 && CountParetoKAbove10 == 0;
 
         #endregion
 
@@ -232,12 +270,13 @@ namespace RMC.BestFit.Diagnostics
                 CountParetoKAbove05 = 0;
                 CountParetoKAbove07 = 0;
                 CountParetoKAbove10 = 0;
+                _countParetoKAboveDiagnosticThreshold = 0;
                 return;
             }
 
             double sum = 0;
             double max = double.NegativeInfinity;
-            int count05 = 0, count07 = 0, count10 = 0;
+            int count05 = 0, count07 = 0, count10 = 0, countDiagnostic = 0;
             int validCount = 0;
 
             foreach (var obs in Observations)
@@ -251,6 +290,7 @@ namespace RMC.BestFit.Diagnostics
                     if (k >= 0.5) count05++;
                     if (k >= 0.7) count07++;
                     if (k >= 1.0) count10++;
+                    if (k >= _diagnosticThreshold) countDiagnostic++;
                 }
             }
 
@@ -268,6 +308,7 @@ namespace RMC.BestFit.Diagnostics
             CountParetoKAbove05 = count05;
             CountParetoKAbove07 = count07;
             CountParetoKAbove10 = count10;
+            _countParetoKAboveDiagnosticThreshold = countDiagnostic;
         }
 
         /// <summary>
@@ -310,6 +351,24 @@ namespace RMC.BestFit.Diagnostics
         {
             if (Count == 0)
                 return "No observations available for diagnostics.";
+
+            if (_usesSampleSizeDiagnosticThreshold)
+            {
+                if (CountParetoKAbove10 > 0)
+                {
+                    return $"UNRELIABLE: {CountParetoKAbove10} observation(s) have Pareto k >= 1.0. " +
+                           "The corresponding PSIS estimates do not have a finite-mean guarantee.";
+                }
+
+                if (_countParetoKAboveDiagnosticThreshold > 0)
+                {
+                    return $"CAUTION: {_countParetoKAboveDiagnosticThreshold} observation(s) have Pareto k " +
+                           $">= {_diagnosticThreshold:F3}, the reliability limit for this posterior sample size.";
+                }
+
+                return $"GOOD: All observations have Pareto k < {_diagnosticThreshold:F3}, " +
+                       "the reliability limit for this posterior sample size.";
+            }
 
             if (CountParetoKAbove10 > 0)
             {
@@ -354,6 +413,13 @@ namespace RMC.BestFit.Diagnostics
                 new XAttribute(nameof(CountParetoKAbove10), CountParetoKAbove10.ToString(CultureInfo.InvariantCulture))
             );
 
+            if (_usesSampleSizeDiagnosticThreshold)
+            {
+                element.Add(new XAttribute(
+                    DiagnosticThresholdAttribute,
+                    _diagnosticThreshold.ToString(CultureInfo.InvariantCulture)));
+            }
+
             if (Observations != null)
             {
                 foreach (var obs in Observations)
@@ -384,8 +450,12 @@ namespace RMC.BestFit.Diagnostics
     /// </remarks>
     public readonly struct ObservationInfluence
     {
+        private const double LegacyGoodThreshold = 0.5;
+        private const string DiagnosticThresholdAttribute = "ParetoKDiagnosticThreshold";
+        private readonly double _diagnosticThreshold;
+        private readonly bool _usesSampleSizeDiagnosticThreshold;
         /// <summary>
-        /// Creates an observation influence with the specified metrics.
+        /// Creates an observation influence with the specified metrics and legacy category thresholds.
         /// </summary>
         /// <param name="index">The zero-based observation index.</param>
         /// <param name="paretoK">The Pareto k diagnostic value.</param>
@@ -396,6 +466,27 @@ namespace RMC.BestFit.Diagnostics
         /// <param name="name">Optional label for the observation.</param>
         public ObservationInfluence(int index, double paretoK, double elpdLoo, double value = double.NaN,
             DataComponentType dataType = DataComponentType.Exact, int count = 1, string? name = null)
+            : this(index, paretoK, elpdLoo, LegacyGoodThreshold, false,
+                  value, dataType, count, name)
+        {
+        }
+
+        /// <summary>
+        /// Creates a Bayesian observation influence using a sample-size-dependent threshold.
+        /// </summary>
+        /// <param name="index">The zero-based observation index.</param>
+        /// <param name="paretoK">The Pareto k diagnostic value.</param>
+        /// <param name="elpdLoo">The pointwise ELPD-LOO contribution.</param>
+        /// <param name="diagnosticThreshold">The draw-count-specific reliability threshold.</param>
+        /// <param name="usesSampleSizeDiagnosticThreshold">Whether to apply the supplied threshold to the category.</param>
+        /// <param name="value">The representative data value.</param>
+        /// <param name="dataType">The type of data observation.</param>
+        /// <param name="count">The count for threshold observations.</param>
+        /// <param name="name">Optional label for the observation.</param>
+        internal ObservationInfluence(int index, double paretoK, double elpdLoo,
+            double diagnosticThreshold, bool usesSampleSizeDiagnosticThreshold,
+            double value = double.NaN, DataComponentType dataType = DataComponentType.Exact,
+            int count = 1, string? name = null)
         {
             Index = index;
             ParetoK = paretoK;
@@ -404,6 +495,8 @@ namespace RMC.BestFit.Diagnostics
             DataType = dataType;
             Count = count;
             Name = name;
+            _diagnosticThreshold = diagnosticThreshold;
+            _usesSampleSizeDiagnosticThreshold = usesSampleSizeDiagnosticThreshold;
         }
 
         /// <summary>
@@ -411,17 +504,33 @@ namespace RMC.BestFit.Diagnostics
         /// </summary>
         /// <param name="xElement">The XML element to deserialize.</param>
         public ObservationInfluence(XElement xElement)
+            : this(xElement, LegacyGoodThreshold, false)
         {
-            int.TryParse(xElement.Attribute(nameof(Index))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var index);
+        }
+
+        /// <summary>
+        /// Deserializes an observation using a parent diagnostic threshold as a fallback.
+        /// </summary>
+        /// <param name="xElement">The XML element to deserialize.</param>
+        /// <param name="diagnosticThreshold">Parent reliability threshold.</param>
+        /// <param name="usesSampleSizeDiagnosticThreshold">Whether the parent uses a draw-count threshold.</param>
+        internal ObservationInfluence(XElement xElement, double diagnosticThreshold,
+            bool usesSampleSizeDiagnosticThreshold)
+        {
+            int.TryParse(xElement.Attribute(nameof(Index))?.Value, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out int index);
             Index = index;
 
-            double.TryParse(xElement.Attribute(nameof(ParetoK))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var paretoK);
+            double.TryParse(xElement.Attribute(nameof(ParetoK))?.Value, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out double paretoK);
             ParetoK = paretoK;
 
-            double.TryParse(xElement.Attribute(nameof(ElpdLoo))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var elpdLoo);
+            double.TryParse(xElement.Attribute(nameof(ElpdLoo))?.Value, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out double elpdLoo);
             ElpdLoo = elpdLoo;
 
-            double.TryParse(xElement.Attribute(nameof(Value))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var value);
+            double.TryParse(xElement.Attribute(nameof(Value))?.Value, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out double value);
             Value = value;
 
             if (xElement.Attribute(nameof(DataType)) != null)
@@ -430,30 +539,42 @@ namespace RMC.BestFit.Diagnostics
                 DataType = dataType;
             }
             else
+            {
                 DataType = DataComponentType.Exact;
+            }
 
-            int.TryParse(xElement.Attribute(nameof(Count))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var count);
+            int.TryParse(xElement.Attribute(nameof(Count))?.Value, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out int count);
             Count = count > 0 ? count : 1;
-
             Name = xElement.Attribute(nameof(Name))?.Value;
-        }
 
+            XAttribute? thresholdAttribute = xElement.Attribute(DiagnosticThresholdAttribute);
+            if (thresholdAttribute != null
+                && double.TryParse(thresholdAttribute.Value, NumberStyles.Any,
+                    CultureInfo.InvariantCulture, out double observationThreshold)
+                && !double.IsNaN(observationThreshold))
+            {
+                _diagnosticThreshold = observationThreshold;
+                _usesSampleSizeDiagnosticThreshold = true;
+            }
+            else
+            {
+                _diagnosticThreshold = diagnosticThreshold;
+                _usesSampleSizeDiagnosticThreshold = usesSampleSizeDiagnosticThreshold;
+            }
+        }
         /// <summary>
         /// Gets the zero-based index of this observation in the data.
         /// </summary>
         public int Index { get; }
 
         /// <summary>
-        /// Gets the Pareto k diagnostic value for this observation.
+        /// Gets the Pareto-k diagnostic value for this pointwise observation unit.
         /// </summary>
         /// <remarks>
-        /// <para>Interpretation:</para>
-        /// <list type="bullet">
-        /// <item><description>k &lt; 0.5: Good - observation is not overly influential</description></item>
-        /// <item><description>0.5 ≤ k &lt; 0.7: OK - moderate influence</description></item>
-        /// <item><description>0.7 ≤ k &lt; 1.0: Bad - high influence, PSIS-LOO may be unreliable</description></item>
-        /// <item><description>k ≥ 1.0: Very bad - observation dominates posterior</description></item>
-        /// </list>
+        /// Bayesian-analysis observations are interpreted against the draw-count-specific
+        /// reliability limit stored with the diagnostic. Historical standalone observations
+        /// retain the fixed 0.5, 0.7, and 1.0 category boundaries.
         /// </remarks>
         public double ParetoK { get; }
 
@@ -492,13 +613,16 @@ namespace RMC.BestFit.Diagnostics
         public string? Name { get; }
 
         /// <summary>
-        /// Gets the diagnostic category based on the Pareto k value.
+        /// Gets the diagnostic category using the stored draw-count limit or legacy fixed thresholds.
         /// </summary>
         public ParetoKCategory Category
         {
             get
             {
-                if (ParetoK < 0.5) return ParetoKCategory.Good;
+                double goodThreshold = _usesSampleSizeDiagnosticThreshold
+                    ? _diagnosticThreshold
+                    : LegacyGoodThreshold;
+                if (ParetoK < goodThreshold) return ParetoKCategory.Good;
                 if (ParetoK < 0.7) return ParetoKCategory.OK;
                 if (ParetoK < 1.0) return ParetoKCategory.Bad;
                 return ParetoKCategory.VeryBad;
@@ -520,6 +644,13 @@ namespace RMC.BestFit.Diagnostics
                 new XAttribute(nameof(Count), Count.ToString(CultureInfo.InvariantCulture))
             );
 
+            if (_usesSampleSizeDiagnosticThreshold)
+            {
+                element.Add(new XAttribute(
+                    DiagnosticThresholdAttribute,
+                    _diagnosticThreshold.ToString(CultureInfo.InvariantCulture)));
+            }
+
             if (!string.IsNullOrEmpty(Name))
             {
                 element.Add(new XAttribute(nameof(Name), Name));
@@ -537,27 +668,27 @@ namespace RMC.BestFit.Diagnostics
     }
 
     /// <summary>
-    /// Categorizes the Pareto k diagnostic value.
+    /// Categorizes a Pareto-k diagnostic relative to the active reliability boundaries.
     /// </summary>
     public enum ParetoKCategory
     {
         /// <summary>
-        /// k &lt; 0.5: Observation is not overly influential. PSIS-LOO is reliable.
+        /// The value is below the active reliability limit.
         /// </summary>
         Good,
 
         /// <summary>
-        /// 0.5 ≤ k &lt; 0.7: Moderate influence. PSIS-LOO estimates may have slight bias.
+        /// The value is at or above the active reliability limit but below 0.7.
         /// </summary>
         OK,
 
         /// <summary>
-        /// 0.7 ≤ k &lt; 1.0: High influence. PSIS-LOO estimates may be unreliable for this observation.
+        /// The value is at least 0.7 but below 1.0.
         /// </summary>
         Bad,
 
         /// <summary>
-        /// k ≥ 1.0: Observation dominates the posterior. PSIS-LOO is unreliable; use exact LOO-CV.
+        /// The value is at least 1.0 and lacks the usual finite-mean guarantee.
         /// </summary>
         VeryBad
     }

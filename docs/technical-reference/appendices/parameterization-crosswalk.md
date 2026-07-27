@@ -71,11 +71,11 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 | API | Coordinates and reported objective | Status |
 |---|---|---|
 | `MaximumLikelihood` | Natural model coordinates within `ModelParameter` bounds; optimizer minimizes negative data log likelihood; `MaximumLogLikelihood` reverses the stored fitness sign | Complete |
-| `MaximumAPosteriori` | Same coordinates; optimizer minimizes the negative full `IModel.LogLikelihood` target; `MaximumLogLikelihood` is therefore a posterior-kernel value | Complete with TR-023 |
-| `GeneralizedMethodOfMoments` | Natural `IGMMModel` coordinates; moment vector length $q$, parameter-vector length $p$, weighting matrix $q\times q$ | Complete with TR-026, TR-033, TR-034 |
-| `BayesianAnalysis` | Bounded natural coordinates targeting `IModel.LogLikelihood`; options are DEMCz, DEMCzs, ARWMH, and NUTS | Complete with TR-024, TR-025, TR-029, TR-030 |
+| `MaximumAPosteriori` | Same coordinates; optimizer minimizes the negative full `IModel.LogLikelihood` target; `MaximumLogLikelihood` is therefore a posterior-kernel value; profile methods reoptimize nuisance parameters on that full target | Complete with TR-023 |
+| `GeneralizedMethodOfMoments` | Natural `IGMMModel` coordinates; moment vector length $q$, parameter-vector length $p$, weighting matrix $q\times q$ | Complete with TR-026, TR-033, and TR-034 fit/covariance parity |
+| `BayesianAnalysis` | Bounded natural coordinates targeting `IModel.LogLikelihood`; options are DEMCz, DEMCzs, ARWMH, and NUTS | Complete; PSIS, ARWMH adaptation, NUTS diagnostics/gradient routes, and rank-normalized R-hat/bulk-tail ESS verified |
 | Posterior results | Marginal summaries use `MCMCResults.Output`; `MAP` is the highest-target sampled output state, not a continuous optimizer | Complete |
-| DIC/WAIC/LOO | Pointwise units are `PointwiseDataLogLikelihood` components; PSIS-LOO is scientifically unavailable under TR-024 | Complete with finding |
+| DIC/WAIC/LOO | Pointwise units are `PointwiseDataLogLikelihood` components; PSIS-LOO matches R `loo` 2.10.0 for `r_eff = 1` and requires Pareto-k review | Complete with documented no-refit and relative-efficiency caveats |
 
 ## Time-Series and Rating-Curve Mappings
 

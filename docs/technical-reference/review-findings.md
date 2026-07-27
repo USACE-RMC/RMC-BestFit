@@ -6,7 +6,7 @@
 
 The active continuation and batching plan is maintained in the [Verification Finalization Plan](../verification/verification-finalization-plan.md).
 
-This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Production behavior is not changed during the documentation program. Each open item requires a separately authorized correction session, focused unit tests, and—where scientific parity is claimed—approved verification evidence.
+This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
 
 ## Summary
 
@@ -22,30 +22,30 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-008](#tr-008) | Mixture EM impossible rows | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-009](#tr-009) | RMSE residual omission | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) / [Artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json) | 2026-07-24 |
 | [TR-010](#tr-010) | FittingAnalysis all-failed status | Medium | Confirmed defect | Fixed | Passed - regression | [Report](../verification/distribution-fitting.md#tr-010---all-candidate-failure-reports-overall-success) · [Artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json) | 2026-07-24 |
-| [TR-011](#tr-011) | Univariate AIC/BIC posterior kernel | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-011](#tr-011) | Bayesian AIC/BIC prior-density inclusion | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-012](#tr-012) | Competing-risk dependent simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-013](#tr-013) | Non-finite composite criteria | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-014](#tr-014) | Composite posterior draw coupling | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-015](#tr-015) | Composite correlation matrix configuration | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Medium | Confirmed terminology limitation | Pseudo-AIC/BIC documented; broader work pending | Pseudo-criteria source-audited | [Bulletin 17C](analysis/bulletin-17c.md#pseudo-aic-and-pseudo-bic) | 2026-07-25 |
 | [TR-017](#tr-017) | Bulletin 17C bootstrap naming | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-018](#tr-018) | Bulletin 17C failed bootstrap fits | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-019](#tr-019) | Bulletin 17C bootstrap truncation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-020](#tr-020) | Bulletin 17C Cohn diagnostics scope | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-021](#tr-021) | Bulletin 17C release evidence | Evidence | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-022](#tr-022) | NUTS versus HMC inventory | Documentation/API | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-023](#tr-023) | MLE/MAP coordinate slices | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-024](#tr-024) | PSIS tail smoothing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-025](#tr-025) | ARWMH covariance adaptation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-026](#tr-026) | GMM Hansen J statistic | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-027](#tr-027) | Zero covariance on numerical failure | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-028](#tr-028) | Joint prior-predictive sampling | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-029](#tr-029) | MCMC diagnostic claims | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-030](#tr-030) | NUTS acceptance reporting | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-022](#tr-022) | NUTS versus HMC inventory | Documentation/API | Confirmed defect | Fixed | Passed - source/API inventory | [Bayesian MCMC](estimation/bayesian-mcmc.md) | 2026-07-25 |
+| [TR-023](#tr-023) | MLE and MAP nuisance profiling | High | Confirmed defect - resolved | Fixed without public API changes | Passed - R `bbmle`, closed-form, and informative-prior MAP parity | [Report](../verification/model-estimation.md#profile-likelihood-covariance-failure-and-joint-prior-characterization) / [Artifact](../../verification/data/model-estimation/profile-likelihood-oracle.json) | 2026-07-27 |
+| [TR-024](#tr-024) | PSIS tail smoothing | High | Confirmed defect - resolved | Fixed | Passed - R `loo` aggregate, pointwise, tail, threshold, and performance parity | [Report](../verification/model-estimation.md#psis-loo-and-pareto-diagnostics) / [Artifact](../../verification/data/model-estimation/psis-loo-oracle.json) | 2026-07-26 |
+| [TR-025](#tr-025) | ARWMH covariance adaptation | High | Confirmed scoped defect - resolved | Fixed | Passed - focused Numerics and BestFit regression | [Report](../verification/model-estimation.md#numerics-mcmc-verification) | 2026-07-26 |
+| [TR-026](#tr-026) | GMM Hansen J statistic | High | Confirmed defect - resolved | Fixed | Passed - R `gmm::specTest` J/p-value parity | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) / [Artifact](../../verification/data/model-estimation/gmm-specification-oracle.json) | 2026-07-26 |
+| [TR-027](#tr-027) | Explicit covariance failure status | High | Confirmed defect - resolved | Fixed | Passed - deterministic failure, success, and regularization paths | [Report](../verification/model-estimation.md#profile-likelihood-covariance-failure-and-joint-prior-characterization) | 2026-07-26 |
+| [TR-028](#tr-028) | Joint prior-predictive sampling | High | Confirmed limitation | Documented | Passed - source/contract and coupled-prior characterization | [Report](../verification/model-estimation.md#profile-likelihood-covariance-failure-and-joint-prior-characterization) / [Predictive checks](estimation/predictive-checks.md) | 2026-07-26 |
+| [TR-029](#tr-029) | MCMC diagnostic claims | High | Confirmed defect - resolved | Modernized without API or serialization changes | Passed - R `posterior` 1.7.0 rank-normalized R-hat and ESS parity | [Report](../verification/model-estimation.md#rank-normalized-convergence-diagnostics-tr-029) / [Artifact](../../verification/data/model-estimation/mcmc-diagnostics-oracle.json) | 2026-07-27 |
+| [TR-030](#tr-030) | NUTS acceptance reporting | High | Confirmed defect - resolved | Fixed | Passed - diagnostics, gradient, serialization, and report regression | [Report](../verification/model-estimation.md#numerics-mcmc-verification) | 2026-07-26 |
 | [TR-031](#tr-031) | Combined influence interpretation | Methodological | Confirmed defect | Fixed | Passed - analytical and R parity | [Report](../verification/model-estimation.md#fit-influence-variance-influence-and-combined-leverage) | 2026-07-25 |
-| [TR-032](#tr-032) | GMM influence labeled Pareto k | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-032](#tr-032) | GMM influence labeled Pareto k | High | Confirmed defect - resolved | Legacy overloads obsolete; supported GMM paths correctly labeled | Passed - compatibility, attribute, and mapping regressions | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) | 2026-07-27 |
 | [TR-033](#tr-033) | GMM objective/gradient scale | High | Rejected non-defect | No change required | Passed | [Model-estimation verification](../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) | 2026-07-25 |
-| [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Confirmed defect - resolved | Fit and covariance fixed | Passed - R `gmm` parameter/objective and fixed-weight/two-step covariance parity | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) / [Artifact](../../verification/data/model-estimation/gmm-specification-oracle.json) | 2026-07-27 |
 | [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-036](#tr-036) | Transform fitting holdout leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -53,12 +53,12 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-046](#tr-046) | Manual transform state rebuild | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-048](#tr-048) | Spatial missing-site marginalization | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-049](#tr-049) | Spatial likelihood decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-050](#tr-050) | Spatial cross-validation result retention | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -66,7 +66,7 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-052](#tr-052) | Spatial held-out covariates | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - scoped correction complete | Corrected with caveats | Passed - source audit | [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-07-25 |
 | [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-057](#tr-057) | Spatial Godambe decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-058](#tr-058) | Regional posterior interval construction | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -244,20 +244,19 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 **Follow-up.** Retain the zero-success and partial-success regressions as permanent state-semantic gates. Candidate counts remain directly available from `FittedDistributions` without adding API.
 
 <a id="tr-011"></a>
-## TR-011 — Univariate AIC/BIC Use Posterior at MAP
+## TR-011 — Bayesian AIC/BIC Included Prior Density at MAP
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed without public API or serialization changes. `MaximumAPosteriori` and every Bayesian analysis result builder now pass `DataLogLikelihood(MAP)` to the AIC/BIC helpers.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by the focused MAP AIC and BIC regressions plus a complete source-call-site audit; see [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
 
-**Evidence.** `UnivariateAnalysis.UpdatePointEstimateResultsAsync()` evaluates `UnivariateDistribution.LogLikelihood(MAP)`, which includes priors, then passes that value to AIC and BIC helpers. Conventional AIC/BIC use maximized data log likelihood; priors make the reported value sensitive to prior density and parameterization.
+**Evidence.** The prior implementation passed `LogLikelihood(MAP)`, adding parameter-prior normalization constants and any Jeffreys or quantile-prior terms. The current implementation excludes all prior-density values while retaining the stored posterior mode as the evaluation point. The focused fixture has bounded uniform priors with nonzero normalization constants and proves that both criteria equal the data-likelihood formulas and differ from posterior-kernel formulas.
 
-**Impact.** Fields labeled AIC/BIC are not comparable with `FittingAnalysis` MLE AIC/BIC or standard definitions, and composite weights can mix incompatible criteria.
+**Impact.** Under priors that are constant throughout the relevant bounded region, MAP coincides with the constrained MLE and the Bayesian-analysis criteria are comparable with fitting-analysis MLE criteria. Under informative, Jeffreys, quantile, or other nonconstant priors, the MAP remains prior-influenced and the fields are not conventional AIC/BIC.
 
-**Follow-up.** Compute conventional AIC/BIC from an MLE data likelihood, or rename the current quantities and prohibit Akaike/BIC interpretations. Add tests with informative versus flat priors showing the selected convention.
-
+**Follow-up.** Retain the focused regressions and call-site audit. With nonconstant priors, direct users to DIC, WAIC, or verified PSIS-LOO rather than AIC/BIC.
 <a id="tr-012"></a>
 ## TR-012 — Competing-Risk Simulation Ignores Dependency
 
@@ -321,17 +320,17 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-016"></a>
 ## TR-016 — Bulletin 17C Frequentist Results Use Bayesian/MCMC Terminology
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed terminology limitation.
 
-**Implementation status.** Not started.
+**Implementation status.** Pseudo-AIC and pseudo-BIC are now documented. The broader public API and report terminology work remains pending.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** The pseudo-criterion calculation passed source audit. The broader terminology finding remains planned.
 
 **Evidence.** `Bulletin17CDistribution` implements `IGMMModel`, not `IModel`, and defines no likelihood, prior, posterior, or MCMC target. `Bulletin17CAnalysis` nevertheless exposes a `BayesianAnalysis` property and stores GMM uncertainty draws in `MCMCResults`; the GMM estimate is placed in `MAP`, ensemble averages are exposed as `PosteriorMean`, and `CredibleIntervalWidth` controls frequentist confidence limits.
 
-**Impact.** API consumers and generated reports can incorrectly describe a sampling distribution as a posterior, a GMM estimate as a posterior mode, and confidence intervals as credible intervals. Bayesian diagnostics and information criteria are not defined for these draws.
+**Impact.** API consumers and generated reports can incorrectly describe a sampling distribution as a posterior, a GMM estimate as a posterior mode, and confidence intervals as credible intervals. DIC, WAIC, and LOOIC are not defined for these draws. The shared AIC/BIC fields are now documented as pseudo-criteria formed from the LP3 data likelihood at the GMM solution, not as Bayesian or likelihood-maximized criteria.
 
-**Follow-up.** Introduce estimator-neutral uncertainty/result abstractions or explicit aliases, preserve serialization compatibility, suppress inapplicable Bayesian diagnostics, and test terminology in public reports and UI labels.
+**Follow-up.** Introduce estimator-neutral uncertainty/result abstractions or explicit aliases, preserve serialization compatibility, suppress inapplicable Bayesian diagnostics, retain explicit pseudo-AIC/pseudo-BIC labeling, and test terminology in public reports and UI labels.
 
 <a id="tr-017"></a>
 ## TR-017 — `BiasCorrectedBootstrap` Does Not Implement BC or BCa
@@ -409,139 +408,137 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 **Follow-up.** Produce a versioned verification artifact for the current GMM implementation from approved, narrowly filtered runs: official worked-example parameter parity, PeakFQ/EMA diagnostic parity, covariance, penalty behavior, censoring designs, and uncertainty coverage. Record seeds, tolerances, dependency commit, and test hashes.
 
 <a id="tr-022"></a>
-## TR-022 — BestFit Exposes NUTS, Not Plain HMC
+## TR-022 — BestFit Selects NUTS, Not Plain HMC
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed documentation and inventory defect.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed without production-code, public-API, or serialization changes.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by source and public-API inventory.
 
-**Evidence.** `BayesianAnalysis.SamplerType` contains `DEMCz`, `DEMCzs`, `ARWMH`, and `NUTS`. `SetUpSampler()` constructs the matching Numerics sampler. The pinned Numerics source also contains a separate `HMC` class, but BestFit has no `HMC` enum member or configuration branch. Planning material and older documentation name HMC as a selectable BestFit sampler.
+**Evidence.** `BayesianAnalysis.SamplerType` exposes `DEMCz`, `DEMCzs`, `ARWMH`, and `NUTS`, and `SetUpSampler()` constructs those four Numerics samplers. Numerics also contains a separate plain `HMC` class, but BestFit exposes no `SamplerType.HMC` member or configuration branch.
 
-**Impact.** A reviewer or API consumer could look for a nonexistent `SamplerType.HMC`, while the actual gradient-based option—adaptive NUTS—would be undocumented or described under the wrong algorithm.
+**Impact.** The technical reference now distinguishes BestFit-selectable samplers from the broader Numerics capability and no longer directs users to a nonexistent BestFit HMC option.
 
-**Follow-up.** Treat the current public API as authoritative in the technical reference. Decide separately whether plain HMC should become a supported BestFit option or whether project-level capability lists should be corrected to NUTS.
+**Follow-up.** Treat the current BestFit API as authoritative. Adding plain HMC remains a separate feature decision.
 
 <a id="tr-023"></a>
-## TR-023 — MLE and MAP “Profile Likelihoods” Are Coordinate Slices
+## TR-023 — MLE and MAP Reoptimize Profile Nuisance Parameters
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** `MaximumLikelihood.ProfileLikelihood()` and `ParameterConfidenceIntervals()` reoptimize all free nuisance parameters against the data likelihood. `MaximumAPosteriori.ProfileLikelihood()` and `ParameterConfidenceIntervals()` now perform the same nuisance reoptimization against the complete posterior kernel. Public signatures remain unchanged; bounded BFGS uses a deterministic bounded Nelder-Mead fallback.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by three exact focused methods against a committed R `bbmle` oracle, its closed-form correlated-quadratic solution, and an analytical informative-prior posterior profile.
 
-**Evidence.** `MaximumLikelihood.ProfileLikelihood()` and `MaximumAPosteriori.ProfileLikelihood()` vary one parameter over a grid while holding all other parameters at the fitted values. Their interval methods solve cutoffs on the same fixed-coordinate slices. A statistical profile likelihood instead reoptimizes all nuisance parameters at every fixed value of the parameter of interest. The MAP version additionally slices the full log posterior and applies a chi-squared likelihood-ratio cutoff.
+**Evidence.** For correlation $\rho=0.8$, nuisance reoptimization gives the 90% profile interval $[-1.6448536,1.6448536]$, whereas the former fixed-nuisance coordinate slice gives $[-0.9869122,0.9869122]$. MLE and flat-prior MAP match every R and analytical profile ordinate plus the nuisance-optimized interval. The informative-prior fixture confirms that MAP reoptimizes the nuisance parameter using the full posterior target rather than either a coordinate slice or a data-only profile.
 
-**Impact.** The returned curves can be narrower, asymmetric in the wrong way, or otherwise materially different from true profile likelihoods when parameters are correlated. `MaximumAPosteriori.ParameterConfidenceIntervals()` are neither frequentist profile-likelihood confidence intervals nor posterior credible intervals.
+**Impact.** MLE and MAP profile curves now retain parameter correlation through nuisance reoptimization. MAP `ParameterConfidenceIntervals()` still are not Bayesian credible intervals: they apply a chi-squared cutoff to a profiled posterior kernel rather than integrating posterior mass. MCMC marginal quantiles remain the Bayesian interval product.
 
-**Follow-up.** Either implement nuisance-parameter reoptimization and reserve “profile likelihood” for the MLE data likelihood, or rename the current methods as conditional coordinate slices. Define a statistically defensible MAP interval product separately and add correlated-parameter test cases.
+**Follow-up.** Preserve all three exact regressions and the committed oracle. Keep the MAP interval interpretation explicit in technical documentation and user guidance.
 
 <a id="tr-024"></a>
-## TR-024 — PSIS Tail Smoothing Does Not Preserve the Required Tail Model or Ordering
+## TR-024 — PSIS Tail Smoothing Did Not Preserve the Required Tail Model or Ordering
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed without public API changes and without a Numerics dependency change. The PSIS tail now uses cutoff excesses, the bounded fixed-grid generalized-Pareto fit and shrinkage used by `posterior::gpdfit` 1.7.0, monotone expected order statistics, and reference-compatible truncation. WAIC and PSIS share one transient pointwise likelihood matrix; only pointwise ELPD and Pareto-k summaries are retained for later influence reporting.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by six exact focused methods against R `loo` 2.10.0 and `posterior` 1.7.0.
 
-**Evidence.** `ParetoSmoothWeights()` selects the largest raw importance weights, divides them by the cutoff in log space, and fits Numerics GPD MLE to ratios whose minimum is one. Numerics fixes the GPD location at that minimum, but BestFit discards the fitted location and evaluates a zero-location quantile. It also sorts indices from largest to smallest while assigning quantiles from smallest to largest, reversing the tail ranks. The routine does not form positive excesses above the cutoff as required by the generalized-Pareto tail approximation.
+**Evidence.** On the deterministic 40-draw fixture, BestFit matches R for LOOIC $13.4018968330430$, $p_{\mathrm{loo}}=0.342431868035246$, LOOIC standard error $1.95756902272540$, all five pointwise contributions, and Pareto $k=(0.0682,-0.0302,0.4116,0.3062,0.3209)$. Six bounded-through-degenerate tail fixtures match every smoothed log weight, Pareto $k$, and importance-sampling effective sample size; the degenerate tail returns $k=+\infty$. The 40-draw reliability limit is $0.375803649418215$, so the third observation is correctly flagged. Default WAIC plus PSIS performs exactly $S$ pointwise model evaluations, and a later influence request remains at $S$ by reusing cached $O(n)$ summaries.
 
-**Impact.** Smoothed importance weights, Pareto \(k\), pointwise ELPD, LOOIC, effective parameter count, standard error, and influence rankings may all be wrong. This directly affects model comparison and diagnostic conclusions.
+**Impact.** LOOIC, $p_{\mathrm{loo}}$, LOOIC standard error, Pareto $k$, and PSIS observation influence now follow the pinned external implementation for independent retained draws. They remain approximate leave-one-out results: no exact refits or moment matching are performed, and the current tail-length calculation uses `r_eff = 1` rather than estimating MCMC relative efficiency.
 
-**Follow-up.** Replace the helper with a tested PSIS implementation matched to a named reference version, including cutoff excesses, stabilized GPD fitting, monotone expected order statistics, truncation rules, and deterministic parity tests against a primary implementation such as the `loo` reference algorithms.
+**Follow-up.** Retain the pinned artifact, exact methods, single-pass call-count checks, and legacy serialization regression. Users must inspect Pareto $k$ and use an explicit sensitivity/refit strategy when the draw-count reliability limit is exceeded.<a id="tr-025"></a>
+## TR-025 — ARWMH Covariance Uses the Complete Realized-State History
 
-<a id="tr-025"></a>
-## TR-025 — ARWMH Warmup Covariance Omits Repeated States
+**Review disposition.** Confirmed scoped defect; resolved.
 
-**Review disposition.** Unreviewed.
+**Implementation status.** Fixed in Numerics without changing the continual Adaptive Metropolis schedule, public API, or serialization.
 
-**Implementation status.** Not started.
+**Verification status.** Passed by two deterministic Numerics methods and one exact BestFit integration method; see [model-estimation verification](../verification/model-estimation.md#numerics-mcmc-verification).
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Evidence.** `ARWMH.ChainIteration()` now determines the retained state and performs exactly one covariance update after every transition. Accepted, rejected, and infeasible proposals therefore contribute the realized chain state. Both 12-transition rejection fixtures record 12 covariance states, regardless of whether the nominal warmup is 50 or five. Through BestFit's production setup path, all four chains record all 125 repeated retained states.
 
-**Evidence.** In pinned Numerics `ARWMH.ChainIteration()`, accepted proposals are always pushed into the running covariance. Rejected or out-of-bounds proposals push the retained state only when `SampleCount > ThinningInterval * WarmupIterations`. Thus the warmup covariance is calculated from accepted states only, whereas repeated states are added only after warmup. The proposal begins using that covariance after `100 * d` transitions.
+**Current behavior.** Covariance adaptation is based on the complete realized-chain history. Continued updating after the nominal warmup remains intentional and consistent with the original Haario-Saksman-Tamminen Adaptive Metropolis construction.
 
-**Impact.** Accepted-state-only covariance is not the empirical covariance of the Markov chain and can bias adaptation toward large or mobile moves. Continuing the running update after warmup also means the proposal is not frozen at the stated warmup boundary.
-
-**Follow-up.** Define the intended adaptive-Metropolis schedule, update the covariance with every realized chain state during adaptation, and freeze or otherwise prove diminishing adaptation after warmup. Add tests for long rejection runs, out-of-bounds proposals, covariance sample counts, and stationary Gaussian targets.
+**Follow-up.** Retain the deterministic rejection/count tests. Distributional recovery on correlated Gaussian targets remains useful additional sampler validation, but is not required to establish the corrected state-history contract.
 
 <a id="tr-026"></a>
-## TR-026 — The Reported GMM J-Statistic Is Not Hansen's J-Test
+## TR-026 — Hansen J Uses the Selected Efficient Weight
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. Successful estimation preserves the unpenalized moment objective evaluated with the strategy-selected weight before covariance post-processing can replace `W`.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by exact focused parameter, objective, Hansen J, and p-value parity against R 4.4.3 and `gmm` 1.9.1.
 
-**Evidence.** `GeneralizedMethodOfMoments.PostProcess(computeJstat: true)` does not evaluate $J=n\mathbf g(\widehat{\boldsymbol\theta})^\mathsf T\widehat{\mathbf S}^{-1}\mathbf g(\widehat{\boldsymbol\theta})$. It instead projects the moment covariance, divides by $n$, attempts to invert the projected matrix, and forms a different quadratic. The projection is rank deficient under the usual overidentified geometry.
+**Evidence.** The committed one-parameter, two-moment R oracle gives the two-step fit $\widehat\theta=1.93548454750500$, selected-weight objective $Q=1.00755078518454$, $J=nQ=10.0755078518454$, and $p=0.00150253202968641$. BestFit matches all four quantities within the declared tolerances.
 
-**Impact.** `JStatistic` and `JStatisticPValue` do not have the documented Hansen-test interpretation or its chi-squared reference distribution.
+**Current behavior.** `PostProcess(computeJstat: true)` populates `JStat` and `JStatPval` for unpenalized overidentified `TwoStep` and `Iterative` fits. Generic fixed-weight `OneStep` and penalized fits leave both fields as `NaN`, because the efficient-weight Hansen chi-squared interpretation is not automatic in those cases.
 
-**Follow-up.** Implement the named statistic for the selected weighting convention and verify it against deterministic overidentified examples from a trusted econometrics implementation.
+**Correction.** The rank-deficient projected-residual-covariance calculation was removed. The statistic is now $n\mathbf g(\widehat{\boldsymbol\theta})^\mathsf T\mathbf W\mathbf g(\widehat{\boldsymbol\theta})$ with $\chi^2_{q-p}$ reference degrees of freedom in its verified scope. Public API and XML serialization member names are unchanged.
 
 <a id="tr-027"></a>
-## TR-027 — Covariance and Influence Failures Are Represented as Zeros
+## TR-027 — Covariance Failure Is Explicitly Reported
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed with additive status and `Try` APIs while retaining existing covariance method signatures. `CovarianceComputationStatus` exposes `NotComputed`, `Available`, `Regularized`, and `Failed`; MLE, MAP, and GMM expose the latest status and diagnostic text.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by deterministic fast tests covering singular MLE/MAP Hessians, a forced GMM covariance exception, a well-conditioned covariance, a positive-definite repair, and stable enum values.
 
-**Evidence.** MLE, MAP, and GMM covariance routines catch inversion or factorization failures and return zero matrices. Related influence paths can consequently return zero-valued diagnostics. The result carries no status distinguishing a genuine zero from numerical failure.
+**Evidence.** `TryGetCovarianceMatrix` for MLE/MAP and public `TryGetCovariance` for GMM return `false` with `Failed` status when covariance is unavailable. Their zero-valued out parameters are documented placeholders only. Existing throwing getters now raise `InvalidOperationException` instead of returning false zero uncertainty. MLE sandwich covariance has the same `Try` contract, and MLE/MAP influence paths obtain covariance through the validated throwing getter. A usable unmodified covariance reports `Available`; a repaired result reports `Regularized` and provides an adjustment diagnostic.
 
-**Impact.** Downstream code may report zero standard errors or apparently exact estimates when uncertainty evaluation actually failed.
+**Impact.** Numerical failure can no longer be silently presented as zero standard errors or zero influence. Callers can choose an explicit non-throwing branch or let covariance-dependent reporting fail fast.
 
-**Follow-up.** Return an explicit failure status or exception, preserve diagnostics, prohibit uncertainty reporting when covariance is unavailable, and test singular, nearly singular, and well-conditioned cases.
+**Follow-up.** Preserve the singular, available, and regularized regressions. Scientific interpretation must still review `Regularized` results because successful numerical repair does not resolve weak identification.
 
 <a id="tr-028"></a>
-## TR-028 — Prior-Predictive Sampling Does Not Draw from the Full Model Prior
+## TR-028 — Prior-Predictive Sampling Is Marginal, Not a General Joint-Prior Sampler
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed limitation.
 
-**Implementation status.** Not started.
+**Implementation status.** The current behavior is documented without a production algorithm change.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by source/model-contract audit and one exact focused coupled-prior characterization.
 
-**Evidence.** `PriorPredictiveCheck.SampleFromPriors()` independently samples each `ModelParameter.PriorDistribution`, clamps values to bounds, and filters sets whose full prior is non-finite. It does not sample or reweight coupled quantile priors, Jeffreys factors, transformation Jacobians, spatial terms, or other contributions implemented only in `IModel.PriorLogLikelihood`. Clamping also creates boundary point masses rather than a truncated distribution.
+**Evidence.** `PriorPredictiveCheck.SampleFromPriors()` independently samples each `ModelParameter.PriorDistribution`, clamps values to bounds, and rejects sets whose full prior log likelihood is non-finite. It does not sample or reweight coupled quantile priors, Jeffreys factors, transformation Jacobians, spatial terms, or other non-marginal contributions implemented only in `IModel.PriorLogLikelihood`. `ParameterSet.Fitness` stores the negative joint prior log likelihood for each accepted draw; it is not a likelihood or posterior score. A fixed-seed 20,000-draw fixture with independent Uniform$(-1,1)$ marginals and a narrow $y\mid x$ coupling confirms that the draws remain marginally independent even though fitness records the coupled density.
 
-**Impact.** The ensemble generally is not the prior predictive distribution for models with non-marginal prior structure, so apparent prior-data conflict can be created or hidden.
+**Impact.** The resulting ensemble is a valid direct prior sample only when the model prior factorizes into the sampled parameter marginals subject to the rejection rule. It is not a general joint-prior sampler for models with additional coupled prior structure.
 
-**Follow-up.** Add a model-level joint-prior sampler or validated weighting/MCMC method, use genuine truncation, report sampling failures, and verify independent and coupled-prior examples.
+**Follow-up.** Retain the documented scope. A general solution requires a model-level joint-prior sampler or a separately approved validated weighting/MCMC method, genuine truncation, failure reporting, and independent/coupled-prior verification.
 
 <a id="tr-029"></a>
-## TR-029 — MCMC Documentation Claims Diagnostics That Are Not Implemented
+## TR-029 — Rank-Normalized R-hat and Conservative Bulk/Tail ESS
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect - resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed without new public methods, result fields, or serialized fields. `GelmanRubin(...)` stores the maximum of rank-normalized split and folded rank-normalized split R-hat in the existing `Rhat` field. The existing scalar `ESS` stores the minimum of rank-normalized bulk ESS and pooled 0.05/0.95 quantile ESS. The concise `R-hat` and `ESS` report labels remain unchanged, while the readiness threshold is now 1.01.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed against R `posterior` 1.7.0 and by focused Numerics/BestFit tests. Public signatures and serialization are unchanged.
 
-**Evidence.** Numerics `MCMCResults` computes an unsplit between/within-chain Gelman–Rubin statistic and one autocorrelation ESS truncated at the first negative lag. It does not split or rank-normalize chains, fold draws, or calculate separate bulk and tail ESS. Comments and report wording nevertheless refer to split R-hat and bulk/tail ESS.
+**Evidence.** The committed deterministic oracle covers IID chains, autocorrelation, shifted means, scale disagreement, sticky tails, ties, constants, warmup removal, and chain permutation. C# uses pooled midranks, Blom inverse-normal scores, split chains, and Geyer's multi-chain initial-positive and initial-monotone paired autocorrelation sequence with zero-padded FFT autocovariances. Invalid, constant, or insufficient input returns `NaN`; single-chain R-hat remains `NaN`; ESS trims unequal chains to their common usable length. A five-run .NET 10 Release benchmark of the same deterministic four-chain, ten-parameter completion fixture retained exactly 439,645 target evaluations and changed median completion time from 1,232.328 ms to 1,243.330 ms, a 0.893% increase.
 
-**Impact.** Reviewers may infer that modern heavy-tail and scale-sensitive convergence checks passed when only older summaries were evaluated.
+**Impact.** The existing compact report now detects within-chain drift, between-chain location or scale disagreement, and weak 5%/95% tail mixing more robustly. The 51-lag original-scale averaged ACF remains unchanged for plots, and diagnostics add no model-target evaluations.
 
-**Follow-up.** Correct the labels and separately implement rank-normalized split/folded R-hat plus bulk and tail ESS with parity tests against a primary reference.
+**Follow-up.** Retain the R-oracle fixtures, public-API and serialization contract, focused report-threshold tests, and FFT-based $O(PMN\log N)$ implementation. R-hat and ESS remain screening diagnostics rather than proof of convergence or model adequacy.
 
 <a id="tr-030"></a>
-## TR-030 — NUTS Acceptance Rate Is Always Reported as One
+## TR-030 — NUTS Reports Sampler-Specific Hamiltonian Diagnostics
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed with additive Numerics and `MCMCResults` properties plus sampler-specific BestFit reporting. Older serialized results remain readable; absent fields are treated as legacy diagnostics-unavailable state.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by focused Numerics acceptance/diagnostic, E-BFMI, analytic-gradient-routing, and serialization tests plus exact BestFit report and posterior-gradient methods; see [model-estimation verification](../verification/model-estimation.md#numerics-mcmc-verification).
 
-**Evidence.** Pinned Numerics NUTS increments the generic accepted-transition counter on every completed iteration because the tree always returns a retained state. `MCMCResults.AcceptanceRates` therefore reports 1.0 rather than the Hamiltonian acceptance statistic used for dual averaging. BestFit applies generic 0.65–0.90 guidance to that value.
+**Evidence.** NUTS now overrides the generic acceptance calculation with the mean post-warmup Hamiltonian acceptance statistic and streams per-chain divergence counts, maximum-depth hits, mean tree depth, mean leapfrog steps, final step size, and E-BFMI without additional target evaluations or retained-draw storage. `MCMCResults` carries those arrays through JSON serialization. BestFit reports them in a compact NUTS section and suppresses the former generic Metropolis interpretation for legacy results.
 
-**Impact.** Healthy NUTS runs are labeled as excessive-acceptance, while poor Hamiltonian behavior is not diagnosed by the reported rate.
+**Gradient regression.** A prior Numerics audit had already corrected the step-size initialization heuristic so it honors a caller-supplied `GradientFunction` instead of unconditionally recomputing finite differences. The permanent Numerics test proves that route. BestFit does not currently supply an analytic gradient; its coupled-prior verification proves that the default bounded finite-difference function differentiates the complete `Model.LogLikelihood` posterior target.
 
-**Follow-up.** Expose sampler-specific acceptance probability, divergences, maximum-tree-depth hits, and energy diagnostics; use sampler-specific report rules.
+**Follow-up.** Retain the focused diagnostic, gradient, serialization, and report regressions. Sampling remains in the bounded API parameterization, so posterior-boundary behavior and model-specific recovery still require review when NUTS is selected.
 
 <a id="tr-031"></a>
 ## TR-031 — Combined Influence Was Presented as Hat-Matrix Information
@@ -564,19 +561,19 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 
 **Follow-up.** Retain the regime, sample-size, and full-curvature tests. Extend model-family-specific calibration before adopting numerical intervention thresholds.
 <a id="tr-032"></a>
-## TR-032 — GMM Cook-Like Influence Is Stored and Classified as Pareto k
+## TR-032 — Legacy GMM PSIS-Shaped Influence Overloads Are Obsolete
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; resolved for supported API use.
 
-**Implementation status.** Not started.
+**Implementation status.** Both legacy `GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` overloads are marked `[Obsolete]` with a non-error compatibility warning. Their signatures and behavior remain intact for source, binary, and serialization compatibility. The warning directs callers to `GetLeverageDiagnostics()` for labeled GMM diagnostics or `GetCooksDistance()` for raw Cook-like values.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by a fast reflection regression and an exact focused compatibility/mapping method.
 
-**Evidence.** `GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` calculates a moment-based Cook-distance-like quadratic but stores it in `ObservationInfluence.ParetoK`. The shared DTO then applies PSIS thresholds 0.5, 0.7, and 1.0 and a PSIS reliability summary to that unrelated scalar.
+**Evidence.** The compatibility test confirms both overloads are obsolete without being compile errors. Reflection invocation preserves the legacy value-for-value mapping from `GetCooksDistance()` into `ObservationInfluence.ParetoK`, while demonstrating why its PSIS categories and summary are not supported GMM interpretations. The main GMM UI already consumes `GetLeverageDiagnostics()` and remains on the correctly labeled path.
 
-**Impact.** GMM observations can be declared PSIS-problematic or reliable using thresholds that have no meaning for the computed diagnostic.
+**Impact.** New and maintained callers receive an explicit compiler warning before entering the semantically invalid PSIS-shaped path, while existing compiled clients remain functional. Supported GMM diagnostics no longer direct users through Pareto-k labels or thresholds.
 
-**Follow-up.** Introduce a GMM-specific influence result, reserve `ParetoK` for valid PSIS, and add serialization/UI tests preventing cross-diagnostic labels.
+**Follow-up.** Retain the compatibility regressions. Remove the legacy overloads only in a future major version with an explicit migration notice.
 
 <a id="tr-033"></a>
 ## TR-033 — The Unpenalized GMM Objective and Gradient Have Different Scale
@@ -594,19 +591,19 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 **Follow-up.** Retain the two independent gradient-scale tests and the MAP/GMM inverse-variance test as permanent verification evidence. Any future change to the objective, gradient, penalty definition, or covariance bread/meat must preserve their joint equations.
 
 <a id="tr-034"></a>
-## TR-034 — Overidentified One-Step GMM Is Artificially Prohibited
+## TR-034 — Overidentified One-Step GMM Uses Fixed Weighting for Fit and Covariance
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** The overidentified/`OneStep` guards were removed from `Estimate()` and `IsValid(out List<string>)`. Covariance now retains the configured fixed weight for `OneStep` bread and meat while recomputing $\mathbf S$ at the solution. `TwoStep` and `Iterative` covariance use final fitted-parameter $\mathbf S^{-1}$. Public API and serialization are unchanged.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Four exact focused tests pass R 4.4.3 and `gmm` 1.9.1 parameter/objective, selected-weight Hansen J, fixed-weight IID sandwich covariance, and efficient two-step covariance parity.
 
-**Evidence.** Constructor validation rejects `GMMEstimationMethod.OneStep` whenever moments outnumber parameters. Standard one-step GMM is defined for overidentified systems given a fixed positive-definite initial weighting matrix.
+**Evidence.** For the one-parameter, two-moment fixture with identity weight, R obtains $\widehat\theta=2.28992700729929$, $Q=0.317956204379562$, and fixed-weight sandwich variance $0.145652392138090$; BestFit matches all three. For two-step GMM, R and BestFit agree on variance $0.132600447299456$. The generator independently reconstructs both centered IID sandwiches and distinguishes the second-step objective weight from the final efficient covariance weight.
 
-**Impact.** The API excludes a standard estimator in the setting where weighting choices matter most, and the validation message teaches an incorrect identification rule.
+**Current behavior.** `OneStep` fitting and covariance use the requested fixed weight for just-identified and overidentified systems. Generic fixed-weight fits do not populate Hansen J. `TwoStep` and `Iterative` refresh the efficient covariance weight at the final parameters.
 
-**Follow-up.** Permit overidentified one-step estimation with a validated weighting matrix, or rename the narrower mode; test exact, over-, and underidentification.
+**Correction.** Identification guards and covariance weight selection were corrected surgically. Enum values, constructor signatures, default identity weighting, underidentification handling, public API, and XML serialization signatures remain unchanged.
 
 <a id="tr-035"></a>
 ## TR-035 — Time-Series Jeffreys Terms Are Misclassified in Pointwise Prior Output
@@ -714,19 +711,19 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 **Follow-up.** Specify whether covariates enter levels or differences, align by `DateTime` rather than positional index, and derive/test the exact Jacobian observation set.
 
 <a id="tr-042"></a>
-## TR-042 — Phase 6 Analyses Compute AIC/BIC from a Posterior Kernel
+## TR-042 — Time-Series and Rating-Curve AIC/BIC Included Prior Density
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed without public API or serialization changes. AR, MA, ARIMA, ARIMAX, and rating-curve analyses now evaluate their data likelihoods at `Results.MAP.Values`.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by the shared focused MAP criterion regression and the source-call-site audit; see [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
 
-**Evidence.** AR, MA, ARIMA, ARIMAX, and rating-curve analyses evaluate `Model.LogLikelihood(Results.MAP.Values)`—data plus priors—and pass it to conventional `GoodnessOfFit.AIC/BIC`. This generalizes the issue recorded for univariate analysis in TR-011.
+**Evidence.** Prior-density terms are no longer passed to `GoodnessOfFit.AIC/BIC`. Each analysis retains its existing parameter count and observation/training sample-size convention.
 
-**Impact.** Values labeled AIC/BIC depend on prior density and parameterization and are not conventional likelihood criteria; comparisons across models or prior choices are invalid.
+**Impact.** Prior normalization constants no longer shift the reported criteria. Flat-prior fits can be compared with their constrained-MLE counterparts; nonconstant priors can move MAP away from MLE, so those values require the documented Bayesian caveat.
 
-**Follow-up.** Compute AIC/BIC from a data-likelihood MLE or expose a clearly named alternative. Add tests showing invariance of conventional criteria to prior changes.
+**Follow-up.** Resolve the separate time-series indexing and rating-curve likelihood-measure findings before making cross-model criterion claims. Use DIC, WAIC, or verified PSIS-LOO with informative priors.
 
 <a id="tr-043"></a>
 ## TR-043 — Rating-Curve Likelihood Omits the Log10 Change-of-Variables Term
@@ -789,19 +786,19 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 **Follow-up.** Make transform configuration atomic and observable, either remove the unused offset or implement it consistently, rebuild dependent state, and test serialization and likelihood changes.
 
 <a id="tr-047"></a>
-## TR-047 — Bivariate AIC and BIC Use the Posterior Kernel
+## TR-047 — Bivariate AIC and BIC Included the Copula Prior
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed without public API or serialization changes. `BivariateAnalysis.UpdatePointEstimateResultsAsync` now evaluates `BivariateDistribution.DataLogLikelihood` at the stored MAP.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by the shared focused MAP criterion regression and the source-call-site audit; see [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
 
-**Evidence.** `BivariateAnalysis.UpdatePointEstimateResultsAsync` evaluates `BivariateDistribution.LogLikelihood` at the MAP estimate. That method includes parameter priors, whereas conventional AIC and BIC require the maximized data log-likelihood. The code comment says this prior-sensitive definition is intentional.
+**Evidence.** Copula-prior density is excluded from AIC/BIC. The parameter penalty remains the number of fitted copula parameters, and BIC continues to use the matched-pair count.
 
-**Impact.** Reported AIC and BIC vary with the copula prior and are not comparable to their standard likelihood-based definitions or to external software. The BIC sample size is the matched-pair count, which is appropriate only after the likelihood issue is resolved.
+**Impact.** With a flat copula prior, MAP coincides with the constrained copula MLE and the criteria have their usual likelihood interpretation conditional on the fixed marginal fits. Informative copula priors invalidate that interpretation, and comparisons remain conditional on identical marginals and paired events.
 
-**Follow-up.** Use `DataLogLikelihood` at an MLE (preferred) or clearly expose a separately named posterior-score diagnostic; retain DIC, WAIC, and LOOIC for Bayesian comparison.
+**Follow-up.** With informative priors, use DIC, WAIC, or verified PSIS-LOO. Do not compare bivariate criteria across different marginal fits, event pairings, or likelihood conventions.
 
 <a id="tr-048"></a>
 ## TR-048 — Spatial Copula Does Not Marginalize Missing Sites
@@ -909,19 +906,19 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 **Follow-up.** Use the model's conditional Gaussian-process predictor for each posterior draw and sample the conditional residual, with an explicit option if deterministic conditional means are desired.
 
 <a id="tr-055"></a>
-## TR-055 — Spatial AIC and BIC Use the Posterior Kernel and Nominal Cell Count
+## TR-055 — Spatial AIC and BIC Required a Defensible Likelihood and Sample Unit
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; the scoped correction is complete with remaining methodological limitations.
 
-**Implementation status.** Not started.
+**Implementation status.** Corrected as far as the current spatial likelihood contract permits, without public API or serialization changes. The analysis now evaluates `SpatialGEV.DataLogLikelihood` at MAP and uses the number of nonempty row/year blocks for BIC instead of `Sites * Observations`.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by source audit for the likelihood call and sample-count implementation. The remaining scientific limitations are explicitly documented in the [spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction).
 
-**Evidence.** `SpatialGEVAnalysis.CreateUncertaintyAnalysisResultsAsync` evaluates `SpatialGEV.LogLikelihood` at the MAP estimate and uses `Sites * Observations` as the BIC sample size. The score includes priors and spatial-error densities, while the cell count includes missing values and does not represent the independent predictive unit under copula dependence.
+**Evidence.** Independent parameter-prior densities and fully missing rows no longer affect the criterion calculation, and contemporaneously dependent site cells are no longer counted as independent BIC replicates. However, `SpatialGEV.DataLogLikelihood` currently contains Gaussian-process spatial-error densities; the copula does not correctly marginalize missing sites; and weighted/dependent spatial likelihoods do not automatically meet ordinary AIC/BIC regularity conditions.
 
-**Impact.** The reported criteria do not have their conventional information-criterion interpretation and can be distorted by missingness, priors, and spatial dependence.
+**Impact.** The corrected fields are materially better defined but remain qualified diagnostics, especially with nonconstant priors or latent spatial errors. They must not be presented as generally conventional AIC/BIC for hierarchical spatial comparison.
 
-**Follow-up.** Define the comparison target and independent observation unit, use a maximized data likelihood for AIC/BIC, and prefer explicitly defined posterior predictive criteria for hierarchical spatial models.
+**Follow-up.** Resolve TR-048 and TR-049, then verify posterior predictive comparison at the row/year unit. Prefer WAIC or verified PSIS-LOO once the scalar and pointwise spatial likelihoods describe the same fitted target.
 
 <a id="tr-056"></a>
 ## TR-056 — Spatial Bootstrap Does Not Fit the Resampled Data

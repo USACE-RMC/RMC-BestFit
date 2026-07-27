@@ -14,7 +14,7 @@ BestFit is Bayesian-first: MCMC is the primary route for parameter and predictiv
 | [Maximum a posteriori](maximum-a-posteriori.md) | `IModel.LogLikelihood` | posterior mode and local Laplace curvature |
 | [Generalized method of moments](generalized-method-of-moments.md) | moment quadratic plus optional penalty | GMM estimate and asymptotic covariance |
 | [Bayesian MCMC](bayesian-mcmc.md) | full posterior kernel | joint posterior draws and credible uncertainty |
-| [Model comparison](model-comparison.md) | likelihood or pointwise predictive criteria | AIC, BIC, DIC, WAIC, intended LOOIC |
+| [Model comparison](model-comparison.md) | likelihood or pointwise predictive criteria | AIC, BIC, DIC, WAIC, verified PSIS-LOOIC |
 | [Predictive checks](predictive-checks.md) | prior/posterior predictive simulation | discrepancy p-values and replicate summaries |
 | [Diagnostics](diagnostics.md) | optimization and chain behavior | status, trace interpretation, R-hat, ESS |
 | [Influence diagnostics](influence-diagnostics.md) | pointwise likelihood/moments/prior curvature | observation and prior sensitivity measures |
@@ -51,7 +51,7 @@ Every fitted result should state:
 
 ## Open Findings Affecting Interpretation
 
-The canonical [review-findings register](../review-findings.md) is part of this reference. Phase 5 identified, among other items, false profile-likelihood naming, invalid PSIS tail smoothing, ARWMH adaptation concerns, NUTS acceptance-rate misreporting, nonstandard GMM J-statistic construction, covariance failure represented by zero matrices, and custom leverage quantities whose interpretation exceeds their derivation. The chapters describe implemented behavior, not aspirational behavior, and exclude affected values from scientific recommendations.
+The canonical [review-findings register](../review-findings.md) is part of this reference. MLE and MAP nuisance profiling, PSIS tail smoothing, covariance failure signaling, GMM Hansen J, overidentified one-step fitting and covariance, ARWMH realized-state adaptation, NUTS gradient/report diagnostics, rank-normalized R-hat and conservative bulk/tail ESS, and combined-influence terminology are corrected and verified. The legacy GMM PSIS-shaped compatibility overloads are explicitly obsolete. Joint-prior sampling remains a documented limitation. The chapters describe current implemented behavior and identify any output whose scientific interpretation remains limited.
 
 ## Validation Boundary
 

@@ -12,11 +12,11 @@ The active handoff and batching plan is maintained in [Verification Finalization
 |---|---|---|
 | Repository integration | Validated 24 July 2026 | Debug Verification rebuild: 0 warnings/errors; Release solution log: 0 Verification project references |
 | Public API baseline | Captured | Exact exported type/member/enum baseline enforced by `PublicApiCompatibilityTests` |
-| Fast regression gate | Passed | Core 3,032; UI 564; App 428; 0 failed and 0 skipped |
+| Fast regression gate | Passed | Core 3,041; UI 564; App 428; 0 failed and 0 skipped |
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
 | Test ownership audit | In progress | Initial duplicate removals and FittingAnalysis split are recorded in [Test Inventory](test-inventory.md) |
 | Distribution fitting | Passed | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. See [Distribution Fitting](distribution-fitting.md) |
-| Model estimation and diagnostics | In progress | Log10-Normal estimator equivalence and fit/variance/combined influence passed; R `gmm` parity fixes TR-065 and terminology fixes TR-031; TR-033 is rejected as a non-defect. Pareto-k/LOO, model comparison, profiles, Hansen J, and remaining diagnostics remain active. See [Model Estimation](model-estimation.md) |
+| Model estimation and diagnostics | Complete for Phase 2 scope | Log10-Normal estimator equivalence, fit/variance/combined influence, and external-package parity for DIC, WAIC, PSIS-LOO, MLE/MAP nuisance profiling, Hansen J, overidentified one-step fitting, fixed-weight/efficient GMM sandwich covariance, and rank-normalized R-hat/bulk-tail ESS passed. TR-023 and TR-032 retain their public signatures; TR-024 through TR-027 and TR-029 through TR-031 and TR-034 are fixed in their approved scopes. TR-028 remains an accepted documented limitation; TR-033 is rejected as a non-defect. See [Model Estimation](model-estimation.md) |
 | Bulletin 17C and later phases | Planned | [Scientific Review Findings](../technical-reference/review-findings.md) |
 ## Evidence rule
 

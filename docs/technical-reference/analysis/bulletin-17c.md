@@ -84,6 +84,26 @@ Before calling `RunAsync`, call `Validate()` and treat every error as blocking. 
 
 They are not Bayesian priors: there is no normalized prior density, marginal likelihood, posterior, or MCMC target. For the same reason, generic posterior information criteria do not apply. A `CompositeAnalysis` cannot use DIC, WAIC, or LOOIC weighting for a Bulletin 17C child.
 
+## Pseudo-AIC and Pseudo-BIC
+
+`Bulletin17CAnalysis` retains the shared `AnalysisResults.AIC` and `BIC` fields for compatibility, but they are pseudo-information criteria rather than classical AIC/BIC. Let $\widehat{\boldsymbol\theta}_{\mathrm{GMM}}$ be the Bulletin 17C GMM solution stored internally in the shared `MAP` slot. The analysis constructs the corresponding LP3 `UnivariateDistribution` over the Bulletin 17C data frame and evaluates its data log likelihood,
+
+$$
+\ell_D^*=\ell_D(\widehat{\boldsymbol\theta}_{\mathrm{GMM}}). \tag{B17C.1}
+$$
+
+It then reports
+
+$$
+\mathrm{pseudo\mbox{-}AIC}=-2\ell_D^*+2k,
+\qquad
+\mathrm{pseudo\mbox{-}BIC}=-2\ell_D^*+k\log n_t, \tag{B17C.2}
+$$
+
+where $k$ is the number of LP3 parameters and $n_t$ is the number of exact records minus identified low outliers plus the number of interval records. Parameter-prior densities are not included.
+
+These values are not classical information criteria because the GMM solution does not maximize $\ell_D$, the usual AIC/BIC penalty derivations do not describe the GMM estimating equations or their effective complexity, and $n_t$ is a record-count convention rather than a derivation for grouped perception-threshold information. GMM parameter and quantile penalties affect the fitted estimate but are not represented in (B17C.2). Use the values only as descriptive, same-data heuristics under an identical Bulletin 17C setup; do not mix them with MLE or Bayesian MAP AIC/BIC or interpret their weights as posterior model probabilities.
+
 ## Uncertainty Interpretation
 
 The default `LinkedMultivariateNormal` engine samples a variance-stabilized approximation to the GMM estimator's sampling distribution. `MultivariateNormal` samples directly in natural parameter space. `Bootstrap` simulates and refits records. The enum member `BiasCorrectedBootstrap` actually runs a studentized link-space pivotal bootstrap; the naming discrepancy is tracked for production review.
@@ -130,7 +150,7 @@ Use the specialized output alongside, not instead of, these checks:
 | external information | quadratic parameter/quantile penalties | normalized parameter/quantile priors |
 | uncertainty | asymptotic MVN, linked MVN, bootstrap, pivotal bootstrap | posterior draws |
 | interval terminology | confidence interval | credible interval |
-| information criteria | not defined | DIC, WAIC, and PSIS-LOO when their prerequisites hold |
+| information criteria | pseudo-AIC/pseudo-BIC from the LP3 data likelihood at the GMM solution; no posterior criteria | AIC/BIC at MAP only under flat priors; DIC, WAIC, and PSIS-LOO when their prerequisites hold |
 
 This distinction should be explicit in reports. Numerical similarity between an EMA/GMM curve and a Bayesian posterior summary does not make their inferential meanings interchangeable.
 

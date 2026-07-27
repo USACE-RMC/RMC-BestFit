@@ -57,7 +57,7 @@ Choose orders using scientific plausibility, ACF/PACF as exploratory tools, resi
 - holdout coverage and proper scores on the original decision scale;
 - sensitivity to training window, transform, order, and covariate specification.
 
-The analyses currently compute values labeled AIC/BIC from the full MAP posterior kernel, not an MLE data likelihood ([TR-042](../review-findings.md#tr-042)). Do not use those fields for Akaike/Bayesian-information comparisons. DIC and WAIC retain the limitations described in [model comparison](../estimation/model-comparison.md); PSIS-LOO is unavailable under TR-024.
+AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log likelihood evaluated at the stored MAP; prior-density terms are excluded. The values agree with MLE criteria only when every active prior is constant and MAP coincides with the constrained MLE. The default Jeffreys scale option is nonconstant, so analyses using it—or any informative prior—should use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than treating the MAP-evaluated fields as conventional AIC/BIC. See [TR-042](../review-findings.md#tr-042).
 
 ## Current Scientific Availability
 
