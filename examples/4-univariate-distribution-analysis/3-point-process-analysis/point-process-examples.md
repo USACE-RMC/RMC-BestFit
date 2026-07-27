@@ -111,22 +111,22 @@ While in the **Distribution Results** tab to the left, select Tabular Results to
 
 ### Plots
 There are also plenty of plots to explore our results with. Under the **Distribution Results** tab we have a frequency curve.
-![Frequency curve (AEP versus quantile), with the credible band.](.../images/point-process-frequency.png)
+![Frequency curve (AEP versus quantile), with the credible band.](../images/point-process-frequency.png)
 
 *Figure 1: Frequency curve (AEP versus quantile), with the credible band.*
 
 The **Kernal Density** tab shows an estimate for the pdf of each parameter.
-![Posterior kernel density for location parameter (ξ).](.../images/point-process-kernel-density-location.png)
+![Posterior kernel density for location parameter (ξ).](../images/point-process-kernel-density-location.png)
 
 *Figure 2: Posterior kernel density for location parameter (ξ).*
 
 The **Markov Chain Traces** tab explores the traces of each Markov chain as it explores the posterior space in order to converge.
-![Markov-chain traces for location parameter (ξ).](.../images/point-process-trace-location.png)
+![Markov-chain traces for location parameter (ξ).](../images/point-process-trace-location.png)
 
 *Figure 3: Markov-chain traces for location parameter (ξ).*
 
 Finally, we can investigate the autocorrelation of the chains under the **Autocorrelation** tab.
-![Autocorrelation function of the chains, used to estimate effective sample size, for location parameter (ξ).](.../images/point-process-autocorrelation-location.png)
+![Autocorrelation function of the chains, used to estimate effective sample size, for location parameter (ξ).](../images/point-process-autocorrelation-location.png)
 
 *Figure 4: Autocorrelation function of the chains, used to estimate effective sample size, for location parameter (ξ).*
 

@@ -99,7 +99,7 @@ Be sure to explore all of the analyses provided!
 
 ### Plots
 
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](.../images/mixed-population-frequency.png)
+![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](../images/mixed-population-frequency.png)
 *Figure: Frequency curve (AEP versus quantile), with the credible band.*
 
 ## Next Steps
