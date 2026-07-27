@@ -46,85 +46,69 @@ B17C-method fits of the seven Bulletin 17C example datasets, including both mult
 3. Open `bulletin-17c-examples.bestfit`.
 
 ### Exploring the Elements
-
-For each B17C alternative:
+For each B17C analysis:
 
 1. Click the alternative in the Project Explorer.
 2. Open the **Frequency** tab — the central LP-III curve plus the chosen confidence intervals are shown.
-3. Switch the confidence-interval type in the Properties panel between **MVN** and **BCB** (Bias-Corrected Bootstrap) to compare.
-4. Use the **Information Expansion** Properties pane to add or remove historical and paleoflood records.
-
-## Analysis Settings
-
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
-
-- **Sampler type** (DEMCzs, ARWMH, HMC).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+3. Switch the confidence-interval type in the **Properties** panel under Options between **MVN** and **BCB** (Bias-Corrected Bootstrap) to compare.
 
 ## Expected Results
-
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+Below are the expected results for B17C Analysis labeled "Example 1"; this should be the first analysis in the list.
+Be sure to explore all of the analyses provided!
 
 ### Parameter Estimates
+The parameter estimates are found under the **GMM Report** tab to the left as parameter summary statistics.
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
-
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
+| Parameter | Mean | Std Dev | 5% | Median | 95% |
 |---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+| Mean (of log) (µ) | 3.32859 | 0.0170513 | 3.30056 | 3.32859 | 3.35661 | 
+| Std Dev (of log) (σ) | 0.140591 | 0.0124871 | 0.120003 | 0.140536 | 0.161152 | 
+| Skew (of log) (γ) | 0.422345 | 0.214745 | 0.0703177 | 0.422267 | 0.774578 | 
 
 ### Frequency / Quantile Table
+While in the **Distribution Results** tab to the left, select Tabular Results to see the frequency plot's value at each return level probability,
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
-
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
+| Probability | 95.0% CI | 5.0% CI | Expected Probability | Computed |
 |---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+| 1E-06 | 31536.45476960882 | 9504.478431532647 | 24554.49950471727 | 16637.381290694262 | 
+| 2E-06 | 28149.802168541166 | 9040.75064415998 | 21698.320005194113 | 15373.041485536076 | 
+| 5E-06 | 24160.94198954819 | 8453.443850597601 | 18465.22493642291 | 13822.796830244182 | 
+| 1E-05 | 21455.61220838344 | 8018.426746788033 | 16368.642332507934 | 12735.491236413278 | 
+| 2E-05 | 19059.420515419384 | 7584.834601256706 | 14529.108611032698 | 11716.700271971204 | 
+| 5E-05 | 16227.689492312738 | 7036.676121218768 | 12431.682956323782 | 10467.780043029716 | 
+| 0.0001 | 14352.979242152784 | 6646.968110248417 | 11061.167218506842 | 9591.790229464237 | 
+| 0.0002 | 12681.090740368469 | 6260.81983404009 | 9849.412895354815 | 8770.75246602347 | 
+| 0.0005 | 10739.197536045618 | 5748.645545945168 | 8454.21602532957 | 7763.446819612117 | 
+| 0.001 | 9456.728000321902 | 5377.2843046125 | 7532.75915104478 | 7055.894046242264 | 
+| 0.002 | 8302.127673152962 | 5008.506131955913 | 6707.646530666868 | 6391.361951623581 | 
+| 0.005 | 6950.922731163299 | 4521.195397698769 | 5743.428623397382 | 5572.971134836763 | 
+| 0.01 | 6048.389460148426 | 4162.263351862811 | 5093.009853602178 | 4994.660836353398 | 
+| 0.02 | 5228.424298909672 | 3799.8948635549073 | 4498.148210293506 | 4447.087767122384 | 
+| 0.05 | 4270.277948099271 | 3319.851153928296 | 3778.9736925918733 | 3762.259385065009 | 
+| 0.1 | 3624.548453911838 | 2945.4644456014116 | 3270.0420861902307 | 3265.250637410281 | 
+| 0.2 | 3018.199431766434 | 2549.418823517292 | 2774.225196097636 | 2774.0651594381807 | 
+| 0.3 | 2675.8403847879326 | 2299.9841323734913 | 2479.7934268715235 | 2480.5351134262696 | 
+| 0.5 | 2227.0001382334076 | 1948.8026579103694 | 2082.108332033603 | 2083.1343664241135 | 
+| 0.7 | 1889.0073300093154 | 1662.0699593897555 | 1770.3603956366273 | 1771.433478893447 | 
+| 0.8 | 1725.6343417562318 | 1515.1032598389882 | 1614.4240965923188 | 1615.5331366620323 | 
+| 0.9 | 1541.3255961148857 | 1335.0431447889257 | 1430.5903005331681 | 1432.0541875729045 | 
+| 0.95 | 1417.3600581301248 | 1203.0906894783586 | 1301.5522975174601 | 1304.365272636727 | 
+| 0.98 | 1305.492656087999 | 1068.6123887847205 | 1174.5910966211009 | 1181.8601363704101 | 
+| 0.99 | 1243.1832472499386 | 986.9285193815624 | 1097.7448455996291 | 1110.7760005372197 | 
 
 ### Plots
+There are also plenty of plots to explore our results with. Under the **Distribution Results** tab we have a frequency curve.
+![Frequency curve (AEP versus quantile), with the credible band.](...images/bulletin-17c-frequency.png)
 
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](images/bulletin-17c-frequency.png)
-*Figure: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
+*Figure 1: Frequency curve (AEP versus quantile), with the credible band.*
 
-![Posterior kernel density for each parameter.](images/bulletin-17c-kernel-density.png)
-*Figure: Posterior kernel density for each parameter.*
+The **Kernal Density** tab shows an estimate for the pdf of each parameter.
+![Posterior kernel density for mean parameter (µ).](...images/bulletin-17c-kernel-density-mean.png)
 
-![Markov-chain traces for each parameter.](images/bulletin-17c-trace.png)
-*Figure: Markov-chain traces for each parameter.*
-
-![Autocorrelation function of the chains, used to estimate effective sample size.](images/bulletin-17c-autocorrelation.png)
-*Figure: Autocorrelation function of the chains, used to estimate effective sample size.*
-
-### MCMC Diagnostics
-
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
+*Figure 2: Posterior kernel density for mean parameter (µ).*
 
 ## Next Steps
 
 - Compare MVN-quantile and bias-corrected bootstrap (BCB) confidence intervals on the same dataset.
 - Re-run on the same input data using the **Bayesian Univariate** workflow and compare AEPs and confidence intervals.
 - Add a **regional skew** weighting if a regional skew estimate is available.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
