@@ -242,9 +242,9 @@ Phase exit criteria:
 
 ## Phase 3 - Data Handling and Bulletin 17C
 
-Status: TR-016 through TR-021 are closed in their approved scopes. TR-016 documents the intentional shared Bayesian/Bulletin 17C result-storage architecture without an API change. TR-020 restricts Cohn diagnostics to exact LP3 data with fast guard regressions; numerical Cohn verification is deferred. TR-021 records all seven formal GMM worked-example methods passing at absolute parameter tolerance `1E-3`. TR-017 documentation reconciliation and TR-018/TR-019 bootstrap-refit reliability remain closed; the final unguarded Examples 1-7 sweep produced 13,000 outputs from 13,000 realizations without retries or failures.
+Status: complete for the approved scope. TR-003 documents the accepted grouped-threshold disaggregation and final-time prior-reference assumptions. TR-016 documents the intentional shared Bayesian/Bulletin 17C result-storage architecture without an API change. TR-020 restricts Cohn diagnostics to exact LP3 data with fast guard regressions; numerical Cohn verification is deferred. TR-021 records all seven formal GMM worked-example methods passing at absolute parameter tolerance `1E-3`. TR-017 documentation reconciliation and TR-018/TR-019 bootstrap-refit reliability remain closed; the final unguarded Examples 1-7 sweep produced 13,000 outputs from 13,000 realizations without retries or failures.
 
-The repository contains no separate Phase 3/B17C JSON or CSV oracle under `verification/data/`; the published targets are encoded with the formal fixtures in `Bulletin17CData.cs`. `B17CExampleTests.Test_Example1` through `Test_Example7` were executed one method at a time and all seven passed current LP3 GMM mean, standard deviation, and skewness parity at absolute tolerance `1E-3`. TR-003 remains deferred pending an approved chronology policy.
+The repository contains no separate Phase 3/B17C JSON or CSV oracle under `verification/data/`; the published targets are encoded with the formal fixtures in `Bulletin17CData.cs`. `B17CExampleTests.Test_Example1` through `Test_Example7` were executed one method at a time and all seven passed current LP3 GMM mean, standard deviation, and skewness parity at absolute tolerance `1E-3`. TR-003 required documentation rather than a new oracle: source establishes the deterministic terminal-above threshold allocation and evaluation of distribution-dependent priors at the most-recent observed index.
 
 TR-017 is closed without a production change after concordance review against Smith and Stedinger's pending methods paper and reference engine (paper checkpoint `aaec860e875e`). `BiasCorrectedBootstrap` implements the paper's bias-corrected pivotal bootstrap: the correction is intrinsic to the replicate-covariance standardization and parent-covariance re-inflation. The enum/XML value and practitioner-facing GUI label remain unchanged; technical documentation uses the full method name and distinguishes it from scalar BC/BCa intervals.
 
@@ -253,12 +253,12 @@ Implementation ledger:
 1. **TR-020 - Cohn diagnostic scope (complete).** Guard both Cohn paths to Log-Pearson Type III with exact data only. Fast unit tests cover every rejected parent and data condition. Cohn value/parity verification is deferred.
 2. **TR-016 - shared result storage (complete).** Document that Bulletin 17C deliberately reuses the Bayesian analysis result architecture for persistence and reprocessing. Legacy member names keep context-specific frequentist meanings; no code/API/serialization redesign is required.
 3. **TR-021 - formal example verification (complete).** `B17CExampleTests.Test_Example1` through `Test_Example7` are the current GMM worked-example suite. All seven exact methods passed the published mean, standard deviation, and skewness comparisons at absolute tolerance `1E-3`.
-4. **TR-003 - chronology semantics (deferred).** Await an approved scientific policy for grouped nonstationary thresholds versus explicitly time-indexed thresholds; then add permutation-invariance evidence appropriate to that policy.
+4. **TR-003 - nonstationary assumptions (complete).** Document that grouped threshold counts are disaggregated with below-threshold status in the earlier portion and above-threshold status in the terminal portion, after preserving explicit indexes. Document that distribution-dependent priors use the last, most-recent observed time step, consistent with the published quantile-prior workflow. No code change or permutation-invariance claim is required.
 
 
 Findings and required direction:
 
-- TR-003: define a chronology-invariant grouped nonstationary likelihood or explicitly require time-indexed thresholds; verify permutation invariance.
+- TR-003: closed as accepted documentation. Nonstationary results are conditional on the deterministic grouped-threshold allocation and the final-time reference for distribution-dependent priors. Known event dates should be represented explicitly, and materially ambiguous allocations require sensitivity analysis. A chronology-marginalized likelihood is a future enhancement, not Phase 3 work.
 - TR-016: closed as an accepted architecture. Bulletin 17C reuses `BayesianAnalysis` and `MCMCResults` storage for persistence, reprocessing, and UI integration; documentation defines the GMM/frequentist meaning of legacy member names. No code/API change is required.
 - TR-017: closed as a rejected naming defect. Retain `BiasCorrectedBootstrap`; document its full technical name, bias-correction mechanism, second-order scope conditions, and distinction from BC/BCa.
 - TR-018: closed. Ranked midpoint/ROS/default/parent starts, convergence-aware GMM acceptance, and pivotal bounds repair produced 13,000 finite outputs from 13,000 realizations with zero retries, parent substitutions, failed candidates, or final first-chance exceptions. Retain substitution only to guarantee configured output length and continue counting every use.
@@ -268,7 +268,7 @@ Findings and required direction:
 
 Phase exit criteria:
 
-- B17C result-storage terminology, bootstrap identity, failed-refit handling, truncation policy, exact-LP3 Cohn scope, and formal worked-example traceability are coherent across code, unit tests, technical reference, and verification inventory. Numerical Cohn interval verification remains separately approval-gated.
+- Grouped-threshold chronology, nonstationary prior reference time, B17C result-storage terminology, bootstrap identity, failed-refit handling, truncation policy, exact-LP3 Cohn scope, and formal worked-example traceability are coherent across code, unit tests, technical reference, and verification inventory. Numerical Cohn interval verification remains separately approval-gated.
 
 ## Phase 4 - Point Processes and Composite Models
 

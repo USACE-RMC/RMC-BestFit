@@ -2,7 +2,11 @@
 
 ## Status
 
-The approved Phase 3 scope closes TR-016 through TR-021. TR-016 documents the intentional reuse of the Bayesian analysis result-storage architecture without changing code, public API, or serialization. TR-017 through TR-019 retain their previously recorded naming and bootstrap-refit dispositions. TR-020 restricts Cohn diagnostics to exact-data Log-Pearson Type III (LP3) and is covered by fast unit tests. TR-021 is verified by the seven formal Bulletin 17C worked-example parameter tests described below. TR-003 chronology semantics remains deferred.
+The approved Phase 3 scope is closed. TR-003 documents the accepted grouped-threshold disaggregation and most-recent-time prior-reference assumptions for the general nonstationary univariate workflow. TR-016 documents the intentional reuse of the Bayesian analysis result-storage architecture without changing code, public API, or serialization. TR-017 through TR-019 retain their previously recorded naming and bootstrap-refit dispositions. TR-020 restricts Cohn diagnostics to exact-data Log-Pearson Type III (LP3) and is covered by fast unit tests. TR-021 is verified by the seven formal Bulletin 17C worked-example parameter tests described below.
+
+## Phase 3 data-handling assumptions
+
+For nonstationary univariate models, grouped perception-threshold counts are expanded conditionally: explicit records keep their indexes, unoccupied earlier indexes are assigned below-threshold status, and unoccupied indexes in the terminal `NumberAbove` portion are assigned above-threshold status. The allocation is an explicit modeling assumption rather than an inferred event chronology. Distribution-dependent Jeffreys and quantile-prior terms are evaluated once at the last, most-recent observed index, consistent with the published quantile-prior workflow. The [data-frame chronology](../technical-reference/data-frame/index.md#stationary-and-nonstationary-chronology) and [prior reference-time](../technical-reference/models/parameters-and-priors.md#complete-univariate-prior) sections define the full contract. TR-003 is documentation-only and makes no permutation-invariance claim.
 
 ## Formal worked-example parameter parity
 
@@ -63,5 +67,5 @@ Those are separate claims and require separately authorized, exactly filtered ve
 
 ## Traceability
 
-- Findings: [TR-016, TR-020, and TR-021](../technical-reference/review-findings.md#tr-016)
+- Findings: [TR-003](../technical-reference/review-findings.md#tr-003) and [TR-016 through TR-021](../technical-reference/review-findings.md#tr-016)
 - Technical method: [Bulletin 17C analysis](../technical-reference/analysis/bulletin-17c.md)

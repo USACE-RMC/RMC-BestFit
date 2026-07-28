@@ -2,6 +2,7 @@
 
 ## 2026-07-28
 
+- Closed TR-003 as a documentation-only decision: grouped perception thresholds use the existing deterministic earlier-below/terminal-above disaggregation after preserving explicit indexes, and distribution-dependent priors are evaluated at the last, most-recent observed time step consistent with the published quantile-prior workflow. No code or permutation-invariance change was required.
 - Closed TR-016 as a documented architecture decision: Bulletin 17C reuses the Bayesian analysis result-storage shape for stable persistence and reprocessing, with GMM/frequentist meanings for legacy member names and no code/API redesign.
 - Closed TR-020 in its approved unit scope by guarding Cohn intervals and asymptotic variance to exact-data LP3; all unsupported parent/data cases now fail explicitly, while numerical Cohn verification remains deferred.
 - Closed TR-021 with seven exact formal Bulletin 17C worked-example runs: `Test_Example1` through `Test_Example7` all passed published LP3 mean, standard deviation, and skewness comparisons at absolute tolerance `1E-3`.

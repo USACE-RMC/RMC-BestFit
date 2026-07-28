@@ -8,7 +8,7 @@ The active continuation and batching plan is maintained in the [Verification Fin
 
 This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
 
-Closeout reconciliation (28 July 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest; current fast gates are Core 3,057/3,057, UI 564/564, and App 428/428, while the recorded Numerics gate is 1,986/1,986. TR-016 through TR-021 are closed in their approved scopes, including seven passed formal Bulletin 17C examples and exact-LP3 Cohn guards; TR-003 chronology semantics remains deferred.
+Closeout reconciliation (28 July 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest; current fast gates are Core 3,057/3,057, UI 564/564, and App 428/428, while the recorded Numerics gate is 1,986/1,986. Phase 3 is closed in its approved scope: TR-003 documents the grouped-threshold disaggregation and final-time prior assumptions, and TR-016 through TR-021 include seven passed formal Bulletin 17C examples and exact-LP3 Cohn guards.
 
 ## Summary
 
@@ -16,7 +16,7 @@ Closeout reconciliation (28 July 2026): Phase 1 and Phase 2 dispositions are clo
 |---|---|---|---|---|---|---|---|
 | [TR-001](#tr-001) | Kappa Four zero-shape PDF and quantile | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-001---kappa-four-zero-primary-shape) · [Artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json) | 2026-07-24 |
 | [TR-002](#tr-002) | Kappa Four shape validation | Closed | Rejected non-defect | N/A | Passed - regression | [Report](../verification/distribution-fitting.md#tr-002---finite-kappa-shape-pairs) / [Artifact](../../verification/data/distribution-fitting/kappa-four-finite-shapes.json) | 2026-07-24 |
-| [TR-003](#tr-003) | Nonstationary threshold chronology | Methodological | Source-confirmed ambiguity; policy required | Not started | Source audit complete; invariance oracle pending | [Phase 3 ledger](../verification/verification-finalization-plan.md#phase-3---data-handling-and-bulletin-17c) | 2026-07-28 |
+| [TR-003](#tr-003) | Nonstationary threshold chronology and prior reference time | Closed | Accepted documented conventions | Documentation complete; no code change required | Passed - source/documentation/literature audit | [Data frame](data-frame/index.md#stationary-and-nonstationary-chronology) · [Priors](models/parameters-and-priors.md#complete-univariate-prior) | 2026-07-28 |
 | [TR-004](#tr-004) | Point-process rate definitions | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-005](#tr-005) | Point-process fitted-model simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-006](#tr-006) | Mixture weights and proposal mutation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -126,19 +126,19 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 **Evidence.** The regression spans positive and negative values of both shape parameters. It verifies admissibility, monotone finite quantiles, CDF/quantile round trips at (10^{-10}), positive interior density, and the reported finite support endpoints. No production change was required; the regression is committed in RMC.Numerics commit `bc11849c762d7b87d06aa64a3f3706ecf118fc13`.
 
 <a id="tr-003"></a>
-## TR-003 — Nonstationary Threshold Chronology
+## TR-003 — Nonstationary Threshold Chronology and Prior Reference Time
 
-**Review disposition.** Source-confirmed methodological ambiguity; the required chronology policy is unresolved.
+**Review disposition.** Closed as accepted, explicitly documented modeling conventions.
 
-**Implementation status.** Not started.
+**Implementation status.** Documentation complete; no production-code, API, or serialization change is required.
 
-**Verification status.** Source and existing-test inventory audit complete. No permutation-invariance oracle or scientific policy has been accepted.
+**Verification status.** Passed by source, technical-documentation, and published-literature audit. No numerical oracle is required for this documentation-only disposition, and no permutation-invariance claim is made.
 
-**Evidence.** `DataFrame.FullTimeSeries` expands a perception period after removing explicit observations, places below-threshold records from the beginning of the remaining period, and places above-threshold records from its end.
+**Evidence.** `DataFrame.CreateFullTimeSeries()` retains explicit observation indexes and disaggregates a grouped perception period around a terminal split: unoccupied earlier indexes receive below-threshold records and unoccupied indexes in the final `NumberAbove` portion receive above-threshold records. It does not marginalize over other compatible allocations. For a nonstationary `UnivariateDistribution`, coefficient priors are evaluated on the trend coefficients, while distribution-dependent Jeffreys and quantile-prior terms use the distribution predicted at `DataFrame.FullTimeSeries.Last().Index`. The final-time quantile-prior reference is consistent with the published workflow of Viglione et al. (2013).
 
-**Impact.** Group totals identify counts and bounds, not event chronology. In a nonstationary likelihood, assigning those counts to different time indices changes parameter values and hence the likelihood. The deterministic ordering assumption supplies information that was not observed.
+**Impact.** Group totals identify counts and bounds, not event chronology, so a nonstationary fit is conditional on the terminal-above disaggregation. Likewise, a quantile prior for a changing distribution expresses present-condition information at the most-recent observed time; it is not repeated across the historical record and does not automatically describe earlier conditions.
 
-**Follow-up.** Establish an intended grouped nonstationary likelihood—such as time-index-specific threshold contributions or marginalization over compatible allocations—and add tests showing invariance to arbitrary record ordering.
+**Follow-up.** Retain these assumptions in practitioner-facing documentation. Analysts must use explicitly dated observations when event chronology is known, document the final-time reference for distribution-dependent priors, and assess alternative defensible allocations when grouped-threshold chronology could materially affect a result. A chronology-marginalized likelihood would be a separately approved enhancement, not unfinished TR-003 work.
 
 <a id="tr-004"></a>
 ## TR-004 — Point-Process Rate Definitions
