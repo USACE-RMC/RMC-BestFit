@@ -795,5 +795,66 @@ public class Bulletin17CDistributionTests
         Assert.IsTrue(restored.ParameterPenalties[2].Enabled, "The serialized penalty state must be restored.");
     }
 
+
+    /// <summary>
+    /// Bootstrap starting candidates are finite, valid, bounded, distinct, and ordered by the
+    /// same identity-weight objective used by the first GMM optimization pass.
+    /// </summary>
+    [TestMethod]
+    public void GetRankedBootstrapInitialValues_CensoredSample_ReturnsObjectiveOrderedCandidates()
+    {
+        var frame = CreateFloodDataFrame();
+        double threshold = frame.ExactSeries
+            .Select(data => data.Value)
+            .OrderBy(value => value)
+            .ElementAt(FixtureSize / 5);
+        frame.LowOutlierThreshold = threshold;
+        frame.SetLowOutliersFromThreshold();
+        frame.CalculatePlottingPositions();
+
+        var model = new Bulletin17CDistribution(
+            frame, UnivariateDistributionType.LogPearsonTypeIII);
+        double[] parentParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        model.SetRandomPenaltyFunction(parentParameters, new Random(1234));
+
+        IReadOnlyList<double[]> candidates =
+            model.GetRankedBootstrapInitialValues(parentParameters);
+
+        Assert.IsTrue(candidates.Count >= 2,
+            "Censored data should supply at least one data-derived candidate and the parent fit.");
+        double previousObjective = double.NegativeInfinity;
+        for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
+        {
+            double[] candidate = candidates[candidateIndex];
+            Assert.AreEqual(model.NumberOfParameters, candidate.Length);
+            Assert.IsTrue(candidate.All(double.IsFinite));
+
+            for (int parameterIndex = 0; parameterIndex < candidate.Length; parameterIndex++)
+            {
+                Assert.IsTrue(candidate[parameterIndex] >= model.Parameters[parameterIndex].LowerBound);
+                Assert.IsTrue(candidate[parameterIndex] <= model.Parameters[parameterIndex].UpperBound);
+            }
+
+            double objective = model.EvaluateBootstrapInitialObjective(candidate);
+            Assert.IsTrue(double.IsFinite(objective));
+            Assert.IsTrue(objective >= previousObjective,
+                "Candidates must be returned in nondecreasing first-pass objective order.");
+            previousObjective = objective;
+        }
+    }
+
+    /// <summary>
+    /// Bootstrap candidate construction rejects a parent vector with the wrong dimension.
+    /// </summary>
+    [TestMethod]
+    public void GetRankedBootstrapInitialValues_WrongParentDimension_Throws()
+    {
+        var model = new Bulletin17CDistribution(
+            CreateFloodDataFrame(), UnivariateDistributionType.LogPearsonTypeIII);
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            model.GetRankedBootstrapInitialValues([1d, 2d]));
+    }
+
     #endregion
 }

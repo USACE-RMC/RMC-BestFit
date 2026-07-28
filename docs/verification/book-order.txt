@@ -4,4 +4,5 @@ methodology.md
 test-inventory.md
 distribution-fitting.md
 model-estimation.md
+bulletin-17c.md
 references.md

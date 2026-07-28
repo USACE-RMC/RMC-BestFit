@@ -4,7 +4,7 @@ using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets.UnivariateData;
 
-namespace RMC.BestFit.Verification.Univariate.B17CTests;
+namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 
 /// <summary>
 /// Verifies that the Bulletin 17C Generalized Method of Moments (GMM) estimator

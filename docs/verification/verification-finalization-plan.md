@@ -1,4 +1,4 @@
-<!-- verification-plan-status: active -->
+<!-- verification-plan-status: phase-3-planning -->
 
 # RMC.BestFit Verification Finalization Plan
 
@@ -18,11 +18,13 @@ A new session should read these files in this order:
 6. `verification/data/MANIFEST.md`
 7. The relevant technical-reference chapter for the current finding
 
-Dependency checkpoint: Numerics commit `76f7dd0 Modernize MCMC convergence diagnostics`, which follows `5c693a8 Fix adaptive MCMC diagnostics and covariance tracking`. The approved BestFit Phase 2 work is consolidated in repository history.
+Dependency checkpoint: Numerics head `eb6718b Add lazy dependent probability enumeration`; Phase 2 diagnostic anchors are `76f7dd0`, `5c693a8`, and `b3f14b0`. BestFit Phase 2 is closed through `1a848ef` following `6ffab67`.
 
 ## Summary
 
 The verification program is building a traceable numerical validation record for RMC.BestFit. The program began with repository integration, test ownership, external oracle infrastructure, and distribution fitting. Phase 2 model estimation and diagnostics are complete for the approved scope; Phase 3 remains planned.
+
+Reconciled checkpoint (28 July 2026): Phase 1 and Phase 2 are formally closed. After the TR-018/TR-019 reliability implementation, the fast gates are Core 3,057/3,057, UI 564/564, and App 428/428, all with zero failures; the recorded Numerics .NET 10 Release gate remains 1,986/1,986. The 16 Phase 1/2 oracle hashes were rechecked against `verification/data/MANIFEST.md` with no discrepancy.
 
 The report is a living Markdown book under `docs/verification/`. Every scientific claim must link to a test, oracle artifact, package/version, tolerance, result, review finding, and relevant technical-reference chapter. Markdown is the source of truth during development. PDF rendering is deferred until explicit release or visual-QA checkpoints.
 
@@ -78,7 +80,7 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 
 ### Current Phase Checkpoint
 
-Phase 2 - Model Estimation and Diagnostics - complete for the approved scope. Phase 3 remains planned and has not started.
+Phase 1 - Distribution Fitting - and Phase 2 - Model Estimation and Diagnostics - are formally closed for their approved scopes. In Phase 3, TR-017 is closed without a rename, and TR-018/TR-019 are closed after 14 exact Examples 1-7 reliability cells produced 13,000 unguarded outputs with zero retries, exceptions, or parent substitution. Other Phase 3 production work remains approval-gated.
 
 Completed Phase 2 findings:
 
@@ -102,6 +104,8 @@ Accepted Phase 2 limitation:
 - TR-028 remains an accepted documented joint-prior-sampling limitation rather than an active fix.
 
 DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, explicit covariance failure status, selected-weight Hansen J, overidentified GMM fitting/covariance, GMM Cook labeling, ARWMH realized-state covariance, NUTS acceptance/gradient routing and live-sampler diagnostics, and modern R-hat/ESS are corrected and verified. Joint-prior sampling remains the documented Phase 2 limitation.
+
+The same approved criteria correction also removed prior-density terms from MAP AIC/BIC call sites tracked by TR-042, TR-047, and TR-055. TR-042 and TR-047 are closed, and the prior-density part of TR-055 is closed; separate time-series, rating-curve, bivariate, and spatial findings remain assigned to later phases.
 
 ## Phase 0 - Repository and Documentation Foundation
 
@@ -148,6 +152,12 @@ Resolved findings:
 - TR-063: whole-series replacement plotting positions confirmed and fixed. Passed analytical and serialization regression.
 - TR-064: DE/BFGS parameter tolerance concern rejected as non-defect. Passed SciPy parity using documented `1e-4` scaled parameter tolerance while retaining tight likelihood and criterion tolerances.
 
+Closeout evidence reconciled 28 July 2026:
+
+- Production and regression anchors include Numerics Kappa Four and RMSE corrections, BestFit candidate-success and DataFrame refresh corrections, `KappaFourZeroShapeVerificationTests`, `GoodnessOfFitRmseVerificationTests`, `FittingAnalysisRegressionTests`, `FittingAnalysisCriteriaVerificationTests`, and the fast `DataFrameTests` coverage.
+- The nine Phase 1 artifacts in `verification/data/distribution-fitting/` retain exact manifest hash matches and cover Kappa limits/finite shapes, RMSE, fit success, Log10-Normal, SciPy, `lmomco`, DataFrame plotting positions, and optimizer tolerance.
+- Primary commit anchors are Numerics `3e058eb`, `bc11849`, and `24bf9f9`, plus BestFit `5d975b7`, `e585bc2`, and `ebb640a`.
+
 Phase exit criteria:
 
 - All distribution families have named oracles and parameterization notes.
@@ -156,7 +166,7 @@ Phase exit criteria:
 
 ## Phase 2 - Model Estimation and Diagnostics
 
-Status: active.
+Status: closed for the approved Phase 2 scope.
 
 ### Log10-Normal Equivalence Experiment
 
@@ -216,6 +226,12 @@ Current scoped external parity is complete. ArviZ would be redundant secondary W
 - TR-034: fixed. Overidentified one-step GMM uses the initial identity or caller-supplied fixed weighting matrix for fit, bread, and meat. Two-step/iterative covariance refreshes the efficient weight at the final parameters. Both covariance strategies match the self-checking R `gmm` oracle.
 - TR-065: fixed. GMM influence Hessian scale no longer depends on penalty presence.
 
+Closeout evidence reconciled 28 July 2026:
+
+- Production and regression anchors include `InformationCriterionOracleTests`, `PsisLooOracleTests`, `ProfileLikelihoodFindingTests`, `GmmSpecificationFindingTests`, `GmmInfluenceDiagnosticsVerificationTests`, `NumericsMcmcFindingTests`, and `CovarianceFailureStatusTests`.
+- The seven Phase 2 artifacts in `verification/data/model-estimation/` retain exact manifest hash matches and cover estimator equivalence, model comparison, PSIS-LOO, MCMC diagnostics, GMM influence, profile likelihood, and GMM specification/covariance.
+- Primary BestFit commit anchors are `c1e343a`, `4f91691`, `6ffab67`, and `1a848ef`; Numerics anchors are `5c693a8`, `76f7dd0`, and `b3f14b0`.
+
 Phase exit criteria:
 
 - Log10-Normal prior/penalty behavior is demonstrated.
@@ -226,21 +242,33 @@ Phase exit criteria:
 
 ## Phase 3 - Data Handling and Bulletin 17C
 
-Status: planned.
+Status: TR-016 through TR-021 are closed in their approved scopes. TR-016 documents the intentional shared Bayesian/Bulletin 17C result-storage architecture without an API change. TR-020 restricts Cohn diagnostics to exact LP3 data with fast guard regressions; numerical Cohn verification is deferred. TR-021 records all seven formal GMM worked-example methods passing at absolute parameter tolerance `1E-3`. TR-017 documentation reconciliation and TR-018/TR-019 bootstrap-refit reliability remain closed; the final unguarded Examples 1-7 sweep produced 13,000 outputs from 13,000 realizations without retries or failures.
+
+The repository contains no separate Phase 3/B17C JSON or CSV oracle under `verification/data/`; the published targets are encoded with the formal fixtures in `Bulletin17CData.cs`. `B17CExampleTests.Test_Example1` through `Test_Example7` were executed one method at a time and all seven passed current LP3 GMM mean, standard deviation, and skewness parity at absolute tolerance `1E-3`. TR-003 remains deferred pending an approved chronology policy.
+
+TR-017 is closed without a production change after concordance review against Smith and Stedinger's pending methods paper and reference engine (paper checkpoint `aaec860e875e`). `BiasCorrectedBootstrap` implements the paper's bias-corrected pivotal bootstrap: the correction is intrinsic to the replicate-covariance standardization and parent-covariance re-inflation. The enum/XML value and practitioner-facing GUI label remain unchanged; technical documentation uses the full method name and distinguishes it from scalar BC/BCa intervals.
+
+Implementation ledger:
+
+1. **TR-020 - Cohn diagnostic scope (complete).** Guard both Cohn paths to Log-Pearson Type III with exact data only. Fast unit tests cover every rejected parent and data condition. Cohn value/parity verification is deferred.
+2. **TR-016 - shared result storage (complete).** Document that Bulletin 17C deliberately reuses the Bayesian analysis result architecture for persistence and reprocessing. Legacy member names keep context-specific frequentist meanings; no code/API/serialization redesign is required.
+3. **TR-021 - formal example verification (complete).** `B17CExampleTests.Test_Example1` through `Test_Example7` are the current GMM worked-example suite. All seven exact methods passed the published mean, standard deviation, and skewness comparisons at absolute tolerance `1E-3`.
+4. **TR-003 - chronology semantics (deferred).** Await an approved scientific policy for grouped nonstationary thresholds versus explicitly time-indexed thresholds; then add permutation-invariance evidence appropriate to that policy.
+
 
 Findings and required direction:
 
 - TR-003: define a chronology-invariant grouped nonstationary likelihood or explicitly require time-indexed thresholds; verify permutation invariance.
-- TR-016: add estimator-neutral aliases/result metadata while retaining legacy Bayesian/MCMC-shaped members for serialization and source compatibility; correct UI/report terminology.
-- TR-017: add `StudentizedPivotalBootstrap` as the accurate option name and retain `BiasCorrectedBootstrap` as an obsolete serialized alias with the same numeric value.
-- TR-018: never substitute parent estimates for failed bootstrap fits. Use bounded attempts and fail the uncertainty run if the required accepted-replicate count is not reached.
-- TR-019: compare truncated and untruncated bootstrap coverage and tail quantiles. Remove truncation if differences exceed Monte Carlo uncertainty; otherwise retain only as a named, reported robustification rule.
-- TR-020: restrict Cohn-style diagnostics to LP3 through validation rather than silently applying base-10 transformations to other families.
-- TR-021: create v2 evidence for official examples, PeakFQ/EMA diagnostics, covariance, penalty behavior, censoring patterns, refit failure, and uncertainty coverage. Do not cite the v1 EMA report as validation of the current GMM path.
+- TR-016: closed as an accepted architecture. Bulletin 17C reuses `BayesianAnalysis` and `MCMCResults` storage for persistence, reprocessing, and UI integration; documentation defines the GMM/frequentist meaning of legacy member names. No code/API change is required.
+- TR-017: closed as a rejected naming defect. Retain `BiasCorrectedBootstrap`; document its full technical name, bias-correction mechanism, second-order scope conditions, and distinction from BC/BCa.
+- TR-018: closed. Ranked midpoint/ROS/default/parent starts, convergence-aware GMM acceptance, and pivotal bounds repair produced 13,000 finite outputs from 13,000 realizations with zero retries, parent substitutions, failed candidates, or final first-chance exceptions. Retain substitution only to guarantee configured output length and continue counting every use.
+- TR-019: closed. The Mahalanobis guard caused every remaining outer retry in the guarded Examples 1-7 sweep. It was removed, and the unguarded sweep passed all 14 cells with zero retries or malformed fits. Retain the direct numerical safeguards and no-guard reliability regression.
+- TR-020: closed in the approved unit scope. Cohn-style intervals and asymptotic quantile variance are available only for exact-data LP3; unsupported parents and censoring/uncertainty are rejected before base-10 LP3 calculations. Numerical Cohn verification is deferred.
+- TR-021: closed with executed formal-example evidence. The seven exact `B17CExampleTests` methods passed LP3 GMM mean, standard deviation, and skewness against published values at `1E-3`. No claim is made for broader diagnostics, interval values, covariance, or coverage.
 
 Phase exit criteria:
 
-- B17C terminology, bootstrap identity, failed-refit handling, truncation policy, diagnostic scope, and v2 evidence are coherent across code, tests, technical reference, and verification report.
+- B17C result-storage terminology, bootstrap identity, failed-refit handling, truncation policy, exact-LP3 Cohn scope, and formal worked-example traceability are coherent across code, unit tests, technical reference, and verification inventory. Numerical Cohn interval verification remains separately approval-gated.
 
 ## Phase 4 - Point Processes and Composite Models
 
@@ -275,7 +303,7 @@ Findings and required direction:
 - TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
 - TR-040: apply identical invalid-scale guards to scalar and pointwise likelihoods.
 - TR-041: align ARIMAX covariates and Jacobians by date and the exact differencing index map.
-- TR-042: compute AIC/BIC from the data likelihood at MAP for AR, MA, ARIMA, ARIMAX, and rating-curve analyses; document flat-prior MLE comparability and informative-prior limitations.
+- TR-042: criteria defect closed in Phase 2. Retain regressions proving that AR, MA, ARIMA, ARIMAX, and rating-curve AIC/BIC use data likelihood at MAP; the later phase must not restate prior-density removal as open work.
 - TR-046: make transform updates atomic: rebuild transformed/differenced data, reset parameters/results, and either implement or compatibility-deprecate the unused offset.
 
 Verification must include algebraic fixtures, scalar/pointwise decomposition, training/holdout isolation, seeded Monte Carlo moments, transformed simulation, exclusion of prior-density terms from AIC/BIC, and flat-prior parity with MLE criteria.
@@ -293,7 +321,7 @@ Findings and required direction:
 - TR-043: include the base-10 change-of-variables term in discharge-space scalar and pointwise likelihoods.
 - TR-044: enforce a defensible strictly positive exponent lower bound and test two-sided continuity.
 - TR-045: validate only date-aligned likelihood pairs; report unrelated invalid records separately.
-- TR-047: compute bivariate AIC/BIC from the copula data likelihood at MAP; document that MLE comparability requires flat copula priors and fixed, common marginal fits.
+- TR-047: criteria defect closed in Phase 2. Retain the bivariate data-likelihood-at-MAP regression and its flat-prior/common-marginal comparability limits; do not restate prior-density removal as open work.
 - TR-048: marginalize missing spatial sites with observed-site correlation submatrices cached by missingness pattern.
 - TR-049: use row/year observed-data contributions for marginals and copula terms; classify latent Gaussian-process density as prior structure and enforce scalar/pointwise identities.
 - TR-050: preserve completed cross-validation results across the restoration refit.
@@ -301,7 +329,7 @@ Findings and required direction:
 - TR-052: pass held-out covariates consistently for location, scale, and shape trends.
 - TR-053: record failed folds as failed/NaN, aggregate successful folds only, and report the success count.
 - TR-054: use conditional Gaussian-process prediction per posterior draw and propagate conditional spatial variance.
-- TR-055: use the spatial data likelihood at MAP and nonempty row/year blocks for BIC, while documenting the remaining Gaussian-process, missing-site, weighting, dependence, and MAP-versus-MLE caveats; prefer explicitly defined posterior-predictive criteria.
+- TR-055: prior-density criteria defect closed in Phase 2. Remaining work is to verify nonempty spatial row/year blocks for BIC and resolve the Gaussian-process, missing-site, weighting, dependence, and MAP-versus-MLE caveats; prefer explicitly defined posterior-predictive criteria.
 - TR-056: fit each bootstrap replicate to its resampled data and reject incomplete replicate sets.
 - TR-057: derive Hessian and score variability from the same estimating equations; report failure rather than substitute `J`.
 - TR-058: compute regional statistics within each joint posterior draw before taking interval quantiles.
@@ -314,9 +342,9 @@ Phase exit criteria:
 
 - Rating-curve likelihoods, bivariate criteria, and spatial missingness/dependence/prediction/uncertainty workflows are mathematically explicit and verified against analytical, external, or simulation oracles.
 
-## Recommended Phase 2 Batch Workflow
+## Completed Phase 2 Batch Record
 
-Phase 2 proceeds only through explicit user-approved surgical scopes. Read-only audits may group related evidence, but production changes require approval for the named finding and fix.
+The following batches record the approved work that closed Phase 2. They are retained for traceability, not as an active work queue.
 
 ### Batch 1 - Criteria, Profiles, GMM, and Covariance
 
@@ -365,11 +393,11 @@ TR-029 uses pooled midranks, inverse-normal scores, split and folded chains, and
 
 ### Batch 5 - Joint Prior Sampling
 
-Candidate finding:
+Accepted limitation:
 
 - TR-028
 
-Characterization is complete. Next action, if approved: design an additive optional capability that does not change `IModel`. Coupled-prior models should implement the capability explicitly or report prior-predictive sampling as unavailable.
+Characterization is complete and Phase 2 is closed. A future, separately approved enhancement may add an optional joint-prior-sampling capability without changing `IModel`; it is not unfinished Phase 2 work.
 
 ## Verification and Documentation Acceptance
 
@@ -388,13 +416,13 @@ Characterization is complete. Next action, if approved: design an additive optio
 Use this prompt to continue from a clean session:
 
 ```text
-We are continuing RMC.BestFit verification finalization after completing and consolidating the approved Phase 2 model-estimation and diagnostics scope. Numerics dependency checkpoint: 76f7dd0.
+We are continuing RMC.BestFit verification finalization after formally closing the approved Phase 1 and Phase 2 scopes. Numerics head checkpoint: eb6718b; Phase 2 Numerics anchors: 76f7dd0, 5c693a8, and b3f14b0. BestFit Phase 2 closes through 1a848ef after 6ffab67.
 
 Read docs/verification/verification-finalization-plan.md first, then docs/technical-reference/review-findings.md, docs/verification/README.md, docs/verification/model-estimation.md, docs/verification/test-inventory.md, and verification/data/MANIFEST.md.
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: DIC, WAIC, PSIS-LOO/Pareto-k, MLE/MAP profiling, GMM Hansen J/fitting/covariance, ARWMH realized-state covariance, NUTS gradient/acceptance contracts, GMM influence labeling, and rank-normalized R-hat/conservative bulk-tail ESS are corrected and focused-verified. TR-028 remains the accepted documented joint-prior limitation. Do not start Phase 3 without explicit direction.
+Current checkpoint: Phase 1 and Phase 2 are formally closed. TR-017 is closed without a production rename: `BiasCorrectedBootstrap` is the bias-corrected pivotal bootstrap. TR-018 and TR-019 are closed after 14 separately executed Examples 1-7 ordinary/pivotal reliability cells produced 13,000 unguarded finite outputs from exactly 13,000 realizations with zero retries, parent substitutions, failed candidates, and final first-chance exceptions from Numerics or RMC.BestFit. Parent fallback remains only to guarantee output length.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
@@ -409,7 +437,7 @@ Constraints:
 - Preserve unrelated modified/untracked files.
 
 First task:
-Inspect the active worktrees without disturbing unrelated changes, confirm the recorded focused/fast gates and oracle hashes, and report any reconciliation discrepancy before beginning new work. Do not start Phase 3 or change production code without direction.
+Continue with the next explicitly approved open Phase 3 finding. Never run the full Verification project.
 ```
 
 ## Off-Ramps

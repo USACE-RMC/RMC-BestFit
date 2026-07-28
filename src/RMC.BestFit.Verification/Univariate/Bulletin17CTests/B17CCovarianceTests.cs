@@ -5,7 +5,7 @@ using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets.UnivariateData;
 using System.Diagnostics;
 
-namespace RMC.BestFit.Verification.Univariate.B17CTests;
+namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 
 /// <summary>
 /// Tests that the Bulletin 17C GMM (Generalized Method of Moments) covariance matrix

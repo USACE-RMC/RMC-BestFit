@@ -4,7 +4,7 @@
 
 [Previous: estimation](bulletin-17c-estimation.md) | [Bulletin 17C overview](bulletin-17c.md) | [Technical Reference](../index.md)
 
-`Bulletin17CAnalysis` propagates GMM sampling uncertainty by generating an ensemble of valid parent-distribution parameter sets. The public enum offers direct multivariate normal, linked multivariate normal, parametric bootstrap, and a studentized pivotal bootstrap. These are frequentist sampling distributions and produce confidence intervals. They are not posterior draws and do not produce Bayesian credible intervals, even though compatibility properties retain `BayesianAnalysis`, `MCMCResults`, `MAP`, `PosteriorMean`, and `CredibleIntervalWidth` names.
+`Bulletin17CAnalysis` propagates GMM sampling uncertainty by generating an ensemble of valid parent-distribution parameter sets. The public enum offers direct multivariate normal, linked multivariate normal, parametric bootstrap, and `BiasCorrectedBootstrap`, whose full technical name is the **bias-corrected pivotal bootstrap**. BestFit reports these as GMM uncertainty ensembles and forms confidence intervals. Smith and Stedinger [6] give the pivotal ensemble an objective/generalized-posterior interpretation when it is paired with the estimator and covariance under the paper's stated conditions; the shared `BayesianAnalysis`, `MCMCResults`, `MAP`, `PosteriorMean`, and `CredibleIntervalWidth` names remain compatibility terminology rather than evidence of an MCMC analysis.
 
 ## Asymptotic Parameter Covariance
 
@@ -96,20 +96,21 @@ The links and their tuning constants are implementation-specific variance-stabil
 For each replicate $b$ the code:
 
 1. simulates a data frame from the fitted parent while retaining the source observation-information structure through `DataFrame.BootstrapDataFrame`;
-2. clones the Bulletin 17C model, reprocesses its data, and randomizes enabled penalty targets;
-3. refits by GMM;
-4. rejects fits whose squared Mahalanobis distance from the parent estimate exceeds the $1-1/(5B)$ quantile of $\chi^2_p$; and
-5. retries at most ten times.
+2. clones the Bulletin 17C model with that data frame so bounds, links, and penalty configuration are preserved, then randomizes enabled penalty targets once;
+3. constructs bounded-midpoint, ROS, distribution-default, and parent-fit starting candidates;
+4. ranks finite distinct candidates by the identity-weight penalized GMM objective;
+5. refits by GMM from each candidate against the same simulated data and penalty target;
+6. only after every candidate is exhausted, generates a fresh realization, for at most ten realizations.
 
 The configured external-information target is resampled with standard deviation $\sqrt{\mathrm{MSE}}$. `SetRandomPenaltyFunction` centers parameter targets on the fitted parent parameter and quantile targets on the fitted parent quantile. This propagates both record and external-information uncertainty.
 
-If all ten attempts fail, the implementation inserts the parent parameter vector and records a failed replicate. Thus the returned array still contains exactly $B$ finite entries. This preserves operational completion but creates point mass at the parent estimate and can narrow intervals. The failure count and retry/rejection counts must accompany any published interval.
+If all ten realizations fail, the implementation inserts the parent parameter vector and records a failed replicate. Thus the returned array still contains exactly $B$ finite entries, as required by downstream post-processing. This fallback is retained deliberately as an output-length guarantee, not as evidence of a successful refit. It creates point mass at the parent estimate and can narrow intervals; robust initialization is intended to make it exceptional, and the failure, retry, and optimizer-fallback counts must accompany any published interval.
 
-### `BiasCorrectedBootstrap`: implemented pivotal bootstrap
+### `BiasCorrectedBootstrap`: bias-corrected pivotal bootstrap
 
-Despite the enum name, this branch is a link-space studentized pivotal construction, not the ordinary bias-corrected percentile (BC) or acceleration-corrected BCa algorithm. It has three phases:
+The compact enum member and GUI label describe the method's purpose and are retained for practitioner clarity. Technically, this branch implements the joint bias-corrected pivotal bootstrap of Smith and Stedinger [6], not Efron's scalar bias-corrected percentile (BC) or acceleration-corrected BCa endpoint algorithm. It has three phases:
 
-1. Generate and refit $B$ parametric bootstrap samples, retaining $\widehat{\boldsymbol\theta}^{*(b)}$ and its covariance $\widehat{\boldsymbol\Sigma}^{*(b)}$. Failed replicates fall back to the parent estimate and covariance.
+1. Generate and refit $B$ parametric bootstrap samples with the same ranked candidate strategy, retaining $\widehat{\boldsymbol\theta}^{*(b)}$ and its covariance $\widehat{\boldsymbol\Sigma}^{*(b)}$. Every candidate must also yield a finite regularized covariance and Cholesky factor. A refit that exhausts all candidates and all ten realizations falls back to the parent estimate and covariance to preserve $B$ outputs and increments the failure counter.
 2. Fit a Yeo-Johnson link to location samples and, when present, shape samples; use a log link for scale. A failed or boundary-railed Yeo-Johnson fit falls back to identity.
 3. In link space, let $\widehat{\boldsymbol\eta}=h(\widehat{\boldsymbol\theta})$, and let $\mathbf L$ and $\mathbf L_b^*$ be Cholesky factors of the parent and replicate link-space covariances. Form
 
@@ -125,11 +126,13 @@ $$
 =h^{-1}\!\left(\widehat{\boldsymbol\eta}+\mathbf L\mathbf z_b\right). \tag{9}
 $$
 
-Invalid phase-three transforms remain unset. Because bootstrap methods require exactly $B$ valid output sets before publishing, any unset final entries cause the entire uncertainty result to be withheld. The enum/XML-description mismatch is recorded as a production review finding.
+The two covariance factors are the bias correction. Standardizing with each replicate's $\mathbf L_b^*$ removes local bias and heteroskedasticity from the refit distribution; re-inflating with the parent's $\mathbf L$ expresses the corrected draw in the parent's uncertainty while preserving joint parameter dependence. The pending paper describes the bare construction as exact for an identifiable subclass and second-order, $O(n^{-1})$, under its regularity, link, matching-target, and estimator-covariance pairing conditions. BestFit's Yeo-Johnson adaptation, smoothing/clipping, post-inverse model-bound repair, and failed-refit policy are additional operational choices. The former Mahalanobis truncation was removed under TR-019 after the unguarded reliability sweep.
+
+After inverse linking, non-finite components use the corresponding parent-fit value and out-of-bound components are moved just inside the model's existing lower and upper bounds before non-throwing validation. Any draw that still fails the distribution domain remains unset. Because bootstrap methods require exactly $B$ valid output sets before publishing, any unset final entries cause the entire uncertainty result to be withheld. The enum and XML value are intentionally retained for compatibility; technical documentation uses the full name “bias-corrected pivotal bootstrap” and distinguishes it from BC/BCa.
 
 ## From Parameter Ensemble to Frequency Curves
 
-After sampling, `RunUncertaintyQuantificationAsync` removes null, dimensionally invalid, and nonfinite sets; sanitizes nonfinite `Fitness` fields; and constructs an `MCMCResults` compatibility object. Its “MAP” is the GMM point estimate. Its “posterior mean” is the arithmetic mean of the uncertainty ensemble. Neither quantity is Bayesian in this workflow.
+After sampling, `RunUncertaintyQuantificationAsync` removes null, dimensionally invalid, and nonfinite sets; sanitizes nonfinite `Fitness` fields; and constructs an `MCMCResults` compatibility object. This deliberately reuses the same result-storage architecture as Bayesian analyses for persistence and downstream reprocessing. In the Bulletin 17C context, `MAP` is the penalized GMM point estimate, `Output` is the frequentist uncertainty ensemble, `PosteriorMean` is its arithmetic mean, and `CredibleIntervalWidth` is the confidence level. The legacy names do not make these quantities Bayesian, and TR-016 requires no code/API or serialization redesign.
 
 At annual exceedance probability $\alpha$, each retained parent draw produces
 
@@ -139,13 +142,13 @@ $$
 
 `UncertaintyAnalysisResults` summarizes these draws with pointwise empirical confidence limits using the configured level $c$. It stores frequency results rather than parameter sets again (`recordParameterSets: false`). Changing probability ordinates or the interval level reprocesses the stored ensemble without rerunning GMM or resampling.
 
-Report the following with every result: parent family, data units, low-outlier rule and threshold, all perception thresholds and record lengths, penalty targets and MSEs, uncertainty engine, $B$, $s$, confidence level, rejection/fallback counts, covariance warnings, and whether linked MVN fell back to direct MVN.
+Report the following with every result: parent family, data units, low-outlier rule and threshold, all perception thresholds and record lengths, penalty targets and MSEs, uncertainty engine, $B$, $s$, confidence level, retry/fallback counts, covariance warnings, and whether linked MVN fell back to direct MVN.
 
 ## Cohn-Style Diagnostic Intervals
 
 `ComputeCohnStyleConfidenceIntervals()` is a separate public diagnostic and does not supply the main `AnalysisResults`. It uses two-node-per-dimension nested quadrature around the GMM estimate. At each outer point it recomputes covariance, constructs an inner grid, estimates the covariance of quantile and quantile standard error, and applies a Cohn-style adjusted Student-$t$ formula with regression coefficient $\beta_1$ and effective degrees of freedom $\nu$ [2]. It enforces monotone lower and upper curves afterward.
 
-The implementation's quantile helper always instantiates a Pearson III distribution in log space and exponentiates interval bounds by $10$. It is therefore mathematically an LP3 diagnostic. The public method does not guard against the five other supported parent families; use outside LP3 is an open high-severity review finding. The companion asymptotic-quantile-variance report uses the same hard-coded helper.
+The quantile helper instantiates Pearson III in base-10 logarithmic space and exponentiates interval bounds by $10$, so the diagnostic is mathematically limited to LP3. `ComputeCohnStyleConfidenceIntervals()` now checks that scope before using the helper: it throws `NotSupportedException` for the five non-LP3 parents and for LP3 data containing low outliers, uncertain observations, interval censoring, or threshold censoring. The report-side asymptotic-quantile-variance calculation uses the same guard and prints an unavailable reason instead of applying LP3 formulas. Cohn value/parity verification remains deferred.
 
 ## Lifecycle, Cancellation, and Failure Semantics
 
@@ -155,9 +158,11 @@ Changing `UncertaintyMethod` clears results. `CancelAnalysis()` cancels the oute
 
 ## Validation Evidence and Required Calibration
 
-Fast unit tests cover configuration, serialization, linked-function behavior, WEDS direction, Yeo-Johnson fallback, result DTOs, and report diagnostics. The long-running Verification source contains parent-family covariance checks, seven worked-example parameter checks, uncensored and censored coverage experiments, and bootstrap comparisons. It was not executed during this documentation work.
+Fast unit tests cover configuration, serialization, linked-function behavior, WEDS direction, Yeo-Johnson fallback, pivotal bounds repair, result DTOs, report diagnostics, midpoint-moment construction, ranked candidate validity/order, and the Cohn scope guard for all unsupported parents and data conditions. Fourteen seeded reliability cells for ordinary and pivotal bootstrap across Examples 1 through 7 were executed independently: 1,000 outputs per method for Examples 1-6 and 500 per method for highly censored Example 7. The final unguarded sweep produced 13,000 finite outputs from exactly 13,000 realizations with zero retries, Mahalanobis rejections, optimizer fallbacks, parent substitutions, failed GMM candidates, and final first-chance exceptions from Numerics or RMC.BestFit.
 
-Before peer-review release, coverage summaries must be generated by the user from narrowly selected Verification tests and archived with seeds, parent parameters, sample sizes, censoring designs, interval levels, replicate counts, and tolerances. In particular, linked-MVN tuning, Mahalanobis truncation, failed-replicate replacement, and pivotal smoothing/clipping require empirical calibration; source-code intent alone is not validation.
+The formal current-path parameter-parity source is `B17CExampleTests.Test_Example1` through `Test_Example7`. Each compares LP3 GMM mean, standard deviation, and skewness with the published Bulletin 17C worked-example values at absolute tolerance `1E-3`. All seven exact methods passed on 28 July 2026 with zero failures or skips. Parent-family covariance checks, uncertain-data variants, pointwise/aggregate moment consistency, coverage experiments, and Cohn interval-value verification are separate claims.
+
+Before peer-review release, compare the bare pivotal construction conditionally with its paired objective/generalized-posterior target, with seeds, parent parameters, sample sizes, censoring designs, interval levels, replicate counts, and tolerances archived. Linked-MVN tuning, failed-replicate replacement, pivotal smoothing/clipping, and the model-bound repair require separate sensitivity evidence. Existing repeated-sampling coverage experiments may characterize deployed interval behavior, but coverage alone is not proof of the pivotal bias correction described in [6].
 
 Implementation symbols: `Bulletin17CAnalysis.RunAsync`, `RunUncertaintyQuantificationAsync`, `GetParameterSetsFromMultivariateNormal`, `GetParameterSetsFromLinkedMultivariateNormal`, `GetParameterSetsFromParametricBootstrap`, `GetParameterSetsFromPivotalBootstrap`, `ComputeCohnStyleConfidenceIntervals`, and `GeneralizedMethodOfMoments.GetCovariance`.
 
@@ -172,6 +177,8 @@ Implementation symbols: `Bulletin17CAnalysis.RunAsync`, `RunUncertaintyQuantific
 <a id="ref-4"></a>[4] I.-K. Yeo and R. A. Johnson, “A new family of power transformations to improve normality or symmetry,” *Biometrika*, vol. 87, no. 4, pp. 954–959, 2000.
 
 <a id="ref-5"></a>[5] M. C. Jones and A. Pewsey, “Sinh-arcsinh distributions,” *Biometrika*, vol. 96, no. 4, pp. 761–780, 2009.
+
+<a id="ref-6"></a>[6] C. H. Smith and J. R. Stedinger, “A Bias-Corrected Pivotal Bootstrap for Objective-Bayes Parameter Ensembles,” manuscript in preparation, 2026.
 
 ---
 

@@ -106,13 +106,14 @@ These values are not classical information criteria because the GMM solution doe
 
 ## Uncertainty Interpretation
 
-The default `LinkedMultivariateNormal` engine samples a variance-stabilized approximation to the GMM estimator's sampling distribution. `MultivariateNormal` samples directly in natural parameter space. `Bootstrap` simulates and refits records. The enum member `BiasCorrectedBootstrap` actually runs a studentized link-space pivotal bootstrap; the naming discrepancy is tracked for production review.
+The default `LinkedMultivariateNormal` engine samples a variance-stabilized approximation to the GMM estimator's sampling distribution. `MultivariateNormal` samples directly in natural parameter space. `Bootstrap` simulates and refits records. The enum and GUI label `BiasCorrectedBootstrap` denote the **bias-corrected pivotal bootstrap**: a joint, multivariate studentized construction in link space whose bias correction comes from standardizing with each replicate covariance and re-inflating with the parent covariance. The compact user-facing name is intentional. It is not Efron's scalar BC or BCa endpoint algorithm.
 
-All four engines return frequentist parameter ensembles used to form confidence intervals. Internally they are stored in `BayesianAnalysis.Results` as `MCMCResults` for compatibility with shared result code. Accordingly:
+All four engines return frequentist parameter ensembles used to form confidence intervals. Bulletin 17C deliberately uses the same `BayesianAnalysis`/`MCMCResults` storage architecture as Bayesian analyses so persistence, result reprocessing, and UI consumers retain one stable result shape. This is storage reuse, not a second inferential target, and no Bulletin 17C-specific parallel result hierarchy is required. In this context:
 
-- “MAP” means the GMM point estimate, not a posterior mode;
-- “posterior mean” means the arithmetic mean of a sampling ensemble, not a posterior expectation;
-- `CredibleIntervalWidth` is used as a confidence level; and
+- `MAP` stores the penalized GMM point estimate, not a posterior mode;
+- `PosteriorMean` stores the arithmetic mean of the uncertainty ensemble, not a posterior expectation;
+- `Output` stores frequentist parameter realizations;
+- `CredibleIntervalWidth` supplies the confidence level; and
 - R-hat, effective sample size, DIC, WAIC, and LOOIC are not meaningful for this analysis.
 
 The [uncertainty chapter](bulletin-17c-uncertainty.md) derives the sandwich covariance, gives every sampling algorithm, and documents rejection, fallback, cancellation, and diagnostic behavior.
@@ -137,7 +138,7 @@ Use the specialized output alongside, not instead of, these checks:
 - physical plausibility of tail extrapolation; and
 - consistency with the current Bulletin 17C study protocol and agency review requirements.
 
-`ComputeCohnStyleConfidenceIntervals()` supplies a separate LP3-focused diagnostic comparison, not the main frequency result. Its current public API does not prevent use with non-LP3 parents even though its helper is hard-coded to Pearson III log space; that defect is recorded in the [review findings register](../review-findings.md).
+`ComputeCohnStyleConfidenceIntervals()` supplies a separate diagnostic comparison, not the main frequency result. It is supported only for Log-Pearson Type III with exact observations and no low outliers. The method throws `NotSupportedException` for every other parent family and for uncertain, interval-censored, threshold-censored, or low-outlier data. The report-side Cohn asymptotic-variance diagnostic applies the same guard and states why it is unavailable. Numerical verification of Cohn interval values is deferred.
 
 ## Specialized GMM Versus Generic Bayesian Univariate Analysis
 
@@ -156,11 +157,11 @@ This distinction should be explicit in reports. Numerical similarity between an 
 
 ## Verification Status and Known Review Items
 
-The current Verification source includes all seven official Bulletin 17C worked examples, PeakFQ plotting-position comparisons, covariance checks, penalty checks, synthetic recovery, and coverage experiments. Those tests are intentionally long-running and were not executed during this documentation pass. The fast documentation/API gate compiles this example and checks its exact synchronization with the Markdown.
+The formal current-path worked-example source is `src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CExampleTests.cs`. Its `Test_Example1` through `Test_Example7` methods fit the specialized LP3 GMM path and compare log-space mean, standard deviation, and skewness with the published Bulletin 17C examples at absolute tolerance `1E-3`. The methods span systematic records, low outliers, broken records, historical information, crest-stage censoring, combined historical/low-outlier records, and paleoflood information. All seven exact methods passed on 28 July 2026 with zero failures or skips; each focused run produced one passing TRX after a zero-warning, zero-error Verification-only build.
 
-The repository's legacy “Comparison with EMA” report compares the earlier Bayesian workflow with EMA and explicitly characterizes the exercise as informative rather than validating. It does not establish parity for the current GMM implementation. The reviewer-facing evidence matrix must therefore distinguish inspected test assertions, previously published results, and tests actually executed for the release.
+The same Verification class also contains uncertain-data variants and pointwise-moment checks, while other sources contain PeakFQ plotting-position comparisons, covariance checks, penalty checks, synthetic recovery, and coverage experiments. Those are separate claims. The repository's legacy “Comparison with EMA” report concerns the earlier Bayesian workflow and is not the oracle for the current specialized GMM implementation.
 
-Production and methodological discrepancies found during the source audit—including compatibility terminology, bootstrap naming/replacement, and the LP3-only Cohn diagnostic—are maintained in [review-findings.md](../review-findings.md) for the separately authorized correction session.
+TR-016 documents the shared result-storage architecture without a code/API redesign. TR-020 closes the unsafe Cohn scope with unit-tested exact-LP3 guards while deferring numerical Cohn verification. TR-021 records the formal seven-example suite passing the published parameter comparisons; the [review findings register](../review-findings.md) and [Bulletin 17C verification report](../../verification/bulletin-17c.md) preserve the evidence boundary for claims not exercised by those tests.
 
 ## Implementation Traceability
 
@@ -168,6 +169,7 @@ Production and methodological discrepancies found during the source audit—incl
 - Analysis and uncertainty: `src/RMC.BestFit/Analyses/Univariate/Bulletin17CAnalysis.cs`
 - Estimator: `src/RMC.BestFit/Estimation/GeneralizedMethodOfMoments.cs`
 - Fast API/behavior tests: `src/RMC.BestFit.Tests/Univariate/Bulletin17CDistributionTests.cs`, `Bulletin17CAnalysisTests.cs`, and `Bulletin17CReportDiagnosticsTests.cs`
+- Formal worked examples: `src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CExampleTests.cs` (`Test_Example1` through `Test_Example7`)
 - Long-running evidence source: `src/RMC.BestFit.Verification/Univariate/B17CTests/`
 
 ## References

@@ -15,11 +15,11 @@ Fast behavior, validation, serialization, property, state, event, exception, and
 | `DistributionFitting/FittingAnalysisTests.cs` | Split | Deterministic state/event/regression cases moved to `FittingAnalysisRegressionTests`; published-data comparisons retained |
 
 
-Four legacy assertions were not retained: a probability-ordinate mutation test contradicted the established no-refit contract; generic large-sample and distribution-success counts had no oracle; and the outlier smoke test reproduced TR-010 (IsEstimated true with zero successful candidates). TR-010 is recorded as a confirmed defect, and its post-fix regression will be added with the approved correction.
+Four legacy assertions were not retained: a probability-ordinate mutation test contradicted the established no-refit contract; generic large-sample and distribution-success counts had no oracle; and the outlier smoke test reproduced TR-010 (IsEstimated true with zero successful candidates). TR-010 is fixed, and `FittingAnalysisRegressionTests` now covers all-candidate failure and partial success.
 
 ## Remaining audit
 
-The following mixed files require method-level splitting before their domain phase begins:
+The following mixed files remain a method-level ownership backlog:
 
 | Area | Mixed files |
 |---|---|
@@ -28,7 +28,7 @@ The following mixed files require method-level splitting before their domain pha
 | Time series | Model and analysis test files containing both constructors/properties and estimator recovery |
 | Bivariate and spatial | Files containing both DTO/state checks and fitted-model recovery |
 
-The audit is intentionally marked **in progress**. No remaining mixed file is represented as verification-grade until its methods have been classified and moved.
+The audit is intentionally marked **in progress**. No remaining mixed file is represented as verification-grade until its methods have been classified and moved. This repository-hygiene backlog does not reopen the claim-specific scientific evidence that closed Phases 1 and 2.
 
 ## External model-comparison oracles and PSIS correction - 25-26 July 2026
 
@@ -94,4 +94,94 @@ The first four methods consume the committed [GMM specification oracle](../../ve
 | `NumericsMcmcFindingTests.Nuts_BestFitResultsUseHamiltonianAcceptanceWithoutDetailedDiagnostics` | BestFit Verification | Generic sampler acceptance, Hamiltonian result transfer, and acceptance-only BestFit report | Passed - exact focused method |
 | `NumericsMcmcFindingTests.Nuts_BestFitNumericalGradientMatchesPosteriorGradient` | BestFit Verification | Bound-aware finite differences of the complete coupled-prior posterior | Passed - exact focused method |
 
-The BestFit methods were run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the full Verification project was not executed. The Numerics methods passed by exact fully qualified filter on the .NET 10 target, and the isolated complete Numerics .NET 10 Release project passed all 1,960 tests with zero failures or skips. The TR-029 BestFit methods consume the committed [MCMC diagnostics oracle](../../verification/data/model-estimation/mcmc-diagnostics-oracle.json), so C# tests require no R or Python runtime. Fast report tests `GenerateReport_Rhat1005_PassesModernThreshold` and `GenerateReport_Rhat102_WarnsAtModernThreshold` verify the 1.01 readiness rule without changing the concise `R-hat` label.
+The BestFit methods were run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the full Verification project was not executed. The Numerics methods passed by exact fully qualified filter on the .NET 10 target, and the reconciled complete Numerics .NET 10 Release project records all 1,986 tests passing with zero failures. The TR-029 BestFit methods consume the committed [MCMC diagnostics oracle](../../verification/data/model-estimation/mcmc-diagnostics-oracle.json), so C# tests require no R or Python runtime. Fast report tests `GenerateReport_Rhat1005_PassesModernThreshold` and `GenerateReport_Rhat102_WarnsAtModernThreshold` verify the 1.01 readiness rule without changing the concise `R-hat` label.
+
+## TR-018/TR-019 Bulletin 17C bootstrap refit reliability - 28 July 2026
+
+| Test method | Test project | Traced contract | Status |
+|---|---|---|---|
+| `NonparametricEmpiricalTests.GetNonparametricMomentsWithLowOutlierMidpoints_LogScaleMatchesExplicitPseudoSample` | Fast unit | Low outliers use bounded measurement-scale midpoints before log transformation | Passed |
+| `Bulletin17CDistributionTests.GetRankedBootstrapInitialValues_CensoredSample_ReturnsObjectiveOrderedCandidates` | Fast unit | Finite, valid, bounded, distinct starts ranked by the first-pass penalized GMM objective | Passed |
+| `Bulletin17CDistributionTests.GetRankedBootstrapInitialValues_WrongParentDimension_Throws` | Fast unit | Candidate API dimension contract | Passed |
+| `Bulletin17CAnalysisTests.RepairPivotParametersToBounds_InvalidComponents_RepairsInPlace` | Fast unit | Non-finite and out-of-bound inverse-linked draws are repaired inside model bounds | Passed |
+| `Bulletin17CAnalysisTests.RepairPivotParametersToBounds_ValidComponents_RemainsUnchanged` | Fast unit | Valid pivotal parameter vectors are not altered | Passed |
+| `B17CBootstrapRefitReliabilityTests.Example1_OrdinaryBootstrap_ThousandRefits` | BestFit Verification | Example 1 ordinary bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example1_PivotalBootstrap_ThousandRefits` | BestFit Verification | Example 1 bias-corrected pivotal bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example2_OrdinaryBootstrap_ThousandRefits` | BestFit Verification | Example 2 ordinary bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example2_PivotalBootstrap_ThousandRefits` | BestFit Verification | Example 2 bias-corrected pivotal bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example3_OrdinaryBootstrap_ThousandRefits` | BestFit Verification | Example 3 ordinary bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example3_PivotalBootstrap_ThousandRefits` | BestFit Verification | Example 3 bias-corrected pivotal bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example4_OrdinaryBootstrap_ThousandRefits` | BestFit Verification | Example 4 ordinary bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example4_PivotalBootstrap_ThousandRefits` | BestFit Verification | Example 4 bias-corrected pivotal bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example5_OrdinaryBootstrap_ThousandRefits` | BestFit Verification | Example 5 ordinary bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example5_PivotalBootstrap_ThousandRefits` | BestFit Verification | Example 5 bias-corrected pivotal bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example6_OrdinaryBootstrap_ThousandRefits` | BestFit Verification | Example 6 ordinary bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example6_PivotalBootstrap_ThousandRefits` | BestFit Verification | Example 6 bias-corrected pivotal bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example7_OrdinaryBootstrap_FiveHundredRefits` | BestFit Verification | Highly censored Example 7 ordinary bootstrap | Passed - exact focused method |
+| `B17CBootstrapRefitReliabilityTests.Example7_PivotalBootstrap_FiveHundredRefits` | BestFit Verification | Highly censored Example 7 bias-corrected pivotal bootstrap | Passed - exact focused method |
+
+| Example | Method | Attempted realizations | Outer retries | Mahalanobis candidate rejections | Optimizer fallbacks | Parent substitutions | First-chance exceptions | Finite outputs |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| 1 | Ordinary | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 1 | Pivotal | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 2 | Ordinary | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 2 | Pivotal | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 3 | Ordinary | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 3 | Pivotal | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 4 | Ordinary | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 4 | Pivotal | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 5 | Ordinary | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 5 | Pivotal | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 6 | Ordinary | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 6 | Pivotal | 1,000 | 0 | 0 | 0 | 0 | 0 | 1,000 |
+| 7 | Ordinary | 500 | 0 | 0 | 0 | 0 | 0 | 500 |
+| 7 | Pivotal | 500 | 0 | 0 | 0 | 0 | 0 | 500 |
+
+| Example | Method | Function evaluations | Max-evaluation candidate statuses | Phase-one time | Test duration |
+|---|---|---:|---:|---:|---:|
+| 1 | Ordinary | 10,547 | 0 | 0.364 s | 1.417 s |
+| 1 | Pivotal | 10,530 | 0 | 0.244 s | 0.951 s |
+| 2 | Ordinary | 100,823 | 2 | 13.556 s | 14.312 s |
+| 2 | Pivotal | 75,331 | 2 | 9.849 s | 10.478 s |
+| 3 | Ordinary | 223,918 | 23 | 29.698 s | 30.288 s |
+| 3 | Pivotal | 229,566 | 26 | 27.904 s | 28.481 s |
+| 4 | Ordinary | 39,476 | 0 | 9.182 s | 9.913 s |
+| 4 | Pivotal | 44,211 | 0 | 14.059 s | 14.824 s |
+| 5 | Ordinary | 78,925 | 3 | 6.996 s | 7.666 s |
+| 5 | Pivotal | 85,720 | 4 | 22.596 s | 23.263 s |
+| 6 | Ordinary | 173,492 | 13 | 15.941 s | 16.649 s |
+| 6 | Pivotal | 152,415 | 12 | 13.827 s | 14.605 s |
+| 7 | Ordinary | 226,375 | 31 | 74.301 s | 75.124 s |
+| 7 | Pivotal | 205,393 | 24 | 90.221 s | 91.094 s |
+
+Each cell was run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the full Verification project was not executed. The final unguarded seeded sweep produced 13,000 finite outputs from exactly 13,000 attempted realizations, with zero outer retries, zero Mahalanobis rejections, zero optimizer fallbacks, zero parent substitutions, zero failed or uninitialized GMM candidates, and zero first-chance exceptions from Numerics or RMC.BestFit. The harness now asserts this direct-refit contract.
+
+The preceding guarded diagnostic sweep showed that every remaining outer retry was caused by the Mahalanobis filter rejecting a finite converged fit. One apparent Example 3 solver retry was traced to `MaximumFunctionEvaluationsReached` on the final inner optimization pass even though iterative GMM had `ConvergedWithinTolerance=true` and an objective between approximately `1.8E-11` and `2.7E-08`. Bootstrap refits now honor the GMM contract: a finite estimate is accepted when the inner status is `Success` or iterative GMM confirms convergence. In the final sweep, 140 candidates carried the maximum-evaluation status; all were confirmed converged and accepted. Removing the obsolete Mahalanobis rejection then eliminated all retries without exposing malformed fits.
+
+Pivotal phase three keeps the Yeo-Johnson links. After inverse linking, non-finite or out-of-bound components are repaired just inside the model's existing lower and upper bounds and revalidated without exception-as-control-flow. Example 5 pivotal exercised this repair once at replicate 695. Location-link fitting used the documented identity fallback in Examples 2, 5, 6, and 7 when the Yeo-Johnson optimizer reached its boundary; Examples 2 and 6 also reported positive-definite covariance regularization. None of these diagnostics caused an exception, retry, or output substitution.
+
+The 1-2 second expectation holds only for Example 1. Examples 2 through 7 perform genuine censored-data GMM work, with highly censored Example 7 taking approximately 74 seconds ordinary and 90 seconds pivotal for 500 outputs. The parent-fit fallback remains only to guarantee configured downstream output length and remains a hard verification failure if exercised. The tests stay `[DoNotParallelize]` because first-chance exception and Trace listeners are process-wide.
+
+## TR-020/TR-021 Bulletin 17C scope and formal-example verification - 28 July 2026
+
+Fast TR-020 coverage was run through the Core unit project. The formal TR-021 methods were then executed one at a time through `scripts/run-verification-test.ps1`; each invocation source-resolved one fully qualified method and produced exactly one TRX result.
+
+| Test method | Test project | Traced contract | Status |
+|---|---|---|---|
+| `Bulletin17CAnalysisTests.ComputeCohnStyleConfidenceIntervals_Lp3ExactDataBeforeEstimation_ReturnsNull` | Fast unit | Exact-data LP3 retains the unestimated null contract | Passed |
+| `Bulletin17CAnalysisTests.ComputeCohnStyleConfidenceIntervals_NonLp3Family_ThrowsNotSupported` | Fast unit | Exponential, Gamma, Log-Normal, Normal, and Pearson III are rejected before LP3 transformations | Passed - 5 data rows |
+| `Bulletin17CAnalysisTests.ComputeCohnStyleConfidenceIntervals_Lp3CensoredOrUncertainData_ThrowsNotSupported` | Fast unit | Low outliers, uncertain observations, interval censoring, and threshold censoring are rejected | Passed - 4 conditions |
+| `Bulletin17CAnalysisTests.ComputeAsymptoticQuantileVariance_UnsupportedScope_ReturnsNull` | Fast unit | Report-side asymptotic variance returns no values outside exact-data LP3 | Passed |
+| `B17CExampleTests.Test_Example1` | BestFit Verification | Moose River systematic-record LP3 mean, standard deviation, and skew | Passed - 0.832 s |
+| `B17CExampleTests.Test_Example2` | BestFit Verification | Orestimba Creek low-outlier/zero-flow LP3 parameters | Passed - 0.402 s |
+| `B17CExampleTests.Test_Example3` | BestFit Verification | Back Creek broken-record/threshold LP3 parameters | Passed - 0.425 s |
+| `B17CExampleTests.Test_Example4` | BestFit Verification | Arkansas River historical/interval/threshold LP3 parameters | Passed - 0.471 s |
+| `B17CExampleTests.Test_Example5` | BestFit Verification | Bear Creek crest-stage variable-threshold LP3 parameters | Passed - 0.333 s |
+| `B17CExampleTests.Test_Example6` | BestFit Verification | Santa Cruz historical/low-outlier LP3 parameters | Passed - 0.598 s |
+| `B17CExampleTests.Test_Example7` | BestFit Verification | American River paleoflood/threshold LP3 parameters | Passed - 0.728 s |
+
+Formal-example aggregate: **7 passed, 0 failed, 0 skipped**. Every method asserted `gmm.IsEstimated` and compared all three current LP3 model parameters with the published fixture values at absolute tolerance `1E-3`, for 21 parameter comparisons. Every focused Verification build completed with zero warnings and zero errors. The complete Verification project was not run.
+
+The result directories are under `TestResults/VerificationFocused/20260728-140241-*Test_Example1` through `20260728-140402-*Test_Example7`. They are local runner output rather than committed oracle artifacts; the durable result and target table is recorded in [Bulletin 17C Verification](bulletin-17c.md#formal-worked-example-parameter-parity).
+
+These formal methods verify worked-example point-estimate parity. They do not verify Cohn interval values, asymptotic or bootstrap covariance, uncertain-data variants, PeakFQ diagnostics, penalty sensitivity, or coverage. Cohn numerical verification remains deferred.

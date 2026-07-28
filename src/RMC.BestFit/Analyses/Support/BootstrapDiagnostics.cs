@@ -21,10 +21,12 @@ namespace RMC.BestFit.Analyses
     ///     measurements on the calling thread.
     /// </para>
     /// <para>
-    ///     Failed or rejected realizations are discarded from the delivered sample — never
-    ///     substituted with the parent parameter vector — so the retained count can be smaller
-    ///     than the requested count. The counters here let reports state exactly how many
-    ///     realizations were requested, succeeded, were discarded, and were ultimately used.
+    ///     Ordinary and pivotal bootstrap refits use bounded retries. After those retries are
+    ///     exhausted, phase one substitutes the fitted parent parameters (and, for the pivotal
+    ///     method, parent covariance) so downstream processing still receives the configured
+    ///     output length. <see cref="FailedReplicates"/> counts those substitutions. Later pivotal
+    ///     transform failures can still reduce <see cref="RetainedReplicates"/> and prevent the
+    ///     all-or-nothing uncertainty result from being published.
     /// </para>
     /// </remarks>
     public class BootstrapDiagnostics
@@ -43,7 +45,8 @@ namespace RMC.BestFit.Analyses
         private int _attemptedReplicates = -1;
 
         /// <summary>
-        /// The number of replicates that were discarded after exhausting all retry attempts.
+        /// The number of requested replicates whose phase-one refit exhausted every retry and was
+        /// replaced by the fitted parent parameters to preserve the configured output length.
         /// </summary>
         private int _failedReplicates;
 
@@ -133,8 +136,9 @@ namespace RMC.BestFit.Analyses
         public int AttemptedReplicates => _attemptedReplicates >= 0 ? _attemptedReplicates : _totalReplicates;
 
         /// <summary>
-        /// Gets the number of replicates discarded after exhausting all retry attempts.
-        /// Discarded replicates are excluded from the delivered sample.
+        /// Gets the number of requested replicates whose phase-one refit exhausted every retry and
+        /// was replaced by the fitted parent parameters. Such replacements remain in the delivered
+        /// ordinary-bootstrap sample and enter pivotal phase two.
         /// </summary>
         public int FailedReplicates => _failedReplicates;
 

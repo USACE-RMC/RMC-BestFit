@@ -1,5 +1,17 @@
 # Progress
 
+## 2026-07-28
+
+- Closed TR-016 as a documented architecture decision: Bulletin 17C reuses the Bayesian analysis result-storage shape for stable persistence and reprocessing, with GMM/frequentist meanings for legacy member names and no code/API redesign.
+- Closed TR-020 in its approved unit scope by guarding Cohn intervals and asymptotic variance to exact-data LP3; all unsupported parent/data cases now fail explicitly, while numerical Cohn verification remains deferred.
+- Closed TR-021 with seven exact formal Bulletin 17C worked-example runs: `Test_Example1` through `Test_Example7` all passed published LP3 mean, standard deviation, and skewness comparisons at absolute tolerance `1E-3`.
+- Reviewed and repaired XML documentation/comments throughout `Bulletin17CDistribution` and `Bulletin17CAnalysis`, including damaged mathematical notation, stale Bayesian wording, malformed XML, and low-value comments; no AI/tool breadcrumbs remain.
+- Closed TR-017 without renaming `BiasCorrectedBootstrap`; technical documentation identifies it as the second-order bias-corrected pivotal bootstrap and distinguishes it from scalar BC/BCa intervals.
+- Reworked Bulletin 17C bootstrap initialization with bounded midpoint, ROS, distribution-default, and parent starts ranked against the same penalized GMM target; confirmed-converged iterative GMM results are accepted even when the final inner pass reaches its evaluation cap.
+- Kept Yeo-Johnson pivotal links and added post-inverse parameter repair against existing model bounds; Example 5 replicate 695 exercises the skew-bound repair without throwing.
+- Removed the obsolete Mahalanobis refit rejection after the guarded sweep showed it caused every remaining outer retry. Fourteen exact Examples 1-7 ordinary/pivotal cells then produced 13,000 unguarded finite outputs from 13,000 realizations with zero retries, substitutions, failed candidates, optimizer fallbacks, and BestFit/Numerics first-chance exceptions.
+- Added and pinned the Examples 5-7 reliability cells (500 outputs per method for highly censored Example 7) and retained the parent-fit fallback solely to guarantee configured downstream output length.
+
 ## 2026-07-17
 
 - Prepared v2.0.0 release metadata: switched central dependencies to `RMC.Numerics` 2.1.4 and `RMC.Wpf.Framework.*` 1.0.4, removed the local project-reference override file, and synchronized final UI/App/project metadata to `2.0.0`.

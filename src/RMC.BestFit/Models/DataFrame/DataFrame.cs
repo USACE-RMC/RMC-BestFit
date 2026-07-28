@@ -2080,6 +2080,86 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Computes nonparametric central moments using bounded midpoint values for low outliers.
+        /// </summary>
+        /// <param name="useLog10Values">
+        /// If <c>true</c>, transforms the bounded midpoint values to base-10 logarithms before
+        /// computing moments; otherwise, uses the values in their natural measurement scale.
+        /// </param>
+        /// <returns>
+        /// An array of central moments [mean, standard deviation, skewness, kurtosis], or
+        /// <c>null</c> when the data are insufficient or a usable empirical distribution cannot
+        /// be constructed.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method is an initialization heuristic for Bulletin 17C bootstrap refits. Each
+        /// flagged low outlier with observed value <c>x</c> and censoring threshold <c>T</c> is
+        /// represented by <c>x + 0.5(T - x)</c>. The pseudo-value is therefore bounded between
+        /// the recorded observation and its low-outlier threshold, unlike an unconstrained ROS
+        /// extrapolation. The stored observation and plotting position are never modified.
+        /// </para>
+        /// <para>
+        /// For log-family fitting, midpoint construction occurs in the original measurement
+        /// scale and the result is transformed afterward. This preserves the stated censoring
+        /// interval while avoiding direct use of an extreme low observation in log moments.
+        /// </para>
+        /// </remarks>
+        internal double[]? GetNonparametricMomentsWithLowOutlierMidpoints(bool useLog10Values = false)
+        {
+            if (NumberOfLowOutliers == 0)
+                return GetNonparametricMoments(useLog10Values);
+
+            if (ExactSeries == null || ExactSeries.Count < 4)
+                return null;
+
+            int totalCount = ExactSeries.Count + UncertainSeries.Count + IntervalSeries.Count;
+            if (totalCount < 4 || !double.IsFinite(LowOutlierThreshold))
+                return null;
+
+            var values = new List<double>(totalCount);
+            for (int i = 0; i < ExactSeries.Count; i++)
+            {
+                double value = ExactSeries[i].Value;
+                if (((ExactData)ExactSeries[i]).IsLowOutlier)
+                    value += 0.5d * (LowOutlierThreshold - value);
+
+                if (useLog10Values)
+                {
+                    if (value <= 0d)
+                        return null;
+                    value = Math.Log10(value);
+                }
+
+                if (!double.IsFinite(value))
+                    return null;
+                values.Add(value);
+            }
+
+            if (useLog10Values)
+            {
+                values.AddRange(UncertainSeries.Select(x => x.Log10Value));
+                values.AddRange(IntervalSeries.Select(x => x.Log10Value));
+            }
+            else
+            {
+                values.AddRange(UncertainSeries.Select(x => x.Value));
+                values.AddRange(IntervalSeries.Select(x => x.Value));
+            }
+            if (values.Any(value => !double.IsFinite(value)))
+                return null;
+            values.Sort();
+
+            var probabilities = ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
+            probabilities.AddRange(UncertainSeries.Select(x => x.PlottingPositionComplement));
+            probabilities.AddRange(IntervalSeries.Select(x => x.PlottingPositionComplement));
+            probabilities.Sort();
+
+            var distribution = CreateEmpiricalDistributionWithUniqueValues(values, probabilities);
+            return distribution?.CentralMoments(1000);
+        }
+
+        /// <summary>
         /// Computes nonparametric central moments using Regression on Order Statistics (ROS)
         /// to impute values for low outliers below the censoring threshold.
         /// </summary>

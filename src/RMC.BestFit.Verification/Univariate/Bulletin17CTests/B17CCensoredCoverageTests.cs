@@ -5,7 +5,7 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 using System.Diagnostics;
 
-namespace RMC.BestFit.Verification.Univariate.B17CTests;
+namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 
 /// <summary>
 /// Tests confidence interval coverage for censored data scenarios.

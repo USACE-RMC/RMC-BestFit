@@ -643,6 +643,149 @@ public class Bulletin17CAnalysisTests
         Assert.AreEqual(12.5, link.Link(12.5), 1e-12);
     }
 
+    /// <summary>
+    /// Pivot repair moves non-finite and out-of-bound values into each model parameter's interior.
+    /// </summary>
+    [TestMethod]
+    public void RepairPivotParametersToBounds_InvalidComponents_RepairsInPlace()
+    {
+        double[] pivot = [double.NaN, -1d, -6.1364298074617105d];
+        double[] parent = [3.25d, 0.5d, -0.9d];
+        var parameters = new List<ModelParameter>
+        {
+            new() { LowerBound = 0d, UpperBound = 5d },
+            new() { LowerBound = 1E-12d, UpperBound = 4d },
+            new() { LowerBound = -6d, UpperBound = 6d }
+        };
+
+        bool repaired = Bulletin17CAnalysis.RepairPivotParametersToBounds(
+            pivot, parent, parameters);
+
+        Assert.IsTrue(repaired);
+        Assert.AreEqual(parent[0], pivot[0], 1E-12d);
+        for (int i = 0; i < pivot.Length; i++)
+        {
+            Assert.IsTrue(double.IsFinite(pivot[i]));
+            Assert.IsTrue(pivot[i] > parameters[i].LowerBound);
+            Assert.IsTrue(pivot[i] < parameters[i].UpperBound);
+        }
+    }
+
+    /// <summary>
+    /// Pivot repair leaves an already valid parameter vector unchanged.
+    /// </summary>
+    [TestMethod]
+    public void RepairPivotParametersToBounds_ValidComponents_RemainsUnchanged()
+    {
+        double[] pivot = [3.25d, 0.5d, -0.9d];
+        double[] expected = pivot.ToArray();
+        double[] parent = [3d, 0.4d, 0d];
+        var parameters = new List<ModelParameter>
+        {
+            new() { LowerBound = 0d, UpperBound = 5d },
+            new() { LowerBound = 1E-12d, UpperBound = 4d },
+            new() { LowerBound = -6d, UpperBound = 6d }
+        };
+
+        bool repaired = Bulletin17CAnalysis.RepairPivotParametersToBounds(
+            pivot, parent, parameters);
+
+        Assert.IsFalse(repaired);
+        CollectionAssert.AreEqual(expected, pivot);
+    }
+
+    #region Cohn diagnostic scope
+
+    /// <summary>
+    /// An unestimated LP3 analysis with exact data retains the existing null result contract.
+    /// </summary>
+    [TestMethod]
+    public void ComputeCohnStyleConfidenceIntervals_Lp3ExactDataBeforeEstimation_ReturnsNull()
+    {
+        var analysis = new Bulletin17CAnalysis(CreateLP3Model());
+
+        Assert.IsNull(analysis.ComputeCohnStyleConfidenceIntervals());
+    }
+
+    /// <summary>
+    /// Cohn diagnostics reject every supported non-LP3 parent before interpreting its parameters
+    /// as LP3 moments or applying a base-10 transformation.
+    /// </summary>
+    /// <param name="distributionType">The unsupported Bulletin 17C parent family.</param>
+    [DataTestMethod]
+    [DataRow(UnivariateDistributionType.Exponential)]
+    [DataRow(UnivariateDistributionType.GammaDistribution)]
+    [DataRow(UnivariateDistributionType.LogNormal)]
+    [DataRow(UnivariateDistributionType.Normal)]
+    [DataRow(UnivariateDistributionType.PearsonTypeIII)]
+    public void ComputeCohnStyleConfidenceIntervals_NonLp3Family_ThrowsNotSupported(
+        UnivariateDistributionType distributionType)
+    {
+        var model = new Bulletin17CDistribution(CreateFloodDataFrame(), distributionType);
+        var analysis = new Bulletin17CAnalysis(model);
+
+        var exception = Assert.ThrowsException<NotSupportedException>(
+            () => analysis.ComputeCohnStyleConfidenceIntervals());
+
+        StringAssert.Contains(exception.Message, "Log-Pearson Type III");
+    }
+
+    /// <summary>
+    /// LP3 Cohn diagnostics reject low outliers and every non-exact observation type.
+    /// </summary>
+    [TestMethod]
+    public void ComputeCohnStyleConfidenceIntervals_Lp3CensoredOrUncertainData_ThrowsNotSupported()
+    {
+        var cases = new (string Name, Action<BestFitDataFrame> Configure)[]
+        {
+            ("low outlier", dataFrame =>
+                ((ExactData)dataFrame.ExactSeries[0]).IsLowOutlier = true),
+            ("uncertain observation", dataFrame =>
+                dataFrame.UncertainSeries.Add(new UncertainData(1900, new Normal(1000d, 100d)))),
+            ("interval-censored observation", dataFrame =>
+                dataFrame.IntervalSeries.Add(new IntervalData(1900, 800d, 1000d, 1200d))),
+            ("threshold-censored period", dataFrame =>
+                dataFrame.ThresholdSeries.Add(new ThresholdData(1800, 1810, 1000d))),
+        };
+
+        foreach (var testCase in cases)
+        {
+            var dataFrame = CreateFloodDataFrame();
+            testCase.Configure(dataFrame);
+            var analysis = new Bulletin17CAnalysis(new Bulletin17CDistribution(
+                dataFrame, UnivariateDistributionType.LogPearsonTypeIII));
+
+            var exception = Assert.ThrowsException<NotSupportedException>(
+                () => analysis.ComputeCohnStyleConfidenceIntervals(), testCase.Name);
+
+            StringAssert.Contains(exception.Message, "require exact data", testCase.Name);
+        }
+    }
+
+    /// <summary>
+    /// The report-side asymptotic-variance calculation returns no values outside the supported
+    /// LP3 exact-data scope.
+    /// </summary>
+    [TestMethod]
+    public void ComputeAsymptoticQuantileVariance_UnsupportedScope_ReturnsNull()
+    {
+        MethodInfo method = typeof(Bulletin17CAnalysis).GetMethod(
+            "ComputeAsymptoticQuantileVariance",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        var nonLp3Analysis = new Bulletin17CAnalysis(new Bulletin17CDistribution(
+            CreateFloodDataFrame(), UnivariateDistributionType.Normal));
+        var censoredData = CreateFloodDataFrame();
+        censoredData.ThresholdSeries.Add(new ThresholdData(1800, 1810, 1000d));
+        var censoredLp3Analysis = new Bulletin17CAnalysis(new Bulletin17CDistribution(
+            censoredData, UnivariateDistributionType.LogPearsonTypeIII));
+
+        Assert.IsNull(method.Invoke(nonLp3Analysis, null));
+        Assert.IsNull(method.Invoke(censoredLp3Analysis, null));
+    }
+
+    #endregion
+
     #region UncertaintyMethod enum surface
 
     /// <summary>

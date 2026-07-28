@@ -7,5 +7,6 @@
 - Hartig, F. et al. `BayesianTools`: general-purpose MCMC, SMC, and Bayesian diagnostics, CRAN package 0.1.9.
 - Vehtari, A. et al. `loo`: efficient leave-one-out cross-validation and WAIC, CRAN package 2.10.0.
 - SciPy community. `scipy.stats` reference, version 1.17.1.
+- England, J. F., Jr., et al. *Guidelines for Determining Flood Flow Frequency - Bulletin 17C*. U.S. Geological Survey Techniques and Methods, book 4, chap. B5, 2019. doi: 10.3133/tm4B5.
 - RMC-BestFit version 1 verification report, `docs/reports/RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software.pdf`.
 - RMC.BestFit 2.0 [Technical Reference](../technical-reference/index.md) and [Scientific Review Findings](../technical-reference/review-findings.md).

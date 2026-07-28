@@ -3,7 +3,7 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 
-namespace RMC.BestFit.Verification.Univariate.B17CTests;
+namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 
 /// <summary>
 /// Long-running regression scenarios for conditional stochastic imputation in Bulletin 17C bootstrap fits.

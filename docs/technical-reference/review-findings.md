@@ -1,4 +1,4 @@
-<!-- technical-reference-status: in-progress -->
+<!-- technical-reference-status: phase-3-planning -->
 
 # Scientific Review Findings
 
@@ -8,13 +8,15 @@ The active continuation and batching plan is maintained in the [Verification Fin
 
 This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
 
+Closeout reconciliation (28 July 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest; current fast gates are Core 3,057/3,057, UI 564/564, and App 428/428, while the recorded Numerics gate is 1,986/1,986. TR-016 through TR-021 are closed in their approved scopes, including seven passed formal Bulletin 17C examples and exact-LP3 Cohn guards; TR-003 chronology semantics remains deferred.
+
 ## Summary
 
 | ID | Finding | Severity | Review disposition | Implementation | Verification | Evidence | Updated |
 |---|---|---|---|---|---|---|---|
 | [TR-001](#tr-001) | Kappa Four zero-shape PDF and quantile | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-001---kappa-four-zero-primary-shape) · [Artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json) | 2026-07-24 |
 | [TR-002](#tr-002) | Kappa Four shape validation | Closed | Rejected non-defect | N/A | Passed - regression | [Report](../verification/distribution-fitting.md#tr-002---finite-kappa-shape-pairs) / [Artifact](../../verification/data/distribution-fitting/kappa-four-finite-shapes.json) | 2026-07-24 |
-| [TR-003](#tr-003) | Nonstationary threshold chronology | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-003](#tr-003) | Nonstationary threshold chronology | Methodological | Source-confirmed ambiguity; policy required | Not started | Source audit complete; invariance oracle pending | [Phase 3 ledger](../verification/verification-finalization-plan.md#phase-3---data-handling-and-bulletin-17c) | 2026-07-28 |
 | [TR-004](#tr-004) | Point-process rate definitions | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-005](#tr-005) | Point-process fitted-model simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-006](#tr-006) | Mixture weights and proposal mutation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -27,12 +29,12 @@ This is the canonical register for disagreements among statistical theory, the p
 | [TR-013](#tr-013) | Non-finite composite criteria | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-014](#tr-014) | Composite posterior draw coupling | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-015](#tr-015) | Composite correlation matrix configuration | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Medium | Confirmed terminology limitation | Pseudo-AIC/BIC documented; broader work pending | Pseudo-criteria source-audited | [Bulletin 17C](analysis/bulletin-17c.md#pseudo-aic-and-pseudo-bic) | 2026-07-25 |
-| [TR-017](#tr-017) | Bulletin 17C bootstrap naming | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-018](#tr-018) | Bulletin 17C failed bootstrap fits | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-019](#tr-019) | Bulletin 17C bootstrap truncation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-020](#tr-020) | Bulletin 17C Cohn diagnostics scope | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-021](#tr-021) | Bulletin 17C release evidence | Evidence | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Closed | Accepted shared result-storage architecture | Documentation complete; no code/API change required | Passed - source/XML/report terminology audit | [Bulletin 17C](analysis/bulletin-17c.md#uncertainty-interpretation) | 2026-07-28 |
+| [TR-017](#tr-017) | Bulletin 17C bootstrap naming | Closed | Rejected naming defect; documentation clarified | No production change required | Passed - paper/implementation concordance audit | [Uncertainty method](analysis/bulletin-17c-uncertainty.md) | 2026-07-28 |
+| [TR-018](#tr-018) | Bulletin 17C failed bootstrap fits | Closed | Robust initialization and convergence-aware acceptance implemented; parent fallback retained only for output length | Complete | Passed - 14 exact cells; 13,000 outputs with zero retries, exceptions, or substitutions | [Test inventory](../verification/test-inventory.md#tr-018tr-019-bulletin-17c-bootstrap-refit-reliability---28-july-2026) | 2026-07-28 |
+| [TR-019](#tr-019) | Bulletin 17C bootstrap truncation | Closed | Obsolete Mahalanobis rejection removed | Complete | Passed - unguarded 13,000-output sweep; zero malformed or failed refits | [Test inventory](../verification/test-inventory.md#tr-018tr-019-bulletin-17c-bootstrap-refit-reliability---28-july-2026) | 2026-07-28 |
+| [TR-020](#tr-020) | Bulletin 17C Cohn diagnostics scope | Closed | Confirmed scope defect - resolved | LP3 exact-data guards implemented | Passed - fast scope regressions; numerical Cohn verification deferred | [Bulletin 17C report](../verification/bulletin-17c.md#cohn-diagnostic-scope) | 2026-07-28 |
+| [TR-021](#tr-021) | Bulletin 17C formal-example parity | Closed | Current GMM formal-example source verified | Seven exact methods executed | Passed - 7/7 published worked examples at 1E-3 | [Bulletin 17C report](../verification/bulletin-17c.md#formal-worked-example-parameter-parity) | 2026-07-28 |
 | [TR-022](#tr-022) | NUTS versus HMC inventory | Documentation/API | Confirmed defect | Fixed | Passed - source/API inventory | [Bayesian MCMC](estimation/bayesian-mcmc.md) | 2026-07-25 |
 | [TR-023](#tr-023) | MLE and MAP nuisance profiling | High | Confirmed defect - resolved | Fixed without public API changes | Passed - R `bbmle`, closed-form, and informative-prior MAP parity | [Report](../verification/model-estimation.md#profile-likelihood-covariance-failure-and-joint-prior-characterization) / [Artifact](../../verification/data/model-estimation/profile-likelihood-oracle.json) | 2026-07-27 |
 | [TR-024](#tr-024) | PSIS tail smoothing | High | Confirmed defect - resolved | Fixed | Passed - R `loo` aggregate, pointwise, tail, threshold, and performance parity | [Report](../verification/model-estimation.md#psis-loo-and-pareto-diagnostics) / [Artifact](../../verification/data/model-estimation/psis-loo-oracle.json) | 2026-07-26 |
@@ -104,7 +106,7 @@ but `InverseCDF` evaluates `Xi - Alpha * Log(1 - p^h / h)`. `PDF` also evaluates
 
 A compiled local probe with \((\xi,\alpha,\kappa)=(0,1,0)\) found, at \(x=1\): for \(h=0.2\), CDF `0.6824160756`, PDF `0.7366130339`, central numerical CDF derivative `0.2709847914`, and inverse-CDF at that CDF `NaN`. The existing Numerics Kappa test exercises construction at zero but not zero-shape density or CDF/quantile inversion.
 
-The corrected source adds the exact zero-kappa density factor and fixes the inverse-CDF grouping. Four upstream regressions cover the analytical derivative, inverse/CDF round trip, support and normalization, and two-sided continuity. The complete Numerics .NET 10 gate passed 1,905 tests with no failures or skips. Both exact BestFit verification methods pass independently at absolute tolerance `1e-10`.
+The corrected source adds the exact zero-kappa density factor and fixes the inverse-CDF grouping. Four upstream regressions cover the analytical derivative, inverse/CDF round trip, support and normalization, and two-sided continuity. The reconciled Numerics .NET 10 Release gate records 1,986 passing tests with no failures. Both exact BestFit verification methods pass independently at absolute tolerance `1e-10`.
 
 **Impact.** The defect affected zero-primary-shape likelihoods and quantiles. The corrected implementation restores the analytical density and inverse CDF for this branch.
 
@@ -126,11 +128,11 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-003"></a>
 ## TR-003 — Nonstationary Threshold Chronology
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Source-confirmed methodological ambiguity; the required chronology policy is unresolved.
 
 **Implementation status.** Not started.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Source and existing-test inventory audit complete. No permutation-invariance oracle or scientific policy has been accepted.
 
 **Evidence.** `DataFrame.FullTimeSeries` expands a perception period after removing explicit observations, places below-threshold records from the beginning of the remaining period, and places above-threshold records from its end.
 
@@ -220,7 +222,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Implementation status.** Fixed without public API changes in RMC.Numerics commit `24bf9f98139b23400bf008df413b0d97330ccfd3`. The numerator now includes every residual, and only the denominator uses the residual degrees of freedom \(n-k\). Invalid parameter counts that do not leave positive residual degrees of freedom are rejected.
 
-**Verification status.** Passed by an analytical hand calculation and paired-permutation test at absolute tolerance \(10^{-12}\). The complete Numerics .NET 10 gate passed 1,907 tests with zero failures or skips. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) and [result artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json).
+**Verification status.** Passed by an analytical hand calculation and paired-permutation test at absolute tolerance \(10^{-12}\). The reconciled Numerics .NET 10 Release gate records 1,986 passing tests with no failures. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) and [result artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json).
 
 **Evidence.** For observed values \([0,0,0,0]\), modeled values \([1,2,3,4]\), and \(k=1\), the analytical value is \(\sqrt{30/3}=3.1622776601683795\). The baseline implementation returned \(2.160246899469287\) because it summed only the first three squared residuals. The same exact verification method passes after the correction and proves invariance to paired row permutation.
 
@@ -320,92 +322,92 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-016"></a>
 ## TR-016 — Bulletin 17C Frequentist Results Use Bayesian/MCMC Terminology
 
-**Review disposition.** Confirmed terminology limitation.
+**Review disposition.** Accepted shared result-storage architecture; the terminology limitation is documented.
 
-**Implementation status.** Pseudo-AIC and pseudo-BIC are now documented. The broader public API and report terminology work remains pending.
+**Implementation status.** Complete as documentation only. Bulletin 17C intentionally uses the same `BayesianAnalysis`/`MCMCResults` storage architecture as Bayesian analyses so persistence, result reprocessing, and UI consumers share one stable shape. No production behavior, public API, serialization member, alias, or parallel result hierarchy was added.
 
-**Verification status.** The pseudo-criterion calculation passed source audit. The broader terminology finding remains planned.
+**Verification status.** Passed by source, XML-documentation, and report-terminology audit. No numerical verification was required for this architectural clarification.
 
-**Evidence.** `Bulletin17CDistribution` implements `IGMMModel`, not `IModel`, and defines no likelihood, prior, posterior, or MCMC target. `Bulletin17CAnalysis` nevertheless exposes a `BayesianAnalysis` property and stores GMM uncertainty draws in `MCMCResults`; the GMM estimate is placed in `MAP`, ensemble averages are exposed as `PosteriorMean`, and `CredibleIntervalWidth` controls frequentist confidence limits.
+**Evidence.** `Bulletin17CDistribution` implements `IGMMModel`, not `IModel`, and defines no likelihood, prior, posterior, or MCMC target. In the shared container, `MAP` stores the penalized GMM point estimate, `Output` stores the frequentist uncertainty ensemble, `PosteriorMean` is the ensemble arithmetic mean, and `CredibleIntervalWidth` supplies the confidence level. Inapplicable DIC, WAIC, LOOIC, R-hat, and effective-sample-size interpretations remain unset or out of scope.
 
-**Impact.** API consumers and generated reports can incorrectly describe a sampling distribution as a posterior, a GMM estimate as a posterior mode, and confidence intervals as credible intervals. DIC, WAIC, and LOOIC are not defined for these draws. The shared AIC/BIC fields are now documented as pseudo-criteria formed from the LP3 data likelihood at the GMM solution, not as Bayesian or likelihood-maximized criteria.
+**Impact.** The stable shared architecture avoids a second serialization and result-processing system, but consumers must interpret its legacy Bayesian-shaped member names in the Bulletin 17C context. The technical reference and XML comments now state that mapping explicitly. Shared AIC/BIC fields remain labeled pseudo-criteria formed from the LP3 data likelihood at the GMM solution, not likelihood-maximized or Bayesian criteria.
 
-**Follow-up.** Introduce estimator-neutral uncertainty/result abstractions or explicit aliases, preserve serialization compatibility, suppress inapplicable Bayesian diagnostics, retain explicit pseudo-AIC/pseudo-BIC labeling, and test terminology in public reports and UI labels.
+**Follow-up.** Preserve the documented mapping and serialization compatibility. A future breaking API redesign may introduce estimator-neutral names, but it is not required for TR-016.
 
 <a id="tr-017"></a>
-## TR-017 — `BiasCorrectedBootstrap` Does Not Implement BC or BCa
+## TR-017 — `BiasCorrectedBootstrap` Implements a Bias-Corrected Pivotal Bootstrap (Closed)
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Rejected naming defect; the implementation and pending methods paper support the existing name. A documentation ambiguity was confirmed and corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** No production, enum, public-API, GUI-label, or serialization change is required. `BiasCorrectedBootstrap = 3` remains the stable compatibility contract.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by concordance audit against Smith and Stedinger, *A Bias-Corrected Pivotal Bootstrap for Objective-Bayes Parameter Ensembles* (manuscript in preparation, local paper checkpoint `aaec860e875e`) and its reference engine. No numerical verification was rerun.
 
-**Evidence.** The enum XML describes bias-corrected intervals, but `GetParameterSetsFromPivotalBootstrap()` collects bootstrap estimates and covariances, fits Yeo-Johnson/log links, forms a studentized multivariate pivot with replicate Cholesky factors, adds smoothing, clips pivot components to `[-6,6]`, and maps them through the parent covariance. It does not compute the BC bias constant, BC percentile mapping, jackknife acceleration, or BCa endpoints.
+**Evidence.** BestFit implements the paper's three-part construction: refit each parametric sample and retain its covariance; form the multivariate studentized pivot $\mathbf z_b=(\mathbf L_b^*)^{-1}(\widehat{\boldsymbol\eta}-\widehat{\boldsymbol\eta}^{*(b)})$ in variance-stabilizing link space; then re-inflate with the parent factor $\mathbf L$ and invert the link. The replicate covariance removes local bias and heteroskedasticity, while the parent covariance expresses the corrected draw in the parent's uncertainty. This is the method the paper names the *bias-corrected pivotal bootstrap* and describes as second-order under its stated regularity and estimator-target conditions.
 
-**Impact.** Selecting and reporting “bias corrected bootstrap” implies a recognized algorithm that is not the one executed. Coverage expectations and literature citations can therefore be wrong.
+**Impact.** The compact enum and GUI label are scientifically defensible and easier for practitioners than the full technical name. Confusion remains possible because Efron's scalar BC and BCa intervals also use “bias-corrected”; documentation must therefore identify this as a multivariate pivotal/studentized ensemble and explicitly state that it is not the BC or BCa endpoint algorithm.
 
-**Follow-up.** Rename the option to a precise pivotal/studentized name or implement the documented BC/BCa method. Add algorithm-identity tests and coverage comparisons against a trusted implementation.
+**Documentation convention.** Retain “Bias-Corrected Bootstrap” in the enum and GUI. On first technical mention, use “bias-corrected pivotal bootstrap,” explain that the correction is intrinsic to the two-covariance pivot, and distinguish it from BC/BCa. Link stabilization, bounds repair, and failed-refit policy remain documented separately from the paper's bare construction.
 
 <a id="tr-018"></a>
 ## TR-018 — Failed Bulletin 17C Bootstrap Refits Become Parent-Estimate Mass
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed numerical-reliability risk. The parent-fit fallback remains an explicit operational policy because downstream processing requires the configured output length; the primary correction is to make refit exhaustion exceptional.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. Every bootstrap realization preserves the parent model's bounds, links, and penalties; draws one randomized penalty target; constructs midpoint-moment, ROS-moment, distribution-default, and parent-fit starts; ranks valid distinct starts by the first-pass penalized GMM objective; and tries them against the same realization before generating another sample. A finite fit is accepted when its inner optimizer reports `Success` or iterative GMM confirms `ConvergedWithinTolerance`. The ten-realization retry limit and final parent-fit substitution remain only to preserve configured output length.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Fast tests cover bounded midpoint construction, candidate validity, distinctness, bounds, ordering, invalid dimensions, and pivotal parameter repair. Fourteen seeded ordinary/pivotal Examples 1-7 cells were executed separately: 1,000 outputs per method for Examples 1-6 and 500 per method for highly censored Example 7. The final unguarded run produced 13,000 finite outputs from exactly 13,000 attempted realizations with zero retries, optimizer fallbacks, parent substitutions, failed GMM candidates, and first-chance exceptions from Numerics or RMC.BestFit.
 
-**Evidence.** Both bootstrap branches retry each replicate at most ten times. When ordinary bootstrap attempts are exhausted, the parent parameter vector is inserted. In the pivotal branch, the parent parameters and parent covariance replace an exhausted phase-one refit. These entries are finite and satisfy the exact-output-count publishing check.
+**Evidence.** Alternate initializations are optimizer restarts for one fixed bootstrap data/penalty target; they are not additional bootstrap draws. During diagnosis, an apparent Example 3 failure was a false rejection: every candidate had reached outer iterative-GMM tolerance with objectives near zero, although the final inner pass reported `MaximumFunctionEvaluationsReached`. Honoring the estimator's convergence contract eliminated that retry. The final grid accepted 140 such confirmed-converged results and required no alternate realization. Exhausted ordinary refits still receive the parent vector, and exhausted pivotal phase-one refits receive the parent vector and covariance, preserving the exact-output-count contract while incrementing `FailedReplicates`. Exact per-cell evidence is recorded in the [test inventory](../verification/test-inventory.md#tr-018tr-019-bulletin-17c-bootstrap-refit-reliability---28-july-2026).
 
-**Impact.** Refit failures create artificial point mass at the fitted estimate and can narrow confidence limits. A method may publish the requested ensemble size even when some nominal replicates contain no successful resampled fit.
+**Impact.** Ranked same-realization starts and convergence-aware acceptance eliminated fallback mass in the 13,000-output worked-example grid without changing requested ensemble size. Any future nonzero `FailedReplicates` still creates artificial point mass at the fitted estimate and can narrow confidence limits, so it remains a verification failure for this grid and a required report diagnostic in production.
 
-**Follow-up.** Define an explicit failure policy: resample until a separately bounded accepted count is obtained, fail the uncertainty run, or publish partial results with calibrated missingness rules. Never silently substitute the parent fit. Add tests showing interval behavior as the refit-failure rate rises.
+**Follow-up.** Retain the exact reliability cells as zero-retry regressions and continue reporting retries, optimizer fallbacks, and parent substitutions. If parent substitution is exercised, reopen the initialization/solver defect rather than accepting fallback mass as normal behavior.
 
 <a id="tr-019"></a>
-## TR-019 — Bulletin 17C Bootstrap Uses Asymptotic Mahalanobis Truncation
+## TR-019 — Bulletin 17C Bootstrap Uses Asymptotic Mahalanobis Truncation (Closed)
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed truncation defect; the guard was no longer needed after refit reliability was corrected and has been removed.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. Ordinary and pivotal bootstrap refits no longer compute parent-covariance Mahalanobis distances or reject converged fits against a chi-squared threshold. Multi-start fitting, finite-parameter validation, pivotal covariance checks, parameter-bound repair, fresh-realization retries, and the fixed-length parent fallback remain.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. In the complete guarded Examples 1-7 diagnostic sweep, every outer retry was caused by Mahalanobis rejection of an otherwise finite converged refit. After removal, the same 14 exact cells produced 13,000 finite outputs from 13,000 realizations with zero retries, zero rejections, zero parent substitutions, zero optimizer fallbacks, and zero BestFit/Numerics first-chance exceptions.
 
-**Evidence.** Both bootstrap collectors reject a successful refit when its squared distance from the parent estimate, measured with the parent GMM covariance, exceeds the `1 - 1/(5B)` quantile of a chi-squared distribution with `p` degrees of freedom. Rejected candidates are retried; exhausted candidates then receive the fallback described in TR-018.
+**Evidence.** Guarded runs forced resampling without exposing any independent solver, covariance, or transform failure. The unguarded runs accepted those tail refits directly and still satisfied all parameter, covariance, output-length, and exception assertions, including highly censored Example 7. Example 5 pivotal separately exercised the model-bound repair for one inverse-linked skew draw.
 
-**Impact.** The empirical bootstrap distribution is deliberately truncated using an asymptotic reference distribution. This may remove genuine tail behavior precisely where flood-quantile confidence limits are most sensitive, and it couples results to the requested ensemble size.
+**Impact.** Removing the guard eliminates an undocumented asymptotic truncation of the empirical bootstrap distribution, avoids unnecessary resampling, and preserves genuine tail behavior. The safeguards that directly test numerical usability remain in place.
 
-**Follow-up.** Establish through simulation whether this rule removes only numerical degeneracy or materially changes coverage. If retained, document it as a calibrated robustification rule, report every rejection, and test sensitivity to the threshold.
+**Follow-up.** Retain the no-guard reliability grid as a regression. Pivotal smoothing and $z$ clipping remain separate operational choices whose calibration and coverage evidence are not resolved by this closeout.
 
 <a id="tr-020"></a>
 ## TR-020 — Cohn-Style Bulletin 17C Diagnostics Are Unguarded LP3 Calculations
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed scope defect; resolved by explicit validation.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. `ComputeCohnStyleConfidenceIntervals()` now throws `NotSupportedException` unless the parent is Log-Pearson Type III and the data are exact, with no low outliers, uncertain observations, interval censoring, or threshold censoring. The report-side asymptotic-variance path uses the same guard and reports why the diagnostic is unavailable instead of applying LP3 calculations outside scope.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Fast unit tests cover all five non-LP3 parent families, all four unsupported LP3 data conditions, the unestimated exact-LP3 null contract, and the report-side helper's unsupported-scope null result. Numerical verification of Cohn interval values is explicitly deferred.
 
-**Evidence.** `ComputeCohnStyleConfidenceIntervals()` is public for every supported Bulletin 17C parent, but `EvaluateQuantileSafe()` always constructs `PearsonTypeIII`, interprets the supplied parameter vector in LP3 log space, and the caller always applies `Math.Pow(10, ...)` to interval endpoints. `ComputeAsymptoticQuantileVariance()` reuses the same helper. No distribution-type guard restricts these paths to `LogPearsonTypeIII`.
+**Evidence.** `EvaluateQuantileSafe()`, nested quadrature, delta-method variance, and base-10 endpoint conversion remain LP3-specific. A single scope helper now protects both Cohn entry points before those assumptions are used. Exact LP3 remains the sole supported domain.
 
-**Impact.** Cohn-style intervals and reported asymptotic quantile variances are nonsensical or fail for Exponential, Gamma, Log-Normal, Normal, and Pearson III analyses while appearing to be generally available.
+**Impact.** Unsupported parents and censored/uncertain data now fail explicitly instead of producing misleading intervals or variances.
 
-**Follow-up.** Either reject non-LP3 use explicitly and label the diagnostics LP3-only, or generalize every quantile-space transform and covariance calculation by parent family. Add one focused test per supported parent, including unit checks that natural-space families are never exponentiated by 10.
+**Follow-up.** Defer Cohn value/parity verification to a separately approved verification task. Do not extend the method to censoring without a derived and independently verified covariance treatment.
 
 <a id="tr-021"></a>
-## TR-021 — Legacy EMA Verification Report Does Not Validate the Current GMM Path
+## TR-021 — Formal Bulletin 17C Examples Are the Current GMM Traceability Source
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Documentation and source-traceability scope complete.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete as documentation only. No production or test code was changed for TR-021.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. `B17CExampleTests.Test_Example1` through `Test_Example7` were executed separately through the exact-method verification runner. All seven passed with zero failures or skips. Each method compares the current specialized LP3 GMM estimates for mean, standard deviation, and skewness with the published Bulletin 17C worked-example values at absolute tolerance `1E-3`.
 
-**Evidence.** The repository PDF “Comparison with EMA - Verification Report” compares EMA with the version 1 Bayesian likelihood/posterior workflow and expressly states that the comparisons do not validate either method. The current specialized `Bulletin17CDistribution`/`Bulletin17CAnalysis` GMM path is different. Current Verification source contains seven-example parity and coverage tests, but those long-running tests were not executed during this documentation program.
+**Evidence.** The canonical source is `src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CExampleTests.cs`; fixtures and published targets are in `Datasets/UnivariateData/Bulletin17CData.cs`. The suite spans systematic records, low outliers, broken records, historical information, crest-stage censoring, combined historical/low-outlier records, and paleoflood information. Each focused run produced exactly one passing TRX after a zero-warning, zero-error Verification-only build. The repository's legacy “Comparison with EMA - Verification Report” concerns the earlier Bayesian workflow and is not the oracle for this current GMM path.
 
-**Impact.** Citing the legacy report as validation of version 2 specialized Bulletin 17C behavior would be an unsupported scientific claim.
+**Impact.** The current specialized GMM point estimates now have executed traceability to all seven formal published worked examples.
 
-**Follow-up.** Produce a versioned verification artifact for the current GMM implementation from approved, narrowly filtered runs: official worked-example parameter parity, PeakFQ/EMA diagnostic parity, covariance, penalty behavior, censoring designs, and uncertainty coverage. Record seeds, tolerances, dependency commit, and test hashes.
+**Follow-up.** Retain the seven exact methods as the formal parameter-parity regression. Broader PeakFQ diagnostics, covariance, penalty, coverage, and Cohn-interval verification are separate claims and are not part of TR-021's scope.
 
 <a id="tr-022"></a>
 ## TR-022 — BestFit Selects NUTS, Not Plain HMC
@@ -1040,7 +1042,7 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 
 **Correction.** A valid programmatic whole-series replacement now refreshes plotting positions after the new collection and item handlers are attached. Exact-series replacement also refreshes `Lambda`. Invalid transient frames retain the previous non-throwing setter behavior and defer derived-state calculation. XML construction suppresses all four intermediate replacement refreshes, preserves serialized plotting positions exactly, and reprocesses effective threshold counts once after loading.
 
-**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The complete Debug regression gate passed Core 3,032, UI 564, and App 428 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed.
+**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The reconciled Debug regression gate records Core 3,044, UI 564, and App 428 passing tests with zero failures; the public API baseline and enforced XML-documentation build also passed.
 
 **Impact.** Programmatic replacement now leaves a valid data frame immediately ready for distribution fitting without an extra manual `CalculatePlottingPositions()` call. Persisted projects retain their stored plotting positions and avoid redundant deserialization work.
 
