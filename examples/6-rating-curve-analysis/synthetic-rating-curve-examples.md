@@ -71,13 +71,13 @@ While in the **Rating Curve Results** tab to the left, select Tabular Results to
 | Stage	| 95.0% CI | 5.0% CI | Posterior Predictive | Posterior Mean |
 |---|---|---|---|---|
 | -0.7326817927 | 0 | 0 | 0 | 0 |
-| -0.5053910586757575 | 0 | 0	0	0
-| -0.2781003246515151 | 0 | 0	0	0
-| -0.05080959062727264 | 0 | 0	0	0
-| 0.1764811433969698 | 0 | 0	0	0
-| 0.40377187742121223 | 0 | 0	0	0
-| 0.6310626114454547 | 0 | 0	0	0
-| 0.8583533454696972 | 0 | 0	0	0
+| -0.5053910586757575 | 0 | 0 | 0 | 0 | 
+| -0.2781003246515151 | 0 | 0 | 0 | 0 | 
+| -0.05080959062727264 | 0 | 0 | 0 | 0 | 
+| 0.1764811433969698 | 0 | 0 | 0 | 0 | 
+| 0.40377187742121223 | 0 | 0 | 0 | 0 | 
+| 0.6310626114454547 | 0 | 0 | 0 | 0 | 
+| 0.8583533454696972 | 0 | 0 | 0 | 0 | 
 | 1.0856440794939397 | 0.004373040596761412 | 0.0024502071394302714 | 0.0033181357135632474 | 0.003288796086243071 | 
 | 1.3129348135181822 | 0.09953251883342444 | 0.06676688004068045 | 0.08194946486631781 | 0.08151122081152615 | 
 | 1.5402255475424247 | 0.41258379667686623 | 0.2787909602693334 | 0.34009199751969216 | 0.3382779019238859 | 
@@ -106,17 +106,17 @@ While in the **Rating Curve Results** tab to the left, select Tabular Results to
 
 ### Plots
 There are plenty of plots to expore with our Rating Curve Analysis. Under the **Rating Curve Results** tab we have our fitted stage-discharge curve plotted with the orginal data.
-![Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.](..images/synthetic-rc-rating-curve.png)
+![Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.](../images/synthetic-rc-rating-curve.png)
 
 *Figure 1: Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.*
 
 To explore how good the fit is we can look at our residuals in the **Residual Diagnostics** tab. The Residuals Plot shows the residuals of the dicharge values against the fitted stage values.
-![Residuals of measured discharge minus rating-curve estimate, plotted against stage.](..images/synthetic-rc-residuals.png)
+![Residuals of measured discharge minus rating-curve estimate, plotted against stage.](../images/synthetic-rc-residuals.png)
 
 *Figure 2: Residuals of measured discharge minus rating-curve estimate, plotted against stage.*
 
 The **Markov Chain Traces** tab explores the traces of each Markov chain as it explores the posterior space in order to converge.
-![Markov-chain trace for the rating-curve parameter h₁, zero-flow stage.](..images/synthetic-rc-trace-h1.png)
+![Markov-chain trace for the rating-curve parameter h₁, zero-flow stage.](../images/synthetic-rc-trace-h1.png)
 
 *Figure 3: Markov-chain trace for the rating-curve parameter h₁, zero-flow stage.*
 
