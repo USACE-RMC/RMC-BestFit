@@ -49,10 +49,6 @@ A fitted rating curve produces:
 - **Posterior predictive bands** at user-selected stage ordinates (controlled via `MinStage`, `MaxStage`, `StageBins` in the Properties panel).
 - **Application output**: feeding a stage Time Series Data element through the fitted rating curve produces a discharge time series with credible bands.
 
-## Screenshot Images
-
-Capture screenshots into an `images/` subfolder next to each example. Naming convention: `<example-slug>-<view-name>.png` (e.g., `susquehanna-rating-curve.png`, `synthetic-rc-residuals.png`).
-
 ## Next Steps
 
 After fitting a rating curve:

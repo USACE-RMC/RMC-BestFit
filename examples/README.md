@@ -18,10 +18,6 @@ This folder contains tutorial example projects for RMC-BestFit 2.0. Each `.bestf
 
 (Chapter 3 is reserved for distribution-fitting workflows already covered inline within chapter 4.)
 
-## Project Naming Convention
-
-All projects follow **lowercase kebab-case**: `example-name.bestfit`. ASCII only, hyphens between words, no spaces, no commas, no Title Case. Where two projects in different sub-folders solve the same problem with different methods (Bayesian vs. Bulletin 17C, etc.), suffixes such as `-bayesian` and `-b17c` disambiguate.
-
 ## How to Open an Example
 
 1. Open RMC-BestFit 2.0.
@@ -30,23 +26,6 @@ All projects follow **lowercase kebab-case**: `example-name.bestfit`. ASCII only
 4. The Project Explorer will show the full tree of Time Series Data, Input Data, and Analysis elements.
 5. Click any element to view its plots and properties.
 6. Open the matching `.md` tutorial in the same folder for a step-by-step guide.
-
-## Screenshot Conventions
-
-Tutorial markdown files reference screenshots in `images/` subfolders next to each example. To populate them:
-
-1. Create an `images/` folder in the example's directory.
-2. Capture screenshots from RMC-BestFit matching the alt-text descriptions.
-3. Save as PNG with the filename specified in each image reference.
-4. Naming convention: `<example-slug>-<view-name>.png`.
-
-## Filling in Output Tables
-
-The analysis-tutorial markdowns (chapters 4-7) include placeholder tables for parameter estimates, AEP / quantile values, and MCMC diagnostics. These are intentionally empty so users can paste in real values from their own re-runs:
-
-- **Parameter table** — right-click an analysis alternative > **Open MCMC Report** > copy the parameter section.
-- **Frequency / AEP table** — right-click the Frequency chart > **Copy Table**.
-- **R-hat / ESS values** — copy from the MCMC Report or from the Properties panel under MCMC Diagnostics.
 
 ## Verification Status
 

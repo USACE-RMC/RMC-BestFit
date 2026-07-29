@@ -61,18 +61,17 @@ Bivariate distribution fitting using six copula families (AMH, Clayton, Frank, G
 
 ### Exploring the Elements
 
-For each Bivariate Distribution alternative:
+For each Bivariate Distribution analysis:
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Joint Density** tab to see the fitted copula contour overlay on the data scatter.
-3. Inspect the dependence parameter (theta or rho) in the parameter table.
-4. Compare AIC / BIC across copula families to select the best fit.
+1. Click the analysis in the Project Explorer.
+2. Open the **Distribution Results** tab to see the fitted copula contour overlay on the data scatter.
+3. Inspect the dependence parameter (θ) in the parameter table.
+4. Compare AIC / BIC across copula families to select the best fit. The copula method can be changed from the Method dropdown in the **Properties** panel.
 
 ## Analysis Settings
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any Bivariate Distribution analysis to inspect:
 
-- **Sampler type** (DEMCzs, ARWMH, HMC).
 - **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
 - **Number of Chains** — typically 6 for routine work.
 - **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
@@ -80,65 +79,46 @@ Each Bayesian analysis in this project uses the DEMCzs sampler with project-spec
 - **Credible Interval Width** — typically 0.90 or 0.95.
 
 ## Expected Results
-
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+Below are the expected results for Bivaraite Distribution Analysis labeled "AMH Copula"; this should be the first analysis in the list.
+Be sure to explore all of the analyses provided!
 
 ### Parameter Estimates
+The parameter estimates are found under the **MCMC Report** tab to the left as parameter summary statistics.
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
-
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
+| Parameter | Mean | Std Dev | 5% | Median | 95% |R-hat | ESS |
 |---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
-
-### Frequency / Quantile Table
-
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
-
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+| Dependency (θ) | 0.814271 | 0.127172 | 0.572653 | 0.84314 | 0.960294 | 1.0001 | 7748 |
 
 ### Plots
+There are plenty of plots to explore in the Bivariate Distribution Analysis. Under **Distribution Results** is simulated data from the joint copula denisty overliad on the X-Y data.
+![Joint copula density contour overlaid on the X-Y scatter.](..images/bivariate-joint-density.png)
 
-![Joint copula density contour overlaid on the X-Y scatter.](images/bivariate-joint-density.png)
-*Figure: Joint copula density contour overlaid on the X-Y scatter.*
+*Figure 1: Joint copula density contour overlaid on the X-Y scatter.*
 
-![Marginal X frequency curve.](images/bivariate-marginal-x.png)
-*Figure: Marginal X frequency curve.*
+The **Kernal Density** tab shows an estimate for the pdf of a parameter.
+![Kernel density of dependency (θ).](..images/bivariate-kernal-density.png)
 
-![Marginal Y frequency curve.](images/bivariate-marginal-y.png)
-*Figure: Marginal Y frequency curve.*
+*Figure 2: Kernel density of dependency (θ).*
 
-![Derived coincident-response frequency curve (CFA only).](images/bivariate-frequency.png)
-*Figure: Derived coincident-response frequency curve (CFA only).*
+The **Markov Chain Traces** tab explores the traces of each Markov chain as it explores the posterior space in order to converge to a parameter.
+![Markov chain trace of dependency (θ).](..images/bivariate-trace.png)
+
+*Figure 3: Markov chain trace of dependency (θ).*
+
 
 ### MCMC Diagnostics
 
-Verify chain convergence before interpreting any results:
+One should always verify chain convergence before interpreting any results. There are a variety of ways including:
 
 - **R-hat** — should be < 1.01 for every parameter.
 - **Effective Sample Size (ESS)** — at least a few hundred per parameter.
 - **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
 - **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
 
+These can be found under the **Markov Chain Traces** and **MCMC Reports** tabs.
+
 ## Next Steps
 
 - Use the joint distribution to estimate **AND / OR / Kendall-return-period** quantiles.
 - Compare copula families via AIC / BIC; the heavy-tail families (Gumbel, Joe) often win for hydrologic peaks.
 - Pair with a **Coincident Frequency Analysis** to derive a sum / difference / max distribution.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._

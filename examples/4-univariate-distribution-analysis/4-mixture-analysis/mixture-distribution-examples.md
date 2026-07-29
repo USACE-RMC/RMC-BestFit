@@ -99,22 +99,22 @@ While in the **Distribution Results** tab to the left, select Tabular Results to
 
 ### Plots
 There are also plenty of plots to explore our results with. Under the **Distribution Results** tab we have a frequency curve.
-![Frequency curve (AEP versus quantile), with the credible band.](.../images/mixture-frequency.png)
+![Frequency curve (AEP versus quantile), with the credible band.](../images/mixture-frequency.png)
 
 *Figure 1: Frequency curve (AEP versus quantile), with the credible band.*
 
 The **Kernal Density** tab shows an estimate for the pdf of each parameter.
-![Posterior kernel density for weight parameter (w₁).](.../images/mixture-kernel-density-w1.png)
+![Posterior kernel density for weight parameter (w₁).](../images/mixture-kernel-density-w1.png)
 
 *Figure 2: Posterior kernel density for weight parameter (w₁).*
 
 The **Markov Chain Traces** tab explores the traces of each Markov chain as it explores the posterior space in order to converge.
-![Markov-chain traces for weight parameter (w₁).](.../images/mixture-trace-w1.png)
+![Markov-chain traces for weight parameter (w₁).](../images/mixture-trace-w1.png)
 
 *Figure 3: Markov-chain traces for weight parameter (w₁).*
 
 Finally, we can investigate the autocorrelation of the chains under the **Autocorrelation** tab.
-![Autocorrelation function of the chains, used to estimate effective sample size, for weight parameter (w₁).](.../images/mixture-autocorrelation-w1.png)
+![Autocorrelation function of the chains, used to estimate effective sample size, for weight parameter (w₁).](../images/mixture-autocorrelation-w1.png)
 
 *Figure 4: Autocorrelation function of the chains, used to estimate effective sample size, for weight parameter (w₁).*
 
