@@ -159,7 +159,7 @@ Select the Bivarate Distribution Analysis labeled "Normal Copula - Conditional".
 *Figure 1: Joint copula density contour overlaid on the X-Y scatter.*
 
 Going back to the Coincident Frequency Analysis, there is the frequency plot of annual exccedance probabilities.
-![Derived coincident-response frequency curve.](/images/waimea-frequency.png)
+![Derived coincident-response frequency curve.](../images/waimea-frequency.png)
 
 *Figure 2: Derived coincident-response frequency curve.*
 
