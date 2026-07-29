@@ -128,12 +128,14 @@ There are plenty of plots to expore with our Time Series Analysis. Under the **T
 *Figure 1: Time-series fit overlaid on the observations, with credible band.*
 
 To take a closer look at the forecasting capability, extend the Forecast Steps in the **Properties** panel under **Options** from 0 to 100. Return the **General** section under the **Properties** panel and select **Estimate**. Then you will have the plot below.
-![Multi-step forecast extension with credible band.](../images/synthetic-ts-forecast.png)
+
+![Multi-step forecast extension with credible band.](./images/synthetic-ts-forecast.png)
 
 *Figure 2: Multi-step forecast extension with credible band.*
 
 To explore how good the fit is we can look at our residuals in the **Residual Diagnostics** tab. Investigate the ACF plot of the resodiauls to ensure residuals are not correlated.
-![Residual autocorrelation function.](../images/synthetic-ts-acf.png)
+
+![Residual autocorrelation function.](./images/synthetic-ts-acf.png)
 
 *Figure 3: Residual autocorrelation function.*
 
