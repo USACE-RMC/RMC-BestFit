@@ -106,17 +106,17 @@ While in the **Rating Curve Results** tab to the left, select Tabular Results to
 
 ### Plots
 There are plenty of plots to expore with our Rating Curve Analysis. Under the **Rating Curve Results** tab we have our fitted stage-discharge curve plotted with the orginal data.
-![Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.](../images/synthetic-rc-rating-curve.png)
+![Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.](./images/synthetic-rc-rating-curve.png)
 
 *Figure 1: Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.*
 
 To explore how good the fit is we can look at our residuals in the **Residual Diagnostics** tab. The Residuals Plot shows the residuals of the dicharge values against the fitted stage values.
-![Residuals of measured discharge minus rating-curve estimate, plotted against stage.](/images/synthetic-rc-residuals.png)
+![Residuals of measured discharge minus rating-curve estimate, plotted against stage.](./images/synthetic-rc-residuals.png)
 
 *Figure 2: Residuals of measured discharge minus rating-curve estimate, plotted against stage.*
 
 The **Markov Chain Traces** tab explores the traces of each Markov chain as it explores the posterior space in order to converge.
-![Markov-chain trace for the rating-curve parameter h₁, zero-flow stage.](/images/synthetic-rc-trace-h1.png)
+![Markov-chain trace for the rating-curve parameter h₁, zero-flow stage.](./images/synthetic-rc-trace-h1.png)
 
 *Figure 3: Markov-chain trace for the rating-curve parameter h₁, zero-flow stage.*
 
