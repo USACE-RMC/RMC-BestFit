@@ -177,11 +177,15 @@ No parameterization version, migration adapter, or persisted-posterior compatibi
 
 Fast tests cover $K-1$ counts and names, final-weight derivation, prior normalization, proposal immutability, covariance dimensions, exact-only atom derivation, analytical hurdle identities, simulation, invalid positive mass, negative exact values, mixed likelihoods, and impossible rows.
 
-Three **RMC.BestFit.Verification** fixtures compare BestFit with Numerics using $n=1000$, seed 12345, pre-fit tolerance $10^{-10}$, fitted parity tolerance $10^{-8}$, and recovery tolerance 0.1:
+Six focused **RMC.BestFit.Verification** fixtures generate $n=1000$ observations with seed 12345 through `MixtureModel.GenerateRandomValues`, jointly verifying the production generator and recovery paths.
+
+Three parity fixtures compare BestFit with Numerics using pre-fit tolerance $10^{-10}$, fitted parity tolerance $10^{-8}$, and recovery tolerance 0.1:
 
 1. two-component Normal, weights 0.3/0.7;
 2. positive-hurdle two-component Normal, $\pi_0=0.1$, weights 0.3/0.6; and
 3. three-component Normal, weights 0.2/0.3/0.5.
+
+Three corresponding `MixtureAnalysis` fixtures recover the same parents with Bayesian MCMC. They use DEMCzs with four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning interval 5, 5,000 output draws, deterministic seeds, 90% credible intervals, and posterior-mode point estimates. Labels are ordered by component mean before comparison. Weight tolerance is 0.1, component tolerance is $\max(0.15, 0.15|\theta|)$, every fitted coordinate requires finite split R-hat below 1.1 and conservative ESS above 100, and the positive-hurdle fixture checks the generated atom against a five-standard-error binomial bound.
 
 See the [mixture verification report](../../verification/mixture.md).
 
@@ -193,7 +197,7 @@ See the [mixture verification report](../../verification/mixture.md).
 | Bayesian initialization and reconstruction | **Analyses/Univariate/MixtureAnalysis.cs** |
 | Physical simplex and hurdle distribution | sibling **Numerics/Distributions/Univariate/Mixture.cs** |
 | Fast regressions | **RMC.BestFit.Tests/Univariate/MixturePhase4Tests.cs** |
-| Recovery parity | **RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs** |
+| Generation, recovery parity, and Bayesian recovery | **RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs** |
 
 ## References
 

@@ -8,7 +8,7 @@ This matrix separates three kinds of evidence that must not be conflated:
 
 1. The pinned RMC.Numerics source establishes the implemented density, CDF, quantile, moments, parameter constraints, and estimation routines.
 2. The compiled documentation fixture establishes that every displayed C# call matches the current .NET API.
-3. `RMC.BestFit.Verification` contains long-running parameter-recovery or published-result comparisons. These tests are listed for traceability but are not executed by Codex under the repository policy; listing a test is not a claim about the latest run.
+3. `RMC.BestFit.Verification` contains long-running parameter-recovery or published-result comparisons. These tests are listed for traceability but are excluded from routine fast gates under repository policy; listing a test is not a claim about the latest run.
 
 All family API snippets are compiled by `DistributionExamples` and checked byte-for-byte by `TechnicalReferenceDocumentationTests.CompletedPages_CSharpBlocksMatchCompiledSourceRegions`.
 
@@ -28,8 +28,8 @@ All family API snippets are compiled by `DistributionExamples` and checked byte-
 | Weibull | `Test_Weibull_MAP` | Tippecanoe River data; two-parameter R-Stan comparison | Scale/shape within 5%; not a comparison with the cited three-parameter textbook form |
 | GEV | `Test_GeneralizedExtremeValue_MAP` | Rao and Hamed (2000), White River Example 7.1.1 | Location/scale within 5%; absolute shape tolerance 0.01 |
 | GPD | `Test_GeneralizedPareto_MAP` | Rao and Hamed (2000), White River at Mt. Carmel Example 8.3.1 | Location/scale within 5%, shape within 10%; conditional magnitude fit, not complete POT occurrence validation |
-| Poisson point process | `PointProcessPriorTests` and `PointProcessRecoveryTests` focused cells | Independent exponential-clock Poisson counts, analytical Hosking-GPA inverse marks, PERT placement timing, and uniform recovery timing | Fast contracts pass; seasonal date and annual mixed-data contracts are covered; ten current exact cells await focused execution |
-| Finite mixture | `MixtureRecoveryTests.NormalMixture2D_Recovery_Parity`, `ZeroInflatedNormalMixture2D_Recovery_Parity`, and `NormalMixture3D_Recovery_Parity` | Same seeded Numerics sample and EM implementation used as the cross-engine oracle; generating Normal parameters provide the recovery target | Fast simplex/hurdle contracts pass; exact methods compile and await focused execution at $10^{-10}$ pre-fit, $10^{-8}$ cross-engine, and 0.1 recovery tolerances |
+| Poisson point process | Two `PointProcessPriorTests` cells and eight `PointProcessRecoveryTests` cells | Independent exponential-clock Poisson counts, analytical Hosking-GPA inverse marks, PERT placement timing, calendar/water-year block-origin parity, production generation/recovery, and independent mixed-likelihood calculations | All ten guarded cells pass with 1,000-observation recovery fixtures and untouched DEMCzs defaults; TR-004/TR-005 are complete in scope |
+| Finite mixture | Three `MixtureRecoveryTests.*_Recovery_Parity` methods and three corresponding `*_BayesianRecovery` methods | BestFit production generator at $n=1000$ and seed 12345; Numerics cross-engine likelihood/EM parity; known synthetic parent recovery through `MixtureAnalysis` | Passed: fast simplex/hurdle contracts, three guarded parity methods at $10^{-10}$ pre-fit and $10^{-8}$ fitted parity, and three guarded Bayesian recoveries with R-hat $<1.1$ and ESS $>100$ |
 | Kappa Four | `Test_Kappa4_MAP` | R air-quality wind data and R `lmom` estimates | Nonzero fitted shapes within stated tolerances; does not cover the open zero-$\kappa$ branches in TR-001 |
 | Logistic | `Test_Logistic_MAP` | Rao and Hamed (2000), Tippecanoe River Example 9.1.1 | Location/scale within 5% |
 | Generalized Logistic | `Test_GeneralizedLogistic_MAP` | Rao and Hamed (2000), East Fork White River; textbook/data-summary discrepancy noted in test | 10% tolerances; source test explicitly warns that table summaries and raw-data moments differ |
@@ -53,7 +53,7 @@ The pinned Numerics repository includes direct distribution tests for several fa
 
 ## Reproduction Policy
 
-Do not replace the evidence above with hand-written output. A reviewer reproducing a long-running test should run only the narrowly selected verification method and record the commit, runtime, seed, diagnostic settings, and observed tolerance. Codex will not execute the full verification project.
+Do not replace the evidence above with hand-written output. A reviewer reproducing a long-running test should run only the narrowly selected verification method and record the commit, runtime, seed, diagnostic settings, and observed tolerance. The full verification project is excluded from routine automated execution.
 
 ---
 

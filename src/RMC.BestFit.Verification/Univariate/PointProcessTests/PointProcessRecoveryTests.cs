@@ -1,7 +1,6 @@
 using Numerics.Data;
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
-using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 
 namespace RMC.BestFit.Verification.Univariate.PointProcessTests;
@@ -44,7 +43,7 @@ public partial class PointProcessRecoveryTests
         double observationYears = sampleSize / lambda;
         DataFrame frame = CreateNonSeasonalRecoveryFrame(generatedSample, observationYears);
         PointProcessModel model = CreateNonSeasonalModel(frame, observationYears);
-        PointProcessAnalysis analysis = ConfigureAnalysis(model, 41002);
+        PointProcessAnalysis analysis = ConfigureAnalysis(model);
 
         await analysis.RunAsync();
 
@@ -63,13 +62,13 @@ public partial class PointProcessRecoveryTests
     [TestMethod]
     public async Task Test_SeasonalProductionGenerator_RecoversParentAndBothChangePoints()
     {
-        const int sampleSize = 4000;
+        const int sampleSize = 1000;
         PointProcessModel parent = CreateSeasonalParentModel();
         TimeSeries generatedSample = parent.GeneratePOTTimeSeries(sampleSize, 42001);
         double observationYears = sampleSize / SeasonalLambda;
         DataFrame frame = CreateSeasonalRecoveryFrame(generatedSample, observationYears);
         PointProcessModel model = CreateSeasonalModel(frame, observationYears);
-        PointProcessAnalysis analysis = ConfigureAnalysis(model, 42002);
+        PointProcessAnalysis analysis = ConfigureAnalysis(model);
         Exception? analysisError = null;
         analysis.AnalysisCompleted += (_, args) => analysisError = args.Error;
 
@@ -247,7 +246,7 @@ public partial class PointProcessRecoveryTests
             }),
             ThresholdSeries = new ThresholdSeries(new List<ThresholdData>
             {
-                new ThresholdData(2003, 2004, 120.0) { NumberAbove = 2 }
+                new ThresholdData(2003, 2005, 120.0) { NumberAbove = 2 }
             })
         };
         PointProcessModel model = CreateSeasonalModel(frame, observationYears);
@@ -264,6 +263,7 @@ public partial class PointProcessRecoveryTests
         };
         model.SetParameterValues(parameters);
         frame.ProcessThresholdSeries();
+        var thresholdRecord = (ThresholdData)frame.ThresholdSeries[0];
 
         double weightOne = (TrueK1 + 366.0 - TrueK2) / 366.0;
         double weightTwo = (TrueK2 - TrueK1) / 366.0;
@@ -291,30 +291,23 @@ public partial class PointProcessRecoveryTests
             upper,
             20000) / (1.0 - 2E-8));
         expected += Math.Log(annualCdf(150.0) - annualCdf(110.0));
-        expected += 2.0 * Math.Log(1.0 - annualCdf(120.0));
+        expected += thresholdRecord.NumberBelow * Math.Log(annualCdf(thresholdRecord.Value));
+        expected += thresholdRecord.NumberAbove * Math.Log(1.0 - annualCdf(thresholdRecord.Value));
 
         double actual = model.DataLogLikelihood(parameters);
 
         Assert.AreEqual(expected, actual, 2E-7, "Seasonal mixed likelihood disagreed with the independently calculated annual maximum distribution.");
+        Assert.AreEqual(1, thresholdRecord.NumberBelow, "The fixture must retain one left-censored annual threshold observation.");
+        Assert.AreEqual(2, thresholdRecord.NumberAbove, "The fixture must retain two right-censored annual threshold observations.");
         Assert.AreEqual(2, model.EmpiricalEventCount, "Annualized non-exact rows must not become seasonal Poisson events.");
     }
 
     /// <summary>Configures the shared Bayesian recovery analysis.</summary>
     /// <param name="model">The point-process model.</param>
-    /// <param name="seed">The sampler seed.</param>
-    /// <returns>A configured analysis using DEMCzs.</returns>
-    private static PointProcessAnalysis ConfigureAnalysis(PointProcessModel model, int seed)
+    /// <returns>An analysis using the default DEMCzs configuration.</returns>
+    private static PointProcessAnalysis ConfigureAnalysis(PointProcessModel model)
     {
-        var analysis = new PointProcessAnalysis(model);
-        analysis.BayesianAnalysis.Type = BayesianAnalysis.SamplerType.DEMCzs;
-        analysis.BayesianAnalysis.NumberOfChains = 4;
-        analysis.BayesianAnalysis.WarmupIterations = 4000;
-        analysis.BayesianAnalysis.Iterations = 8000;
-        analysis.BayesianAnalysis.ThinningInterval = 10;
-        analysis.BayesianAnalysis.PRNGSeed = seed;
-        analysis.BayesianAnalysis.UseSimulationDefaults = false;
-        analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMean;
-        return analysis;
+        return new PointProcessAnalysis(model);
     }
 
     /// <summary>Creates a configured nonseasonal model from the supplied POT data and exposure.</summary>

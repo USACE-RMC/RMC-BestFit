@@ -272,15 +272,15 @@ Phase exit criteria:
 
 ## Phase 4 - Point Processes and Composite Models
 
-Status: in progress. The TR-004/TR-005 point-process implementation and fast tests are complete, with exact current-source verification open. The TR-006/TR-007/TR-008 mixture correction, fast tests, and three recovery fixtures are complete; the three exact mixture methods await focused execution. Competing-risk and composite batches have not started.
+Status: in progress. The point-process subset is closed: TR-004 and TR-005 are complete in their approved scope, and all ten guarded cells pass. The TR-006/TR-007/TR-008 mixture subset is also closed. Competing-risk and composite batches have not started.
 
 Findings and required direction:
 
-- TR-004: empirical count/rate, fitted threshold intensity, exposure metadata, and manual year/index fallback are implemented. Seasonal exact records require dates; annual/block-indexed non-exact records use the annual maximum of the two exposure-adjusted seasonal processes.
-- TR-005: empirical-Lambda Poisson counts, Madsen Hosking-GPA marks, seasonal exposure assignment, floored block-day changepoints, and histogram-informed flat defaults are implemented. PERT remains placement-only evidence. Run the ten exact current-source methods listed in the point-process report.
-- TR-006: BestFit uses direct physical $K-1$ weights, derives the final weight, applies the normalized flat-simplex prior, and never mutates proposals. Public weight-related signatures are unchanged. No legacy posterior migration or parameterization version is provided; affected saved mixture results require re-estimation.
-- TR-007: Numerics and BestFit implement one exact-zero positive-hurdle mixed measure with every continuous contribution conditioned on $X>0$; BestFit derives the fixed atom from exact annual records only.
-- TR-008: Numerics and BestFit EM fail explicitly with row context when any required total row probability is zero or nonfinite. Run the three exact recovery methods listed in the mixture report without tuning tolerances.
+- TR-004: complete. Empirical count/rate, fitted threshold intensity, exposure metadata, and manual year/index fallback are implemented. Seasonal exact records require dates; annual/block-indexed non-exact records use the annual maximum of the two exposure-adjusted seasonal processes. Both guarded independent mixed-likelihood calculations pass.
+- TR-005: complete in the approved scope. All recovery fixtures use 1,000 observations and untouched `BayesianAnalysis` defaults. Calendar-year uniform, October-water-year block-origin parity, nonseasonal production, and seasonal production recovery pass. The initial water-year failure changed block-day parameters from `170/350` to `80/260`; the corrected parity cell keeps the parameters fixed and changes only the block origin. No sampler default, seed, prior, production formula, or tolerance changed.
+- TR-006: BestFit uses direct physical $K-1$ weights, derives the final weight, applies the normalized flat-simplex prior, and never mutates proposals. Public weight-related signatures are unchanged. No legacy posterior migration or parameterization version is provided; affected saved mixture results require re-estimation. Three exact parity methods and three Bayesian `MixtureAnalysis` recovery methods passed guarded execution.
+- TR-007: Numerics and BestFit implement one exact-zero positive-hurdle mixed measure with every continuous contribution conditioned on $X>0$; BestFit derives the fixed atom from exact annual records only. Both zero-inflated parity and Bayesian recovery passed, including the production-generator atom check.
+- TR-008: Numerics and BestFit EM fail explicitly with row context when any required total row probability is zero or nonfinite. Fast impossible-row regressions and all six guarded recovery methods pass without changing tolerances.
 - TR-012: use dependency-aware competing-risk simulation and validate rank dependence for every supported mode.
 - TR-013: reject or explicitly zero-weight invalid criteria; handle exact zero RMSE separately.
 - TR-014: define separately fitted child posteriors as independent and combine them through seeded independent resampling invariant to chain ordering.

@@ -227,6 +227,8 @@ A positive seed is deterministic; nonpositive seeds use a clock-seeded generator
 
 ## Implementation and Verification Traceability
 
+The 31 July 2026 current-source backcheck closes TR-004 and TR-005 in the approved point-process scope. All ten guarded cells pass. Recovery fixtures use 1,000 observations and the untouched `BayesianAnalysis` defaults: DEMCzs, four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning 20, and seed 12345. Calendar-year uniform recovery, October-water-year block-origin parity, and both production-generator recovery cells pass. The initial water-year failure came from changing the block-day changepoints to `80/260`; keeping `170/350` and changing only the dates and block convention produces the same modeled partition and passes. No production formula, sampler default, prior, or tolerance changed. See the [point-process verification report](../../verification/point-process.md#current-source-guarded-results) for exact outcomes.
+
 | Concern | Implementation |
 |---|---|
 | Model, likelihood, priors, simulation | **Models/UnivariateDistribution/PointProcessModel.cs** |

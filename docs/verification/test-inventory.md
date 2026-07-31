@@ -185,3 +185,28 @@ Formal-example aggregate: **7 passed, 0 failed, 0 skipped**. Every method assert
 The result directories are under `TestResults/VerificationFocused/20260728-140241-*Test_Example1` through `20260728-140402-*Test_Example7`. They are local runner output rather than committed oracle artifacts; the durable result and target table is recorded in [Bulletin 17C Verification](bulletin-17c.md#formal-worked-example-parameter-parity).
 
 These formal methods verify worked-example point-estimate parity. They do not verify Cohn interval values, asymptotic or bootstrap covariance, uncertain-data variants, PeakFQ diagnostics, penalty sensitivity, or coverage. Cohn numerical verification remains deferred.
+
+## Phase 4 mixture closeout - 31 July 2026
+
+All six methods generate the parent sample through `MixtureModel.GenerateRandomValues(1000, 12345)`. Each method was run separately through `scripts/run-verification-test.ps1`; every invocation source-resolved one exact method and produced one passing TRX under `TestResults/VerificationFocused`.
+
+| Test method | Oracle or recovery contract | Status |
+|---|---|---|
+| `MixtureRecoveryTests.NormalMixture2D_Recovery_Parity` | BestFit production generator, Numerics/BestFit likelihood and EM parity, two-component parent recovery | Passed - 1.426 s |
+| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_Recovery_Parity` | BestFit positive-hurdle generator, Numerics/BestFit likelihood and EM parity, atom and parent recovery | Passed - 1.852 s |
+| `MixtureRecoveryTests.NormalMixture3D_Recovery_Parity` | BestFit production generator, Numerics/BestFit likelihood and EM parity, three-component parent recovery | Passed - 3.247 s |
+| `MixtureRecoveryTests.NormalMixture2D_BayesianRecovery` | Seeded DEMCzs posterior-mode recovery with split R-hat and ESS acceptance | Passed - 9.589 s |
+| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_BayesianRecovery` | Seeded positive-hurdle DEMCzs recovery, binomial atom bound, split R-hat, and ESS | Passed - 21.346 s |
+| `MixtureRecoveryTests.NormalMixture3D_BayesianRecovery` | Seeded three-component DEMCzs posterior-mode recovery with label sorting, split R-hat, and ESS | Passed - 12.761 s |
+
+The parity methods retain pre-fit tolerance `1E-10`, cross-engine fitted tolerance `1E-8`, and absolute parent-recovery tolerance `0.1`. The Bayesian methods use four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning 5, 5,000 output draws, deterministic seeds, weight tolerance `0.1`, component tolerance `max(0.15, 0.15 * abs(parent))`, split R-hat below `1.1`, and conservative ESS above `100`. The full Verification project was not run.
+
+## Phase 4 point-process backcheck - 31 July 2026
+
+All ten scoped methods were run separately through `scripts/run-verification-test.ps1`; each invocation resolved one exact source method and produced one TRX. All ten pass. The guarded build remained warning- and error-free.
+
+The three accepted Bayesian recovery fixtures were rerun with 1,000 observations and the untouched `BayesianAnalysis` defaults. Calendar-year uniform recovery passed in 35.690 s, nonseasonal production recovery passed in 8.450 s, and seasonal production recovery passed in 36.309 s. The default configuration eliminated the former seasonal second-Kappa miss.
+
+The original water-year recovery cell changed the block-day changepoints from calendar `170/350` to `80/260`, so it did not isolate the effect of changing the year origin. The corrected cell holds `K1/K2` fixed, verifies identical magnitudes and block days, an exact 92-day date shift, and parent data log-likelihood parity at `1E-10`, then passes with default DEMCzs in 33.897 s.
+
+The seasonal mixed-likelihood cell initially revealed an all-above threshold fixture inconsistent with `ProcessThresholdSeries`. Its corrected three-year fixture asserts one effective below/two above observations and derives the independent threshold oracle from those processed counts; the rerun passed at unchanged tolerance `2E-7`. No production point-process formula, sampler default, prior, or numerical acceptance setting changed. The full Verification project was not run.

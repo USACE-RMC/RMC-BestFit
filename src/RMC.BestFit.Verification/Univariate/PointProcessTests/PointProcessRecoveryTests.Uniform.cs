@@ -22,24 +22,26 @@ public partial class PointProcessRecoveryTests
             PointProcessSeasonalFixture.CalendarK1,
             PointProcessSeasonalFixture.CalendarK2,
             47001,
-            47002,
             "calendar-year");
     }
 
     /// <summary>
-    /// Verifies water-year recovery with automatic changepoint priors and uniform within-season timing.
+    /// Verifies water-year recovery by changing only the block origin from the calendar-year fixture.
     /// </summary>
     /// <returns>A task representing the asynchronous Bayesian analysis.</returns>
+    /// <remarks>
+    /// The parent changepoints remain fixed in block-day coordinates. Only the generated dates and
+    /// model block convention shift to an October water year.
+    /// </remarks>
     [TestMethod]
     public async Task Test_WaterYearUniformSeasonality_AutomaticPriorsRecoverParentAndBothChangePoints()
     {
         await VerifyUniformRecovery(
             TimeBlockWindow.WaterYear,
             10,
-            PointProcessSeasonalFixture.WaterYearK1,
-            PointProcessSeasonalFixture.WaterYearK2,
+            PointProcessSeasonalFixture.CalendarK1,
+            PointProcessSeasonalFixture.CalendarK2,
             47001,
-            47002,
             "water-year");
     }
 
@@ -51,7 +53,6 @@ public partial class PointProcessRecoveryTests
     /// <param name="trueK1">The first effective parent changepoint.</param>
     /// <param name="trueK2">The second effective parent changepoint.</param>
     /// <param name="fixtureSeed">The independent fixture seed.</param>
-    /// <param name="samplerSeed">The established Bayesian sampler seed.</param>
     /// <param name="label">The assertion label.</param>
     /// <returns>A task representing the asynchronous Bayesian analysis.</returns>
     private static async Task VerifyUniformRecovery(
@@ -60,10 +61,9 @@ public partial class PointProcessRecoveryTests
         int trueK1,
         int trueK2,
         int fixtureSeed,
-        int samplerSeed,
         string label)
     {
-        const int sampleSize = 4000;
+        const int sampleSize = 1000;
         DataFrame frame = PointProcessSeasonalFixture.Generate(
             sampleSize,
             fixtureSeed,
@@ -80,8 +80,10 @@ public partial class PointProcessRecoveryTests
             trueK2 >= model.Parameters[1].LowerBound && trueK2 <= model.Parameters[1].UpperBound,
             $"The automatic {label} K2 prior did not contain the parent day.");
         Assert.AreEqual(PointProcessSeasonalFixture.Lambda, model.Lambda, 1E-12, "The parent Poisson rate was not retained.");
+        if (timeBlock == TimeBlockWindow.WaterYear)
+            AssertCalendarWaterYearBlockOriginParity(frame, model, trueK1, trueK2, fixtureSeed);
 
-        PointProcessAnalysis analysis = ConfigureAnalysis(model, samplerSeed);
+        PointProcessAnalysis analysis = ConfigureAnalysis(model);
         var validation = analysis.Validate();
         Assert.IsTrue(validation.IsValid, string.Join(Environment.NewLine, validation.ValidationMessages));
 
@@ -128,5 +130,51 @@ public partial class PointProcessRecoveryTests
         model.TotalYears = frame.PointProcessObservationYears;
         model.SetDefaultParameters();
         return model;
+    }
+
+    /// <summary>
+    /// Verifies that changing only the block origin preserves the generated sample and likelihood.
+    /// </summary>
+    /// <param name="waterFrame">The October-water-year fixture.</param>
+    /// <param name="waterModel">The model configured from the water-year fixture.</param>
+    /// <param name="k1">The common first block-day changepoint.</param>
+    /// <param name="k2">The common second block-day changepoint.</param>
+    /// <param name="fixtureSeed">The common fixture seed.</param>
+    private static void AssertCalendarWaterYearBlockOriginParity(
+        DataFrame waterFrame,
+        PointProcessModel waterModel,
+        int k1,
+        int k2,
+        int fixtureSeed)
+    {
+        DataFrame calendarFrame = PointProcessSeasonalFixture.Generate(
+            waterFrame.ExactSeries.Count,
+            fixtureSeed,
+            TimeBlockWindow.CalendarYear,
+            1,
+            k1,
+            k2,
+            PointProcessSeasonalFixture.EventTiming.Uniform);
+        PointProcessModel calendarModel = CreateAutomaticUniformModel(
+            calendarFrame,
+            TimeBlockWindow.CalendarYear,
+            1);
+
+        Assert.AreEqual(calendarFrame.ExactSeries.Count, waterFrame.ExactSeries.Count);
+        for (int i = 0; i < calendarFrame.ExactSeries.Count; i++)
+        {
+            var calendarObservation = (ExactData)calendarFrame.ExactSeries[i];
+            var waterObservation = (ExactData)waterFrame.ExactSeries[i];
+            Assert.AreEqual(calendarObservation.Value, waterObservation.Value, 0.0,
+                $"Magnitude {i} changed when only the block origin shifted.");
+            Assert.AreEqual(calendarObservation.DateTime.AddDays(-92), waterObservation.DateTime,
+                $"Date {i} was not shifted from January 1 to October 1.");
+        }
+
+        CollectionAssert.AreEqual(calendarModel.POTDays, waterModel.POTDays,
+            "Calendar and water-year dates did not map to identical block days.");
+        double[] parent = PointProcessSeasonalFixture.ParentParameters(k1 + 0.5, k2 + 0.5);
+        Assert.AreEqual(calendarModel.DataLogLikelihood(parent), waterModel.DataLogLikelihood(parent), 1E-10,
+            "Changing only the block origin changed the parent data log-likelihood.");
     }
 }

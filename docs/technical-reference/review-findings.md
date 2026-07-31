@@ -8,7 +8,7 @@ The active continuation and batching plan is maintained in the [Verification Fin
 
 This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
 
-Closeout reconciliation (28 July 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest; current fast gates are Core 3,057/3,057, UI 564/564, and App 428/428, while the recorded Numerics gate is 1,986/1,986. Phase 3 is closed in its approved scope: TR-003 documents the grouped-threshold disaggregation and final-time prior assumptions, and TR-016 through TR-021 include seven passed formal Bulletin 17C examples and exact-LP3 Cohn guards.
+Closeout reconciliation (31 July 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest; the latest recorded fast gates are Core 3,101/3,101, UI 564/564, and App 428/428, while the corrected Numerics gate is 2,016/2,016 on each supported target framework. Phase 3 is closed in its approved scope. Within Phase 4, the TR-004/TR-005 point-process subset and TR-006/TR-007/TR-008 mixture subset are closed. Competing-risk and composite work has not started.
 
 ## Summary
 
@@ -17,11 +17,11 @@ Closeout reconciliation (28 July 2026): Phase 1 and Phase 2 dispositions are clo
 | [TR-001](#tr-001) | Kappa Four zero-shape PDF and quantile | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-001---kappa-four-zero-primary-shape) · [Artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json) | 2026-07-24 |
 | [TR-002](#tr-002) | Kappa Four shape validation | Closed | Rejected non-defect | N/A | Passed - regression | [Report](../verification/distribution-fitting.md#tr-002---finite-kappa-shape-pairs) / [Artifact](../../verification/data/distribution-fitting/kappa-four-finite-shapes.json) | 2026-07-24 |
 | [TR-003](#tr-003) | Nonstationary threshold chronology and prior reference time | Closed | Accepted documented conventions | Documentation complete; no code change required | Passed - source/documentation/literature audit | [Data frame](data-frame/index.md#stationary-and-nonstationary-chronology) · [Priors](models/parameters-and-priors.md#complete-univariate-prior) | 2026-07-28 |
-| [TR-004](#tr-004) | Point-process rate definitions | High | Confirmed defect with accepted inference fallback | Implemented; seasonal date and annual mixed-data contracts resolved | Fast regressions passed; current focused execution pending | [Report](../verification/point-process.md#tr-004---exposure-and-rate-definitions) | 2026-07-30 |
-| [TR-005](#tr-005) | Point-process Poisson-GPA simulation | High | Confirmed defect | Implemented; final focused execution pending | Fast regressions passed; exact current-source cells pending | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-07-30 |
-| [TR-006](#tr-006) | Mixture weights and proposal mutation | High | Confirmed defect; approved correction | Implemented; focused recovery pending | Fast regressions passed; exact focused execution pending | [Report](../verification/mixture.md#tr-006--weights-and-proposal-purity) | 2026-07-31 |
-| [TR-007](#tr-007) | Zero-inflated mixed distribution | High | Confirmed defect; approved correction | Implemented; focused recovery pending | Fast regressions passed; exact focused execution pending | [Report](../verification/mixture.md#tr-007--positive-hurdle) | 2026-07-31 |
-| [TR-008](#tr-008) | Mixture EM impossible rows | High | Confirmed defect; approved correction | Implemented; focused recovery pending | Fast regressions passed; exact focused execution pending | [Report](../verification/mixture.md#tr-008--impossible-rows) | 2026-07-31 |
+| [TR-004](#tr-004) | Point-process rate definitions | High | Confirmed defect with accepted inference fallback | Complete | Passed - fast contracts and two independent mixed-likelihood cells | [Report](../verification/point-process.md#tr-004---exposure-and-rate-definitions) | 2026-07-31 |
+| [TR-005](#tr-005) | Point-process Poisson-GPA simulation | High | Confirmed defect | Complete | Passed in approved scope - all ten guarded cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-07-31 |
+| [TR-006](#tr-006) | Mixture weights and proposal mutation | High | Confirmed defect; corrected | Complete | Passed - fast, exact parity, and Bayesian recovery | [Report](../verification/mixture.md#tr-006--weights-and-proposal-purity) | 2026-07-31 |
+| [TR-007](#tr-007) | Zero-inflated mixed distribution | High | Confirmed defect; corrected | Complete | Passed - analytical, simulation, parity, and Bayesian recovery | [Report](../verification/mixture.md#tr-007--positive-hurdle) | 2026-07-31 |
+| [TR-008](#tr-008) | Mixture EM impossible rows | High | Confirmed defect; corrected | Complete | Passed - explicit-failure regressions and focused recovery | [Report](../verification/mixture.md#tr-008--impossible-rows) | 2026-07-31 |
 | [TR-009](#tr-009) | RMSE residual omission | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) / [Artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json) | 2026-07-24 |
 | [TR-010](#tr-010) | FittingAnalysis all-failed status | Medium | Confirmed defect | Fixed | Passed - regression | [Report](../verification/distribution-fitting.md#tr-010---all-candidate-failure-reports-overall-success) · [Artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json) | 2026-07-24 |
 | [TR-011](#tr-011) | Bayesian AIC/BIC prior-density inclusion | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
@@ -147,13 +147,13 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Implementation status.** The public empirical count/rate and fitted threshold intensity are distinct. `Lambda` remains the empirical exact-event-rate alias. Source-record exposure is serialized on `DataFrame`; explicit `TotalYears` takes precedence, followed by stored source exposure and then the exact-record year/index span.
 
-**Verification status.** Fast mixed-count, precedence, warning, seasonal-date, annualized mixed-likelihood, state-refresh, and serialization regressions pass. The independent nonseasonal and seasonal mixed-likelihood cells compile but await exact focused execution.
+**Verification status.** Passed. Fast mixed-count, precedence, warning, seasonal-date, annualized mixed-likelihood, state-refresh, and serialization regressions pass. Both guarded independent mixed-likelihood cells pass, including uncertain, interval, and threshold records under the seasonal annual-maximum distribution.
 
 **Evidence.** `CalculateLambda()` counts every exact POT record and excludes uncertain, interval, and threshold-count rows. Simulation uses that empirical rate, while the likelihood separately exposes the GEV-compatible fitted threshold intensity. POT extraction retains inclusive source-record years, including leading and trailing years with no selected peak. Manual POT data fall back to exact year/index span and receive an inference warning.
 
 **Resolved authority decisions.** Seasonal fitting now requires a valid date on every exact POT observation; nonseasonal manual records retain year/index-span exposure fallback. Seasonal uncertain, interval, and threshold records are annual/block-indexed. Their likelihood uses the annual maximum of the two independent exposure-adjusted seasonal processes through **CompetingRisks**. Exposure fractions weight process intensities and are not annual mixture probabilities.
 
-**Follow-up.** Execute the exact current-source cells listed in the [point-process verification report](../verification/point-process.md#exact-focused-execution-required-for-closeout), including both independently calculated mixed-likelihood cells.
+**Closeout.** The seasonal fixture correction retained one below-threshold and two above-threshold annual observations and derived its oracle from the processed counts. No production likelihood or tolerance changed. TR-004 is complete.
 
 <a id="tr-005"></a>
 ## TR-005 - Point-Process Poisson-GPA Simulation
@@ -162,58 +162,58 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Implementation status.** The approved production process is implemented. Both simulation surfaces use empirical `Lambda` for Poisson counts, Madsen conversion from Hosking GEV to Hosking GPA for marks, floored changepoints, analytical exposure weights, and the shared elapsed block-day convention. GEV priors, exact-event point-process likelihood equations, sampler settings, tolerances, and seed behavior remain unchanged.
 
-**Verification status.** Fast intensity, generation, floored-changepoint, histogram, water-year, fallback, custom-prior, unchanged-GEV-default, and serialization regressions pass. Historical focused placement and recovery outcomes are retained in the report, but the consolidated current fixture and corrected shifted water-year recovery cell require exact reruns.
+**Verification status.** Complete in the approved scope. All ten guarded current-source cells pass. Recovery fixtures use 1,000 observations and the untouched `BayesianAnalysis` defaults. Calendar-year uniform recovery, October-water-year block-origin parity, nonseasonal production recovery, and seasonal production recovery pass; the robust defaults eliminate the former seasonal second-Kappa miss. The initial water-year failure was a verification-coordinate error: the fixture changed `K1/K2` from `170/350` to `80/260` rather than keeping the parent block-day parameters fixed while changing only the block origin.
 
 **Evidence.** Seasonal exposure is \(w_1=(k_1+366-k_2)/366\) and \(w_2=(k_2-k_1)/366\). Default supports are \([1,251)\) and \([200,367)\); the linear-time rotated monthly histogram may supply five-month flat windows, while ambiguous, insufficient, flat, or undated timing retains broad defaults. Independent exponential-clock Poisson and analytical Hosking-GPA fixtures support the scientific checks.
 
 **Impact.** Generated counts, component assignments, dates, and marks now follow the approved Poisson-GPA parent process. Automatic changepoint priors enter a broad seasonal neighborhood without profile likelihood, MAP preprocessing, or changes to GEV defaults.
 
-**Follow-up.** Execute only the ten current exact methods listed in the report. Retain floored modal-day and credible-set checks; PERT timing remains placement evidence only because its interior timing law is absent from the fitted likelihood.
+**Closeout.** TR-005 is complete without changing any production formula, DEMCzs default, prior, or recovery tolerance. PERT timing remains placement evidence only because its interior timing law is absent from the fitted likelihood.
 
 <a id="tr-006"></a>
 ## TR-006 — Mixture Weights Are Redundant and Mutate Candidate Arrays
 
 **Review disposition.** Confirmed defect; the direct physical $K-1$ correction was approved.
 
-**Implementation status.** Implemented in Numerics commit `1462e35` and the pending BestFit Phase 4 batch without changing any public weight-related method signature.
+**Implementation status.** Complete in Numerics commit `1462e35` and the BestFit Phase 4 mixture batch without changing any public weight-related method signature.
 
-**Verification status.** Fast regressions pass. Three exact cross-engine recovery methods compile and await focused execution.
+**Verification status.** Passed. Fast regressions, three exact Numerics/BestFit recovery-parity methods, and three Bayesian `MixtureAnalysis` generation-and-recovery methods pass. Every focused method was run separately through the guarded runner and produced one passing TRX.
 
 **Evidence.** Numerics retains all $K$ physical weights in its public arrays and copies caller input before normalization or assignment. BestFit now tracks only $w_1,\ldots,w_{K-1}$, derives $w_K=m-\sum_{j=1}^{K-1}w_j$, rejects infeasible proposals, and uses one nonmutating reconstruction path. Its proper flat physical-simplex prior includes $\log\Gamma(K)-(K-1)\log m$. EM outputs, covariance, parameter names, and information-criterion dimension use $K-1$ weights.
 
 **Impact.** The redundant radial direction and objective-side proposal mutation are removed. Existing saved mixture posterior results from the former normalized $K$-weight workflow require re-estimation; no migration or parameterization version is provided.
 
-**Follow-up.** Execute the three exact methods in the [mixture verification report](../verification/mixture.md#focused-recovery-execution-required), preserve any failure output, and do not tune EM or recovery tolerances.
+**Closeout.** The production BestFit generator supplies all six seeded samples. Exact parity retains the declared likelihood and recovery tolerances; Bayesian recovery retains deterministic DEMCzs settings and requires finite split R-hat below 1.1 and conservative ESS above 100 for every fitted coordinate. Saved results from the former parameterization still require re-estimation.
 
 <a id="tr-007"></a>
 ## TR-007 — Zero-Inflated Mixture Probability Functions
 
 **Review disposition.** Confirmed defect; the exact-zero positive-hurdle interpretation was approved.
 
-**Implementation status.** Implemented in Numerics commit `1462e35` and the pending BestFit Phase 4 batch.
+**Implementation status.** Complete in Numerics commit `1462e35` and the BestFit Phase 4 mixture batch.
 
-**Verification status.** Analytical identities, simulation, support, invalid-positive-mass, and mixed-observation fast tests pass. The zero-inflated cross-engine recovery method compiles and awaits focused execution.
+**Verification status.** Passed. Analytical identities, simulation, support, invalid-positive-mass, and mixed-observation fast tests pass. The guarded zero-inflated parity and Bayesian recovery methods pass; Bayesian recovery also checks the generated atom against its five-standard-error binomial bound.
 
 **Evidence.** The corrected law has $F(x)=0$ for $x<0$, an atom $\pi_0$ at zero, and component distributions conditioned on $X>0$ for every positive continuous contribution. `PDF(0)=pi0` is documented under the Lebesgue-plus-Dirac reference measure. CDF, log density, quantiles, simulation, and BestFit exact, uncertain, interval, and threshold likelihoods use the same law. BestFit derives the fixed atom only from exact zeros divided by all exact annual records and rejects negative exact observations.
 
 **Impact.** The probability functions, likelihood, and simulator now define one coherent distribution; negative values are no longer collapsed into the zero atom.
 
-**Follow-up.** Execute `ZeroInflatedNormalMixture2D_Recovery_Parity` through the guarded focused runner and reconcile any discrepancy without tolerance changes.
+**Closeout.** The positive-hurdle generator, likelihood, EM fit, and Bayesian fit recover the same seeded parent without tolerance changes.
 
 <a id="tr-008"></a>
 ## TR-008 — Mixture EM Skips Impossible Rows
 
 **Review disposition.** Confirmed defect; explicit failure was approved.
 
-**Implementation status.** Implemented in Numerics commit `1462e35` and the pending BestFit Phase 4 batch.
+**Implementation status.** Complete in Numerics commit `1462e35` and the BestFit Phase 4 mixture batch.
 
-**Verification status.** Fast impossible-row tests pass for Numerics exact data and BestFit exact, uncertain, interval, and threshold records. Cross-engine recovery methods compile and await focused execution.
+**Verification status.** Passed. Fast impossible-row tests pass for Numerics exact data and BestFit exact, uncertain, interval, and threshold records. All six guarded recovery methods pass with the explicit-failure contract retained.
 
 **Evidence.** Numerics and BestFit now throw `InvalidOperationException` containing row index and value whenever the required total row probability is zero or nonfinite. The exact-data BestFit path delegates to the corrected Numerics EM, while the mixed path applies the same explicit failure contract.
 
 **Impact.** An impossible observation can no longer disappear from the objective or leave stale responsibilities behind.
 
-**Follow-up.** Retain these explicit failures while running the three focused recovery methods; do not restore row skipping to obtain convergence.
+**Closeout.** Explicit impossible-row failures remain part of the verified contract; no row skipping or convergence-tolerance change was introduced.
 
 <a id="tr-009"></a>
 ## TR-009 — RMSE Omits the Last \(k\) Residuals

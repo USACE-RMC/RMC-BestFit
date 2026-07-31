@@ -53,26 +53,23 @@ Fast coverage includes $K-1$ counts and names, final-weight derivation, prior no
 
 The Core Debug suite passed 3,101/3,101 tests. The strict XML Debug build, Release solution build, public API baseline, UI 564/564, App 428/428, and Verification compilation also passed with zero failures or build warnings. The repository-wide gates are recorded in **docs/PROGRESS.md**.
 
-## Focused Recovery Execution Required
+## Focused Recovery Results
 
-The following exact methods compile but have not been executed by Codex:
+All six methods generate $n=1000$ observations with seed 12345 through the production `MixtureModel.GenerateRandomValues` method. Each method was run separately through `scripts/run-verification-test.ps1`, source-resolved to one fully qualified method, and produced exactly one passing TRX under `TestResults/VerificationFocused`.
 
-1. **RMC.BestFit.Verification.Univariate.MixtureTests.MixtureRecoveryTests.NormalMixture2D_Recovery_Parity**
-2. **RMC.BestFit.Verification.Univariate.MixtureTests.MixtureRecoveryTests.ZeroInflatedNormalMixture2D_Recovery_Parity**
-3. **RMC.BestFit.Verification.Univariate.MixtureTests.MixtureRecoveryTests.NormalMixture3D_Recovery_Parity**
+| Exact method | Verification contract | Guarded duration | Status |
+|---|---|---:|---|
+| `NormalMixture2D_Recovery_Parity` | Two-component Normal generation, pre-fit likelihood parity, EM parity, and parent recovery | 1.426 s | Passed |
+| `ZeroInflatedNormalMixture2D_Recovery_Parity` | Positive-hurdle generation, likelihood parity, EM parity, and parent recovery | 1.852 s | Passed |
+| `NormalMixture3D_Recovery_Parity` | Three-component Normal generation, likelihood parity, EM parity, and parent recovery | 3.247 s | Passed |
+| `NormalMixture2D_BayesianRecovery` | Two-component `MixtureAnalysis` posterior recovery and diagnostics | 9.589 s | Passed |
+| `ZeroInflatedNormalMixture2D_BayesianRecovery` | Positive-hurdle `MixtureAnalysis` recovery, atom check, and diagnostics | 21.346 s | Passed |
+| `NormalMixture3D_BayesianRecovery` | Three-component `MixtureAnalysis` posterior recovery and diagnostics | 12.761 s | Passed |
 
-Each method:
+The parity methods give Numerics and BestFit the same BestFit-generated sample, compare pre-fit data log likelihoods at $10^{-10}$, compare fitted engines at $10^{-8}$, location-sort component labels, and retain absolute recovery tolerance 0.1.
 
-- generates $n=1000$ observations with seed 12345;
-- gives Numerics and BestFit the same sample;
-- compares pre-fit data log likelihoods at $10^{-10}$;
-- runs both EM entry points;
-- reconstructs and location-sorts all physical weights and Normal components;
-- compares fitted engines at $10^{-8}$; and
-- retains recovery tolerance 0.1 against generating values.
-
-Run only these methods using the repository's guarded verification workflow. Do not widen EM or recovery tolerances if a fixture fails; preserve the output and reconcile the formula or implementation.
+The Bayesian methods use DEMCzs with four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning interval 5, 5,000 output draws, 90% credible intervals, deterministic sampler seeds, and posterior mode as the recovery estimate. Physical weights use absolute tolerance 0.1; component parameters use $\max(0.15, 0.15|\theta|)$. Every coordinate must have finite split R-hat below 1.1 and conservative ESS above 100. The positive-hurdle method also checks the empirical atom against a five-standard-error binomial bound.
 
 ## Closeout State
 
-Implementation and fast-test evidence are complete. TR-006/TR-007/TR-008 remain verification-pending until Haden supplies the three focused recovery results. The BestFit batch must not be committed before those results are reconciled.
+The Phase 4 mixture subset is complete. TR-006, TR-007, and TR-008 are implemented and verified by fast contracts, three guarded cross-engine parity methods, and three guarded Bayesian generation-and-recovery methods. The broader Phase 4 remains open for competing-risk and composite work; the point-process subset is also closed.
