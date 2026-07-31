@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -50,6 +50,9 @@ namespace RMC.BestFit.Models
             if (lowOutlierThresholdAttr != null) double.TryParse(lowOutlierThresholdAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _lowOutlierThreshold);
             var plottingParameterAttr = xElement.Attribute(nameof(PlottingParameter));
             if (plottingParameterAttr != null) double.TryParse(plottingParameterAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _plottingParameter);
+            var pointProcessObservationYearsAttr = xElement.Attribute(nameof(PointProcessObservationYears));
+            if (pointProcessObservationYearsAttr != null)
+                double.TryParse(pointProcessObservationYearsAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _pointProcessObservationYears);
 
             _suppressSeriesReplacementRefresh = true;
             try
@@ -116,6 +119,7 @@ namespace RMC.BestFit.Models
         private int _numberOfLowOutliers = 0;
         private double _lowOutlierThreshold = 0;
         private double _plottingParameter = 0.0;
+        private double _pointProcessObservationYears = double.NaN;
         private long _plottingPositionVersion;
         private string _usgsRawText = "";
         private bool _suppressSeriesReplacementRefresh;
@@ -305,6 +309,38 @@ namespace RMC.BestFit.Models
         /// The average number of events per index.
         /// </summary>
         public double Lambda => _lambda;
+
+        /// <summary>
+        /// Gets or sets the source-record exposure, in years, retained when a peaks-over-threshold
+        /// series is extracted from a time series.
+        /// </summary>
+        /// <remarks>
+        /// This metadata preserves leading and trailing source years that contain no extracted
+        /// peaks. A value of <see cref="double.NaN"/> means that source exposure is unavailable.
+        /// Collection edits do not recalculate this value because the retained POT events cannot
+        /// reveal unobserved zero-event years.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when the value is not <see cref="double.NaN"/> and is not positive and finite.
+        /// </exception>
+        public double PointProcessObservationYears
+        {
+            get { return _pointProcessObservationYears; }
+            set
+            {
+                if (!double.IsNaN(value) && (!Tools.IsFinite(value) || value <= 0.0))
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Point-process observation years must be positive and finite, or NaN when unavailable.");
+
+                bool unchanged = double.IsNaN(_pointProcessObservationYears)
+                    ? double.IsNaN(value)
+                    : _pointProcessObservationYears.AlmostEquals(value);
+                if (unchanged)
+                    return;
+
+                _pointProcessObservationYears = value;
+                RaisePropertyChange(nameof(PointProcessObservationYears));
+            }
+        }
 
 
         /// <summary>
@@ -2409,6 +2445,8 @@ namespace RMC.BestFit.Models
             result.SetAttributeValue(nameof(LowOutlierThreshold), LowOutlierThreshold.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(PlottingParameter), PlottingParameter.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(Lambda), Lambda.ToString("G17", CultureInfo.InvariantCulture));
+            if (Tools.IsFinite(PointProcessObservationYears) && PointProcessObservationYears > 0.0)
+                result.SetAttributeValue(nameof(PointProcessObservationYears), PointProcessObservationYears.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(USGSRawText), USGSRawText.ToString(CultureInfo.InvariantCulture));
             result.Add(ExactSeries.ToXElement());
             result.Add(UncertainSeries.ToXElement());
@@ -2503,18 +2541,26 @@ namespace RMC.BestFit.Models
         /// <param name="minStepsBetweenPeaks">The minimum number of time steps between peaks. Default = 1.</param>
         /// <param name="smoothingFunction">The time series smoothing function. Default = None.</param>
         /// <param name="period">The time period to perform smoothing over. Default = 1.</param>
+        /// <remarks>
+        /// The inclusive source calendar-year span is retained in
+        /// <see cref="PointProcessObservationYears"/> so leading and trailing years with no
+        /// extracted peaks remain part of the point-process exposure.
+        /// </remarks>
         public void CreatePeaksOverThresholdSeries(TimeSeries timeSeries, double threshold, int minStepsBetweenPeaks = 1, 
             SmoothingFunctionType smoothingFunction = SmoothingFunctionType.None, int period = 1)
         {
             var _timeSeries = timeSeries.PeaksOverThresholdSeries(threshold, minStepsBetweenPeaks, smoothingFunction, period);
 
+            PointProcessObservationYears = timeSeries.Count > 0
+                ? timeSeries.EndDate.Year - timeSeries.StartDate.Year + 1.0
+                : double.NaN;
+
             ExactSeries.Clear();
             ExactSeries.SuppressCollectionChanged = true;
             for (int i = 0; i < _timeSeries.Count; i++)
                 ExactSeries.Add(new ExactData(_timeSeries[i].Index, _timeSeries[i].Value));
-            // Set lambda
             double events = ExactSeries.Count;
-            double span = timeSeries.EndDate.Year - timeSeries.StartDate.Year + 1;
+            double span = PointProcessObservationYears;
             _lambda = events / span;
             ExactSeries.SuppressCollectionChanged = false;
             ExactSeries.RaiseCollectionChangedReset();

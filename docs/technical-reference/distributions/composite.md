@@ -40,13 +40,13 @@ $$
 F_C(x)=\sum_{m=1}^{M}w_mF_m(x). \tag{3}
 $$
 
-For **CompositeType.Mixture**, every weight must satisfy \(0<w_m<1\), and the sum may not exceed one. If
+For **CompositeType.Mixture**, every weight must satisfy $0<w_m<1$, and the sum may not exceed one. If
 
 $$
 s=\sum_{m=1}^{M}w_m<1, \tag{4}
 $$
 
-the implementation sets Numerics **IsZeroInflated = true** and **ZeroWeight = 1-s**. This reuses the zero-inflated behavior discussed in [TR-007](../review-findings.md#tr-007); it is not merely an “unallocated model probability.” Unless an exact point mass at zero is scientifically intended, fixed mixture weights should sum to one.
+the implementation sets Numerics **IsZeroInflated = true** and **ZeroWeight = 1-s**. The corrected law treats $1-s$ as an exact atom at zero and conditions every child distribution on $X>0$ for its continuous contribution. This is a scientifically meaningful positive-hurdle model, not merely an "unallocated model probability." Unless that atom and conditioning are intended, fixed mixture weights should sum to one.
 
 ## Criterion Weights
 

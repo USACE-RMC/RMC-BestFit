@@ -7,6 +7,7 @@ using Numerics.Mathematics;
 using Numerics.Mathematics.Integration;
 using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
+using Numerics.Mathematics.SpecialFunctions;
 using RMC.BestFit.Estimation;
 
 namespace RMC.BestFit.Models
@@ -27,7 +28,7 @@ namespace RMC.BestFit.Models
     /// <list type="bullet">
     /// <item><description>Mixtures of one to three component distributions.</description></item>
     /// <item><description>Bayesian priors on parameters and quantiles.</description></item>
-    /// <item><description>Zero inflation for values less than or equal to zero.</description></item>
+    /// <item><description>A fixed atom at zero with continuous components conditioned on positive values.</description></item>
     /// <item><description>Expectation–Maximization (EM) for approximate MLE.</description></item>
     /// </list>
     /// </remarks>
@@ -64,7 +65,7 @@ namespace RMC.BestFit.Models
         /// <param name="dataFrame">The data frame to fit to.</param>
         /// <param name="distributions">The list of component distributions.</param>
         /// <param name="isZeroInflated">
-        /// If true, assigns a weight to all data points less than or equal to zero.
+        /// If true, derives a fixed atom from exact observations equal to zero.
         /// </param>
         public MixtureModel(DataFrame dataFrame, List<UnivariateDistributionBase> distributions, bool isZeroInflated = false)
         {
@@ -89,7 +90,7 @@ namespace RMC.BestFit.Models
         /// <param name="dataFrame">The data frame to fit to.</param>
         /// <param name="distributionTypes">The list of univariate distribution types.</param>
         /// <param name="isZeroInflated">
-        /// If true, assigns a weight to all data points less than or equal to zero.
+        /// If true, derives a fixed atom from exact observations equal to zero.
         /// </param>
         public MixtureModel(DataFrame dataFrame, List<UnivariateDistributionType> distributionTypes, bool isZeroInflated = false)
         {
@@ -216,7 +217,7 @@ namespace RMC.BestFit.Models
                     {
                         if (IsZeroInflated)
                         {
-                            Mixture.ZeroWeight = _dataFrame.ZeroValueRelativeFrequency();
+                            Mixture.ZeroWeight = GetExactZeroWeight();
                         }
                         else
                         {
@@ -252,7 +253,7 @@ namespace RMC.BestFit.Models
                     _mixture.IsZeroInflated = IsZeroInflated;
                     if (IsZeroInflated)
                     {
-                        _mixture.ZeroWeight = DataFrame is not null ? DataFrame.ZeroValueRelativeFrequency() : 0.0;
+                        _mixture.ZeroWeight = DataFrame is not null ? GetExactZeroWeight() : 0.0;
                     }
                     else
                     {
@@ -276,7 +277,7 @@ namespace RMC.BestFit.Models
         public bool IsNonstationary => false;
 
         /// <summary>
-        /// Determines whether a zero-inflated weight is assigned to values less than or equal to zero.
+        /// Determines whether a fixed atom is assigned to exact observations equal to zero.
         /// </summary>
         [Category("Inputs")]
         [DisplayName("Is Zero-Inflated")]
@@ -297,7 +298,7 @@ namespace RMC.BestFit.Models
                         Mixture.IsZeroInflated = _isZeroInflated;
                         if (_isZeroInflated)
                         {
-                            Mixture.ZeroWeight = DataFrame != null ? DataFrame.ZeroValueRelativeFrequency() : 0.0;
+                            Mixture.ZeroWeight = DataFrame != null ? GetExactZeroWeight() : 0.0;
                         }
                         else
                         {
@@ -342,6 +343,194 @@ namespace RMC.BestFit.Models
 
         #region Methods
 
+        /// <summary>
+        /// Computes the fixed zero atom from exact annual records only.
+        /// </summary>
+        /// <returns>The number of exact values equal to zero divided by the number of exact records.</returns>
+        private double GetExactZeroWeight()
+        {
+            if (DataFrame?.ExactSeries is null || DataFrame.ExactSeries.Count == 0) return 0.0;
+            int zeroCount = DataFrame.ExactSeries.Count(data => data.Value == 0.0);
+            return zeroCount / (double)DataFrame.ExactSeries.Count;
+        }
+
+        /// <summary>
+        /// Gets the exact sample used to initialize continuous component parameters.
+        /// </summary>
+        /// <returns>All exact values for an ordinary mixture, or strictly positive exact values for a hurdle mixture.</returns>
+        private List<double> GetComponentInitializationSample()
+        {
+            return DataFrame.ExactSeries
+                .Where(data => !IsZeroInflated || data.Value > 0.0)
+                .Select(data => data.Value)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets the number of free physical mixture weights.
+        /// </summary>
+        /// <param name="mixture">The Numerics mixture.</param>
+        /// <returns>Zero for one component; otherwise, one less than the component count.</returns>
+        private static int GetFreeWeightCount(Mixture mixture)
+        {
+            return Math.Max(0, mixture.Distributions.Length - 1);
+        }
+
+        /// <summary>
+        /// Expands BestFit's free-weight vector to Numerics' full physical-weight vector.
+        /// </summary>
+        /// <param name="parameters">The BestFit parameter vector.</param>
+        /// <param name="physicalParameters">The full Numerics parameter vector when feasible.</param>
+        /// <returns><see langword="true"/> when the proposal has the expected size and lies on the configured simplex.</returns>
+        private bool TryExpandPhysicalParameters(IList<double> parameters, out double[] physicalParameters)
+        {
+            physicalParameters = Array.Empty<double>();
+            if (Mixture is null || parameters is null) return false;
+
+            int componentCount = Mixture.Distributions.Length;
+            int freeWeightCount = GetFreeWeightCount(Mixture);
+            int distributionParameterCount = Mixture.Distributions!.Sum(distribution => distribution.NumberOfParameters);
+            if (parameters.Count != freeWeightCount + distributionParameterCount) return false;
+
+            double componentMass = IsZeroInflated ? 1.0 - Mixture.ZeroWeight : 1.0;
+            if (!Tools.IsFinite(componentMass) || componentMass <= 0.0) return false;
+
+            physicalParameters = new double[componentCount + distributionParameterCount];
+            double trackedWeightSum = 0.0;
+            for (int i = 0; i < freeWeightCount; i++)
+            {
+                double weight = parameters[i];
+                if (!Tools.IsFinite(weight) || weight < 0.0) return false;
+                physicalParameters[i] = weight;
+                trackedWeightSum += weight;
+            }
+
+            double finalWeight = componentMass - trackedWeightSum;
+            if (!Tools.IsFinite(finalWeight) || finalWeight < 0.0) return false;
+            physicalParameters[componentCount - 1] = finalWeight;
+
+            for (int i = 0; i < distributionParameterCount; i++)
+            {
+                physicalParameters[componentCount + i] = parameters[freeWeightCount + i];
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to reconstruct a Numerics mixture from a BestFit parameter vector.
+        /// </summary>
+        /// <param name="parameters">The BestFit parameter vector.</param>
+        /// <param name="distribution">The reconstructed distribution when the proposal is valid.</param>
+        /// <returns><see langword="true"/> when reconstruction succeeds and all Numerics parameters are valid.</returns>
+        private bool TryCreateDistribution(IList<double> parameters, out Mixture? distribution)
+        {
+            distribution = null;
+            if (Mixture is null || !TryExpandPhysicalParameters(parameters, out double[] physicalParameters)) return false;
+            try
+            {
+                var candidate = (Mixture)Mixture.Clone();
+                candidate.SetParameters(physicalParameters);
+                if (!candidate.ParametersValid) return false;
+                distribution = candidate;
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Reconstructs a Numerics mixture from a BestFit parameter vector without mutating the caller.
+        /// </summary>
+        /// <param name="parameters">The BestFit parameter vector.</param>
+        /// <returns>A reconstructed Numerics mixture with all physical component weights.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the proposal is outside the feasible simplex or contains invalid component parameters.</exception>
+        internal Mixture CreateDistribution(IList<double> parameters)
+        {
+            if (!TryCreateDistribution(parameters, out Mixture? distribution))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(parameters),
+                    "The mixture proposal is outside the feasible physical simplex or contains invalid component parameters.");
+            }
+            return distribution!;
+        }
+
+        /// <summary>
+        /// Evaluates an uncertain observation, including the fixed atom and continuous contribution.
+        /// </summary>
+        /// <param name="model">The configured Numerics mixture.</param>
+        /// <param name="measurementDistribution">The observation's measurement-error distribution.</param>
+        /// <returns>The retained-window observation probability, or zero when the window is invalid.</returns>
+        private static double UncertainObservationProbability(
+            Mixture model,
+            UnivariateDistributionBase measurementDistribution)
+        {
+            const double lowerProbability = 1E-8;
+            const double upperProbability = 1.0 - 1E-8;
+            double lower = measurementDistribution.InverseCDF(lowerProbability);
+            double upper = measurementDistribution.InverseCDF(upperProbability);
+            double retainedMass = upperProbability - lowerProbability;
+            if (!Tools.IsFinite(lower) || !Tools.IsFinite(upper) || !Tools.IsFinite(retainedMass) ||
+                retainedMass <= 0.0 || lower >= upper)
+            {
+                return 0.0;
+            }
+
+            double probability = 0.0;
+            if (model.IsZeroInflated && lower <= 0.0 && upper >= 0.0)
+            {
+                probability += model.ZeroWeight * measurementDistribution.PDF(0.0);
+            }
+
+            double integrationLower = model.IsZeroInflated ? Math.Max(0.0, lower) : lower;
+            if (integrationLower < upper)
+            {
+                probability += Integration.GaussLegendre20(
+                    value => measurementDistribution.PDF(value) * model.PDF(value),
+                    integrationLower,
+                    upper);
+            }
+
+            probability /= retainedMass;
+            return Tools.IsFinite(probability) && probability > 0.0 ? probability : 0.0;
+        }
+
+        /// <summary>
+        /// Evaluates the complete BestFit data likelihood for a configured Numerics mixture.
+        /// </summary>
+        /// <param name="model">The configured Numerics mixture.</param>
+        /// <returns>The data log likelihood, or negative infinity for an impossible observation.</returns>
+        private double EvaluateDataLogLikelihood(Mixture model)
+        {
+            double logLikelihood = 0.0;
+            foreach (ExactData data in DataFrame.ExactSeries)
+            {
+                if (model.IsZeroInflated && data.Value < 0.0) return double.NegativeInfinity;
+                logLikelihood += !data.IsLowOutlier
+                    ? model.LogLikelihood(data.Value)
+                    : model.LogLikelihood_LeftCensored(DataFrame.LowOutlierThreshold, 1);
+            }
+            foreach (UncertainData data in DataFrame.UncertainSeries!)
+            {
+                double probability = UncertainObservationProbability(model, data.Distribution);
+                if (probability <= 0.0) return double.NegativeInfinity;
+                logLikelihood += Math.Log(probability);
+            }
+            foreach (IntervalData data in DataFrame.IntervalSeries)
+            {
+                logLikelihood += model.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
+            }
+            foreach (ThresholdData data in DataFrame.ThresholdSeries)
+            {
+                if (data.NumberBelow > 0)
+                    logLikelihood += model.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
+                if (data.NumberAbove > 0)
+                    logLikelihood += model.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
+            }
+            return Tools.IsFinite(logLikelihood) ? logLikelihood : double.NegativeInfinity;
+        }
         /// <inheritdoc/>
         protected override void DataFrame_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -361,7 +550,7 @@ namespace RMC.BestFit.Models
             {
                 if (IsZeroInflated)
                 {
-                    Mixture.ZeroWeight = DataFrame.ZeroValueRelativeFrequency();
+                    Mixture.ZeroWeight = GetExactZeroWeight();
                 }
                 else
                 {
@@ -410,14 +599,10 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override void SetDefaultParameters()
         {
-
-            // Remove old handlers
-            if (Parameters.Count > 0)
+            foreach (ModelParameter parameter in Parameters)
             {
-                for (int i = 0; i < NumberOfParameters; i++)
-                    Parameters[i].PropertyChanged -= Parameter_PropertyChanged;
+                parameter.PropertyChanged -= Parameter_PropertyChanged;
             }
-
             _parameters = new List<ModelParameter>();
 
             if (Mixture is null ||
@@ -430,35 +615,32 @@ namespace RMC.BestFit.Models
                 return;
             }
 
-            // Priors for mixture weights
-            int k = Mixture.Distributions.Length;
-            if (k > 1)
+            int componentCount = Mixture.Distributions.Length;
+            int freeWeightCount = GetFreeWeightCount(Mixture);
+            double componentMass = IsZeroInflated ? 1.0 - Mixture.ZeroWeight : 1.0;
+            double initialWeight = componentMass / componentCount;
+            for (int i = 0; i < freeWeightCount; i++)
             {
-                double w0 = 1d / k;
-                for (int i = 0; i < k; i++)
+                Parameters.Add(new ModelParameter
                 {
-                    Parameters.Add(new ModelParameter
-                    {
-                        Name = "Weight (w" + SubscriptFormatter.ToSubscript(i + 1) + ")",
-                        Value = w0,
-                        LowerBound = 0,
-                        UpperBound = 1,
-                        PriorDistribution = new Uniform(0, 1)
-                    });
-                }
+                    Name = "Weight (w" + SubscriptFormatter.ToSubscript(i + 1) + ")",
+                    Value = initialWeight,
+                    LowerBound = 0.0,
+                    UpperBound = componentMass,
+                    PriorDistribution = new Uniform(0.0, componentMass)
+                });
             }
 
-            // Priors for distribution parameters
-            for (int i = 0; i < k; i++)
+            List<double> initializationSample = GetComponentInitializationSample();
+            for (int i = 0; i < componentCount; i++)
             {
-                var component = Mixture.Distributions[i];
-
-                var tuple = ((IMaximumLikelihoodEstimation)component).GetParameterConstraints(DataFrame.ExactSeries.Select(x => x.Value).ToList());
-                var initials = tuple.Item1;
-                var lowers = tuple.Item2;
-                var uppers = tuple.Item3;
-
-                var parametersToString = component.ParametersToString;
+                UnivariateDistributionBase component = Mixture.Distributions[i];
+                Tuple<double[], double[], double[]> constraints =
+                    ((IMaximumLikelihoodEstimation)component).GetParameterConstraints(initializationSample);
+                double[] initials = constraints.Item1;
+                double[] lowers = constraints.Item2;
+                double[] uppers = constraints.Item3;
+                string[,] parametersToString = component.ParametersToString;
                 for (int j = 0; j < component.NumberOfParameters; j++)
                 {
                     Parameters.Add(new ModelParameter
@@ -474,10 +656,10 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Add handlers
-            for (int i = 0; i < NumberOfParameters; i++)
-                Parameters[i].PropertyChanged += Parameter_PropertyChanged;
-
+            foreach (ModelParameter parameter in Parameters)
+            {
+                parameter.PropertyChanged += Parameter_PropertyChanged;
+            }
             RaisePropertyChange(nameof(SetDefaultParameters));
         }
 
@@ -578,333 +760,334 @@ namespace RMC.BestFit.Models
         /// Performs Expectation–Maximization to obtain approximate MLE
         /// estimates and covariance matrix for the mixture model.
         /// </summary>
-        /// <param name="parameters">The estimated MLE parameters (weights then component parameters).</param>
-        /// <param name="covariance">The approximate covariance matrix of the parameters.</param>
+        /// <param name="parameters">The estimated parameters with K-1 free weights followed by component parameters.</param>
+        /// <param name="covariance">The approximate covariance matrix in the K-1 free-weight parameterization.</param>
         /// <param name="iterations">The number of EM iterations performed.</param>
         /// <param name="maxIterations">Maximum EM iterations (default 1000).</param>
         /// <param name="tolerance">Relative tolerance for convergence (default 1E-8).</param>
         public void ExpectationMaximization(out double[] parameters, out double[,] covariance, out int iterations, int maxIterations = 1000, double tolerance = 1E-8)
         {
-
             parameters = Array.Empty<double>();
             covariance = new double[0, 0];
             iterations = 0;
-
-            if (Mixture is null || DataFrame is null)
-                return;
+            if (Mixture is null || DataFrame is null) return;
 
             var model = (Mixture)Mixture.Clone();
-
             DataFrame.CreateFullTimeSeries();
-            int N = DataFrame.TotalRecordLength();
-            int Np = model.Distributions.Sum(x => x.NumberOfParameters);
-            int K = model.Distributions.Count();
+            List<Data> observations = DataFrame.FullTimeSeries.ToList();
+            int observationCount = observations.Count;
+            int componentCount = model.Distributions.Length;
+            int freeWeightCount = GetFreeWeightCount(model);
+            int distributionParameterCount = model.Distributions.Sum(distribution => distribution.NumberOfParameters);
+            if (observationCount == 0 || componentCount == 0) return;
 
-            if (N == 0 || K == 0)
-                return;
-
-            // Get constraints 
-            var tuple = model.GetParameterConstraints(DataFrame.ExactSeries.Select(x => x.Value).ToList());
-            var initialValues = tuple.Item1.Subset(K);
-            var lowerBounds = tuple.Item2.Subset(K);
-            var upperBounds = tuple.Item3.Subset(K);
-
-            // Initialize EM state
-            var mleWeights = tuple.Item1.Subset(0, K - 1);
-            var mleParameters = initialValues;
-            var likelihood = new double[N, K];
-
-            double oldLogLH = double.NegativeInfinity;
-            double newLogLH = double.NegativeInfinity;
-
-            // E-step: compute responsibilities and log-likelihood
-            double EStep(double[] x)
+            for (int rowIndex = 0; rowIndex < DataFrame.ExactSeries.Count; rowIndex++)
             {
-                // Set mixture parameters
-                model.SetParameters(mleWeights, x);
-
-                // Outer loop for computing the likelihoods
-                for (int k = 0; k < K; k++)
+                ExactData exact = (ExactData)DataFrame.ExactSeries[rowIndex];
+                if (model.IsZeroInflated && exact.Value < 0.0)
                 {
-                    for (int i = 0; i < DataFrame.FullTimeSeries.Count; i++)
-                    {
-                        var data = DataFrame.FullTimeSeries[i];
-
-                        // Exact Data
-                        if (data is ExactData exact)
-                        {
-                            if (!exact.IsLowOutlier)
-                            {
-                                if (model.IsZeroInflated && data.Value <= 0.0)
-                                {
-                                    likelihood[i, k] = Math.Log(model.ZeroWeight);
-                                }
-                                else
-                                {
-                                    likelihood[i, k] = Math.Log(mleWeights[k]) + model.Distributions[k].LogPDF(data.Value);
-                                }
-                            }
-                            else
-                            {
-                                // Low outliers are treated as left censored
-                                likelihood[i, k] = Math.Log(mleWeights[k]) + model.Distributions[k].LogCDF(DataFrame.LowOutlierThreshold);
-                            }
-                        }
-                        // Uncertain Data
-                        else if (data is UncertainData uncertain)
-                        {
-                            var dist = uncertain.Distribution;
-                            double lowerProbability = 1E-8;
-                            double upperProbability = 1.0 - 1E-8;
-                            var a = dist.InverseCDF(lowerProbability);
-                            var b = dist.InverseCDF(upperProbability);
-                            double mass = upperProbability - lowerProbability;
-                            if (Tools.IsFinite(a) && Tools.IsFinite(b) && Tools.IsFinite(mass) && mass > 0.0 && a < b && mleWeights[k] > 0)
-                            {
-                                var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * model.Distributions[k].PDF(q); }, a, b) / mass;
-                                likelihood[i, k] = Math.Log(mleWeights[k]) + (ep > 0 ? Math.Log(ep) : double.NegativeInfinity);
-                            }
-                            else
-                            {
-                                likelihood[i, k] = double.NegativeInfinity;
-                            }
-                        }
-                        // interval data
-                        else if (data is IntervalData interval)
-                        {
-                            // DataFrame validates LowerValue < UpperValue at construction,
-                            // but defend against numerical near-equality producing CDF
-                            // differences <= 0 by guarding the log argument.
-                            double cdfDiff = model.Distributions[k].CDF(interval.UpperValue) - model.Distributions[k].CDF(interval.LowerValue);
-                            likelihood[i, k] = cdfDiff > 0
-                                ? Math.Log(mleWeights[k]) + Math.Log(cdfDiff)
-                                : double.NegativeInfinity;
-                        }
-                        // threshold data
-                        // Invariant from DataFrame.CreateFullTimeSeries: each
-                        // threshold ordinate in the expanded series carries either
-                        // NumberBelow == 1 OR NumberAbove == 1, never both. The
-                        // two branches below are exhaustive for valid input; the
-                        // -∞ fall-through guards against malformed data and is
-                        // not a "dropped observation" path.
-                        else if (data is ThresholdData threshold)
-                        {
-                            if (threshold.NumberBelow == 1 && threshold.NumberAbove == 0)
-                            {
-                                likelihood[i, k] = Math.Log(mleWeights[k]) + model.Distributions[k].LogCDF(threshold.Value);
-                            }
-                            else if (threshold.NumberBelow == 0 && threshold.NumberAbove == 1)
-                            {
-                                likelihood[i, k] = Math.Log(mleWeights[k]) + model.Distributions[k].LogCCDF(threshold.Value);
-                            }
-                            else
-                            {
-                                likelihood[i, k] = double.NegativeInfinity;
-                            }
-                        }
-                    }
+                    throw new InvalidOperationException(
+                        $"Mixture EM row {rowIndex} has negative exact value {exact.Value:R} in a zero-inflated model.");
                 }
-                // At this point we have unnormalized log likelihoods.
-                // We need to normalize using log-sum-exp and compute the true log-likelihoods.
-                double lh = 0.0;
-                for (int i = 0; i < N; i++)
-                {
-                    // Get max likelihood
-                    double max = double.NegativeInfinity;
-                    for (int k = 0; k < K; k++)
-                    {
-                        if (likelihood[i, k] > max)
-                        {
-                            max = likelihood[i, k];
-                        }
-                    }
+            }
+            model.ValidateParameters(model.GetParameters, true);
 
-                    if (!Tools.IsFinite(max) || max == double.NegativeInfinity)
-                    {
-                        continue;
-                    } // sum <= 0 is excluded above
+            List<double> initializationSample = GetComponentInitializationSample();
+            Tuple<double[], double[], double[]> constraints = model.GetParameterConstraints(initializationSample);
+            double[] initialParameters = constraints.Item1.Subset(componentCount);
+            double[] lowerBounds = constraints.Item2.Subset(componentCount);
+            double[] upperBounds = constraints.Item3.Subset(componentCount);
+            double[] mleWeights = constraints.Item1.Subset(0, componentCount - 1);
+            double[] mleParameters = initialParameters;
+            var responsibilities = new double[observationCount, componentCount];
+            double oldLogLikelihood = double.MinValue;
+            double newLogLikelihood = double.MinValue;
 
-                    // log-sum-exp trick begins here
-                    double sum = 0;
-                    for (int k = 0; k < K; k++)
-                        sum += Math.Exp(likelihood[i, k] - max);
-
-                    if (sum <=0)
-                    {
-                        continue;
-                    }   
-
-                    double tmp = max + Math.Log(sum);
-                    lh += tmp;
-
-                    for (int k = 0; k < K; k++)
-                    {
-                        likelihood[i, k] = Math.Exp(likelihood[i, k] - tmp);
-                        // After normalization, likelihood is a probability in [0,1]
-                        // If not finite, set to 0 (not MinValue which is a large negative number)
-                        if (!Tools.IsFinite(likelihood[i, k]))
-                            likelihood[i, k] = 0.0;
-                    }
-
-                }
-
-                if (!Tools.IsFinite(lh)) return double.NegativeInfinity;
-                return lh;
-
+            double PositiveMass(int componentIndex)
+            {
+                return model.Distributions[componentIndex].CCDF(0.0);
             }
 
-            // M-step: The Maximization step (update weights and continuous parameters)
-            double[] MStep(double[] x)
+            double ComponentDensity(int componentIndex, double value)
             {
-                // Get updated weights
-                for (int k = 0; k < K; k++)
+                if (!model.IsZeroInflated) return model.Distributions[componentIndex].PDF(value);
+                return value > 0.0
+                    ? model.Distributions[componentIndex].PDF(value) / PositiveMass(componentIndex)
+                    : 0.0;
+            }
+
+            double ComponentCdf(int componentIndex, double value)
+            {
+                if (!model.IsZeroInflated) return model.Distributions[componentIndex].CDF(value);
+                if (value <= 0.0) return 0.0;
+                double mass = PositiveMass(componentIndex);
+                return Math.Max(
+                    0.0,
+                    Math.Min(
+                        1.0,
+                        (model.Distributions[componentIndex].CDF(value) -
+                         model.Distributions[componentIndex].CDF(0.0)) / mass));
+            }
+
+            double ComponentCcdf(int componentIndex, double value)
+            {
+                if (!model.IsZeroInflated) return model.Distributions[componentIndex].CCDF(value);
+                if (value < 0.0) return 1.0;
+                return Math.Max(
+                    0.0,
+                    Math.Min(1.0, model.Distributions[componentIndex].CCDF(value) / PositiveMass(componentIndex)));
+            }
+
+            double UncertainComponentProbability(int componentIndex, UnivariateDistributionBase measurementDistribution)
+            {
+                const double lowerProbability = 1E-8;
+                const double upperProbability = 1.0 - 1E-8;
+                double lower = measurementDistribution.InverseCDF(lowerProbability);
+                double upper = measurementDistribution.InverseCDF(upperProbability);
+                double retainedMass = upperProbability - lowerProbability;
+                if (!Tools.IsFinite(lower) || !Tools.IsFinite(upper) || !Tools.IsFinite(retainedMass) ||
+                    retainedMass <= 0.0 || lower >= upper)
                 {
-                    double wgt = 0d;
-                    for (int i = 0; i < DataFrame.FullTimeSeries.Count; i++)
-                    {
-                        var data = DataFrame.FullTimeSeries[i];
-                        if (!IsZeroInflated || data.Value > 0.0)
-                        {
-                            wgt += likelihood[i, k];
-                        }
-                    }
-                    mleWeights[k] = wgt / N;
+                    return 0.0;
                 }
-                // MLE
-                var solver = new NelderMead(logLH, Np, x, lowerBounds, upperBounds);
+
+                double integrationLower = model.IsZeroInflated ? Math.Max(0.0, lower) : lower;
+                if (integrationLower >= upper) return 0.0;
+                double probability = Integration.GaussLegendre20(
+                    value => measurementDistribution.PDF(value) * ComponentDensity(componentIndex, value),
+                    integrationLower,
+                    upper) / retainedMass;
+                return Tools.IsFinite(probability) && probability > 0.0 ? probability : 0.0;
+            }
+
+            double AtomProbability(Data observation)
+            {
+                if (!model.IsZeroInflated || model.ZeroWeight <= 0.0) return 0.0;
+                if (observation is ExactData exact)
+                {
+                    if (!exact.IsLowOutlier) return exact.Value == 0.0 ? model.ZeroWeight : 0.0;
+                    return DataFrame.LowOutlierThreshold >= 0.0 ? model.ZeroWeight : 0.0;
+                }
+                if (observation is UncertainData uncertain)
+                {
+                    const double lowerProbability = 1E-8;
+                    const double upperProbability = 1.0 - 1E-8;
+                    double lower = uncertain.Distribution.InverseCDF(lowerProbability);
+                    double upper = uncertain.Distribution.InverseCDF(upperProbability);
+                    double retainedMass = upperProbability - lowerProbability;
+                    if (!Tools.IsFinite(lower) || !Tools.IsFinite(upper) || !Tools.IsFinite(retainedMass) ||
+                        retainedMass <= 0.0 || lower >= upper || lower > 0.0 || upper < 0.0)
+                    {
+                        return 0.0;
+                    }
+                    return model.ZeroWeight * uncertain.Distribution.PDF(0.0) / retainedMass;
+                }
+                if (observation is IntervalData interval)
+                {
+                    return interval.LowerValue < 0.0 && interval.UpperValue >= 0.0
+                        ? model.ZeroWeight
+                        : 0.0;
+                }
+                if (observation is ThresholdData threshold)
+                {
+                    if (threshold.NumberBelow == 1 && threshold.NumberAbove == 0)
+                        return threshold.Value >= 0.0 ? model.ZeroWeight : 0.0;
+                    if (threshold.NumberBelow == 0 && threshold.NumberAbove == 1)
+                        return threshold.Value < 0.0 ? model.ZeroWeight : 0.0;
+                }
+                return 0.0;
+            }
+
+            double ComponentObservationProbability(Data observation, int componentIndex)
+            {
+                if (observation is ExactData exact)
+                {
+                    return !exact.IsLowOutlier
+                        ? ComponentDensity(componentIndex, exact.Value)
+                        : ComponentCdf(componentIndex, DataFrame.LowOutlierThreshold);
+                }
+                if (observation is UncertainData uncertain)
+                {
+                    return UncertainComponentProbability(componentIndex, uncertain.Distribution);
+                }
+                if (observation is IntervalData interval)
+                {
+                    return Math.Max(
+                        0.0,
+                        ComponentCdf(componentIndex, interval.UpperValue) -
+                        ComponentCdf(componentIndex, interval.LowerValue));
+                }
+                if (observation is ThresholdData threshold)
+                {
+                    if (threshold.NumberBelow == 1 && threshold.NumberAbove == 0)
+                        return ComponentCdf(componentIndex, threshold.Value);
+                    if (threshold.NumberBelow == 0 && threshold.NumberAbove == 1)
+                        return ComponentCcdf(componentIndex, threshold.Value);
+                }
+                return 0.0;
+            }
+
+            InvalidOperationException CreateImpossibleRowException(int rowIndex, double value)
+            {
+                return new InvalidOperationException(
+                    $"Mixture EM row {rowIndex} with value {value:R} has zero or nonfinite total probability.");
+            }
+
+            double EStep(double[] distributionParameters)
+            {
+                model.SetParameters(mleWeights, distributionParameters);
+                double logLikelihood = 0.0;
+                for (int rowIndex = 0; rowIndex < observationCount; rowIndex++)
+                {
+                    Data observation = observations[rowIndex];
+                    double atomProbability = AtomProbability(observation);
+                    if (!Tools.IsFinite(atomProbability) || atomProbability < 0.0)
+                        throw CreateImpossibleRowException(rowIndex, observation.Value);
+                    double atomLogProbability = atomProbability > 0.0
+                        ? Math.Log(atomProbability)
+                        : double.NegativeInfinity;
+                    double maximumLogProbability = atomLogProbability;
+
+                    for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                    {
+                        double componentProbability = ComponentObservationProbability(observation, componentIndex);
+                        if (!Tools.IsFinite(componentProbability) || componentProbability < 0.0)
+                            throw CreateImpossibleRowException(rowIndex, observation.Value);
+                        double componentLogProbability = mleWeights[componentIndex] > 0.0 && componentProbability > 0.0
+                            ? Math.Log(mleWeights[componentIndex]) + Math.Log(componentProbability)
+                            : double.NegativeInfinity;
+                        responsibilities[rowIndex, componentIndex] = componentLogProbability;
+                        if (componentLogProbability > maximumLogProbability)
+                            maximumLogProbability = componentLogProbability;
+                    }
+
+                    if (!Tools.IsFinite(maximumLogProbability))
+                        throw CreateImpossibleRowException(rowIndex, observation.Value);
+
+                    double scaledProbabilitySum = atomProbability > 0.0
+                        ? Math.Exp(atomLogProbability - maximumLogProbability)
+                        : 0.0;
+                    for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                    {
+                        scaledProbabilitySum += Math.Exp(
+                            responsibilities[rowIndex, componentIndex] - maximumLogProbability);
+                    }
+                    if (!Tools.IsFinite(scaledProbabilitySum) || scaledProbabilitySum <= 0.0)
+                        throw CreateImpossibleRowException(rowIndex, observation.Value);
+
+                    double rowLogProbability = maximumLogProbability + Math.Log(scaledProbabilitySum);
+                    if (!Tools.IsFinite(rowLogProbability))
+                        throw CreateImpossibleRowException(rowIndex, observation.Value);
+                    for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                    {
+                        responsibilities[rowIndex, componentIndex] =
+                            Math.Exp(responsibilities[rowIndex, componentIndex] - rowLogProbability);
+                    }
+                    logLikelihood += rowLogProbability;
+                }
+                return logLikelihood;
+            }
+
+            double Objective(double[] distributionParameters)
+            {
+                model.SetParameters(mleWeights, distributionParameters);
+                return EvaluateDataLogLikelihood(model);
+            }
+
+            double[] MStep(double[] distributionParameters)
+            {
+                for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                {
+                    double weight = 0.0;
+                    for (int rowIndex = 0; rowIndex < observationCount; rowIndex++)
+                    {
+                        weight += responsibilities[rowIndex, componentIndex];
+                    }
+                    mleWeights[componentIndex] = weight;
+                }
+
+                double weightSum = mleWeights.Sum();
+                double componentMass = model.IsZeroInflated ? 1.0 - model.ZeroWeight : 1.0;
+                if (!Tools.IsFinite(weightSum) || weightSum <= 0.0)
+                {
+                    throw new InvalidOperationException(
+                        "Mixture EM cannot update component weights because no finite positive responsibility mass is available.");
+                }
+                double scale = componentMass / weightSum;
+                for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                {
+                    mleWeights[componentIndex] *= scale;
+                }
+
+                var solver = new NelderMead(
+                    Objective,
+                    distributionParameterCount,
+                    distributionParameters,
+                    lowerBounds,
+                    upperBounds);
                 solver.Maximize();
                 return solver.BestParameterSet.Values;
             }
 
-            // The log-likelihood function to maximize in the M-Step.
-            // Weights are held fixed, only the distribution parameters are solved.
-            double logLH(double[] x)
+            bool useNumericsExactPath =
+                DataFrame.UncertainSeries.Count == 0 &&
+                DataFrame.IntervalSeries.Count == 0 &&
+                DataFrame.ThresholdSeries.Count == 0 &&
+                DataFrame.ExactSeries.All(data => !((ExactData)data).IsLowOutlier);
+
+            if (useNumericsExactPath)
             {
-                // Set mixture parameters
-                model.SetParameters(mleWeights, x);
-
-                double lh = 0;
-                // Compute the data likelihood
-                // Exact Data
-                for (int i = 0; i < DataFrame.ExactSeries.Count; i++)
+                model.MaxIterations = maxIterations;
+                model.Tolerance = tolerance;
+                double[] physicalResult = model.MLE(DataFrame.ExactSeries.Select(data => data.Value).ToList());
+                Array.Copy(physicalResult, 0, mleWeights, 0, componentCount);
+                Array.Copy(physicalResult, componentCount, mleParameters, 0, distributionParameterCount);
+                iterations = model.Iterations;
+            }
+            else
+            {
+                for (iterations = 1; iterations <= maxIterations; iterations++)
                 {
-                    var data = (ExactData)DataFrame.ExactSeries[i];
-                    if (data.IsLowOutlier == false)
-                    {
-                        lh += model.LogLikelihood(data.Value);
-                    }
-                    else
-                    {
-                        // Low outliers are treated as left censored
-                        lh += model.LogLikelihood_LeftCensored(DataFrame.LowOutlierThreshold, 1);
-                    }
+                    newLogLikelihood = EStep(mleParameters);
+                    if (Math.Abs((oldLogLikelihood - newLogLikelihood) / oldLogLikelihood) < tolerance) break;
+                    mleParameters = MStep(mleParameters);
+                    oldLogLikelihood = newLogLikelihood;
                 }
-
-                // Uncertain Data
-                for (int i = 0; i < DataFrame.UncertainSeries.Count; i++)
-                {
-                    var dist = ((UncertainData)DataFrame.UncertainSeries[i]).Distribution;
-                    double lowerProbability = 1E-8;
-                    double upperProbability = 1.0 - 1E-8;
-                    var a = dist.InverseCDF(lowerProbability);
-                    var b = dist.InverseCDF(upperProbability);
-                    double mass = upperProbability - lowerProbability;
-                    if (Tools.IsFinite(a) && Tools.IsFinite(b) && Tools.IsFinite(mass) && mass > 0.0 && a < b)
-                    {
-                        // Normalize by retained ME mass so truncated 1E-8 tails do not
-                        // damp the uncertain likelihood contribution.
-                        var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * model.PDF(q); }, a, b) / mass;
-                        lh += ep > 0 ? Math.Log(ep) : double.NegativeInfinity;
-                    }
-                    else
-                    {
-                        lh += double.NegativeInfinity;
-                    }
-                }
-
-                // Interval Data
-                for (int i = 0; i < DataFrame.IntervalSeries.Count; i++)
-                {
-                    var data = (IntervalData)DataFrame.IntervalSeries[i];
-                    lh += model.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
-                }
-
-                // Threshold Data
-                for (int i = 0; i < DataFrame.ThresholdSeries.Count; i++)
-                {
-                    var data = (ThresholdData)DataFrame.ThresholdSeries[i];
-                    if (data.NumberBelow > 0)
-                        lh += model.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
-                    if (data.NumberAbove > 0)
-                        lh += model.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
-                }
-
-                // Return the full log-likelihood 
-                if (!Tools.IsFinite(lh)) return double.NegativeInfinity;
-                return lh;
             }
 
-            // Estimate using the EM Algorithm
-            for (iterations = 1; iterations <= maxIterations; iterations++)
-            {
-                // Perform the expectation step
-                newLogLH = EStep(mleParameters);
-
-                // Check convergence
-                if (Tools.IsFinite(oldLogLH))
-                {
-                    if (Math.Abs((oldLogLH - newLogLH) / oldLogLH) < tolerance)
-                        break;
-                }
-
-                // Perform the maximization step
-                mleParameters = MStep(mleParameters);
-
-                // Update log-likelihood state
-                oldLogLH = newLogLH;
-
-            }
-
-            // Return the full list of distribution parameters
             var result = new List<double>();
-            result.AddRange(mleWeights);
+            result.AddRange(mleWeights.Take(freeWeightCount));
             result.AddRange(mleParameters);
             parameters = result.ToArray();
 
-            // Estimate the covariance matrix of parameters
-            // Get Hessian and invert it to get the covariance matrix
-            var hessian = NumericalDiff.ComputeHessian((x) => { return EStep(x); }, mleParameters, mleParameters.Length);
-            Matrix fisher = hessian * -1;
-            fisher = fisher.Inverse();
+            Matrix hessian = NumericalDiff.ComputeHessian(
+                Objective,
+                mleParameters,
+                mleParameters.Length);
+            Matrix fisher = (hessian * -1.0).Inverse();
             covariance = new double[parameters.Length, parameters.Length];
-            // Mixing weights covariance (multinomial approximation)
-            for (int i = 0; i < K; i++)
-            {
-                double wi = mleWeights[i];
-                covariance[i, i] = wi * (1.0 - wi) / N;
 
-                for (int j = 0; j < K; j++)
+            // The free coordinates are the first K-1 physical weights, so the
+            // transformed covariance is the corresponding principal submatrix.
+            for (int i = 0; i < freeWeightCount; i++)
+            {
+                double weightI = mleWeights[i];
+                covariance[i, i] = weightI * (1.0 - weightI) / observationCount;
+                for (int j = 0; j < freeWeightCount; j++)
                 {
                     if (i == j) continue;
-
-                    double wj = mleWeights[j];
-                    // Equicorrelation rho between MLE Dirichlet weights. Add a tiny
-                    // epsilon nudge so the resulting covariance matrix is strictly
-                    // positive-definite for downstream Cholesky. Guard K==1 to avoid
-                    // division by zero (single-component model has no off-diagonal).
-                    if (K <= 1) { covariance[i, j] = 0.0; continue; }
-                    double rho = -1.0 / (K - 1.0) + Tools.DoubleMachineEpsilon;
-                    double vari = wi * (1.0 - wi) / N;
-                    double varj = wj * (1.0 - wj) / N;
-                    covariance[i, j] = rho * Math.Sqrt(vari * varj);
+                    double weightJ = mleWeights[j];
+                    double correlation = -1.0 / (componentCount - 1.0) + Tools.DoubleMachineEpsilon;
+                    double varianceI = weightI * (1.0 - weightI) / observationCount;
+                    double varianceJ = weightJ * (1.0 - weightJ) / observationCount;
+                    covariance[i, j] = correlation * Math.Sqrt(varianceI * varianceJ);
                 }
             }
-            // Component parameter covariance from Fisher information
             for (int i = 0; i < fisher.NumberOfRows; i++)
             {
                 for (int j = 0; j < fisher.NumberOfColumns; j++)
                 {
-                    covariance[i + K, j + K] = fisher[i, j];
+                    covariance[i + freeWeightCount, j + freeWeightCount] = fisher[i, j];
                 }
             }
         }
@@ -929,316 +1112,201 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override double DataLogLikelihood(double[] parameters)
         {
-            if (Mixture is null || DataFrame is null)
+            if (Mixture is null || DataFrame is null ||
+                !TryCreateDistribution(parameters, out Mixture? model))
+            {
                 return double.NegativeInfinity;
-
-            var model = (Mixture)Mixture.Clone();
-            int k = model.Distributions.Length;
-            double logLH = 0.0;
-
-            // Set model parameter
-            model.SetParameters(ref parameters);
-
-            // Exact Data
-            for (int i = 0; i < DataFrame.ExactSeries.Count; i++)
-            {
-                var data = (ExactData)DataFrame.ExactSeries[i];
-                if (!data.IsLowOutlier)
-                {
-                    logLH += model.LogLikelihood(data.Value);
-                }
-                else
-                {
-                    logLH += model.LogLikelihood_LeftCensored(DataFrame.LowOutlierThreshold, 1);
-                }
             }
-
-            // Uncertain Data
-            for (int i = 0; i < DataFrame.UncertainSeries.Count; i++)
-            {
-                var dist = ((UncertainData)DataFrame.UncertainSeries[i]).Distribution;
-                double lowerProbability = 1E-8;
-                double upperProbability = 1.0 - 1E-8;
-                var a = dist.InverseCDF(lowerProbability);
-                var b = dist.InverseCDF(upperProbability);
-                double mass = upperProbability - lowerProbability;
-                if (Tools.IsFinite(a) && Tools.IsFinite(b) && Tools.IsFinite(mass) && mass > 0.0 && a < b)
-                {
-                    var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * model.PDF(q); }, a, b) / mass;
-                    logLH += ep > 0 ? Math.Log(ep) : double.NegativeInfinity;
-                }
-                else
-                {
-                    logLH += double.NegativeInfinity;
-                }
-            }
-
-            // Interval Data
-            for (int i = 0; i < DataFrame.IntervalSeries.Count; i++)
-            {
-                var data = (IntervalData)DataFrame.IntervalSeries[i];
-                logLH += model.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
-            }
-
-            // Threshold Data
-            for (int i = 0; i < DataFrame.ThresholdSeries.Count; i++)
-            {
-                var data = (ThresholdData)DataFrame.ThresholdSeries[i];
-                if (data.NumberBelow > 0)
-                    logLH += model.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
-                if (data.NumberAbove > 0)
-                    logLH += model.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
-            }
-            return logLH;
+            return EvaluateDataLogLikelihood(model!);
         }
 
         /// <inheritdoc/>
         public override double[] PointwiseDataLogLikelihood(double[] parameters)
         {
-            if (Mixture is null || DataFrame is null)
-                return Array.Empty<double>();
-
-            var model = (Mixture)Mixture.Clone();
-
-            // Set model parameters
-            var parmsCopy = parameters.ToArray();
-            model.SetParameters(ref parmsCopy);
+            if (Mixture is null || DataFrame is null ||
+                !TryCreateDistribution(parameters, out Mixture? model))
+            {
+                int count = DataFrame?.ExactSeries.Count ?? 0;
+                count += DataFrame?.UncertainSeries.Count ?? 0;
+                count += DataFrame?.IntervalSeries.Count ?? 0;
+                count += DataFrame?.ThresholdSeries.Count ?? 0;
+                return Enumerable.Repeat(double.NegativeInfinity, count).ToArray();
+            }
 
             var result = new List<double>();
-
-            // Exact Data
-            for (int i = 0; i < DataFrame.ExactSeries.Count; i++)
+            foreach (ExactData data in DataFrame.ExactSeries)
             {
-                var data = (ExactData)DataFrame.ExactSeries[i];
-                if (!data.IsLowOutlier)
-                {
-                    result.Add(model.LogLikelihood(data.Value));
-                }
-                else
-                {
-                    result.Add(model.LogLikelihood_LeftCensored(DataFrame.LowOutlierThreshold, 1));
-                }
+                double logLikelihood = model!.IsZeroInflated && data.Value < 0.0
+                    ? double.NegativeInfinity
+                    : !data.IsLowOutlier
+                        ? model.LogLikelihood(data.Value)
+                        : model.LogLikelihood_LeftCensored(DataFrame.LowOutlierThreshold, 1);
+                result.Add(logLikelihood);
             }
-
-            // Uncertain Data
-            for (int i = 0; i < DataFrame.UncertainSeries.Count; i++)
+            foreach (UncertainData data in DataFrame.UncertainSeries!)
             {
-                var dist = ((UncertainData)DataFrame.UncertainSeries[i]).Distribution;
-                double lowerProbability = 1E-8;
-                double upperProbability = 1.0 - 1E-8;
-                var a = dist.InverseCDF(lowerProbability);
-                var b = dist.InverseCDF(upperProbability);
-                double mass = upperProbability - lowerProbability;
-                if (Tools.IsFinite(a) && Tools.IsFinite(b) && Tools.IsFinite(mass) && mass > 0.0 && a < b)
-                {
-                    var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * model.PDF(q); }, a, b) / mass;
-                    result.Add(ep > 0 ? Math.Log(ep) : double.NegativeInfinity);
-                }
-                else
-                {
-                    result.Add(double.NegativeInfinity);
-                }
+                double probability = UncertainObservationProbability(model!, data.Distribution);
+                result.Add(probability > 0.0 ? Math.Log(probability) : double.NegativeInfinity);
             }
-
-            // Interval Data
-            for (int i = 0; i < DataFrame.IntervalSeries.Count; i++)
+            foreach (IntervalData data in DataFrame.IntervalSeries)
             {
-                var data = (IntervalData)DataFrame.IntervalSeries[i];
-                result.Add(model.LogLikelihood_Intervals(data.LowerValue, data.UpperValue));
+                result.Add(model!.LogLikelihood_Intervals(data.LowerValue, data.UpperValue));
             }
-
-            // Threshold Data
-            for (int i = 0; i < DataFrame.ThresholdSeries.Count; i++)
+            foreach (ThresholdData data in DataFrame.ThresholdSeries)
             {
-                var data = (ThresholdData)DataFrame.ThresholdSeries[i];
-                // Combine left and right censored contributions for this threshold
-                double ll = 0.0;
+                double logLikelihood = 0.0;
                 if (data.NumberBelow > 0)
-                    ll += model.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
+                    logLikelihood += model!.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
                 if (data.NumberAbove > 0)
-                    ll += model.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
-                result.Add(ll);
+                    logLikelihood += model!.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
+                result.Add(logLikelihood);
             }
-
             return result.ToArray();
         }
 
         /// <inheritdoc/>
         public override List<DataComponent> PointwiseDataLogLikelihoodComponents(double[] parameters)
         {
-            if (Mixture is null || DataFrame is null)
-                return new List<DataComponent>();
-
-            var model = (Mixture)Mixture.Clone();
-            var parmsCopy = parameters.ToArray();
-            model.SetParameters(ref parmsCopy);
-
             var result = new List<DataComponent>();
-            int idx = 0;
-
-            // Exact Data
-            for (int i = 0; i < DataFrame.ExactSeries.Count; i++)
+            if (Mixture is null || DataFrame is null ||
+                !TryCreateDistribution(parameters, out Mixture? model))
             {
-                var data = (ExactData)DataFrame.ExactSeries[i];
-                double logLH;
-                double value = data.Value;
-
-                if (!data.IsLowOutlier)
-                {
-                    logLH = model.LogLikelihood(data.Value);
-                }
-                else
-                {
-                    logLH = model.LogLikelihood_LeftCensored(DataFrame.LowOutlierThreshold, 1);
-                    value = DataFrame.LowOutlierThreshold;
-                }
-
-                result.Add(new DataComponent(idx++, logLH, value, DataComponentType.Exact, 1, data.Index.ToString()));
+                return result;
             }
 
-            // Uncertain Data
-            for (int i = 0; i < DataFrame.UncertainSeries.Count; i++)
+            int resultIndex = 0;
+            foreach (ExactData data in DataFrame.ExactSeries)
             {
-                var data = (UncertainData)DataFrame.UncertainSeries[i];
-                var dist = data.Distribution;
-                double lowerProbability = 1E-8;
-                double upperProbability = 1.0 - 1E-8;
-                var a = dist.InverseCDF(lowerProbability);
-                var b = dist.InverseCDF(upperProbability);
-                double mass = upperProbability - lowerProbability;
-                double logLH = double.NegativeInfinity;
-                if (Tools.IsFinite(a) && Tools.IsFinite(b) && Tools.IsFinite(mass) && mass > 0.0 && a < b)
-                {
-                    var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * model.PDF(q); }, a, b) / mass;
-                    logLH = ep > 0 ? Math.Log(ep) : double.NegativeInfinity;
-                }
-                result.Add(new DataComponent(idx++, logLH, dist.Mean, DataComponentType.Uncertain, 1, data.Index.ToString()));
+                double value = data.IsLowOutlier ? DataFrame.LowOutlierThreshold : data.Value;
+                double logLikelihood = model!.IsZeroInflated && data.Value < 0.0
+                    ? double.NegativeInfinity
+                    : !data.IsLowOutlier
+                        ? model.LogLikelihood(data.Value)
+                        : model.LogLikelihood_LeftCensored(DataFrame.LowOutlierThreshold, 1);
+                result.Add(new DataComponent(resultIndex++, logLikelihood, value, DataComponentType.Exact, 1, data.Index.ToString()));
             }
-
-            // Interval Data
-            for (int i = 0; i < DataFrame.IntervalSeries.Count; i++)
+            foreach (UncertainData data in DataFrame.UncertainSeries!)
             {
-                var data = (IntervalData)DataFrame.IntervalSeries[i];
-                double logLH = model.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
+                double probability = UncertainObservationProbability(model!, data.Distribution);
+                double logLikelihood = probability > 0.0 ? Math.Log(probability) : double.NegativeInfinity;
+                result.Add(new DataComponent(resultIndex++, logLikelihood, data.Distribution.Mean, DataComponentType.Uncertain, 1, data.Index.ToString()));
+            }
+            foreach (IntervalData data in DataFrame.IntervalSeries)
+            {
+                double logLikelihood = model!.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
                 double midpoint = (data.LowerValue + data.UpperValue) / 2.0;
-
-                result.Add(new DataComponent(idx++, logLH, midpoint, DataComponentType.Interval, 1, data.Index.ToString()));
+                result.Add(new DataComponent(resultIndex++, logLikelihood, midpoint, DataComponentType.Interval, 1, data.Index.ToString()));
             }
-
-            // Threshold Data
-            for (int i = 0; i < DataFrame.ThresholdSeries.Count; i++)
+            int thresholdIndex = 0;
+            foreach (ThresholdData data in DataFrame.ThresholdSeries)
             {
-                var data = (ThresholdData)DataFrame.ThresholdSeries[i];
-                double ll = 0.0;
+                double logLikelihood = 0.0;
                 if (data.NumberBelow > 0)
-                    ll += model.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
+                    logLikelihood += model!.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
                 if (data.NumberAbove > 0)
-                    ll += model.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
-
+                    logLikelihood += model!.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
                 int totalCount = data.NumberBelow + data.NumberAbove;
-                result.Add(new DataComponent(idx++, ll, data.Value, DataComponentType.LeftCensored, totalCount, $"Threshold {i + 1}"));
+                result.Add(new DataComponent(
+                    resultIndex++,
+                    logLikelihood,
+                    data.Value,
+                    DataComponentType.LeftCensored,
+                    totalCount,
+                    $"Threshold {++thresholdIndex}"));
             }
-
             return result;
         }
 
         /// <inheritdoc/>
         public override double PriorLogLikelihood(double[] parameters)
         {
-            if (Mixture is null || Parameters is null)
+            if (Mixture is null || Parameters is null ||
+                !TryCreateDistribution(parameters, out Mixture? model))
+            {
                 return double.NegativeInfinity;
+            }
 
-            var model = (Mixture)Mixture.Clone();
-            int k = model.Distributions.Length;
-            double logLH = 0.0;
-
-            // Set model parameter
-            model.SetParameters(ref parameters);
-
-            // Parameter Priors
+            double logLikelihood = 0.0;
             for (int i = 0; i < Parameters.Count; i++)
             {
-                logLH += Parameters[i].PriorDistribution.LogPDF(parameters[i]);
+                logLikelihood += Parameters[i].PriorDistribution.LogPDF(parameters[i]);
             }
 
-            // Jeffreys rule on scale parameters for each component
+            int componentCount = model!.Distributions.Length;
+            if (componentCount > 1)
+            {
+                // Uniform(0, m) terms contribute -(K-1)log(m); this completes
+                // the normalized flat density on the physical simplex.
+                logLikelihood += Gamma.LogGamma(componentCount);
+            }
+
             if (UseJeffreysRuleForScale)
             {
-                for (int j = 0; j < k; j++)
+                for (int i = 0; i < componentCount; i++)
                 {
-                    var dist = model.Distributions[j];
-                    if (!TryGetJeffreysScaleParameter(dist, out double scale))
-                        continue;
-
-                    if (scale <= 0)
-                        return double.NegativeInfinity;
-
-                    logLH -= Math.Log(scale);
+                    if (!TryGetJeffreysScaleParameter(model.Distributions[i], out double scale)) continue;
+                    if (scale <= 0.0) return double.NegativeInfinity;
+                    logLikelihood -= Math.Log(scale);
                 }
             }
-
-            // Single quantile prior
-            if (EnableQuantilePriors == true && _quantilePriorsTrue.Count == 1)
+            if (EnableQuantilePriors && _quantilePriorsTrue.Count == 1)
             {
-                logLH += _quantilePriorsTrue[0].Distribution.LogPDF(model.InverseCDF(1 - _quantilePriorsTrue[0].Alpha));
+                double quantile = model.InverseCDF(1.0 - _quantilePriorsTrue[0].Alpha);
+                logLikelihood += _quantilePriorsTrue[0].Distribution.LogPDF(quantile);
             }
-
-            return logLH;
+            return Tools.IsFinite(logLikelihood) ? logLikelihood : double.NegativeInfinity;
         }
 
         /// <inheritdoc/>
         public override List<PriorComponent> PointwisePriorLogLikelihood(double[] parameters)
         {
             var result = new List<PriorComponent>();
-
-            if (Mixture is null || Parameters is null)
+            if (Mixture is null || Parameters is null ||
+                !TryCreateDistribution(parameters, out Mixture? model))
+            {
                 return result;
+            }
 
-            var model = (Mixture)Mixture.Clone();
-            int k = model.Distributions.Length;
-
-            // Set model parameters
-            var parmsCopy = parameters.ToArray();
-            model.SetParameters(ref parmsCopy);
-
-            // Parameter Priors
             for (int i = 0; i < Parameters.Count; i++)
             {
-                double ll = Parameters[i].PriorDistribution.LogPDF(parameters[i]);
-                string paramName = string.IsNullOrEmpty(Parameters[i].OwnerName) ? Parameters[i].Name : Parameters[i].OwnerName;
+                double logLikelihood = Parameters[i].PriorDistribution.LogPDF(parameters[i]);
+                string parameterName = string.IsNullOrEmpty(Parameters[i].OwnerName)
+                    ? Parameters[i].Name
+                    : Parameters[i].OwnerName;
                 result.Add(new PriorComponent(
-                    $"Parameter Prior: {paramName}",
-                    ll,
+                    $"Parameter Prior: {parameterName}",
+                    logLikelihood,
                     PriorComponentType.ParameterPrior));
             }
 
-            // Jeffreys rule on scale parameters for each component
+            int componentCount = model!.Distributions.Length;
+            if (componentCount > 1)
+            {
+                result.Add(new PriorComponent(
+                    "Mixture simplex normalization",
+                    Gamma.LogGamma(componentCount),
+                    PriorComponentType.ParameterPrior));
+            }
             if (UseJeffreysRuleForScale)
             {
-                for (int j = 0; j < k; j++)
+                for (int i = 0; i < componentCount; i++)
                 {
-                    var dist = model.Distributions[j];
-                    if (!TryGetJeffreysScaleParameter(dist, out double scale, out _))
-                        continue;
-
+                    if (!TryGetJeffreysScaleParameter(model.Distributions[i], out double scale, out _)) continue;
                     result.Add(new PriorComponent(
-                        $"Jeffreys Scale: Component {j + 1}",
-                        scale > 0 ? -Math.Log(scale) : double.NegativeInfinity,
+                        $"Jeffreys Scale: Component {i + 1}",
+                        scale > 0.0 ? -Math.Log(scale) : double.NegativeInfinity,
                         PriorComponentType.JeffreysScalePrior));
                 }
             }
-
-            // Single quantile prior
             if (EnableQuantilePriors && _quantilePriorsTrue.Count == 1)
             {
-                double quantile = model.InverseCDF(1 - _quantilePriorsTrue[0].Alpha);
-                double ll = _quantilePriorsTrue[0].Distribution.LogPDF(quantile);
+                double quantile = model.InverseCDF(1.0 - _quantilePriorsTrue[0].Alpha);
+                double logLikelihood = _quantilePriorsTrue[0].Distribution.LogPDF(quantile);
                 result.Add(new PriorComponent(
                     $"Quantile Prior: p={_quantilePriorsTrue[0].Alpha:P2}",
-                    ll,
+                    logLikelihood,
                     PriorComponentType.QuantilePrior));
             }
-
             return result;
         }
 
@@ -1247,15 +1315,21 @@ namespace RMC.BestFit.Models
         {
             if (parameters == null)
                 throw new ArgumentNullException(nameof(parameters));
-
             if (parameters.Count != NumberOfParameters)
                 throw new ArgumentException("The length of the parameter list is incorrect.", nameof(parameters));
+            if (!TryExpandPhysicalParameters(parameters, out double[] physicalParameters))
+                throw new ArgumentOutOfRangeException(nameof(parameters), "The mixture weights are outside the feasible physical simplex.");
+
+            var candidate = (Mixture)Mixture!.Clone();
+            candidate.SetParameters(physicalParameters);
+            if (!candidate.ParametersValid)
+                throw new ArgumentOutOfRangeException(nameof(parameters), "The mixture proposal contains invalid component parameters.");
 
             for (int i = 0; i < parameters.Count; i++)
+            {
                 Parameters[i].Value = parameters[i];
-
-            var parmsCopy = parameters.ToArray();
-            Mixture!.SetParameters(ref parmsCopy);
+            }
+            Mixture.SetParameters(physicalParameters);
         }
 
         /// <inheritdoc/>
@@ -1361,7 +1435,7 @@ namespace RMC.BestFit.Models
             // integral is normalized by the retained mass in the 1E-8 probability window.
             if (DataFrame.UncertainSeries is not null)
             {
-                foreach (UncertainData data in DataFrame.UncertainSeries)
+                foreach (UncertainData data in DataFrame.UncertainSeries!)
                 {
                     var dist = data.Distribution;
                     double lowerProbability = 1E-8;
@@ -1400,13 +1474,27 @@ namespace RMC.BestFit.Models
                     isValid = false;
                     messages.Add("Error: ZeroWeight must be in [0, 1) for a zero-inflated model.");
                 }
-            }
-            else
-            {
-                if (Mixture.ZeroWeight != 0.0)
+
+                ExactData? negativeExact = DataFrame.ExactSeries.Cast<ExactData>().FirstOrDefault(data => data.Value < 0.0);
+                if (negativeExact is not null)
                 {
-                    messages.Add("Warning: ZeroWeight is non-zero while IsZeroInflated is false. This will be reset to zero at runtime.");
+                    isValid = false;
+                    messages.Add($"Error: Zero-inflated mixtures do not permit negative exact observations; index {negativeExact.Index} has value {negativeExact.Value:R}.");
                 }
+
+                for (int i = 0; i < Mixture.Distributions.Length; i++)
+                {
+                    double positiveMass = Mixture.Distributions[i].CCDF(0.0);
+                    if (!Tools.IsFinite(positiveMass) || positiveMass <= 0.0)
+                    {
+                        isValid = false;
+                        messages.Add($"Error: Component distribution {i + 1} must have finite, positive probability above zero.");
+                    }
+                }
+            }
+            else if (Mixture.ZeroWeight != 0.0)
+            {
+                messages.Add("Warning: ZeroWeight is non-zero while IsZeroInflated is false. This will be reset to zero at runtime.");
             }
 
             // Check log distributions against data and retained ME support.
@@ -1414,43 +1502,51 @@ namespace RMC.BestFit.Models
             {
                 for (int i = 0; i < Mixture.Distributions.Length; i++)
                 {
-                    var dist = Mixture.Distributions[i];
-
-                    if (dist.Type == UnivariateDistributionType.LnNormal ||
-                        dist.Type == UnivariateDistributionType.LogNormal ||
-                        dist.Type == UnivariateDistributionType.LogPearsonTypeIII)
+                    UnivariateDistributionBase distribution = Mixture.Distributions[i];
+                    if (distribution.Type != UnivariateDistributionType.LnNormal &&
+                        distribution.Type != UnivariateDistributionType.LogNormal &&
+                        distribution.Type != UnivariateDistributionType.LogPearsonTypeIII)
                     {
-                        bool hasNonPositiveExact =
-                            !IsZeroInflated &&
-                            DataFrame.ExactSeries.Count > 0 &&
-                             DataFrame.ExactSeries
-                                 .Where(x => !((ExactData)x).IsLowOutlier)
-                                  .Any(y => y.Value <= 0.0);
+                        continue;
+                    }
 
-                        bool hasNonPositiveUncertain = false;
+                    bool hasNonPositiveExact =
+                        !IsZeroInflated &&
+                        DataFrame.ExactSeries.Count > 0 &&
+                        DataFrame.ExactSeries
+                            .Where(data => !((ExactData)data).IsLowOutlier)
+                            .Any(data => data.Value <= 0.0);
+
+                    bool hasNonPositiveUncertain = false;
+                    if (!IsZeroInflated)
+                    {
                         foreach (UncertainData data in DataFrame.UncertainSeries!)
                         {
-                            var meDist = data.Distribution;
-                            double lowerProbability = 1E-8;
-                            double lower = meDist.InverseCDF(lowerProbability);
-
-                            // Zero inflation can account for exact zeros, but it cannot make a
-                            // log component valid over negative retained ME support.
+                            double lower = data.Distribution.InverseCDF(1E-8);
                             if (!Tools.IsFinite(lower) || lower <= 0.0)
                             {
                                 hasNonPositiveUncertain = true;
                                 break;
                             }
                         }
+                    }
 
-                        if (hasNonPositiveExact || hasNonPositiveUncertain)
-                        {
-                            isValid = false;
-                            messages.Add($"Error: Component distribution {i + 1} is log-based but data include non-positive values or retained uncertain support.");
-                        }
+                    if (hasNonPositiveExact || hasNonPositiveUncertain)
+                    {
+                        isValid = false;
+                        messages.Add($"Error: Component distribution {i + 1} is log-based but data include non-positive values or retained uncertain support.");
                     }
                 }
             }
+
+            int expectedParameterCount = Math.Max(0, Mixture.Distributions!.Length - 1) +
+                Mixture.Distributions!.Sum(distribution => distribution.NumberOfParameters);
+            if (Parameters.Count != expectedParameterCount)
+            {
+                isValid = false;
+                messages.Add($"Error: Mixture parameter vector must contain K-1 free weights and component parameters ({expectedParameterCount} total).");
+            }
+
 
             // Parameter priors
             if (Parameters is not null)

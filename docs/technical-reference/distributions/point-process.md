@@ -1,10 +1,10 @@
-<!-- technical-reference-status: complete -->
+<!-- technical-reference-status: in-progress -->
 
 # Peaks over Threshold: Poisson Point-Process Model
 
 [Previous: Competing Risks](competing-risks.md) | [Technical Reference](../index.md) | [Next: Composite Distributions](composite.md)
 
-**PointProcessModel** fits threshold exceedances with the GEV-compatible Poisson point-process parameterization of extreme-value theory. It supports one stationary season or two day-of-year seasons. The model is not a generic arrival-process framework: every component must be a Numerics **GeneralizedExtremeValue**, and the implemented mark/rate likelihood is the limiting Poisson model associated with the GEV family.
+**PointProcessModel** fits threshold exceedances with the GEV-compatible Poisson point-process parameterization of extreme-value theory. It supports one stationary season or two block-day seasons under a calendar- or water-year convention. The model is not a generic arrival-process framework: every component must be a Numerics **GeneralizedExtremeValue**, and the implemented mark/rate likelihood is the limiting Poisson model associated with the GEV family.
 
 ## Notation and Parameterization
 
@@ -17,7 +17,9 @@
 | \(\sigma>0\) | scale, data units | Numerics **Alpha** |
 | \(\xi\) | Coles extreme-value shape | negative Numerics **Kappa** |
 | \(\kappa\) | Numerics Hosking shape | \(\kappa=-\xi\) |
-| \(\widehat\lambda\) | displayed empirical events per year | **Lambda** |
+| \(n_e\) | exact records treated as Poisson events | **EmpiricalEventCount** |
+| \(\widehat\lambda_e=n_e/N_y\) | empirical exact-event rate | **EmpiricalEventRate**, **Lambda** compatibility alias |
+| \(\Lambda_u\) | fitted threshold intensity | **FittedThresholdIntensity** |
 
 The feasibility condition is
 
@@ -32,7 +34,7 @@ $$
 \mu_2,\sigma_2,\kappa_2), \tag{2}
 $$
 
-where \(k_1\) and \(k_2\) are day-of-year change points constrained by \(1\le k_1<k_2\le366\). Default parameter bounds further place the first change point in days 10–170 and the second in days 171–330.
+where \(k_1\) and \(k_2\) are effective integer change-point days constrained by \(1\le k_1<k_2\le366\). Continuous latent proposals are floored once before use. The approved broad latent supports are half-open \([1,251)\) for the first value and \([200,367)\) for the second. These supports retain the paper's full second-changepoint range while allowing the first break to occur early in the configured block year [3](#ref-3).
 
 ## Point-Process Intensity and Likelihood
 
@@ -70,7 +72,7 @@ $$
 -N_y\exp\left[-\frac{u-\mu}{\sigma}\right]. \tag{6}
 $$
 
-Thus the occurrence rate is not a separate fitted Poisson parameter: equations (4)–(6) determine it from the GEV-compatible parameters. The public **Lambda** property is a data summary, not a member of \(\boldsymbol\theta\) and not a factor explicitly inserted into equation (5).
+Thus the occurrence rate is not a separate fitted Poisson parameter: equations (4)–(6) determine it from the GEV-compatible parameters. **FittedThresholdIntensity** exposes that fitted rate. **EmpiricalEventRate** is the exact-event count divided by exposure, while **Lambda** remains its compatibility alias; neither is a member of \(\boldsymbol\theta\) nor an additional factor in equation (5).
 
 ## Relationship to the Generalized Pareto Distribution
 
@@ -82,11 +84,19 @@ P(Y\le y\mid X>u)
 \qquad \sigma_u=\sigma+\xi(u-\mu), \tag{7}
 $$
 
-on \(y\ge0\) subject to \(1+\xi y/\sigma_u>0\). BestFit does not fit a separate **GeneralizedPareto** object in this model; it uses the equivalent point-process likelihood in equations (5)–(6). This distinction matters because **GenerateRandomValues(...)** samples the configured competing-risk GEV marginals, whereas **GeneratePOTTimeSeries(...)** conditions generated marks above \(u\).
+on \(y\ge0\) subject to \(1+\xi y/\sigma_u>0\). BestFit fits the equivalent point-process likelihood in equations (5)-(6), not a separate **GeneralizedPareto** model. For simulation, the configured Hosking GEV is converted to a Hosking GPA using the Madsen relationship
+
+$$
+\mu_{GPA}=u,\qquad
+\sigma_{GPA}=\sigma_{GEV}\widehat\lambda_e^{\kappa},\qquad
+\kappa_{GPA}=\kappa_{GEV}. \tag{7a}
+$$
+
+Both simulation APIs use the empirical **Lambda** as the annual Poisson mean. Seasonal events are assigned using only the changepoint exposure weights, then marked from the corresponding converted GPA.
 
 ## Seasonal Likelihood
 
-Season 1 contains days \(d<k_1\) or \(d\ge k_2\); season 2 contains \(k_1\le d<k_2\). Their exposures are
+Season 1 contains days \(d<\lfloor k_1\rfloor\) or \(d\ge\lfloor k_2\rfloor\); season 2 contains \(\lfloor k_1\rfloor\le d<\lfloor k_2\rfloor\). Their exposures are
 
 $$
 N_{y1}=N_y\frac{k_1+366-k_2}{366},
@@ -94,9 +104,23 @@ N_{y1}=N_y\frac{k_1+366-k_2}{366},
 N_{y2}=N_y\frac{k_2-k_1}{366}. \tag{8}
 $$
 
-Each exact event contributes the intensity-density term from its assigned season, and each season contributes its own \(-N_{ys}\Lambda_{u,s}\) term. **POTDays** is derived from the exact series using the selected **TimeBlock** and **StartMonth**; uncertain, interval, and threshold-count records do not carry a usable day-of-year assignment.
+Each exact event contributes the intensity-density term from its assigned season, and each season contributes its own \(-N_{ys}\Lambda_{u,s}\) term. **POTDays** is the one-based elapsed day from the selected calendar- or water-year block start. This elapsed-day calculation, rather than a month shift, is shared by observed and generated events and preserves leap days. Uncertain, interval, and threshold-count records do not carry a usable day assignment.
 
-For frequency-output composition, BestFit transforms each seasonal GEV so its annual component represents the corresponding seasonal fraction \(p_s=N_{ys}/N_y\). In Numerics-sign notation, for \(\kappa_s\ne0\),
+The fractions \(p_s=N_{ys}/N_y\) weight the two seasonal point-process intensities; they are not mixture probabilities applied to annual GEV distributions. If \(M_s\) is the maximum generated by process \(s\) over its seasonal exposure, then
+
+$$
+F_{M_s}(x)=\exp[-p_s\Lambda_s(x)]. \tag{8a}
+$$
+
+The annual maximum is the maximum of the two independent seasonal maxima, so
+
+$$
+F_A(x)=P\{\max(M_1,M_2)\le x\}
+=F_{M_1}(x)F_{M_2}(x)
+=\exp[-p_1\Lambda_1(x)-p_2\Lambda_2(x)]. \tag{8b}
+$$
+
+For frequency-output composition, BestFit represents each \(F_{M_s}\) as an exposure-adjusted GEV. In Numerics-sign notation, for \(\kappa_s\ne0\),
 
 $$
 \widehat\mu_s
@@ -106,17 +130,17 @@ $$
 \widehat\sigma_s=\sigma_s p_s^{-\kappa_s}, \tag{9}
 $$
 
-with Gumbel limit \(\widehat\mu_s=\mu_s-\sigma_s\log p_s\) and \(\widehat\sigma_s=\sigma_s\). The resulting annual distribution is the independent maximum of the two transformed components.
+with Gumbel limit \(\widehat\mu_s=\mu_s-\sigma_s\log p_s\) and \(\widehat\sigma_s=\sigma_s\). The resulting **CompetingRisks** distribution is the independent maximum of the two transformed seasonal components. It is equivalent to equation (8b), not to a weighted-mixture CDF \(p_1F_1+p_2F_2\).
 
 ## Non-Exact Observation Contributions
 
-After the exact point-process contribution, the implementation evaluates other records against the composite GEV distribution:
+After the exact point-process contribution, the implemented hybrid likelihood evaluates other records against a competing-risk GEV magnitude distribution:
 
-- uncertain observations use 20-point Gauss–Legendre integration of measurement-error density times composite density over the central \(1-2\times10^{-8}\) error-distribution mass, divided by that retained mass;
+- uncertain observations use 20-point Gauss-Legendre integration of measurement-error density times composite density over the central (1-2\times10^{-8}) error-distribution mass, divided by that retained mass;
 - interval records contribute the log probability between their bounds; and
 - threshold counts contribute repeated left- and/or right-censored log probabilities.
 
-These records are treated as block-indexed magnitude information and do not receive separate Poisson event-density or exposure contributions. This is an implemented hybrid likelihood, not the standard marked-point-process treatment of uncertain event times and counts. Studies using substantial non-exact POT information should justify this observation model explicitly.
+These records are block-indexed annual magnitude information. They do not become Poisson events and do not receive an event-density or additional exposure contribution. In a seasonal model they have no event day because their index identifies the annual block, not a seasonal process. Their likelihood therefore uses the annual **CompetingRisks** distribution in equation (8b): exposure weights act on the process intensities, each seasonal process produces an exposure-adjusted seasonal maximum, and the annual observation is evaluated against the maximum of those two independent maxima. The weights are never applied as annual mixture probabilities.
 
 For WAIC and LOO, the global rate term is divided equally among exact events. If there are no exact events, it is attached to the first non-exact entry so that
 
@@ -126,10 +150,13 @@ $$
 $$
 
 The allocation preserves the sum but is not unique; pointwise influence attributed to the rate term depends on this convention.
-
 ## Priors
 
 The posterior target adds each **ModelParameter** prior. With **UseJeffreysRuleForScale**, one \(-\log\sigma_s\) term is added per seasonal GEV scale. A single quantile prior is evaluated on the composite annual distribution. The multi-quantile reparameterization is accepted only for a nonseasonal single-component model with three quantile priors, in which case the quantile-density terms and the transformation Jacobian enter the prior decomposition. See [Parameters and Priors](../models/parameters-and-priors.md).
+
+When default flat priors are enabled, seasonal changepoints use a fast empirical occurrence-histogram rule. Exact dated events are counted in the existing 12 calendar-month bins and rotated so bin one is the configured block-year start. Counts first receive an effectively-flat check against month-length exposure using the Pearson statistic and the fixed 11-degree-of-freedom 95% cutoff 19.675. Non-flat counts receive one circular \([1,2,1]/4\) smoothing pass; the uniquely strongest separated peak pair defines two arcs, and the minimum-frequency month on each arc defines an approximate break. Each prior is a five-month flat window centered on the detected valley cell and intersected with the approved broad support. The latent initial value is the valley-cell center; the effective changepoint remains its floor.
+
+The rule is not an estimator: it evaluates no likelihood, fit, MAP objective, or MCMC state. Fewer than ten dated exact events, flat/effectively flat or unimodal structure, ambiguous tied peak pairs, or an incompatible window retain the broad defaults. Index-only manually entered POT data therefore retain the broad priors. A seasonal model is invalid unless every exact POT observation has a nondefault **DateTime**, because its process assignment requires a block day. Index-only exact records remain valid for nonseasonal fits and for their year/index-span exposure fallback. Set **UseDefaultFlatPriors** to false before supplying custom priors; serialization remains the ordinary **ModelParameter** format.
 
 ## Compile-Checked Configuration
 
@@ -166,32 +193,37 @@ The numerical threshold and exposure are illustrative configuration values, not 
 
 A useful threshold is high enough for the tail approximation to be credible but low enough to retain adequate information. **ThresholdDiagnostics**, **MeanResidualLifeResult**, and **ParameterStabilityResult** support threshold sensitivity work. A defensible analysis examines mean residual life, shape/modified-scale stability, event independence, seasonal changes, and the stability of decision-relevant quantiles—not one diagnostic in isolation [1](#ref-1).
 
-With defaults enabled, BestFit uses a supplied finite POT metadata threshold only if it lies below the smallest exact value; otherwise it uses the floating-point value immediately below the smallest exact value. When exact data are absent, it uses the value immediately below the smallest uncertain/interval representative. Default exposure is the exact-series index span or one year if no exact record exists. These are initialization heuristics, not substitutes for station-history metadata.
+With defaults enabled, BestFit uses a supplied finite POT metadata threshold only if it lies below the smallest exact value; otherwise it uses the floating-point value immediately below the smallest exact value. When exact data are absent, it uses the value immediately below the smallest uncertain/interval representative.
 
-**CalculateLambda()** currently counts exact, uncertain, and interval records, whereas **GeneratePOTTimeSeries()** uses exact records only and the fitted likelihood derives rate from equation (4). This discrepancy is [TR-004](../review-findings.md#tr-004). The simulator also draws event count from the empirical exact-event rate rather than the fitted point-process intensity; it should not be described as a posterior predictive realization of equations (3)–(6) until [TR-005](../review-findings.md#tr-005) is resolved.
+Exposure precedence is explicit model **TotalYears**, then **DataFrame.PointProcessObservationYears**, then the exact-series year/index span (or one year when no exact record exists). POT extraction records the source time-series year count before discarding sub-threshold observations, preserving leading and trailing zero-event years. Manually entered POT data normally lack that metadata, so the year/index span remains the compatibility fallback. **IsTotalYearsInferred** identifies that fallback, and validation warns that users should override it when station-history coverage is known. Only exact records enter **EmpiricalEventCount** and **EmpiricalEventRate**; non-exact rows remain magnitude-likelihood observations.
 
 ## Simulation APIs
 
-**GenerateRandomValues(sampleSize, seed)** draws one value from every configured GEV component and takes their minimum or maximum according to the **CompetingRisks** setting. It does not condition values above the threshold and does not simulate arrival times.
+**GenerateRandomValues(sampleSize, seed)** draws annual counts from `Poisson(Lambda)` until exactly `sampleSize` exceedances have been retained. It returns only magnitudes because its established return type is `double[]`. In seasonal mode, each event is assigned from the exposure weights \(w_1,w_2\), then marked from the assigned Madsen-converted GPA.
+
+**GeneratePOTTimeSeries(sampleSize, seed)** uses the same annual Poisson batches, seasonal assignments, and GPA marks, and adds dummy dates in leap-containing blocks beginning in 2000. The block start follows the configured calendar-, water-, or custom-year setting.
 
 **GeneratePOTTimeSeries(startDate, durationYears, seed)**:
 
-1. draws an event count from a Poisson distribution with mean **ExactSeries.Count / TotalYears * durationYears**;
-2. assigns event dates uniformly over **durationYears * 365.25** days;
-3. selects a seasonal marginal from the generated calendar day, when enabled;
-4. samples that marginal conditional on exceeding **Threshold**; and
-5. sorts the date–magnitude pairs.
+1. converts each raw Hosking GEV component to its Hosking GPA using equation (7a) and the empirical **Lambda**;
+2. draws one total count from `Poisson(durationYears * Lambda)`;
+3. assigns each seasonal event using the analytical exposure weights;
+4. samples a date uniformly from the requested span subject to the same block-day season predicate used by the likelihood; and
+5. samples the mark from the assigned GPA and sorts the date-magnitude pairs.
 
-A positive seed is deterministic in the pinned implementation; nonpositive seeds use a clock-seeded generator. The seasonal simulator applies raw component parameters rather than the annualized transform in equation (9), another aspect included in [TR-005](../review-findings.md#tr-005).
+A positive seed is deterministic; nonpositive seeds use a clock-seeded generator. Equation (9)'s annualized transform is used for frequency-output composition, not for Poisson-GPA generation.
 
 ## Failure Modes and Extrapolation Cautions
 
 - Declustering and threshold selection occur outside the point-process likelihood. Dependent clusters will overstate information.
-- The default exposure can be biased if the first or last observed exceedance does not delimit the actual observation period.
+- Event-span fallback exposure can be biased if the first or last retained event does not delimit the actual observation period; heed the validation warning or supply source exposure.
+- Manually entered undated exact records are suitable for nonseasonal exposure fallback, but validation rejects them for seasonal fitting.
+- Seasonal uncertain, interval, and threshold-count records are annual/block-indexed and use the annual maximum distribution in equation (8b); their indexes do not assign them to a seasonal process.
 - Shape estimates near zero switch formula at \(10^{-4}\), while seasonal annualization uses a tighter \(10^{-8}\) limit; check continuity in sensitive cases.
 - A negative Coles shape imposes a finite upper endpoint; proposed parameters violating support return negative infinity.
 - Two seasons add two change points and two complete GEV parameter sets. Sparse seasonal events can yield weak identification and partition sensitivity.
-- The mixed-data extension lacks event-time uncertainty and does not add uncertain/interval records to the Poisson event product.
+- Floored changepoint posteriors can be genuinely multimodal. Assess integer-day posterior mass, credible sets, and posterior-predictive recovery rather than posterior means alone [3](#ref-3).
+- The mixed-data extension lacks event-time uncertainty and does not add uncertain or interval records to the Poisson event product.
 
 ## Implementation and Verification Traceability
 
@@ -202,12 +234,16 @@ A positive seed is deterministic in the pinned implementation; nonpositive seeds
 | Threshold diagnostics | **Models/DataFrame/ThresholdDiagnostics.cs** |
 | Composite annual distribution | pinned **Numerics/Distributions/Univariate/CompetingRisks.cs** |
 | GEV parameterization | pinned **Numerics/Distributions/Univariate/GeneralizedExtremeValue.cs** |
+| Fast contracts | **RMC.BestFit.Tests/Univariate/PointProcessModelTests.cs**, **PointProcessAnalysisTests.cs**, **PointProcessChangePointPriorTests.cs**, **DataFrame/ExactDataProcessTests.cs** |
+| Scientific verification cells | **RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessSeasonalFixture.cs**, **PointProcessPriorTests.cs**, **PointProcessRecoveryTests.cs**, **PointProcessRecoveryTests.Uniform.cs**; see [point-process verification](../../verification/point-process.md) |
 
 ## References
 
 <a id="ref-1"></a>[1] S. Coles, *An Introduction to Statistical Modeling of Extreme Values*. London, U.K.: Springer, 2001.
 
 <a id="ref-2"></a>[2] A. C. Davison and R. L. Smith, “Models for exceedances over high thresholds,” *Journal of the Royal Statistical Society: Series B*, vol. 52, no. 3, pp. 393–442, 1990.
+
+<a id="ref-3"></a>[3] S. G. Coles and L. R. Pericchi, “Anticipating catastrophes through extreme value modelling,” *Journal of the Royal Statistical Society: Series C*, vol. 52, no. 4, pp. 405–416, 2003.
 
 ---
 

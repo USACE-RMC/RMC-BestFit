@@ -1,4 +1,4 @@
-using Numerics.Distributions;
+﻿using Numerics.Distributions;
 using RMC.BestFit.Models;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
@@ -85,10 +85,10 @@ public class MeasurementErrorIntegrationTests
     }
 
     /// <summary>
-    /// Mixture log components reject uncertain lower support even when zero inflation is enabled.
+    /// A positive-hurdle mixture integrates only positive continuous support when measurement error crosses zero.
     /// </summary>
     [TestMethod]
-    public void MixtureModel_Validate_LogComponent_UncertainLowerTailCrossesZero_IsInvalid()
+    public void MixtureModel_Validate_LogComponent_UncertainLowerTailCrossesZero_IsValid()
     {
         var df = CreatePositiveDataFrame();
         df.UncertainSeries.Add(new UncertainData(2005, new Normal(100.0, 50.0)));
@@ -96,9 +96,9 @@ public class MeasurementErrorIntegrationTests
 
         var (isValid, messages) = model.Validate();
 
-        Assert.IsFalse(isValid);
-        Assert.IsTrue(messages.Any(m => m.Contains("retained uncertain support", StringComparison.OrdinalIgnoreCase) ||
-                                        m.Contains("1E-8", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(isValid, string.Join(Environment.NewLine, messages));
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(parameters)));
     }
 
     /// <summary>

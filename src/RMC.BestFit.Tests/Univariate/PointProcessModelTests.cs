@@ -1,6 +1,7 @@
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
+using Numerics.Mathematics.Integration;
 using RMC.BestFit.Models;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
@@ -203,6 +204,95 @@ public class PointProcessModelTests
 
         // Lambda = events / years = 10 events / 10 years = 1.0
         Assert.AreEqual(1.0, model.Lambda, 1e-10);
+    }
+
+    /// <summary>Verifies that non-exact observations do not become empirical Poisson events.</summary>
+    [TestMethod]
+    public void Test_EmpiricalEventRate_CountsExactEventsOnly()
+    {
+        var df = CreatePOTDataFrame();
+        df.UncertainSeries.Add(new UncertainData(1998, new Normal(1800.0, 100.0)));
+        df.IntervalSeries.Add(new IntervalData(1999, 1600.0, 1700.0, 1800.0));
+        df.ThresholdSeries.Add(new BestFitThresholdData(2000, 2005, 1500.0) { NumberAbove = 20 });
+        var model = new PointProcessModel { DataFrame = df, TotalYears = 5.0 };
+
+        Assert.AreEqual(df.ExactSeries.Count, model.EmpiricalEventCount);
+        Assert.AreEqual(2.0, model.EmpiricalEventRate, 1E-12);
+        Assert.AreEqual(model.EmpiricalEventRate, model.Lambda, 0.0);
+    }
+
+    /// <summary>Verifies that a retained source exposure takes precedence over event-span inference.</summary>
+    [TestMethod]
+    public void Test_DefaultExposure_UsesStoredSourceYears()
+    {
+        var df = CreatePOTDataFrame();
+        df.PointProcessObservationYears = 25.0;
+
+        var model = new PointProcessModel { DataFrame = df };
+        var validation = model.Validate();
+
+        Assert.AreEqual(25.0, model.TotalYears, 0.0);
+        Assert.IsFalse(model.IsTotalYearsInferred);
+        Assert.IsFalse(validation.ValidationMessages.Any(message => message.StartsWith("Warning: TotalYears", StringComparison.Ordinal)));
+    }
+
+    /// <summary>Verifies that an explicit exposure is not replaced by a stored source exposure.</summary>
+    [TestMethod]
+    public void Test_DefaultExposure_ExplicitTotalYearsHasPrecedence()
+    {
+        var df = CreatePOTDataFrame();
+        df.PointProcessObservationYears = 25.0;
+        var model = new PointProcessModel { UseDefaults = false, DataFrame = df, TotalYears = 40.0 };
+
+        model.SetDefaultThresholdAndTotalYears();
+
+        Assert.AreEqual(40.0, model.TotalYears, 0.0);
+        Assert.IsFalse(model.IsTotalYearsInferred);
+    }
+
+    /// <summary>Verifies that event-span fallback is identified by a validation warning.</summary>
+    [TestMethod]
+    public void Test_DefaultExposure_EventSpanFallbackWarns()
+    {
+        var model = new PointProcessModel { DataFrame = CreatePOTDataFrame() };
+
+        var validation = model.Validate();
+
+        Assert.IsTrue(model.IsTotalYearsInferred);
+        Assert.IsTrue(validation.ValidationMessages.Any(message => message.StartsWith("Warning: TotalYears", StringComparison.Ordinal)));
+    }
+
+    /// <summary>Verifies that explicitly accepting an inferred value records an explicit override.</summary>
+    [TestMethod]
+    public void Test_TotalYears_SettingSameValueClearsInferenceFlag()
+    {
+        var model = new PointProcessModel { DataFrame = CreatePOTDataFrame() };
+        model.UseDefaults = false;
+
+        model.TotalYears = model.TotalYears;
+
+        Assert.IsFalse(model.IsTotalYearsInferred);
+    }
+
+    /// <summary>Verifies explicit exposure precedence and rate refresh regardless of initializer order.</summary>
+    [TestMethod]
+    public void Test_DataFrameReplacement_WithDefaultsDisabledPreservesExposureAndRefreshesRate()
+    {
+        var frame = CreatePOTDataFrame();
+        var model = new PointProcessModel
+        {
+            UseDefaults = false,
+            TotalYears = 5.0,
+            DataFrame = frame
+        };
+
+        Assert.AreEqual(5.0, model.TotalYears, 0.0);
+        Assert.AreEqual(2.0, model.Lambda, 1E-12);
+
+        frame.ExactSeries.Add(new ExactData(2011, 2100.0));
+
+        Assert.AreEqual(11, model.EmpiricalEventCount);
+        Assert.AreEqual(2.2, model.Lambda, 1E-12);
     }
 
     /// <summary>Verifies that use defaults sets threshold and years.</summary>
@@ -653,13 +743,10 @@ public class PointProcessModelTests
         model.IsSeasonal = true;
         model.DataFrame = df;
 
-        // K1 bounds
-        Assert.AreEqual(10, model.Parameters[0].LowerBound);
-        Assert.AreEqual(170, model.Parameters[0].UpperBound);
-
-        // K2 bounds
-        Assert.AreEqual(171, model.Parameters[1].LowerBound);
-        Assert.AreEqual(330, model.Parameters[1].UpperBound);
+        Assert.AreEqual(1.0, model.Parameters[0].LowerBound);
+        Assert.AreEqual(Math.BitDecrement(251.0), model.Parameters[0].UpperBound);
+        Assert.AreEqual(200.0, model.Parameters[1].LowerBound);
+        Assert.AreEqual(Math.BitDecrement(367.0), model.Parameters[1].UpperBound);
     }
 
     /// <summary>Verifies that seasonal change point default values.</summary>
@@ -691,6 +778,146 @@ public class PointProcessModelTests
         double dataLogLH = model.DataLogLikelihood(parameters);
 
         Assert.IsFalse(double.IsNaN(dataLogLH));
+    }
+
+    /// <summary>Verifies that block-indexed non-exact records use the annual maximum distribution.</summary>
+    [TestMethod]
+    public void Test_Seasonal_NonExactLikelihoodUsesAnnualizedCompetingRisk()
+    {
+        var frame = CreateSeasonalPOTDataFrame();
+        var measurementError = new Normal(2250.0, 75.0);
+        frame.UncertainSeries.Add(new UncertainData(2001, measurementError));
+        frame.IntervalSeries.Add(new IntervalData(2002, 2000.0, 2200.0, 2400.0));
+        frame.ThresholdSeries.Add(new BestFitThresholdData(2003, 2004, 2100.0)
+        {
+            NumberBelow = 1,
+            NumberAbove = 1
+        });
+        var model = new PointProcessModel { IsSeasonal = true, DataFrame = frame };
+        double[] parameters = { 90.0, 250.0, 2100.0, 450.0, 0.10, 2500.0, 550.0, -0.05 };
+        CompetingRisks annualMaximum = model.GetDistribution(parameters);
+
+        double[] pointwise = model.PointwiseDataLogLikelihood(parameters);
+        int nonExactIndex = frame.ExactSeries.Count;
+        const double lowerProbability = 1E-8;
+        const double upperProbability = 1.0 - 1E-8;
+        double lower = measurementError.InverseCDF(lowerProbability);
+        double upper = measurementError.InverseCDF(upperProbability);
+        double expectedUncertain = Math.Log(Integration.GaussLegendre20(
+            value => measurementError.PDF(value) * annualMaximum.PDF(value), lower, upper) /
+            (upperProbability - lowerProbability));
+        double expectedInterval = annualMaximum.LogLikelihood_Intervals(2000.0, 2400.0);
+        double expectedThreshold = annualMaximum.LogLikelihood_LeftCensored(2100.0, 1) +
+                                   annualMaximum.LogLikelihood_RightCensored(2100.0, 1);
+
+        Assert.AreEqual(expectedUncertain, pointwise[nonExactIndex], 1E-12);
+        Assert.AreEqual(expectedInterval, pointwise[nonExactIndex + 1], 1E-12);
+        Assert.AreEqual(expectedThreshold, pointwise[nonExactIndex + 2], 1E-12);
+        Assert.AreEqual(model.DataLogLikelihood(parameters), pointwise.Sum(), 1E-10);
+    }
+
+    /// <summary>Verifies that seasonal weights use the floored integer changepoint days.</summary>
+    [TestMethod]
+    public void Test_Seasonal_ExposureWeightsUseFlooredChangePoints()
+    {
+        var model = new PointProcessModel { IsSeasonal = true, DataFrame = CreateSeasonalPOTDataFrame() };
+        double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        parameters[0] = 10.9;
+        parameters[1] = 200.9;
+
+        model.SetParameterValues(parameters);
+
+        Assert.AreEqual(176.0 / 366.0, model.SeasonOneExposureWeight, 1E-15);
+        Assert.AreEqual(190.0 / 366.0, model.SeasonTwoExposureWeight, 1E-15);
+    }
+
+    /// <summary>Verifies that proposals within the same changepoint day cells have identical likelihoods.</summary>
+    [TestMethod]
+    public void Test_Seasonal_LikelihoodIsConstantWithinFlooredDayCells()
+    {
+        var model = new PointProcessModel { IsSeasonal = true, DataFrame = CreateSeasonalPOTDataFrame() };
+        double[] first = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        first[0] = 10.1;
+        first[1] = 200.8;
+        double[] second = (double[])first.Clone();
+        second[0] = 10.9;
+        second[1] = 200.1;
+
+        Assert.AreEqual(model.DataLogLikelihood(first), model.DataLogLikelihood(second), 0.0);
+    }
+
+    /// <summary>Verifies elapsed-day water-year indexing across a leap day.</summary>
+    [TestMethod]
+    public void Test_Seasonal_WaterYearBlockDaysUseElapsedDates()
+    {
+        var df = new BestFitDataFrame
+        {
+            ExactSeries = new ExactSeries(new List<ExactData>
+            {
+                new ExactData(new DateTime(2019, 10, 1), 1000.0),
+                new ExactData(new DateTime(2020, 9, 30), 1100.0)
+            })
+        };
+        var model = new PointProcessModel
+        {
+            IsSeasonal = true,
+            TimeBlock = TimeBlockWindow.WaterYear,
+            StartMonth = 10,
+            DataFrame = df
+        };
+
+        CollectionAssert.AreEqual(new List<int> { 1, 366 }, model.POTDays);
+    }
+
+    /// <summary>Verifies the analytical fitted Gumbel threshold intensity.</summary>
+    [TestMethod]
+    public void Test_FittedThresholdIntensity_GumbelMatchesAnalyticalMeasure()
+    {
+        var model = new PointProcessModel
+        {
+            UseDefaults = false,
+            DataFrame = CreatePOTDataFrame(),
+            Threshold = 900.0,
+            TotalYears = 10.0
+        };
+        model.SetParameterValues(new double[] { 1000.0, 100.0, 0.0 });
+
+        Assert.AreEqual(Math.Exp(1.0), model.FittedThresholdIntensity, 1E-12);
+        Assert.IsTrue(double.IsNaN(model.FittedSeasonOneThresholdIntensity));
+    }
+
+    /// <summary>Verifies that duration-based simulation uses the empirical Poisson arrival rate.</summary>
+    [TestMethod]
+    public void Test_GeneratePOTTimeSeries_DurationUsesEmpiricalLambda()
+    {
+        const double threshold = 0.4;
+        const double lambda = 8.0;
+        const double gpaScale = 0.7;
+        const double kappa = -0.2;
+        const double durationYears = 3.0;
+        const int seed = 12345;
+        var model = new PointProcessModel
+        {
+            UseDefaults = false,
+            DataFrame = CreatePOTDataFrame()
+        };
+        model.Threshold = threshold;
+        model.TotalYears = model.DataFrame.ExactSeries.Count / lambda;
+        model.SetDefaultParameters();
+
+        double gevLocation = threshold + gpaScale / kappa * (1.0 - Math.Pow(lambda, -kappa));
+        double gevScale = gpaScale * Math.Pow(lambda, -kappa);
+        model.SetParameterValues(new[] { gevLocation, gevScale, kappa });
+
+        var rng = new Numerics.Sampling.MersenneTwister(seed);
+        int expectedCount = checked((int)new Poisson(durationYears * lambda).InverseCDF(rng.NextDouble()));
+        Numerics.Data.TimeSeries actual = model.GeneratePOTTimeSeries(
+            new DateTime(2000, 1, 1),
+            durationYears,
+            seed);
+
+        Assert.AreEqual(expectedCount, actual.Count);
+        Assert.IsTrue(actual.All(point => point.Value >= threshold));
     }
 
     #endregion
@@ -825,6 +1052,7 @@ public class PointProcessModelTests
         var xElement = model.ToXElement();
 
         Assert.IsNotNull(xElement.Attribute("TotalYears"));
+        Assert.IsNotNull(xElement.Attribute("IsTotalYearsInferred"));
     }
 
     /// <summary>Verifies that to X element contains is seasonal attribute.</summary>
@@ -865,6 +1093,20 @@ public class PointProcessModelTests
         Assert.AreEqual(original.Threshold, restored.Threshold, 1e-10);
         Assert.AreEqual(original.TotalYears, restored.TotalYears, 1e-10);
         Assert.AreEqual(original.IsSeasonal, restored.IsSeasonal);
+        Assert.AreEqual(original.IsTotalYearsInferred, restored.IsTotalYearsInferred);
+    }
+
+    /// <summary>Verifies that inferred exposure origin survives point-process XML serialization.</summary>
+    [TestMethod]
+    public void Test_RoundTrip_PreservesInferredExposureOrigin()
+    {
+        var df = CreatePOTDataFrame();
+        var original = new PointProcessModel { DataFrame = df };
+
+        var restored = new PointProcessModel(df, original.ToXElement());
+
+        Assert.IsTrue(original.IsTotalYearsInferred);
+        Assert.IsTrue(restored.IsTotalYearsInferred);
     }
 
     /// <summary>Verifies that round trip preserves seasonal settings for .</summary>
@@ -962,6 +1204,20 @@ public class PointProcessModelTests
 
         Assert.IsFalse(isValid);
         Assert.IsTrue(messages.Any(m => m.Contains("StartMonth")));
+    }
+
+    /// <summary>Verifies that seasonal fitting rejects an exact observation without a date.</summary>
+    [TestMethod]
+    public void Test_Validate_SeasonalUndatedExactObservation_ReturnsFalse()
+    {
+        var frame = CreateSeasonalPOTDataFrame();
+        frame.ExactSeries.Add(new ExactData(2001, 1750.0));
+        var model = new PointProcessModel { IsSeasonal = true, DataFrame = frame };
+
+        var (isValid, messages) = model.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(message => message.Contains("requires a valid date", StringComparison.OrdinalIgnoreCase)));
     }
 
     #endregion
@@ -1215,6 +1471,188 @@ public class PointProcessModelTests
 
         // Lambda should be ~10 events per year
         Assert.AreEqual(10.0, model.Lambda, 1e-10);
+    }
+
+    #endregion
+
+    #region Random Generation Tests
+
+    /// <summary>
+    /// Verifies that nonseasonal random generation uses the empirical Poisson rate and the
+    /// Hosking-parameterized Madsen GEV-to-GPA conversion.
+    /// </summary>
+    [TestMethod]
+    public void Test_GenerateRandomValues_NonSeasonal_UsesPoissonGpaMadsenProcess()
+    {
+        const double threshold = 0.4;
+        const double lambda = 8.0;
+        const double gpaScale = 0.7;
+        const double kappa = -0.2;
+        const int sampleSize = 50;
+        const int seed = 12345;
+
+        var model = new PointProcessModel
+        {
+            UseDefaults = false,
+            DataFrame = CreatePOTDataFrame()
+        };
+        model.Threshold = threshold;
+        model.TotalYears = model.DataFrame.ExactSeries.Count / lambda;
+        model.SetDefaultParameters();
+
+        double gevLocation = threshold + gpaScale / kappa * (1.0 - Math.Pow(lambda, -kappa));
+        double gevScale = gpaScale * Math.Pow(lambda, -kappa);
+        model.SetParameterValues(new[] { gevLocation, gevScale, kappa });
+
+        double[] actual = model.GenerateRandomValues(sampleSize, seed);
+
+        var poisson = new Poisson(lambda);
+        var gpa = new GeneralizedPareto(threshold, gpaScale, kappa);
+        var rng = new Numerics.Sampling.MersenneTwister(seed);
+        var expected = new double[sampleSize];
+        int generated = 0;
+        while (generated < sampleSize)
+        {
+            int yearlyEventCount = checked((int)poisson.InverseCDF(rng.NextDouble()));
+            int eventsToRetain = Math.Min(yearlyEventCount, sampleSize - generated);
+            for (int i = 0; i < eventsToRetain; i++)
+            {
+                expected[generated] = gpa.InverseCDF(rng.NextDouble());
+                generated++;
+            }
+        }
+
+        Assert.AreEqual(lambda, model.Lambda, 1E-12);
+        Assert.AreEqual(sampleSize, actual.Length);
+        for (int i = 0; i < sampleSize; i++)
+        {
+            Assert.AreEqual(expected[i], actual[i], 1E-12, $"Generated magnitude {i} did not match the Numerics Poisson-GPA construction.");
+        }
+        Assert.IsTrue(actual.All(value => value >= threshold));
+    }
+
+    /// <summary>
+    /// Verifies seasonal Poisson thinning, Madsen GPA marks, and calendar/water-year dummy dates.
+    /// </summary>
+    [TestMethod]
+    public void Test_GenerateRandomValues_Seasonal_UsesPoissonGpaExposureMixture()
+    {
+        const double threshold = 0.4;
+        const double lambda = 8.0;
+        const double gpaScaleOne = 0.5;
+        const double gpaKappaOne = 0.1;
+        const double gpaScaleTwo = 0.7;
+        const double gpaKappaTwo = -0.2;
+        const int changePointOne = 60;
+        const int changePointTwo = 210;
+        const int sampleSize = 80;
+        const int seed = 24680;
+        var model = new PointProcessModel
+        {
+            UseDefaults = false,
+            IsSeasonal = true,
+            TimeBlock = TimeBlockWindow.CalendarYear,
+            StartMonth = 1,
+            DataFrame = CreateSeasonalPOTDataFrame()
+        };
+        model.Threshold = threshold;
+        model.TotalYears = model.DataFrame.ExactSeries.Count / lambda;
+        model.SetDefaultParameters();
+
+        double gevLocationOne = threshold + gpaScaleOne / gpaKappaOne *
+            (1.0 - Math.Pow(lambda, -gpaKappaOne));
+        double gevScaleOne = gpaScaleOne * Math.Pow(lambda, -gpaKappaOne);
+        double gevLocationTwo = threshold + gpaScaleTwo / gpaKappaTwo *
+            (1.0 - Math.Pow(lambda, -gpaKappaTwo));
+        double gevScaleTwo = gpaScaleTwo * Math.Pow(lambda, -gpaKappaTwo);
+        model.SetParameterValues(new[]
+        {
+            changePointOne + 0.75,
+            changePointTwo + 0.25,
+            gevLocationOne,
+            gevScaleOne,
+            gpaKappaOne,
+            gevLocationTwo,
+            gevScaleTwo,
+            gpaKappaTwo
+        });
+
+        double weightOne = (changePointOne + 366.0 - changePointTwo) / 366.0;
+        int firstSegmentDays = changePointOne - 1;
+        int seasonOneDays = changePointOne + 366 - changePointTwo;
+        int seasonTwoDays = changePointTwo - changePointOne;
+        var poisson = new Poisson(lambda);
+        var gpaOne = new GeneralizedPareto(threshold, gpaScaleOne, gpaKappaOne);
+        var gpaTwo = new GeneralizedPareto(threshold, gpaScaleTwo, gpaKappaTwo);
+        var rng = new Numerics.Sampling.MersenneTwister(seed);
+        var expected = new List<(int component, int day, int block, double magnitude)>(sampleSize);
+        int blockIndex = 0;
+        while (expected.Count < sampleSize)
+        {
+            int yearlyEventCount = checked((int)poisson.InverseCDF(rng.NextDouble()));
+            int eventsToRetain = Math.Min(yearlyEventCount, sampleSize - expected.Count);
+            for (int i = 0; i < eventsToRetain; i++)
+            {
+                int component = rng.NextDouble() >= weightOne ? 1 : 0;
+                int day;
+                if (component == 0)
+                {
+                    int seasonIndex = Math.Min((int)(rng.NextDouble() * seasonOneDays), seasonOneDays - 1);
+                    day = seasonIndex < firstSegmentDays
+                        ? seasonIndex + 1
+                        : changePointTwo + seasonIndex - firstSegmentDays;
+                }
+                else
+                {
+                    day = changePointOne +
+                        Math.Min((int)(rng.NextDouble() * seasonTwoDays), seasonTwoDays - 1);
+                }
+
+                double magnitude = (component == 0 ? gpaOne : gpaTwo).InverseCDF(rng.NextDouble());
+                expected.Add((component, day, blockIndex, magnitude));
+            }
+            blockIndex++;
+        }
+
+        double[] actualMagnitudes = model.GenerateRandomValues(sampleSize, seed);
+        Assert.AreEqual(sampleSize, actualMagnitudes.Length);
+        for (int i = 0; i < sampleSize; i++)
+        {
+            Assert.AreEqual(expected[i].magnitude, actualMagnitudes[i], 1E-12);
+            Assert.AreEqual(expected[i].component == 0, expected[i].day < changePointOne || expected[i].day >= changePointTwo);
+        }
+
+        var expectedOrdered = expected.OrderBy(point => point.block).ThenBy(point => point.day).ThenBy(point => point.magnitude).ToArray();
+        Numerics.Data.TimeSeries calendar = model.GeneratePOTTimeSeries(sampleSize, seed);
+        var calendarOrdered = calendar.OrderBy(point => point.Index).ThenBy(point => point.Value).ToArray();
+        for (int i = 0; i < sampleSize; i++)
+        {
+            DateTime calendarStart = new DateTime(2000 + 4 * expectedOrdered[i].block, 1, 1);
+            Assert.AreEqual(calendarStart.AddDays(expectedOrdered[i].day - 1), calendarOrdered[i].Index);
+            Assert.AreEqual(expectedOrdered[i].magnitude, calendarOrdered[i].Value, 1E-12);
+        }
+
+        model.TimeBlock = TimeBlockWindow.WaterYear;
+        model.StartMonth = 10;
+        model.SetParameterValues(new[]
+        {
+            changePointOne + 0.75,
+            changePointTwo + 0.25,
+            gevLocationOne,
+            gevScaleOne,
+            gpaKappaOne,
+            gevLocationTwo,
+            gevScaleTwo,
+            gpaKappaTwo
+        });
+        Numerics.Data.TimeSeries waterYear = model.GeneratePOTTimeSeries(sampleSize, seed);
+        var waterYearOrdered = waterYear.OrderBy(point => point.Index).ThenBy(point => point.Value).ToArray();
+        for (int i = 0; i < sampleSize; i++)
+        {
+            DateTime waterYearStart = new DateTime(1999 + 4 * expectedOrdered[i].block, 10, 1);
+            Assert.AreEqual(waterYearStart.AddDays(expectedOrdered[i].day - 1), waterYearOrdered[i].Index);
+            Assert.AreEqual(expectedOrdered[i].magnitude, waterYearOrdered[i].Value, 1E-12);
+        }
     }
 
     #endregion

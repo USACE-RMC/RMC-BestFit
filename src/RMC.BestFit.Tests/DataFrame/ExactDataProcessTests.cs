@@ -169,6 +169,55 @@ public class ExactDataProcessTests
     }
 
     /// <summary>
+    /// Verifies that POT extraction retains the source-record years even when the first and last
+    /// source years contain no selected peaks.
+    /// </summary>
+    [TestMethod]
+    public void Test_PeaksOverThreshold_PreservesSourceObservationYears()
+    {
+        var values = Enumerable.Repeat(1.0, 36).ToArray();
+        values[17] = 10.0;
+        var timeSeries = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var frame = new BestFitDataFrame();
+
+        frame.CreatePeaksOverThresholdSeries(timeSeries, 5.0);
+        frame.CalculateLambda();
+
+        Assert.AreEqual(1, frame.ExactSeries.Count);
+        Assert.AreEqual(3.0, frame.PointProcessObservationYears, 0.0);
+    }
+
+    /// <summary>
+    /// Verifies that retained POT source exposure survives DataFrame XML serialization.
+    /// </summary>
+    [TestMethod]
+    public void Test_PeaksOverThreshold_SourceObservationYearsRoundTrip()
+    {
+        var values = Enumerable.Repeat(1.0, 24).ToArray();
+        values[8] = 10.0;
+        var timeSeries = new NumericsTimeSeries(TimeInterval.OneMonth, new DateTime(2000, 1, 1), values);
+        var frame = new BestFitDataFrame();
+        frame.CreatePeaksOverThresholdSeries(timeSeries, 5.0);
+
+        var restored = new BestFitDataFrame(frame.ToXElement());
+
+        Assert.AreEqual(2.0, restored.PointProcessObservationYears, 0.0);
+    }
+
+    /// <summary>
+    /// Verifies validation of manually assigned point-process source exposure.
+    /// </summary>
+    [TestMethod]
+    public void Test_PointProcessObservationYears_RejectsInvalidValues()
+    {
+        var frame = new BestFitDataFrame();
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => frame.PointProcessObservationYears = 0.0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => frame.PointProcessObservationYears = double.PositiveInfinity);
+        frame.PointProcessObservationYears = double.NaN;
+        Assert.IsTrue(double.IsNaN(frame.PointProcessObservationYears));
+    }
+    /// <summary>
     /// Tests USGS peak discharge data retrieval from NWIS web services.
     /// </summary>
     /// <remarks>

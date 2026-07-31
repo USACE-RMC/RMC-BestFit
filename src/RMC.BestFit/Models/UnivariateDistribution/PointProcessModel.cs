@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -29,7 +29,7 @@ namespace RMC.BestFit.Models
     /// Non-seasonal point process (single GEV).
     /// </description></item>
     /// <item><description>
-    /// Seasonal point process (two GEVs with day-of-year based seasons).
+    /// Seasonal point process (two GEVs with block-day based seasons).
     /// </description></item>
     /// <item><description>
     /// Parameter priors and optional quantile priors in a Bayesian framework.
@@ -85,6 +85,16 @@ namespace RMC.BestFit.Models
             if (totalYearsAttr != null) double.TryParse(totalYearsAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _totalYears);
             var useDefaultsAttr = xElement.Attribute(nameof(UseDefaults));
             if (useDefaultsAttr != null) bool.TryParse(useDefaultsAttr.Value, out _useDefaults);
+            var totalYearsInferredAttr = xElement.Attribute(nameof(IsTotalYearsInferred));
+            if (totalYearsInferredAttr != null)
+            {
+                bool.TryParse(totalYearsInferredAttr.Value, out _isTotalYearsInferred);
+            }
+            else
+            {
+                _isTotalYearsInferred = _useDefaults && !HasStoredSourceExposure();
+            }
+            _totalYearsExplicit = !_useDefaults;
             CalculateLambda();
             var isSeasonalAttr = xElement.Attribute(nameof(IsSeasonal));
             if (isSeasonalAttr != null) bool.TryParse(isSeasonalAttr.Value, out _isSeasonal);
@@ -157,13 +167,12 @@ namespace RMC.BestFit.Models
         private double _totalYears = double.NaN;
         private bool _useDefaults = true;
         private double _lambda = double.NaN;
+        private bool _isTotalYearsInferred = true;
 
         /// <summary>
-        /// Tracks whether the user has explicitly set <see cref="TotalYears"/>.
-        /// When <c>false</c>, <see cref="SetDefaultThresholdAndTotalYears"/> is
-        /// allowed to overwrite the value with its data-derived heuristic. When
-        /// the user changes <see cref="DataFrame"/>, this is reset to <c>false</c>
-        /// so the heuristic for the new data is presented to them.
+        /// Tracks whether automatic exposure updates may replace <see cref="TotalYears"/>.
+        /// Explicit values remain protected while defaults are disabled; enabling defaults
+        /// restores source-exposure or event-span inference.
         /// </summary>
         private bool _totalYearsExplicit = false;
 
@@ -177,25 +186,20 @@ namespace RMC.BestFit.Models
                     _dataFrame.PropertyChanged -= DataFrame_PropertyChanged;
 
                 _dataFrame = value;
-
-                // The user is supplying new data; the previously-explicit TotalYears
-                // (if any) no longer reflects this record. Reset so the heuristic
-                // for the new data is applied and re-presented in the GUI.
-                _totalYearsExplicit = false;
-
                 if (_dataFrame != null)
                 {
                     _dataFrame.PropertyChanged += DataFrame_PropertyChanged;
-
                     _dataFrame.ProcessThresholdSeries();
-                    SetAMSData();
-
-                    if (UseDefaults)
-                        SetDefaultThresholdAndTotalYears(forceTotalYears: true);
-
-                    if (UseDefaultFlatPriors)
-                        SetDefaultParameters();
                 }
+
+                SetAMSData();
+                if (UseDefaults && _dataFrame != null)
+                    SetDefaultThresholdAndTotalYears(forceTotalYears: true);
+                else
+                    CalculateLambda();
+
+                if (UseDefaultFlatPriors && _dataFrame != null)
+                    SetDefaultParameters();
 
                 RaisePropertyChange(nameof(DataFrame));
             }
@@ -238,14 +242,108 @@ namespace RMC.BestFit.Models
         public DataFrame AMSDataFrame => _amsDataFrame;
 
         /// <summary>
-        /// Gets the day-of-year (calendar or water year) for each peaks-over-threshold event.
+        /// Gets the one-based block day for each peaks-over-threshold event.
         /// </summary>
         public List<int> POTDays => _potDays;
 
         /// <summary>
-        /// Gets the average number of POT events per year.
+        /// Gets the empirical number of exact POT events per year.
         /// </summary>
+        /// <remarks>
+        /// This compatibility alias is identical to <see cref="EmpiricalEventRate"/>.
+        /// It is not the fitted threshold intensity used by the point-process likelihood.
+        /// </remarks>
         public double Lambda => _lambda;
+
+        /// <summary>
+        /// Gets the number of exact observations treated as Poisson POT events.
+        /// </summary>
+        /// <remarks>
+        /// Uncertain, interval, and threshold-count records contribute to the hybrid magnitude
+        /// likelihood but are not silently converted into occurrence-process events.
+        /// </remarks>
+        public int EmpiricalEventCount => DataFrame?.ExactSeries.Count ?? 0;
+
+        /// <summary>
+        /// Gets the empirical exact-event rate, equal to <see cref="EmpiricalEventCount"/> divided
+        /// by <see cref="TotalYears"/>.
+        /// </summary>
+        public double EmpiricalEventRate => _lambda;
+
+        /// <summary>
+        /// Gets the fitted total threshold intensity per year at <see cref="Threshold"/>.
+        /// </summary>
+        /// <remarks>
+        /// In seasonal mode this is the exposure-weighted sum of the two fitted seasonal
+        /// intensities. Simulation uses the separately documented empirical <see cref="Lambda"/>.
+        /// </remarks>
+        public double FittedThresholdIntensity
+        {
+            get
+            {
+                return TryGetFittedIntensities(out double total, out _, out _, out _, out _)
+                    ? total
+                    : double.NaN;
+            }
+        }
+
+        /// <summary>
+        /// Gets the fitted, unweighted threshold intensity for seasonal component one.
+        /// </summary>
+        public double FittedSeasonOneThresholdIntensity
+        {
+            get
+            {
+                return IsSeasonal && TryGetFittedIntensities(out _, out double first, out _, out _, out _)
+                    ? first
+                    : double.NaN;
+            }
+        }
+
+        /// <summary>
+        /// Gets the fitted, unweighted threshold intensity for seasonal component two.
+        /// </summary>
+        public double FittedSeasonTwoThresholdIntensity
+        {
+            get
+            {
+                return IsSeasonal && TryGetFittedIntensities(out _, out _, out double second, out _, out _)
+                    ? second
+                    : double.NaN;
+            }
+        }
+
+        /// <summary>
+        /// Gets the exposure weight for wrapped seasonal component one.
+        /// </summary>
+        public double SeasonOneExposureWeight
+        {
+            get
+            {
+                return IsSeasonal && TryGetFittedIntensities(out _, out _, out _, out double firstWeight, out _)
+                    ? firstWeight
+                    : double.NaN;
+            }
+        }
+
+        /// <summary>
+        /// Gets the exposure weight for interior seasonal component two.
+        /// </summary>
+        public double SeasonTwoExposureWeight
+        {
+            get
+            {
+                return IsSeasonal && TryGetFittedIntensities(out _, out _, out _, out _, out double secondWeight)
+                    ? secondWeight
+                    : double.NaN;
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether <see cref="TotalYears"/> was inferred from the span of
+        /// retained exact events rather than supplied explicitly or preserved from source exposure.
+        /// </summary>
+        public bool IsTotalYearsInferred => _isTotalYearsInferred;
 
         /// <summary>
         /// Gets or sets the threshold above which events are modeled by the point process.
@@ -279,13 +377,16 @@ namespace RMC.BestFit.Models
             get { return _totalYears; }
             set
             {
-                if (!_totalYears.AlmostEquals(value))
-                {
-                    _totalYears = value;
-                    _totalYearsExplicit = true;  // user (or caller) explicitly set the value
-                    CalculateLambda();
+                bool valueChanged = !_totalYears.AlmostEquals(value);
+                bool inferenceChanged = _isTotalYearsInferred;
+                _totalYears = value;
+                _totalYearsExplicit = true;
+                _isTotalYearsInferred = false;
+                CalculateLambda();
+                if (inferenceChanged)
+                    RaisePropertyChange(nameof(IsTotalYearsInferred));
+                if (valueChanged)
                     RaisePropertyChange(nameof(TotalYears));
-                }
             }
         }
 
@@ -307,6 +408,8 @@ namespace RMC.BestFit.Models
                     _useDefaults = value;
                     if (_useDefaults)
                         SetDefaultThresholdAndTotalYears(forceTotalYears: true);
+                    else
+                        _totalYearsExplicit = Tools.IsFinite(_totalYears) && _totalYears > 0.0;
                     RaisePropertyChange(nameof(UseDefaults));
                 }
             }
@@ -405,6 +508,8 @@ namespace RMC.BestFit.Models
 
             if (UseDefaults)
                 SetDefaultThresholdAndTotalYears(forceTotalYears: true);
+            else
+                CalculateLambda();
 
             if (UseDefaultFlatPriors)
                 SetDefaultParameters();
@@ -455,15 +560,16 @@ namespace RMC.BestFit.Models
                     Threshold = Math.BitDecrement(minima.Min());
             }
 
-            // TotalYears is the Poisson exposure duration for exact POT events only.
-            // If exact events miss the first/last observed years, this is only a
-            // heuristic; users can uncheck UseDefaults and enter the better exposure.
             bool totalYearsChanged = false;
+            bool inferenceChanged = false;
             if (forceTotalYears || !_totalYearsExplicit)
             {
-                double inferred = DataFrame.ExactSeries.Count > 0
-                    ? DataFrame.ExactSeries.IndexSpan()
-                    : 1.0;
+                bool hasSourceExposure = HasStoredSourceExposure();
+                double inferred = hasSourceExposure
+                    ? DataFrame.PointProcessObservationYears
+                    : DataFrame.ExactSeries.Count > 0
+                        ? DataFrame.ExactSeries.IndexSpan()
+                        : 1.0;
 
                 if (!_totalYears.AlmostEquals(inferred))
                 {
@@ -471,9 +577,14 @@ namespace RMC.BestFit.Models
                     totalYearsChanged = true;
                 }
                 _totalYearsExplicit = false;
+                bool isInferred = !hasSourceExposure;
+                inferenceChanged = _isTotalYearsInferred != isInferred;
+                _isTotalYearsInferred = isInferred;
             }
 
             CalculateLambda();
+            if (inferenceChanged)
+                RaisePropertyChange(nameof(IsTotalYearsInferred));
             if (totalYearsChanged)
                 RaisePropertyChange(nameof(TotalYears));
         }
@@ -483,24 +594,23 @@ namespace RMC.BestFit.Models
         /// </summary>
         public void CalculateLambda()
         {
-            if (DataFrame == null || double.IsNaN(_totalYears) || _totalYears <= 0)
-            {
-                _lambda = double.NaN;
-                return;
-            }
-
-            double events =
-                DataFrame.ExactSeries.Count +
-                DataFrame.UncertainSeries.Count +
-                DataFrame.IntervalSeries.Count;
-
-            _lambda = events / _totalYears;
+            _lambda = DataFrame == null || !Tools.IsFinite(_totalYears) || _totalYears <= 0.0
+                ? double.NaN
+                : EmpiricalEventCount / _totalYears;
+            RaisePropertyChange(nameof(EmpiricalEventCount));
+            RaisePropertyChange(nameof(EmpiricalEventRate));
+            RaisePropertyChange(nameof(Lambda));
         }
 
         /// <summary>
         /// Preprocesses the annual maximum (or block) data and, for seasonal
-        /// models, computes the day-of-year for each POT event.
+        /// models, computes the configured calendar- or water-year block day for each POT event.
         /// </summary>
+        /// <remarks>
+        /// Seasonal processing requires a valid date on every exact observation. Missing dates
+        /// or dated block-processing failures leave the derived collections empty, and
+        /// <see cref="Validate()"/> reports that the seasonal model cannot be estimated.
+        /// </remarks>
         public void SetAMSData()
         {
             _amsDataFrame = new DataFrame();
@@ -510,6 +620,9 @@ namespace RMC.BestFit.Models
             {
                 return;
             }
+
+            if (IsSeasonal && DataFrame.ExactSeries.Cast<ExactData>().Any(data => data.DateTime == default))
+                return;
 
             try
             {
@@ -529,39 +642,21 @@ namespace RMC.BestFit.Models
                     for (int i = 0; i < DataFrame.ExactSeries.Count; i++)
                     {
                         var exact = (ExactData)DataFrame.ExactSeries[i];
-                        var dt = exact.DateTime;
-
-                        if (dt == default)
-                        {
-                            dt = new DateTime(exact.Index, 1, 1);
-                        }
-
-                        ts.Add(new SeriesOrdinate<DateTime, double>(dt, exact.Value));
+                        ts.Add(new SeriesOrdinate<DateTime, double>(exact.DateTime, exact.Value));
                     }
 
                     // Compute block maxima.
                     _amsDataFrame.CreateBlockSeries(ts, TimeBlock, BlockFunctionType.Maximum, SmoothingFunctionType.None, StartMonth);
 
-                    // Compute day of year for POT events.
-                    if (TimeBlock == TimeBlockWindow.WaterYear)
-                    {
-                        // Shift dates for water-year convention if needed.
-                        int shift = StartMonth != 1 ? 12 - StartMonth + 1 : 0;
-                        ts = StartMonth != 1 ? ts.ShiftDatesByMonth(shift) : ts;
-                    }
-
                     for (int i = 0; i < ts.Count; i++)
                     {
-                        _potDays.Add(ts[i].Index.DayOfYear);
+                        _potDays.Add(GetBlockDay(ts[i].Index));
                     }
                 }
             }
             catch (Exception ex)
             {
-                // Swallow exceptions to avoid crashing the model on imperfect
-                // time-series data; AMSDataFrame and POTDays will simply
-                // remain minimal or empty.
-                Debug.WriteLine($"PointProcessModel.SetTimeBlockSeries: time-series processing skipped: {ex.Message}");
+                Debug.WriteLine($"PointProcessModel.SetAMSData: time-series processing skipped: {ex.Message}");
             }
         }
 
@@ -612,25 +707,26 @@ namespace RMC.BestFit.Models
                 return;
             }
 
-            // Seasonal change-point parameters (in day-of-year).
             if (Distribution.Distributions.Count() > 1)
             {
+                var changePointDefaults = GetDefaultChangePointParameters();
+
                 Parameters.Add(new ModelParameter
                 {
                     Name = "Change Point K₁",
-                    Value = 90,
-                    LowerBound = 10,
-                    UpperBound = 170,
-                    PriorDistribution = new Uniform(10, 170)
+                    Value = changePointDefaults[0].Value,
+                    LowerBound = changePointDefaults[0].Lower,
+                    UpperBound = changePointDefaults[0].Upper,
+                    PriorDistribution = new Uniform(changePointDefaults[0].Lower, changePointDefaults[0].Upper)
                 });
 
                 Parameters.Add(new ModelParameter
                 {
                     Name = "Change Point K₂",
-                    Value = 250,
-                    LowerBound = 171,
-                    UpperBound = 330,
-                    PriorDistribution = new Uniform(171, 330)
+                    Value = changePointDefaults[1].Value,
+                    LowerBound = changePointDefaults[1].Lower,
+                    UpperBound = changePointDefaults[1].Upper,
+                    PriorDistribution = new Uniform(changePointDefaults[1].Lower, changePointDefaults[1].Upper)
                 });
             }
 
@@ -667,6 +763,258 @@ namespace RMC.BestFit.Models
                 Parameters[i].PropertyChanged += Parameter_PropertyChanged;
 
             RaisePropertyChange(nameof(SetDefaultParameters));
+        }
+
+        /// <summary>
+        /// Gets broad or histogram-informed default parameters for the two seasonal changepoints.
+        /// </summary>
+        /// <returns>
+        /// Two tuples containing the latent value and inclusive floating-point bounds for
+        /// <c>K₁</c> and <c>K₂</c>, respectively.
+        /// </returns>
+        /// <remarks>
+        /// The histogram rule is an empirical initialization aid, not an estimator. It counts
+        /// exact dated POT events by month, rotates the bins to the configured block-year start,
+        /// and locates broad valleys between two separated seasonal peaks. Ambiguous histograms
+        /// retain the approved broad supports <c>K₁ ∈ [1,251)</c> and
+        /// <c>K₂ ∈ [200,367)</c>.
+        /// </remarks>
+        private (double Value, double Lower, double Upper)[] GetDefaultChangePointParameters()
+        {
+            var broadDefaults = new[]
+            {
+                (Value: 90.0, Lower: 1.0, Upper: Math.BitDecrement(251.0)),
+                (Value: 250.0, Lower: 200.0, Upper: Math.BitDecrement(367.0))
+            };
+
+            if (DataFrame == null)
+                return broadDefaults;
+
+            int firstMonth = TimeBlock == TimeBlockWindow.CalendarYear ? 1 : StartMonth;
+            if (firstMonth < 1 || firstMonth > 12)
+                return broadDefaults;
+
+            var monthlyCounts = new double[12];
+            int datedCount = 0;
+            foreach (ExactData observation in DataFrame.ExactSeries)
+            {
+                if (observation.DateTime == default)
+                    continue;
+
+                int blockMonth = (observation.DateTime.Month - firstMonth + 12) % 12;
+                monthlyCounts[blockMonth] += 1.0;
+                datedCount++;
+            }
+
+            if (datedCount < 10)
+                return broadDefaults;
+
+            int[] monthStarts = GetBlockMonthStarts(firstMonth);
+            if (IsEffectivelyFlat(monthlyCounts, monthStarts) ||
+                !TryFindSeasonalValleys(monthlyCounts, out int firstValley, out int secondValley))
+            {
+                return broadDefaults;
+            }
+            if (!TryCreateChangePointDefault(firstValley, monthStarts, 1.0, 251.0, out var firstDefault) ||
+                !TryCreateChangePointDefault(secondValley, monthStarts, 200.0, 367.0, out var secondDefault))
+            {
+                return broadDefaults;
+            }
+
+            return new[] { firstDefault, secondDefault };
+        }
+
+        /// <summary>
+        /// Determines whether monthly counts are consistent with uniform daily occurrence exposure.
+        /// </summary>
+        /// <param name="monthlyCounts">Monthly counts ordered from the configured block-year start.</param>
+        /// <param name="monthStarts">Canonical one-based block-month boundaries.</param>
+        /// <returns><c>true</c> when broad random variation should not be interpreted as two seasons.</returns>
+        /// <remarks>
+        /// Expected counts are proportional to the number of modeled days in each month. The
+        /// fixed cutoff 19.675 is the 95th percentile of a chi-square distribution with 11
+        /// degrees of freedom. This guard only selects the broad prior fallback; it is not a
+        /// point-process parameter estimate or a likelihood calculation.
+        /// </remarks>
+        private static bool IsEffectivelyFlat(double[] monthlyCounts, int[] monthStarts)
+        {
+            double total = monthlyCounts.Sum();
+            if (total <= 0.0)
+                return true;
+
+            double statistic = 0.0;
+            for (int i = 0; i < monthlyCounts.Length; i++)
+            {
+                double expected = total * (monthStarts[i + 1] - monthStarts[i]) / 366.0;
+                double difference = monthlyCounts[i] - expected;
+                statistic += difference * difference / expected;
+            }
+
+            return statistic <= 19.675;
+        }
+
+        /// <summary>
+        /// Locates the two seasonal valleys in a twelve-bin monthly occurrence histogram.
+        /// </summary>
+        /// <param name="monthlyCounts">Monthly counts ordered from the configured block-year start.</param>
+        /// <param name="firstValley">The earlier valley-month index in block-year order.</param>
+        /// <param name="secondValley">The later valley-month index in block-year order.</param>
+        /// <returns><c>true</c> when two separated peaks and their intervening valleys are identifiable.</returns>
+        /// <remarks>
+        /// Detection uses one circular <c>[1,2,1]/4</c> smoothing pass. The smoothing affects
+        /// only the default-prior neighborhood; it does not alter observations or likelihoods.
+        /// </remarks>
+        private static bool TryFindSeasonalValleys(double[] monthlyCounts, out int firstValley, out int secondValley)
+        {
+            firstValley = -1;
+            secondValley = -1;
+
+            double minimum = monthlyCounts.Min();
+            double maximum = monthlyCounts.Max();
+            if (maximum <= minimum)
+                return false;
+
+            var smoothed = new double[12];
+            for (int i = 0; i < smoothed.Length; i++)
+            {
+                int previous = (i + 11) % 12;
+                int next = (i + 1) % 12;
+                smoothed[i] = (monthlyCounts[previous] + 2.0 * monthlyCounts[i] + monthlyCounts[next]) / 4.0;
+            }
+
+            var peaks = new List<int>();
+            for (int i = 0; i < smoothed.Length; i++)
+            {
+                double previous = smoothed[(i + 11) % 12];
+                double next = smoothed[(i + 1) % 12];
+                if (smoothed[i] >= previous && smoothed[i] >= next &&
+                    (smoothed[i] > previous || smoothed[i] > next))
+                {
+                    peaks.Add(i);
+                }
+            }
+
+            double mean = smoothed.Average();
+            int bestFirstPeak = -1;
+            int bestSecondPeak = -1;
+            double bestScore = double.NegativeInfinity;
+            int bestPairCount = 0;
+            for (int i = 0; i < peaks.Count; i++)
+            {
+                for (int j = i + 1; j < peaks.Count; j++)
+                {
+                    int separation = (peaks[j] - peaks[i] + 12) % 12;
+                    if (separation < 3 || separation > 9 ||
+                        smoothed[peaks[i]] <= mean || smoothed[peaks[j]] <= mean)
+                    {
+                        continue;
+                    }
+
+                    double score = smoothed[peaks[i]] + smoothed[peaks[j]];
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestFirstPeak = peaks[i];
+                        bestSecondPeak = peaks[j];
+                        bestPairCount = 1;
+                    }
+                    else if (score == bestScore)
+                    {
+                        bestPairCount++;
+                    }
+                }
+            }
+
+            if (bestPairCount != 1)
+                return false;
+
+            int valleyA = FindCircularValley(smoothed, bestFirstPeak, bestSecondPeak);
+            int valleyB = FindCircularValley(smoothed, bestSecondPeak, bestFirstPeak);
+            if (valleyA < 0 || valleyB < 0 ||
+                smoothed[valleyA] >= Math.Min(smoothed[bestFirstPeak], smoothed[bestSecondPeak]) ||
+                smoothed[valleyB] >= Math.Min(smoothed[bestFirstPeak], smoothed[bestSecondPeak]))
+            {
+                return false;
+            }
+
+            firstValley = Math.Min(valleyA, valleyB);
+            secondValley = Math.Max(valleyA, valleyB);
+            return true;
+        }
+
+        /// <summary>
+        /// Finds the lowest monthly bin on the forward circular arc between two peak bins.
+        /// </summary>
+        /// <param name="values">The smoothed circular monthly values.</param>
+        /// <param name="startPeak">The excluded peak at the beginning of the arc.</param>
+        /// <param name="endPeak">The excluded peak at the end of the arc.</param>
+        /// <returns>The valley-month index, using the middle tied cell when a valley is broad.</returns>
+        private static int FindCircularValley(double[] values, int startPeak, int endPeak)
+        {
+            var valleyCandidates = new List<int>();
+            double valleyValue = double.PositiveInfinity;
+            for (int index = (startPeak + 1) % 12; index != endPeak; index = (index + 1) % 12)
+            {
+                if (values[index] < valleyValue)
+                {
+                    valleyValue = values[index];
+                    valleyCandidates.Clear();
+                    valleyCandidates.Add(index);
+                }
+                else if (values[index] == valleyValue)
+                {
+                    valleyCandidates.Add(index);
+                }
+            }
+
+            return valleyCandidates.Count == 0 ? -1 : valleyCandidates[(valleyCandidates.Count - 1) / 2];
+        }
+
+        /// <summary>
+        /// Builds canonical leap-year block-month boundaries for a selected start month.
+        /// </summary>
+        /// <param name="firstMonth">The calendar month corresponding to the first block-month bin.</param>
+        /// <returns>Thirteen one-based boundaries spanning <c>[1,367]</c>.</returns>
+        private static int[] GetBlockMonthStarts(int firstMonth)
+        {
+            var starts = new int[13];
+            starts[0] = 1;
+            for (int i = 0; i < 12; i++)
+            {
+                int calendarMonth = (firstMonth - 1 + i) % 12 + 1;
+                starts[i + 1] = starts[i] + DateTime.DaysInMonth(2000, calendarMonth);
+            }
+
+            return starts;
+        }
+
+        /// <summary>
+        /// Creates a five-month flat changepoint support centered on a detected valley month.
+        /// </summary>
+        /// <param name="valleyMonth">The zero-based valley-month index in block-year order.</param>
+        /// <param name="monthStarts">Canonical one-based block-month boundaries.</param>
+        /// <param name="baseLower">Inclusive approved lower support.</param>
+        /// <param name="baseUpperExclusive">Exclusive approved upper support.</param>
+        /// <param name="result">The resulting latent value and floating-point bounds.</param>
+        /// <returns><c>true</c> when the detected valley and its intersected window are valid.</returns>
+        private static bool TryCreateChangePointDefault(
+            int valleyMonth,
+            int[] monthStarts,
+            double baseLower,
+            double baseUpperExclusive,
+            out (double Value, double Lower, double Upper) result)
+        {
+            double value = 0.5 * (monthStarts[valleyMonth] + monthStarts[valleyMonth + 1]);
+            double lower = Math.Max(baseLower, monthStarts[Math.Max(0, valleyMonth - 2)]);
+            double upperExclusive = Math.Min(baseUpperExclusive, monthStarts[Math.Min(12, valleyMonth + 3)]);
+            if (value < lower || value >= upperExclusive || lower >= upperExclusive)
+            {
+                result = default;
+                return false;
+            }
+
+            result = (value, lower, Math.BitDecrement(upperExclusive));
+            return true;
         }
 
         /// <inheritdoc/>
@@ -773,16 +1121,8 @@ namespace RMC.BestFit.Models
             }
         }
 
+
         /// <inheritdoc/>
-        /// <remarks>
-        /// Explicit override of the base implementation to ensure the canonical
-        /// pattern: <c>Data + Prior</c>, with non-finite results collapsed to
-        /// <see cref="double.NegativeInfinity"/>. The base implementation collapses
-        /// to <c>NegativeInfinity</c> only when <see cref="Tools.IsFinite"/> fails,
-        /// which is bypassed when an inner method returns <see cref="double.NegativeInfinity"/>
-        /// (a finite sentinel). Forcing the check here keeps the contract consistent
-        /// with other <c>IModel</c> implementers.
-        /// </remarks>
         public override double LogLikelihood(double[] parameters)
         {
             double dataLogLH = DataLogLikelihood(parameters);
@@ -812,8 +1152,8 @@ namespace RMC.BestFit.Models
             if (double.IsNaN(u) || double.IsNaN(Ny) || Ny <= 0)
                 return double.NegativeInfinity;
 
-            double k1 = 0.0;
-            double k2 = 0.0;
+            int k1 = 0;
+            int k2 = 0;
             double ny1 = 0.0;
             double ny2 = 0.0;
 
@@ -827,10 +1167,7 @@ namespace RMC.BestFit.Models
                 if (parameters.Length < 8)
                     return double.NegativeInfinity;
 
-                k1 = parameters[0];
-                k2 = parameters[1];
-
-                if (!(k1 >= 1 && k1 <= 366 && k2 >= 1 && k2 <= 366 && k1 < k2))
+                if (!TryGetEffectiveChangePoints(parameters, out k1, out k2))
                     return double.NegativeInfinity;
 
                 ny1 = Ny * (k1 + (366.0 - k2)) / 366.0;
@@ -886,6 +1223,9 @@ namespace RMC.BestFit.Models
             }
             else
             {
+                if (POTDays.Count != DataFrame.ExactSeries.Count)
+                    return double.NegativeInfinity;
+
                 var gev1 = model.Distributions[0] as GeneralizedExtremeValue;
                 var gev2 = model.Distributions[1] as GeneralizedExtremeValue;
 
@@ -909,7 +1249,7 @@ namespace RMC.BestFit.Models
                     double x = DataFrame.ExactSeries[i].Value;
                     int day = POTDays[i];
 
-                    if (day < k1 || day >= k2)
+                    if (IsSeasonOneDay(day, k1, k2))
                     {
                         // Season 1
                         if (Math.Abs(shp1) < 1E-4)
@@ -971,12 +1311,10 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Uncertain / Interval / Threshold data are evaluated against the
-            // composite (competing-risks) GEV likelihood — they are block-indexed,
-            // not date-indexed, so day-of-year season dispatch does not apply.
-            // The composite `model` already represents the seasonal mixture in its
-            // full form for these data types.
-            //
+            CompetingRisks annualizedModel = IsSeasonal ? GetDistribution(parameters) : model;
+
+            // Non-exact records are block-indexed annual observations and therefore use the
+            // annual competing-risk distribution rather than a season-specific event likelihood.
             // Uncertain Data
             for (int i = 0; i < DataFrame.UncertainSeries.Count; i++)
             {
@@ -989,7 +1327,7 @@ namespace RMC.BestFit.Models
                 if (Tools.IsFinite(a) && Tools.IsFinite(b) && Tools.IsFinite(mass) && mass > 0.0 && a < b)
                 {
                     // Normalize by retained ME mass from the 1E-8 probability window.
-                    var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * model.PDF(q); }, a, b) / mass;
+                    var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * annualizedModel.PDF(q); }, a, b) / mass;
                     logLH += ep > 0 ? Math.Log(ep) : double.NegativeInfinity;
                 }
                 else
@@ -1002,7 +1340,7 @@ namespace RMC.BestFit.Models
             for (int i = 0; i < DataFrame.IntervalSeries.Count; i++)
             {
                 var data = (IntervalData)DataFrame.IntervalSeries[i];
-                logLH += model.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
+                logLH += annualizedModel.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
             }
 
             // Threshold Data
@@ -1010,9 +1348,9 @@ namespace RMC.BestFit.Models
             {
                 var data = (ThresholdData)DataFrame.ThresholdSeries[i];
                 if (data.NumberBelow > 0)
-                    logLH += model.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
+                    logLH += annualizedModel.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
                 if (data.NumberAbove > 0)
-                    logLH += model.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
+                    logLH += annualizedModel.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
             }
             return logLH;
         }
@@ -1061,8 +1399,8 @@ namespace RMC.BestFit.Models
             if (totalObs == 0)
                 return Array.Empty<double>();
 
-            double k1 = 0.0;
-            double k2 = 0.0;
+            int k1 = 0;
+            int k2 = 0;
             double ny1 = 0.0;
             double ny2 = 0.0;
 
@@ -1076,10 +1414,7 @@ namespace RMC.BestFit.Models
                 if (parameters.Length < 8)
                     return Array.Empty<double>();
 
-                k1 = parameters[0];
-                k2 = parameters[1];
-
-                if (!(k1 >= 1 && k1 <= 366 && k2 >= 1 && k2 <= 366 && k1 < k2))
+                if (!TryGetEffectiveChangePoints(parameters, out k1, out k2))
                     return Array.Empty<double>();
 
                 ny1 = Ny * (k1 + (366.0 - k2)) / 366.0;
@@ -1087,6 +1422,9 @@ namespace RMC.BestFit.Models
 
                 model.SetParameters(parameters.Skip(2).ToArray());
             }
+
+            if (IsSeasonal && POTDays.Count != DataFrame.ExactSeries.Count)
+                return Array.Empty<double>();
 
             // Compute the global rate term to be distributed across observations
             double rateTerm = 0.0;
@@ -1119,6 +1457,7 @@ namespace RMC.BestFit.Models
             }
             else
             {
+
                 var gev1 = model.Distributions[0] as GeneralizedExtremeValue;
                 var gev2 = model.Distributions[1] as GeneralizedExtremeValue;
 
@@ -1229,7 +1568,7 @@ namespace RMC.BestFit.Models
                     int day = POTDays[i];
                     double ll;
 
-                    if (day < k1 || day >= k2)
+                    if (IsSeasonOneDay(day, k1, k2))
                     {
                         // Season 1
                         if (Math.Abs(shp1) < 1E-4)
@@ -1259,7 +1598,9 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Uncertain Data — composite GEV likelihood only (no rate-term share).
+            CompetingRisks annualizedModel = IsSeasonal ? GetDistribution(parameters) : model;
+
+            // Uncertain Data — annual composite GEV likelihood only (no rate-term share).
             for (int i = 0; i < DataFrame.UncertainSeries.Count; i++)
             {
                 var dist = ((UncertainData)DataFrame.UncertainSeries[i]).Distribution;
@@ -1271,7 +1612,7 @@ namespace RMC.BestFit.Models
                 double ll;
                 if (Tools.IsFinite(a) && Tools.IsFinite(b) && Tools.IsFinite(mass) && mass > 0.0 && a < b)
                 {
-                    var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * model.PDF(q); }, a, b) / mass;
+                    var ep = Integration.GaussLegendre20((q) => { return dist.PDF(q) * annualizedModel.PDF(q); }, a, b) / mass;
                     ll = ep > 0 ? Math.Log(ep) : double.NegativeInfinity;
                 }
                 else
@@ -1293,7 +1634,7 @@ namespace RMC.BestFit.Models
             for (int i = 0; i < DataFrame.IntervalSeries.Count; i++)
             {
                 var data = (IntervalData)DataFrame.IntervalSeries[i];
-                double ll = model.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
+                double ll = annualizedModel.LogLikelihood_Intervals(data.LowerValue, data.UpperValue);
                 if (!fallbackRateApplied)
                 {
                     ll += rateTerm;
@@ -1308,9 +1649,9 @@ namespace RMC.BestFit.Models
                 var data = (ThresholdData)DataFrame.ThresholdSeries[i];
                 double ll = 0.0;
                 if (data.NumberBelow > 0)
-                    ll += model.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
+                    ll += annualizedModel.LogLikelihood_LeftCensored(data.Value, data.NumberBelow);
                 if (data.NumberAbove > 0)
-                    ll += model.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
+                    ll += annualizedModel.LogLikelihood_RightCensored(data.Value, data.NumberAbove);
                 if (!fallbackRateApplied)
                 {
                     ll += rateTerm;
@@ -1546,8 +1887,8 @@ namespace RMC.BestFit.Models
             {
                 // Seasonal case: convert GEV parameters so that each season
                 // has the correct marginal exceedance behavior.
-                double k1 = parameters[0];
-                double k2 = parameters[1];
+                if (!TryGetEffectiveChangePoints(parameters, out int k1, out int k2))
+                    throw new ArgumentOutOfRangeException(nameof(parameters), "Floored seasonal change points must satisfy 1 <= K1 < K2 <= 366.");
 
                 double xi1 = parameters[2];
                 double alpha1 = parameters[3];
@@ -1558,8 +1899,8 @@ namespace RMC.BestFit.Models
                 double kappa2 = parameters[7];
 
                 // Correction factors
-                double p1 = (k1 + (366 - k2)) / 366;
-                double p2 = (k2 - k1) / 366;
+                double p1 = (k1 + (366.0 - k2)) / 366.0;
+                double p2 = (k2 - k1) / 366.0;
 
                 // Season 1 - use Gumbel limit when kappa is near zero
                 double xiHat1, alphaHat1;
@@ -1636,8 +1977,8 @@ namespace RMC.BestFit.Models
             {
                 // Seasonal case: convert GEV parameters so that each season
                 // has the correct marginal exceedance behavior.
-                double k1 = parameters[0];
-                double k2 = parameters[1];
+                if (!TryGetEffectiveChangePoints(parameters, out int k1, out int k2))
+                    throw new ArgumentOutOfRangeException(nameof(parameters), "Floored seasonal change points must satisfy 1 <= K1 < K2 <= 366.");
 
                 double xi1 = parameters[2];
                 double alpha1 = parameters[3];
@@ -1648,8 +1989,8 @@ namespace RMC.BestFit.Models
                 double kappa2 = parameters[7];
 
                 // Correction factors
-                double p1 = (k1 + (366 - k2)) / 366;
-                double p2 = (k2 - k1) / 366;
+                double p1 = (k1 + (366.0 - k2)) / 366.0;
+                double p2 = (k2 - k1) / 366.0;
 
                 // Season 1 - use Gumbel limit when kappa is near zero
                 double xiHat1, alphaHat1;
@@ -1716,6 +2057,8 @@ namespace RMC.BestFit.Models
             {
                 _threshold = Threshold,
                 _totalYears = TotalYears,
+                _totalYearsExplicit = _totalYearsExplicit,
+                _isTotalYearsInferred = IsTotalYearsInferred,
                 _useDefaults = UseDefaults,
                 _isSeasonal = IsSeasonal,
                 _timeBlock = TimeBlock,
@@ -1743,6 +2086,7 @@ namespace RMC.BestFit.Models
             // Inputs
             result.SetAttributeValue(nameof(Threshold), Threshold.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(TotalYears), TotalYears.ToString("G17", CultureInfo.InvariantCulture));
+            result.SetAttributeValue(nameof(IsTotalYearsInferred), IsTotalYearsInferred.ToString());
             result.SetAttributeValue(nameof(UseDefaults), UseDefaults.ToString());
             result.SetAttributeValue(nameof(IsSeasonal), IsSeasonal.ToString());
             result.SetAttributeValue(nameof(TimeBlock), TimeBlock.ToString());
@@ -1852,6 +2196,10 @@ namespace RMC.BestFit.Models
                 isValid = false;
                 messages.Add("Error: TotalYears must be positive and finite.");
             }
+            else if (IsTotalYearsInferred)
+            {
+                messages.Add("Warning: TotalYears was inferred from the first and last retained exact POT events. Leading or trailing zero-event years are not observable from the POT data; override TotalYears when source-record coverage is known.");
+            }
 
             if (double.IsNaN(Lambda) || !Tools.IsFinite(Lambda) || Lambda <= 0)
             {
@@ -1859,16 +2207,35 @@ namespace RMC.BestFit.Models
                 messages.Add("Error: Lambda (average events per year) must be positive and finite.");
             }
 
+            double fittedIntensity = FittedThresholdIntensity;
+            if (!Tools.IsFinite(fittedIntensity) || fittedIntensity <= 0.0)
+            {
+                isValid = false;
+                messages.Add("Error: The fitted threshold intensity must be positive and finite.");
+            }
+
             // Seasonal-specific checks
             if (IsSeasonal)
             {
+                int[] undatedIndexes = DataFrame.ExactSeries
+                    .Cast<ExactData>()
+                    .Where(data => data.DateTime == default)
+                    .Select(data => data.Index)
+                    .ToArray();
+                if (undatedIndexes.Length > 0)
+                {
+                    isValid = false;
+                    messages.Add($"Error: Every exact observation requires a valid date for seasonal point-process fitting. Missing dates at indexes: {string.Join(", ", undatedIndexes)}.");
+                }
+
                 if (StartMonth < 1 || StartMonth > 12)
                 {
                     isValid = false;
                     messages.Add("Error: StartMonth must be between 1 and 12 for seasonal models.");
                 }
 
-                if (AMSDataFrame is null || AMSDataFrame.ExactSeries.Count == 0)
+                if (undatedIndexes.Length == 0 &&
+                    (AMSDataFrame is null || AMSDataFrame.ExactSeries.Count == 0))
                 {
                     isValid = false;
                     messages.Add("Error: AMSDataFrame has no exact data for seasonal model.");
@@ -1879,13 +2246,10 @@ namespace RMC.BestFit.Models
                     Parameters[0].Name.StartsWith("Change Point", StringComparison.OrdinalIgnoreCase) &&
                     Parameters[1].Name.StartsWith("Change Point", StringComparison.OrdinalIgnoreCase))
                 {
-                    double k1 = Parameters[0].Value;
-                    double k2 = Parameters[1].Value;
-
-                    if (!(k1 >= 1 && k1 <= 366 && k2 >= 1 && k2 <= 366 && k1 < k2))
+                    if (!TryGetEffectiveChangePoints(Parameters.Select(parameter => parameter.Value).ToArray(), out _, out _))
                     {
                         isValid = false;
-                        messages.Add("Error: Seasonal change points K1 and K2 must satisfy 1 ≤ K1 < K2 ≤ 366.");
+                        messages.Add("Error: Floored seasonal change points K1 and K2 must satisfy 1 <= K1 < K2 <= 366.");
                     }
                 }
             }
@@ -1943,65 +2307,119 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         /// <remarks>
         /// <para>
-        /// Generates random samples from the point process (peaks-over-threshold) distribution.
-        /// The exceedance distribution (typically GPD) with the threshold is used for generation.
+        /// Generates a fixed-size POT magnitude sample from the empirical arrival rate
+        /// <see cref="Lambda"/> and Madsen-equivalent generalized Pareto distributions. Yearly
+        /// event counts are drawn from a Numerics Poisson distribution until the requested number
+        /// of exceedances has been accumulated. In seasonal mode, exposure weights derived from
+        /// the floored changepoints select the seasonal GPA for each event.
         /// </para>
         /// </remarks>
         public double[] GenerateRandomValues(int sampleSize, int seed = -1)
         {
             if (sampleSize <= 0)
                 throw new ArgumentOutOfRangeException(nameof(sampleSize), "Sample size must be positive.");
-            if (Distribution is null)
-                throw new InvalidOperationException("Distribution cannot be null when generating random values.");
 
-            var rng = seed > 0 ? new Numerics.Sampling.MersenneTwister(seed) : new Numerics.Sampling.MersenneTwister();
+            if (!IsSeasonal)
+                return GenerateNonSeasonalRandomValues(sampleSize, seed);
+
+            return GenerateFixedPoissonGpaEvents(sampleSize, seed)
+                .Select(point => point.magnitude)
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Generates a fixed-size nonseasonal POT sample from the Poisson-GPA process.
+        /// </summary>
+        /// <param name="sampleSize">The number of exceedance magnitudes to return.</param>
+        /// <param name="seed">The pseudorandom number generator seed.</param>
+        /// <returns>An array containing exactly <paramref name="sampleSize"/> POT magnitudes.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the empirical arrival rate, threshold, GEV parameters, or converted GPA
+        /// parameters do not define a valid nonseasonal point process.
+        /// </exception>
+        /// <remarks>
+        /// The Madsen conversion preserves the Hosking shape parameter used by Numerics:
+        /// <c>Alpha_GPA = Alpha_GEV * Lambda^Kappa</c>, <c>Xi_GPA = Threshold</c>, and
+        /// <c>Kappa_GPA = Kappa_GEV</c>. The Poisson count and GPA marks share one seeded
+        /// Mersenne-Twister stream.
+        /// </remarks>
+        private double[] GenerateNonSeasonalRandomValues(int sampleSize, int seed)
+        {
+            GeneralizedPareto gpa = CreatePoissonGpaComponents(out _, out _, out _)[0];
+            var poisson = new Poisson(Lambda);
+            var rng = seed > 0
+                ? new Numerics.Sampling.MersenneTwister(seed)
+                : new Numerics.Sampling.MersenneTwister();
             var result = new double[sampleSize];
-            var components = Distribution.Distributions;
-            bool useMinimum = Distribution.MinimumOfRandomVariables;
+            int generated = 0;
 
-            for (int i = 0; i < sampleSize; i++)
+            while (generated < sampleSize)
             {
-                // Generate values from all components (GPD + any other components)
-                double combinedValue = useMinimum ? double.MaxValue : double.NegativeInfinity;
-
-                foreach (var component in components)
+                int yearlyEventCount = checked((int)poisson.InverseCDF(rng.NextDouble()));
+                int eventsToRetain = Math.Min(yearlyEventCount, sampleSize - generated);
+                for (int i = 0; i < eventsToRetain; i++)
                 {
-                    double value = component.InverseCDF(rng.NextDouble());
-                    if (useMinimum)
-                        combinedValue = Math.Min(combinedValue, value);
-                    else
-                        combinedValue = Math.Max(combinedValue, value);
+                    result[generated] = gpa.InverseCDF(rng.NextDouble());
+                    generated++;
                 }
-
-                result[i] = combinedValue;
             }
 
             return result;
         }
 
         /// <summary>
-        /// Generates a synthetic Peaks-Over-Threshold (POT) time series from the
-        /// fitted Poisson-GPD/GEV process: total event count is drawn from
-        /// Poisson(λ · durationYears) where λ = N / TotalYears, then magnitudes are
-        /// sampled from the exceedance distribution conditional on Y &gt; Threshold.
+        /// Generates a fixed-size, date-stamped POT sample from the Poisson-GPA process.
+        /// </summary>
+        /// <param name="sampleSize">The exact number of POT exceedances to return.</param>
+        /// <param name="seed">The pseudorandom number generator seed.</param>
+        /// <returns>A daily-interval series containing dummy dates and POT magnitudes.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="sampleSize"/> is not positive.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the arrival rate, changepoints, or Madsen-converted GPA parameters are
+        /// invalid.
+        /// </exception>
+        /// <remarks>
+        /// Yearly counts are sampled from <c>Poisson(Lambda)</c> until the requested POT sample is
+        /// complete. Seasonal membership is sampled using only the changepoint exposure weights.
+        /// Dates use successive leap-containing dummy blocks beginning with calendar year 2000 or
+        /// the corresponding configured water/custom-year block. Multiple exceedances may share
+        /// a date.
+        /// </remarks>
+        public TimeSeries GeneratePOTTimeSeries(int sampleSize, int seed = -1)
+        {
+            if (sampleSize <= 0)
+                throw new ArgumentOutOfRangeException(nameof(sampleSize), "Sample size must be positive.");
+
+            List<(DateTime date, double magnitude)> events = GenerateFixedPoissonGpaEvents(sampleSize, seed);
+            events.Sort((left, right) => left.date.CompareTo(right.date));
+            var result = new TimeSeries(TimeInterval.OneDay);
+            foreach ((DateTime date, double magnitude) in events)
+            {
+                result.Add(new SeriesOrdinate<DateTime, double>(date, magnitude));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Generates a synthetic Peaks-Over-Threshold (POT) time series from the fitted
+        /// Poisson-GPA process over a requested exposure duration.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Unlike <see cref="GenerateRandomValues(int, int)"/> — which mirrors the
-        /// CompetingRisks max/min API and returns just magnitudes — this method
+        /// Unlike <see cref="GenerateRandomValues(int, int)"/> — which returns a fixed-size
+        /// sample containing only exceedance magnitudes — this method
         /// returns a date-stamped <see cref="TimeSeries"/> that respects the model's
         /// seasonal structure (when <see cref="IsSeasonal"/> is true).
         /// </para>
         /// <para>
-        /// <b>Water year vs. calendar year:</b> the per-year rate λ is independent
-        /// of the year convention; only the date assignment cares. Pass
-        /// <paramref name="startDate"/> aligned with whichever year convention you
-        /// want — for example, the first day of <see cref="StartMonth"/> for a
-        /// water year, or January 1 for a calendar year. For seasonal models,
-        /// season classification uses the day-of-year (1-366) of the generated
-        /// date and the fitted season-change parameters (k1, k2) to dispatch to
-        /// Season 1 (day &lt; k1 || day ≥ k2) or Season 2 (k1 ≤ day &lt; k2),
-        /// matching <see cref="DataLogLikelihood(double[])"/>.
+        /// <b>Water year vs. calendar year:</b> generated and observed events use the same
+        /// elapsed-day calculation from the configured block start. The total event count has mean
+        /// <c>durationYears * Lambda</c>. Seasonal membership is assigned by Poisson thinning with
+        /// the changepoint exposure weights, and generated dates are restricted to the matching
+        /// season.
         /// </para>
         /// </remarks>
         /// <param name="startDate">First date in the synthetic record.</param>
@@ -2011,88 +2429,37 @@ namespace RMC.BestFit.Models
         /// pairs, one per simulated exceedance, sorted by date.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when
         /// <paramref name="durationYears"/> is non-positive.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the model state
-        /// is incomplete (no <see cref="Distribution"/>, no <see cref="DataFrame"/>,
-        /// or NaN/non-positive <see cref="Threshold"/>/<see cref="TotalYears"/>).</exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the arrival rate, changepoints, or Madsen-converted GPA parameters are invalid.
+        /// </exception>
         public TimeSeries GeneratePOTTimeSeries(DateTime startDate, double durationYears, int seed = -1)
         {
             if (durationYears <= 0)
                 throw new ArgumentOutOfRangeException(nameof(durationYears), "Duration must be positive.");
-            if (Distribution is null)
-                throw new InvalidOperationException("Distribution cannot be null when generating POT samples.");
-            if (DataFrame is null)
-                throw new InvalidOperationException("DataFrame cannot be null when generating POT samples.");
+            GeneralizedPareto[] components = CreatePoissonGpaComponents(
+                out int k1,
+                out int k2,
+                out double seasonOneWeight);
 
-            double u = Threshold;
-            double Ny = TotalYears;
-            if (double.IsNaN(u) || double.IsNaN(Ny) || Ny <= 0)
-                throw new InvalidOperationException("Threshold and TotalYears must be set on the model.");
+            double totalDays = durationYears * 365.25;
+            if (!Tools.IsFinite(totalDays) || totalDays <= 0.0)
+                throw new ArgumentOutOfRangeException(nameof(durationYears), "Duration must produce a positive finite date span.");
 
-            int observedCount = DataFrame.ExactSeries?.Count ?? 0;
-            double lambda = observedCount / Ny;            // events per year
-            double expectedEvents = lambda * durationYears;
-
+            DateTime endDate = startDate.AddDays(totalDays);
             var rng = seed > 0 ? new Numerics.Sampling.MersenneTwister(seed) : new Numerics.Sampling.MersenneTwister();
 
-            // Sample total event count from Poisson(expectedEvents).
-            int totalEvents = SamplePoisson(expectedEvents, rng);
-
-            var result = new TimeSeries(TimeInterval.OneDay);
-            if (totalEvents <= 0) return result;
-
-            // Configure a local clone of the CompetingRisks distribution. For
-            // seasonal mode, the first two parameters are k1, k2; the rest go to
-            // the per-season distributions.
-            var parameters = Parameters.Select(p => p.Value).ToArray();
-            var localModel = (CompetingRisks)Distribution.Clone();
-            double k1 = 0.0, k2 = 0.0;
-            if (IsSeasonal && parameters.Length >= 2)
+            int totalCount = SamplePoisson(durationYears * Lambda, rng);
+            var events = new List<(DateTime date, double magnitude)>(totalCount);
+            for (int i = 0; i < totalCount; i++)
             {
-                k1 = parameters[0];
-                k2 = parameters[1];
-                localModel.SetParameters(parameters.Skip(2).ToArray());
-            }
-            else
-            {
-                localModel.SetParameters(parameters);
-            }
-
-            // Total span for uniform date sampling. 365.25 averages over leap years.
-            double totalDays = durationYears * 365.25;
-
-            var events = new List<(DateTime date, double magnitude)>(totalEvents);
-            for (int i = 0; i < totalEvents; i++)
-            {
-                double offsetDays = rng.NextDouble() * totalDays;
-                var eventDate = startDate.AddDays(offsetDays);
-
-                // Pick the marginal distribution for this date.
-                UnivariateDistributionBase mark;
-                if (IsSeasonal && localModel.Distributions.Count >= 2)
-                {
-                    int day = eventDate.DayOfYear;
-                    mark = (day < k1 || day >= k2)
-                        ? localModel.Distributions[0]
-                        : localModel.Distributions[1];
-                }
-                else
-                {
-                    mark = localModel.Distributions[0];
-                }
-
-                // Sample conditional on Y > u via inverse-CDF on the conditional
-                // CDF: F_cond(y) = (F(y) - F(u)) / (1 - F(u)); inverse mapping is
-                // y = F^{-1}(F(u) + (1 - F(u)) · U).
-                double Fu = mark.CDF(u);
-                if (Fu >= 1.0 - 1e-12) Fu = 1.0 - 1e-12;
-                double pUnif = Fu + (1.0 - Fu) * rng.NextDouble();
-                if (pUnif >= 1.0) pUnif = 1.0 - 1e-12;
-                double magnitude = mark.InverseCDF(pUnif);
-
+                int componentIndex = IsSeasonal && rng.NextDouble() >= seasonOneWeight ? 1 : 0;
+                DateTime eventDate = SampleEventDate(startDate, endDate, componentIndex, k1, k2, rng);
+                double magnitude = components[componentIndex].InverseCDF(rng.NextDouble());
                 events.Add((eventDate, magnitude));
             }
 
             events.Sort((a, b) => a.date.CompareTo(b.date));
+            var result = new TimeSeries(TimeInterval.OneDay);
             foreach (var (date, magnitude) in events)
             {
                 result.Add(new SeriesOrdinate<DateTime, double>(date, magnitude));
@@ -2102,37 +2469,372 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Samples an integer event count from a Poisson distribution with the
-        /// given mean. Uses Knuth's algorithm for small means and a normal
-        /// approximation for large means.
+        /// Determines whether the data frame retains a valid point-process source exposure.
+        /// </summary>
+        /// <returns><c>true</c> when source observation years are positive and finite.</returns>
+        private bool HasStoredSourceExposure()
+        {
+            return DataFrame is not null &&
+                   Tools.IsFinite(DataFrame.PointProcessObservationYears) &&
+                   DataFrame.PointProcessObservationYears > 0.0;
+        }
+
+        /// <summary>
+        /// Floors the two latent seasonal changepoints and validates their ordered day cells.
+        /// </summary>
+        /// <param name="parameters">The full point-process parameter vector.</param>
+        /// <param name="k1">The effective first integer changepoint day.</param>
+        /// <param name="k2">The effective second integer changepoint day.</param>
+        /// <returns><c>true</c> when the floored days satisfy 1 &lt;= K1 &lt; K2 &lt;= 366.</returns>
+        /// <remarks>
+        /// Continuous MCMC proposals are mapped to equal-width discrete day cells. Default supports
+        /// are either broad or histogram-informed; custom priors can narrow them further.
+        /// </remarks>
+        private static bool TryGetEffectiveChangePoints(IList<double> parameters, out int k1, out int k2)
+        {
+            k1 = 0;
+            k2 = 0;
+            if (parameters.Count < 2 || !Tools.IsFinite(parameters[0]) || !Tools.IsFinite(parameters[1]))
+                return false;
+
+            double flooredK1 = Math.Floor(parameters[0]);
+            double flooredK2 = Math.Floor(parameters[1]);
+            if (flooredK1 < 1.0 || flooredK1 > 365.0 || flooredK2 < 2.0 || flooredK2 > 366.0)
+                return false;
+
+            k1 = (int)flooredK1;
+            k2 = (int)flooredK2;
+            return k1 < k2;
+        }
+
+        /// <summary>
+        /// Computes the one-based day within the selected calendar or water-year block.
+        /// </summary>
+        /// <param name="date">The event date.</param>
+        /// <returns>The one-based elapsed day from the applicable block start.</returns>
+        /// <remarks>
+        /// Water-year and custom-year blocks use <see cref="StartMonth"/>; other block types use
+        /// January 1. Elapsed-day arithmetic preserves leap days without shifting calendar months.
+        /// </remarks>
+        private int GetBlockDay(DateTime date)
+        {
+            bool shiftedYear = TimeBlock == TimeBlockWindow.WaterYear || TimeBlock == TimeBlockWindow.CustomYear;
+            int startMonth = shiftedYear ? StartMonth : 1;
+            if (startMonth < 1 || startMonth > 12)
+                return date.DayOfYear;
+
+            int startYear = date.Month >= startMonth ? date.Year : date.Year - 1;
+            var blockStart = new DateTime(startYear, startMonth, 1, 0, 0, 0, date.Kind);
+            return (date.Date - blockStart.Date).Days + 1;
+        }
+
+        /// <summary>
+        /// Determines which wrapped season contains an effective block day.
+        /// </summary>
+        /// <param name="day">The one-based block day.</param>
+        /// <param name="k1">The first effective changepoint.</param>
+        /// <param name="k2">The second effective changepoint.</param>
+        /// <returns><c>true</c> for wrapped season one; otherwise, <c>false</c>.</returns>
+        private static bool IsSeasonOneDay(int day, int k1, int k2)
+        {
+            return day < k1 || day >= k2;
+        }
+
+        /// <summary>
+        /// Evaluates the GEV-compatible point-process threshold measure.
+        /// </summary>
+        /// <param name="distribution">The GEV component.</param>
+        /// <param name="threshold">The POT threshold.</param>
+        /// <returns>The fitted threshold intensity, or <see cref="double.NaN"/> outside support.</returns>
+        /// <remarks>
+        /// Numerics stores Kappa with the opposite sign from the Coles shape parameter. The
+        /// zero-shape branch is the analytical Gumbel limit.
+        /// </remarks>
+        private static double CalculateThresholdIntensity(GeneralizedExtremeValue distribution, double threshold)
+        {
+            double location = distribution.Xi;
+            double scale = distribution.Alpha;
+            double shape = -distribution.Kappa;
+            if (!Tools.IsFinite(threshold) || !Tools.IsFinite(location) || !Tools.IsFinite(scale) ||
+                !Tools.IsFinite(shape) || scale <= 0.0)
+            {
+                return double.NaN;
+            }
+
+            if (Math.Abs(shape) < 1E-4)
+                return Math.Exp(-(threshold - location) / scale);
+
+            double support = 1.0 + shape * ((threshold - location) / scale);
+            return support > 0.0 ? Math.Pow(support, -1.0 / shape) : double.NaN;
+        }
+
+        /// <summary>
+        /// Computes current fitted total and component threshold intensities for read-only APIs.
+        /// </summary>
+        /// <param name="totalIntensity">The exposure-weighted total annual intensity.</param>
+        /// <param name="seasonOneIntensity">The first unweighted component intensity.</param>
+        /// <param name="seasonTwoIntensity">The second unweighted component intensity.</param>
+        /// <param name="seasonOneWeight">The first component exposure weight.</param>
+        /// <param name="seasonTwoWeight">The second component exposure weight.</param>
+        /// <returns><c>true</c> when the fitted state is valid.</returns>
+        private bool TryGetFittedIntensities(
+            out double totalIntensity,
+            out double seasonOneIntensity,
+            out double seasonTwoIntensity,
+            out double seasonOneWeight,
+            out double seasonTwoWeight)
+        {
+            totalIntensity = double.NaN;
+            seasonOneIntensity = double.NaN;
+            seasonTwoIntensity = 0.0;
+            seasonOneWeight = 1.0;
+            seasonTwoWeight = 0.0;
+
+            if (Distribution is null || Parameters is null)
+                return false;
+
+            int requiredComponents = IsSeasonal ? 2 : 1;
+            var process = (CompetingRisks)Distribution.Clone();
+            if (process.Distributions.Count != requiredComponents)
+                return false;
+
+            double[] parameters = Parameters.Select(parameter => parameter.Value).ToArray();
+            if (IsSeasonal)
+            {
+                if (parameters.Length != process.NumberOfParameters + 2 ||
+                    !TryGetEffectiveChangePoints(parameters, out int k1, out int k2))
+                {
+                    return false;
+                }
+
+                seasonOneWeight = (k1 + 366.0 - k2) / 366.0;
+                seasonTwoWeight = (k2 - k1) / 366.0;
+                process.SetParameters(parameters.Skip(2).ToArray());
+            }
+            else
+            {
+                if (parameters.Length != process.NumberOfParameters)
+                    return false;
+                process.SetParameters(parameters);
+            }
+
+            if (process.Distributions[0] is not GeneralizedExtremeValue first)
+                return false;
+            seasonOneIntensity = CalculateThresholdIntensity(first, Threshold);
+            if (!Tools.IsFinite(seasonOneIntensity) || seasonOneIntensity < 0.0)
+                return false;
+
+            if (IsSeasonal)
+            {
+                if (process.Distributions[1] is not GeneralizedExtremeValue second)
+                    return false;
+                seasonTwoIntensity = CalculateThresholdIntensity(second, Threshold);
+                if (!Tools.IsFinite(seasonTwoIntensity) || seasonTwoIntensity < 0.0)
+                    return false;
+            }
+
+            totalIntensity = seasonOneWeight * seasonOneIntensity + seasonTwoWeight * seasonTwoIntensity;
+            return seasonOneWeight > 0.0 && seasonTwoWeight >= 0.0 &&
+                   Tools.IsFinite(totalIntensity) && totalIntensity >= 0.0;
+        }
+
+        /// <summary>
+        /// Generates a fixed-size marked Poisson sample using the configured GPA components.
+        /// </summary>
+        /// <param name="sampleSize">The exact number of exceedances to generate.</param>
+        /// <param name="seed">The pseudorandom number generator seed.</param>
+        /// <returns>Dummy dates and magnitudes in generation order.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the configured point process cannot be converted to valid GPA components.
+        /// </exception>
+        /// <remarks>
+        /// The seasonal categorical draw uses only the two exposure weights. The total annual
+        /// event count remains <c>Poisson(Lambda)</c>. Successive leap-containing dummy blocks
+        /// retain the annual batches while making all 366 modeled block days representable as
+        /// <see cref="DateTime"/> values.
+        /// </remarks>
+        private List<(DateTime date, double magnitude)> GenerateFixedPoissonGpaEvents(int sampleSize, int seed)
+        {
+            GeneralizedPareto[] components = CreatePoissonGpaComponents(
+                out int k1,
+                out int k2,
+                out double seasonOneWeight);
+            var poisson = new Poisson(Lambda);
+            var rng = seed > 0
+                ? new Numerics.Sampling.MersenneTwister(seed)
+                : new Numerics.Sampling.MersenneTwister();
+
+            bool shiftedYear = TimeBlock == TimeBlockWindow.WaterYear || TimeBlock == TimeBlockWindow.CustomYear;
+            int startMonth = shiftedYear ? StartMonth : 1;
+            if (startMonth < 1 || startMonth > 12)
+                throw new InvalidOperationException("The point-process block start month must be between 1 and 12.");
+
+            var events = new List<(DateTime date, double magnitude)>(sampleSize);
+            int blockIndex = 0;
+            while (events.Count < sampleSize)
+            {
+                if (blockIndex > 1999)
+                    throw new InvalidOperationException("The requested POT sample exceeds the available dummy DateTime blocks.");
+                int dummyLeapYear = 2000 + 4 * blockIndex;
+                int startYear = startMonth <= 2 ? dummyLeapYear : dummyLeapYear - 1;
+                DateTime blockStart = new DateTime(startYear, startMonth, 1);
+
+                int yearlyEventCount = checked((int)poisson.InverseCDF(rng.NextDouble()));
+                int eventsToRetain = Math.Min(yearlyEventCount, sampleSize - events.Count);
+                for (int i = 0; i < eventsToRetain; i++)
+                {
+                    int componentIndex = IsSeasonal && rng.NextDouble() >= seasonOneWeight ? 1 : 0;
+                    int day;
+                    if (!IsSeasonal)
+                    {
+                        day = 1 + Math.Min((int)(rng.NextDouble() * 366.0), 365);
+                    }
+                    else if (componentIndex == 0)
+                    {
+                        int firstSegmentDays = k1 - 1;
+                        int seasonOneDays = k1 + 366 - k2;
+                        int seasonIndex = Math.Min((int)(rng.NextDouble() * seasonOneDays), seasonOneDays - 1);
+                        day = seasonIndex < firstSegmentDays
+                            ? seasonIndex + 1
+                            : k2 + seasonIndex - firstSegmentDays;
+                    }
+                    else
+                    {
+                        int seasonTwoDays = k2 - k1;
+                        day = k1 + Math.Min((int)(rng.NextDouble() * seasonTwoDays), seasonTwoDays - 1);
+                    }
+
+                    DateTime date = blockStart.AddDays(day - 1);
+                    double magnitude = components[componentIndex].InverseCDF(rng.NextDouble());
+                    events.Add((date, magnitude));
+                }
+                blockIndex++;
+            }
+
+            return events;
+        }
+
+        /// <summary>
+        /// Converts the configured raw Hosking GEV parameters to seasonal Hosking GPAs.
+        /// </summary>
+        /// <param name="k1">The floored first changepoint, or zero when nonseasonal.</param>
+        /// <param name="k2">The floored second changepoint, or zero when nonseasonal.</param>
+        /// <param name="seasonOneWeight">The wrapped-season exposure weight.</param>
+        /// <returns>One nonseasonal GPA or two seasonal GPA components.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the empirical rate, parameters, or converted GPA components are invalid.
+        /// </exception>
+        /// <remarks>
+        /// Madsen conversion under the Numerics/Hosking sign convention is
+        /// <c>Alpha_GPA = Alpha_GEV * Lambda^Kappa</c>,
+        /// <c>Xi_GPA = Threshold</c>, and <c>Kappa_GPA = Kappa_GEV</c>. Seasonal exposure is
+        /// handled by the categorical process assignment and is not applied to this conversion.
+        /// </remarks>
+        private GeneralizedPareto[] CreatePoissonGpaComponents(
+            out int k1,
+            out int k2,
+            out double seasonOneWeight)
+        {
+            if (!Tools.IsFinite(Lambda) || Lambda <= 0.0)
+                throw new InvalidOperationException("The empirical point-process arrival rate must be positive and finite.");
+            if (!Tools.IsFinite(Threshold))
+                throw new InvalidOperationException("The point-process threshold must be finite.");
+            if (Distribution is null || Parameters is null)
+                throw new InvalidOperationException("The point-process distribution and parameters must be configured.");
+
+            k1 = 0;
+            k2 = 0;
+            seasonOneWeight = 1.0;
+            int componentCount = IsSeasonal ? 2 : 1;
+            int expectedParameterCount = IsSeasonal ? 8 : 3;
+            if (Parameters.Count != expectedParameterCount || Distribution.Distributions.Count != componentCount)
+                throw new InvalidOperationException("The point-process component count does not match its parameter vector.");
+            if (IsSeasonal)
+            {
+                double[] values = Parameters.Select(parameter => parameter.Value).ToArray();
+                if (!TryGetEffectiveChangePoints(values, out k1, out k2))
+                    throw new InvalidOperationException("Floored seasonal changepoints must satisfy 1 <= K1 < K2 <= 366.");
+                seasonOneWeight = (k1 + 366.0 - k2) / 366.0;
+            }
+
+            var components = new GeneralizedPareto[componentCount];
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                int parameterIndex = IsSeasonal ? 2 + 3 * componentIndex : 3 * componentIndex;
+                if (Distribution.Distributions[componentIndex] is not GeneralizedExtremeValue)
+                    throw new InvalidOperationException("Each point-process component must be a generalized extreme-value distribution.");
+
+                var gev = new GeneralizedExtremeValue(
+                    Parameters[parameterIndex].Value,
+                    Parameters[parameterIndex + 1].Value,
+                    Parameters[parameterIndex + 2].Value);
+                if (!gev.ParametersValid)
+                    throw new InvalidOperationException("The fitted generalized extreme-value parameters are invalid.");
+
+                double gpaScale = gev.Alpha * Math.Pow(Lambda, gev.Kappa);
+                var gpa = new GeneralizedPareto(Threshold, gpaScale, gev.Kappa);
+                if (!gpa.ParametersValid)
+                    throw new InvalidOperationException("The Madsen-converted generalized Pareto parameters are invalid.");
+                components[componentIndex] = gpa;
+            }
+
+            return components;
+        }
+
+        /// <summary>
+        /// Samples a date uniformly from the requested component's portion of the record.
+        /// </summary>
+        /// <param name="startDate">The inclusive record start.</param>
+        /// <param name="endDate">The exclusive record end.</param>
+        /// <param name="componentIndex">The zero-based process component.</param>
+        /// <param name="k1">The effective first changepoint.</param>
+        /// <param name="k2">The effective second changepoint.</param>
+        /// <param name="rng">The pseudorandom number generator.</param>
+        /// <returns>A date whose block day belongs to the requested component.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the requested season has no representable date in the supplied record span.
+        /// </exception>
+        private DateTime SampleEventDate(
+            DateTime startDate,
+            DateTime endDate,
+            int componentIndex,
+            int k1,
+            int k2,
+            Numerics.Sampling.MersenneTwister rng)
+        {
+            double spanDays = (endDate - startDate).TotalDays;
+            if (!IsSeasonal)
+                return startDate.AddDays(rng.NextDouble() * spanDays);
+
+            bool requireSeasonOne = componentIndex == 0;
+            for (int attempt = 0; attempt < 1000000; attempt++)
+            {
+                DateTime candidate = startDate.AddDays(rng.NextDouble() * spanDays);
+                if (IsSeasonOneDay(GetBlockDay(candidate), k1, k2) == requireSeasonOne)
+                    return candidate;
+            }
+
+            throw new InvalidOperationException("The requested seasonal component has no representable date in the simulation record.");
+        }
+
+        /// <summary>
+        /// Samples an integer event count from a Poisson distribution with the given mean.
         /// </summary>
         /// <param name="mean">The Poisson rate (event count expected).</param>
         /// <param name="rng">A Mersenne-Twister PRNG.</param>
         /// <returns>A non-negative integer event count.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when the mean is non-finite, negative, or too large for an integer count.
+        /// </exception>
         private static int SamplePoisson(double mean, Numerics.Sampling.MersenneTwister rng)
         {
-            if (mean <= 0.0) return 0;
+            if (!Tools.IsFinite(mean) || mean < 0.0 || mean > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(mean), mean, "The Poisson mean must be finite, non-negative, and representable as an integer count.");
+            if (mean == 0.0)
+                return 0;
 
-            if (mean > 30.0)
-            {
-                // Normal approximation: N(mean, mean) is accurate for mean > 30.
-                double z = Numerics.Distributions.Normal.StandardZ(rng.NextDouble());
-                int n = (int)Math.Round(mean + Math.Sqrt(mean) * z);
-                return Math.Max(0, n);
-            }
-
-            // Knuth's small-mean algorithm.
-            double L = Math.Exp(-mean);
-            int k = 0;
-            double p = 1.0;
-            while (true)
-            {
-                k++;
-                p *= rng.NextDouble();
-                if (p <= L) return k - 1;
-                // Safety guard for pathological RNG sequences.
-                if (k > 1000000) return k - 1;
-            }
+            double probability = Math.Clamp(rng.NextDouble(), 1E-12, 1.0 - 1E-12);
+            return checked((int)new Poisson(mean).InverseCDF(probability));
         }
 
         #endregion

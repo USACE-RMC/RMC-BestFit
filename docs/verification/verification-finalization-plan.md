@@ -272,15 +272,15 @@ Phase exit criteria:
 
 ## Phase 4 - Point Processes and Composite Models
 
-Status: planned.
+Status: in progress. The TR-004/TR-005 point-process implementation and fast tests are complete, with exact current-source verification open. The TR-006/TR-007/TR-008 mixture correction, fast tests, and three recovery fixtures are complete; the three exact mixture methods await focused execution. Competing-risk and composite batches have not started.
 
 Findings and required direction:
 
-- TR-004: separate empirical event count/rate from fitted threshold intensity and test mixed observation types.
-- TR-005: generate counts, seasonal assignments, and marks from the fitted point-process intensity; verify Monte Carlo rates and conditional tails.
-- TR-006: use an identified `K-1` simplex representation internally, never mutate proposals, and migrate legacy serialized `K`-weight models through a compatibility adapter.
-- TR-007: implement a coherent mixed measure for an exact zero point mass, including CDF jump, quantiles, likelihood, and simulation.
-- TR-008: fail EM when any required row has zero total component probability.
+- TR-004: empirical count/rate, fitted threshold intensity, exposure metadata, and manual year/index fallback are implemented. Seasonal exact records require dates; annual/block-indexed non-exact records use the annual maximum of the two exposure-adjusted seasonal processes.
+- TR-005: empirical-Lambda Poisson counts, Madsen Hosking-GPA marks, seasonal exposure assignment, floored block-day changepoints, and histogram-informed flat defaults are implemented. PERT remains placement-only evidence. Run the ten exact current-source methods listed in the point-process report.
+- TR-006: BestFit uses direct physical $K-1$ weights, derives the final weight, applies the normalized flat-simplex prior, and never mutates proposals. Public weight-related signatures are unchanged. No legacy posterior migration or parameterization version is provided; affected saved mixture results require re-estimation.
+- TR-007: Numerics and BestFit implement one exact-zero positive-hurdle mixed measure with every continuous contribution conditioned on $X>0$; BestFit derives the fixed atom from exact annual records only.
+- TR-008: Numerics and BestFit EM fail explicitly with row context when any required total row probability is zero or nonfinite. Run the three exact recovery methods listed in the mixture report without tuning tolerances.
 - TR-012: use dependency-aware competing-risk simulation and validate rank dependence for every supported mode.
 - TR-013: reject or explicitly zero-weight invalid criteria; handle exact zero RMSE separately.
 - TR-014: define separately fitted child posteriors as independent and combine them through seeded independent resampling invariant to chain ordering.

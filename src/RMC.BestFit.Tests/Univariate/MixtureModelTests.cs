@@ -1,4 +1,4 @@
-using Numerics.Distributions;
+﻿using Numerics.Distributions;
 using RMC.BestFit.Models;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
@@ -114,7 +114,12 @@ public class MixtureModelTests
             Mixture = new Mixture(weights, distributions),
             DataFrame = CreateSampleDataFrame()
         };
-        double[] parameterValues = model.Mixture!.GetParameters;
+        int componentCount = model.Mixture!.Distributions.Length;
+        int freeWeightCount = Math.Max(0, componentCount - 1);
+        double[] physicalParameters = model.Mixture.GetParameters;
+        double[] parameterValues = physicalParameters.Take(freeWeightCount)
+            .Concat(physicalParameters.Skip(componentCount))
+            .ToArray();
 
         for (int i = 0; i < parameterValues.Length; i++)
         {
@@ -447,12 +452,10 @@ public class MixtureModelTests
         };
         var model = new MixtureModel(df, types);
 
-        // Should have 2 weight parameters + 2*2 distribution parameters = 6
-        Assert.IsTrue(model.NumberOfParameters >= 6);
-
-        // First two parameters should be weights
-        Assert.IsTrue(model.Parameters[0].Name.Contains("Weight"));
-        Assert.IsTrue(model.Parameters[1].Name.Contains("Weight"));
+        // K-1 gives one free weight plus two parameters per Normal component.
+        Assert.AreEqual(5, model.NumberOfParameters);
+        Assert.AreEqual("Weight (w₁)", model.Parameters[0].Name);
+        Assert.IsFalse(model.Parameters[1].Name.Contains("Weight", StringComparison.Ordinal));
     }
 
     /// <summary>Verifies that set default parameters single component no weight parameters.</summary>
@@ -762,9 +765,12 @@ public class MixtureModelTests
 
         model.ExpectationMaximization(out double[] parameters, out double[,] covariance, out int iterations);
 
-        // First two parameters are weights
-        double weightSum = parameters[0] + parameters[1];
-        Assert.AreEqual(1.0, weightSum, 0.01); // EM may not be perfectly converged
+        // The first physical weight is free and the final weight is derived.
+        double firstWeight = parameters[0];
+        double finalWeight = 1.0 - firstWeight;
+        Assert.IsTrue(firstWeight >= 0.0);
+        Assert.IsTrue(finalWeight >= 0.0);
+        Assert.AreEqual(1.0, firstWeight + finalWeight, 1E-12);
     }
 
     #endregion

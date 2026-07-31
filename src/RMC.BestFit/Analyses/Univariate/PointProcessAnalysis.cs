@@ -8,7 +8,6 @@ using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Xml.Linq;
 
 namespace RMC.BestFit.Analyses
@@ -77,7 +76,6 @@ namespace RMC.BestFit.Analyses
 
             PointProcess = pointProcess ?? throw new ArgumentNullException(nameof(pointProcess));
 
-            // Probability ordinates
             ProbabilityOrdinates = new ProbabilityOrdinates();
             var probElement = xElement.Element("ProbabilityOrdinates");
             if (probElement != null)
@@ -86,7 +84,6 @@ namespace RMC.BestFit.Analyses
                 ProbabilityOrdinates.FromDelimitedString(probText, ProbabilityOrdinates.DefaultDelimiter);
             }
 
-            // Bayesian analysis
             var bayesElement = xElement.Element("BayesianAnalysis");
             if (bayesElement != null)
             {
@@ -97,18 +94,15 @@ namespace RMC.BestFit.Analyses
                 BayesianAnalysis = new BayesianAnalysis(pointProcess);
             }
 
-            // Check if estimated
             var isEstimatedAttr = xElement.Attribute("IsEstimated");
             if (isEstimatedAttr != null && bool.TryParse(isEstimatedAttr.Value, out bool isEst))
             {
                 _isEstimated = isEst;
             }
 
-            // Restore MCMC results if provided
             if (mcmcResults != null)
                 _bayesianAnalysis.SetCustomMCMCResults(mcmcResults, skipInformationCriteria: true);
 
-            // Restore analysis results
             AnalysisResults = analysisResults;
             NormalizeRestoredEstimatedState();
         }
@@ -249,7 +243,7 @@ namespace RMC.BestFit.Analyses
         /// Handles changes to the <see cref="ProbabilityOrdinates"/> collection.
         /// </summary>
         /// <remarks>
-        /// Ordinates drive only <see cref="AnalysisResults"/> — not MCMC or <c>IsEstimated</c>.
+        /// Ordinates drive only <see cref="AnalysisResults"/> â€” not MCMC or <c>IsEstimated</c>.
         /// When estimated and ordinates are valid, reprocess via <see cref="CreateFrequencyAnalysisResultsAsync"/>;
         /// when invalid, clear <see cref="AnalysisResults"/> only; when not estimated, no-op.
         /// </remarks>
@@ -347,7 +341,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only â€” the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>. Leaves MCMC output and
         /// <c>IsEstimated</c> intact.
         /// </summary>
@@ -382,7 +376,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults â€”
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -396,14 +390,11 @@ namespace RMC.BestFit.Analyses
 
                 try
                 {
-                    // Prepare input data
                     PointProcess.DataFrame.ProcessThresholdSeries();
                     PointProcess.ProcessQuantilePriors();
 
-                    // Run Bayesian analysis
                     await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
-                    // Post-process
                     if (BayesianAnalysis.IsEstimated == true)
                     {
                         AnalysisProgress.ReportProcessingResults(progressReporter);
@@ -456,16 +447,10 @@ namespace RMC.BestFit.Analyses
         /// <inheritdoc/>
         public UnivariateDistributionBase? GetDistribution(int index)
         {
-
-            UnivariateDistributionBase? result = null;
             if (BayesianAnalysis == null || BayesianAnalysis.IsEstimated == false || BayesianAnalysis.Results == null)
-                return result;
+                return null;
 
-            var dist = PointProcess.Distribution!.Clone();
-            dist.SetParameters(BayesianAnalysis.Results.Output[index].Values);
-            result = dist;
-
-            return result;
+            return PointProcess.GetDistribution(BayesianAnalysis.Results.Output[index].Values);
         }
 
         /// <inheritdoc/>
@@ -483,9 +468,7 @@ namespace RMC.BestFit.Analyses
                 ? BayesianAnalysis.Results.PosteriorMean.Values
                 : BayesianAnalysis.Results.MAP.Values;
 
-            var dist = PointProcess.Distribution!.Clone();
-            dist.SetParameters(parms);
-            return dist;
+            return PointProcess.GetDistribution(parms);
         }
 
         /// <summary>
@@ -507,7 +490,6 @@ namespace RMC.BestFit.Analyses
 
             await Task.Run(() =>
             {
-                // Set the point estimator
                 if (BayesianAnalysis.PointEstimator == BayesianAnalysis.PointEstimateType.PosteriorMean)
                 {
                     PointProcess.SetParameterValues(BayesianAnalysis.Results.PosteriorMean.Values);
@@ -517,7 +499,6 @@ namespace RMC.BestFit.Analyses
                     PointProcess.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
                 }
 
-                // Update mode curve
                 AnalysisResults!.ModeCurve = new double[ProbabilityOrdinates.Count];
                 for (int i = 0; i < ProbabilityOrdinates.Count; i++)
                     AnalysisResults.ModeCurve[i] = PointProcess.Distribution!.InverseCDF(1 - ProbabilityOrdinates[i]);
@@ -531,7 +512,6 @@ namespace RMC.BestFit.Analyses
                 var bic = GoodnessOfFit.BIC(n, k, logL);
                 var dic = BayesianAnalysis.DIC;
 
-                // RMSE
                 var values = PointProcess.DataFrame.ExactSeries.ValuesToList();
                 values.AddRange(PointProcess.DataFrame.UncertainSeries.ValuesToList());
                 values.AddRange(PointProcess.DataFrame.IntervalSeries.ValuesToList());
@@ -571,7 +551,6 @@ namespace RMC.BestFit.Analyses
             {
                 PointProcess.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
 
-                // Get sampled distributions for each MCMC output
                 int B = BayesianAnalysis.OutputLength;
                 var sampledDistributions = new UnivariateDistributionBase[B];
                 Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
@@ -581,7 +560,6 @@ namespace RMC.BestFit.Analyses
                     sampledDistributions[idx] = d;
                 });
 
-                // Create uncertainty analysis results
                 AnalysisResults = new UncertaintyAnalysisResults(PointProcess.Distribution!,
                                                                 sampledDistributions,
                                                                 ProbabilityOrdinates.Select(p => 1.0 - p).ToArray(),
@@ -598,7 +576,6 @@ namespace RMC.BestFit.Analyses
             bool isValid = true;
             var messageList = new List<string>();
 
-            // Validate univariate distribution
             var distValid = PointProcess.Validate();
             if (!distValid.IsValid)
             {
@@ -606,7 +583,6 @@ namespace RMC.BestFit.Analyses
                 messageList.AddRange(distValid.ValidationMessages);
             }
 
-            // Validate probability ordinates
             var probOrdValid = ProbabilityOrdinates.Validate();
             if (!probOrdValid.IsValid)
             {
@@ -614,7 +590,6 @@ namespace RMC.BestFit.Analyses
                 messageList.AddRange(probOrdValid.ValidationMessages);
             }
 
-            // Validate Bayesian analysis
             var bayesValid = BayesianAnalysis.Validate();
             if (!bayesValid.IsValid)
             {
@@ -634,13 +609,12 @@ namespace RMC.BestFit.Analyses
         /// </returns>
         /// <remarks>
         /// <para>
-        /// The XML representation does not include the underlying <see cref="PointProcess"/>
-        /// or computed results (<see cref="AnalysisResults"/>).
-        /// It stores:
+        /// The XML representation does not include the underlying <see cref="PointProcess"/>,
+        /// posterior samples, or computed <see cref="AnalysisResults"/>. It stores:
         /// </para>
         /// <list type="bullet">
         /// <item><description><c>ProbabilityOrdinates</c> as a delimited string.</description></item>
-        /// <item><description><c>BayesianAnalysis</c> configuration and MCMC results.</description></item>
+        /// <item><description><c>BayesianAnalysis</c> configuration and scalar summary state.</description></item>
         /// </list>
         /// </remarks>
         public XElement ToXElement()
@@ -650,7 +624,6 @@ namespace RMC.BestFit.Analyses
                 new XElement("ProbabilityOrdinates",
                     ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter)));
 
-            // Bayesian analysis
             if (BayesianAnalysis != null)
             {
                 root.Add(BayesianAnalysis.ToXElement());

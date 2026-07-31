@@ -1,4 +1,4 @@
-using Numerics;
+﻿using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -383,7 +383,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults �
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -410,101 +410,56 @@ namespace RMC.BestFit.Analyses
                     {
                         try
                         {
-                            // Get initial parameters and covariance from Expectation-Maximization
-                            MixtureDistribution.ExpectationMaximization(out var parameters, out var covariance, out var iterations);
+                            // Get initial parameters and covariance from Expectation-Maximization.
+                            MixtureDistribution.ExpectationMaximization(
+                                out double[] parameters,
+                                out double[,] covariance,
+                                out _);
 
-                            int K = MixtureDistribution.Mixture!.Distributions.Length;
-                            int Np = parameters.Length - K;
+                            int parameterCount = parameters.Length;
                             var prng = new MersenneTwister(sampler.PRNGSeed);
                             var tempPopulation = new List<ParameterSet>();
-
-                            // Build separate proposal distributions for weights and component parameters.
-                            // Weights are sampled from a Dirichlet distribution centered on the EM estimates,
-                            // which guarantees samples lie on the simplex (positive, sum to 1). This avoids
-                            // the near-singular covariance matrix that arises from the multinomial approximation
-                            // when all K weights are included in a single multivariate normal.
-                            Dirichlet? weightDirichlet = null;
-                            if (K > 1)
+                            var inflatedCovariance = new double[parameterCount, parameterCount];
+                            for (int row = 0; row < parameterCount; row++)
                             {
-                                int N = MixtureDistribution.DataFrame!.TotalRecordLength();
-                                // Effective concentration sum: alpha_i = w_i * S gives Dirichlet mean = EM weights.
-                                // S = N-1 matches the multinomial variance approximation. Dividing by a deflation
-                                // factor widens the distribution, analogous to the covariance inflation for components.
-                                double S = Math.Max(N - 1, K + 1);
-                                double deflation = 1.5;
-                                var alpha = new double[K];
-                                for (int j = 0; j < K; j++)
-                                    alpha[j] = Math.Max(parameters[j] * S / deflation, 0.1);
-                                weightDirichlet = new Dirichlet(alpha);
+                                for (int column = 0; column < parameterCount; column++)
+                                {
+                                    inflatedCovariance[row, column] = covariance[row, column] * 1.5;
+                                }
                             }
+                            var proposal = new MultivariateNormal(parameters, inflatedCovariance);
 
-                            // Component parameters sampled from a multivariate normal using the
-                            // Fisher information sub-block of the EM covariance, inflated by 1.5×.
-                            var emComponents = new double[Np];
-                            var componentCovar = new double[Np, Np];
-                            for (int i = 0; i < Np; i++)
-                            {
-                                emComponents[i] = parameters[i + K];
-                                for (int j = 0; j < Np; j++)
-                                    componentCovar[i, j] = covariance[i + K, j + K] * 1.5;
-                            }
-                            var componentMvn = new MultivariateNormal(emComponents, componentCovar);
-
-                            // Randomly sample from the proposal distributions
                             for (int i = 0; i < sampler.InitialIterations; i++)
                             {
-                                // Sample weights from Dirichlet (always valid: positive and sum to 1)
-                                double[] weights;
-                                if (weightDirichlet != null)
-                                {
-                                    var wSample = weightDirichlet.GenerateRandomValues(1, prng.Next());
-                                    weights = new double[K];
-                                    for (int j = 0; j < K; j++)
-                                        weights[j] = wSample[0, j];
-                                }
-                                else
-                                {
-                                    // Single component — weight is always 1.0
-                                    weights = new double[] { 1.0 };
-                                }
-
-                                // Sample component parameters from MVN (may need retry for invalid params)
                                 bool failed = true;
                                 int failedCount = 0;
-                                double[]? p = null;
-                                double lh = double.NegativeInfinity;
-
+                                double[]? proposalParameters = null;
+                                double logLikelihood = double.NegativeInfinity;
                                 while (failed)
                                 {
                                     try
                                     {
-                                        var comp = componentMvn.InverseCDF(prng.NextDoubles(1, Np).GetRow(0));
-
-                                        // Concatenate weights and component parameters
-                                        p = new double[K + Np];
-                                        Array.Copy(weights, 0, p, 0, K);
-                                        Array.Copy(comp, 0, p, K, Np);
-
-                                        lh = MixtureDistribution.LogLikelihood(p);
-                                        failed = false;
+                                        proposalParameters = proposal.InverseCDF(
+                                            prng.NextDoubles(1, parameterCount).GetRow(0));
+                                        logLikelihood = MixtureDistribution.LogLikelihood(proposalParameters);
+                                        failed = !Tools.IsFinite(logLikelihood);
                                     }
                                     catch (Exception ex)
                                     {
-                                        // The sampled component parameters were invalid, try again.
-                                        Debug.WriteLine($"MixtureAnalysis.PriorPredictiveCheck: invalid component draw {failedCount + 1}: {ex.Message}");
-                                        failedCount++;
-                                        if (failedCount > 20)
-                                            break;
+                                        Debug.WriteLine(
+                                            $"MixtureAnalysis initialization draw {failedCount + 1} was invalid: {ex.Message}");
+                                        failed = true;
                                     }
+
+                                    if (failedCount++ > 20) break;
                                 }
 
-                                if (failed)
-                                    throw new Exception("Bad parameters");
+                                if (failed || proposalParameters is null)
+                                    throw new InvalidOperationException("Unable to generate a feasible mixture initialization.");
 
-                                sampler.PopulationMatrix.Add(new ParameterSet(p!, lh));
-                                tempPopulation.Add(new ParameterSet(p!, lh));
+                                sampler.PopulationMatrix.Add(new ParameterSet(proposalParameters, logLikelihood));
+                                tempPopulation.Add(new ParameterSet(proposalParameters, logLikelihood));
                             }
-
                             // Sort temp population by log-likelihood in descending order
                             tempPopulation.Sort((x, y) => -1 * x.Fitness.CompareTo(y.Fitness));
 
@@ -582,9 +537,8 @@ namespace RMC.BestFit.Analyses
             if (BayesianAnalysis == null || BayesianAnalysis.IsEstimated == false || BayesianAnalysis.Results == null)
                 return result;
 
-            var dist = MixtureDistribution.Mixture!.Clone();
-            dist.SetParameters(BayesianAnalysis.Results.Output[index].Values);
-            result = dist;
+            result = MixtureDistribution.CreateDistribution(
+                BayesianAnalysis.Results.Output[index].Values);
 
             return result;
         }
@@ -604,9 +558,7 @@ namespace RMC.BestFit.Analyses
                 ? BayesianAnalysis.Results.PosteriorMean.Values
                 : BayesianAnalysis.Results.MAP.Values;
 
-            var dist = MixtureDistribution.Mixture!.Clone();
-            dist.SetParameters(parms);
-            return dist;
+            return MixtureDistribution.CreateDistribution(parms);
         }
 
         /// <summary>
@@ -698,10 +650,8 @@ namespace RMC.BestFit.Analyses
                 var sampledDistributions = new UnivariateDistributionBase[B];
                 Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
-                    var d = (Mixture)MixtureDistribution.Mixture!.Clone();
-                    var parms = BayesianAnalysis.Results!.Output[idx].Values;
-                    d.SetParameters(ref parms);
-                    sampledDistributions[idx] = d;
+                    sampledDistributions[idx] = MixtureDistribution.CreateDistribution(
+                        BayesianAnalysis.Results!.Output[idx].Values);
                 });
 
                 // Create uncertainty analysis results

@@ -1326,6 +1326,7 @@ TYPE class RMC.BestFit.Models.DataFrame
   PROPERTY System.Double Lambda {get;}
   PROPERTY System.Double LowOutlierThreshold {get;set;}
   PROPERTY System.Double PlottingParameter {get;set;}
+  PROPERTY System.Double PointProcessObservationYears {get;set;}
   PROPERTY System.Int32 NumberOfLowOutliers {get;}
   PROPERTY System.String USGSRawText {get;}
   EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged
@@ -1737,6 +1738,7 @@ TYPE class RMC.BestFit.Models.PointProcessModel
   CTOR RMC.BestFit.Models.PointProcessModel(RMC.BestFit.Models.DataFrame, Numerics.Distributions.CompetingRisks)
   CTOR RMC.BestFit.Models.PointProcessModel(RMC.BestFit.Models.DataFrame, System.Xml.Linq.XElement)
   METHOD Numerics.Data.TimeSeries GeneratePOTTimeSeries(System.DateTime, System.Double, System.Int32 optional)
+  METHOD Numerics.Data.TimeSeries GeneratePOTTimeSeries(System.Int32, System.Int32 optional)
   METHOD Numerics.Distributions.CompetingRisks GetDistribution(System.Collections.Generic.IList<System.Double>)
   METHOD RMC.BestFit.Models.IModel Clone()
   METHOD System.Boolean IsSupportedDistributionType(Numerics.Distributions.UnivariateDistributionType)
@@ -1763,11 +1765,19 @@ TYPE class RMC.BestFit.Models.PointProcessModel
   PROPERTY RMC.BestFit.Models.DataFrame DataFrame {get;set;}
   PROPERTY System.Boolean IsNonstationary {get;}
   PROPERTY System.Boolean IsSeasonal {get;set;}
+  PROPERTY System.Boolean IsTotalYearsInferred {get;}
   PROPERTY System.Boolean UseDefaults {get;set;}
   PROPERTY System.Collections.Generic.List<System.Int32> POTDays {get;}
+  PROPERTY System.Double EmpiricalEventRate {get;}
+  PROPERTY System.Double FittedSeasonOneThresholdIntensity {get;}
+  PROPERTY System.Double FittedSeasonTwoThresholdIntensity {get;}
+  PROPERTY System.Double FittedThresholdIntensity {get;}
   PROPERTY System.Double Lambda {get;}
+  PROPERTY System.Double SeasonOneExposureWeight {get;}
+  PROPERTY System.Double SeasonTwoExposureWeight {get;}
   PROPERTY System.Double Threshold {get;set;}
   PROPERTY System.Double TotalYears {get;set;}
+  PROPERTY System.Int32 EmpiricalEventCount {get;}
   PROPERTY System.Int32 StartMonth {get;set;}
 TYPE struct RMC.BestFit.Models.PriorComponent
   BASE System.ValueType

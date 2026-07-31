@@ -1,5 +1,23 @@
 # Progress
 
+## 2026-07-31
+
+- Implemented the approved TR-006/TR-007/TR-008 mixture correction without changing public weight-related signatures: Numerics retains $K$ physical weights, while BestFit uses $K-1$ direct physical weights and derives the final weight.
+- Corrected the exact-zero positive-hurdle law across density, CDF, quantiles, simulation, mixed-observation likelihoods, and EM; exact atom estimation uses exact annual records only, and impossible EM rows now fail with row context.
+- Committed the focused Numerics batch as `1462e35`; Release builds passed with zero warnings/errors and all 2,016 tests passed independently on net481, net8.0, net9.0, and net10.0.
+- Added BestFit fast coverage and three compiled recovery-parity methods. The strict XML Debug build, Release solution build, public API baseline, and Verification compilation passed with zero warnings/errors; mandated fast suites passed Core 3,101/3,101, UI 564/564, and App 428/428.
+- BestFit remains intentionally uncommitted until Haden runs and supplies the three exact recovery results. No legacy mixture-posterior migration or parameterization version is included; affected saved results require re-estimation.
+
+## 2026-07-30
+
+- Implemented the TR-004/TR-005 point-process batch: preserved source exposure, retained manual year/index-span fallback and warnings, separated empirical count/rate from fitted intensity, and corrected fixed-size and duration simulation to the approved empirical-Lambda Poisson/Hosking-GPA process.
+- Added the fast monthly-histogram changepoint-prior heuristic with calendar/water-year rotation, month-length flatness guard, circular smoothing, deterministic valleys, five-month windows, broad fallbacks `[1,251)` and `[200,367)`, custom-prior preservation, and ordinary parameter serialization.
+- Kept all six seasonal GEV defaults, likelihood equations, DEMCzs settings, tolerances, and seed contracts unchanged.
+- Consolidated independent exponential-clock Poisson, analytical Hosking-GPA, PERT placement, and uniform recovery fixtures. Removed the intentionally failing PERT recovery experiments after they demonstrated the expected interior-timing mismatch.
+- Corrected the water-year automatic-prior recovery fixture to use shifted block-day changepoints 80 and 260 rather than calendar coordinates 170 and 350.
+- Audited `PointProcessModel`, `PointProcessAnalysis`, fast tests, and focused verification for state bugs, stale XML, encoding damage, low-value narration, and obsolete fixture references. Strict builds, all fast suites, and Verification compilation pass with zero warnings.
+- Passed the strict Debug solution build with `EnforceXmlDocumentation=true`, the Release solution build, and all mandated fast suites: Core 3,089/3,089, UI 564/564, and App 428/428. The `validate-code-xml-docs.ps1` wrapper named in `AGENTS.md` is not present in the tracked scripts inventory, so its private-method scan could not be invoked; the touched point-process files were audited directly.
+- Resolved the seasonal point-process input and annualization decisions: every exact seasonal POT observation now requires a valid date, while annual/block-indexed uncertain, interval, and threshold records use the maximum of the two independent exposure-adjusted seasonal processes. Exposure fractions weight process intensities, not annual mixture probabilities. Fast Core tests pass at 3,089/3,089; ten exact current-source verification methods remain to be run under repository policy.
 ## 2026-07-28
 
 - Closed TR-003 as a documentation-only decision: grouped perception thresholds use the existing deterministic earlier-below/terminal-above disaggregation after preserving explicit indexes, and distribution-dependent priors are evaluated at the last, most-recent observed time step consistent with the published quantile-prior workflow. No code or permutation-invariance change was required.
