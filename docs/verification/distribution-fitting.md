@@ -4,6 +4,8 @@
 
 The first phase verifies the 15 supported univariate families, the fitting pipeline, goodness-of-fit metrics, and findings TR-001, TR-002, TR-009, TR-010, TR-063, and TR-064.
 
+Phase 1 closeout was reconciled on 28 July 2026. All nine distribution-fitting artifact hashes match `verification/data/MANIFEST.md`; recorded gates are Numerics .NET 10 Release 1,986/1,986 and Core/UI/App 3,044/564/428 with zero failures. These gates were not rerun during the documentation-only reconciliation.
+
 ## Distribution matrix
 
 | Family | Primary oracle | Secondary oracle | Status |
@@ -53,7 +55,7 @@ The focused analytical tests are:
 
 **Implementation:** Fixed without public API changes in RMC.Numerics commit `3e058ebe5917817f3dde5e3b2ed6574d6bab083e`.
 
-**Verification:** Passed. The PDF derivative and quantile/CDF round-trip methods were run separately through the guarded runner at absolute tolerance `1e-10`. The complete Numerics .NET 10 unit gate passed 1,905 tests with zero failures or skips. The [evidence artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json) records the baseline failures, passing results, source commits, and TRX paths.
+**Verification:** Passed. The PDF derivative and quantile/CDF round-trip methods were run separately through the guarded runner at absolute tolerance `1e-10`. The reconciled Numerics .NET 10 Release gate records 1,986 passing tests with zero failures. The [evidence artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json) records the baseline failures, passing results, source commits, and TRX paths.
 
 ## TR-002 - finite Kappa shape pairs
 
@@ -94,7 +96,7 @@ The focused analytical method is:
 
 **Implementation:** Fixed without public API changes in RMC.Numerics commit `24bf9f98139b23400bf008df413b0d97330ccfd3`. All \(n\) residuals enter the numerator, \(n-k\) is used only as the denominator, and invalid \(k\) values are rejected.
 
-**Verification:** Passed at absolute tolerance `1e-12`, including paired-permutation invariance. The complete Numerics .NET 10 unit gate passed 1,907 tests with zero failures or skips. The [evidence artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json) records the baseline failure, corrected result, source commits, and TRX paths.
+**Verification:** Passed at absolute tolerance `1e-12`, including paired-permutation invariance. The reconciled Numerics .NET 10 Release gate records 1,986 passing tests with zero failures. The [evidence artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json) records the baseline failure, corrected result, source commits, and TRX paths.
 
 ## TR-010 - all-candidate failure reports overall success
 
@@ -104,7 +106,7 @@ A deterministic outlier fixture completed with `IsEstimated == true` while all 1
 
 **Implementation:** Fixed without public API changes. `IsEstimated` and `AnalysisCompleted.Succeeded` now require at least one successful candidate; partial-success runs remain successful.
 
-**Verification:** Passed by deterministic all-failed and partial-success regressions. The complete .NET 10 core gate passed 3,030 tests with zero failures or skips. No Verification-project method was added because this is a state-semantic regression, not a numerical validation claim. See the [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json).
+**Verification:** Passed by deterministic all-failed and partial-success regressions. The reconciled Core Debug gate records 3,044 passing tests with zero failures. No Verification-project method was added because this is a state-semantic regression, not a numerical validation claim. See the [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json).
 
 ## TR-063 - whole-series replacement refresh
 
@@ -124,7 +126,7 @@ The focused analytical method is:
 
 - `RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.ExactSeriesReplacement_ProducesAnalyticalWeibullPositions`
 
-**Verification:** Passed for all 39 oracle observations at absolute tolerance `1e-12`. Fast regressions also prove that deliberately non-derived serialized positions survive a round trip and that non-finite transient input retains the previous non-throwing behavior. The complete Debug regression gate passed Core 3,032, UI 564, and App 428 tests with zero failures or skips; the public API baseline and enforced XML-documentation build also passed. See the [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
+**Verification:** Passed for all 39 oracle observations at absolute tolerance `1e-12`. Fast regressions also prove that deliberately non-derived serialized positions survive a round trip and that non-finite transient input retains the previous non-throwing behavior. The reconciled Debug regression gate records Core 3,044, UI 564, and App 428 passing tests with zero failures; the public API baseline and enforced XML-documentation build also passed. See the [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
 
 ## TR-064 - distribution-fitting optimizer tolerance
 

@@ -4,6 +4,8 @@
 
 Phase 2 is complete for its approved scope. The Log10-Normal MLE/MAP/GMM baseline, Gaussian prior and quadratic-penalty equivalence, GMM objective/covariance scaling, scoped fit/variance/combined-influence diagnostics, DIC, WAIC, PSIS-LOO, Hansen J, overidentified one-step fitting, MLE/MAP nuisance profiling, fixed-weight and efficient GMM sandwich covariance, ARWMH realized-state covariance, NUTS gradient and acceptance-contract integration, and rank-normalized R-hat and conservative bulk/tail ESS are verified. TR-023 and TR-032 retain their public signatures; TR-027 exposes explicit covariance status and failure contracts; TR-028 remains a documented, verified limitation.
 
+Closeout reconciliation (28 July 2026): all seven model-estimation artifact hashes match `verification/data/MANIFEST.md`. BestFit Phase 2 closes through commits `6ffab67` and `1a848ef`, with Numerics diagnostic anchors `5c693a8`, `76f7dd0`, and `b3f14b0`. Recorded fast gates are Numerics 1,986/1,986, Core 3,044/3,044, UI 564/564, and App 428/428 with zero failures; they were not rerun during the documentation-only reconciliation.
+
 ## Log10-Normal fixture
 
 The deterministic exact-data fixture is defined in base-10 log space by

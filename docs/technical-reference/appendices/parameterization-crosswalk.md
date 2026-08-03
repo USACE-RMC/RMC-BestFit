@@ -28,7 +28,7 @@ This crosswalk prevents natural space, log/link space, Numerics parameters, tren
 | `GeneralizedNormal` | $(\xi,\alpha,\kappa)$ | Hosking GNO; not exponential-power | $\kappa<0$ unbounded upper; $\kappa>0$ bounded upper | Complete |
 | `GeneralizedPareto` | $(\xi,\alpha,\kappa)$ | Numerics $\kappa=-\xi_{\text{common}}$ | $\kappa<0$ heavy upper; $\kappa>0$ bounded upper | Complete |
 | `Gumbel` | $(\xi,\alpha)$ | Location and scale | All real; exponential upper tail | Complete |
-| `KappaFour` | $(\xi,\alpha,\kappa,h)$ | Second shape is `Hondo` | Shape-dependent | Blocked by TR-001 |
+| `KappaFour` | $(\xi,\alpha,\kappa,h)$ | Second shape is `Hondo` | Shape-dependent | Complete; TR-001 zero-shape fix verified |
 | `LnNormal` | $(m,s)$ | Arithmetic mean and SD of $X$ | $x>0$; internally converts to natural-log parameters | Complete |
 | `Logistic` | $(\xi,\alpha)$ | Location and scale | All real; symmetric exponential tails | Complete |
 | `LogNormal` | $(\mu_Y,\sigma_Y)$ | Mean/SD of $Y=\log_{10}X$ | $x>0$ | Complete |
@@ -59,7 +59,7 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 |---|---|---|
 | Point process, one season | $(\mu,\sigma,\kappa)$ with Numerics $\kappa=-\xi_{\mathrm{Coles}}$; threshold and exposure are model properties, not fitted coordinates | Complete |
 | Point process, two seasons | $(k_1,k_2,\mu_1,\sigma_1,\kappa_1,\mu_2,\sigma_2,\kappa_2)$; $k_1,k_2$ are day-of-year change points | Complete |
-| Mixture, $K$ components | $K$ raw weights followed by each component's Numerics parameter block; implementation normalizes all $K$ weights, creating the TR-006 redundancy | Complete with finding |
+| Mixture, $K$ components | Numerics retains $K$ physical weights; BestFit fits $K-1$ physical weights followed by component parameter blocks and derives $w_K=m-\sum_{j=1}^{K-1}w_j$, with $m=1$ or $1-\pi_0$ | Complete; TR-006 verified |
 | Competing risks | Concatenated component parameter blocks; minimum/maximum and dependence are model properties | Complete |
 | Composite analysis | No independent fitted vector; combines already fitted child parameter realizations and derived criterion weights | Complete |
 | Bulletin 17C | Parent natural parameters: two for Exponential/Gamma/Normal/Log-Normal and $(\mu,\sigma,\gamma)$ for P3/LP3; LP3 and Log-Normal moments are in base-10 log space | Complete |

@@ -28,7 +28,7 @@ Implementation behavior is the authority for API and numerical claims. Primary l
 - [Competing risks](distributions/competing-risks.md)
 - [Composite distributions and model averaging](distributions/composite.md)
 
-All fifteen univariate family chapters have completed their source, parameterization, likelihood, API-example, and evidence audit. Kappa Four remains explicitly qualified by the open zero-shape Numerics defect in TR-001.
+All fifteen univariate family chapters have completed their source, parameterization, likelihood, API-example, and evidence audit. The Kappa Four zero-shape Numerics defect in TR-001 is fixed and analytically verified.
 
 ## Estimation and diagnostics
 

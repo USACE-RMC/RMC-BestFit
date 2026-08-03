@@ -30,7 +30,7 @@ All family API snippets are compiled by `DistributionExamples` and checked byte-
 | GPD | `Test_GeneralizedPareto_MAP` | Rao and Hamed (2000), White River at Mt. Carmel Example 8.3.1 | Location/scale within 5%, shape within 10%; conditional magnitude fit, not complete POT occurrence validation |
 | Poisson point process | Two `PointProcessPriorTests` cells and eight `PointProcessRecoveryTests` cells | Independent exponential-clock Poisson counts, analytical Hosking-GPA inverse marks, PERT placement timing, calendar/water-year block-origin parity, production generation/recovery, and independent mixed-likelihood calculations | All ten guarded cells pass with 1,000-observation recovery fixtures and untouched DEMCzs defaults; TR-004/TR-005 are complete in scope |
 | Finite mixture | Three `MixtureRecoveryTests.*_Recovery_Parity` methods and three corresponding `*_BayesianRecovery` methods | BestFit production generator at $n=1000$ and seed 12345; Numerics cross-engine likelihood/EM parity; known synthetic parent recovery through `MixtureAnalysis` | Passed: fast simplex/hurdle contracts, three guarded parity methods at $10^{-10}$ pre-fit and $10^{-8}$ fitted parity, and three guarded Bayesian recoveries with R-hat $<1.1$ and ESS $>100$ |
-| Kappa Four | `Test_Kappa4_MAP` | R air-quality wind data and R `lmom` estimates | Nonzero fitted shapes within stated tolerances; does not cover the open zero-$\kappa$ branches in TR-001 |
+| Kappa Four | `Test_Kappa4_MAP` plus `KappaFourZeroShapeVerificationTests` | R air-quality wind data, R `lmom` estimates, and analytical zero-shape identities | Nonzero fitted shapes within stated tolerances; zero-$\kappa$ density, inversion, support, normalization, and continuity pass TR-001 evidence |
 | Logistic | `Test_Logistic_MAP` | Rao and Hamed (2000), Tippecanoe River Example 9.1.1 | Location/scale within 5% |
 | Generalized Logistic | `Test_GeneralizedLogistic_MAP` | Rao and Hamed (2000), East Fork White River; textbook/data-summary discrepancy noted in test | 10% tolerances; source test explicitly warns that table summaries and raw-data moments differ |
 
@@ -49,7 +49,7 @@ For every family, a release-quality numerical evidence set should contain:
 - parameter-dependent endpoint tests; and
 - independent package parity after applying the exact parameterization crosswalk.
 
-The pinned Numerics repository includes direct distribution tests for several families. In particular, `Test_Numerics.Distributions.Univariate.Test_KappaFour` verifies R `lmom` L-moment estimates, nonzero-shape CDF values, nonzero-shape CDF/quantile inversion, and derivative calculations. It does not test the zero-$\kappa$ density or the $\kappa=0,h\ne0$ inverse branch; the isolated audit values are recorded in TR-001.
+The pinned Numerics repository includes direct distribution tests for several families. In particular, its Kappa Four coverage verifies R `lmom` L-moment estimates, nonzero-shape CDF values and inversion, derivative calculations, and analytical zero-$\kappa$ density and inverse/CDF behavior. BestFit's independent zero-shape evidence is recorded in TR-001 and the committed Kappa artifact.
 
 ## Reproduction Policy
 
