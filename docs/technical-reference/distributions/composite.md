@@ -30,7 +30,7 @@ $$
 
 **IsMaximum** selects equation (1); otherwise Numerics evaluates the minimum. **Dependency** selects independent, perfectly positive, perfectly negative, or correlation-matrix probability rules as described in [Competing Risks](competing-risks.md).
 
-**CompositeAnalysis** exposes no correlation-matrix property and does not copy a matrix when it creates its new Numerics **CompetingRisks** objects. Selecting **CorrelationMatrix** therefore leaves Numerics without the required matrix and is not a usable composite configuration. This is [TR-015](../review-findings.md#tr-015).
+**CompositeAnalysis.CorrelationMatrix** supplies the latent-Normal matrix used by correlation-matrix dependence. The property owns defensive copies, is serialized with invariant-culture `CorrelationMatrix`/`Correlation_Row` elements, and is propagated to every point-estimate and realization **CompetingRisks** object. The UI wrapper persists the same matrix through an appended optional project column, so legacy projects remain readable. Validation requires the matrix for this dependency mode, requires its dimension to equal the child count, and applies the finite, bounds, unit-diagonal, symmetry, and strict positive-definiteness checks described in [Competing Risks](competing-risks.md). TR-015 is complete.
 
 ## Fixed Mixture Composition
 
@@ -73,7 +73,9 @@ and **Equal** uses \(w_m=1/M\). A final proportional normalization corrects floa
 
 Equation (6) gives conventional Akaike weights when \(C_m=\mathrm{AIC}_m\). Applying the same exponential transform to BIC approximates normalized evidence under additional assumptions; applying it to DIC, WAIC, or LOOIC is a pseudo-BMA-style heuristic, not Bayesian posterior model probability and not predictive stacking [1](#ref-1). The implementation does not optimize stacking weights.
 
-Only estimated children with non-null **AnalysisResults** enter **EstimateModelWeights()**. However, finite criterion values are not checked before the vector is passed to Numerics. A fitted child with a non-finite DIC, WAIC, LOOIC, or RMSE can contaminate all weights. This is [TR-013](../review-findings.md#tr-013). Validation separately rejects posterior-criterion weighting when any child is **Bulletin17CAnalysis**, because that analysis does not produce a Bayesian likelihood chain.
+Every estimated child is classified by the selected criterion before Numerics weighting. Non-finite information criteria, non-finite RMSE, and negative RMSE are unusable. If at least one usable child remains, each unusable child receives exactly zero weight and a named warning; if none remains, validation fails with named errors and all weights remain zero. If one or more RMSE values are exactly zero, those children divide unit weight equally and all positive or invalid RMSE children receive zero. Ordinary finite values retain equations (6) and (7). These contracts close TR-013.
+
+**Bulletin17CAnalysis** is a supported composite child. Equal, AIC, BIC, and RMSE weighting include it normally. Its **BayesianAnalysis** member is a compatibility container for GMM/frequentist uncertainty and does not represent a likelihood-based posterior, so DIC, WAIC, and LOOIC are unavailable. Under one of those posterior criteria B17C receives zero weight with a named warning when another child has a usable value. The composite is invalid only when no child has a usable selected criterion; there is no type-based B17C rejection.
 
 ## Compile-Checked Model Average
 
@@ -139,7 +141,8 @@ Validation requires:
 - no nested **CompositeAnalysis**;
 - valid ascending probability ordinates in \([0,1]\);
 - valid fixed mixture weights and a sum not greater than one; and
-- no DIC/WAIC/LOOIC weighting of a Bulletin 17C child.
+- at least one usable selected criterion for non-equal model averaging; and
+- a valid, dimensionally compatible matrix when correlation-matrix competing-risk dependence is selected.
 
 **RunAsync** repeats the fitted-child check, raises a cancellable preview event, waits for any in-flight reprocessing, clears results, estimates model weights when needed, and constructs frequency results. Parallel realization construction observes the cancellation token both in scheduling and at each iteration. The analysis is marked estimated only after result construction succeeds.
 
@@ -161,6 +164,7 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 - Criterion weights ignore uncertainty in the criteria themselves.
 - AIC/BIC values from **UnivariateAnalysis** use the data log likelihood at MAP. They are comparable with conventional MLE criteria only when all active priors are constant; with nonconstant priors, select DIC, WAIC, or verified PSIS-LOO weighting instead. See [TR-011](../review-findings.md#tr-011).
 - DIC, WAIC, and LOOIC require comparable pointwise likelihood definitions and priors.
+- Bulletin 17C has no likelihood-based posterior criterion and is therefore zero-weighted for DIC, WAIC, and LOOIC; it remains eligible for Equal, AIC, BIC, and RMSE.
 - LOOIC exponential weights are not PSIS stacking and do not use Pareto-\(k\) diagnostics in weight optimization.
 - Correlated competing sources require a valid joint model; merely choosing a dependency enum is insufficient.
 - A model average can hide severe disagreement in the decision tail. Report component curves and weights alongside the composite.
@@ -171,10 +175,12 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 |---|---|
 | Composition lifecycle and weighting | **Analyses/Univariate/CompositeAnalysis.cs** |
 | Child/weight wrapper | **Analyses/Support/WeightedUnivariateAnalysis.cs** |
+| Correlation-matrix validation and XML | **Models/Support/CorrelationMatrixUtilities.cs** |
 | Criterion formulas | pinned **Numerics/Data/Statistics/GoodnessOfFit.cs** |
 | Mixture construction | pinned **Numerics/Distributions/Univariate/Mixture.cs** |
 | Min/max construction | pinned **Numerics/Distributions/Univariate/CompetingRisks.cs** |
 | Uncertainty aggregation | pinned **Numerics/Distributions/Univariate/Uncertainty Analysis/BootstrapAnalysis.cs** |
+| Fast contract evidence | **RMC.BestFit.Tests/Univariate/CompositePhase4Tests.cs** and **RMC.BestFit.UI.Tests/Elements/UnivariateAnalysis/CompositeCorrelationMatrixTests.cs** |
 
 ## References
 

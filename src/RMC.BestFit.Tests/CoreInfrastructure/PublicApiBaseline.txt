@@ -290,6 +290,7 @@ TYPE class RMC.BestFit.Analyses.CompositeAnalysis
   PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
   PROPERTY System.Boolean IsMaximum {get;set;}
   PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.Analyses.WeightedUnivariateAnalysis> Analyses {get;set;}
+  PROPERTY System.Double[,] CorrelationMatrix {get;set;}
 TYPE enum RMC.BestFit.Analyses.CompositeType
   BASE System.Enum
   INTERFACE System.IComparable

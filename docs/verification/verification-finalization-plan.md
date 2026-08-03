@@ -272,7 +272,7 @@ Phase exit criteria:
 
 ## Phase 4 - Point Processes and Composite Models
 
-Status: in progress. The point-process subset is closed: TR-004 and TR-005 are complete in their approved scope, and all ten guarded cells pass. The TR-006/TR-007/TR-008 mixture subset is also closed. Competing-risk and composite batches have not started.
+Status: in progress. The point-process subset (TR-004/TR-005), mixture subset (TR-006/TR-007/TR-008), competing-risk simulation (TR-012), criterion handling (TR-013), and correlation-matrix configuration (TR-015) are closed with direct evidence. TR-014 is deferred by direction pending review with bivariate posterior behavior; it is the remaining Phase 4 exit item.
 
 Findings and required direction:
 
@@ -281,14 +281,15 @@ Findings and required direction:
 - TR-006: BestFit uses direct physical $K-1$ weights, derives the final weight, applies the normalized flat-simplex prior, and never mutates proposals. Public weight-related signatures are unchanged. No legacy posterior migration or parameterization version is provided; affected saved mixture results require re-estimation. Three exact parity methods and three Bayesian `MixtureAnalysis` recovery methods passed guarded execution.
 - TR-007: Numerics and BestFit implement one exact-zero positive-hurdle mixed measure with every continuous contribution conditioned on $X>0$; BestFit derives the fixed atom from exact annual records only. Both zero-inflated parity and Bayesian recovery passed, including the production-generator atom check.
 - TR-008: Numerics and BestFit EM fail explicitly with row context when any required total row probability is zero or nonfinite. Fast impossible-row regressions and all six guarded recovery methods pass without changing tolerances.
-- TR-012: use dependency-aware competing-risk simulation and validate rank dependence for every supported mode.
-- TR-013: reject or explicitly zero-weight invalid criteria; handle exact zero RMSE separately.
-- TR-014: define separately fitted child posteriors as independent and combine them through seeded independent resampling invariant to chain ordering.
-- TR-015: add a validated and serialized correlation-matrix property while retaining existing method signatures.
+- TR-012: complete. Numerics commit `cafe6cf3837988341912a5aa8bfda444ea55ff77` routes the existing simulation entry point through dependency-aware sampling while preserving the independent seeded sequence. Fast contracts and four separately guarded analytical rank/CDF methods cover Independent, PerfectlyPositive, PerfectlyNegative, and CorrelationMatrix modes.
+- TR-013: complete. Invalid or unavailable criteria receive exactly zero weight with a named warning when another usable child remains; no-usable-criterion averages fail explicitly. Exact-zero RMSE children split unit weight without division by zero. Bulletin 17C remains eligible for Equal/AIC/BIC/RMSE and is zero-weighted, not type-rejected, when DIC/WAIC/LOOIC is unavailable.
+- TR-014: deferred by explicit direction. Raw child index pairing remains unchanged. The independence/resampling design must be reconsidered together with bivariate posteriors and must verify posterior immutability plus child- and chain-order invariance before implementation.
+- TR-015: complete. Core and UI expose the authorized defensively owned `CorrelationMatrix` property, validate its structure and child dimension, persist it with invariant optional fields, and propagate it to point-estimate and uncertainty-result competing-risk distributions. Existing public method signatures and result contracts are preserved.
 
 Phase exit criteria:
 
-- Point-process simulation, mixture likelihoods, zero-inflation, composite weighting, posterior coupling, and dependency handling are internally coherent and verified against analytical or simulation fixtures.
+- Point-process simulation, mixture likelihoods, zero-inflation, composite weighting, and competing-risk dependency handling are internally coherent and verified against analytical or simulation fixtures.
+- Phase 4 remains open until TR-014 establishes and verifies the posterior-coupling contract across univariate and affected bivariate posterior consumers.
 
 ## Phase 5 - Time-Series Models
 

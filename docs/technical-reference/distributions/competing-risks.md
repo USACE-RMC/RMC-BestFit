@@ -57,7 +57,7 @@ $$
 
 For a minimum, the implementation obtains the corresponding union probability. For non-independent settings, Numerics computes the scalar density by numerical differentiation of the composite CDF. Accuracy can therefore deteriorate in very flat tails or near support boundaries.
 
-The correlation matrix describes dependence among latent normal scores, not Pearson correlation among flood magnitudes. It must be symmetric, have unit diagonal, have dimension \(K\times K\), and be positive definite enough for the multivariate-normal implementation. Dependence is not estimated by **CompetingRisksModel**; it is configuration supplied through the underlying Numerics distribution.
+The correlation matrix describes dependence among latent normal scores, not Pearson correlation among flood magnitudes. It must be finite, symmetric, bounded in \([-1,1]\), have unit diagonal, have dimension \(K\times K\), and be strictly positive definite for the multivariate-normal implementation. Dependence is not estimated by **CompetingRisksModel**; it is fixed configuration supplied through the underlying Numerics distribution or through a parent **CompositeAnalysis**.
 
 ## Observation Likelihood
 
@@ -133,7 +133,14 @@ The component variables are not separately observed in this likelihood. If event
 
 ## Simulation
 
-**CompetingRisksModel.GenerateRandomValues(...)** delegates to Numerics **CompetingRisks.GenerateRandomValues(...)**. That method draws components independently and takes the min/max regardless of the configured **Dependency**. Numerics contains a separate **GenerateRandomValuesWithDependency(...)** method, but BestFit does not call it. Consequently, simulation from a non-independent fitted model is inconsistent with its configured CDF; this is [TR-012](../review-findings.md#tr-012). Until resolved, use the BestFit simulation API only for **Independent** dependence.
+**CompetingRisksModel.GenerateRandomValues(...)** validates any required correlation matrix and delegates to Numerics **CompetingRisks.GenerateRandomValues(...)**. The established Numerics entry point now routes through its dependency-aware implementation:
+
+- **Independent** uses a separate uniform rank for every component and observation;
+- **PerfectlyPositive** uses one shared rank per observation;
+- **PerfectlyNegative** samples the documented limiting equicorrelated Gaussian copula; and
+- **CorrelationMatrix** samples the configured Gaussian copula.
+
+The same seed reproduces the same sample within each mode. The independent seed sequence is preserved from the pre-correction implementation. Invalid user matrices fail before simulation rather than producing a downstream null reference, Cholesky failure, or silent independent sample. TR-012 is complete; the four guarded analytical rank/CDF methods and fast contracts are recorded in [Competing-Risks Verification](../../verification/competing-risks.md).
 
 ## Assumptions and Limitations
 
@@ -154,6 +161,7 @@ The component variables are not separately observed in this likelihood. If event
 | Bayesian orchestration | **Analyses/Univariate/CompetingRiskAnalysis.cs** |
 | Composite CDF/PDF and dependence | pinned **Numerics/Distributions/Univariate/CompetingRisks.cs** |
 | Probability bounds/copula helpers | pinned **Numerics/Data/Statistics/Probability.cs** |
+| Dependency simulation evidence | **Verification/Univariate/CompetingRiskTests/CompetingRiskDependencyVerificationTests.cs** |
 
 ## References
 

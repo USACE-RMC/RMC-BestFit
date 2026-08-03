@@ -4,6 +4,7 @@ using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Utilities;
 using RMC.BestFit.Estimation;
+using CorrelationMatrixUtilities = RMC.BestFit.Models.CorrelationMatrixUtilities;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -167,6 +168,11 @@ namespace RMC.BestFit.Analyses
             if (depAttr != null && Enum.TryParse(depAttr.Value, out Probability.DependencyType dt))
                 _dependency = dt;
 
+            // Correlation matrix
+            var correlationElement = xElement.Element(nameof(CorrelationMatrix));
+            if (correlationElement != null)
+                _correlationMatrix = CorrelationMatrixUtilities.FromXElement(correlationElement);
+
             // Is maximum
             var maxAttr = xElement.Attribute(nameof(IsMaximum));
             if (maxAttr != null && bool.TryParse(maxAttr.Value, out bool isMax))
@@ -229,6 +235,7 @@ namespace RMC.BestFit.Analyses
         private CompositeType _compositeDistributionType = CompositeType.CompetingRisks;
         private AverageMethod _modelAverageMethod = AverageMethod.DIC;
         private Probability.DependencyType _dependency = Probability.DependencyType.Independent;
+        private double[,]? _correlationMatrix;
         private bool _isMaximum = true;
         private ProbabilityOrdinates _probabilityOrdinates = null!;
         private BayesianAnalysis _bayesianAnalysis = null!;
@@ -326,6 +333,35 @@ namespace RMC.BestFit.Analyses
                     ClearResults();
                     RaisePropertyChange(nameof(Dependency));
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the correlation matrix used when <see cref="Dependency"/> is
+        /// <see cref="Probability.DependencyType.CorrelationMatrix"/>.
+        /// </summary>
+        /// <value>An owned copy of the configured correlation matrix, or <see langword="null"/>.</value>
+        /// <exception cref="ArgumentException">
+        /// Thrown when a non-null matrix is not square, finite, symmetric with unit diagonal,
+        /// bounded to valid correlations, and strictly positive definite.
+        /// </exception>
+        /// <remarks>
+        /// The matrix dimension is checked against <see cref="Analyses"/> by <see cref="Validate"/>.
+        /// Both assignment and retrieval use defensive copies so callers cannot mutate the
+        /// analysis configuration without clearing results.
+        /// </remarks>
+        public double[,]? CorrelationMatrix
+        {
+            get { return CorrelationMatrixUtilities.Clone(_correlationMatrix); }
+            set
+            {
+                if (value != null && !CorrelationMatrixUtilities.TryValidate(value, null, true, out string? error))
+                    throw new ArgumentException(error, nameof(value));
+                if (CorrelationMatrixUtilities.AreEqual(_correlationMatrix, value)) return;
+
+                _correlationMatrix = CorrelationMatrixUtilities.Clone(value);
+                ClearResults();
+                RaisePropertyChange(nameof(CorrelationMatrix));
             }
         }
 
@@ -577,6 +613,78 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Gets the selected comparison criterion for a child analysis.
+        /// </summary>
+        /// <param name="index">The child-analysis index.</param>
+        /// <returns>The selected criterion, or <see cref="double.NaN"/> when unavailable.</returns>
+        private double GetCriterionValue(int index)
+        {
+            IUnivariateAnalysis? analysis = Analyses[index].UnivariateAnalysis;
+
+            // Bulletin 17C uses BayesianAnalysis only as a compatibility container for
+            // its GMM sampling distribution. Its DIC/WAIC/LOOIC members therefore do
+            // not represent posterior information criteria and are unavailable for
+            // model weighting. The child remains eligible for every criterion it does
+            // calculate (AIC, BIC, and RMSE) and for equal weighting.
+            if (analysis is Bulletin17CAnalysis &&
+                ModelAverageMethod is AverageMethod.DIC or AverageMethod.WAIC or AverageMethod.LOOIC)
+            {
+                return double.NaN;
+            }
+
+            return ModelAverageMethod switch
+            {
+                AverageMethod.AIC => analysis?.AnalysisResults?.AIC ?? double.NaN,
+                AverageMethod.BIC => analysis?.AnalysisResults?.BIC ?? double.NaN,
+                AverageMethod.DIC => analysis?.BayesianAnalysis?.DIC ?? double.NaN,
+                AverageMethod.WAIC => analysis?.BayesianAnalysis?.WAIC ?? double.NaN,
+                AverageMethod.LOOIC => analysis?.BayesianAnalysis?.LOOIC ?? double.NaN,
+                AverageMethod.RMSE => analysis?.AnalysisResults?.RMSE ?? double.NaN,
+                _ => double.NaN
+            };
+        }
+
+        /// <summary>
+        /// Determines whether a selected model-comparison criterion is usable for weighting.
+        /// </summary>
+        /// <param name="value">The criterion value.</param>
+        /// <returns><see langword="true"/> when the value is finite and valid for the selected method.</returns>
+        private bool IsCriterionValid(double value)
+        {
+            return Tools.IsFinite(value) && (ModelAverageMethod != AverageMethod.RMSE || value >= 0d);
+        }
+
+        /// <summary>
+        /// Classifies fitted children by whether their selected comparison criterion is valid.
+        /// </summary>
+        /// <param name="validIndices">Receives fitted children with valid criteria.</param>
+        /// <param name="invalidIndices">Receives fitted children with invalid criteria.</param>
+        private void ClassifyCriterionIndices(List<int> validIndices, List<int> invalidIndices)
+        {
+            for (int index = 0; index < Analyses.Count; index++)
+            {
+                IUnivariateAnalysis? analysis = Analyses[index].UnivariateAnalysis;
+                if (analysis == null || !analysis.IsEstimated) continue;
+
+                if (IsCriterionValid(GetCriterionValue(index)))
+                    validIndices.Add(index);
+                else
+                    invalidIndices.Add(index);
+            }
+        }
+
+        /// <summary>
+        /// Creates a stable diagnostic label for a child analysis.
+        /// </summary>
+        /// <param name="index">The zero-based child index.</param>
+        /// <returns>A one-based index and runtime analysis type.</returns>
+        private string GetChildDiagnosticLabel(int index)
+        {
+            string typeName = Analyses[index].UnivariateAnalysis?.GetType().Name ?? "unresolved analysis";
+            return $"Sub-analysis {index + 1} ({typeName})";
+        }
+
+        /// <summary>
         /// Estimates model weights based on the selected averaging method.
         /// </summary>
         public void EstimateModelWeights()
@@ -592,75 +700,61 @@ namespace RMC.BestFit.Analyses
             try
             {
 
-            double sum = 0;
-            if (ModelAverageMethod == AverageMethod.Equal)
-            {
-                double w = 1d / Analyses.Count;
-                for (int i = 0; i < Analyses.Count; i++)
+                double sum = 0;
+                if (ModelAverageMethod == AverageMethod.Equal)
                 {
-                    Analyses[i].Weight = w;
-                    sum += w;
-                }
-            }
-            else
-            {
-                // Build the goodness-of-fit array over only the successfully-fit
-                // sub-analyses. Passing default-zero entries for unfit analyses to
-                // AICWeights would assign them the BEST weight (since 0 is the
-                // minimum AIC across the array), contaminating the composite with
-                // phantom contributions.
-                var validIndices = new List<int>();
-                for (int i = 0; i < Analyses.Count; i++)
-                {
-                    var ua = Analyses[i].UnivariateAnalysis;
-                    if (ua?.AnalysisResults != null && ua.IsEstimated)
-                        validIndices.Add(i);
-                }
-
-                // Default every weight to 0; only valid sub-analyses contribute.
-                for (int i = 0; i < Analyses.Count; i++)
-                    Analyses[i].Weight = 0.0;
-
-                if (validIndices.Count == 0)
-                    return; // sum stays 0; caller's normalization branch is a no-op
-
-                var gofValid = new double[validIndices.Count];
-                for (int j = 0; j < validIndices.Count; j++)
-                {
-                    int i = validIndices[j];
-                    gofValid[j] = ModelAverageMethod switch
+                    double w = 1d / Analyses.Count;
+                    for (int i = 0; i < Analyses.Count; i++)
                     {
-                        AverageMethod.AIC => Analyses[i].UnivariateAnalysis!.AnalysisResults!.AIC,
-                        AverageMethod.BIC => Analyses[i].UnivariateAnalysis!.AnalysisResults!.BIC,
-                        AverageMethod.DIC => Analyses[i].UnivariateAnalysis!.BayesianAnalysis?.DIC ?? double.NaN,
-                        AverageMethod.WAIC => Analyses[i].UnivariateAnalysis!.BayesianAnalysis?.WAIC ?? double.NaN,
-                        AverageMethod.LOOIC => Analyses[i].UnivariateAnalysis!.BayesianAnalysis?.LOOIC ?? double.NaN,
-                        AverageMethod.RMSE => Analyses[i].UnivariateAnalysis!.AnalysisResults!.RMSE,
-                        _ => 0
-                    };
+                        Analyses[i].Weight = w;
+                        sum += w;
+                    }
                 }
-
-                var validWeights = ModelAverageMethod == AverageMethod.RMSE
-                    ? GoodnessOfFit.RMSEWeights(gofValid)
-                    : GoodnessOfFit.AICWeights(gofValid);
-
-                for (int j = 0; j < validIndices.Count; j++)
+                else
                 {
-                    Analyses[validIndices[j]].Weight = validWeights[j];
-                    sum += validWeights[j];
-                }
-            }
+                    var validIndices = new List<int>();
+                    var invalidIndices = new List<int>();
+                    ClassifyCriterionIndices(validIndices, invalidIndices);
 
-            // Ensure weights sum to 1 by normalizing proportionally
-            // This avoids pushing any single weight negative or above 1
-            if (Analyses.Count > 0 && Math.Abs(sum - 1.0) > 1e-10 && sum > 0)
-            {
-                for (int i = 0; i < Analyses.Count; i++)
+                    // Invalid and unavailable child criteria never contribute.
+                    for (int i = 0; i < Analyses.Count; i++)
+                        Analyses[i].Weight = 0d;
+
+                    if (validIndices.Count == 0)
+                        return;
+
+                    var validCriteria = new double[validIndices.Count];
+                    for (int j = 0; j < validIndices.Count; j++)
+                        validCriteria[j] = GetCriterionValue(validIndices[j]);
+
+                    double[] validWeights;
+                    if (ModelAverageMethod == AverageMethod.RMSE && validCriteria.Any(value => value == 0d))
+                    {
+                        int zeroCount = validCriteria.Count(value => value == 0d);
+                        validWeights = validCriteria
+                            .Select(value => value == 0d ? 1d / zeroCount : 0d)
+                            .ToArray();
+                    }
+                    else
+                    {
+                        validWeights = ModelAverageMethod == AverageMethod.RMSE
+                            ? GoodnessOfFit.RMSEWeights(validCriteria)
+                            : GoodnessOfFit.AICWeights(validCriteria);
+                    }
+
+                    for (int j = 0; j < validIndices.Count; j++)
+                    {
+                        Analyses[validIndices[j]].Weight = validWeights[j];
+                        sum += validWeights[j];
+                    }
+                }
+
+                // Ensure weights sum to 1 by normalizing proportionally.
+                if (Math.Abs(sum - 1d) > 1e-10 && sum > 0d)
                 {
-                    Analyses[i].Weight /= sum;
+                    for (int i = 0; i < Analyses.Count; i++)
+                        Analyses[i].Weight /= sum;
                 }
-            }
-
             }
             finally { _isEstimatingWeights = false; }
         }
@@ -795,6 +889,7 @@ namespace RMC.BestFit.Analyses
                     {
                         MinimumOfRandomVariables = !IsMaximum,
                         Dependency = Dependency,
+                        CorrelationMatrix = CorrelationMatrix!,
                         XTransform = Transform.Logarithmic,
                         ProbabilityTransform = Transform.NormalZ
                     };
@@ -827,6 +922,7 @@ namespace RMC.BestFit.Analyses
                         {
                             MinimumOfRandomVariables = !IsMaximum,
                             Dependency = Dependency,
+                            CorrelationMatrix = CorrelationMatrix!,
                             XTransform = Transform.Logarithmic,
                             ProbabilityTransform = Transform.NormalZ
                         };
@@ -943,6 +1039,7 @@ namespace RMC.BestFit.Analyses
                 {
                     MinimumOfRandomVariables = !IsMaximum,
                     Dependency = Dependency,
+                    CorrelationMatrix = CorrelationMatrix!,
                     XTransform = Transform.Logarithmic,
                     ProbabilityTransform = Transform.NormalZ
                 };
@@ -1053,24 +1150,52 @@ namespace RMC.BestFit.Analyses
                     messages.Add("Error: The sum of the weights is greater than 1.");
                 }
 
-                // Bulletin17CAnalysis is fit by GMM, not by an MCMC chain, so it does not
-                // produce posterior-likelihood-based information criteria (DIC, WAIC, LOO-CV).
-                // Reject Model Averaging weighted by any of those criteria when at least one
-                // child is a Bulletin17CAnalysis � silently averaging with NaN / 0 weights
-                // would produce a meaningless composite curve.
+                // Invalid criteria are excluded with a named warning when at least one
+                // usable child remains. If every fitted child criterion is invalid, the
+                // composite cannot define an average and validation fails.
                 if (CompositeDistributionType == CompositeType.ModelAverage &&
-                    (ModelAverageMethod == AverageMethod.DIC ||
-                     ModelAverageMethod == AverageMethod.WAIC ||
-                     ModelAverageMethod == AverageMethod.LOOIC) &&
-                    Analyses.Any(wua => wua.UnivariateAnalysis is Bulletin17CAnalysis))
+                    ModelAverageMethod != AverageMethod.Equal)
                 {
-                    isValid = false;
-                    messages.Add(
-                        $"Error: Model Averaging with {ModelAverageMethod} is not supported when any child " +
-                        "is a Bulletin17CAnalysis. B17C uses Generalized Method of Moments rather than an " +
-                        "MCMC chain, so DIC, WAIC, and LOO-CV are not defined for it. Choose AIC, BIC, " +
-                        "RMSE, or Equal weighting instead.");
+                    var validIndices = new List<int>();
+                    var invalidIndices = new List<int>();
+                    ClassifyCriterionIndices(validIndices, invalidIndices);
+                    bool noValidCriterion = invalidIndices.Count > 0 && validIndices.Count == 0;
+
+                    foreach (int index in invalidIndices)
+                    {
+                        double criterion = GetCriterionValue(index);
+                        string label = GetChildDiagnosticLabel(index);
+                        if (noValidCriterion)
+                        {
+                            isValid = false;
+                            messages.Add(
+                                $"Error: {label} has invalid {ModelAverageMethod} value " +
+                                $"'{criterion.ToString("G17", CultureInfo.InvariantCulture)}' and must be re-estimated or removed.");
+                        }
+                        else
+                        {
+                            messages.Add(
+                                $"Warning: {label} has invalid {ModelAverageMethod} value " +
+                                $"'{criterion.ToString("G17", CultureInfo.InvariantCulture)}', was assigned zero weight, " +
+                                "and must be re-estimated or removed to be included in the average.");
+                        }
+                    }
                 }
+            }
+
+            int? expectedMatrixDimension = Analyses != null && Analyses.Count > 0
+                ? Analyses.Count
+                : null;
+            bool matrixRequired = CompositeDistributionType == CompositeType.CompetingRisks &&
+                Dependency == Probability.DependencyType.CorrelationMatrix;
+            if (!CorrelationMatrixUtilities.TryValidate(
+                _correlationMatrix,
+                expectedMatrixDimension,
+                matrixRequired,
+                out string? matrixError))
+            {
+                isValid = false;
+                messages.Add($"Error: {matrixError}");
             }
 
             if (ProbabilityOrdinates == null || ProbabilityOrdinates.Count == 0)
@@ -1112,6 +1237,9 @@ namespace RMC.BestFit.Analyses
                 new XAttribute(nameof(ModelAverageMethod), ModelAverageMethod),
                 new XAttribute(nameof(Dependency), Dependency),
                 new XAttribute(nameof(IsMaximum), IsMaximum));
+
+            if (_correlationMatrix != null)
+                root.Add(CorrelationMatrixUtilities.ToXElement(_correlationMatrix));
 
             // Probability ordinates
             if (ProbabilityOrdinates != null && ProbabilityOrdinates.Count > 0)

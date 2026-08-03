@@ -8,7 +8,7 @@ The active continuation and batching plan is maintained in the [Verification Fin
 
 This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
 
-Closeout reconciliation (31 July 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest; the latest recorded fast gates are Core 3,101/3,101, UI 564/564, and App 428/428, while the corrected Numerics gate is 2,016/2,016 on each supported target framework. Phase 3 is closed in its approved scope. Within Phase 4, the TR-004/TR-005 point-process subset and TR-006/TR-007/TR-008 mixture subset are closed. Competing-risk and composite work has not started.
+Closeout reconciliation (3 August 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest. Phase 3 is closed in its approved scope. Within Phase 4, the TR-004/TR-005 point-process subset, TR-006/TR-007/TR-008 mixture subset, TR-012 competing-risk simulation, TR-013 criterion handling, and TR-015 correlation-matrix configuration are closed. TR-014 remains open by direction pending joint review with bivariate posterior behavior, so Phase 4 remains in progress.
 
 ## Summary
 
@@ -25,10 +25,10 @@ Closeout reconciliation (31 July 2026): Phase 1 and Phase 2 dispositions are clo
 | [TR-009](#tr-009) | RMSE residual omission | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) / [Artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json) | 2026-07-24 |
 | [TR-010](#tr-010) | FittingAnalysis all-failed status | Medium | Confirmed defect | Fixed | Passed - regression | [Report](../verification/distribution-fitting.md#tr-010---all-candidate-failure-reports-overall-success) · [Artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json) | 2026-07-24 |
 | [TR-011](#tr-011) | Bayesian AIC/BIC prior-density inclusion | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
-| [TR-012](#tr-012) | Competing-risk dependent simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-013](#tr-013) | Non-finite composite criteria | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-014](#tr-014) | Composite posterior draw coupling | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-015](#tr-015) | Composite correlation matrix configuration | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-012](#tr-012) | Competing-risk dependent simulation | High | Confirmed defect; corrected | Complete | Passed - fast seed/validation contracts and four analytical rank/CDF methods | [Report](../verification/competing-risks.md) | 2026-08-03 |
+| [TR-013](#tr-013) | Non-finite composite criteria | Medium | Confirmed defect; corrected | Complete | Passed - fast mixed-validity, zero-RMSE, finite-weight, and B17C compatibility contracts | [Report](../verification/composite.md#criterion-weighting) | 2026-08-03 |
+| [TR-014](#tr-014) | Composite posterior draw coupling | Methodological | Confirmed concern; direction under review | Deferred by direction | Planned with bivariate-posterior scope | [Report](../verification/composite.md#deferred-posterior-coupling) | 2026-08-03 |
+| [TR-015](#tr-015) | Composite correlation matrix configuration | High | Confirmed defect; corrected | Complete | Passed - fast validation, ownership, persistence, and construction contracts | [Report](../verification/composite.md#correlation-matrix-configuration) | 2026-08-03 |
 | [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Closed | Accepted shared result-storage architecture | Documentation complete; no code/API change required | Passed - source/XML/report terminology audit | [Bulletin 17C](analysis/bulletin-17c.md#uncertainty-interpretation) | 2026-07-28 |
 | [TR-017](#tr-017) | Bulletin 17C bootstrap naming | Closed | Rejected naming defect; documentation clarified | No production change required | Passed - paper/implementation concordance audit | [Uncertainty method](analysis/bulletin-17c-uncertainty.md) | 2026-07-28 |
 | [TR-018](#tr-018) | Bulletin 17C failed bootstrap fits | Closed | Robust initialization and convergence-aware acceptance implemented; parent fallback retained only for output length | Complete | Passed - 14 exact cells; 13,000 outputs with zero retries, exceptions, or substitutions | [Test inventory](../verification/test-inventory.md#tr-018tr-019-bulletin-17c-bootstrap-refit-reliability---28-july-2026) | 2026-07-28 |
@@ -262,62 +262,62 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-012"></a>
 ## TR-012 — Competing-Risk Simulation Ignores Dependency
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. Pinned Numerics commit `cafe6cf3837988341912a5aa8bfda444ea55ff77` preserves the established simulation signature and independent seeded sequence while routing all dependency modes through the existing dependency-aware implementation. BestFit preflights any required matrix before calling Numerics.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Fast Numerics and BestFit contracts cover seed determinism, independent golden-sequence preservation, entry-point equivalence, mode selection, and invalid matrices. Four exact guarded methods independently verify every dependency mode against Gaussian-copula Spearman-rank and analytical maximum-CDF targets; see [competing-risks verification](../verification/competing-risks.md).
 
-**Evidence.** `CompetingRisksModel.GenerateRandomValues()` calls Numerics `CompetingRisks.GenerateRandomValues()`, which samples each marginal with an independent uniform draw. Numerics has a separate `GenerateRandomValuesWithDependency()` implementation, but BestFit does not call it.
+**Evidence.** The prior Numerics public entry point contained a separate independent-only loop even though a dependency-aware method already existed. The corrected entry point delegates to that method. Independent mode retains its original PRNG loop, perfectly positive mode shares ranks, and the perfectly negative/correlation-matrix modes use the configured Gaussian copula.
 
-**Impact.** Simulations from perfectly dependent or correlation-matrix models do not follow the fitted/configured composite CDF.
+**Impact.** Simulation now follows the same configured dependency semantics as CDF evaluation for all supported modes. Invalid custom matrices fail explicitly before sampling.
 
-**Follow-up.** Delegate to the dependency-aware method, validate correlation matrices, and test simulated rank dependence and composite CDFs for every dependency mode.
+**Follow-up.** Retain the independent golden sequence and all four exact rank/CDF cells. Do not change the limiting perfectly-negative construction or seed defaults without separate approval.
 
 <a id="tr-013"></a>
 ## TR-013 — Non-Finite Composite Criteria
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete without changing public weighting signatures. Every estimated child criterion is classified before weighting. Invalid values are exactly zero-weighted when a usable child remains and cause an explicit invalid result only when no usable criterion remains. Exact-zero RMSE is handled as a separate limiting case.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by fast programmatic tests for mixed finite/non-finite criteria, all-invalid criteria, negative and exact-zero RMSE, ordinary finite-weight parity, normalization, and Bulletin 17C participation.
 
-**Evidence.** `CompositeAnalysis.EstimateModelWeights()` filters on estimated/non-null child results but does not filter or reject non-finite criterion values before calling `AICWeights` or `RMSEWeights`.
+**Evidence.** Criterion classification now excludes NaN and infinities for every method and negative RMSE. Exact-zero RMSE children split unit weight. Bulletin 17C remains eligible for Equal/AIC/BIC/RMSE; its non-posterior compatibility container does not supply DIC/WAIC/LOOIC, so those values are treated as unavailable rather than rejecting the child type.
 
-**Impact.** One `NaN`, infinity, or zero RMSE can produce non-finite or degenerate weights for all models.
+**Impact.** One invalid child can no longer contaminate otherwise usable models, and no zero-RMSE case divides by zero or publishes NaN. A model average still cannot be defined when every selected criterion is unavailable or invalid.
 
-**Follow-up.** Validate every selected metric, define whether invalid children fail the analysis or receive zero weight, handle zero RMSE explicitly, and add mixed-validity tests.
+**Follow-up.** Retain named diagnostics and exact-zero tests. B17C must not be type-rejected: it participates in every criterion it computes and receives zero weight only when the selected posterior criterion is unavailable.
 
 <a id="tr-014"></a>
 ## TR-014 — Composite Posterior Draw Coupling
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed methodological concern; approved direction remains under review.
 
-**Implementation status.** Not started.
+**Implementation status.** Deferred by explicit direction. No posterior index selection, resampling, output-length, seed, point-estimate, or chain-order behavior changed in the TR-012/TR-013/TR-015 batch.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Planned. The verification design must include separately fitted univariate children and affected bivariate posterior consumers before implementation.
 
 **Evidence.** For separately fitted children, `CompositeAnalysis` takes the minimum output length and combines child distribution at raw index \(b\) with every other child's raw index \(b\). It does not establish a joint posterior, permute draws, or independently resample indices.
 
 **Impact.** Nonlinear composite uncertainty depends on arbitrary chain ordering and possibly common pseudo-random seeds. The resulting interval encodes an undocumented cross-child coupling.
 
-**Follow-up.** Define independence or another joint dependence assumption among child posteriors. For independent fits, use deterministic seeded independent index permutations/resampling and test invariance to child draw order.
+**Follow-up.** Review the independence/coupling contract together with bivariate posteriors. If independent resampling remains the approved direction, define deterministic child-specific seed derivation and verify marginal preservation, posterior immutability, child-order invariance, and chain-order invariance before changing production behavior.
 
 <a id="tr-015"></a>
 ## TR-015 — Composite Correlation Matrix Cannot Be Supplied
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. The authorized `CorrelationMatrix` property was added to core and UI composite analyses. Existing constructors, methods, parameter vectors, seed behavior, defaults, and result signatures remain unchanged. XML and UI persistence use optional appended fields so legacy projects remain readable.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by fast core/UI tests for defensive ownership, square/dimension checks, finite bounds, unit diagonal, symmetry, strict positive definiteness, invariant XML, legacy-null loading, SQLite save/open, copy independence, and result construction.
 
-**Evidence.** `CompositeAnalysis.Dependency` can be set to `CorrelationMatrix`, but the analysis exposes no matrix property and constructs fresh Numerics `CompetingRisks` objects without assigning `CorrelationMatrix`. Numerics dereferences that matrix when creating its multivariate normal.
+**Evidence.** Core validation now requires a matrix exactly when correlation-matrix competing-risk dependence is active and requires its dimension to match the child count. Point-estimate, modal, and retained-realization constructions all copy the matrix into the new Numerics `CompetingRisks` object.
 
-**Impact.** A public enum value represents an unconfigurable path that can fail during CDF/empirical-CDF construction.
+**Impact.** The existing public enum value is now fully configurable and persistable; malformed configurations fail during assignment, validation, or simulation preflight with explicit messages.
 
-**Follow-up.** Add a validated, serialized matrix configuration or reject `CorrelationMatrix` at validation until supported. Test dimension, symmetry, unit diagonal, positive definiteness, persistence, and result construction.
+**Follow-up.** Retain the property in the public API baseline and preserve the established `CorrelationMatrix`/`Correlation_Row` serialization names.
 
 <a id="tr-016"></a>
 ## TR-016 — Bulletin 17C Frequentist Results Use Bayesian/MCMC Terminology

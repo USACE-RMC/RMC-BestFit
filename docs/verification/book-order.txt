@@ -5,4 +5,8 @@ test-inventory.md
 distribution-fitting.md
 model-estimation.md
 bulletin-17c.md
+point-process.md
+mixture.md
+competing-risks.md
+composite.md
 references.md

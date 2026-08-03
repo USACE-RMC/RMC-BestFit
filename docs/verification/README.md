@@ -12,7 +12,7 @@ The active handoff and batching plan is maintained in [Verification Finalization
 |---|---|---|
 | Repository integration | Validated 24 July 2026 | Debug Verification rebuild: 0 warnings/errors; Release solution log: 0 Verification project references |
 | Public API baseline | Captured | Exact exported type/member/enum baseline enforced by `PublicApiCompatibilityTests` |
-| Fast regression gate | Passed 31 July 2026 | Core 3,101; UI 564; App 428; 0 failures |
+| Fast regression gate | Passed 3 August 2026 | Core 3,116; UI 568; App 428; 0 failures |
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
 | Test ownership audit | In progress | Initial duplicate removals and FittingAnalysis split are recorded in [Test Inventory](test-inventory.md) |
 | Distribution fitting | Closed - Phase 1 | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. All nine Phase 1 artifact hashes match the manifest. See [Distribution Fitting](distribution-fitting.md) |
@@ -20,6 +20,8 @@ The active handoff and batching plan is maintained in [Verification Finalization
 | Data handling and Bulletin 17C | Closed - Phase 3 | TR-003 documents the accepted grouped-threshold disaggregation and most-recent-time prior reference. All seven formal worked-example GMM methods passed published mean/standard-deviation/skew parity at `1E-3`. Exact-LP3 Cohn scope guards passed fast tests; Cohn value verification is deferred. The 14 ordinary/pivotal reliability cells retain their 13,000 finite outputs with zero retries, substitutions, or exceptions. See [Bulletin 17C Verification](bulletin-17c.md), the [Phase 3 ledger](verification-finalization-plan.md#phase-3---data-handling-and-bulletin-17c), and [Scientific Review Findings](../technical-reference/review-findings.md). |
 | Point-process correction | Closed - Phase 4 point-process subset | TR-004/TR-005 are complete in the approved scope. All ten guarded cells pass with 1,000-observation recovery fixtures and untouched DEMCzs defaults, including calendar/water-year block-origin parity. See [Point-Process Verification](point-process.md). |
 | Mixture correction | Closed - Phase 4 mixture subset | TR-006/TR-007/TR-008 fast contracts, three guarded Numerics/BestFit recovery-parity methods, and three guarded Bayesian `MixtureAnalysis` generation-and-recovery methods passed. See [Mixture Verification](mixture.md). |
+| Competing-risk simulation | Closed - Phase 4 TR-012 | Fast seed/matrix contracts and four separately guarded analytical rank/CDF methods pass for every supported dependency mode. See [Competing-Risks Verification](competing-risks.md). |
+| Composite weighting and correlation configuration | Closed - Phase 4 TR-013/TR-015 | Fast criterion, exact-zero RMSE, B17C compatibility, matrix ownership/validation, persistence, and result-construction contracts pass. TR-014 remains deferred, so Phase 4 remains open. See [Composite Verification](composite.md). |
 
 ## Evidence rule
 

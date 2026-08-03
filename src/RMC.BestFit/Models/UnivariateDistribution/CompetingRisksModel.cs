@@ -853,6 +853,17 @@ namespace RMC.BestFit.Models
                 messages.Add("Error: Competing risks model currently supports at most 3 component distributions.");
             }
 
+            bool matrixRequired = CompetingRisks.Dependency == Numerics.Data.Statistics.Probability.DependencyType.CorrelationMatrix;
+            if (!CorrelationMatrixUtilities.TryValidate(
+                CompetingRisks.CorrelationMatrix,
+                CompetingRisks.Distributions.Count,
+                matrixRequired,
+                out string? matrixError))
+            {
+                isValid = false;
+                messages.Add($"Error: {matrixError}");
+            }
+
             // Validate uncertain-data ME bounds before likelihood evaluation. The uncertain
             // contribution is normalized by retained probability mass over this 1E-8 window.
             if (DataFrame.UncertainSeries is not null)
@@ -973,6 +984,16 @@ namespace RMC.BestFit.Models
                 throw new ArgumentOutOfRangeException(nameof(sampleSize), "Sample size must be positive.");
             if (CompetingRisks is null)
                 throw new InvalidOperationException("CompetingRisks distribution cannot be null when generating random values.");
+
+            bool matrixRequired = CompetingRisks.Dependency == Numerics.Data.Statistics.Probability.DependencyType.CorrelationMatrix;
+            if (!CorrelationMatrixUtilities.TryValidate(
+                CompetingRisks.CorrelationMatrix,
+                CompetingRisks.Distributions.Count,
+                matrixRequired,
+                out string? matrixError))
+            {
+                throw new InvalidOperationException(matrixError);
+            }
 
             return CompetingRisks.GenerateRandomValues(sampleSize, seed);         
         }

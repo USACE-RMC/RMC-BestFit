@@ -210,3 +210,16 @@ The three accepted Bayesian recovery fixtures were rerun with 1,000 observations
 The original water-year recovery cell changed the block-day changepoints from calendar `170/350` to `80/260`, so it did not isolate the effect of changing the year origin. The corrected cell holds `K1/K2` fixed, verifies identical magnitudes and block days, an exact 92-day date shift, and parent data log-likelihood parity at `1E-10`, then passes with default DEMCzs in 33.897 s.
 
 The seasonal mixed-likelihood cell initially revealed an all-above threshold fixture inconsistent with `ProcessThresholdSeries`. Its corrected three-year fixture asserts one effective below/two above observations and derives the independent threshold oracle from those processed counts; the rerun passed at unchanged tolerance `2E-7`. No production point-process formula, sampler default, prior, or numerical acceptance setting changed. The full Verification project was not run.
+
+## Phase 4 competing-risk and composite closeout - 3 August 2026
+
+The four TR-012 methods generate 40,000 observations with seed 24681357 through the production `CompetingRisksModel.GenerateRandomValues` path. Each was run separately through `scripts/run-verification-test.ps1`; every invocation resolved one exact fully qualified method and produced one passing TRX.
+
+| Test method | Analytical contract | Status |
+|---|---|---|
+| `CompetingRiskDependencyVerificationTests.Test_IndependentSimulation_MatchesRankDependenceAndCompositeCdf` | zero Spearman dependence and standard-Normal maximum CDF 0.25 at zero | Passed - 0.732 s |
+| `CompetingRiskDependencyVerificationTests.Test_PerfectlyPositiveSimulation_MatchesRankDependenceAndCompositeCdf` | unit Spearman dependence and comonotonic maximum CDF 0.5 at zero | Passed - 0.247 s |
+| `CompetingRiskDependencyVerificationTests.Test_PerfectlyNegativeSimulation_MatchesRankDependenceAndCompositeCdf` | Gaussian-copula identities at Numerics limiting negative correlation | Passed - 0.309 s |
+| `CompetingRiskDependencyVerificationTests.Test_CorrelationMatrixSimulation_MatchesRankDependenceAndCompositeCdf` | Gaussian-copula identities at configured latent correlation 0.6 | Passed - 0.306 s |
+
+TR-013 and TR-015 use fast programmatic tests because their contracts are deterministic validation, weighting, ownership, serialization, and persistence behavior rather than estimator or external-oracle calculations. The core tests cover mixed-invalid criteria, all-invalid failure, exact-zero RMSE, finite AIC parity, B17C compatibility, matrix validation/ownership/XML, and result construction. UI tests cover property ownership, independent copy, appended-column compatibility, and SQLite save/open. TR-014 remains deferred and no posterior coupling behavior changed. The full Verification project was not run.

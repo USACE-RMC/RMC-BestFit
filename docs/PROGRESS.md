@@ -1,5 +1,14 @@
 # Progress
 
+## 2026-08-03
+
+- Closed TR-012 with a focused Numerics correction (`cafe6cf3837988341912a5aa8bfda444ea55ff77`) that preserves the independent golden seed sequence and routes the existing `CompetingRisks.GenerateRandomValues` signature through dependency-aware simulation. Numerics Release build and all 2,023 tests passed on the validated target.
+- Added four narrowly scoped competing-risk verification methods. Independent, perfectly positive, perfectly negative, and correlation-matrix modes each passed separately through the exact guarded runner against Gaussian-copula Spearman-rank and analytical maximum-CDF targets; the full Verification project was not run.
+- Closed TR-013 with explicit invalid/unavailable criterion classification, exact-zero weights for excluded children, named diagnostics, an all-invalid failure, and a division-free exact-zero RMSE branch. Bulletin 17C is not type-rejected: it participates in Equal/AIC/BIC/RMSE and receives zero weight with a warning only when a selected posterior criterion is unavailable and another child is usable.
+- Closed TR-015 by adding the authorized defensively owned `CorrelationMatrix` property to core and UI composite analyses, validating structure/dimension/positive definiteness, preserving optional legacy loading, serializing invariant XML and SQLite data, and propagating the matrix into point estimates and frequency results without changing existing public method signatures.
+- Deferred TR-014 by direction. Raw child-posterior index pairing remains unchanged; the independence/resampling policy must be reviewed with affected bivariate posteriors before implementation. Phase 4 therefore remains open.
+- Passed the strict Debug XML-documentation solution build and Release solution build with zero warnings/errors, the explicit public API baseline, Verification compilation, and all mandatory fast suites: Core 3,116/3,116, UI 568/568, and App 428/428. The named XML-validation wrapper remains absent, so the deleted-namespace scan was run directly and found no matches.
+
 ## 2026-07-31
 
 - Implemented the approved TR-006/TR-007/TR-008 mixture correction without changing public weight-related signatures: Numerics retains $K$ physical weights, while BestFit uses $K-1$ direct physical weights and derives the final weight.

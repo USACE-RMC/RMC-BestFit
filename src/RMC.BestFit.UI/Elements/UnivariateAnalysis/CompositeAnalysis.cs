@@ -463,6 +463,33 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
+        /// Gets or sets the correlation matrix used by correlation-matrix competing-risk dependency.
+        /// </summary>
+        /// <value>An owned matrix copy, or <see langword="null"/> when no matrix is configured.</value>
+        /// <exception cref="ArgumentException">Thrown when the supplied matrix is structurally invalid.</exception>
+        /// <remarks>
+        /// Matrix editing is not exposed in the current WPF property controls; this property
+        /// supports programmatic configuration and project persistence while delegating
+        /// validation and ownership to the model-layer analysis.
+        /// </remarks>
+        [Browsable(false)]
+        public double[,] CorrelationMatrix
+        {
+            get { return _innerAnalysis?.CorrelationMatrix; }
+            set
+            {
+                double[,] old = _innerAnalysis?.CorrelationMatrix;
+                if (CorrelationMatricesEqual(old, value)) return;
+
+                _innerAnalysis.CorrelationMatrix = value;
+                SetIsValid();
+                if (!UndoManager.IsExecutingAction) ClearResults();
+                SetIsDirty(true);
+                RaisePropertyChange(nameof(CorrelationMatrix));
+            }
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether the distributions are competing to be maximum or minimum value.
         /// </summary>
         [Category("Composition")]
@@ -626,6 +653,29 @@ namespace RMC.BestFit.UI
             // edits itself; forwarding model child-event Analyses would restyle the grid for
             // every batch child completion.
             RaisePropertyChange(e.PropertyName);
+        }
+
+        /// <summary>
+        /// Determines whether two optional correlation matrices contain exactly equal values.
+        /// </summary>
+        /// <param name="left">The first matrix.</param>
+        /// <param name="right">The second matrix.</param>
+        /// <returns><see langword="true"/> when both matrices are null or exactly equal.</returns>
+        private static bool CorrelationMatricesEqual(double[,] left, double[,] right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left == null || right == null) return false;
+            if (left.GetLength(0) != right.GetLength(0) || left.GetLength(1) != right.GetLength(1)) return false;
+
+            for (int row = 0; row < left.GetLength(0); row++)
+            {
+                for (int column = 0; column < left.GetLength(1); column++)
+                {
+                    if (left[row, column] != right[row, column]) return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -828,7 +878,8 @@ namespace RMC.BestFit.UI
             { nameof(ProbabilityOrdinates), typeof(string) },
             { nameof(AnalysisResults), typeof(string) },
             { "FrequencyPlotSettings", typeof(string) },
-            { "MCMCReport", typeof(string) } };
+            { "MCMCReport", typeof(string) },
+            { nameof(CorrelationMatrix), typeof(string) } };
 
 
         /// <summary>
@@ -980,6 +1031,9 @@ namespace RMC.BestFit.UI
                 if (dtView.ColumnNames.Contains(nameof(ModelAverageMethod))) Enum.TryParse(dtView.GetCell(nameof(ModelAverageMethod), rowIndex).ToString(), out _modelAverageMethod);
                 if (dtView.ColumnNames.Contains(nameof(Dependency))) Enum.TryParse(dtView.GetCell(nameof(Dependency), rowIndex).ToString(), out _dependency);
                 if (dtView.ColumnNames.Contains(nameof(IsMaximum))) bool.TryParse(dtView.GetCell(nameof(IsMaximum), rowIndex).ToString(), out _isMaximum);
+                string correlationMatrixXml = null;
+                if (dtView.ColumnNames.Contains(nameof(CorrelationMatrix)))
+                    correlationMatrixXml = dtView.GetCell(nameof(CorrelationMatrix), rowIndex)?.ToString();
                 // Plot Properties
                 DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);             
                 // Get probability ordinates (save to local â€” inner analysis gets reconstructed below)
@@ -1014,6 +1068,9 @@ namespace RMC.BestFit.UI
                     // Add probability ordinates
                     if (!string.IsNullOrEmpty(probOrdinatesStr))
                         innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
+
+                    if (!string.IsNullOrEmpty(correlationMatrixXml))
+                        innerXElement.Add(XElement.Parse(correlationMatrixXml));
 
                     // Add Bayesian analysis
                     if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
@@ -1185,6 +1242,9 @@ namespace RMC.BestFit.UI
             dtView.EditCell(rowIndex, nameof(BayesianAnalysis), BayesianAnalysis?.ToXElement()?.ToString() ?? "");
             dtView.EditCell(rowIndex, nameof(ProbabilityOrdinates), ProbabilityOrdinates?.ToDelimitedString("|") ?? "");
             dtView.EditCell(rowIndex, "FrequencyPlotSettings", _frequencyPlot != null ? PlotSerializer.ToXElement(_frequencyPlot).ToString() : "");
+            XElement correlationElement = _innerAnalysis?.ToXElement().Element(nameof(CorrelationMatrix));
+            dtView.EditCell(rowIndex, nameof(CorrelationMatrix),
+                correlationElement?.ToString(SaveOptions.DisableFormatting) ?? string.Empty);
             // Persist AnalysisResults via XElement round-trip â€” only summary curves + scalar
             // fit metrics; per-realisation matrices are never stored (Numerics's
             // UncertaintyAnalysisResults.ToXElement explicitly excludes parameter sets).
@@ -1233,6 +1293,7 @@ namespace RMC.BestFit.UI
                 element.CompositeDistributionType = CompositeDistributionType;
                 element.ModelAverageMethod = ModelAverageMethod;
                 element.Dependency = Dependency;
+                element.CorrelationMatrix = CorrelationMatrix;
                 element.IsMaximum = IsMaximum;
 
                 // Copy Bayesian analysis settings (uncertainty-presentation only â€” CompositeAnalysis runs no MCMC chain itself)
