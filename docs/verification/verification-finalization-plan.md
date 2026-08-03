@@ -1,4 +1,4 @@
-<!-- verification-plan-status: phase-3-planning -->
+<!-- verification-plan-status: phase-4-in-progress -->
 
 # RMC.BestFit Verification Finalization Plan
 
@@ -18,13 +18,13 @@ A new session should read these files in this order:
 6. `verification/data/MANIFEST.md`
 7. The relevant technical-reference chapter for the current finding
 
-Dependency checkpoint: Numerics head `eb6718b Add lazy dependent probability enumeration`; Phase 2 diagnostic anchors are `76f7dd0`, `5c693a8`, and `b3f14b0`. BestFit Phase 2 is closed through `1a848ef` following `6ffab67`.
+Implementation checkpoint (3 August 2026): BestFit scientific behavior is closed through `9d252f6`. The validated local Numerics head is `34b5186`; the canonical Phase 4 correction anchors are `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. The program began with repository integration, test ownership, external oracle infrastructure, and distribution fitting. Phase 2 model estimation and diagnostics are complete for the approved scope; Phase 3 remains planned.
+The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, with the test-ownership migration audit retained as an active hygiene backlog. Phases 1, 2, and 3 are closed for their approved scopes. Phase 4 is complete except for TR-014, which remains deferred pending a joint decision about independently fitted univariate and bivariate posterior coupling.
 
-Reconciled checkpoint (28 July 2026): Phase 1 and Phase 2 are formally closed. After the TR-018/TR-019 reliability implementation, the fast gates are Core 3,057/3,057, UI 564/564, and App 428/428, all with zero failures; the recorded Numerics .NET 10 Release gate remains 1,986/1,986. The 16 Phase 1/2 oracle hashes were rechecked against `verification/data/MANIFEST.md` with no discrepancy.
+Reconciled checkpoint (3 August 2026): Core 3,116/3,116, UI 568/568, App 428/428, and Numerics .NET 10 Release 2,024/2,024 pass with zero failures. Strict XML documentation, Release solution, public API baseline, and Verification compilation gates pass. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
 
 The report is a living Markdown book under `docs/verification/`. Every scientific claim must link to a test, oracle artifact, package/version, tolerance, result, review finding, and relevant technical-reference chapter. Markdown is the source of truth during development. PDF rendering is deferred until explicit release or visual-QA checkpoints.
 
@@ -76,11 +76,13 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 - Public API baseline tests exist.
 - The review-finding register contains summary rows and detailed sections for TR-001 through TR-065.
 - Phase 1 distribution fitting is complete for the currently scoped claims.
-- Phase 2 fit influence, variance influence, and combined leverage for MAP/GMM are complete for the scoped Log10-Normal prior/penalty tests.
+- Phase 2 model estimation and diagnostics are closed for the approved scope.
+- Phase 3 data handling and Bulletin 17C are closed for the approved scope.
+- Phase 4 closes TR-004 through TR-008, TR-012, TR-013, and TR-015; TR-014 remains deferred and open.
 
 ### Current Phase Checkpoint
 
-Phase 1 - Distribution Fitting - and Phase 2 - Model Estimation and Diagnostics - are formally closed for their approved scopes. In Phase 3, TR-017 is closed without a rename, and TR-018/TR-019 are closed after 14 exact Examples 1-7 reliability cells produced 13,000 unguarded outputs with zero retries, exceptions, or parent substitution. Other Phase 3 production work remains approval-gated.
+Phases 1 through 3 are formally closed for their approved scopes. In Phase 4, point-process TR-004/TR-005, mixture TR-006/TR-007/TR-008, competing-risk simulation TR-012, composite criterion handling TR-013, and correlation-matrix configuration TR-015 are closed with direct evidence. TR-014 is the only remaining Phase 4 exit item and is deferred by direction until its posterior-coupling policy is reviewed with affected bivariate posterior consumers.
 
 Completed Phase 2 findings:
 
@@ -109,7 +111,7 @@ The same approved criteria correction also removed prior-density terms from MAP 
 
 ## Phase 0 - Repository and Documentation Foundation
 
-Status: substantially complete; keep these gates alive.
+Status: operational; keep these gates alive while the test-ownership migration audit remains in progress.
 
 Required state:
 
@@ -417,13 +419,13 @@ Characterization is complete and Phase 2 is closed. A future, separately approve
 Use this prompt to continue from a clean session:
 
 ```text
-We are continuing RMC.BestFit verification finalization after formally closing the approved Phase 1 and Phase 2 scopes. Numerics head checkpoint: eb6718b; Phase 2 Numerics anchors: 76f7dd0, 5c693a8, and b3f14b0. BestFit Phase 2 closes through 1a848ef after 6ffab67.
+We are continuing RMC.BestFit verification finalization after closing Phases 1 through 3 for their approved scopes and all Phase 4 findings except TR-014. BestFit implementation checkpoint: 9d252f6. Validated Numerics head: 34b5186; Phase 4 correction anchors: 3e69a93 and cafe6cf.
 
 Read docs/verification/verification-finalization-plan.md first, then docs/technical-reference/review-findings.md, docs/verification/README.md, docs/verification/model-estimation.md, docs/verification/test-inventory.md, and verification/data/MANIFEST.md.
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: Phase 1 and Phase 2 are formally closed. TR-017 is closed without a production rename: `BiasCorrectedBootstrap` is the bias-corrected pivotal bootstrap. TR-018 and TR-019 are closed after 14 separately executed Examples 1-7 ordinary/pivotal reliability cells produced 13,000 unguarded finite outputs from exactly 13,000 realizations with zero retries, parent substitutions, failed candidates, and final first-chance exceptions from Numerics or RMC.BestFit. Parent fallback remains only to guarantee output length.
+Current checkpoint: Phase 0 infrastructure is operational; Phases 1 through 3 are closed for their approved scopes. TR-004 through TR-008, TR-012, TR-013, and TR-015 are closed. TR-014 is deferred by direction and is the only remaining Phase 4 exit item because separately fitted child-posterior coupling must be reviewed together with affected bivariate posteriors. Bulletin 17C remains a valid composite child for Equal/AIC/BIC/RMSE and receives zero weight rather than type rejection when DIC/WAIC/LOOIC is unavailable and another child is usable.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
@@ -438,7 +440,7 @@ Constraints:
 - Preserve unrelated modified/untracked files.
 
 First task:
-Continue with the next explicitly approved open Phase 3 finding. Never run the full Verification project.
+Resolve TR-014 only after the univariate and bivariate posterior-coupling contract is explicitly approved. Never run the full Verification project.
 ```
 
 ## Off-Ramps

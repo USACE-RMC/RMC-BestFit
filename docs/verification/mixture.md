@@ -41,17 +41,17 @@ Numerics and BestFit EM throw **InvalidOperationException** with row index and v
 
 ### Numerics
 
-Commit **1462e35** contains the focused Numerics correction and tests.
+Reachable Numerics commit **3e69a93** contains the focused correction and tests; it is the rebased equivalent of the original implementation object.
 
 - Release build: zero warnings and zero errors for net481, net8.0, net9.0, and net10.0.
 - Focused mixture suite: 20/20 passed, including the existing two 2D and one 3D recovery fixtures.
-- Full Release suite: 2,016/2,016 passed independently on each target framework.
+- Current .NET 10 Release suite: 2,024/2,024 passed. The focused correction was also validated across all configured target frameworks before subsequent tests were added.
 
 ### BestFit fast tests
 
 Fast coverage includes $K-1$ counts and names, final-weight derivation, prior normalization, proposal immutability, covariance dimensions, exact-only atom derivation, mixed likelihoods, negative exact values, invalid positive mass, and impossible rows for every observation family.
 
-The Core Debug suite passed 3,101/3,101 tests. The strict XML Debug build, Release solution build, public API baseline, UI 564/564, App 428/428, and Verification compilation also passed with zero failures or build warnings. The repository-wide gates are recorded in **docs/PROGRESS.md**.
+The normalized Core Debug suite passes 3,116/3,116 tests. The strict XML Debug build, Release solution build, public API baseline, UI 568/568, App 428/428, and Verification compilation also pass with zero failures or build warnings. The repository-wide gates are recorded in **docs/PROGRESS.md**.
 
 ## Focused Recovery Results
 
@@ -72,4 +72,4 @@ The Bayesian methods use DEMCzs with four chains, 1,500 warmup iterations, 3,000
 
 ## Closeout State
 
-The Phase 4 mixture subset is complete. TR-006, TR-007, and TR-008 are implemented and verified by fast contracts, three guarded cross-engine parity methods, and three guarded Bayesian generation-and-recovery methods. The broader Phase 4 remains open for competing-risk and composite work; the point-process subset is also closed.
+The Phase 4 mixture subset is complete. TR-006, TR-007, and TR-008 are implemented and verified by fast contracts, three guarded cross-engine parity methods, and three guarded Bayesian generation-and-recovery methods. Point-process TR-004/TR-005, competing-risk TR-012, and composite TR-013/TR-015 are also closed. Phase 4 remains open only for deferred posterior-coupling finding TR-014.

@@ -1,4 +1,4 @@
-<!-- technical-reference-status: in-progress -->
+<!-- technical-reference-status: complete -->
 
 # Peaks over Threshold: Poisson Point-Process Model
 

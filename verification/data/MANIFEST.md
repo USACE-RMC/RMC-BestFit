@@ -2,6 +2,8 @@
 
 Every committed oracle file must be listed before a C# verification test consumes it.
 
+Integrity recheck (3 August 2026): independently recomputed SHA-256 values for all 16 listed artifacts exactly match this manifest (nine Phase 1 distribution-fitting artifacts and seven Phase 2 model-estimation artifacts). No Phase 3/Bulletin 17C artifact is present.
+
 | Family | File | Oracle | Version | Generator | Seed | Tolerance | SHA-256 | Status |
 |---|---|---|---|---|---|---|---|---|
 | Kappa Four zero-shape | [kappa-four-zero-shape.json](distribution-fitting/kappa-four-zero-shape.json) | Analytical CDF derivative and inverse | Numerics `8286646` to `3e058eb` | Focused exact-method runner | Deterministic | `1e-10` absolute | `7ac1932c70a93cab2b92b0e5c6a7f19538dbbf8321a45d4a08fd869c8d094d33` | Passed |

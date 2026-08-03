@@ -13,7 +13,7 @@ Fast Numerics tests establish:
 - the independent seed-12345 sequence is unchanged against a fixed ten-value golden sequence;
 - both public simulation entry points agree for all four dependency modes;
 - a non-positive-definite user matrix is rejected before sampling; and
-- all 2,023 Numerics tests pass on the validated target.
+- all 2,024 Numerics tests pass on the validated .NET 10 target.
 
 BestFit fast tests exercise the production model entry point, deterministic seed repetition, dependency-mode differentiation, and correlation-matrix preflight validation.
 

@@ -28,7 +28,7 @@ This index maps scientific treatments to the implementation directories audited 
 
 ## Dependency Baseline
 
-The dependency source of truth for this release is RMC.Numerics 2.1.4 at commit `828664650c9327b309ee8332e707ccca73588e93`. The technical-reference audit used the local checkout at `C:\GIT\Numerics`. The external path is intentionally not a repository link; reviewers should use the commit identifier to obtain the same source.
+The published package baseline remains RMC.Numerics 2.1.4 at commit `828664650c9327b309ee8332e707ccca73588e93`. Phase 0-4 verification used the local `C:\GIT\Numerics` correction history through validated head `34b51862f0429b263efbed0c22f61d57b8771e1a`; reachable scientific correction anchors include `3e69a9388bbecaad89960679301b3bd8d685b88d` for mixtures and `cafe6cf3837988341912a5aa8bfda444ea55ff77` for competing-risk simulation. Chapter-specific pins identify the source actually audited rather than implying that later unrelated chapters were revalidated at this head.
 
 ## Test and Example Sources
 
@@ -40,7 +40,7 @@ The dependency source of truth for this release is RMC.Numerics 2.1.4 at commit 
 | UI wrapper tests | [RMC.BestFit.UI.Tests](../../../src/RMC.BestFit.UI.Tests) |
 | Application tests | [RMC.BestFit.App.Tests](../../../src/RMC.BestFit.App.Tests) |
 
-The verification source library was inspected but not executed during this documentation program, in accordance with the repository rule that the user runs `RMC.BestFit.Verification` on demand.
+Verification execution is claim-specific. Phases 1-4 include explicitly authorized methods run one at a time through `scripts/run-verification-test.ps1`; the full Verification project was never executed. Rows that describe source inspection only remain labeled as such in their subject chapters.
 
 ---
 

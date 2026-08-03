@@ -10,9 +10,9 @@ The active handoff and batching plan is maintained in [Verification Finalization
 
 | Program area | Status | Evidence |
 |---|---|---|
-| Repository integration | Validated 24 July 2026 | Debug Verification rebuild: 0 warnings/errors; Release solution log: 0 Verification project references |
+| Repository integration | Operational - validated 3 August 2026 | Strict Debug XML build and Verification compilation: 0 warnings/errors; Release solution excludes Verification; test-ownership migration remains an active hygiene backlog |
 | Public API baseline | Captured | Exact exported type/member/enum baseline enforced by `PublicApiCompatibilityTests` |
-| Fast regression gate | Passed 3 August 2026 | Core 3,116; UI 568; App 428; 0 failures |
+| Fast regression gate | Passed 3 August 2026 | Core 3,116; UI 568; App 428; Numerics .NET 10 Release 2,024; 0 failures |
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
 | Test ownership audit | In progress | Initial duplicate removals and FittingAnalysis split are recorded in [Test Inventory](test-inventory.md) |
 | Distribution fitting | Closed - Phase 1 | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. All nine Phase 1 artifact hashes match the manifest. See [Distribution Fitting](distribution-fitting.md) |

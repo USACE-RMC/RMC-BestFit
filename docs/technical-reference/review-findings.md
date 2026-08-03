@@ -106,7 +106,7 @@ but `InverseCDF` evaluates `Xi - Alpha * Log(1 - p^h / h)`. `PDF` also evaluates
 
 A compiled local probe with \((\xi,\alpha,\kappa)=(0,1,0)\) found, at \(x=1\): for \(h=0.2\), CDF `0.6824160756`, PDF `0.7366130339`, central numerical CDF derivative `0.2709847914`, and inverse-CDF at that CDF `NaN`. The existing Numerics Kappa test exercises construction at zero but not zero-shape density or CDF/quantile inversion.
 
-The corrected source adds the exact zero-kappa density factor and fixes the inverse-CDF grouping. Four upstream regressions cover the analytical derivative, inverse/CDF round trip, support and normalization, and two-sided continuity. The reconciled Numerics .NET 10 Release gate records 1,986 passing tests with no failures. Both exact BestFit verification methods pass independently at absolute tolerance `1e-10`.
+The corrected source adds the exact zero-kappa density factor and fixes the inverse-CDF grouping. Four upstream regressions cover the analytical derivative, inverse/CDF round trip, support and normalization, and two-sided continuity. The normalized Numerics .NET 10 Release gate records 2,024 passing tests with no failures. Both exact BestFit verification methods pass independently at absolute tolerance `1e-10`.
 
 **Impact.** The defect affected zero-primary-shape likelihoods and quantiles. The corrected implementation restores the analytical density and inverse CDF for this branch.
 
@@ -175,7 +175,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Review disposition.** Confirmed defect; the direct physical $K-1$ correction was approved.
 
-**Implementation status.** Complete in Numerics commit `1462e35` and the BestFit Phase 4 mixture batch without changing any public weight-related method signature.
+**Implementation status.** Complete in reachable Numerics commit `3e69a93` and the BestFit Phase 4 mixture batch without changing any public weight-related method signature.
 
 **Verification status.** Passed. Fast regressions, three exact Numerics/BestFit recovery-parity methods, and three Bayesian `MixtureAnalysis` generation-and-recovery methods pass. Every focused method was run separately through the guarded runner and produced one passing TRX.
 
@@ -190,7 +190,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Review disposition.** Confirmed defect; the exact-zero positive-hurdle interpretation was approved.
 
-**Implementation status.** Complete in Numerics commit `1462e35` and the BestFit Phase 4 mixture batch.
+**Implementation status.** Complete in reachable Numerics commit `3e69a93` and the BestFit Phase 4 mixture batch.
 
 **Verification status.** Passed. Analytical identities, simulation, support, invalid-positive-mass, and mixed-observation fast tests pass. The guarded zero-inflated parity and Bayesian recovery methods pass; Bayesian recovery also checks the generated atom against its five-standard-error binomial bound.
 
@@ -205,7 +205,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Review disposition.** Confirmed defect; explicit failure was approved.
 
-**Implementation status.** Complete in Numerics commit `1462e35` and the BestFit Phase 4 mixture batch.
+**Implementation status.** Complete in reachable Numerics commit `3e69a93` and the BestFit Phase 4 mixture batch.
 
 **Verification status.** Passed. Fast impossible-row tests pass for Numerics exact data and BestFit exact, uncertain, interval, and threshold records. All six guarded recovery methods pass with the explicit-failure contract retained.
 
@@ -222,7 +222,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Implementation status.** Fixed without public API changes in RMC.Numerics commit `24bf9f98139b23400bf008df413b0d97330ccfd3`. The numerator now includes every residual, and only the denominator uses the residual degrees of freedom \(n-k\). Invalid parameter counts that do not leave positive residual degrees of freedom are rejected.
 
-**Verification status.** Passed by an analytical hand calculation and paired-permutation test at absolute tolerance \(10^{-12}\). The reconciled Numerics .NET 10 Release gate records 1,986 passing tests with no failures. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) and [result artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json).
+**Verification status.** Passed by an analytical hand calculation and paired-permutation test at absolute tolerance \(10^{-12}\). The normalized Numerics .NET 10 Release gate records 2,024 passing tests with no failures. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) and [result artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json).
 
 **Evidence.** For observed values \([0,0,0,0]\), modeled values \([1,2,3,4]\), and \(k=1\), the analytical value is \(\sqrt{30/3}=3.1622776601683795\). The baseline implementation returned \(2.160246899469287\) because it summed only the first three squared residuals. The same exact verification method passes after the correction and proves invariance to paired row permutation.
 
@@ -1042,7 +1042,7 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 
 **Correction.** A valid programmatic whole-series replacement now refreshes plotting positions after the new collection and item handlers are attached. Exact-series replacement also refreshes `Lambda`. Invalid transient frames retain the previous non-throwing setter behavior and defer derived-state calculation. XML construction suppresses all four intermediate replacement refreshes, preserves serialized plotting positions exactly, and reprocesses effective threshold counts once after loading.
 
-**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The reconciled Debug regression gate records Core 3,044, UI 564, and App 428 passing tests with zero failures; the public API baseline and enforced XML-documentation build also passed.
+**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The normalized Debug regression gate records Core 3,116, UI 568, and App 428 passing tests with zero failures; the public API baseline and enforced XML-documentation build also passed.
 
 **Impact.** Programmatic replacement now leaves a valid data frame immediately ready for distribution fitting without an extra manual `CalculatePlottingPositions()` call. Persisted projects retain their stored plotting positions and avoid redundant deserialization work.
 
