@@ -123,7 +123,8 @@ While in the **Time Series Results** tab to the left, select Tabular Results to 
 
 ### Plots
 There are plenty of plots to expore with our Time Series Analysis. Under the **Time Series Results** tab there is fitted curve plotted with the orginal data. This plot has both training and prediction estimates.
-![Time-series fit overlaid on the observations, with credible band.](../images/synthetic-ts-time-series.png)
+
+![Time-series fit overlaid on the observations, with credible band.](./images/synthetic-ts-time-series.png)
 
 *Figure 1: Time-series fit overlaid on the observations, with credible band.*
 

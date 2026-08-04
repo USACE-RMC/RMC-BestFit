@@ -108,7 +108,7 @@ These are under the **POT Diagnostics** tab on the left. The tabs at the bottom 
    - **Data Entry Method:** Peaks-Over-Threshold Series
    - **Time Series Element:** GHCN-USC00040741-Precipitation
    - **Threshold:** 1.0 (inches)
-   - **Min Steps Between Peaks:** 5 (days)
+   - **Minimum Steps [Between Peaks]:** 5 (days)
 
 ![Properties panel showing precipitation POT settings](../images/ghcn-pot-properties.png)
 

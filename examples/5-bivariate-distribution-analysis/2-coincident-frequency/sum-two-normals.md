@@ -106,11 +106,13 @@ Select the **Tabular Results** tab at the top to see the frequency plot's value 
 ### Plots
 There are plenty of plots to explore in the Coincident Frequency Anaylsis. First we can look at the Bivariate Distribution Analysis used to build the Coincident Frequency Anaylsis. 
 Select the Bivarate Distribution Analysis labeled "Normal Copula - Rho = 0.0". From there, under **Distribution Results** is simulated data from the joint copula denisty overliad on the X-Y data.
+
 ![Joint copula density contour overlaid on the X-Y scatter.](../images/sum-two-normals-joint-density.png)
 
 *Figure 1: Joint copula density contour overlaid on the X-Y scatter.*
 
 Going back to the Coincident Frequency Analysis, there is the frequency plot of annual exccedance probabilities.
+
 ![Derived coincident-response frequency curve.](../images/sum-two-normals-frequency.png)
 
 *Figure 2: Derived coincident-response frequency curve.*

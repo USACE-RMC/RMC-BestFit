@@ -91,16 +91,19 @@ The parameter estimates are found under the **MCMC Report** tab to the left as p
 
 ### Plots
 There are plenty of plots to explore in the Bivariate Distribution Analysis. Under **Distribution Results** is simulated data from the joint copula denisty overliad on the X-Y data.
+
 ![Joint copula density contour overlaid on the X-Y scatter.](../images/bivariate-joint-density.png)
 
 *Figure 1: Joint copula density contour overlaid on the X-Y scatter.*
 
 The **Kernal Density** tab shows an estimate for the pdf of a parameter.
+
 ![Kernel density of dependency (θ).](../images/bivariate-kernal-density.png)
 
 *Figure 2: Kernel density of dependency (θ).*
 
 The **Markov Chain Traces** tab explores the traces of each Markov chain as it explores the posterior space in order to converge to a parameter.
+
 ![Markov chain trace of dependency (θ).](../images/bivariate-trace.png)
 
 *Figure 3: Markov chain trace of dependency (θ).*

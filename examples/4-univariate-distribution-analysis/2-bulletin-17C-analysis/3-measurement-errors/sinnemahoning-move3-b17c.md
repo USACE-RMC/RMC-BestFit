@@ -63,6 +63,7 @@ The parameter estimates are found under the **GMM Report** tab to the left as pa
 While in the **Distribution Results** tab to the left, select Tabular Results to see the frequency plot's value at each return level probability,
 
 | Probability | 95.0% CI | 5.0% CI | Expected Probability | Computed |
+|---|---|---|---|---|
 | 1E-06 | 1010667.4196454879 | 87278.89808161247 | 888023.2521845531 | 189358.8687011805 | 
 | 2E-06 | 825694.3822362763 | 82912.68590135279 | 662692.7488685393 | 171814.47275785723 | 
 | 5E-06 | 628451.1410449261 | 76873.00488312499 | 457567.26485387725 | 150699.54835185735 | 
@@ -90,11 +91,16 @@ While in the **Distribution Results** tab to the left, select Tabular Results to
 | 0.99 | 6816.267686757423 | 4444.811201588628 | 5276.8069213907975 | 5336.962866943537 | 
 
 ### Plots
+There are also plenty of plots to explore our results with. Under the **Distribution Results** tab we have a frequency curve.
 
 ![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](../images/sinnemahoning-b17c-frequency.png)
+
 *Figure 1: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
 
+The **Kernal Density** tab shows an estimate for the pdf of each parameter.
+
 ![Posterior kernel density for mean parameter (µ).](../images/sinnemahoning-b17c-kernel-density-mean.png)
+
 *Figure 2: Posterior kernel density for mean parameter (µ).*
 
 ## Next Steps

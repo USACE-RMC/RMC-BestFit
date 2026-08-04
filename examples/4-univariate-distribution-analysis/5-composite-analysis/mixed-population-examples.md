@@ -98,8 +98,10 @@ Be sure to explore all of the analyses provided!
 | 0.99 | 268.7286650340908 | 217.9437506795664 | 241.13875524919075 | 242.7587977692525 | 
 
 ### Plots
+There are also plenty of plots to explore our results with. Under the **Distribution Results** tab we have a frequency curve.
 
 ![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](../images/mixed-population-frequency.png)
+
 *Figure: Frequency curve (AEP versus quantile), with the credible band.*
 
 ## Next Steps
