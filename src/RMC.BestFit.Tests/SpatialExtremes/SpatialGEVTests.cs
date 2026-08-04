@@ -1948,5 +1948,43 @@ public class SpatialGEVTests
         }
     }
 
+    /// <summary>
+    /// Verifies that a realistically sized 100-by-10 matrix can be evaluated without
+    /// dimension truncation or a nonfinite likelihood.
+    /// </summary>
+    [TestMethod]
+    public void Model_LargeDataMatrix_ReturnsFiniteLikelihood()
+    {
+        var data = new double[100, 10];
+        var coordinates = new double[10, 2];
+        var random = new Random(12345);
+        var distribution = new GeneralizedExtremeValue(100.0, 20.0, 0.0);
+
+        for (int site = 0; site < 10; site++)
+        {
+            coordinates[site, 0] = site * 10.0;
+            coordinates[site, 1] = random.NextDouble() * 5.0;
+        }
+
+        for (int observation = 0; observation < 100; observation++)
+        {
+            for (int site = 0; site < 10; site++)
+                data[observation, site] = distribution.InverseCDF(random.NextDouble());
+        }
+
+        var model = new SpatialGEV(
+            data,
+            coordinates,
+            new GeneralLinearFunction("Location"),
+            new GeneralLinearFunction("Scale"),
+            new GeneralLinearFunction("Shape"));
+
+        double likelihood = model.LogLikelihood(model.Parameters.Select(parameter => parameter.Value).ToArray());
+
+        Assert.AreEqual(10, model.Sites);
+        Assert.AreEqual(100, model.Observations);
+        Assert.IsTrue(double.IsFinite(likelihood));
+    }
+
     #endregion
 }

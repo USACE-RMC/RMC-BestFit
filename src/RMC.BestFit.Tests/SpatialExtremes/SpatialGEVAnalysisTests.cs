@@ -1060,5 +1060,28 @@ public class SpatialGEVAnalysisTests
         Assert.AreEqual(0.6, spatialGEV.SiteWeights[4], 1e-10);
     }
 
+    /// <summary>
+    /// Verifies that cancellation from the starting event is reflected in the
+    /// completion event without running an MCMC chain.
+    /// </summary>
+    [TestMethod]
+    public async Task RunAsync_WhenCanceled_ReportsCanceledAndUnsuccessful()
+    {
+        var analysis = new SpatialGEVAnalysis(CreateTestSpatialGEV());
+        bool cancelled = false;
+        bool succeeded = true;
+        analysis.AnalysisStarting += (_, args) => args.Cancel = true;
+        analysis.AnalysisCompleted += (_, args) =>
+        {
+            cancelled = args.Cancelled;
+            succeeded = args.Succeeded;
+        };
+
+        await analysis.RunAsync();
+
+        Assert.IsTrue(cancelled);
+        Assert.IsFalse(succeeded);
+    }
+
     #endregion
 }

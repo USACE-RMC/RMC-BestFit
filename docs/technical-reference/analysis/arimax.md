@@ -141,7 +141,7 @@ The last four response/covariate observations are holdout values, not future ext
 
 ## Traceability and Evidence
 
-Implementation: `Models/TimeSeries/ARIMAX.cs`; orchestration: `Analyses/TimeSeries/ARIMAXAnalysis.cs`. Fast tests cover configuration, serialization, prediction shapes, covariate extension, and broad transformations. Recovery and forecast verification sources were inspected under `RMC.BestFit.Verification/TimeSeriesModels/ARIMAXTests.cs` but not executed. Existing tests do not establish the raw-time alignment or scale identities in TR-037, TR-039, and TR-041.
+Implementation: `Models/TimeSeries/ARIMAX.cs`; orchestration: `Analyses/TimeSeries/ARIMAXAnalysis.cs`. Fast tests cover configuration, serialization, prediction shapes, covariate extension, and broad transformations. The recovery verification source was inspected under `RMC.BestFit.Verification/TimeSeriesModels/ARIMAXMLERecoveryTests.cs` but not executed. Existing tests do not establish the raw-time alignment or scale identities in TR-037, TR-039, and TR-041.
 
 ## References
 

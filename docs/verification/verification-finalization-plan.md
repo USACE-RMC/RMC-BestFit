@@ -22,9 +22,11 @@ Implementation checkpoint (3 August 2026): BestFit scientific behavior is closed
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, with the test-ownership migration audit retained as an active hygiene backlog. Phases 1, 2, 3, and the original Phase 4 findings are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement completed focused execution with 23 passes and seven unresolved findings, so it continues to gate Phase 5. TR-014 implements the approved product-posterior resampling policy in Composite and CFA while leaving `BivariateAnalysis` unchanged.
+The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1, 2, 3, and the original Phase 4 findings are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement completed focused execution with 23 passes and seven unresolved findings, so it continues to gate Phase 5. TR-014 implements the approved product-posterior resampling policy in Composite and CFA while leaving `BivariateAnalysis` unchanged.
 
 Reconciled checkpoint (3 August 2026): Core 3,134/3,134, UI 571/571, App 428/428, and Numerics 2,072/2,072 on each of net481/net8/net9/net10 pass with zero failures. Strict XML documentation and Verification compilation gates pass. Both exact TR-014 methods pass separately through the guarded runner. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
+
+Ownership-cleanup checkpoint (4 August 2026): all 84 Verification C# files were reviewed, 435 of 1,196 methods remain, and 35 missing deterministic contracts were added to the fast core project. Core 3,175/3,175, UI 571/571, App 428/428, and API 496/496 pass; the strict Debug solution build reports zero warnings/errors. No Verification method was executed for this repository-hygiene change.
 
 The report is a living Markdown book under `docs/verification/`. Every scientific claim must link to a test, oracle artifact, package/version, tolerance, result, review finding, and relevant technical-reference chapter. Markdown is the source of truth during development. PDF rendering is deferred until explicit release or visual-QA checkpoints.
 
@@ -111,7 +113,7 @@ The same approved criteria correction also removed prior-density terms from MAP 
 
 ## Phase 0 - Repository and Documentation Foundation
 
-Status: operational; keep these gates alive while the test-ownership migration audit remains in progress.
+Status: operational; keep these gates alive after completion of the test-ownership migration audit.
 
 Required state:
 
@@ -230,7 +232,7 @@ Current scoped external parity is complete. ArviZ would be redundant secondary W
 
 Closeout evidence reconciled 28 July 2026:
 
-- Production and regression anchors include `InformationCriterionOracleTests`, `PsisLooOracleTests`, `ProfileLikelihoodFindingTests`, `GmmSpecificationFindingTests`, `GmmInfluenceDiagnosticsVerificationTests`, `NumericsMcmcFindingTests`, and `CovarianceFailureStatusTests`.
+- Production and regression anchors include `InformationCriterionOracleTests`, `PsisLooOracleVerificationTests`, `ProfileLikelihoodFindingTests`, `GmmSpecificationFindingTests`, `GmmInfluenceDiagnosticsVerificationTests`, `McmcNumericalVerificationTests`, and `CovarianceFailureStatusTests`.
 - The seven Phase 2 artifacts in `verification/data/model-estimation/` retain exact manifest hash matches and cover estimator equivalence, model comparison, PSIS-LOO, MCMC diagnostics, GMM influence, profile likelihood, and GMM specification/covariance.
 - Primary BestFit commit anchors are `c1e343a`, `4f91691`, `6ffab67`, and `1a848ef`; Numerics anchors are `5c693a8`, `76f7dd0`, and `b3f14b0`.
 

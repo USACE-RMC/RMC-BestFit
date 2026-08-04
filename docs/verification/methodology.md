@@ -12,7 +12,9 @@ The program establishes claim-specific evidence for statistical correctness, num
 4. Published worked example or table.
 5. Simulation coverage with a predeclared design and Monte Carlo acceptance interval.
 
-Regression pins and estimator smoke tests are useful engineering checks but are not independent verification.
+Regression pins and estimator smoke tests are useful engineering checks but are not independent verification. Merely invoking MLE, MAP, GMM, or MCMC does not make a test Verification-owned; convergence, finiteness, and result-shape assertions without an independent target are insufficient.
+
+Recovery tests predeclare the generating model, sample size, seed, fitted parameters or curves, diagnostic requirements, and acceptance bounds. Coverage tests additionally predeclare the repetition count, nominal target, and Monte Carlo acceptance interval. Deterministic validation, state, exception, serialization, cache, and calculation contracts remain in the fast projects and may use injected or restored fitted state so long as they do not run an estimator.
 
 ## Reproducibility contract
 

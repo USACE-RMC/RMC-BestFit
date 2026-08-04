@@ -107,7 +107,7 @@ Run the analysis asynchronously, require satisfactory chain diagnostics, inspect
 
 ## Validation and Traceability
 
-Implementation: `Models/TimeSeries/AutoRegressive.cs` and `Analyses/TimeSeries/ARAnalysis.cs`. Fast tests cover construction, likelihood decomposition, transforms, prediction state, and analysis lifecycle. Long-running recovery/forecast sources reside under `RMC.BestFit.Verification/TimeSeriesModels/AutoRegressiveTests.cs` and `TimeSeriesAnalysis/ARAnalysisTests.cs`; they were not executed during this documentation pass.
+Implementation: `Models/TimeSeries/AutoRegressive.cs` and `Analyses/TimeSeries/ARAnalysis.cs`. Fast tests cover construction, likelihood decomposition, transforms, prediction state, and analysis lifecycle. Long-running recovery/forecast sources reside under `RMC.BestFit.Verification/TimeSeriesModels/AutoRegressiveMLERecoveryTests.cs` and `TimeSeriesAnalysis/ARAnalysisTests.cs`; they were not executed during this documentation pass.
 
 ## References
 

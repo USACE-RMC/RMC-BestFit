@@ -46,6 +46,26 @@ public class RatingCurveTests
         return new NumericsTimeSeries(TimeInterval.OneDay, startDate, values);
     }
 
+    /// <summary>
+    /// Creates a deterministic one-segment rating-curve fixture with enough aligned
+    /// observations to exercise likelihood and validation contracts.
+    /// </summary>
+    /// <returns>The configured model and its parameter vector.</returns>
+    private static (RMC.BestFit.Models.RatingCurve Model, double[] Parameters) MakeContractModel()
+    {
+        double[] parameters = [0.5, Math.Log10(10.0), 1.5, 0.05];
+        double[] stages = Enumerable.Range(0, 20).Select(i => 1.0 + (0.25 * i)).ToArray();
+        double[] discharges = stages
+            .Select(stage => 10.0 * Math.Pow(stage - parameters[0], parameters[2]))
+            .ToArray();
+        var model = new RMC.BestFit.Models.RatingCurve(
+            new NumericsTimeSeries(TimeInterval.OneDay, new DateTime(2000, 1, 1), stages),
+            new NumericsTimeSeries(TimeInterval.OneDay, new DateTime(2000, 1, 1), discharges),
+            numberOfSegments: 1);
+        model.SetParameterValues(parameters);
+        return (model, parameters);
+    }
+
     #region Default Constructor
 
     /// <summary>
@@ -1036,6 +1056,150 @@ public class RatingCurveTests
         Assert.AreEqual(100, counts.StageCount);
         Assert.AreEqual(100, counts.DischargeCount);
         Assert.AreEqual(40, counts.PairedCount);
+    }
+
+    /// <summary>
+    /// NaN parameters produce the canonical impossible-likelihood sentinel.
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_NaNParameter_ReturnsNegativeInfinity()
+    {
+        var (model, parameters) = MakeContractModel();
+        parameters[0] = double.NaN;
+
+        Assert.IsTrue(double.IsNegativeInfinity(model.DataLogLikelihood(parameters)));
+    }
+
+    /// <summary>
+    /// Pointwise data likelihood contributions sum to the aggregate data likelihood.
+    /// </summary>
+    [TestMethod]
+    public void PointwiseDataLogLikelihood_SumsToAggregate()
+    {
+        var (model, parameters) = MakeContractModel();
+
+        double aggregate = model.DataLogLikelihood(parameters);
+        double pointwise = model.PointwiseDataLogLikelihood(parameters).Sum();
+
+        Assert.AreEqual(aggregate, pointwise, 1e-10);
+    }
+
+    /// <summary>
+    /// Pointwise priors include every parameter prior and the optional Jeffreys scale prior.
+    /// </summary>
+    [TestMethod]
+    public void PointwisePriorLogLikelihood_IncludesAllComponents()
+    {
+        var (model, parameters) = MakeContractModel();
+        model.UseJeffreysRuleForScale = true;
+
+        var components = model.PointwisePriorLogLikelihood(parameters);
+
+        Assert.AreEqual(model.NumberOfParameters + 1, components.Count);
+        Assert.AreEqual(model.PriorLogLikelihood(parameters), components.Sum(item => item.LogLikelihood), 1e-10);
+    }
+
+    /// <summary>
+    /// Fitted values contain one entry per aligned observation.
+    /// </summary>
+    [TestMethod]
+    public void FittedValues_ReturnsAlignedObservationCount()
+    {
+        var (model, parameters) = MakeContractModel();
+
+        Assert.AreEqual(model.GetDataAlignmentCounts().PairedCount, model.FittedValues(parameters).Length);
+    }
+
+    /// <summary>
+    /// Rating tables have the requested number of rows and the stage/discharge columns.
+    /// </summary>
+    [TestMethod]
+    public void GenerateRatingTable_ReturnsRequestedDimensions()
+    {
+        var (model, parameters) = MakeContractModel();
+
+        double[,] table = model.GenerateRatingTable(parameters, 1.0, 10.0, 50);
+
+        Assert.AreEqual(50, table.GetLength(0));
+        Assert.AreEqual(2, table.GetLength(1));
+    }
+
+    /// <summary>
+    /// A valid one-segment rating table increases in both stage and discharge.
+    /// </summary>
+    [TestMethod]
+    public void GenerateRatingTable_IsMonotone()
+    {
+        var (model, parameters) = MakeContractModel();
+        double[,] table = model.GenerateRatingTable(parameters, 1.0, 10.0, 50);
+
+        for (int row = 1; row < table.GetLength(0); row++)
+        {
+            Assert.IsTrue(table[row, 0] > table[row - 1, 0]);
+            Assert.IsTrue(table[row, 1] > table[row - 1, 1]);
+        }
+    }
+
+    /// <summary>
+    /// Validation rejects a nonpositive aligned discharge.
+    /// </summary>
+    [TestMethod]
+    public void Validate_NonPositiveDischarge_IsInvalid()
+    {
+        var (model, _) = MakeContractModel();
+        model.DischargeData[0] = new SeriesOrdinate<DateTime, double>(model.DischargeData[0].Index, 0.0);
+
+        var validation = model.Validate();
+
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message => message.Contains("positive")));
+    }
+
+    /// <summary>
+    /// Cloning detaches parameters from the source model.
+    /// </summary>
+    [TestMethod]
+    public void Clone_CreatesIndependentParameters()
+    {
+        var (model, parameters) = MakeContractModel();
+        var clone = (RMC.BestFit.Models.RatingCurve)model.Clone();
+
+        model.Parameters[0].Value = -999.0;
+
+        Assert.AreEqual(parameters[0], clone.Parameters[0].Value, 1e-10);
+    }
+
+    /// <summary>
+    /// XML serialization emits the rating-curve root and segment-count attribute.
+    /// </summary>
+    [TestMethod]
+    public void ToXElement_ContainsRatingCurveConfiguration()
+    {
+        var (model, _) = MakeContractModel();
+
+        var element = model.ToXElement();
+
+        Assert.AreEqual(nameof(RMC.BestFit.Models.RatingCurve), element.Name.LocalName);
+        Assert.IsNotNull(element.Attribute(nameof(RMC.BestFit.Models.RatingCurve.NumberOfSegments)));
+    }
+
+    /// <summary>
+    /// XML round-trip preserves configuration and parameter values without invoking estimation.
+    /// </summary>
+    [TestMethod]
+    public void XmlRoundTrip_PreservesConfigurationAndParameters()
+    {
+        var (model, parameters) = MakeContractModel();
+        model.UseJeffreysRuleForScale = false;
+
+        var restored = new RMC.BestFit.Models.RatingCurve(
+            model.StageData,
+            model.DischargeData,
+            model.ToXElement());
+
+        Assert.AreEqual(model.NumberOfSegments, restored.NumberOfSegments);
+        Assert.AreEqual(model.UseJeffreysRuleForScale, restored.UseJeffreysRuleForScale);
+        CollectionAssert.AreEqual(parameters, restored.Parameters.Select(parameter => parameter.Value).ToArray());
     }
 
     #endregion

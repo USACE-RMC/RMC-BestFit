@@ -19,7 +19,7 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// methods require no R or Python runtime.
 /// </remarks>
 [TestClass]
-public class PsisLooOracleTests
+public class PsisLooOracleVerificationTests
 {
     /// <summary>
     /// Gets or sets the MSTest context used to record external-parity finding values.
@@ -353,33 +353,6 @@ public class PsisLooOracleTests
         StringAssert.StartsWith(restored.GetReliabilitySummary(), "CAUTION:");
     }
 
-    /// <summary>
-    /// Verifies default WAIC and PSIS-LOO completion evaluates the pointwise model once per draw.
-    /// </summary>
-    [TestMethod]
-    public void DefaultInformationCriteria_EvaluatePointwiseLikelihoodOnce()
-    {
-        var fixture = CreateCountingFixture();
-
-        Assert.AreEqual(fixture.DrawCount, fixture.Model.PointwiseCallCount);
-        Assert.AreEqual(fixture.DrawCount + 1, fixture.Model.DataCallCount);
-        Assert.AreEqual(0, fixture.Model.ComponentCallCount);
-    }
-
-    /// <summary>
-    /// Verifies influence diagnostics reuse cached ELPD and Pareto-k summaries.
-    /// </summary>
-    [TestMethod]
-    public void InfluenceDiagnostics_ReuseCachedPointwiseLikelihood()
-    {
-        var fixture = CreateCountingFixture();
-
-        InfluenceDiagnostics diagnostics = fixture.Analysis.ComputeInfluenceDiagnostics();
-
-        Assert.AreEqual(fixture.ObservationCount, diagnostics.Count);
-        Assert.AreEqual(fixture.DrawCount, fixture.Model.PointwiseCallCount);
-        Assert.AreEqual(1, fixture.Model.ComponentCallCount);
-    }
     /// <summary>
     /// Creates the deterministic Normal model and fixed posterior results shared with R.
     /// </summary>

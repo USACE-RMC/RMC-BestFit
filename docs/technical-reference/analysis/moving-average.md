@@ -106,7 +106,7 @@ The example treats the series as an already detrended anomaly. For raw streamflo
 
 The model assumes regular spacing, no missing times, Gaussian homoscedastic innovations on the fitted scale, fixed parameters, and an error-free response. It does not model seasonal MA factors, state-dependent variance, intervention effects, or exact initial-state uncertainty.
 
-Implementation: `Models/TimeSeries/MovingAverage.cs`; orchestration: `Analyses/TimeSeries/MAAnalysis.cs`. Fast tests cover API behavior and deterministic calculations. Verification source compares conditional behavior and recovery under `RMC.BestFit.Verification/TimeSeriesModels/MovingAverageTests.cs`; it was not run in this program.
+Implementation: `Models/TimeSeries/MovingAverage.cs`; orchestration: `Analyses/TimeSeries/MAAnalysis.cs`. Fast tests cover API behavior and deterministic calculations. Recovery verification resides under `RMC.BestFit.Verification/TimeSeriesModels/MovingAverageMLERecoveryTests.cs`; it was not run in this program.
 
 ## References
 

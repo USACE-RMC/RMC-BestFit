@@ -17,18 +17,35 @@ Fast behavior, validation, serialization, property, state, event, exception, and
 
 Four legacy assertions were not retained: a probability-ordinate mutation test contradicted the established no-refit contract; generic large-sample and distribution-success counts had no oracle; and the outlier smoke test reproduced TR-010 (IsEstimated true with zero successful candidates). TR-010 is fixed, and `FittingAnalysisRegressionTests` now covers all-candidate failure and partial success.
 
-## Remaining audit
+## Comprehensive cleanup - 4 August 2026
 
-The following mixed files remain a method-level ownership backlog:
+Every C# source file in `RMC.BestFit.Verification` was reviewed at method level against the fast core tests. The cleanup reduced Verification from 1,196 to 435 methods and added 35 missing deterministic contracts to `RMC.BestFit.Tests`. The 761 methods removed from Verification were duplicate unit coverage, estimator smoke checks without an independent oracle, or assertions already subsumed by stronger fast or verification evidence.
 
-| Area | Mixed files |
+| Area | Original Verification methods | Retained Verification methods | Added fast contracts | Removed from Verification |
+|---|---:|---:|---:|---:|
+| Bivariate | 41 | 22 | 2 | 19 |
+| Distribution fitting | 45 | 45 | 0 | 0 |
+| Model estimation | 181 | 61 | 21 | 120 |
+| Rating curve | 117 | 20 | 10 | 97 |
+| Spatial extremes | 205 | 9 | 2 | 196 |
+| Time series | 387 | 80 | 0 | 307 |
+| Univariate and Bulletin 17C | 220 | 198 | 0 | 22 |
+| **Total** | **1,196** | **435** | **35** | **761** |
+
+Four files were removed in full: `Bivariate/BivariateAnalysisTests.cs`, `Bivariate/BivariateDistributionTests.cs`, `ModelEstimation/FitVarianceInfluenceTests.cs`, and `Univariate/UnivariateDistributionTests.cs`. Mixed files were replaced by recovery- or oracle-specific classes for time-series models, rating curves, spatial GEV, Bayesian analysis, GMM, MAP, Profile Q, MCMC diagnostics, PSIS-LOO, and Log10-Normal influence. The 296 exact duplicates between time-series model and analysis suites were removed together with transform, constructor, property, and covariate-extension unit checks. No mixed-file ownership backlog remains.
+
+The fast additions use small inline fixtures and do not reference `TestData.cs` or `Datasets/`. They cover cancellation and validation, RatingCurve calculations and XML contracts, spatial large-matrix/cancellation behavior, PSIS caching, GMM state and guard behavior, and MAP reset/argument guards. Twelve candidate moves were not duplicated because stronger semantic fast tests already existed; three ineffective fresh-state assertions were deleted rather than preserved.
+
+| Affected Verification source group | Final disposition |
 |---|---|
-| Model estimation | `GeneralizedMethodOfMomentsTests.cs`, `MaximumAPosterioriTests.cs` |
-| Rating curve | `RatingCurveTests.cs`, `RatingCurveAnalysisTests.cs` |
-| Time series | Model and analysis test files containing both constructors/properties and estimator recovery |
-| Bivariate and spatial | Files containing both DTO/state checks and fitted-model recovery |
-
-The audit is intentionally marked **in progress**. No remaining mixed file is represented as verification-grade until its methods have been classified and moved. This repository-hygiene backlog does not reopen the claim-specific scientific evidence that closed Phases 1 and 2.
+| `BivariateAnalysisTests`, `BivariateDistributionTests` | Removed; two missing cancellation/validation contracts added fast and the remaining behavior was already covered |
+| `BivariateDistributionMLETests` | Retained 12 MPL/IFM parameter-recovery methods; removed the missing-plotting-position finite-result smoke method |
+| Bayesian, GMM, MAP, and Profile Q mixed files | Replaced by `*RecoveryTests`; deterministic state, validation, clone, default, and argument guards moved or consolidated fast |
+| PSIS-LOO, MCMC diagnostics, and Log10-Normal influence mixed files | Replaced by `*VerificationTests`; caching/report/obsolete-API contracts moved or consolidated fast |
+| Rating-curve model and analysis files | Replaced by 10 MLE and 10 Bayesian recovery methods; 10 missing model contracts added fast |
+| Spatial GEV model and analysis files | Replaced by two MLE and seven Bayesian recovery methods; large-matrix and cancellation contracts added fast |
+| Time-series model files | Replaced by 49 MLE/R-recovery methods; 307 unit, transform-smoke, covariate-extension, and exact analysis-suite duplicate methods removed |
+| `UnivariateDistributionTests` and `FitVarianceInfluenceTests` | Removed because fast distribution/diagnostic suites and stronger source-backed verification already cover the contracts |
 
 ## External model-comparison oracles and PSIS correction - 25-26 July 2026
 
@@ -36,12 +53,12 @@ The audit is intentionally marked **in progress**. No remaining mixed file is re
 |---|---|---|
 | `ModelEstimation/InformationCriterionOracleTests.cs::DIC_MatchesRBayesianToolsOracle` | R `BayesianTools::DIC` 0.1.9 | Passed - exact focused method |
 | `ModelEstimation/InformationCriterionOracleTests.cs::WAIC_MatchesRLooOracle` | R `loo::waic` 2.10.0 | Passed - exact focused method |
-| `ModelEstimation/PsisLooOracleTests.cs::RlooOracle_InternalIdentitiesAreConsistent` | R `loo::psis` and `loo::loo` 2.10.0 | Passed - exact focused method |
-| `ModelEstimation/PsisLooOracleTests.cs::PSISLOO_MatchesRLooOracle` | R `loo::loo` 2.10.0 | Passed - aggregate, pointwise, Pareto-k, and smoothed-weight parity |
-| `ModelEstimation/PsisLooOracleTests.cs::PsisTailRegimes_MatchRLooOracle` | R `loo::psis` 2.10.0, including bounded through nonfinite-mean and degenerate tails | Passed - every weight, Pareto k, and effective sample size |
-| `ModelEstimation/PsisLooOracleTests.cs::ParetoInfluence_UsesRloo210DiagnosticThreshold` | R `loo` 2.10.0 sample-size diagnostic threshold | Passed - classification and XML round-trip |
-| `ModelEstimation/PsisLooOracleTests.cs::DefaultInformationCriteria_EvaluatePointwiseLikelihoodOnce` | Deterministic call-count model | Passed - one evaluation per retained draw |
-| `ModelEstimation/PsisLooOracleTests.cs::InfluenceDiagnostics_ReuseCachedPointwiseLikelihood` | Deterministic call-count model | Passed - influence reuses pointwise LOO cache |
+| `ModelEstimation/PsisLooOracleVerificationTests.cs::RlooOracle_InternalIdentitiesAreConsistent` | R `loo::psis` and `loo::loo` 2.10.0 | Passed - exact focused method |
+| `ModelEstimation/PsisLooOracleVerificationTests.cs::PSISLOO_MatchesRLooOracle` | R `loo::loo` 2.10.0 | Passed - aggregate, pointwise, Pareto-k, and smoothed-weight parity |
+| `ModelEstimation/PsisLooOracleVerificationTests.cs::PsisTailRegimes_MatchRLooOracle` | R `loo::psis` 2.10.0, including bounded through nonfinite-mean and degenerate tails | Passed - every weight, Pareto k, and effective sample size |
+| `ModelEstimation/PsisLooOracleVerificationTests.cs::ParetoInfluence_UsesRloo210DiagnosticThreshold` | R `loo` 2.10.0 sample-size diagnostic threshold | Passed - classification and XML round-trip |
+| `ModelEstimation/PsisCachingContractTests.cs::DefaultInformationCriteria_EvaluatePointwiseLikelihoodOnce` | Deterministic call-count model in the fast core project | Passed - one evaluation per retained draw |
+| `ModelEstimation/PsisCachingContractTests.cs::InfluenceDiagnostics_ReuseCachedPointwiseLikelihood` | Deterministic call-count model in the fast core project | Passed - influence reuses pointwise LOO cache |
 
 The DIC/WAIC methods consume the committed [model-comparison oracle](../../verification/data/model-estimation/model-comparison-oracle.json). The PSIS/LOO methods consume the committed [PSIS-LOO oracle](../../verification/data/model-estimation/psis-loo-oracle.json). R is used only to generate the versioned artifacts and is not required when the C# verification tests run.
 
@@ -70,9 +87,9 @@ The profile tests consume the committed [profile-likelihood oracle](../../verifi
 | `GmmSpecificationFindingTests.OveridentifiedOneStep_MatchesRGmmFixedWeightOracle` | R `gmm` 1.9.1 fixed positive-definite weighting matrix | Passed - exact focused parameter/objective parity and `NaN` Hansen scope |
 | `GmmSpecificationFindingTests.OveridentifiedTwoStepSandwichCovariance_MatchesRGmmOracle` | R `gmm` 1.9.1 `vcov()` plus analytical centered IID sandwich | Passed - exact focused covariance parity |
 | `GmmSpecificationFindingTests.OveridentifiedFixedWeightSandwichCovariance_MatchesRGmmOracle` | R `gmm` 1.9.1 arbitrary-fixed-weight IID sandwich plus analytical reconstruction | Passed - exact focused covariance parity |
-| `Log10NormalInfluenceLeverageFindingTests.GmmCookInfluence_LegacyPsisAdapterIsObsoleteCompatibilityOnly` | Obsolete attribute plus preserved Cook-value-to-legacy-DTO mapping | Passed - exact focused compatibility method |
+| `GeneralizedMethodOfMomentsExpandedTests.LegacyInfluenceDiagnosticsOverloads_AreObsoleteCompatibilityApis` | Fast reflection contract for the obsolete compatibility overloads | Passed - fast core project |
 
-The first four methods consume the committed [GMM specification oracle](../../verification/data/model-estimation/gmm-specification-oracle.json), generated from the locked R environment. R is not required at C# runtime. Each method was run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the full Verification project was not executed.
+The first four methods consume the committed [GMM specification oracle](../../verification/data/model-estimation/gmm-specification-oracle.json), generated from the locked R environment. R is not required at C# runtime. Those four methods were run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the compatibility contract runs in the fast core project. The full Verification project was not executed.
 
 ## Numerics MCMC verification - 26 July 2026
 
@@ -88,13 +105,13 @@ The first four methods consume the committed [GMM specification oracle](../../ve
 | `Test_MCMCDiagnostics.Test_ModernDiagnostics_MatchRPosteriorReference` | Numerics | R `posterior` 1.7.0 rank-normalized R-hat and conservative bulk/tail ESS | Passed - focused .NET 10 method |
 | `Test_MCMCDiagnostics.Test_GelmanRubin_FoldedRanksDetectScaleMismatch` | Numerics | R `posterior` 1.7.0 folded rank-normalized R-hat | Passed - focused .NET 10 method |
 | `Test_MCMCDiagnostics.Test_ModernDiagnostics_EdgeCases` | Numerics | Constants, insufficient input, and chain permutation | Passed - focused .NET 10 method |
-| `NumericsMcmcFindingTests.RankNormalizedRhat_MatchesRPosteriorOracle` | BestFit Verification | Committed R `posterior` 1.7.0 oracle across nine fixtures | Passed - exact focused method |
-| `NumericsMcmcFindingTests.ConservativeEss_MatchesRPosteriorBulkAndTailOracle` | BestFit Verification | Committed R bulk/lower-tail/upper-tail ESS and conservative minimum | Passed - exact focused method |
-| `NumericsMcmcFindingTests.Arwmh_BestFitWiringRecordsEveryRealizedStateInAdaptiveCovariance` | BestFit Verification | Production sampler setup and complete per-chain covariance counts | Passed - exact focused method |
-| `NumericsMcmcFindingTests.Nuts_BestFitResultsUseHamiltonianAcceptanceWithoutDetailedDiagnostics` | BestFit Verification | Generic sampler acceptance, Hamiltonian result transfer, and acceptance-only BestFit report | Passed - exact focused method |
-| `NumericsMcmcFindingTests.Nuts_BestFitNumericalGradientMatchesPosteriorGradient` | BestFit Verification | Bound-aware finite differences of the complete coupled-prior posterior | Passed - exact focused method |
+| `McmcNumericalVerificationTests.RankNormalizedRhat_MatchesRPosteriorOracle` | BestFit Verification | Committed R `posterior` 1.7.0 oracle across nine fixtures | Passed - exact focused method |
+| `McmcNumericalVerificationTests.ConservativeEss_MatchesRPosteriorBulkAndTailOracle` | BestFit Verification | Committed R bulk/lower-tail/upper-tail ESS and conservative minimum | Passed - exact focused method |
+| `McmcNumericalVerificationTests.Arwmh_BestFitWiringRecordsEveryRealizedStateInAdaptiveCovariance` | BestFit Verification | Production sampler setup and complete per-chain covariance counts | Passed - exact focused method |
+| `BayesianAnalysisReportTests.GenerateReport_NutsAcceptance_ReportsHamiltonianRatesOnly` | BestFit fast core tests | Hamiltonian result transfer and acceptance-only BestFit report | Passed - fast core project |
+| `McmcNumericalVerificationTests.Nuts_BestFitNumericalGradientMatchesPosteriorGradient` | BestFit Verification | Bound-aware finite differences of the complete coupled-prior posterior | Passed - exact focused method |
 
-The BestFit methods were run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the full Verification project was not executed. The Numerics methods passed by exact fully qualified filter on the .NET 10 target, and the normalized complete Numerics .NET 10 Release project records all 2,024 tests passing with zero failures. The TR-029 BestFit methods consume the committed [MCMC diagnostics oracle](../../verification/data/model-estimation/mcmc-diagnostics-oracle.json), so C# tests require no R or Python runtime. Fast report tests `GenerateReport_Rhat1005_PassesModernThreshold` and `GenerateReport_Rhat102_WarnsAtModernThreshold` verify the 1.01 readiness rule without changing the concise `R-hat` label.
+The four BestFit Verification methods were run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the report contract runs in the fast core project, and the full Verification project was not executed. The Numerics methods passed by exact fully qualified filter on the .NET 10 target, and the normalized complete Numerics .NET 10 Release project records all 2,024 tests passing with zero failures. The TR-029 BestFit methods consume the committed [MCMC diagnostics oracle](../../verification/data/model-estimation/mcmc-diagnostics-oracle.json), so C# tests require no R or Python runtime. Fast report tests `GenerateReport_Rhat1005_PassesModernThreshold` and `GenerateReport_Rhat102_WarnsAtModernThreshold` verify the 1.01 readiness rule without changing the concise `R-hat` label.
 
 ## TR-018/TR-019 Bulletin 17C bootstrap refit reliability - 28 July 2026
 

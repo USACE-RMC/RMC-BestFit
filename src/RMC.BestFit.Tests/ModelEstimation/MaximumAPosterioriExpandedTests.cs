@@ -31,6 +31,19 @@ public class MaximumAPosterioriExpandedTests
         return new UnivariateDistribution(df, UnivariateDistributionType.Normal);
     }
 
+    /// <summary>
+    /// Marks a fixture estimated through its private state setter so argument and
+    /// reset contracts can be tested without running an optimizer.
+    /// </summary>
+    /// <param name="estimator">The estimator to mark.</param>
+    private static void MarkEstimated(MaximumAPosteriori estimator)
+    {
+        var property = typeof(MaximumAPosteriori).GetProperty(nameof(MaximumAPosteriori.IsEstimated));
+        Assert.IsNotNull(property);
+        property.SetValue(estimator, true);
+        Assert.IsTrue(estimator.IsEstimated);
+    }
+
     #region Property / pre-estimation state
 
     /// <summary>
@@ -235,6 +248,50 @@ public class MaximumAPosterioriExpandedTests
         // Act & Assert
         Assert.ThrowsException<InvalidOperationException>(
             () => map.ParameterConfidenceIntervals());
+    }
+
+    /// <summary>Changing optimizer method clears previously estimated state.</summary>
+    [TestMethod]
+    public void OptimizerMethod_Change_ClearsEstimatedState()
+    {
+        var map = new MaximumAPosteriori(MakeNormalModel());
+        MarkEstimated(map);
+
+        map.OptimizerMethod = OptimizationMethod.NelderMead;
+
+        Assert.IsFalse(map.IsEstimated);
+        Assert.AreEqual(OptimizationStatus.None, map.Status);
+    }
+
+    /// <summary>Profile likelihood rejects fewer than two bins after state validation.</summary>
+    [TestMethod]
+    public void ProfileLikelihood_InvalidBins_ThrowsArgumentOutOfRangeException()
+    {
+        var map = new MaximumAPosteriori(MakeNormalModel());
+        MarkEstimated(map);
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => map.ProfileLikelihood(1));
+    }
+
+    /// <summary>Profile confidence intervals reject alpha outside the open unit interval.</summary>
+    [TestMethod]
+    public void ParameterConfidenceIntervals_InvalidAlpha_ThrowsArgumentOutOfRangeException()
+    {
+        var map = new MaximumAPosteriori(MakeNormalModel());
+        MarkEstimated(map);
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => map.ParameterConfidenceIntervals(0d));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => map.ParameterConfidenceIntervals(1d));
+    }
+
+    /// <summary>BIC rejects nonpositive sample size after state validation.</summary>
+    [TestMethod]
+    public void GetBIC_InvalidSampleSize_ThrowsArgumentOutOfRangeException()
+    {
+        var map = new MaximumAPosteriori(MakeNormalModel());
+        MarkEstimated(map);
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => map.GetBIC(0));
     }
 
     #endregion

@@ -15,7 +15,7 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// oracle; after an approved production correction, it is replaced by a direct parity assertion.
 /// </remarks>
 [TestClass]
-public class Log10NormalInfluenceLeverageFindingTests
+public class Log10NormalInfluenceVerificationTests
 {
     private static readonly double[] SymmetricLog10Values =
         [1.1d, 1.4d, 1.7d, 2.0d, 2.3d, 2.6d, 2.9d];
@@ -137,44 +137,6 @@ public class Log10NormalInfluenceLeverageFindingTests
 
         Assert.AreEqual(outlierIndex, exactMostInfluential, "The analytical deletion oracle must identify the injected outlier.");
         Assert.AreEqual(outlierIndex, reportedMostInfluential, "The current GMM diagnostic must retain the correct influence ranking.");
-    }
-
-    /// <summary>
-    /// Confirms that the legacy PSIS-shaped GMM adapter is obsolete while preserving compatibility.
-    /// </summary>
-    [TestMethod]
-    public void GmmCookInfluence_LegacyPsisAdapterIsObsoleteCompatibilityOnly()
-    {
-        var gmm = FitGmm(SymmetricLog10Values);
-        double[] cooksDistance = gmm.GetCooksDistance();
-        var legacyMethod = typeof(GeneralizedMethodOfMoments).GetMethod(
-            "GetInfluenceDiagnostics",
-            Type.EmptyTypes);
-        Assert.IsNotNull(legacyMethod);
-        var obsolete = legacyMethod.GetCustomAttributes(typeof(ObsoleteAttribute), inherit: false)
-            .Cast<ObsoleteAttribute>()
-            .SingleOrDefault();
-        Assert.IsNotNull(obsolete, "The misleading legacy adapter must not remain a supported API path.");
-        StringAssert.Contains(obsolete.Message, "not a Pareto-k diagnostic");
-
-        var diagnostics = (InfluenceDiagnostics?)legacyMethod.Invoke(gmm, null);
-        Assert.IsNotNull(diagnostics, "The obsolete adapter must remain callable for compatibility.");
-
-        Assert.AreEqual(cooksDistance.Length, diagnostics.Count, "GMM diagnostic observation count mismatch.");
-        for (int i = 0; i < cooksDistance.Length; i++)
-        {
-            Assert.AreEqual(
-                cooksDistance[i],
-                diagnostics.Observations[i].ParetoK,
-                1E-12d,
-                $"Observation {i} does not reproduce the traced Cook-to-Pareto mapping.");
-            Assert.IsTrue(double.IsNaN(diagnostics.Observations[i].ElpdLoo), "GMM does not compute pointwise PSIS ELPD.");
-        }
-
-        StringAssert.Contains(
-            diagnostics.GetReliabilitySummary(),
-            "PSIS-LOO",
-            "The retained compatibility object must preserve its historical serialized behavior.");
     }
 
     /// <summary>

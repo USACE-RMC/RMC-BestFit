@@ -953,46 +953,4 @@ public class BivariateDistributionMLETests
         // Assert that the fitted parameters are close to the true parameters
         Assert.AreEqual(0.7871479, bivariateDist.Copula.Theta, 1E-3, "Copula dependency parameter is incorrect.");
     }
-
-
-    /// <summary>
-    /// Verifies pseudo-likelihood MLE initializes absent plotting positions and returns a finite estimate.
-    /// </summary>
-    [TestMethod]
-    public void Test_Normal_MPL_MissingPlottingPositions_ReturnsFiniteEstimate()
-    {
-        const int sampleSize = 80;
-        double[] dataX = new Numerics.Distributions.Normal(100.0, 15.0)
-            .GenerateRandomValues(sampleSize, 8675309);
-        double[] noise = new Numerics.Distributions.Normal(0.0, 10.0)
-            .GenerateRandomValues(sampleSize, 314159);
-        double[] dataY = dataX.Select((value, index) =>
-            50.0 + (0.6 * value) + noise[index]).ToArray();
-
-        var frameX = new DataFrame { ExactSeries = new ExactSeries(dataX) };
-        var frameY = new DataFrame { ExactSeries = new ExactSeries(dataY) };
-        Assert.IsTrue(frameX.ExactSeries.All(data => data.PlottingPosition == 0.0));
-        Assert.IsTrue(frameY.ExactSeries.All(data => data.PlottingPosition == 0.0));
-
-        var marginalX = new UnivariateDistribution(
-            frameX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var marginalY = new UnivariateDistribution(
-            frameY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var bivariate = new BivariateDistribution(marginalX, marginalY, CopulaType.Normal)
-        {
-            CopulaEstimationMethod = CopulaEstimationMethod.PseudoLikelihood,
-        };
-
-        var mle = new MaximumLikelihood(bivariate, OptimizationMethod.Brent);
-        Assert.IsTrue(mle.Estimate());
-        bivariate.SetParameterValues(mle.BestParameterSet.Values);
-
-        Assert.IsTrue(frameX.ExactSeries.All(data =>
-            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
-        Assert.IsTrue(frameY.ExactSeries.All(data =>
-            data.PlottingPositionComplement > 0.0 && data.PlottingPositionComplement < 1.0));
-        Assert.IsTrue(double.IsFinite(mle.BestParameterSet.Values[0]));
-        Assert.IsTrue(double.IsFinite(
-            bivariate.DataLogLikelihood(mle.BestParameterSet.Values)));
-    }
 }

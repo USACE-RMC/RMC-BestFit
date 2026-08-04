@@ -161,7 +161,7 @@ Focused Numerics methods:
 
 Focused BestFit method:
 
-- `NumericsMcmcFindingTests.Arwmh_BestFitWiringRecordsEveryRealizedStateInAdaptiveCovariance`
+- `McmcNumericalVerificationTests.Arwmh_BestFitWiringRecordsEveryRealizedStateInAdaptiveCovariance`
 
 ### No-U-Turn Sampler diagnostics (TR-030)
 
@@ -177,10 +177,10 @@ Focused Numerics methods:
 - `Test_MCMCSamplerDiagnostics.NUTS_EnergyBayesianFractionOfMissingInformationMatchesStanFormula`
 - `Test_MCMCInitialization.NutsInitializationUsesConfiguredGradientAndReducesLikelihoodWork`
 
-Focused BestFit methods:
+Focused BestFit checks:
 
-- `NumericsMcmcFindingTests.Nuts_BestFitResultsUseHamiltonianAcceptanceWithoutDetailedDiagnostics`
-- `NumericsMcmcFindingTests.Nuts_BestFitNumericalGradientMatchesPosteriorGradient`
+- `BayesianAnalysisReportTests.GenerateReport_NutsAcceptance_ReportsHamiltonianRatesOnly` (fast core contract)
+- `McmcNumericalVerificationTests.Nuts_BestFitNumericalGradientMatchesPosteriorGradient`
 
 The historical NUTS gradient-routing issue was narrower than the reporting defect: the reasonable-step-size initialization heuristic once bypassed a caller-supplied analytic gradient. Numerics commit `33dc1af` corrected that route, and its permanent unit regression passes. BestFit intentionally supplies no analytic gradient; its focused coupled-prior method confirms the default bounded finite differences differentiate the complete posterior passed by `BayesianAnalysis.SetUpSampler()`. All C# methods use deterministic inline targets and require no R or Python runtime.
 
@@ -196,7 +196,7 @@ Focused Numerics methods:
 - `Test_MCMCDiagnostics.Test_GelmanRubin_FoldedRanksDetectScaleMismatch`
 - `Test_MCMCDiagnostics.Test_ModernDiagnostics_EdgeCases`
 
-Focused BestFit methods `NumericsMcmcFindingTests.RankNormalizedRhat_MatchesRPosteriorOracle` and `ConservativeEss_MatchesRPosteriorBulkAndTailOracle` establish exact artifact parity. Fast report tests prove that R-hat 1.005 passes and 1.02 warns under the 1.01 readiness threshold. Public methods, result properties, and serialization signatures are unchanged; single-chain R-hat and invalid, constant, or insufficient diagnostic input remain `NaN`.
+Focused BestFit methods `McmcNumericalVerificationTests.RankNormalizedRhat_MatchesRPosteriorOracle` and `ConservativeEss_MatchesRPosteriorBulkAndTailOracle` establish exact artifact parity. Fast report tests prove that R-hat 1.005 passes and 1.02 warns under the 1.01 readiness threshold. Public methods, result properties, and serialization signatures are unchanged; single-chain R-hat and invalid, constant, or insufficient diagnostic input remain `NaN`.
 
 Sources: [Haario et al. Adaptive Metropolis paper](https://projecteuclid.org/journals/bernoulli/volume-7/issue-2/An-adaptive-Metropolis-algorithm/bj/1080222083.full), [BayesianTools sampler source](https://github.com/florianhartig/BayesianTools/blob/master/BayesianTools/R/mcmcRun.R), [pymcmcstat sampler documentation](https://pymcmcstat.readthedocs.io/en/latest/pymcmcstat.samplers.html), [Hoffman-Gelman NUTS paper](https://jmlr.org/papers/v15/hoffman14a.html), [PyMC NUTS diagnostics](https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.NUTS.html), [BlackJAX `NUTSInfo`](https://blackjax-devs.github.io/blackjax/autoapi/blackjax/mcmc/nuts/index.html), [RStan HMC diagnostics](https://mc-stan.org/rstan/reference/check_hmc_diagnostics.html), [CmdStan `diagnose`](https://mc-stan.org/docs/2_39/cmdstan-guide/diagnose_utility.html), [R `posterior` R-hat](https://mc-stan.org/posterior/reference/rhat.html), [R `posterior` bulk ESS](https://mc-stan.org/posterior/reference/ess_bulk.html), and [R `posterior` tail ESS](https://mc-stan.org/posterior/reference/ess_tail.html).
 
@@ -299,7 +299,7 @@ $$
 
 The audited call sites are `MaximumAPosteriori`, `UnivariateAnalysis`, `PointProcessAnalysis`, `MixtureAnalysis`, `CompetingRiskAnalysis`, `BivariateAnalysis`, `RatingCurveAnalysis`, `ARAnalysis`, `MAAnalysis`, `ARIMAAnalysis`, `ARIMAXAnalysis`, and `SpatialGEVAnalysis`. Every site calls `DataLogLikelihood` at the stored MAP; none passes `LogLikelihood` to the AIC/BIC helpers.
 
-The focused methods `MaximumAPosterioriTests.Test_GetAIC_ReturnsFiniteValue` and `Test_GetBIC_ReturnsFiniteValue` use bounded uniform priors with nonzero normalization constants. Each test proves that the reported criterion equals the data-likelihood formula in (ME.14) and differs from the value obtained from the posterior kernel. Both methods passed through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`.
+The focused methods `MaximumAPosterioriRecoveryTests.Test_GetAIC_ReturnsFiniteValue` and `Test_GetBIC_ReturnsFiniteValue` use bounded uniform priors with nonzero normalization constants. Each test proves that the reported criterion equals the data-likelihood formula in (ME.14) and differs from the value obtained from the posterior kernel. Both methods passed through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`.
 
 Spatial GEV uses each nonempty row/year as one multivariate BIC observation block. Its criteria retain the documented spatial likelihood, latent-error, missing-site, weighting, and dependence limitations. Bulletin 17C separately reports pseudo-AIC/pseudo-BIC by evaluating the LP3 data likelihood at its GMM solution; those values are not included in the Bayesian MAP claim above.
 

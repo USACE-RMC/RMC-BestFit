@@ -10,11 +10,11 @@ The active handoff and batching plan is maintained in [Verification Finalization
 
 | Program area | Status | Evidence |
 |---|---|---|
-| Repository integration | Operational - validated 3 August 2026 | Strict Debug XML build and Verification compilation: 0 warnings/errors; Release solution excludes Verification; test-ownership migration remains an active hygiene backlog |
+| Repository integration | Operational - validated 4 August 2026 | Strict Debug XML build and Verification compilation: 0 warnings/errors; Release solution excludes Verification; the method-level ownership cleanup is complete |
 | Public API baseline | Captured | Exact exported type/member/enum baseline enforced by `PublicApiCompatibilityTests` |
-| Fast regression gate | Passed 3 August 2026 | Core 3,134; UI 571; App 428; Numerics 2,072 on each of net481/net8/net9/net10; 0 failures |
+| Fast regression gate | Passed 4 August 2026 | Core 3,175; UI 571; App 428; API 496; 0 failures |
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
-| Test ownership audit | In progress | Initial duplicate removals and FittingAnalysis split are recorded in [Test Inventory](test-inventory.md) |
+| Test ownership audit | Complete - 4 August 2026 | All 84 Verification C# files were reviewed; 435 of 1,196 methods remain, 761 redundant/non-verification methods were removed, and 35 missing deterministic contracts were added to the fast core project. Core line/branch/method coverage increased from 64.73/59.46/86.94% to 66.03/60.43/88.25%. See [Test Inventory](test-inventory.md) |
 | Distribution fitting | Closed - Phase 1 | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. All nine Phase 1 artifact hashes match the manifest. See [Distribution Fitting](distribution-fitting.md) |
 | Model estimation and diagnostics | Closed - Phase 2 | Log10-Normal estimator equivalence, fit/variance/combined influence, and external-package parity for DIC, WAIC, PSIS-LOO, MLE/MAP nuisance profiling, Hansen J, overidentified one-step fitting, fixed-weight/efficient GMM sandwich covariance, and rank-normalized R-hat/bulk-tail ESS passed. TR-023 and TR-032 retain their public signatures; TR-024 through TR-027 and TR-029 through TR-031 and TR-034 are fixed in their approved scopes. TR-028 remains an accepted documented limitation; TR-033 is rejected as a non-defect. All seven Phase 2 artifact hashes match the manifest. See [Model Estimation](model-estimation.md) |
 | Data handling and Bulletin 17C | Closed - Phase 3 | TR-003 documents the accepted grouped-threshold disaggregation and most-recent-time prior reference. All seven formal worked-example GMM methods passed published mean/standard-deviation/skew parity at `1E-3`. Exact-LP3 Cohn scope guards passed fast tests; Cohn value verification is deferred. The 14 ordinary/pivotal reliability cells retain their 13,000 finite outputs with zero retries, substitutions, or exceptions. See [Bulletin 17C Verification](bulletin-17c.md), the [Phase 3 ledger](verification-finalization-plan.md#phase-3---data-handling-and-bulletin-17c), and [Scientific Review Findings](../technical-reference/review-findings.md). |
@@ -25,7 +25,7 @@ The active handoff and batching plan is maintained in [Verification Finalization
 
 ## Evidence rule
 
-A passing build, optimizer convergence, or reproduction of an internal result is not verification. A claim is verified only when its test has an analytical, independently implemented, external-package, or published-result oracle with declared provenance and tolerance.
+A passing build, estimator invocation, optimizer convergence, finite result, result shape, or reproduction of an internal result is not verification. A claim is verified only when its test has an analytical, independently implemented, external-package, published/real-source, recovery, or coverage oracle with declared provenance and tolerance. Deterministic state, validation, serialization, guard, caching, and regression contracts belong in the fast test projects even when they exercise an object restored to an estimated state.
 
 ## Execution rule
 
