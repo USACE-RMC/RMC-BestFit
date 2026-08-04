@@ -523,6 +523,8 @@ namespace RMC.BestFit.Analyses
         /// point-estimate output without rebuilding posterior bands; CredibleIntervalWidth
         /// changes clear derived composite results because the per-realisation matrix of
         /// composite distributions is not cached and the user must rerun explicitly.
+        /// PRNGSeed changes also clear derived results because the seed defines the
+        /// independently randomized cross-child posterior pairing.
         /// All other notifications propagate for UI binding.
         /// </summary>
         private void BayesianAnalysis_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -539,6 +541,11 @@ namespace RMC.BestFit.Analyses
                 RaisePropertyChange(e.PropertyName);
             }
             else if (e.PropertyName == nameof(BayesianAnalysis.CredibleIntervalWidth))
+            {
+                ClearResults();
+                RaisePropertyChange(e.PropertyName);
+            }
+            else if (e.PropertyName == nameof(BayesianAnalysis.PRNGSeed))
             {
                 ClearResults();
                 RaisePropertyChange(e.PropertyName);
@@ -860,9 +867,22 @@ namespace RMC.BestFit.Analyses
 
             await Task.Run(() =>
             {
-                // Get minimum number of realizations across all analyses
-                int realz = Analyses.Min(x => x.UnivariateAnalysis?.BayesianAnalysis?.OutputLength ?? 0);
-                if (realz == 0) return;
+                // Independently randomize the retained posterior index selected from each
+                // separately fitted child. The shared output length is the shortest ACTUAL
+                // retained chain; longer chains contribute a without-replacement subset from
+                // their complete retained range rather than being truncated to a common prefix.
+                var sourceOutputCounts = new int[Analyses.Count];
+                for (int analysisIndex = 0; analysisIndex < Analyses.Count; analysisIndex++)
+                {
+                    sourceOutputCounts[analysisIndex] =
+                        Analyses[analysisIndex].UnivariateAnalysis?.BayesianAnalysis?.Results?.Output?.Count ?? 0;
+                    if (sourceOutputCounts[analysisIndex] <= 0) return;
+                }
+
+                int[][] randomIndexes = PosteriorIndexResampler.CreateRandomIndexes(
+                    sourceOutputCounts,
+                    BayesianAnalysis.PRNGSeed);
+                int realz = randomIndexes[0].Length;
 
                 // Cancellation wiring (mirrors Bulletin17CAnalysis.cs:789-850 pattern):
                 // pass the run's cancellation token via ParallelOptions so the runtime
@@ -890,7 +910,7 @@ namespace RMC.BestFit.Analyses
                         MinimumOfRandomVariables = !IsMaximum,
                         Dependency = Dependency,
                         CorrelationMatrix = CorrelationMatrix!,
-                        XTransform = Transform.Logarithmic,
+                        XTransform = Transform.None,
                         ProbabilityTransform = Transform.NormalZ
                     };
                     ((CompetingRisks)mode).CreateEmpiricalCDF();
@@ -916,14 +936,15 @@ namespace RMC.BestFit.Analyses
                         var uDists = new UnivariateDistributionBase[Analyses.Count];
                         for (int i = 0; i < Analyses.Count; i++)
                         {
-                            uDists[i] = Analyses[i].UnivariateAnalysis!.GetDistribution(idx)!;
+                            uDists[i] = Analyses[i].UnivariateAnalysis!
+                                .GetDistribution(randomIndexes[i][idx])!;
                         }
                         results[idx] = new CompetingRisks(uDists)
                         {
                             MinimumOfRandomVariables = !IsMaximum,
                             Dependency = Dependency,
                             CorrelationMatrix = CorrelationMatrix!,
-                            XTransform = Transform.Logarithmic,
+                            XTransform = Transform.None,
                             ProbabilityTransform = Transform.NormalZ
                         };
                         ((CompetingRisks)results[idx]).CreateEmpiricalCDF();
@@ -948,7 +969,7 @@ namespace RMC.BestFit.Analyses
                     }
                     mode = new Mixture(weights.ToArray(), modeDists.ToArray())
                     {
-                        XTransform = Transform.Logarithmic,
+                        XTransform = Transform.None,
                         ProbabilityTransform = Transform.NormalZ
                     };
                     if (sum < 1)
@@ -968,11 +989,12 @@ namespace RMC.BestFit.Analyses
                         var uDists = new List<UnivariateDistributionBase>();
                         for (int i = 0; i < Analyses.Count; i++)
                         {
-                            uDists.Add(Analyses[i].UnivariateAnalysis!.GetDistribution(idx)!);
+                            uDists.Add(Analyses[i].UnivariateAnalysis!
+                                .GetDistribution(randomIndexes[i][idx])!);
                         }
                         results[idx] = new Mixture(weights.ToArray(), uDists.ToArray())
                         {
-                            XTransform = Transform.Logarithmic,
+                            XTransform = Transform.None,
                             ProbabilityTransform = Transform.NormalZ
                         };
                         if (sum < 1)
@@ -1040,7 +1062,7 @@ namespace RMC.BestFit.Analyses
                     MinimumOfRandomVariables = !IsMaximum,
                     Dependency = Dependency,
                     CorrelationMatrix = CorrelationMatrix!,
-                    XTransform = Transform.Logarithmic,
+                    XTransform = Transform.None,
                     ProbabilityTransform = Transform.NormalZ
                 };
                 cr.CreateEmpiricalCDF();
@@ -1061,7 +1083,7 @@ namespace RMC.BestFit.Analyses
                 }
                 var mix = new Mixture(weights.ToArray(), modeDists.ToArray())
                 {
-                    XTransform = Transform.Logarithmic,
+                    XTransform = Transform.None,
                     ProbabilityTransform = Transform.NormalZ
                 };
                 if (sum < 1)
@@ -1220,6 +1242,12 @@ namespace RMC.BestFit.Analyses
                         break;
                     }
                 }
+            }
+
+            if (BayesianAnalysis.PRNGSeed < 0)
+            {
+                isValid = false;
+                messages.Add("Error: The posterior-resampling PRNG seed must be nonnegative.");
             }
 
             return (isValid, messages);

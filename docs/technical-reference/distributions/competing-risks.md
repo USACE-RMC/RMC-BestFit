@@ -142,11 +142,37 @@ The component variables are not separately observed in this likelihood. If event
 
 The same seed reproduces the same sample within each mode. The independent seed sequence is preserved from the pre-correction implementation. Invalid user matrices fail before simulation rather than producing a downstream null reference, Cholesky failure, or silent independent sample. TR-012 is complete; the four guarded analytical rank/CDF methods and fast contracts are recorded in [Competing-Risks Verification](../../verification/competing-risks.md).
 
+## Recovery Verification
+
+The Phase 4 recovery supplement reproduces eight min/max fixtures from pinned RMC.Numerics
+commit `c361f2864428a98a33d6072ffa9bc11ac360839d` and adds correlated minimum and maximum
+fixtures at latent correlation 0.6. Each population is generated through the BestFit model,
+then fitted by both the production Differential Evolution MLE and `CompetingRiskAnalysis`.
+
+Bayesian recovery deliberately leaves every DEMCzs sampling setting at its production default.
+`CompetingRiskAnalysis` initializes the sampler separately by estimating the posterior mode with
+default Differential Evolution, computing a bounded posterior Hessian, inflating its covariance
+by 1.5, and drawing the complete initial population with the sampler seed. Singular information
+uses a regularized Moore-Penrose covariance only for initialization; it does not convert an
+unavailable public MAP covariance into reportable posterior uncertainty. The best feasible draws
+seed the chains, and initialization failure resets the sampler to its randomized policy. The
+verification asserts both the resolved DEMCzs defaults and retained `UserDefined` initialization,
+making the recovery family secondary evidence for default sampler configuration as well as for
+the combined distribution. Acceptance is based primarily on parent-CDF recovery because aggregate
+minima and maxima do not generally identify every child parameter. Direct parameter gates are
+limited to the contrasting two-Weibull shapes and the separated two-Normal means. All ten MLE
+methods and four of ten Default-DEMCzs methods pass focused execution; six Bayesian findings keep
+the supplement open. See
+[Competing-Risks Verification](../../verification/competing-risks.md) for fixtures, seeds,
+diagnostics, and predeclared tolerances.
+
 ## Assumptions and Limitations
 
 - Equations (1)–(5) require independence; select another dependency mode only with evidence and a valid correlation specification.
 - The block variables must refer to the same time interval and the recorded response must truly be their min or max.
-- BestFit supports one to three component families, all stationary in this model.
+- BestFit supports one to three component families, all stationary in this model. The upper
+  bound is an identifiability guard shared with mixture analysis: aggregate observations do not
+  reliably identify more than three latent component distributions.
 - Dependence is fixed, not inferred jointly with marginal parameters.
 - Numerical differentiation for dependent density values can introduce a likelihood floor or instability in extreme tails.
 - A direct constructor from family types inherits Numerics' minimum default. Always verify **MinimumOfRandomVariables**.
@@ -162,6 +188,7 @@ The same seed reproduces the same sample within each mode. The independent seed 
 | Composite CDF/PDF and dependence | pinned **Numerics/Distributions/Univariate/CompetingRisks.cs** |
 | Probability bounds/copula helpers | pinned **Numerics/Data/Statistics/Probability.cs** |
 | Dependency simulation evidence | **Verification/Univariate/CompetingRiskTests/CompetingRiskDependencyVerificationTests.cs** |
+| MLE/default-DEMCzs recovery evidence | **Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs** and helper partial |
 
 ## References
 

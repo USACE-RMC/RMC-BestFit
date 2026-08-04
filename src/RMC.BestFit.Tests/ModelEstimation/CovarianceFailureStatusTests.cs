@@ -56,6 +56,28 @@ public sealed class CovarianceFailureStatusTests
     }
 
     /// <summary>
+    /// Confirms that a singular MAP Hessian can supply a regularized Moore-Penrose covariance
+    /// for chain initialization without changing the failed public covariance status.
+    /// </summary>
+    [TestMethod]
+    public void MaximumAPosteriori_SingularHessian_ProvidesInitializationOnlyCovariance()
+    {
+        var estimator = new MaximumAPosteriori(CreateTwoParameterModel());
+        ConfigureEstimatedState(estimator, new Matrix(2, 2));
+
+        bool succeeded = estimator.TryGetInitializationCovarianceMatrix(
+            out Matrix covariance,
+            out string? diagnostic);
+
+        Assert.IsTrue(succeeded);
+        Assert.AreEqual(CovarianceComputationStatus.Failed, estimator.CovarianceStatus);
+        Assert.IsFalse(string.IsNullOrWhiteSpace(diagnostic));
+        Assert.IsTrue(covariance[0, 0] > 0d);
+        Assert.IsTrue(covariance[1, 1] > 0d);
+        Assert.AreEqual(covariance[0, 1], covariance[1, 0], 1E-12);
+    }
+
+    /// <summary>
     /// Confirms that GMM exposes failure through its public Try method and throws from its getter.
     /// </summary>
     [TestMethod]

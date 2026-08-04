@@ -118,7 +118,11 @@ Component labels remain exchangeable under symmetric families and priors. Verifi
 
 ## Parameter Estimation
 
-**ExpectationMaximization(...)** preserves the established iteration limit, tolerance, bounded Nelder-Mead component optimization, and convergence order. On exact non-outlier data, BestFit delegates to Numerics, producing identical responsibilities, conditioning, simplex normalization, impossible-row behavior, iterations, and physical weights.
+**ExpectationMaximization(...)** preserves the established approximate-MLE contract, iteration
+limit, tolerance, bounded Nelder-Mead component optimization, and convergence order. It does not
+include parameter, simplex, Jeffreys-scale, or quantile priors. On exact non-outlier data, BestFit
+delegates to Numerics, producing identical responsibilities, conditioning, simplex normalization,
+impossible-row behavior, iterations, and physical weights.
 
 For mixed records, BestFit adds the fixed atom to each row total and assigns component responsibilities only to continuous contributions:
 
@@ -140,7 +144,33 @@ $$
 \log p_Q\!\left[F_M^{-1}(1-\alpha_Q)\right]. \tag{13}
 $$
 
-**MixtureAnalysis** initializes from the $K-1$ EM estimate and covariance with a multivariate Normal proposal and feasibility rejection. It does not use a Dirichlet initializer. Every retained posterior vector uses the common nonmutating $K-1$-to-$K$ reconstruction path.
+**MixtureAnalysis** uses EM as a deterministic basin finder and then performs a bounded local
+Nelder-Mead refinement against the complete posterior kernel:
+
+$$
+\widehat{\boldsymbol\phi}_{EM}
+=\operatorname*{arg\,max}_{\boldsymbol\phi}\ell_D(\boldsymbol\phi),
+\qquad
+\widehat{\boldsymbol\phi}_{MAP}
+=\operatorname*{arg\,max}_{\boldsymbol\phi}
+\left[\ell_D(\boldsymbol\phi)+\log p(\boldsymbol\phi)\right],
+\quad
+\boldsymbol\phi_0=\widehat{\boldsymbol\phi}_{EM}. \tag{14}
+$$
+
+The second objective is `MixtureModel.LogLikelihood`, so Equation (11), all scalar parameter
+priors, Jeffreys scale terms, and the enabled quantile prior in Equation (13) participate in the
+initialization mode. The bounded posterior Hessian supplies a local covariance; singular
+information may use the initialization-only regularized Moore-Penrose covariance without changing
+the public MAP covariance status.
+
+The full initial population is sampled with the configured sampler seed from a multivariate Normal
+using covariance multiplier 1.5. A proposal receives at most 20 replacement draws, is accepted only
+with finite full-posterior fitness, and the best population members seed the chains. MAP failure
+falls back to the EM center and covariance while retaining posterior scoring; failure of that EM
+population resets to randomized initialization. This changes no DEMCzs sampling default and does
+not use a Dirichlet initializer. Every retained posterior vector uses the common nonmutating
+$K-1$-to-$K$ reconstruction path.
 
 ## Compile-Checked Configuration
 
@@ -177,7 +207,10 @@ No parameterization version, migration adapter, or persisted-posterior compatibi
 
 Fast tests cover $K-1$ counts and names, final-weight derivation, prior normalization, proposal immutability, covariance dimensions, exact-only atom derivation, analytical hurdle identities, simulation, invalid positive mass, negative exact values, mixed likelihoods, and impossible rows.
 
-Six focused **RMC.BestFit.Verification** fixtures generate $n=1000$ observations with seed 12345 through `MixtureModel.GenerateRandomValues`, jointly verifying the production generator and recovery paths.
+Six focused **RMC.BestFit.Verification** fixtures generate $n=1000$ observations with seed 12345
+through `MixtureModel.GenerateRandomValues`, jointly verifying the production generator and
+recovery paths. The three EM parity results remain current because public EM is unchanged. The
+three Bayesian results predate EM-seeded MAP initialization and are marked for focused rerun.
 
 Three parity fixtures compare BestFit with Numerics using pre-fit tolerance $10^{-10}$, fitted parity tolerance $10^{-8}$, and recovery tolerance 0.1:
 
@@ -185,7 +218,11 @@ Three parity fixtures compare BestFit with Numerics using pre-fit tolerance $10^
 2. positive-hurdle two-component Normal, $\pi_0=0.1$, weights 0.3/0.6; and
 3. three-component Normal, weights 0.2/0.3/0.5.
 
-Three corresponding `MixtureAnalysis` fixtures recover the same parents with Bayesian MCMC. They use DEMCzs with four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning interval 5, 5,000 output draws, deterministic seeds, 90% credible intervals, and posterior-mode point estimates. Labels are ordered by component mean before comparison. Weight tolerance is 0.1, component tolerance is $\max(0.15, 0.15|\theta|)$, every fitted coordinate requires finite split R-hat below 1.1 and conservative ESS above 100, and the positive-hurdle fixture checks the generated atom against a five-standard-error binomial bound.
+Three corresponding `MixtureAnalysis` fixtures retain their declared Bayesian recovery settings and
+acceptance gates, but require explicitly authorized reruns after the initializer change. A new
+`InformativePrior_EmSeededMapInitialization_UsesFullPosterior` method is compiled but not run. It
+checks the EM starting vector, informative-prior displacement, nondecreasing full posterior, local
+posterior covariance, `UserDefined` population construction, and exact full-posterior fitness.
 
 See the [mixture verification report](../../verification/mixture.md).
 
@@ -198,6 +235,7 @@ See the [mixture verification report](../../verification/mixture.md).
 | Physical simplex and hurdle distribution | sibling **Numerics/Distributions/Univariate/Mixture.cs** |
 | Fast regressions | **RMC.BestFit.Tests/Univariate/MixturePhase4Tests.cs** |
 | Generation, recovery parity, and Bayesian recovery | **RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs** |
+| Informative-prior EM-seeded MAP initialization | **RMC.BestFit.Verification/Univariate/MixtureTests/MixturePriorAwareInitializationVerificationTests.cs** |
 
 ## References
 

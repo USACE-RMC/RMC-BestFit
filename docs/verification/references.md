@@ -15,5 +15,15 @@
 - Salvadori, G., De Michele, C., Kottegoda, N. T., and Rosso, R. *Extremes in Nature: An Approach Using Copulas*. Springer, 2007.
 - Burnham, K. P. and Anderson, D. R. *Model Selection and Multimodel Inference*, 2nd ed. Springer, 2002.
 - Yao, Y., Vehtari, A., Simpson, D., and Gelman, A. “Using stacking to average Bayesian predictive distributions.” *Bayesian Analysis*, vol. 13, no. 3, pp. 917-1007, 2018.
+- R `mistr` package, `normdist` and `mixdist` mixture-distribution functions used to produce
+  RMC-TotalRisk report Table 45. CRAN package page: <https://cran.r-project.org/package=mistr>.
+- U.S. Army Corps of Engineers, Risk Management Center. *Verification of the RMC-TotalRisk
+  Software*. 2024, section “Composite Hazard and Response Functions,” Equation 49 and Tables 44-46.
+- RMC.Numerics competing-risk recovery source, commit
+  `c361f2864428a98a33d6072ffa9bc11ac360839d`,
+  `Test_Numerics/Distributions/Univariate/Test_CompetingRisks.cs`.
+- RMC-TotalRisk composite hazard and response verification source, commit
+  `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`,
+  `CompositeHazardVerification.cs` and `CompositeResponseVerification.cs`.
 - RMC-BestFit version 1 verification report, `docs/reports/RMC-TR-2020-02 - Verification of the Bayesian Estimation and Fitting Software.pdf`.
 - RMC.BestFit 2.0 [Technical Reference](../technical-reference/index.md) and [Scientific Review Findings](../technical-reference/review-findings.md).

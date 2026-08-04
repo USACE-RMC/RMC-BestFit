@@ -188,18 +188,27 @@ These formal methods verify worked-example point-estimate parity. They do not ve
 
 ## Phase 4 mixture closeout - 31 July 2026
 
-All six methods generate the parent sample through `MixtureModel.GenerateRandomValues(1000, 12345)`. Each method was run separately through `scripts/run-verification-test.ps1`; every invocation source-resolved one exact method and produced one passing TRX under `TestResults/VerificationFocused`.
+The original six methods generate the parent sample through
+`MixtureModel.GenerateRandomValues(1000, 12345)`. All six have prior guarded results. The public
+EM estimator is unchanged, so the three parity results remain current. The three Bayesian results
+predate EM-seeded MAP initialization and require focused reruns before they support the changed
+initialization path.
 
 | Test method | Oracle or recovery contract | Status |
 |---|---|---|
 | `MixtureRecoveryTests.NormalMixture2D_Recovery_Parity` | BestFit production generator, Numerics/BestFit likelihood and EM parity, two-component parent recovery | Passed - 1.426 s |
 | `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_Recovery_Parity` | BestFit positive-hurdle generator, Numerics/BestFit likelihood and EM parity, atom and parent recovery | Passed - 1.852 s |
 | `MixtureRecoveryTests.NormalMixture3D_Recovery_Parity` | BestFit production generator, Numerics/BestFit likelihood and EM parity, three-component parent recovery | Passed - 3.247 s |
-| `MixtureRecoveryTests.NormalMixture2D_BayesianRecovery` | Seeded DEMCzs posterior-mode recovery with split R-hat and ESS acceptance | Passed - 9.589 s |
-| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_BayesianRecovery` | Seeded positive-hurdle DEMCzs recovery, binomial atom bound, split R-hat, and ESS | Passed - 21.346 s |
-| `MixtureRecoveryTests.NormalMixture3D_BayesianRecovery` | Seeded three-component DEMCzs posterior-mode recovery with label sorting, split R-hat, and ESS | Passed - 12.761 s |
+| `MixtureRecoveryTests.NormalMixture2D_BayesianRecovery` | Seeded DEMCzs posterior-mode recovery with split R-hat and ESS acceptance | Ready - focused rerun; prior result 9.589 s |
+| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_BayesianRecovery` | Seeded positive-hurdle DEMCzs recovery, binomial atom bound, split R-hat, and ESS | Ready - focused rerun; prior result 21.346 s |
+| `MixtureRecoveryTests.NormalMixture3D_BayesianRecovery` | Seeded three-component DEMCzs posterior-mode recovery with label sorting, split R-hat, and ESS | Ready - focused rerun; prior result 12.761 s |
+| `MixturePriorAwareInitializationVerificationTests.InformativePrior_EmSeededMapInitialization_UsesFullPosterior` | EM start, informative-prior displacement, nondecreasing posterior, MAP covariance, and full-posterior population fitness | Ready - focused run |
 
-The parity methods retain pre-fit tolerance `1E-10`, cross-engine fitted tolerance `1E-8`, and absolute parent-recovery tolerance `0.1`. The Bayesian methods use four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning 5, 5,000 output draws, deterministic seeds, weight tolerance `0.1`, component tolerance `max(0.15, 0.15 * abs(parent))`, split R-hat below `1.1`, and conservative ESS above `100`. The full Verification project was not run.
+The parity methods retain pre-fit tolerance `1E-10`, cross-engine fitted tolerance `1E-8`, and
+absolute parent-recovery tolerance `0.1`. The Bayesian configurations, seeds, and acceptance gates
+remain unchanged. The new informative-prior method runs EM, local MAP refinement, covariance, and
+population construction without MCMC. Neither it nor the three affected Bayesian methods was run
+during implementation, and the full Verification project was not run.
 
 ## Phase 4 point-process backcheck - 31 July 2026
 
@@ -222,4 +231,91 @@ The four TR-012 methods generate 40,000 observations with seed 24681357 through 
 | `CompetingRiskDependencyVerificationTests.Test_PerfectlyNegativeSimulation_MatchesRankDependenceAndCompositeCdf` | Gaussian-copula identities at Numerics limiting negative correlation | Passed - 0.309 s |
 | `CompetingRiskDependencyVerificationTests.Test_CorrelationMatrixSimulation_MatchesRankDependenceAndCompositeCdf` | Gaussian-copula identities at configured latent correlation 0.6 | Passed - 0.306 s |
 
-TR-013 and TR-015 use fast programmatic tests because their contracts are deterministic validation, weighting, ownership, serialization, and persistence behavior rather than estimator or external-oracle calculations. The core tests cover mixed-invalid criteria, all-invalid failure, exact-zero RMSE, finite AIC parity, B17C compatibility, matrix validation/ownership/XML, and result construction. UI tests cover property ownership, independent copy, appended-column compatibility, and SQLite save/open. TR-014 remains deferred and no posterior coupling behavior changed. The full Verification project was not run.
+TR-013 and TR-015 use fast programmatic tests because their contracts are deterministic validation,
+weighting, ownership, serialization, and persistence behavior rather than estimator or
+external-oracle calculations. The core tests cover mixed-invalid criteria, all-invalid failure,
+exact-zero RMSE, finite AIC parity, B17C compatibility, matrix validation/ownership/XML, and
+result construction. UI tests cover property ownership, independent copy, appended-column
+compatibility, and SQLite save/open.
+
+TR-014 adds fast helper, Composite, CFA, and UI contracts plus two independent numerical oracles.
+The helper tests establish unique in-range rows, sampling across the full longer-chain range,
+exact seed repeatability, distinct source permutations, and pairwise absolute Spearman correlation
+below `0.05` for three 5,000-draw mappings. Composite fast tests cover both branches, actual
+shortest-chain sizing, exact finite-map reconstruction, different seeds, immutable child outputs,
+and unchanged point estimates. CFA fast tests cover copula/X/Y row order, optional-chain fallback,
+cache invalidation, and exact aggregate/accessor agreement. UI tests cover seed save/open/copy/undo.
+
+| Exact verification method | Independent contract | Tolerances and negative control | Status |
+|---|---|---|---|
+| `PosteriorResamplingVerificationTests.CompositePosteriorResampling_MatchesIndependentCartesianOracle` | empirical Cartesian product of deliberately raw-aligned child posteriors; reversed-chain and swapped-child variants | posterior mean `0.02`; credible limits `0.05`; raw-paired miss at least `0.10` | Passed - 2.677 s |
+| `PosteriorResamplingVerificationTests.CoincidentFrequencyPosteriorResampling_MatchesIndependentClosedFormOracle` | closed-form independent Normal-sum posterior; reversed-chain variant | posterior mean `0.02`; credible limits `0.05`; raw-paired miss at least `0.10` | Passed - 2.505 s |
+
+Each TR-014 Verification method was run separately through `scripts/run-verification-test.ps1`
+and produced one passing TRX. The complete Verification project was not run. Current final fast
+gates pass Core 3,134/3,134, UI 571/571, and App 428/428.
+
+## Phase 4 recovery supplement - 3 August 2026
+
+The following 30 exact methods were run individually. Twenty-three passed and seven exposed
+unresolved findings, so they continue to gate the start of Phase 5. The competing-risk source is pinned to Numerics
+`c361f2864428a98a33d6072ffa9bc11ac360839d`; the composite source is pinned to RMC-TotalRisk
+`d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7` and the 2024 composite hazard/response report.
+
+### Competing-risk MLE and default-DEMCzs recovery
+
+All ten MLE methods use the production Differential Evolution default. All ten Bayesian methods
+leave the production DEMCzs sampling configuration untouched and assert its resolved values:
+3,500 iterations, 1,750 warmup, 10,000 outputs, 90% intervals, posterior mean, seed 12345,
+dimension-scaled chains/thinning/initialization, and the default advanced proposal settings.
+`CompetingRiskAnalysis` supplies a `UserDefined` initial population from an inflated MAP/Hessian
+approximation and each method that reaches post-run assertions verifies that this initializer did
+not silently fall back to randomized starts.
+
+| Exact method | Fixture and oracle | Status |
+|---|---|---|
+| `CompetingRiskRecoveryTests.MLE_Minimum_TwoWeibullConstantIncreasing_RecoversParent` | Minimum Weibull(50, 1) + Weibull(80, 3); likelihood and parent CDF | Passed - 3.488 s |
+| `CompetingRiskRecoveryTests.Bayesian_Minimum_TwoWeibullConstantIncreasing_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, parent CDF | Passed - 3:21.394 |
+| `CompetingRiskRecoveryTests.MLE_Minimum_TwoWeibullContrastingShapes_RecoversParent` | Minimum Weibull(30, 0.8) + Weibull(100, 3); likelihood, CDF, sorted shapes | Passed - 2.487 s |
+| `CompetingRiskRecoveryTests.Bayesian_Minimum_TwoWeibullContrastingShapes_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, CDF, draw-ordered shapes | Passed - 2:52.558 |
+| `CompetingRiskRecoveryTests.MLE_Minimum_ThreeWeibullBathtub_RecoversParent` | Minimum Weibull(20, 0.7) + Weibull(200, 1) + Weibull(150, 4); likelihood and parent CDF | Passed - 39.592 s |
+| `CompetingRiskRecoveryTests.Bayesian_Minimum_ThreeWeibullBathtub_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, parent CDF | Passed - 5:37.609 |
+| `CompetingRiskRecoveryTests.MLE_Minimum_ThreeWeibullSeparatedShapes_RecoversParent` | Minimum Weibull(15, 0.5) + Weibull(60, 1.5) + Weibull(120, 4); likelihood and parent CDF | Passed - 16.884 s |
+| `CompetingRiskRecoveryTests.Bayesian_Minimum_ThreeWeibullSeparatedShapes_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, parent CDF | Passed - 5:49.246 |
+| `CompetingRiskRecoveryTests.MLE_Maximum_TwoSeparatedNormals_RecoversParent` | Maximum Normal(50, 8) + Normal(85, 12); likelihood, CDF, sorted means | Passed - 8.474 s |
+| `CompetingRiskRecoveryTests.Bayesian_Maximum_TwoSeparatedNormals_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, CDF, draw-ordered means | Failed - 2:34.639; lower-mean miss 1,086.09% |
+| `CompetingRiskRecoveryTests.MLE_Maximum_WeibullAndGumbel_RecoversParent` | Maximum Weibull(50, 2) + Gumbel(70, 15); likelihood and parent CDF | Passed - 2.276 s |
+| `CompetingRiskRecoveryTests.Bayesian_Maximum_WeibullAndGumbel_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, parent CDF | Failed - 1:40.019; scale R-hat 1.10899 |
+| `CompetingRiskRecoveryTests.MLE_Maximum_ThreeSeparatedNormals_RecoversParent` | Maximum Normal(40, 6) + Normal(70, 8) + Normal(100, 10); likelihood and parent CDF | Passed - 5.581 s |
+| `CompetingRiskRecoveryTests.Bayesian_Maximum_ThreeSeparatedNormals_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, parent CDF | Failed - 6:02.620; standard-deviation R-hat 1.44785 |
+| `CompetingRiskRecoveryTests.MLE_Maximum_ThreeDifferentFamilies_RecoversParent` | Maximum Exponential(0.05) + Gamma(3, 15) + natural LogNormal(4.2, 0.4); likelihood and parent CDF | Passed - 14.076 s |
+| `CompetingRiskRecoveryTests.Bayesian_Maximum_ThreeDifferentFamilies_RecoversParent` | Same fixture; default DEMCzs and MAP initialization | Failed - 6:16.455; Gamma inverse-CDF exception |
+| `CompetingRiskRecoveryTests.MLE_Minimum_CorrelatedTwoWeibulls_RecoversParent` | Minimum two-Weibull Gaussian copula at latent rho 0.6; likelihood and parent CDF | Passed - 26.354 s |
+| `CompetingRiskRecoveryTests.Bayesian_Minimum_CorrelatedTwoWeibulls_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, parent CDF | Failed - 28:48.056; scale ESS 77.5203 |
+| `CompetingRiskRecoveryTests.MLE_Maximum_CorrelatedTwoNormals_RecoversParent` | Maximum Normal(50, 10) + Normal(65, 12), latent rho 0.6; likelihood and parent CDF | Passed - 12.083 s |
+| `CompetingRiskRecoveryTests.Bayesian_Maximum_CorrelatedTwoNormals_RecoversParent` | Same fixture; default DEMCzs, MAP initialization, diagnostics, parent CDF | Failed - 17:32.062; standard-deviation R-hat 1.17331 |
+
+Every competing-risk case uses BestFit generation seed 12345, true-parameter data-likelihood
+parity at `1E-10`, and empirical-quantile CDF locations 0.01-0.99. The CDF bound is `0.05` for
+ordinary two-component cases and `0.06` for three-component/correlated cases. Bayesian diagnostics
+require finite R-hat below `1.1` and ESS above `100` for every parameter.
+
+### Composite report and product-posterior recovery
+
+| Exact method | Oracle | Status |
+|---|---|---|
+| `CompositeRecoveryTests.MixtureCdf_MatchesExactWeightedNormalSum` | exact weighted three-Normal CDF | Passed - 0.354 s |
+| `CompositeRecoveryTests.MixtureQuantiles_MatchPublishedRMistrTable45` | 25 published R `mistr` Table 45 quantiles | Passed - 0.387 s |
+| `CompositeRecoveryTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` | direct Normal CDF and probability-dependent inversion bound | Failed - 0.174 s; extreme-tail residual `1.02566838E-8` |
+| `CompositeRecoveryTests.MaximumComposite_MatchesIndependentAndComonotonicClosedForms` | independent product and comonotonic minimum identities | Passed - 0.432 s |
+| `CompositeRecoveryTests.MinimumComposite_MatchesIndependentAndComonotonicClosedForms` | independent union and comonotonic maximum identities | Passed - 0.444 s |
+| `CompositeRecoveryTests.CombinationRules_SatisfyTheoreticalBracketingAndRemainDistinct` | mixture/maximum/minimum brackets and material separation | Passed - 0.547 s |
+| `CompositeRecoveryTests.MixturePosterior_MatchesCompleteCartesianOracle` | complete 20-by-20-by-20 mixture posterior | Passed - 4.758 s |
+| `CompositeRecoveryTests.MaximumPosterior_MatchesCompleteCartesianOracle` | complete 20-by-20-by-20 independent maximum posterior | Passed - 5.580 s |
+| `CompositeRecoveryTests.MinimumPosterior_MatchesCompleteCartesianOracle` | complete 20-by-20-by-20 independent minimum posterior | Passed - 4.766 s |
+| `CompositeRecoveryTests.CorrelationMatrix_MinimumAndMaximumMatchBivariateNormalOrthants` | analytical bivariate-Normal median orthants at latent rho 0.6 | Passed - 0.347 s |
+
+The three posterior methods use explicit 5,000-draw `MCMCResults`, 20 deterministic mean supports
+per child, seed 20260803, five nonexceedance probabilities, 90% limits, mean tolerance `0.02`, and
+limit tolerance `0.05`. Each also requires the fixed parent curve to remain inside its band.
+Analytical formulas and the short published table are embedded; no new oracle artifact is added.

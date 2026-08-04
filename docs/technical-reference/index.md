@@ -42,7 +42,7 @@ All fifteen univariate family chapters have completed their source, parameteriza
 - [Influence diagnostics](estimation/influence-diagnostics.md)
 - [Predictive checks](estimation/predictive-checks.md)
 
-The Phase 5 estimator and diagnostic chapters are source-audited. They distinguish implemented conventions from standard theory and link all production discrepancies to the review-findings register.
+The Phase 5 estimator and diagnostic chapters are source-audited. They distinguish implemented conventions from standard theory and link all production discrepancies to the review-findings register. Phase 5 execution remains gated by the Phase 4 competing-risk/composite recovery supplement.
 
 ## Analysis workflows
 

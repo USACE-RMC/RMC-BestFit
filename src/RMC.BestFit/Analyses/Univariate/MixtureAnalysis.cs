@@ -2,6 +2,7 @@
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
+using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
 using Numerics.Sampling;
 using Numerics.Sampling.MCMC;
@@ -25,9 +26,10 @@ namespace RMC.BestFit.Analyses
     ///     Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil
     /// </para>
     /// <para>
-    /// This analysis fits a <see cref="MixtureModel"/> using Bayesian MCMC methods with
-    /// Expectation-Maximization (EM) initialization. It produces uncertainty quantification
-    /// for frequency analysis (quantiles at specified exceedance probabilities).
+    /// This analysis fits a <see cref="MixtureModel"/> using Bayesian MCMC methods. It uses
+    /// Expectation-Maximization to identify a reliable mixture basin, refines that estimate with
+    /// a bounded local MAP optimization, and initializes the sampler from an inflated local
+    /// posterior approximation before producing frequency-analysis uncertainty quantification.
     /// </para>
     /// <para>
     /// The mixture distribution combines multiple component distributions with estimated
@@ -39,6 +41,22 @@ namespace RMC.BestFit.Analyses
     /// </remarks>
     public class MixtureAnalysis : AnalysisBase, IUnivariateAnalysis
     {
+
+        /// <summary>
+        /// Fixed covariance multiplier used to overdisperse the local MAP approximation.
+        /// </summary>
+        /// <remarks>
+        /// This matches the competing-risk initialization policy.
+        /// </remarks>
+        private const double MapCovarianceInflationFactor = 1.5d;
+
+        /// <summary>
+        /// Maximum number of replacement draws attempted after an invalid MAP-population draw.
+        /// </summary>
+        /// <remarks>
+        /// This matches the competing-risk feasibility-retry policy.
+        /// </remarks>
+        private const int MaximumInitializationReplacementDraws = 20;
 
         #region Construction
 
@@ -383,7 +401,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -401,81 +419,11 @@ namespace RMC.BestFit.Analyses
                     MixtureDistribution.DataFrame.ProcessThresholdSeries();
                     MixtureDistribution.ProcessQuantilePriors();
 
-                    // Set up sampler with EM initialization
+                    // Set up the default DEMCzs sampler, then replace only its initialization
+                    // population with an overdispersed local approximation at the posterior mode.
                     BayesianAnalysis.SetUpSampler();
                     var sampler = BayesianAnalysis.Sampler!;
-                    sampler.Initialize = MCMCSampler.InitializationType.UserDefined;
-
-                    await Task.Run(() =>
-                    {
-                        try
-                        {
-                            // Get initial parameters and covariance from Expectation-Maximization.
-                            MixtureDistribution.ExpectationMaximization(
-                                out double[] parameters,
-                                out double[,] covariance,
-                                out _);
-
-                            int parameterCount = parameters.Length;
-                            var prng = new MersenneTwister(sampler.PRNGSeed);
-                            var tempPopulation = new List<ParameterSet>();
-                            var inflatedCovariance = new double[parameterCount, parameterCount];
-                            for (int row = 0; row < parameterCount; row++)
-                            {
-                                for (int column = 0; column < parameterCount; column++)
-                                {
-                                    inflatedCovariance[row, column] = covariance[row, column] * 1.5;
-                                }
-                            }
-                            var proposal = new MultivariateNormal(parameters, inflatedCovariance);
-
-                            for (int i = 0; i < sampler.InitialIterations; i++)
-                            {
-                                bool failed = true;
-                                int failedCount = 0;
-                                double[]? proposalParameters = null;
-                                double logLikelihood = double.NegativeInfinity;
-                                while (failed)
-                                {
-                                    try
-                                    {
-                                        proposalParameters = proposal.InverseCDF(
-                                            prng.NextDoubles(1, parameterCount).GetRow(0));
-                                        logLikelihood = MixtureDistribution.LogLikelihood(proposalParameters);
-                                        failed = !Tools.IsFinite(logLikelihood);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Debug.WriteLine(
-                                            $"MixtureAnalysis initialization draw {failedCount + 1} was invalid: {ex.Message}");
-                                        failed = true;
-                                    }
-
-                                    if (failedCount++ > 20) break;
-                                }
-
-                                if (failed || proposalParameters is null)
-                                    throw new InvalidOperationException("Unable to generate a feasible mixture initialization.");
-
-                                sampler.PopulationMatrix.Add(new ParameterSet(proposalParameters, logLikelihood));
-                                tempPopulation.Add(new ParameterSet(proposalParameters, logLikelihood));
-                            }
-                            // Sort temp population by log-likelihood in descending order
-                            tempPopulation.Sort((x, y) => -1 * x.Fitness.CompareTo(y.Fitness));
-
-                            // Set the initial vectors to the best performing parameter sets
-                            for (int i = 0; i < sampler.NumberOfChains; i++)
-                            {
-                                sampler.MarkovChains[i].Add(tempPopulation[i].Clone());
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // If there is an error during initialization, fall back to random initialization
-                            Debug.WriteLine($"MixtureAnalysis initialization failed, using random initialization: {ex.Message}");
-                            sampler.Initialize = MCMCSampler.InitializationType.Randomize;
-                        }
-                    }, token);
+                    await ConfigureEmSeededMapInitializationAsync(sampler, token);
 
                     // Run Bayesian analysis
                     await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
@@ -521,6 +469,211 @@ namespace RMC.BestFit.Analyses
             {
                 _reprocessGate.Release();
             }
+        }
+
+        /// <summary>
+        /// Configures a mixture sampler with an EM-seeded, prior-aware MAP population.
+        /// </summary>
+        /// <param name="sampler">The already configured production MCMC sampler.</param>
+        /// <param name="cancellationToken">Token used to cancel initialization before MCMC begins.</param>
+        /// <returns>A task that completes when initialization succeeds or the sampler is reset to randomized initialization.</returns>
+        /// <remarks>
+        /// The public EM method remains an approximate-MLE estimator. Its solution supplies a
+        /// deterministic basin for bounded Nelder-Mead refinement of the full posterior. If MAP
+        /// refinement or its covariance is unusable, the original EM approximation is retained
+        /// as the first fallback. All DEMCzs settings remain unchanged.
+        /// </remarks>
+        private async Task ConfigureEmSeededMapInitializationAsync(
+            MCMCSampler sampler,
+            CancellationToken cancellationToken)
+        {
+            sampler.Initialize = MCMCSampler.InitializationType.UserDefined;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    MixtureDistribution.ExpectationMaximization(
+                        out double[] emParameters,
+                        out double[,] emCovariance,
+                        out _);
+
+                    try
+                    {
+                        var map = new MaximumAPosteriori(
+                            MixtureDistribution,
+                            OptimizationMethod.NelderMead,
+                            emParameters);
+                        if (!map.Estimate())
+                        {
+                            throw new InvalidOperationException(
+                                $"Mixture MAP refinement failed with status {map.Status}.");
+                        }
+
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!map.TryGetInitializationCovarianceMatrix(
+                            out Matrix mapCovariance,
+                            out string? covarianceDiagnostic))
+                        {
+                            throw new InvalidOperationException(
+                                covarianceDiagnostic ?? "The mixture MAP covariance is unavailable.");
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(covarianceDiagnostic))
+                            Debug.WriteLine(covarianceDiagnostic);
+
+                        PopulateSamplerFromPosteriorApproximation(
+                            MixtureDistribution,
+                            sampler,
+                            map.BestParameterSet.Values,
+                            mapCovariance.ToArray(),
+                            cancellationToken);
+                        return;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(
+                            $"MixtureAnalysis MAP refinement failed, using EM initialization: {ex.Message}");
+                    }
+
+                    PopulateSamplerFromPosteriorApproximation(
+                        MixtureDistribution,
+                        sampler,
+                        emParameters,
+                        emCovariance,
+                        cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    ResetSamplerToRandomizedInitialization(sampler);
+                    Debug.WriteLine(
+                        $"MixtureAnalysis EM/MAP initialization failed, using random initialization: {ex.Message}");
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Clears a failed custom population and restores randomized sampler initialization.
+        /// </summary>
+        /// <param name="sampler">The sampler to reset.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="sampler"/> is <c>null</c>.</exception>
+        /// <remarks>
+        /// This seam keeps the final fallback atomic and supports fast state-contract testing
+        /// without executing EM, MAP, or MCMC.
+        /// </remarks>
+        internal static void ResetSamplerToRandomizedInitialization(MCMCSampler sampler)
+        {
+            ArgumentNullException.ThrowIfNull(sampler);
+            sampler.Reset();
+            sampler.Initialize = MCMCSampler.InitializationType.Randomize;
+        }
+
+        /// <summary>
+        /// Populates an MCMC sampler from an inflated multivariate Normal approximation.
+        /// </summary>
+        /// <param name="model">The mixture model used to evaluate the full posterior.</param>
+        /// <param name="sampler">The configured sampler that receives the population and chain states.</param>
+        /// <param name="centerParameters">The MAP or fallback EM parameter vector.</param>
+        /// <param name="covariance">The local MAP or fallback EM covariance.</param>
+        /// <param name="cancellationToken">Token used to cancel population generation.</param>
+        /// <exception cref="ArgumentNullException">Thrown when a required input is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the approximation dimensions do not match.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when a feasible initial population cannot be generated.</exception>
+        /// <remarks>
+        /// Population fitness always uses <see cref="MixtureModel.LogLikelihood(double[])"/>, so
+        /// parameter, simplex, Jeffreys-scale, and quantile priors participate in ranking even
+        /// when the likelihood-only EM approximation is used as a fallback center.
+        /// </remarks>
+        internal static void PopulateSamplerFromPosteriorApproximation(
+            MixtureModel model,
+            MCMCSampler sampler,
+            double[] centerParameters,
+            double[,] covariance,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(model);
+            ArgumentNullException.ThrowIfNull(sampler);
+            ArgumentNullException.ThrowIfNull(centerParameters);
+            ArgumentNullException.ThrowIfNull(covariance);
+
+            int parameterCount = centerParameters.Length;
+            if (parameterCount != model.NumberOfParameters ||
+                covariance.GetLength(0) != parameterCount ||
+                covariance.GetLength(1) != parameterCount)
+            {
+                throw new ArgumentException(
+                    "The center parameter and covariance dimensions must match the mixture model.",
+                    nameof(covariance));
+            }
+
+            sampler.Reset();
+            sampler.Initialize = MCMCSampler.InitializationType.UserDefined;
+
+            var inflatedCovariance = new double[parameterCount, parameterCount];
+            for (int row = 0; row < parameterCount; row++)
+            {
+                for (int column = 0; column < parameterCount; column++)
+                {
+                    inflatedCovariance[row, column] =
+                        covariance[row, column] * MapCovarianceInflationFactor;
+                }
+            }
+
+            var proposal = new MultivariateNormal(centerParameters, inflatedCovariance);
+            var prng = new MersenneTwister(sampler.PRNGSeed);
+            var population = new List<ParameterSet>(sampler.InitialIterations);
+
+            for (int populationIndex = 0; populationIndex < sampler.InitialIterations; populationIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                double[]? proposalParameters = null;
+                double logPosterior = double.NegativeInfinity;
+                bool isFeasible = false;
+
+                for (int attempt = 0; attempt <= MaximumInitializationReplacementDraws; attempt++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    try
+                    {
+                        proposalParameters = proposal.InverseCDF(
+                            prng.NextDoubles(1, parameterCount).GetRow(0));
+                        logPosterior = model.LogLikelihood(proposalParameters);
+                        isFeasible = Tools.IsFinite(logPosterior);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(
+                            $"MixtureAnalysis initialization draw {attempt + 1} was invalid: {ex.Message}");
+                        isFeasible = false;
+                    }
+
+                    if (isFeasible)
+                        break;
+                }
+
+                if (!isFeasible || proposalParameters is null)
+                {
+                    throw new InvalidOperationException(
+                        "Unable to generate a feasible mixture EM/MAP initialization.");
+                }
+
+                var parameterSet = new ParameterSet(proposalParameters, logPosterior);
+                sampler.PopulationMatrix.Add(parameterSet.Clone());
+                population.Add(parameterSet);
+            }
+
+            population.Sort((left, right) => right.Fitness.CompareTo(left.Fitness));
+            for (int chainIndex = 0; chainIndex < sampler.NumberOfChains; chainIndex++)
+                sampler.MarkovChains[chainIndex].Add(population[chainIndex].Clone());
         }
 
         /// <inheritdoc/>

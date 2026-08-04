@@ -119,17 +119,53 @@ Equation (7) is a column-bin quadrature. Accuracy depends on response smoothness
 
 ## Uncertainty Propagation
 
-The copula posterior from the upstream `BivariateAnalysis` is the required draw source. `MarginalXChain` and `MarginalYChain` are optional:
+The copula posterior from the upstream `BivariateAnalysis` is the required draw source.
+`MarginalXChain` and `MarginalYChain` are optional. Let \(\mathcal S\) contain the copula
+source and each supplied marginal source. Using their actual retained counts,
 
 $$
-R=\min(R_C,R_X,R_Y), \tag{9}
+R=\min_{q\in\mathcal S}R_q. \tag{9}
 $$
 
-where an absent marginal chain is treated as having unlimited length and its configured point-estimate distribution is reused. Draw \(s\) combines copula draw \(s\) with marginal draw \(s\) when supplied. This pairing approximates propagation from separately fitted marginal and copula stages; it is not a joint MCMC fit.
+An absent marginal chain is excluded from \(\mathcal S\) and its configured point-estimate
+distribution is reused. Before parallel processing, a Mersenne Twister initialized from CFA's
+`BayesianAnalysis.PRNGSeed` generates one without-replacement index row for every source:
 
-For every \(z_k\), BestFit stores the posterior mean of \(\widehat A_Z^{(s)}(z_k)\) and equal-tail credible limits at the configured width. The point curve uses MAP or posterior-mean parameters according to `BayesianAnalysis.PointEstimator`. The `BayesianAnalysis` owned by coincident-frequency analysis holds presentation settings; it does not run its own chain.
+$$
+k_{q,1},\ldots,k_{q,R}
+\subset\{1,\ldots,R_q\},
+\qquad k_{q,s}\ne k_{q,t}\text{ for }s\ne t. \tag{10}
+$$
 
-If the copula chain has no output draws, the deterministic point-estimate path remains available: the mean curve is copied from the point curve and confidence limits are `NaN`. If optional marginal chains have fewer draws than the copula chain, the shortest chain truncates propagation.
+Rows are generated in fixed semantic order: copula, X marginal when present, then Y marginal
+when present. Realization \(s\) is therefore
+
+$$
+\widehat A_Z^{(s)}(z_k)=
+\widehat A_Z\!\left(z_k;
+\psi^{(k_{C,s})},
+\eta_X^{(k_{X,s})},
+\eta_Y^{(k_{Y,s})}\right), \tag{11}
+$$
+
+with absent marginal parameter blocks replaced by their point estimates. This is independent
+product-posterior propagation across separately fitted stages, not a joint MCMC fit. Longer
+chains contribute from their complete retained range rather than only their first \(R\) draws.
+
+For every \(z_k\), BestFit stores the posterior mean of \(\widehat A_Z^{(s)}(z_k)\) and
+equal-tail credible limits at the configured width. The point curve uses MAP or posterior-mean
+parameters according to `BayesianAnalysis.PointEstimator`. CFA's `BayesianAnalysis` does not
+run a chain; its nonnegative `PRNGSeed` controls result-generation pairing. A fixed seed,
+semantic source order, and retained order reproduce the exact finite mapping. Source or chain
+reordering targets the same product distribution but need not reproduce identical finite output.
+
+If the copula chain has no output draws, the deterministic point-estimate path remains available:
+the mean curve is copied from the point curve and confidence limits are `NaN`. The generated
+mapping is cached transiently so `GetEmpiricalDistribution(index)` returns the exact realization
+used by the aggregate result. The cache is regenerated deterministically after loading and is
+invalidated with derived results when a supplied chain or the resampling seed changes. Index
+arrays are not serialized. Saved CFA uncertainty summaries created before TR-014 must be
+reprocessed to use the corrected coupling policy.
 
 The response matrix is held fixed for every realization. Hydraulic parameter, routing-model, terrain, operating-rule, and numerical-model uncertainty are therefore absent unless the user represents them outside this API.
 
@@ -178,7 +214,14 @@ After configuration, call `Validate()`, examine every error and warning, and onl
 
 ## Validation and Traceability
 
-Implementation: `Analyses/Bivariate/CoincidentFrequencyAnalysis.cs`, with upstream probability operations in `Models/BivariateDistribution/BivariateDistribution.cs` and pinned Numerics copulas. Fast tests cover constructors, validation, monotone-grid requirements, point-estimate integration, boundary mass conservation, marginal-draw propagation, cancellation, serialization, and analysis state. The compile-checked example above is sourced from `BivariateAndSpatialExamples.cs`. Long-running bivariate verification sources were not executed during this documentation pass.
+Implementation: `Analyses/Bivariate/CoincidentFrequencyAnalysis.cs`, with posterior index
+generation in `Analyses/Support/PosteriorIndexResampler.cs`, upstream probability operations in
+`Models/BivariateDistribution/BivariateDistribution.cs`, and pinned Numerics copulas. Fast tests
+cover source-row separation, optional-chain fallback, cache invalidation, aggregate/accessor
+identity, seed persistence, and the pre-existing numerical and lifecycle contracts. The focused
+`CoincidentFrequencyPosteriorResampling_MatchesIndependentClosedFormOracle` method passes a
+Normal-sum product-posterior oracle at maximum absolute mean tolerance `0.02` and credible-limit
+tolerance `0.05`; its raw-paired negative control misses by at least `0.10`.
 
 No external verification claim is made for a project-specific response surface. For review, archive the surface-generation model, input version, units, grid-convergence study, and deterministic reproduction command alongside the BestFit project.
 

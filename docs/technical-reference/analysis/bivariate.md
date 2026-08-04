@@ -166,7 +166,14 @@ Student-\(t\) has parameters `Dependency (θ)` and `DegreesOfFreedom`; all other
 
 `BivariateAnalysis.RunAsync` validates the model, rebuilds pairs, runs `BayesianAnalysis`, and then constructs joint-frequency uncertainty. Arithmetic exceptions and non-finite copula or marginal-CDF evaluations are converted to `double.NegativeInfinity`, rejecting the proposal without terminating the chain.
 
-For every requested \((x_k,y_k)\) ordinate, the point curve uses (3) at the configured MAP or posterior-mean copula parameter. Posterior mean and credible limits are calculated from the same AND probability over copula draws. The marginals remain fixed for every draw. Consequently these bands quantify copula-parameter uncertainty conditional on the marginal fits, not total bivariate uncertainty.
+For every requested \((x_k,y_k)\) ordinate, the point curve uses (3) at the configured MAP or
+posterior-mean copula parameter. Posterior mean and credible limits are calculated from the same
+AND probability over copula draws. The marginals remain fixed for every draw. Consequently these
+bands quantify copula-parameter uncertainty conditional on the marginal fits, not total bivariate
+uncertainty. TR-014 does not change this analysis, likelihood, posterior band, or public API.
+Independent propagation of optional marginal posterior chains occurs downstream in
+`CoincidentFrequencyAnalysis`, where those chains are combined with the copula chain as separate
+product-posterior sources.
 
 The reported RMSE compares \(C(F_{nX},F_{nY})\) with the empirical bivariate CDF at each matched pseudo-observation and divides the squared-error sum by \(n_p-1\). It requires at least two pairs. `GenerateRandomValues(sampleSize, seed)` delegates to the Numerics copula's Latin-hypercube simulation and transforms both uniforms through the attached marginal inverse CDFs.
 

@@ -357,9 +357,9 @@ namespace RMC.BestFit.UI
         private XElement _bivariateResponseSnapshot;
 
         /// <summary>
-        /// Undo bridge for <see cref="BayesianAnalysis"/> output settings the user can edit
+        /// Undo bridge for <see cref="BayesianAnalysis"/> result settings the user can edit
         /// from the <c>BayesianOutputControl</c> combos (<c>CredibleIntervalWidth</c>,
-        /// <c>OutputLength</c>, <c>PointEstimator</c>). CFA does not run its own MCMC chain,
+        /// <c>OutputLength</c>, <c>PointEstimator</c>, and <c>PRNGSeed</c>). CFA does not run its own MCMC chain,
         /// so the broader simulation/advanced bridges in <see cref="BayesianController"/> do
         /// not apply â€” only this scoped settings bridge is needed. Mirrors the canonical
         /// pattern used by <see cref="CompositeAnalysis"/>.
@@ -560,8 +560,8 @@ namespace RMC.BestFit.UI
 
         /// <summary>
         /// Gets the Bayesian Analysis settings (CredibleIntervalWidth, OutputLength,
-        /// PointEstimator) owned by this CFA element via the inner model analysis. CFA does
-        /// not run its own MCMC chain; this object holds presentation settings that are
+        /// PointEstimator, and PRNGSeed) owned by this CFA element via the inner model analysis.
+        /// CFA does not run its own MCMC chain; this object holds result settings that are
         /// independent of the upstream <see cref="BivariateAnalysis"/>'s settings, so CFA
         /// state round-trips cleanly across save/open.
         /// </summary>
@@ -829,11 +829,11 @@ namespace RMC.BestFit.UI
                     _innerAnalysis.NumberOfBins = bins;
                 }
 
-                // BayesianAnalysis presentation triple (CredibleIntervalWidth, OutputLength,
-                // PointEstimator). Parse the XElement attributes directly rather than rebuilding a
+                // BayesianAnalysis presentation settings and posterior-resampling seed. Parse the
+                // XElement attributes directly rather than rebuilding a
                 // throwaway BayesianAnalysis(XElement) instance â€” the heavy constructor pulls in
                 // priors / sampler config / etc. and throws on partial or legacy XML, even though
-                // CFA only persists these three fields.
+                // CFA only consumes these result-construction fields.
                 if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
                 {
                     var bayesXml = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
@@ -845,6 +845,7 @@ namespace RMC.BestFit.UI
                             var ciAttr = bayesElement.Attribute(nameof(BayesianAnalysis.CredibleIntervalWidth));
                             var olAttr = bayesElement.Attribute(nameof(BayesianAnalysis.OutputLength));
                             var peAttr = bayesElement.Attribute(nameof(BayesianAnalysis.PointEstimator));
+                            var seedAttr = bayesElement.Attribute(nameof(BayesianAnalysis.PRNGSeed));
 
                             if (ciAttr != null && double.TryParse(ciAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double ci))
                                 _innerAnalysis.BayesianAnalysis.CredibleIntervalWidth = ci;
@@ -852,6 +853,8 @@ namespace RMC.BestFit.UI
                                 _innerAnalysis.BayesianAnalysis.OutputLength = ol;
                             if (peAttr != null && Enum.TryParse(peAttr.Value, out BayesianAnalysis.PointEstimateType pe))
                                 _innerAnalysis.BayesianAnalysis.PointEstimator = pe;
+                            if (seedAttr != null && int.TryParse(seedAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int seed))
+                                _innerAnalysis.BayesianAnalysis.PRNGSeed = seed;
                         }
                         catch (Exception ex)
                         {
@@ -1044,10 +1047,11 @@ namespace RMC.BestFit.UI
                 element.Description = Description;
                 element._innerAnalysis.NumberOfBins = _innerAnalysis.NumberOfBins;
 
-                // BayesianAnalysis presentation triple (mirrors Composite line 1136-1138).
+                // BayesianAnalysis result-construction settings.
                 element._innerAnalysis.BayesianAnalysis.CredibleIntervalWidth = _innerAnalysis.BayesianAnalysis.CredibleIntervalWidth;
                 element._innerAnalysis.BayesianAnalysis.OutputLength = _innerAnalysis.BayesianAnalysis.OutputLength;
                 element._innerAnalysis.BayesianAnalysis.PointEstimator = _innerAnalysis.BayesianAnalysis.PointEstimator;
+                element._innerAnalysis.BayesianAnalysis.PRNGSeed = _innerAnalysis.BayesianAnalysis.PRNGSeed;
 
                 // Upstream link â€” copy the reference; both elements share the same upstream
                 // BivariateAnalysis, matching how Composite copies InputData.
@@ -1452,7 +1456,8 @@ namespace RMC.BestFit.UI
             // / IsValid via _bayesianOptionsValid.
             if (e.PropertyName == nameof(BayesianAnalysis.CredibleIntervalWidth) ||
                 e.PropertyName == nameof(BayesianAnalysis.OutputLength) ||
-                e.PropertyName == nameof(BayesianAnalysis.PointEstimator))
+                e.PropertyName == nameof(BayesianAnalysis.PointEstimator) ||
+                e.PropertyName == nameof(BayesianAnalysis.PRNGSeed))
             {
                 ValidateBayesianOptions();
                 SetIsValid();
@@ -1746,6 +1751,7 @@ namespace RMC.BestFit.UI
             }
             if (bayes.CredibleIntervalWidth <= 0d || bayes.CredibleIntervalWidth >= 1d ||
                 bayes.OutputLength < 1 ||
+                bayes.PRNGSeed < 0 ||
                 !Enum.IsDefined(typeof(BayesianAnalysis.PointEstimateType), bayes.PointEstimator))
             {
                 _bayesianOptionsValid = false;
@@ -1893,7 +1899,7 @@ namespace RMC.BestFit.UI
             _yValuesBridge = new UndoableCollectionBridge<double>(_yValues, getUndo, nameof(YValues), this);
 
             // BayesianAnalysis output settings bridge â€” records user edits to CI width,
-            // output length, and point estimator as undo entries. The BayesianAnalysis
+            // output length, point estimator, and posterior-resampling seed as undo entries. The BayesianAnalysis
             // setters themselves only RaisePropertyChange (no undo recording); this bridge
             // captures the change externally via INotifyPropertyChanged.
             if (_innerAnalysis?.BayesianAnalysis != null)
@@ -1907,7 +1913,8 @@ namespace RMC.BestFit.UI
                     {
                         nameof(BayesianAnalysis.CredibleIntervalWidth),
                         nameof(BayesianAnalysis.OutputLength),
-                        nameof(BayesianAnalysis.PointEstimator)
+                        nameof(BayesianAnalysis.PointEstimator),
+                        nameof(BayesianAnalysis.PRNGSeed)
                     },
                     onActionRecorded: () => SetIsDirty(true));
             }

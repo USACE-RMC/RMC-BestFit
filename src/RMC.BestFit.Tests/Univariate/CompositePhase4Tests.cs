@@ -15,9 +15,8 @@ namespace RMC.BestFit.Tests.Univariate;
 /// Fast programmatic regression tests for Phase 4 composite-analysis corrections.
 /// </summary>
 /// <remarks>
-/// Covers criterion filtering, exact-zero RMSE weights, and correlation-matrix
-/// validation, serialization, ownership, and result construction. Posterior coupling
-/// and chain-order behavior are deliberately outside this class because TR-014 is deferred.
+/// Covers criterion filtering, exact-zero RMSE weights, correlation-matrix validation,
+/// serialization, ownership, and independent posterior result construction.
 /// </remarks>
 [TestClass]
 public class CompositePhase4Tests
@@ -69,6 +68,32 @@ public class CompositePhase4Tests
                 RMSE = criterion
             });
 
+        return analysis;
+    }
+
+    /// <summary>
+    /// Creates an estimated Normal child with a deliberately varying retained posterior.
+    /// </summary>
+    /// <param name="pointMean">The point-estimate Normal mean.</param>
+    /// <param name="standardDeviation">The fixed posterior standard deviation.</param>
+    /// <param name="outputCount">The retained posterior count.</param>
+    /// <param name="posteriorMean">Maps a raw output index to its Normal mean.</param>
+    /// <returns>An estimated child analysis.</returns>
+    private static UnivariateAnalysis CreateVariablePosteriorChild(
+        double pointMean,
+        double standardDeviation,
+        int outputCount,
+        Func<int, double> posteriorMean)
+    {
+        UnivariateAnalysis analysis = CreateEstimatedChild(pointMean, standardDeviation, 100d);
+        var output = new List<ParameterSet>(outputCount);
+        for (int index = 0; index < outputCount; index++)
+            output.Add(new ParameterSet([posteriorMean(index), standardDeviation], 0d));
+
+        analysis.BayesianAnalysis.OutputLength = outputCount;
+        analysis.BayesianAnalysis.SetCustomMCMCResults(
+            new MCMCResults(new ParameterSet([pointMean, standardDeviation], 0d), output, 0.1d),
+            skipInformationCriteria: true);
         return analysis;
     }
 
@@ -296,5 +321,173 @@ public class CompositePhase4Tests
         Assert.IsNotNull(results);
         Assert.IsNotNull(results.ModeCurve);
         Assert.IsTrue(results.ModeCurve.All(double.IsFinite));
+    }
+
+    /// <summary>
+    /// Verifies both Composite construction branches consume independently randomized
+    /// source indices based on actual retained counts without mutating child posteriors.
+    /// </summary>
+    /// <param name="compositeType">The Composite construction branch under test.</param>
+    [TestMethod]
+    [DataRow(CompositeType.Mixture)]
+    [DataRow(CompositeType.CompetingRisks)]
+    public async Task CreateFrequencyAnalysisResults_IndependentIndexes_MatchExactFiniteOracle(
+        CompositeType compositeType)
+    {
+        UnivariateAnalysis first = CreateVariablePosteriorChild(100d, 6d, 120, index => 80d + 0.4d * index);
+        UnivariateAnalysis second = CreateVariablePosteriorChild(180d, 9d, 190, index => 230d - 0.5d * index);
+        CompositeAnalysis composite = CreateComposite(first, second);
+        composite.CompositeDistributionType = compositeType;
+        composite.BayesianAnalysis.PRNGSeed = 314159;
+        double[][] firstSnapshot = first.BayesianAnalysis.Results!.Output.Select(draw => (double[])draw.Values.Clone()).ToArray();
+        double[][] secondSnapshot = second.BayesianAnalysis.Results!.Output.Select(draw => (double[])draw.Values.Clone()).ToArray();
+        double[] pointEstimateBefore = composite.GetPointEstimateDistribution()!.GetParameters;
+
+        await composite.CreateFrequencyAnalysisResultsAsync();
+
+        UncertaintyAnalysisResults expected = BuildExpectedCompositeResults(composite);
+        AssertUncertaintyResultsEqual(expected, composite.AnalysisResults!, 1E-10);
+        AssertPosteriorUnchanged(firstSnapshot, first.BayesianAnalysis.Results.Output);
+        AssertPosteriorUnchanged(secondSnapshot, second.BayesianAnalysis.Results.Output);
+        CollectionAssert.AreEqual(pointEstimateBefore, composite.GetPointEstimateDistribution()!.GetParameters);
+    }
+
+    /// <summary>
+    /// Verifies a fixed seed is exactly repeatable and changing only that seed changes the
+    /// finite posterior summary while preserving the point-estimate curve.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateFrequencyAnalysisResults_SeedContract_IsRepeatableAndResultDefining()
+    {
+        UnivariateAnalysis first = CreateVariablePosteriorChild(100d, 5d, 120, index => 70d + 0.3d * index);
+        UnivariateAnalysis second = CreateVariablePosteriorChild(160d, 8d, 131, index => 225d - 0.4d * index);
+        CompositeAnalysis composite = CreateComposite(first, second);
+        composite.CompositeDistributionType = CompositeType.Mixture;
+        composite.BayesianAnalysis.PRNGSeed = 271828;
+
+        await composite.CreateFrequencyAnalysisResultsAsync();
+        double[] firstMean = (double[])composite.AnalysisResults!.MeanCurve!.Clone();
+        double[] firstMode = (double[])composite.AnalysisResults.ModeCurve!.Clone();
+        await composite.CreateFrequencyAnalysisResultsAsync();
+
+        CollectionAssert.AreEqual(firstMean, composite.AnalysisResults!.MeanCurve!);
+        CollectionAssert.AreEqual(firstMode, composite.AnalysisResults.ModeCurve!);
+
+        composite.BayesianAnalysis.PRNGSeed = 271829;
+        Assert.IsNull(composite.AnalysisResults, "Changing the seed must invalidate derived results.");
+        await composite.CreateFrequencyAnalysisResultsAsync();
+
+        Assert.IsTrue(firstMean.Where((value, index) =>
+            Math.Abs(value - composite.AnalysisResults!.MeanCurve![index]) > 1E-8).Any());
+        CollectionAssert.AreEqual(firstMode, composite.AnalysisResults!.ModeCurve!);
+    }
+
+    /// <summary>
+    /// Verifies a negative Composite posterior-resampling seed fails validation.
+    /// </summary>
+    [TestMethod]
+    public void Validate_NegativePosteriorResamplingSeed_ReturnsError()
+    {
+        CompositeAnalysis composite = CreateComposite(
+            CreateEstimatedChild(100d, 10d, 100d),
+            CreateEstimatedChild(120d, 12d, 100d));
+        composite.BayesianAnalysis.PRNGSeed = -1;
+
+        var validation = composite.Validate();
+
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message =>
+            message.Contains("PRNG seed", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// Reconstructs the exact finite Composite result from the helper's deterministic index matrix.
+    /// </summary>
+    /// <param name="composite">The configured Composite fixture.</param>
+    /// <returns>The independently constructed finite-sample uncertainty result.</returns>
+    private static UncertaintyAnalysisResults BuildExpectedCompositeResults(CompositeAnalysis composite)
+    {
+        int[] counts = composite.Analyses
+            .Select(entry => entry.UnivariateAnalysis!.BayesianAnalysis!.Results!.Output.Count)
+            .ToArray();
+        int[][] indexes = PosteriorIndexResampler.CreateRandomIndexes(counts, composite.BayesianAnalysis.PRNGSeed);
+        var distributions = new UnivariateDistributionBase[indexes[0].Length];
+
+        for (int realization = 0; realization < distributions.Length; realization++)
+        {
+            var children = composite.Analyses
+                .Select((entry, source) => entry.UnivariateAnalysis!.GetDistribution(indexes[source][realization])!)
+                .ToArray();
+            if (composite.CompositeDistributionType == CompositeType.CompetingRisks)
+            {
+                var competingRisks = new CompetingRisks(children)
+                {
+                    MinimumOfRandomVariables = !composite.IsMaximum,
+                    Dependency = composite.Dependency,
+                    CorrelationMatrix = composite.CorrelationMatrix!,
+                    XTransform = Numerics.Data.Transform.None,
+                    ProbabilityTransform = Numerics.Data.Transform.NormalZ
+                };
+                competingRisks.CreateEmpiricalCDF();
+                distributions[realization] = competingRisks;
+            }
+            else
+            {
+                double[] weights = composite.Analyses.Select(entry => entry.Weight).ToArray();
+                var mixture = new Mixture(weights, children)
+                {
+                    XTransform = Numerics.Data.Transform.None,
+                    ProbabilityTransform = Numerics.Data.Transform.NormalZ
+                };
+                mixture.CreateEmpiricalCDF();
+                distributions[realization] = mixture;
+            }
+        }
+
+        double[] probabilities = composite.ProbabilityOrdinates.Select(probability => 1d - probability).ToArray();
+        var bootstrap = new BootstrapAnalysis(
+            composite.GetPointEstimateDistribution()!,
+            ParameterEstimationMethod.MaximumLikelihood,
+            100,
+            distributions.Length);
+        return bootstrap.Estimate(
+            probabilities,
+            1d - composite.BayesianAnalysis.CredibleIntervalWidth,
+            distributions,
+            false);
+    }
+
+    /// <summary>
+    /// Verifies two uncertainty results agree at every reported ordinate.
+    /// </summary>
+    /// <param name="expected">The independently reconstructed result.</param>
+    /// <param name="actual">The Composite result.</param>
+    /// <param name="tolerance">The maximum absolute difference.</param>
+    private static void AssertUncertaintyResultsEqual(
+        UncertaintyAnalysisResults expected,
+        UncertaintyAnalysisResults actual,
+        double tolerance)
+    {
+        for (int index = 0; index < expected.ModeCurve!.Length; index++)
+        {
+            Assert.AreEqual(expected.ModeCurve[index], actual.ModeCurve![index], tolerance);
+            Assert.AreEqual(expected.MeanCurve![index], actual.MeanCurve![index], tolerance);
+            Assert.AreEqual(expected.ConfidenceIntervals![index, 0], actual.ConfidenceIntervals![index, 0], tolerance);
+            Assert.AreEqual(expected.ConfidenceIntervals[index, 1], actual.ConfidenceIntervals[index, 1], tolerance);
+        }
+    }
+
+    /// <summary>
+    /// Verifies retained parameter values were not modified during Composite result construction.
+    /// </summary>
+    /// <param name="expected">The retained parameter snapshot.</param>
+    /// <param name="actual">The retained posterior output after result construction.</param>
+    private static void AssertPosteriorUnchanged(
+        IReadOnlyList<double[]> expected,
+        IReadOnlyList<ParameterSet> actual)
+    {
+        Assert.AreEqual(expected.Count, actual.Count);
+        for (int index = 0; index < expected.Count; index++)
+            CollectionAssert.AreEqual(expected[index], actual[index].Values);
     }
 }

@@ -48,6 +48,31 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
+        /// Constructs a MAP estimator with an explicit optimizer starting point.
+        /// </summary>
+        /// <param name="model">The model to estimate.</param>
+        /// <param name="method">The optimization method.</param>
+        /// <param name="initialValues">The finite in-bounds parameter vector used to initialize a local optimizer.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="model"/> or <paramref name="initialValues"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the initial vector has the wrong dimension or contains a nonfinite or out-of-bounds value.</exception>
+        /// <remarks>
+        /// This internal construction path lets model-specific estimators, such as mixture EM,
+        /// provide a reliable basin for local full-posterior refinement without changing the
+        /// public MAP API or the model's current parameter values.
+        /// </remarks>
+        internal MaximumAPosteriori(
+            IModel model,
+            OptimizationMethod method,
+            IReadOnlyList<double> initialValues)
+        {
+            Model = model ?? throw new ArgumentNullException(nameof(model), "Model cannot be null.");
+            ArgumentNullException.ThrowIfNull(initialValues);
+            _optimizerMethod = method;
+            SetUpOptimizer(initialValues);
+            IsEstimated = false;
+        }
+
+        /// <summary>
         /// Gets the model to estimate.
         /// </summary>
         public IModel Model { get; private set; }
@@ -193,12 +218,15 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// Sets up the optimizer class based on the selected optimization method.
         /// </summary>
-        private void SetUpOptimizer()
+        private void SetUpOptimizer(IReadOnlyList<double>? explicitInitialValues = null)
         {
             // Store parameter constraints
-            InitialValues = Model.Parameters.Select(x => x.Value).ToArray();
             LowerBounds = Model.Parameters.Select(x => x.LowerBound).ToArray();
             UpperBounds = Model.Parameters.Select(x => x.UpperBound).ToArray();
+            InitialValues = explicitInitialValues?.ToArray() ??
+                Model.Parameters.Select(x => x.Value).ToArray();
+            if (explicitInitialValues != null)
+                ValidateInitialValues(InitialValues);
 
             // MAP estimation maximizes the full log-likelihood(data likelihood + prior)
             if (OptimizerMethod == OptimizationMethod.Brent)
@@ -238,6 +266,32 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
+        /// Validates an optimizer starting point against the current model parameter space.
+        /// </summary>
+        /// <param name="initialValues">The proposed optimizer starting point.</param>
+        /// <exception cref="ArgumentException">Thrown when the vector has the wrong dimension or contains a nonfinite or out-of-bounds value.</exception>
+        private void ValidateInitialValues(IReadOnlyList<double> initialValues)
+        {
+            if (initialValues.Count != NumberOfParameters)
+            {
+                throw new ArgumentException(
+                    "The initial parameter vector must match the model parameter count.",
+                    nameof(initialValues));
+            }
+
+            for (int index = 0; index < initialValues.Count; index++)
+            {
+                double value = initialValues[index];
+                if (!double.IsFinite(value) || value < LowerBounds[index] || value > UpperBounds[index])
+                {
+                    throw new ArgumentException(
+                        $"Initial parameter {index} must be finite and within its model bounds.",
+                        nameof(initialValues));
+                }
+            }
+        }
+
+        /// <summary>
         /// Estimates the model parameters that maximize the likelihood function.
         /// </summary>
         /// <returns>True if estimation was successful; otherwise, false.</returns>
@@ -265,7 +319,12 @@ namespace RMC.BestFit.Estimation
                         // Uses full log-likelihood (data + prior) for posterior Fisher information.
                         try
                         {
-                            _hessian = NumericalDiff.ComputeHessian(Model.LogLikelihood, BestParameterSet.Values, NumberOfParameters);
+                            _hessian = NumericalDiff.ComputeHessian(
+                                Model.LogLikelihood,
+                                BestParameterSet.Values,
+                                NumberOfParameters,
+                                LowerBounds,
+                                UpperBounds);
                         }
                         catch (Exception ex)
                         {
@@ -653,6 +712,65 @@ namespace RMC.BestFit.Estimation
             {
                 Debug.WriteLine($"Failed to compute covariance matrix: {ex.Message}");
                 return SetCovarianceFailure($"Posterior covariance computation failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Attempts to obtain a finite local covariance for MAP-centered MCMC initialization.
+        /// </summary>
+        /// <param name="covariance">The initialization covariance when successful; otherwise, a zero matrix.</param>
+        /// <param name="diagnostic">A diagnostic describing any singular-information fallback that was required.</param>
+        /// <returns><see langword="true"/> when a finite positive-definite initialization covariance is available.</returns>
+        /// <remarks>
+        /// The public covariance contract remains governed by <see cref="TryGetCovarianceMatrix(out Matrix)"/>.
+        /// When that method rejects a singular posterior information matrix, initialization may
+        /// still use its Moore-Penrose inverse. Null-space directions are thereby anchored at the
+        /// MAP rather than assigned unbounded variance, after which only the established
+        /// positive-definite matrix regularization is applied. This covariance is intended solely
+        /// for initial population generation and must not be reported as posterior uncertainty.
+        /// </remarks>
+        internal bool TryGetInitializationCovarianceMatrix(
+            out Matrix covariance,
+            out string? diagnostic)
+        {
+            if (TryGetCovarianceMatrix(out covariance))
+            {
+                diagnostic = CovarianceDiagnostic;
+                return true;
+            }
+
+            diagnostic = CovarianceDiagnostic;
+            covariance = new Matrix(NumberOfParameters, NumberOfParameters);
+            if (!IsEstimated || _hessian == null || NumberOfParameters < 2)
+                return false;
+
+            try
+            {
+                Matrix fisher = _hessian * -1d;
+                var decomposition = new SingularValueDecomposition(fisher);
+                Matrix pseudoInverse = decomposition.Solve(Matrix.Identity(NumberOfParameters));
+                Matrix regularized = MatrixRegularization.MakeSymmetricPositiveDefinite(pseudoInverse);
+                if (!MatrixIsUsableCovariance(regularized) ||
+                    !MatrixIsSymmetricPositiveDefinite(regularized))
+                {
+                    diagnostic =
+                        "The Moore-Penrose posterior covariance could not be regularized for initialization.";
+                    return false;
+                }
+
+                covariance = regularized;
+                diagnostic =
+                    $"Posterior information was rank deficient ({decomposition.Rank()} of " +
+                    $"{NumberOfParameters}); MAP initialization uses a regularized Moore-Penrose covariance.";
+                Debug.WriteLine(diagnostic);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                diagnostic = $"Initialization covariance computation failed: {ex.Message}";
+                Debug.WriteLine(diagnostic);
+                covariance = new Matrix(NumberOfParameters, NumberOfParameters);
+                return false;
             }
         }
 

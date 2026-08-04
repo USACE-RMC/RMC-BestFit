@@ -1,4 +1,7 @@
+using Numerics;
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 using System.Xml.Linq;
@@ -514,6 +517,127 @@ public class MixtureAnalysisTests
 
         Assert.AreEqual(3, analysis.ProbabilityOrdinates.Count, "Should have 3 probability ordinates.");
         Assert.AreEqual(0.5, analysis.ProbabilityOrdinates[0], 1e-10, "First ordinate should be 0.5.");
+    }
+
+    #endregion
+
+    #region Initialization Tests
+
+    /// <summary>
+    /// Verifies posterior-approximation population construction is deterministic, resets stale
+    /// state, scores the full posterior, and seeds chains from the best population members.
+    /// </summary>
+    [TestMethod]
+    public void PopulateSamplerFromPosteriorApproximation_UsesSeedPosteriorAndBestStates()
+    {
+        var model = CreateTestMixtureModel();
+        double[] center = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        model.Parameters[1].PriorDistribution = new Normal(center[1], 100d);
+        var covariance = new double[center.Length, center.Length];
+        for (int index = 0; index < center.Length; index++)
+        {
+            double standardDeviation = Math.Max(1E-4, Math.Abs(center[index]) * 1E-5);
+            covariance[index, index] = standardDeviation * standardDeviation;
+        }
+
+        var firstAnalysis = new MixtureAnalysis(model);
+        firstAnalysis.BayesianAnalysis.SetUpSampler();
+        MCMCSampler firstSampler = firstAnalysis.BayesianAnalysis.Sampler!;
+        firstSampler.InitialIterations = Math.Max(20, firstSampler.NumberOfChains);
+        firstSampler.PopulationMatrix.Add(new ParameterSet(center, double.PositiveInfinity));
+        firstSampler.MarkovChains[0].Add(new ParameterSet(center, double.PositiveInfinity));
+
+        var secondAnalysis = new MixtureAnalysis(model);
+        secondAnalysis.BayesianAnalysis.SetUpSampler();
+        MCMCSampler secondSampler = secondAnalysis.BayesianAnalysis.Sampler!;
+        secondSampler.InitialIterations = firstSampler.InitialIterations;
+
+        MixtureAnalysis.PopulateSamplerFromPosteriorApproximation(
+            model,
+            firstSampler,
+            center,
+            covariance,
+            CancellationToken.None);
+        MixtureAnalysis.PopulateSamplerFromPosteriorApproximation(
+            model,
+            secondSampler,
+            center,
+            covariance,
+            CancellationToken.None);
+
+        Assert.AreEqual(MCMCSampler.InitializationType.UserDefined, firstSampler.Initialize);
+        Assert.AreEqual(firstSampler.InitialIterations, firstSampler.PopulationMatrix.Count);
+        Assert.AreEqual(firstSampler.PopulationMatrix.Count, secondSampler.PopulationMatrix.Count);
+        for (int populationIndex = 0; populationIndex < firstSampler.PopulationMatrix.Count; populationIndex++)
+        {
+            ParameterSet first = firstSampler.PopulationMatrix[populationIndex];
+            ParameterSet second = secondSampler.PopulationMatrix[populationIndex];
+            Assert.IsTrue(double.IsFinite(first.Fitness));
+            Assert.AreEqual(model.LogLikelihood(first.Values), first.Fitness, 1E-10);
+            Assert.AreNotEqual(model.DataLogLikelihood(first.Values), first.Fitness);
+            CollectionAssert.AreEqual(
+                first.Values,
+                second.Values,
+                $"Population draw {populationIndex} changed with the same sampler seed.");
+        }
+
+        ParameterSet[] expectedInitialStates = firstSampler.PopulationMatrix
+            .OrderByDescending(parameterSet => parameterSet.Fitness)
+            .Take(firstSampler.NumberOfChains)
+            .ToArray();
+        for (int chainIndex = 0; chainIndex < firstSampler.NumberOfChains; chainIndex++)
+        {
+            Assert.AreEqual(1, firstSampler.MarkovChains[chainIndex].Count);
+            CollectionAssert.AreEqual(
+                expectedInitialStates[chainIndex].Values,
+                firstSampler.MarkovChains[chainIndex][0].Values,
+                $"Chain {chainIndex} was not seeded by the expected population member.");
+        }
+    }
+
+    /// <summary>
+    /// Verifies mismatched approximation dimensions fail before a population is installed.
+    /// </summary>
+    [TestMethod]
+    public void PopulateSamplerFromPosteriorApproximation_WithMismatchedCovariance_Throws()
+    {
+        var model = CreateTestMixtureModel();
+        var analysis = new MixtureAnalysis(model);
+        analysis.BayesianAnalysis.SetUpSampler();
+        MCMCSampler sampler = analysis.BayesianAnalysis.Sampler!;
+        double[] center = model.Parameters.Select(parameter => parameter.Value).ToArray();
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            MixtureAnalysis.PopulateSamplerFromPosteriorApproximation(
+                model,
+                sampler,
+                center,
+                new double[center.Length - 1, center.Length - 1],
+                CancellationToken.None));
+        Assert.AreEqual(0, sampler.PopulationMatrix.Count);
+        Assert.IsTrue(sampler.MarkovChains.All(chain => chain.Count == 0));
+    }
+
+    /// <summary>
+    /// Verifies the final initialization fallback removes partial custom state and restores randomization.
+    /// </summary>
+    [TestMethod]
+    public void ResetSamplerToRandomizedInitialization_ClearsCustomState()
+    {
+        var model = CreateTestMixtureModel();
+        var analysis = new MixtureAnalysis(model);
+        analysis.BayesianAnalysis.SetUpSampler();
+        MCMCSampler sampler = analysis.BayesianAnalysis.Sampler!;
+        double[] values = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        sampler.Initialize = MCMCSampler.InitializationType.UserDefined;
+        sampler.PopulationMatrix.Add(new ParameterSet(values, model.LogLikelihood(values)));
+        sampler.MarkovChains[0].Add(new ParameterSet(values, model.LogLikelihood(values)));
+
+        MixtureAnalysis.ResetSamplerToRandomizedInitialization(sampler);
+
+        Assert.AreEqual(MCMCSampler.InitializationType.Randomize, sampler.Initialize);
+        Assert.AreEqual(0, sampler.PopulationMatrix.Count);
+        Assert.IsTrue(sampler.MarkovChains.All(chain => chain.Count == 0));
     }
 
     #endregion

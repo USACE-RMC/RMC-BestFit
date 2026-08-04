@@ -18,13 +18,13 @@ A new session should read these files in this order:
 6. `verification/data/MANIFEST.md`
 7. The relevant technical-reference chapter for the current finding
 
-Implementation checkpoint (3 August 2026): BestFit scientific behavior is closed through `9d252f6`. The validated local Numerics head is `34b5186`; the canonical Phase 4 correction anchors are `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
+Implementation checkpoint (3 August 2026): BestFit scientific behavior is closed through `9d252f6` plus the current TR-014 and recovery-supplement working-tree changes, including the authorized competing-risk MAP initializer. The recovery supplement pins Numerics `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`; Numerics clone correction `e57af20` preserves the configured logarithm base. The canonical Phase 4 correction anchors remain `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, with the test-ownership migration audit retained as an active hygiene backlog. Phases 1, 2, and 3 are closed for their approved scopes. Phase 4 is complete except for TR-014, which remains deferred pending a joint decision about independently fitted univariate and bivariate posterior coupling.
+The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, with the test-ownership migration audit retained as an active hygiene backlog. Phases 1, 2, 3, and the original Phase 4 findings are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement completed focused execution with 23 passes and seven unresolved findings, so it continues to gate Phase 5. TR-014 implements the approved product-posterior resampling policy in Composite and CFA while leaving `BivariateAnalysis` unchanged.
 
-Reconciled checkpoint (3 August 2026): Core 3,116/3,116, UI 568/568, App 428/428, and Numerics .NET 10 Release 2,024/2,024 pass with zero failures. Strict XML documentation, Release solution, public API baseline, and Verification compilation gates pass. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
+Reconciled checkpoint (3 August 2026): Core 3,134/3,134, UI 571/571, App 428/428, and Numerics 2,072/2,072 on each of net481/net8/net9/net10 pass with zero failures. Strict XML documentation and Verification compilation gates pass. Both exact TR-014 methods pass separately through the guarded runner. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
 
 The report is a living Markdown book under `docs/verification/`. Every scientific claim must link to a test, oracle artifact, package/version, tolerance, result, review finding, and relevant technical-reference chapter. Markdown is the source of truth during development. PDF rendering is deferred until explicit release or visual-QA checkpoints.
 
@@ -78,11 +78,11 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 - Phase 1 distribution fitting is complete for the currently scoped claims.
 - Phase 2 model estimation and diagnostics are closed for the approved scope.
 - Phase 3 data handling and Bulletin 17C are closed for the approved scope.
-- Phase 4 closes TR-004 through TR-008, TR-012, TR-013, and TR-015; TR-014 remains deferred and open.
+- Phase 4 closes TR-004 through TR-008 and TR-012 through TR-015.
 
 ### Current Phase Checkpoint
 
-Phases 1 through 3 are formally closed for their approved scopes. In Phase 4, point-process TR-004/TR-005, mixture TR-006/TR-007/TR-008, competing-risk simulation TR-012, composite criterion handling TR-013, and correlation-matrix configuration TR-015 are closed with direct evidence. TR-014 is the only remaining Phase 4 exit item and is deferred by direction until its posterior-coupling policy is reviewed with affected bivariate posterior consumers.
+Phases 1 through 3 and the original Phase 4 finding scopes are formally closed. Phase 4 includes point-process TR-004/TR-005, mixture TR-006/TR-007/TR-008, competing-risk simulation TR-012, composite criterion handling TR-013, independent Composite/CFA posterior resampling TR-014, and correlation-matrix configuration TR-015. The recovery supplement has now run all 20 competing-risk and ten composite methods individually through the guarded runner; its seven unresolved findings keep the supplemental Phase 4 gate open and prevent Phase 5 from starting.
 
 Completed Phase 2 findings:
 
@@ -274,28 +274,37 @@ Phase exit criteria:
 
 ## Phase 4 - Point Processes and Composite Models
 
-Status: in progress. The point-process subset (TR-004/TR-005), mixture subset (TR-006/TR-007/TR-008), competing-risk simulation (TR-012), criterion handling (TR-013), and correlation-matrix configuration (TR-015) are closed with direct evidence. TR-014 is deferred by direction pending review with bivariate posterior behavior; it is the remaining Phase 4 exit item.
+Status: original findings complete for the approved scope; recovery supplement focused execution complete with seven unresolved findings. The point-process subset (TR-004/TR-005), mixture subset (TR-006/TR-007/TR-008), competing-risk simulation (TR-012), criterion handling (TR-013), independent posterior resampling (TR-014), and correlation-matrix configuration (TR-015) remain closed with direct evidence. Phase 5 stays gated pending disposition of the supplement findings.
 
 Findings and required direction:
 
 - TR-004: complete. Empirical count/rate, fitted threshold intensity, exposure metadata, and manual year/index fallback are implemented. Seasonal exact records require dates; annual/block-indexed non-exact records use the annual maximum of the two exposure-adjusted seasonal processes. Both guarded independent mixed-likelihood calculations pass.
 - TR-005: complete in the approved scope. All recovery fixtures use 1,000 observations and untouched `BayesianAnalysis` defaults. Calendar-year uniform, October-water-year block-origin parity, nonseasonal production, and seasonal production recovery pass. The initial water-year failure changed block-day parameters from `170/350` to `80/260`; the corrected parity cell keeps the parameters fixed and changes only the block origin. No sampler default, seed, prior, production formula, or tolerance changed.
-- TR-006: BestFit uses direct physical $K-1$ weights, derives the final weight, applies the normalized flat-simplex prior, and never mutates proposals. Public weight-related signatures are unchanged. No legacy posterior migration or parameterization version is provided; affected saved mixture results require re-estimation. Three exact parity methods and three Bayesian `MixtureAnalysis` recovery methods passed guarded execution.
+- TR-006: BestFit uses direct physical $K-1$ weights, derives the final weight, applies the normalized flat-simplex prior, and never mutates proposals. Public weight-related signatures are unchanged. No legacy posterior migration or parameterization version is provided; affected saved mixture results require re-estimation. Three exact parity methods remain passed; the three Bayesian `MixtureAnalysis` methods have prior guarded results that predate the initializer change.
+- Mixture Bayesian initialization now retains public EM as an approximate-MLE/Numerics-parity contract, uses its solution to start bounded Nelder-Mead refinement of the full posterior, and builds the seeded population from the MAP covariance with an EM-population fallback. The informative-prior initializer method and the three Bayesian recovery methods are `Ready - focused run`; their earlier Bayesian runtimes predate this initializer and are not current passing evidence.
 - TR-007: Numerics and BestFit implement one exact-zero positive-hurdle mixed measure with every continuous contribution conditioned on $X>0$; BestFit derives the fixed atom from exact annual records only. Both zero-inflated parity and Bayesian recovery passed, including the production-generator atom check.
 - TR-008: Numerics and BestFit EM fail explicitly with row context when any required total row probability is zero or nonfinite. Fast impossible-row regressions and all six guarded recovery methods pass without changing tolerances.
 - TR-012: complete. Numerics commit `cafe6cf3837988341912a5aa8bfda444ea55ff77` routes the existing simulation entry point through dependency-aware sampling while preserving the independent seeded sequence. Fast contracts and four separately guarded analytical rank/CDF methods cover Independent, PerfectlyPositive, PerfectlyNegative, and CorrelationMatrix modes.
 - TR-013: complete. Invalid or unavailable criteria receive exactly zero weight with a named warning when another usable child remains; no-usable-criterion averages fail explicitly. Exact-zero RMSE children split unit weight without division by zero. Bulletin 17C remains eligible for Equal/AIC/BIC/RMSE and is zero-weighted, not type-rejected, when DIC/WAIC/LOOIC is unavailable.
-- TR-014: deferred by explicit direction. Raw child index pairing remains unchanged. The independence/resampling design must be reconsidered together with bivariate posteriors and must verify posterior immutability plus child- and chain-order invariance before implementation.
+- TR-014: complete. Composite and CFA use one independently randomized, full-range, without-replacement index row per actual retained source and the shortest actual count. A fixed owning seed and source order are reproducible; reversed-chain and swapped-child variants pass the same product-posterior targets without requiring bitwise equality. CFA caches the semantic copula/X/Y map for aggregate/accessor identity. Child posteriors and point estimates are immutable, UI seed lifecycle is preserved, index arrays are not serialized, and `BivariateAnalysis` remains unchanged.
 - TR-015: complete. Core and UI expose the authorized defensively owned `CorrelationMatrix` property, validate its structure and child dimension, persist it with invariant optional fields, and propagate it to point-estimate and uncertainty-result competing-risk distributions. Existing public method signatures and result contracts are preserved.
+
+Recovery supplement implementation:
+
+- `CompetingRiskRecoveryTests` adds ten MLE and ten Bayesian methods reproducing the eight pinned Numerics min/max fixtures plus two latent-correlation-0.6 cases. Generation uses seed 12345 and 1,000/1,500 observations. Every case requires true-parameter likelihood parity at `1E-10`, successful finite estimation, and parent-CDF recovery at `0.05` or `0.06`. The approved hybrid parameter gate is limited to the identifiable two-Weibull shapes and separated two-Normal means.
+- Bayesian recovery always uses the unchanged production DEMCzs sampling defaults and asserts them before and after sampling. Current resolved defaults are 3,500 iterations, 1,750 warmup, 10,000 outputs, 90% intervals, posterior mean, seed 12345, and dimension-scaled chain/thinning/initialization values. `CompetingRiskAnalysis` supplies an authorized MAP-centered `UserDefined` population: bounded posterior Hessian, initialization-only regularized Moore-Penrose fallback for singular information, fixed covariance inflation 1.5, sampler-seed draws, and randomized fallback. Focused methods assert that successful post-run results retained MAP initialization.
+- `CompositeRecoveryTests` adds ten analytical, published-table, closed-form, Cartesian-posterior, and correlation-orthant methods. Three posterior cells use explicit 5,000-draw child `MCMCResults`, 20-point mean supports, seed 20260803, five probabilities, mean tolerance `0.02`, limit tolerance `0.05`, and fixed-parent band containment.
+- All 30 new methods were rerun one at a time after MAP initialization. All ten MLE methods, four Default-DEMCzs methods, and nine Composite methods pass. Six Bayesian cells and one extreme-tail Composite inversion cell fail their predeclared gates. MAP initialization resolved the former separated three-Weibull R-hat failure, while correlated two-Weibull ESS now fails; the total remains 23 passes and seven findings. Analytical formulas and the short R `mistr` table are embedded, so no new generated artifact or manifest entry is required.
 
 Phase exit criteria:
 
 - Point-process simulation, mixture likelihoods, zero-inflation, composite weighting, and competing-risk dependency handling are internally coherent and verified against analytical or simulation fixtures.
-- Phase 4 remains open until TR-014 establishes and verifies the posterior-coupling contract across univariate and affected bivariate posterior consumers.
+- Independent Composite/CFA posterior propagation passes fast seed/range/immutability/cache contracts and separately guarded Cartesian and closed-form oracles. Saved pre-TR-014 summaries require reprocessing.
+- Before Phase 5, resolve or receive an approved disposition for the seven supplement findings without changing algorithms, defaults, seeds, or tolerances implicitly. The two existing TR-014 methods pass their repeated exact runs. Run the three mandatory fast Core/UI/App suites before any final commit because the working unit also contains the current TR-014 core/UI work.
 
 ## Phase 5 - Time-Series Models
 
-Status: planned.
+Status: planned; gated by the Phase 4 competing-risk/composite recovery supplement.
 
 Findings and required direction:
 
@@ -419,13 +428,13 @@ Characterization is complete and Phase 2 is closed. A future, separately approve
 Use this prompt to continue from a clean session:
 
 ```text
-We are continuing RMC.BestFit verification finalization after closing Phases 1 through 3 for their approved scopes and all Phase 4 findings except TR-014. BestFit implementation checkpoint: 9d252f6. Validated Numerics head: 34b5186; Phase 4 correction anchors: 3e69a93 and cafe6cf.
+We are continuing RMC.BestFit verification finalization after completing the original Phase 1-4 finding scopes and running the Phase 4 competing-risk/composite recovery supplement. BestFit implementation checkpoint: 9d252f6 plus the current TR-014, recovery-test, and competing-risk MAP-initialization working-tree changes. Recovery sources are pinned to Numerics c361f28 and RMC-TotalRisk d4d43e6; the Numerics logarithmic-base clone correction is e57af20.
 
 Read docs/verification/verification-finalization-plan.md first, then docs/technical-reference/review-findings.md, docs/verification/README.md, docs/verification/model-estimation.md, docs/verification/test-inventory.md, and verification/data/MANIFEST.md.
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: Phase 0 infrastructure is operational; Phases 1 through 3 are closed for their approved scopes. TR-004 through TR-008, TR-012, TR-013, and TR-015 are closed. TR-014 is deferred by direction and is the only remaining Phase 4 exit item because separately fitted child-posterior coupling must be reviewed together with affected bivariate posteriors. Bulletin 17C remains a valid composite child for Equal/AIC/BIC/RMSE and receives zero weight rather than type rejection when DIC/WAIC/LOOIC is unavailable and another child is usable.
+Current checkpoint: Phase 0 infrastructure is operational; Phases 1 through 3 and the original Phase 4 findings are closed for their approved scopes. TR-014 independently resamples actual retained Composite and CFA sources with the existing seed, while `BivariateAnalysis` remains unchanged and conditional on fixed marginals. The 30-method recovery supplement completed focused execution with 23 passes and seven unresolved findings, so Phase 5 remains gated. Bulletin 17C remains a valid composite child for Equal/AIC/BIC/RMSE and receives zero weight rather than type rejection when DIC/WAIC/LOOIC is unavailable and another child is usable.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
@@ -440,7 +449,7 @@ Constraints:
 - Preserve unrelated modified/untracked files.
 
 First task:
-Resolve TR-014 only after the univariate and bivariate posterior-coupling contract is explicitly approved. Never run the full Verification project.
+Obtain an approved technical disposition for the seven recovery-supplement findings before beginning Phase 5. Preserve the closed Phase 1-4 numerical and compatibility contracts. Never run the full Verification project.
 ```
 
 ## Off-Ramps

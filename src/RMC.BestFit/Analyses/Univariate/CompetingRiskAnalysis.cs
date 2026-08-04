@@ -2,7 +2,10 @@ using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
+using Numerics.Mathematics.LinearAlgebra;
+using Numerics.Mathematics.Optimization;
 using Numerics.Sampling;
+using Numerics.Sampling.MCMC;
 using Numerics.Utilities;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -24,8 +27,10 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// This analysis fits a <see cref="CompetingRisksModel"/> using Bayesian MCMC methods.
-    /// It produces uncertainty quantification for frequency analysis (quantiles at specified
-    /// exceedance probabilities).
+    /// It initializes the sampler from an inflated local approximation at a Differential
+    /// Evolution MAP estimate, then preserves the configured sampler settings while producing
+    /// uncertainty quantification for frequency analysis (quantiles at specified exceedance
+    /// probabilities).
     /// </para>
     /// <para>
     /// The competing risks distribution combines multiple independent parent distributions where
@@ -38,6 +43,22 @@ namespace RMC.BestFit.Analyses
     /// </remarks>
     public class CompetingRiskAnalysis : AnalysisBase, IUnivariateAnalysis
     {
+
+        /// <summary>
+        /// Fixed covariance multiplier used to overdisperse the local MAP approximation.
+        /// </summary>
+        /// <remarks>
+        /// This matches the established <see cref="MixtureAnalysis"/> initialization policy.
+        /// </remarks>
+        private const double MapCovarianceInflationFactor = 1.5d;
+
+        /// <summary>
+        /// Maximum number of replacement draws attempted after an invalid MAP-population draw.
+        /// </summary>
+        /// <remarks>
+        /// This matches the established <see cref="MixtureAnalysis"/> feasibility-retry policy.
+        /// </remarks>
+        private const int MaximumInitializationReplacementDraws = 20;
 
         #region Construction
 
@@ -337,11 +358,12 @@ namespace RMC.BestFit.Analyses
 
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = new CancellationTokenSource();
+            var token = _cancellationTokenSource.Token;
 
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults â€”
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -358,6 +380,12 @@ namespace RMC.BestFit.Analyses
                     // Prepare input data
                     CompetingRisksDistribution.DataFrame.ProcessThresholdSeries();
                     CompetingRisksDistribution.ProcessQuantilePriors();
+
+                    // Set up the default DEMCzs sampler, then replace only its initialization
+                    // population with an overdispersed local approximation at the posterior mode.
+                    BayesianAnalysis.SetUpSampler();
+                    var sampler = BayesianAnalysis.Sampler!;
+                    await ConfigureMapInitializationAsync(sampler, token);
 
                     // Run Bayesian analysis
                     await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
@@ -403,6 +431,172 @@ namespace RMC.BestFit.Analyses
             {
                 _reprocessGate.Release();
             }
+        }
+
+        /// <summary>
+        /// Configures a competing-risk sampler with a population drawn around the posterior mode.
+        /// </summary>
+        /// <param name="sampler">The already configured production MCMC sampler.</param>
+        /// <param name="cancellationToken">Token used to cancel initialization before MCMC begins.</param>
+        /// <returns>A task that completes when initialization succeeds or the sampler is reset to randomized initialization.</returns>
+        /// <remarks>
+        /// The MAP uses the production Differential Evolution default. Its pseudo-random seed is
+        /// synchronized with the sampler seed, while all other optimizer and DEMCzs settings remain
+        /// unchanged. A failed MAP estimate, unusable posterior covariance, or infeasible population
+        /// causes a clean fallback to the sampler's established randomized initialization.
+        /// </remarks>
+        private async Task ConfigureMapInitializationAsync(
+            MCMCSampler sampler,
+            CancellationToken cancellationToken)
+        {
+            sampler.Initialize = MCMCSampler.InitializationType.UserDefined;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var map = new MaximumAPosteriori(CompetingRisksDistribution);
+                    if (map.Optimizer is DifferentialEvolution differentialEvolution)
+                        differentialEvolution.PRNGSeed = sampler.PRNGSeed;
+
+                    if (!map.Estimate())
+                    {
+                        throw new InvalidOperationException(
+                            $"Competing-risk MAP initialization failed with status {map.Status}.");
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!map.TryGetInitializationCovarianceMatrix(
+                        out Matrix covariance,
+                        out string? covarianceDiagnostic))
+                    {
+                        throw new InvalidOperationException(
+                            covarianceDiagnostic ?? "The competing-risk MAP covariance is unavailable.");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(covarianceDiagnostic))
+                        Debug.WriteLine(covarianceDiagnostic);
+
+                    PopulateSamplerFromPosteriorApproximation(
+                        CompetingRisksDistribution,
+                        sampler,
+                        map.BestParameterSet.Values,
+                        covariance.ToArray(),
+                        cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    sampler.Reset();
+                    sampler.Initialize = MCMCSampler.InitializationType.Randomize;
+                    Debug.WriteLine(
+                        $"CompetingRiskAnalysis MAP initialization failed, using random initialization: {ex.Message}");
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Populates an MCMC sampler from an inflated multivariate Normal approximation.
+        /// </summary>
+        /// <param name="model">The competing-risk model used to reject infeasible draws.</param>
+        /// <param name="sampler">The configured sampler that receives the population and chain states.</param>
+        /// <param name="mapParameters">The posterior-mode parameter vector.</param>
+        /// <param name="mapCovariance">The local posterior covariance at the mode.</param>
+        /// <param name="cancellationToken">Token used to cancel population generation.</param>
+        /// <exception cref="ArgumentNullException">Thrown when a required input is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the approximation dimensions do not match.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when a feasible initial population cannot be generated.</exception>
+        /// <remarks>
+        /// This internal seam supports fast deterministic tests without running MAP or MCMC. The
+        /// covariance is multiplied by the fixed factor <see cref="MapCovarianceInflationFactor"/>.
+        /// Population draws use the sampler seed, and the best finite draws seed its Markov chains.
+        /// </remarks>
+        internal static void PopulateSamplerFromPosteriorApproximation(
+            CompetingRisksModel model,
+            MCMCSampler sampler,
+            double[] mapParameters,
+            double[,] mapCovariance,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(model);
+            ArgumentNullException.ThrowIfNull(sampler);
+            ArgumentNullException.ThrowIfNull(mapParameters);
+            ArgumentNullException.ThrowIfNull(mapCovariance);
+
+            int parameterCount = mapParameters.Length;
+            if (parameterCount != model.NumberOfParameters ||
+                mapCovariance.GetLength(0) != parameterCount ||
+                mapCovariance.GetLength(1) != parameterCount)
+            {
+                throw new ArgumentException(
+                    "The MAP parameter and covariance dimensions must match the competing-risk model.",
+                    nameof(mapCovariance));
+            }
+
+            sampler.Reset();
+            sampler.Initialize = MCMCSampler.InitializationType.UserDefined;
+
+            var inflatedCovariance = new double[parameterCount, parameterCount];
+            for (int row = 0; row < parameterCount; row++)
+            {
+                for (int column = 0; column < parameterCount; column++)
+                {
+                    inflatedCovariance[row, column] =
+                        mapCovariance[row, column] * MapCovarianceInflationFactor;
+                }
+            }
+
+            var proposal = new MultivariateNormal(mapParameters, inflatedCovariance);
+            var prng = new MersenneTwister(sampler.PRNGSeed);
+            var population = new List<ParameterSet>(sampler.InitialIterations);
+
+            for (int populationIndex = 0; populationIndex < sampler.InitialIterations; populationIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                double[]? proposalParameters = null;
+                double logLikelihood = double.NegativeInfinity;
+                bool isFeasible = false;
+
+                for (int attempt = 0; attempt <= MaximumInitializationReplacementDraws; attempt++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    try
+                    {
+                        proposalParameters = proposal.InverseCDF(
+                            prng.NextDoubles(1, parameterCount).GetRow(0));
+                        logLikelihood = model.LogLikelihood(proposalParameters);
+                        isFeasible = Tools.IsFinite(logLikelihood);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine(
+                            $"CompetingRiskAnalysis initialization draw {attempt + 1} was invalid: {ex.Message}");
+                        isFeasible = false;
+                    }
+
+                    if (isFeasible)
+                        break;
+                }
+
+                if (!isFeasible || proposalParameters is null)
+                {
+                    throw new InvalidOperationException(
+                        "Unable to generate a feasible competing-risk MAP initialization.");
+                }
+
+                var parameterSet = new ParameterSet(proposalParameters, logLikelihood);
+                sampler.PopulationMatrix.Add(parameterSet.Clone());
+                population.Add(parameterSet);
+            }
+
+            population.Sort((left, right) => right.Fitness.CompareTo(left.Fitness));
+            for (int chainIndex = 0; chainIndex < sampler.NumberOfChains; chainIndex++)
+                sampler.MarkovChains[chainIndex].Add(population[chainIndex].Clone());
         }
 
         /// <inheritdoc/>

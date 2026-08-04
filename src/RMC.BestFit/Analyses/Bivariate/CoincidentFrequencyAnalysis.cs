@@ -154,11 +154,17 @@ namespace RMC.BestFit.Analyses
         private double[] _yValues = null!;
         private double[,] _bivariateResponse = null!;
         private int _numberOfBins = 50;
+        private MCMCResults? _marginalXChain;
+        private MCMCResults? _marginalYChain;
+        private int[][]? _posteriorRandomIndexes;
+        private int[]? _posteriorRandomIndexSourceCounts;
+        private int _posteriorRandomIndexSeed = -1;
 
         /// <summary>
-        /// Gets the Bayesian analysis settings (CredibleIntervalWidth, OutputLength, PointEstimator).
-        /// CFA does not own an MCMC chain � this object holds presentation settings only and is
-        /// set once in the constructor (mirrors <c>CompositeAnalysis</c>).
+        /// Gets the Bayesian result settings (CredibleIntervalWidth, OutputLength,
+        /// PointEstimator, and PRNGSeed).
+        /// CFA does not own an MCMC chain; this object holds presentation and result-generation settings.
+        /// PRNGSeed controls cross-source posterior resampling; the remaining values control presentation.
         /// </summary>
         public BayesianAnalysis BayesianAnalysis { get; private set; } = null!;
 
@@ -253,16 +259,37 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Gets or sets the X marginal posterior MCMC samples. When non-null, each
-        /// realisation r uses <see cref="MCMCResults.Output"/>[r].Values as the marginal X
-        /// parameters. When null, the algorithm uses the point-estimate marginal X.
+        /// realisation uses an independently randomized, without-replacement index into
+        /// <see cref="MCMCResults.Output"/>. When null, the algorithm uses the point-estimate
+        /// marginal X.
         /// </summary>
-        public MCMCResults? MarginalXChain { get; set; }
+        public MCMCResults? MarginalXChain
+        {
+            get { return _marginalXChain; }
+            set
+            {
+                if (ReferenceEquals(_marginalXChain, value)) return;
+                _marginalXChain = value;
+                ClearResults();
+                RaisePropertyChange(nameof(MarginalXChain));
+            }
+        }
 
         /// <summary>
         /// Gets or sets the Y marginal posterior MCMC samples. Same semantics as
         /// <see cref="MarginalXChain"/>.
         /// </summary>
-        public MCMCResults? MarginalYChain { get; set; }
+        public MCMCResults? MarginalYChain
+        {
+            get { return _marginalYChain; }
+            set
+            {
+                if (ReferenceEquals(_marginalYChain, value)) return;
+                _marginalYChain = value;
+                ClearResults();
+                RaisePropertyChange(nameof(MarginalYChain));
+            }
+        }
 
         /// <summary>
         /// Gets the uncertainty analysis results: ModeCurve, MeanCurve, ConfidenceIntervals
@@ -304,7 +331,8 @@ namespace RMC.BestFit.Analyses
         /// Loss of estimated state clears results; PointEstimator changes update the
         /// point-estimate output without re-running the chain; CredibleIntervalWidth
         /// changes clear derived CFA results because the per-realisation AEP matrix is
-        /// not cached and the user must rerun explicitly.
+        /// not cached and the user must rerun explicitly. PRNGSeed changes also clear the
+        /// cached cross-source posterior pairing and derived results.
         /// All other notifications propagate for UI binding.
         /// </summary>
         private void BayesianAnalysis_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -325,10 +353,70 @@ namespace RMC.BestFit.Analyses
                 ClearResults();
                 RaisePropertyChange(e.PropertyName);
             }
+            else if (e.PropertyName == nameof(Estimation.BayesianAnalysis.PRNGSeed))
+            {
+                ClearResults();
+                RaisePropertyChange(e.PropertyName);
+            }
             else
             {
                 RaisePropertyChange(e.PropertyName);
             }
+        }
+
+        /// <summary>
+        /// Returns the cached posterior-index mapping when it matches the current source
+        /// counts and seed, or creates a new mapping when the cache is absent or stale.
+        /// </summary>
+        /// <param name="copulaResults">The required upstream copula posterior results.</param>
+        /// <returns>
+        /// Index rows in semantic order: copula, X marginal when present, and Y marginal
+        /// when present; or <c>null</c> when any supplied source has no retained output.
+        /// </returns>
+        /// <remarks>
+        /// The mapping is generated before parallel processing so no random-number generator
+        /// is shared by worker threads. It is not serialized; deterministic regeneration from
+        /// the saved seed preserves the same finite pairing after a project is reopened.
+        /// </remarks>
+        private int[][]? GetOrCreatePosteriorRandomIndexes(MCMCResults copulaResults)
+        {
+            var sourceOutputCounts = new List<int>
+            {
+                copulaResults.Output?.Count ?? 0
+            };
+            if (MarginalXChain != null)
+                sourceOutputCounts.Add(MarginalXChain.Output?.Count ?? 0);
+            if (MarginalYChain != null)
+                sourceOutputCounts.Add(MarginalYChain.Output?.Count ?? 0);
+
+            if (sourceOutputCounts.Any(count => count <= 0)) return null;
+
+            bool cacheMatches = _posteriorRandomIndexes != null &&
+                _posteriorRandomIndexSourceCounts != null &&
+                _posteriorRandomIndexSeed == BayesianAnalysis.PRNGSeed &&
+                _posteriorRandomIndexSourceCounts.SequenceEqual(sourceOutputCounts);
+            if (cacheMatches) return _posteriorRandomIndexes;
+
+            _posteriorRandomIndexes = PosteriorIndexResampler.CreateRandomIndexes(
+                sourceOutputCounts,
+                BayesianAnalysis.PRNGSeed);
+            _posteriorRandomIndexSourceCounts = sourceOutputCounts.ToArray();
+            _posteriorRandomIndexSeed = BayesianAnalysis.PRNGSeed;
+            return _posteriorRandomIndexes;
+        }
+
+        /// <summary>
+        /// Clears the transient posterior-index mapping and its cache key.
+        /// </summary>
+        /// <remarks>
+        /// Posterior index arrays are derived state. They are regenerated from the current
+        /// posterior source counts and <see cref="BayesianAnalysis.PRNGSeed"/> when needed.
+        /// </remarks>
+        private void InvalidatePosteriorRandomIndexes()
+        {
+            _posteriorRandomIndexes = null;
+            _posteriorRandomIndexSourceCounts = null;
+            _posteriorRandomIndexSeed = -1;
         }
 
         /// <summary>
@@ -337,6 +425,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         public void ClearResults()
         {
+            InvalidatePosteriorRandomIndexes();
             AnalysisResults = null;
             ZOutputValues = null;
             RaisePropertyChange(nameof(AnalysisResults));
@@ -458,10 +547,14 @@ namespace RMC.BestFit.Analyses
                 // Determine realisation count: copula chain is the only required source
                 // (marginal chains are optional � fall back to point-estimate marginals if missing).
                 var copulaResults = BivariateAnalysis.BayesianAnalysis?.Results;
-                int copulaRealz = copulaResults?.Output?.Count ?? 0;
-                int marginalXRealz = MarginalXChain?.Output?.Count ?? int.MaxValue;
-                int marginalYRealz = MarginalYChain?.Output?.Count ?? int.MaxValue;
-                int realz = Math.Min(copulaRealz, Math.Min(marginalXRealz, marginalYRealz));
+                int[][]? randomIndexes = copulaResults == null
+                    ? null
+                    : GetOrCreatePosteriorRandomIndexes(copulaResults);
+                int realz = randomIndexes?[0].Length ?? 0;
+                int marginalXSourceRow = MarginalXChain == null ? -1 : 1;
+                int marginalYSourceRow = MarginalYChain == null
+                    ? -1
+                    : 1 + (MarginalXChain == null ? 0 : 1);
 
                 AnalysisResults = new UncertaintyAnalysisResults
                 {
@@ -502,11 +595,14 @@ namespace RMC.BestFit.Analyses
                     // running outside the debugger.
                     options.CancellationToken.ThrowIfCancellationRequested();
 
-                    double[]? mxParams = (MarginalXChain != null && r < MarginalXChain.Output.Count)
-                        ? MarginalXChain.Output[r].Values : null;
-                    double[]? myParams = (MarginalYChain != null && r < MarginalYChain.Output.Count)
-                        ? MarginalYChain.Output[r].Values : null;
-                    var aep = ComputeAEPCurveForDraw(copulaResults!.Output[r].Values, mxParams, myParams, yEdges);
+                    double[]? mxParams = MarginalXChain == null
+                        ? null
+                        : MarginalXChain.Output[randomIndexes![marginalXSourceRow][r]].Values;
+                    double[]? myParams = MarginalYChain == null
+                        ? null
+                        : MarginalYChain.Output[randomIndexes![marginalYSourceRow][r]].Values;
+                    var copulaParameters = copulaResults!.Output[randomIndexes![0][r]].Values;
+                    var aep = ComputeAEPCurveForDraw(copulaParameters, mxParams, myParams, yEdges);
                     for (int k = 0; k < K; k++) aepStore[k][r] = aep[k];
 
                     int done = Interlocked.Increment(ref progressCounter);
@@ -899,16 +995,19 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Returns an empirical distribution over Z (response value) and AEP (= 1 - F_Z) for posterior
-        /// draw <paramref name="index"/>. The realisation count equals
-        /// min(copulaChain, marginalXChain, marginalYChain), where missing marginal chains are treated
-        /// as unbounded (point-estimate fall-back inside <see cref="ComputeAEPCurveForDraw"/>).
+        /// realization <paramref name="index"/>. The realization count equals the shortest
+        /// supplied retained chain. Missing marginal chains use the point-estimate fallback
+        /// inside <see cref="ComputeAEPCurveForDraw"/> and do not constrain that count.
         /// </summary>
         /// <param name="index">Posterior realisation index in [0, realz).</param>
         /// <returns>The empirical Z?AEP distribution for the requested draw, or null when upstream is
         /// not estimated, <see cref="ZOutputValues"/> is null, the index is out of range, or the
         /// constructor rejects the data.</returns>
-        /// <remarks>Mirrors <see cref="UnivariateAnalysis.GetDistribution(int)"/>. The probability
-        /// axis is in descending sort order (AEP).</remarks>
+        /// <remarks>
+        /// Mirrors <see cref="UnivariateAnalysis.GetDistribution(int)"/>. The probability
+        /// axis is in descending sort order (AEP). The accessor reuses the cached randomized
+        /// copula/X/Y mapping used to construct <see cref="AnalysisResults"/>.
+        /// </remarks>
         public EmpiricalDistribution? GetEmpiricalDistribution(int index)
         {
             if (BivariateAnalysis?.BayesianAnalysis == null
@@ -918,18 +1017,22 @@ namespace RMC.BestFit.Analyses
                 return null;
 
             var copulaResults = BivariateAnalysis.BayesianAnalysis.Results;
-            int copulaRealz = copulaResults.Output?.Count ?? 0;
-            int marginalXRealz = MarginalXChain?.Output?.Count ?? int.MaxValue;
-            int marginalYRealz = MarginalYChain?.Output?.Count ?? int.MaxValue;
-            int realz = Math.Min(copulaRealz, Math.Min(marginalXRealz, marginalYRealz));
+            int[][]? randomIndexes = GetOrCreatePosteriorRandomIndexes(copulaResults);
+            int realz = randomIndexes?[0].Length ?? 0;
 
             if (index < 0 || index >= realz) return null;
 
-            var copulaParams = copulaResults.Output![index].Values;
-            var mxParams = (MarginalXChain != null && index < MarginalXChain.Output.Count)
-                ? MarginalXChain.Output[index].Values : null;
-            var myParams = (MarginalYChain != null && index < MarginalYChain.Output.Count)
-                ? MarginalYChain.Output[index].Values : null;
+            int marginalXSourceRow = MarginalXChain == null ? -1 : 1;
+            int marginalYSourceRow = MarginalYChain == null
+                ? -1
+                : 1 + (MarginalXChain == null ? 0 : 1);
+            var copulaParams = copulaResults.Output![randomIndexes![0][index]].Values;
+            var mxParams = MarginalXChain == null
+                ? null
+                : MarginalXChain.Output[randomIndexes[marginalXSourceRow][index]].Values;
+            var myParams = MarginalYChain == null
+                ? null
+                : MarginalYChain.Output[randomIndexes[marginalYSourceRow][index]].Values;
 
             var yEdges = ComputeYBinEdges(YValues);
             var aepCurve = ComputeAEPCurveForDraw(copulaParams, mxParams, myParams, yEdges);
@@ -1152,6 +1255,12 @@ namespace RMC.BestFit.Analyses
             {
                 // Non-blocking warning � large bin counts are valid but slow.
                 messages.Add("Warning: NumberOfBins > 100 may result in slow run times.");
+            }
+
+            if (BayesianAnalysis.PRNGSeed < 0)
+            {
+                isValid = false;
+                messages.Add("The posterior-resampling PRNG seed must be nonnegative.");
             }
 
             return (isValid, messages);

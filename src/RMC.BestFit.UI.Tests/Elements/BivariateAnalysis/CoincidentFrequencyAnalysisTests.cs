@@ -5,6 +5,7 @@ using Numerics.Sampling.MCMC;
 using RMC.BestFit.Models;
 using RMC.BestFit.UI;
 using System.ComponentModel;
+using System.IO;
 using System.Reflection;
 using ModelAnalyses = RMC.BestFit.Analyses;
 
@@ -18,12 +19,13 @@ namespace RMC.BestFit.UI.Tests.Elements.BivariateAnalysis;
 /// All tests require STA thread because the constructor creates an OxyPlot WPF
 /// <c>Plot</c> instance. Tests cover constructor defaults, property change notifications,
 /// upstream <see cref="UI.BivariateAnalysis"/> linking, ordinate collections, response
-/// surface assignment, settings pass-through, plot ownership, undo bridge setup, and
-/// <c>Copy()</c>. Save/Open/Delete are excluded because they require a SQLite project file.
+/// surface assignment, settings pass-through, plot ownership, undo bridge setup, copy,
+/// and focused posterior-resampling-seed persistence.
 /// </remarks>
 [TestClass]
 public class CoincidentFrequencyAnalysisTests
 {
+    private static readonly object ProjectPathLock = new object();
     private static BivariateAnalysisCollection? _collection;
     private static UnivariateAnalysisCollection? _univariateCollection;
     private static InputDataCollection? _inputDataCollection;
@@ -347,6 +349,26 @@ public class CoincidentFrequencyAnalysisTests
     }
 
     /// <summary>
+    /// Verifies posterior-resampling seed edits participate in the Bayesian-settings undo bridge.
+    /// </summary>
+    [STATestMethod]
+    public void PRNGSeed_UndoRedo_RestoresValue()
+    {
+        var cfa = new CoincidentFrequencyAnalysis("SeedUndoCFA", _collection!);
+        int originalSeed = cfa.BayesianAnalysis.PRNGSeed;
+        cfa.UndoManager.Clear();
+
+        cfa.BayesianAnalysis.PRNGSeed = originalSeed + 123;
+        Assert.IsTrue(cfa.UndoManager.CanUndo);
+
+        cfa.UndoManager.Undo();
+        Assert.AreEqual(originalSeed, cfa.BayesianAnalysis.PRNGSeed);
+
+        cfa.UndoManager.Redo();
+        Assert.AreEqual(originalSeed + 123, cfa.BayesianAnalysis.PRNGSeed);
+    }
+
+    /// <summary>
     /// Verifies undoing an X-ordinate add replays the resize path and restores response dimensions.
     /// </summary>
     [STATestMethod]
@@ -567,6 +589,7 @@ public class CoincidentFrequencyAnalysisTests
             NumberOfBins = 100,
         };
         cfa.BayesianAnalysis.CredibleIntervalWidth = 0.95;
+        cfa.BayesianAnalysis.PRNGSeed = 424242;
         // Clear the seeded default row before populating, so the test's expected values are
         // independent of the constructor's default-seeding behavior.
         cfa.XValues.Clear(); cfa.XValues.Add(0); cfa.XValues.Add(1);
@@ -581,6 +604,7 @@ public class CoincidentFrequencyAnalysisTests
         Assert.AreSame(ba, clone.BivariateAnalysis);
         Assert.AreEqual(100, clone.NumberOfBins);
         Assert.AreEqual(0.95, clone.BayesianAnalysis.CredibleIntervalWidth);
+        Assert.AreEqual(424242, clone.BayesianAnalysis.PRNGSeed);
         CollectionAssert.AreEqual(new[] { 0.0, 1.0 }, clone.XValues.ToArray());
         CollectionAssert.AreEqual(new[] { 0.0, 1.0 }, clone.YValues.ToArray());
 
@@ -588,6 +612,39 @@ public class CoincidentFrequencyAnalysisTests
         cfa.BivariateResponse[0, 0] = 999;
         Assert.AreEqual(1.0, clone.BivariateResponse[0, 0],
             "Response surface must be deep-copied so source mutations do not bleed into the clone.");
+    }
+
+    /// <summary>
+    /// Verifies CFA save/open preserves the existing BayesianAnalysis PRNGSeed attribute.
+    /// </summary>
+    [STATestMethod]
+    [DoNotParallelize]
+    public void SaveAndOpen_RoundTripPosteriorResamplingSeed()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-CFASeed-{Guid.NewGuid():N}.db");
+        lock (ProjectPathLock)
+        {
+            BestFitProject project = BestFitProject.GetInstance();
+            string previousPath = project.FullFileName;
+            try
+            {
+                project.FullFileName = path;
+                var collection = new BivariateAnalysisCollection(project);
+                var original = new CoincidentFrequencyAnalysis("SeedPersistence", collection);
+                original.BayesianAnalysis.PRNGSeed = 24681357;
+
+                original.Save();
+                var restored = new CoincidentFrequencyAnalysis("SeedPersistence", collection);
+                restored.Open();
+
+                Assert.AreEqual(24681357, restored.BayesianAnalysis.PRNGSeed);
+            }
+            finally
+            {
+                project.FullFileName = previousPath;
+                DeleteDatabaseFiles(path);
+            }
+        }
     }
 
     #endregion
@@ -750,6 +807,19 @@ public class CoincidentFrequencyAnalysisTests
     #endregion
 
     #region Regression helpers
+
+    /// <summary>
+    /// Deletes a temporary SQLite database and optional sidecar files created by a test.
+    /// </summary>
+    /// <param name="path">The primary database path.</param>
+    private static void DeleteDatabaseFiles(string path)
+    {
+        System.Data.SQLite.SQLiteConnection.ClearAllPools();
+        foreach (string candidate in new[] { path, path + "-wal", path + "-shm" })
+        {
+            if (File.Exists(candidate)) File.Delete(candidate);
+        }
+    }
 
     /// <summary>
     /// Creates a valid, estimated upstream bivariate analysis for dependency-state tests.

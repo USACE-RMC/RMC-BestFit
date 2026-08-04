@@ -1,8 +1,12 @@
 using Numerics.Distributions;
 using Numerics.Distributions.Copulas;
+using Numerics.Data.Statistics;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using System.Reflection;
 using System.Xml.Linq;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
@@ -70,6 +74,78 @@ public class CoincidentFrequencyAnalysisTests
             for (int j = 0; j < 5; j++)
                 z[i, j] = x[i] + y[j];
         return (x, y, z);
+    }
+
+    /// <summary>
+    /// Builds synthetic MCMC results from indexed parameter values.
+    /// </summary>
+    /// <param name="count">The retained output count.</param>
+    /// <param name="parameters">Maps an output index to a parameter vector.</param>
+    /// <returns>The synthetic MCMC results.</returns>
+    private static MCMCResults BuildMcmcResults(int count, Func<int, double[]> parameters)
+    {
+        var output = new List<ParameterSet>(count);
+        for (int index = 0; index < count; index++)
+            output.Add(new ParameterSet(parameters(index), 0d));
+        return new MCMCResults(new ParameterSet(parameters(count / 2), 0d), output, 0.1d);
+    }
+
+    /// <summary>
+    /// Creates a CFA with deliberately aligned, unequal copula and marginal posteriors.
+    /// </summary>
+    /// <param name="copulaCount">The retained copula count.</param>
+    /// <param name="marginalXCount">The optional retained X-marginal count.</param>
+    /// <param name="marginalYCount">The optional retained Y-marginal count.</param>
+    /// <returns>The configured CFA fixture.</returns>
+    private static CoincidentFrequencyAnalysis CreatePosteriorCfa(
+        int copulaCount,
+        int? marginalXCount,
+        int? marginalYCount)
+    {
+        BivariateAnalysis bivariate = CreateBivariateAnalysisAtPointEstimate();
+        MCMCResults copulaResults = BuildMcmcResults(copulaCount, index =>
+        {
+            double fraction = index / (double)(copulaCount - 1);
+            return [-0.7d + 1.4d * fraction];
+        });
+        bivariate.BayesianAnalysis.SetCustomMCMCResults(copulaResults, skipInformationCriteria: true);
+
+        var (x, y, response) = BuildSumGrid();
+        var cfa = new CoincidentFrequencyAnalysis(bivariate, x, y, response)
+        {
+            NumberOfBins = 15
+        };
+        if (marginalXCount.HasValue)
+        {
+            int count = marginalXCount.Value;
+            cfa.MarginalXChain = BuildMcmcResults(count, index =>
+            {
+                double fraction = index / (double)(count - 1);
+                return [-0.9d + 1.8d * fraction, 1d];
+            });
+        }
+        if (marginalYCount.HasValue)
+        {
+            int count = marginalYCount.Value;
+            cfa.MarginalYChain = BuildMcmcResults(count, index =>
+            {
+                double fraction = index / (double)(count - 1);
+                return [-0.8d + 1.6d * fraction, 1d];
+            });
+        }
+        return cfa;
+    }
+
+    /// <summary>
+    /// Reads CFA's transient posterior-index cache for focused contract testing.
+    /// </summary>
+    /// <param name="cfa">The CFA instance.</param>
+    /// <returns>The cached mapping, or <c>null</c>.</returns>
+    private static int[][]? GetPosteriorIndexCache(CoincidentFrequencyAnalysis cfa)
+    {
+        return (int[][]?)typeof(CoincidentFrequencyAnalysis)
+            .GetField("_posteriorRandomIndexes", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(cfa);
     }
 
     #endregion
@@ -405,6 +481,19 @@ public class CoincidentFrequencyAnalysisTests
         Assert.IsTrue(messages.Any(m => m.Contains("slow run times")));
     }
 
+    /// <summary>Verifies that validate rejects a negative posterior-resampling seed.</summary>
+    [TestMethod]
+    public void Validate_NegativePosteriorResamplingSeed_ReturnsError()
+    {
+        CoincidentFrequencyAnalysis cfa = CreatePosteriorCfa(20, 20, 20);
+        cfa.BayesianAnalysis.PRNGSeed = -1;
+
+        var (isValid, messages) = cfa.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Any(message => message.Contains("PRNG seed", StringComparison.Ordinal)));
+    }
+
     #endregion
 
     #region XML round-trip
@@ -526,6 +615,130 @@ public class CoincidentFrequencyAnalysisTests
         {
             Assert.IsTrue(modeCurve[k] <= modeCurve[k - 1] + 1e-9,
                 $"AEP must be non-increasing in z; failed at k={k} (rho={rho}).");
+        }
+    }
+
+    /// <summary>
+    /// Verifies CFA creates distinct copula/X/Y index rows in fixed semantic order and that
+    /// every indexed empirical distribution exactly reconstructs the aggregate result.
+    /// </summary>
+    [TestMethod]
+    public async Task RunAsync_IndependentPosteriorIndexes_MatchCachedAccessorRealizations()
+    {
+        CoincidentFrequencyAnalysis cfa = CreatePosteriorCfa(23, 17, 19);
+        cfa.BayesianAnalysis.PRNGSeed = 97531;
+
+        await cfa.RunAsync();
+
+        int[][]? cache = GetPosteriorIndexCache(cfa);
+        Assert.IsNotNull(cache);
+        int[][] expectedIndexes = PosteriorIndexResampler.CreateRandomIndexes([23, 17, 19], 97531);
+        Assert.AreEqual(3, cache.Length);
+        for (int source = 0; source < cache.Length; source++)
+            CollectionAssert.AreEqual(expectedIndexes[source], cache[source]);
+        Assert.IsFalse(cache[0].SequenceEqual(cache[1]));
+        Assert.IsFalse(cache[1].SequenceEqual(cache[2]));
+
+        AssertAggregateMatchesAccessors(cfa, 17);
+        int[][]? cacheAfterAccess = GetPosteriorIndexCache(cfa);
+        Assert.AreSame(cache, cacheAfterAccess,
+            "Indexed access must reuse the exact mapping used by aggregate construction.");
+    }
+
+    /// <summary>
+    /// Verifies absent optional marginal chains retain point-estimate fallback while a
+    /// present Y chain occupies the second semantic source row.
+    /// </summary>
+    [TestMethod]
+    public async Task RunAsync_MissingMarginalX_UsesFallbackAndPreservesSourceOrder()
+    {
+        CoincidentFrequencyAnalysis cfa = CreatePosteriorCfa(21, null, 13);
+        cfa.BayesianAnalysis.PRNGSeed = 86420;
+
+        await cfa.RunAsync();
+
+        int[][]? cache = GetPosteriorIndexCache(cfa);
+        Assert.IsNotNull(cache);
+        Assert.AreEqual(2, cache.Length);
+        int[][] expectedIndexes = PosteriorIndexResampler.CreateRandomIndexes([21, 13], 86420);
+        CollectionAssert.AreEqual(expectedIndexes[0], cache[0]);
+        CollectionAssert.AreEqual(expectedIndexes[1], cache[1]);
+        AssertAggregateMatchesAccessors(cfa, 13);
+    }
+
+    /// <summary>
+    /// Verifies changing the result-generation seed or a marginal posterior invalidates both
+    /// the cached mapping and derived CFA results before deterministic regeneration.
+    /// </summary>
+    [TestMethod]
+    public async Task PosteriorIndexCache_SeedAndMarginalChanges_InvalidateAndRegenerate()
+    {
+        CoincidentFrequencyAnalysis cfa = CreatePosteriorCfa(25, 20, 22);
+        cfa.BayesianAnalysis.PRNGSeed = 11111;
+        await cfa.RunAsync();
+        int[][]? firstCache = GetPosteriorIndexCache(cfa);
+        Assert.IsNotNull(firstCache);
+
+        cfa.BayesianAnalysis.PRNGSeed = 22222;
+        Assert.IsNull(GetPosteriorIndexCache(cfa));
+        Assert.IsNull(cfa.AnalysisResults);
+        Assert.IsNull(cfa.ZOutputValues);
+        await cfa.RunAsync();
+        int[][]? secondCache = GetPosteriorIndexCache(cfa);
+        Assert.IsNotNull(secondCache);
+        Assert.AreNotSame(firstCache, secondCache);
+
+        cfa.MarginalXChain = BuildMcmcResults(18, index => [index / 20d, 1d]);
+        Assert.IsNull(GetPosteriorIndexCache(cfa));
+        Assert.IsNull(cfa.AnalysisResults);
+        Assert.IsNull(cfa.ZOutputValues);
+        await cfa.RunAsync();
+        int[][]? thirdCache = GetPosteriorIndexCache(cfa);
+        Assert.IsNotNull(thirdCache);
+        Assert.AreEqual(18, thirdCache[0].Length);
+        int[][] expectedIndexes = PosteriorIndexResampler.CreateRandomIndexes([25, 18, 22], 22222);
+        for (int source = 0; source < thirdCache.Length; source++)
+            CollectionAssert.AreEqual(expectedIndexes[source], thirdCache[source]);
+    }
+
+    /// <summary>
+    /// Verifies CFA aggregate mean and credible limits equal direct aggregation of its
+    /// cached indexed empirical distributions.
+    /// </summary>
+    /// <param name="cfa">The completed CFA.</param>
+    /// <param name="realizationCount">The expected realization count.</param>
+    private static void AssertAggregateMatchesAccessors(
+        CoincidentFrequencyAnalysis cfa,
+        int realizationCount)
+    {
+        Assert.IsNotNull(cfa.AnalysisResults);
+        Assert.IsNotNull(cfa.ZOutputValues);
+        var distributions = new EmpiricalDistribution[realizationCount];
+        for (int realization = 0; realization < realizationCount; realization++)
+        {
+            distributions[realization] = cfa.GetEmpiricalDistribution(realization)!;
+            Assert.IsNotNull(distributions[realization]);
+        }
+
+        double alpha = 1d - cfa.BayesianAnalysis.CredibleIntervalWidth;
+        for (int bin = 0; bin < cfa.ZOutputValues.Length; bin++)
+        {
+            double[] aeps = distributions
+                .Select(distribution => distribution.ProbabilityValues[bin])
+                .ToArray();
+            Assert.AreEqual(
+                Statistics.ParallelMean(aeps),
+                cfa.AnalysisResults.MeanCurve![bin],
+                1E-15);
+            Array.Sort(aeps);
+            Assert.AreEqual(
+                Statistics.Percentile(aeps, alpha / 2d, true),
+                cfa.AnalysisResults.ConfidenceIntervals![bin, 0],
+                1E-15);
+            Assert.AreEqual(
+                Statistics.Percentile(aeps, 1d - alpha / 2d, true),
+                cfa.AnalysisResults.ConfidenceIntervals[bin, 1],
+                1E-15);
         }
     }
 

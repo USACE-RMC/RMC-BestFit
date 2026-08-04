@@ -45,9 +45,9 @@ namespace RMC.BestFit.UI
     /// intentionally does not own a <see cref="BayesianController"/> and has no 7-plot Bayesian diagnostic suite.
     /// A composite is a weighted average over already-fitted univariate analyses â€” it runs no MCMC chain of its own,
     /// so there is no Markov chain trace, autocorrelation, or other chain diagnostic to display. Only a single
-    /// <c>FrequencyPlot</c> is exposed. The three <see cref="BayesianAnalysis"/> property copies in <see cref="Copy"/>
-    /// (<c>CredibleIntervalWidth</c>, <c>OutputLength</c>, <c>PointEstimator</c>) propagate only the
-    /// uncertainty-presentation settings, not any chain/diagnostic state.
+    /// <c>FrequencyPlot</c> is exposed. The <see cref="BayesianAnalysis"/> property copies in <see cref="Copy"/>
+    /// propagate the uncertainty-presentation settings and the posterior-resampling seed,
+    /// not any chain or diagnostic state.
     /// </para>
     /// </remarks>
     [Category("General")]
@@ -317,9 +317,9 @@ namespace RMC.BestFit.UI
         private UndoableCollectionBridge<double> _probabilityOrdinatesBridge;
 
         /// <summary>
-        /// Undo bridge for <see cref="BayesianAnalysis"/> output settings the user can edit
+        /// Undo bridge for <see cref="BayesianAnalysis"/> result settings the user can edit
         /// from the <c>BayesianOutputControl</c> combos (<c>CredibleIntervalWidth</c>,
-        /// <c>OutputLength</c>, <c>PointEstimator</c>). Composite does not run its own MCMC,
+        /// <c>OutputLength</c>, <c>PointEstimator</c>, and <c>PRNGSeed</c>). Composite does not run its own MCMC,
         /// so the broader simulation/advanced bridges in <see cref="BayesianController"/> do
         /// not apply â€” only this scoped settings bridge is needed.
         /// </summary>
@@ -1300,6 +1300,7 @@ namespace RMC.BestFit.UI
                 element._innerAnalysis.BayesianAnalysis.CredibleIntervalWidth = BayesianAnalysis.CredibleIntervalWidth;
                 element._innerAnalysis.BayesianAnalysis.OutputLength = BayesianAnalysis.OutputLength;
                 element._innerAnalysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimator;
+                element._innerAnalysis.BayesianAnalysis.PRNGSeed = BayesianAnalysis.PRNGSeed;
 
                 // Copy UI analyses collection
                 foreach (WeightedUnivariateAnalysis wua in Analyses)
@@ -1880,7 +1881,7 @@ namespace RMC.BestFit.UI
             }
 
             // BayesianAnalysis output settings bridge â€” records user edits to CI width,
-            // output length, and point estimator as undo entries. The BayesianAnalysis
+            // output length, point estimator, and posterior-resampling seed as undo entries. The BayesianAnalysis
             // setters themselves only RaisePropertyChange (no undo recording); this bridge
             // captures the change externally via INotifyPropertyChanged.
             if (_innerAnalysis?.BayesianAnalysis != null)
@@ -1894,7 +1895,8 @@ namespace RMC.BestFit.UI
                     {
                         nameof(BayesianAnalysis.CredibleIntervalWidth),
                         nameof(BayesianAnalysis.OutputLength),
-                        nameof(BayesianAnalysis.PointEstimator)
+                        nameof(BayesianAnalysis.PointEstimator),
+                        nameof(BayesianAnalysis.PRNGSeed)
                     },
                     onActionRecorded: () => SetIsDirty(true));
             }

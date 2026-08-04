@@ -8,7 +8,7 @@ The active continuation and batching plan is maintained in the [Verification Fin
 
 This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
 
-Closeout reconciliation (3 August 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest. Phase 3 is closed in its approved scope. Within Phase 4, the TR-004/TR-005 point-process subset, TR-006/TR-007/TR-008 mixture subset, TR-012 competing-risk simulation, TR-013 criterion handling, and TR-015 correlation-matrix configuration are closed. TR-014 remains open by direction pending joint review with bivariate posterior behavior, so Phase 4 remains in progress.
+Closeout reconciliation (3 August 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest. Phase 3 is closed in its approved scope. The original Phase 4 findings are complete: TR-014 now independently resamples the actual retained outputs used by Composite and coincident-frequency propagation, while `BivariateAnalysis` remains intentionally conditional on fixed marginals. The 30-method competing-risk/composite recovery supplement completed focused execution with 23 passes and seven unresolved findings; it gates Phase 5 without reopening those original finding dispositions.
 
 ## Summary
 
@@ -27,7 +27,7 @@ Closeout reconciliation (3 August 2026): Phase 1 and Phase 2 dispositions are cl
 | [TR-011](#tr-011) | Bayesian AIC/BIC prior-density inclusion | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-012](#tr-012) | Competing-risk dependent simulation | High | Confirmed defect; corrected | Complete | Passed - fast seed/validation contracts and four analytical rank/CDF methods | [Report](../verification/competing-risks.md) | 2026-08-03 |
 | [TR-013](#tr-013) | Non-finite composite criteria | Medium | Confirmed defect; corrected | Complete | Passed - fast mixed-validity, zero-RMSE, finite-weight, and B17C compatibility contracts | [Report](../verification/composite.md#criterion-weighting) | 2026-08-03 |
-| [TR-014](#tr-014) | Composite posterior draw coupling | Methodological | Confirmed concern; direction under review | Deferred by direction | Planned with bivariate-posterior scope | [Report](../verification/composite.md#deferred-posterior-coupling) | 2026-08-03 |
+| [TR-014](#tr-014) | Cross-analysis posterior draw coupling | Methodological | Confirmed concern; corrected | Complete | Passed - fast contracts and two independent numerical oracles | [Report](../verification/composite.md#independent-posterior-resampling) | 2026-08-03 |
 | [TR-015](#tr-015) | Composite correlation matrix configuration | High | Confirmed defect; corrected | Complete | Passed - fast validation, ownership, persistence, and construction contracts | [Report](../verification/composite.md#correlation-matrix-configuration) | 2026-08-03 |
 | [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Closed | Accepted shared result-storage architecture | Documentation complete; no code/API change required | Passed - source/XML/report terminology audit | [Bulletin 17C](analysis/bulletin-17c.md#uncertainty-interpretation) | 2026-07-28 |
 | [TR-017](#tr-017) | Bulletin 17C bootstrap naming | Closed | Rejected naming defect; documentation clarified | No production change required | Passed - paper/implementation concordance audit | [Uncertainty method](analysis/bulletin-17c-uncertainty.md) | 2026-07-28 |
@@ -290,19 +290,19 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 **Follow-up.** Retain named diagnostics and exact-zero tests. B17C must not be type-rejected: it participates in every criterion it computes and receives zero weight only when the selected posterior criterion is unavailable.
 
 <a id="tr-014"></a>
-## TR-014 — Composite Posterior Draw Coupling
+## TR-014 — Cross-Analysis Posterior Draw Coupling
 
-**Review disposition.** Confirmed methodological concern; approved direction remains under review.
+**Review disposition.** Confirmed methodological concern; corrected under the approved independent product-posterior policy.
 
-**Implementation status.** Deferred by explicit direction. No posterior index selection, resampling, output-length, seed, point-estimate, or chain-order behavior changed in the TR-012/TR-013/TR-015 batch.
+**Implementation status.** Complete. One internal helper validates positive actual retained-output counts, sets the realization count to their minimum, and uses Numerics `NextIntegers(..., replacement: false)` to generate one full-range index row per source from the owning analysis's existing nonnegative `PRNGSeed`. Composite applies those rows in both construction branches. CFA uses fixed semantic order (copula, optional X, optional Y), caches the mapping for indexed access, and invalidates cache and results when sources or seed change. No index arrays are serialized, no Numerics code or public API changed, and `BivariateAnalysis` remains unchanged.
 
-**Verification status.** Planned. The verification design must include separately fitted univariate children and affected bivariate posterior consumers before implementation.
+**Verification status.** Passed. Fast helper tests establish unique in-range rows, complete longer-chain range, exact seed repeatability, distinct source permutations, and pairwise absolute Spearman correlation below `0.05` for 5,000 draws. Composite and CFA fast tests cover both composition branches, unequal counts, source separation, fallback, cache identity/invalidation, child immutability, point-estimate stability, and UI seed save/open/copy/undo. The two exact guarded methods pass independent Cartesian-product and closed-form Normal-sum oracles at maximum mean tolerance `0.02` and credible-limit tolerance `0.05`; each raw-paired negative control misses by at least `0.10`.
 
-**Evidence.** For separately fitted children, `CompositeAnalysis` takes the minimum output length and combines child distribution at raw index \(b\) with every other child's raw index \(b\). It does not establish a joint posterior, permute draws, or independently resample indices.
+**Evidence.** The generated sample targets the product posterior of separately fitted sources. Longer chains contribute across their complete retained range without replacement, while every source contributes exactly the shortest actual output count. A fixed seed, source order, and retained order reproduce the exact matrix. Reversing a chain or swapping commutative Composite children changes the finite seeded sample but passes the same independent target, establishing distributional rather than bitwise order invariance. Child `MCMCResults` and point estimates remain unchanged.
 
-**Impact.** Nonlinear composite uncertainty depends on arbitrary chain ordering and possibly common pseudo-random seeds. The resulting interval encodes an undocumented cross-child coupling.
+**Impact.** Composite and CFA uncertainty summaries no longer encode raw-index alignment among separately fitted chains. Saved derived summaries created before TR-014 remain readable but must be reprocessed to adopt the corrected coupling policy.
 
-**Follow-up.** Review the independence/coupling contract together with bivariate posteriors. If independent resampling remains the approved direction, define deterministic child-specific seed derivation and verify marginal preservation, posterior immutability, child-order invariance, and chain-order invariance before changing production behavior.
+**Follow-up.** Preserve the existing seed/semantic source-order contract and transient-cache policy. Do not reinterpret `BivariateAnalysis` intervals as marginal-uncertainty propagation; optional marginal propagation remains downstream in CFA.
 
 <a id="tr-015"></a>
 ## TR-015 — Composite Correlation Matrix Cannot Be Supplied

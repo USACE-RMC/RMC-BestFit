@@ -113,24 +113,74 @@ $$
 F_m^{(1)},\ldots,F_m^{(B_m)}. \tag{8}
 $$
 
-The composite uses
+The composite uses the actual retained output counts, not the configured output-length settings:
 
 $$
 B=\min_m B_m \tag{9}
 $$
 
-and, for each index \(b=1,\ldots,B\), constructs
+Before parallel result construction, one Mersenne Twister initialized from the Composite
+`BayesianAnalysis.PRNGSeed` generates a without-replacement index vector for every child:
+
+$$
+k_{m,1},\ldots,k_{m,B}
+\subset \{1,\ldots,B_m\},
+\qquad k_{m,b}\ne k_{m,b'}\text{ for }b\ne b'. \tag{10}
+$$
+
+Rows are generated independently in configured child order. For each realization
+\(b=1,\ldots,B\), the mixture/model-average branch constructs
 
 $$
 F_C^{(b)}(x)=
-\sum_m w_mF_m^{(b)}(x) \tag{10}
+\sum_m w_mF_m^{(k_{m,b})}(x), \tag{11}
 $$
 
-for mixture/model-average output, or the configured min/max composition of the \(F_m^{(b)}\) for competing risks. It creates a point-estimate composite from each child's selected posterior-mean or MAP distribution and sends the supplied realization distributions to Numerics **BootstrapAnalysis.Estimate(...)** to summarize requested nonexceedance quantiles and equal-tail intervals.
+or the configured min/max composition of the \(F_m^{(k_{m,b})}\) for competing risks.
+Longer chains are sampled across their complete retained range rather than truncated to
+the shortest-chain prefix. The child `MCMCResults` objects and their output order are not
+modified. The point-estimate composite still uses each child's selected posterior-mean or
+MAP distribution, and Numerics **BootstrapAnalysis.Estimate(...)** summarizes the supplied
+realization distributions at requested nonexceedance probabilities.
 
-Raw draw index \(b\) has no joint posterior meaning across analyses fitted separately. The implementation neither randomly permutes nor independently resamples child draw indices before pairing them. Identical sampler seeds or chain ordering can therefore impose an arbitrary coupling on a nonlinear composite. This uncertainty-propagation concern is [TR-014](../review-findings.md#tr-014). Marginal child intervals remain informative, but the composite interval should not be presented as invariant to cross-model draw pairing until the coupling policy is established.
+This construction targets the product posterior of separately fitted children. A fixed
+seed, source order, and retained output order reproduce the exact finite mapping. Reordering
+sources or retained chains changes the finite seeded sample, but not the product-posterior
+target; summaries are therefore distributionally rather than bitwise order invariant.
+[TR-014](../review-findings.md#tr-014) records the correction and verification.
 
-The **BayesianAnalysis** property on **CompositeAnalysis** stores display choices such as point estimator, credible width, and output length. The composite does not call its sampler. **GetDistribution(index)** intentionally returns null; realization distributions are constructed internally during result creation.
+The **BayesianAnalysis** property on **CompositeAnalysis** stores the point estimator,
+credible width, output length, and posterior-resampling seed. The composite does not call
+its sampler. `PRNGSeed` must be nonnegative and is a result-generation setting; changing it
+invalidates derived results. **GetDistribution(index)** intentionally returns null because
+realization distributions are constructed internally during result creation. Index arrays
+are transient and are not serialized. Saved Composite uncertainty summaries created before
+TR-014 must be reprocessed to adopt the independent product-posterior policy.
+
+## Recovery and Report Verification
+
+`CompositeAnalysis` has no likelihood and does not sample a composite parameter posterior.
+Verification therefore supplies already-estimated children with explicit retained
+`MCMCResults`, then evaluates deterministic combination and posterior-propagation behavior.
+This distinction prevents the report from describing composite result construction as an
+estimator recovery.
+
+The Phase 4 supplement pins RMC-TotalRisk commit
+`d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7` and its 2024 composite hazard/response report.
+For Normal(10, 2), Normal(20, 1), and Normal(30, 5) with weights 0.3/0.2/0.5, it checks the
+mixture identity, 25 published R `mistr` Table 45 quantiles, inversion against the analytical
+weighted CDF, independent/comonotonic min/max identities, and rule bracketing. A bivariate
+Normal median fixture checks correlation-matrix minimum and maximum probabilities at latent
+correlation 0.6.
+
+Three posterior cells use 5,000 retained draws, 20 deterministic mean-support values per child,
+seed 20260803, five central/tail probabilities, and complete 20-by-20-by-20 Cartesian oracles.
+The independent oracle uses direct Normal CDFs and bisection rather than the production
+resampler or composite constructors. Mean ordinates have tolerance 0.02, credible limits have
+tolerance 0.05, and the fixed parent must lie inside every 90% band. Nine of the ten exact methods
+pass focused execution. The extreme-tail mixture inversion cell remains open because its residual
+exceeds the fixed TotalRisk bound by `2.566838E-10`. Details are recorded
+in [Composite Verification](../../verification/composite.md).
 
 ## Validation, Run, and Cancellation
 
@@ -142,11 +192,15 @@ Validation requires:
 - valid ascending probability ordinates in \([0,1]\);
 - valid fixed mixture weights and a sum not greater than one; and
 - at least one usable selected criterion for non-equal model averaging; and
-- a valid, dimensionally compatible matrix when correlation-matrix competing-risk dependence is selected.
+- a valid, dimensionally compatible matrix when correlation-matrix competing-risk dependence is selected; and
+- a nonnegative posterior-resampling seed.
 
 **RunAsync** repeats the fitted-child check, raises a cancellable preview event, waits for any in-flight reprocessing, clears results, estimates model weights when needed, and constructs frequency results. Parallel realization construction observes the cancellation token both in scheduling and at each iteration. The analysis is marked estimated only after result construction succeeds.
 
-Changes to weights, child results, composition type, averaging method, dependence, max/min selection, credible width, point estimator, or probability ordinates clear or reprocess derived output according to their effect. **WeightedUnivariateAnalysis** forwards child property changes and rejects a composite child in its setter.
+Changes to weights, child results, composition type, averaging method, dependence, max/min
+selection, credible width, posterior-resampling seed, point estimator, or probability ordinates
+clear or reprocess derived output according to their effect. **WeightedUnivariateAnalysis**
+forwards child property changes and rejects a composite child in its setter.
 
 ## Practical Interpretation
 
@@ -180,9 +234,18 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 | Mixture construction | pinned **Numerics/Distributions/Univariate/Mixture.cs** |
 | Min/max construction | pinned **Numerics/Distributions/Univariate/CompetingRisks.cs** |
 | Uncertainty aggregation | pinned **Numerics/Distributions/Univariate/Uncertainty Analysis/BootstrapAnalysis.cs** |
-| Fast contract evidence | **RMC.BestFit.Tests/Univariate/CompositePhase4Tests.cs** and **RMC.BestFit.UI.Tests/Elements/UnivariateAnalysis/CompositeCorrelationMatrixTests.cs** |
+| Posterior index generation | **Analyses/Support/PosteriorIndexResampler.cs** |
+| Fast contract evidence | **RMC.BestFit.Tests/Analyses/PosteriorIndexResamplerTests.cs**, **RMC.BestFit.Tests/Univariate/CompositePhase4Tests.cs**, and Composite UI tests |
+| Independent numerical oracle | **RMC.BestFit.Verification/ModelEstimation/PosteriorResamplingVerificationTests.cs** |
+| Report and three-child recovery supplement | **RMC.BestFit.Verification/Univariate/CompositeTests/CompositeRecoveryTests.cs** and helper partial |
 
 ## References
+
+U.S. Army Corps of Engineers, Risk Management Center, *Verification of the RMC-TotalRisk
+Software*, 2024, “Composite Hazard and Response Functions,” Equation 49 and Tables 44-46.
+
+R `mistr` package, `normdist` and `mixdist` mixture-distribution functions,
+<https://cran.r-project.org/package=mistr>.
 
 <a id="ref-1"></a>[1] Y. Yao, A. Vehtari, D. Simpson, and A. Gelman, “Using stacking to average Bayesian predictive distributions,” *Bayesian Analysis*, vol. 13, no. 3, pp. 917–1007, 2018.
 

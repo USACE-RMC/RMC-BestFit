@@ -76,9 +76,11 @@ public class CompositeCorrelationMatrixTests
     }
 
     /// <summary>
-    /// Verifies a saved UI composite restores its correlation matrix through SQLite.
+    /// Verifies a saved UI composite restores its correlation matrix and posterior-resampling
+    /// seed through SQLite.
     /// </summary>
     [STATestMethod]
+    [DoNotParallelize]
     public void SaveAndOpen_RoundTripCorrelationMatrix()
     {
         string path = Path.Combine(Path.GetTempPath(), $"BestFit-CompositeMatrix-{Guid.NewGuid():N}.db");
@@ -94,6 +96,7 @@ public class CompositeCorrelationMatrixTests
                 {
                     CorrelationMatrix = new[,] { { 1d, 0.625d }, { 0.625d, 1d } }
                 };
+                original.BayesianAnalysis.PRNGSeed = 987654;
 
                 original.Save();
                 var restored = new CompositeAnalysis("MatrixPersistence", collection);
@@ -101,6 +104,7 @@ public class CompositeCorrelationMatrixTests
 
                 Assert.AreEqual(0.625d, restored.CorrelationMatrix[0, 1], 0d);
                 Assert.AreEqual(0.625d, restored.CorrelationMatrix[1, 0], 0d);
+                Assert.AreEqual(987654, restored.BayesianAnalysis.PRNGSeed);
             }
             finally
             {
@@ -116,6 +120,7 @@ public class CompositeCorrelationMatrixTests
     /// <param name="path">The primary database path.</param>
     private static void DeleteDatabaseFiles(string path)
     {
+        System.Data.SQLite.SQLiteConnection.ClearAllPools();
         foreach (string candidate in new[] { path, path + "-wal", path + "-shm" })
         {
             if (File.Exists(candidate)) File.Delete(candidate);

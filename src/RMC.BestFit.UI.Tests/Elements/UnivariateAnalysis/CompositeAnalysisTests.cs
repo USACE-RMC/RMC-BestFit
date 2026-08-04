@@ -393,6 +393,28 @@ public class CompositeAnalysisTests
             "CancellationTokenSource must be canceled — otherwise the App's Cancel " +
             "button is a visual-only no-op and the parallel simulation runs to completion.");
     }
+
+    /// <summary>
+    /// Verifies the posterior-resampling seed is preserved by copy and participates in
+    /// the Bayesian-settings undo bridge.
+    /// </summary>
+    [STATestMethod]
+    public void PRNGSeed_CopyAndUndoRedo_PreserveValue()
+    {
+        var composite = new CompositeAnalysis("SeedComposite", _collection!);
+        int originalSeed = composite.BayesianAnalysis.PRNGSeed;
+        composite.UndoManager.Clear();
+
+        composite.BayesianAnalysis.PRNGSeed = 112358;
+        Assert.IsTrue(composite.UndoManager.CanUndo);
+        var copy = (CompositeAnalysis)composite.Copy("SeedCompositeCopy");
+        Assert.AreEqual(112358, copy.BayesianAnalysis.PRNGSeed);
+
+        composite.UndoManager.Undo();
+        Assert.AreEqual(originalSeed, composite.BayesianAnalysis.PRNGSeed);
+        composite.UndoManager.Redo();
+        Assert.AreEqual(112358, composite.BayesianAnalysis.PRNGSeed);
+    }
     /// <summary>
     /// Verifies that a child <see cref="RMC.BestFit.UI.UnivariateAnalysis.IsEstimated"/> event recomputes
     /// App-bound DIC model-average weights after the batch-run event order completes.
