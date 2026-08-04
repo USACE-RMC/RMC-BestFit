@@ -5,7 +5,7 @@ using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets;
 using RMC.BestFit.Verification.Datasets.TimeSeriesData;
 
-namespace RMC.BestFit.Verification.TimeSeriesModels;
+namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
 /// Verifies maximum-likelihood parameter recovery for the <see cref="ARIMAX"/> model
