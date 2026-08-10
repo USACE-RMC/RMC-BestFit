@@ -62,15 +62,6 @@ Before interpreting any result:
 
 The DEMCzs sampler is the default workhorse and converges reliably on routine LP-III, GEV, and Gumbel fits within 2,000-5,000 iterations after a 1,000-2,000 warmup.
 
-## Screenshot Images
-
-Tutorial screenshot placeholders reference images in an `images/` subfolder under each example. To add screenshots:
-
-1. Create an `images/` folder in the example's directory.
-2. Capture screenshots from RMC-BestFit matching the alt-text descriptions.
-3. Save as PNG with the filename specified in each image reference.
-4. Naming convention: `<example-slug>-<view-name>.png` (e.g., `viglione-frequency.png`, `blakely-trace.png`).
-
 ## Next Steps
 
 After univariate frequency analysis:

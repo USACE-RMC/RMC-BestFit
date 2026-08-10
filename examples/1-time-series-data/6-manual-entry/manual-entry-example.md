@@ -49,6 +49,7 @@ This dataset is commonly used to demonstrate seasonal decomposition, trend-cycle
 Open `manual-entry-example.bestfit` in RMC-BestFit. The Project Explorer shows three Time Series Data elements:
 
 ![Project Explorer showing the three manual entry elements: Airline Passengers, Nile River Flows, and Mauna Loa CO2](../images/manual-entry-project-explorer.png)
+
 *Figure 1: Project Explorer with three manually entered time series*
 
 Each element contains the full dataset already entered. Click on any element to view the time series plot and explore its statistical properties.
@@ -64,7 +65,7 @@ Each element contains the full dataset already entered. Click on any element to 
 
 ### Exploring the Time Series Tabs
 
-Click on an element to open it. The main view shows four tabs:
+Click on an element to open it. The main view shows four tabs to the left:
 
 1. **Time Series** -- The raw data plotted against time. Look for trend, seasonality, and level shifts.
 2. **Seasonality** -- A seasonal subseries plot showing data grouped by month (or other period). Useful for identifying recurring patterns.
@@ -72,15 +73,19 @@ Click on an element to open it. The main view shows four tabs:
 4. **PACF** -- Partial autocorrelation function. Helps identify AR order -- significant spikes at lags 1 through *p* suggest an AR(*p*) model.
 
 ![Time series plot of Airline Passengers showing upward trend with growing seasonal amplitude](../images/manual-entry-airline-ts-plot.png)
+
 *Figure 2: Airline Passengers time series showing multiplicative seasonal pattern*
 
 ![ACF plot of Airline Passengers showing slowly decaying autocorrelation with seasonal peaks](../images/manual-entry-airline-acf.png)
+
 *Figure 3: ACF of Airline Passengers -- periodic peaks at lags 12, 24, 36 indicate seasonality*
 
 ![Time series plot of Nile River Flows showing level shift around 1898](../images/manual-entry-nile-ts-plot.png)
+
 *Figure 4: Nile River annual flows with visible level shift*
 
 ![Time series plot of Mauna Loa CO2 showing upward trend with seasonal cycle](../images/manual-entry-co2-ts-plot.png)
+
 *Figure 5: Mauna Loa CO2 with accelerating trend and annual seasonal cycle*
 
 ### Viewing the Properties Panel
@@ -93,6 +98,7 @@ Open the Properties panel (click **Properties** in the toolbar or press **F4**) 
 - **Start Date** -- The date of the first observation
 
 ![Properties panel showing Entry Method = Manual, Time Interval = One Month, and Unit Label for Airline Passengers](../images/manual-entry-properties.png)
+
 *Figure 6: Properties panel for a manually entered time series*
 
 ## Creating Your Own Manual Entry Element
@@ -102,7 +108,7 @@ To enter a new time series manually from a CSV file:
 ### 1. Create the Element
 
 1. Right-click **Time Series Data** in the Project Explorer
-2. Select **Create New**
+2. Select **New Time Series**
 3. Enter a descriptive name for the element
 
 ### 2. Configure the Properties

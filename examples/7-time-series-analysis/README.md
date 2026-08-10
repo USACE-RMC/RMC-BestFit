@@ -60,10 +60,6 @@ Each Time Series Analysis element references **one** Time Series Data element as
 
 By default, RMC-BestFit reserves the **last 20% of each series for validation** (`UseDefaultTrainingSteps = true`). For maximum-likelihood parity with R's `arima()` and statsmodels, set `UseDefaultTrainingSteps = false` and `TrainingTimeSteps = data length` in the Properties panel.
 
-## Screenshot Images
-
-Capture screenshots into `images/` subfolders next to each example. Naming convention: `<example-slug>-<view-name>.png` (e.g., `nile-time-series.png`, `synthetic-ts-arma11-residuals.png`).
-
 ## Next Steps
 
 After fitting a time-series model:

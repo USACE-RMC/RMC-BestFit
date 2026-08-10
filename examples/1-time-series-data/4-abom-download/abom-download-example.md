@@ -60,16 +60,18 @@ Some daily series from BOM may contain missing data (NaN values). This is common
 4. The Project Explorer will show 6 elements under **Time Series Data**
 
 ![RMC-BestFit Project Explorer showing all 6 ABOM time series elements](../images/abom-project-explorer.png)
+
 *Figure 1: Project Explorer with all ABOM time series elements*
 
 ### Exploring Daily Precipitation (Cotter River)
 
 1. Click **ABOM - 410730 - Daily Precipitation** in the Project Explorer
-2. The **Time Series** tab displays the daily rainfall record
+2. The **Time Series** tab on the left displays the daily rainfall record
 3. Notice the episodic rainfall pattern with occasional high-intensity events
-4. Click the **Seasonality** tab to observe the seasonal rainfall distribution
+4. Click the **Seasonality** tab on the left to observe the seasonal rainfall distribution
 
 ![Time series plot showing daily precipitation for Cotter River at Gingera](../images/abom-precipitation-ts-plot.png)
+
 *Figure 2: Daily precipitation for Cotter River at Gingera, ACT (BOM 410730)*
 
 ### Exploring Daily Discharge (Cotter River)
@@ -79,6 +81,7 @@ Some daily series from BOM may contain missing data (NaN values). This is common
 3. Click the **Seasonality** tab to see the seasonal flow pattern
 
 ![Time series plot showing daily discharge for Cotter River with visible data gaps](../images/abom-daily-discharge-ts-plot.png)
+
 *Figure 3: Daily discharge for Cotter River at Gingera, ACT (BOM 410730)*
 
 ### Exploring Instantaneous Stage (Murray River)
@@ -88,6 +91,7 @@ Some daily series from BOM may contain missing data (NaN values). This is common
 3. The Murray River at Tocumwal shows the regulated flow pattern of a major river system
 
 ![Time series plot showing instantaneous stage for Murray River at Tocumwal](../images/abom-instantaneous-stage-ts-plot.png)
+
 *Figure 4: Instantaneous water level for Murray River at Tocumwal, NSW (BOM 409202)*
 
 ### Viewing the Properties Panel
@@ -101,14 +105,15 @@ Some daily series from BOM may contain missing data (NaN values). This is common
    - **Download** button to refresh the data
 
 ![Properties panel showing ABOM site number, data type dropdown, and Download button](../images/abom-properties-panel.png)
+
 *Figure 5: Properties panel for an ABOM time series element*
 
 ### Downloading Your Own ABOM Data
 
 To create a new ABOM time series element:
 
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **ABOM**
+1. Right-click **Time Series Data** in the Project Explorer and select **New Time Series**
+2. After naming the time series, in the Properties panel, set **Entry Method** to **ABOM**
 3. Enter a valid **ABOM Station ID** (6 digits, e.g., `410730`)
 4. Select the desired **Data Type** from the dropdown
 5. For Daily Precipitation, also select the **Depth Unit** (Millimeters, Centimeters, or Inches)

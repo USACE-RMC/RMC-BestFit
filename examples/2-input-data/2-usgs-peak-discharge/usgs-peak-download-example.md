@@ -30,6 +30,7 @@ Open `usgs-peak-download-example.bestfit` in RMC-BestFit. The Project Explorer s
 | USGS - 11274500 - Peak Discharge | Orestimba Creek near Newman, CA | 47 of 94 years | Ephemeral stream with many zero/low-flow years |
 
 ![Project Explorer showing two USGS peak discharge Input Data elements](../images/peak-download-project-explorer.png)
+
 *Figure 1: Project Explorer with USGS peak discharge elements*
 
 ## Step-by-Step Guide
@@ -44,27 +45,31 @@ Open `usgs-peak-download-example.bestfit` in RMC-BestFit. The Project Explorer s
 ### Exploring Moose River (01134500) -- No Low Outliers
 
 1. Click **USGS - 01134500 - Peak Discharge** in the Project Explorer
-2. The **Chronology** tab shows the annual peak instantaneous discharge from 1947 to present
-3. Click the **Frequency** tab to see the empirical frequency curve -- note the smooth distribution with no obvious breaks or gaps in the lower tail
+2. The **Chronology** tab at the bottom shows the annual peak instantaneous discharge from 1947 to present
+3. Click the **Frequency** tab at the bottom to see the empirical frequency curve -- note the smooth distribution with no obvious breaks or gaps in the lower tail
 4. This station has no MGBT low outliers -- the annual peak flows are consistent year to year, as expected for a perennial stream fed by snowmelt
 
 ![Chronology of Moose River annual peak discharge](../images/peak-download-moose-river-chronology.png)
+
 *Figure 2: Moose River annual peak discharge -- no low outliers*
 
 ![Frequency plot for Moose River](../images/peak-download-moose-river-frequency.png)
+
 *Figure 3: Empirical frequency curve for Moose River*
 
 ### Exploring Orestimba Creek (11274500) -- 47 Low Outliers
 
 1. Click **USGS - 11274500 - Peak Discharge** in the Project Explorer
-2. The **Chronology** tab reveals a striking pattern: many years have very low or zero peak flows, while a few years have large flood peaks exceeding 10,000 cfs
-3. Click the **Frequency** tab -- note the clear break in the lower tail where the MGBT has identified 47 low outliers
+2. The **Chronology** tab at the bottom reveals a striking pattern: many years have very low or zero peak flows, while a few years have large flood peaks exceeding 10,000 cfs
+3. Click the **Frequency** tab from the bottom-- note the clear break in the lower tail where the MGBT has identified 47 low outliers
 4. The low outliers appear as threshold-censored observations (shown differently from exact observations in the data grid and plots)
 
 ![Chronology of Orestimba Creek showing many low/zero flow years](../images/peak-download-orestimba-chronology.png)
+
 *Figure 4: Orestimba Creek annual peak discharge -- note the many low-flow years*
 
 ![Frequency plot for Orestimba Creek showing MGBT threshold](../images/peak-download-orestimba-frequency.png)
+
 *Figure 5: Empirical frequency curve for Orestimba Creek with MGBT low outliers*
 
 ### Understanding the Multiple Grubbs-Beck Test (MGBT)
@@ -83,22 +88,23 @@ The MGBT is a statistical test that identifies anomalously low peaks in the annu
 
 1. With either Input Data element selected, open the **Properties** panel
 2. The panel shows the USGS peak discharge configuration:
-   - **Exact Data Method:** USGS Peak Discharge
+   - **Data Entry Method:** USGS Peak Discharge
    - **USGS Site Number:** The 8-digit site identifier
    - **Use Multiple Grubbs-Beck Test:** Checked (enabled by default)
    - **Download** button to refresh the data from USGS NWIS
 
 ![Properties panel showing USGS peak discharge settings](../images/peak-download-properties.png)
+
 *Figure 6: Properties panel for a USGS peak discharge element*
 
 ### Downloading Your Own USGS Peak Data
 
 To create a new USGS peak discharge Input Data element:
 
-1. Right-click **Input Data** in the Project Explorer and select **Create New**
+1. Right-click **Input Data** in the Project Explorer and select **New Input Data**
 2. Enter a descriptive name for the element
 3. In the Properties panel:
-   - Set **Exact Data Method** to **USGS Peak Discharge**
+   - Set **Data Entry Method** to **USGS Peak Discharge**
    - Enter a valid **USGS Site Number** (8-15 digits). Look up site numbers at https://waterdata.usgs.gov
    - Enable or disable the **Use Multiple Grubbs-Beck Test** checkbox
 4. Click **Download**

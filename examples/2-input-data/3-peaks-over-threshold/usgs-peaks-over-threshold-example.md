@@ -25,6 +25,7 @@ Open `usgs-peaks-over-threshold-example.bestfit` in RMC-BestFit. The Project Exp
 | USGS - 11274500 - Peaks-Over-Threshold | Input Data | POT series with threshold = 650 cfs, minimum separation = 5 days |
 
 ![Project Explorer showing time series and POT Input Data elements](../images/usgs-pot-project-explorer.png)
+
 *Figure 1: Project Explorer with time series and POT elements*
 
 ## Step-by-Step Guide
@@ -43,19 +44,22 @@ Open `usgs-peaks-over-threshold-example.bestfit` in RMC-BestFit. The Project Exp
 3. Click the **Seasonality** tab to confirm that floods are concentrated in the winter wet season (November--April)
 
 ![Daily discharge hydrograph for Orestimba Creek](../images/usgs-pot-daily-discharge.png)
+
 *Figure 2: Daily discharge for Orestimba Creek -- highly episodic, event-driven hydrology*
 
 ### Exploring the POT Input Data
 
 1. Click **USGS - 11274500 - Peaks-Over-Threshold** in the Project Explorer
-2. The **Chronology** tab shows all 78 extracted peaks plotted against time
-3. Click the **Frequency** tab to see the empirical frequency curve of the extracted peaks
-4. Click the **Seasonality** tab to see when peaks occur -- concentrated in winter months
+2. The **Chronology** tab at the bottom shows all 78 extracted peaks plotted against time
+3. Click the **Frequency** tab at thd bottom to see the empirical frequency curve of the extracted peaks
+4. Click the **Seasonality** tab to the left to see when peaks occur -- concentrated in winter months
 
 ![Chronology of POT events extracted from Orestimba Creek](../images/usgs-pot-chronology.png)
+
 *Figure 3: Chronology of 78 peaks over the 650 cfs threshold*
 
 ![Frequency plot of POT events](../images/usgs-pot-frequency.png)
+
 *Figure 4: Empirical frequency curve for POT events*
 
 ### Understanding the POT Configuration
@@ -73,43 +77,47 @@ The POT extraction uses two key parameters:
 RMC-BestFit provides three diagnostic plots to help select an appropriate threshold:
 
 1. **MRL (Mean Residual Life) Plot** -- Click the **MRL** tab. This plot shows the mean excess over the threshold as a function of threshold level. A roughly linear relationship above a certain threshold suggests that the Generalized Pareto distribution is a reasonable model for the exceedances. The selected threshold should be in the region where the MRL plot appears approximately linear.
-
 2. **Modified Scale Stability Plot** -- Click the **Modified Scale** tab. This plot shows the estimated scale parameter (adjusted for threshold) as a function of threshold. The parameter should be roughly constant above an appropriate threshold.
-
 3. **Shape Stability Plot** -- Click the **Shape** tab. This plot shows the estimated shape parameter as a function of threshold. Like the scale plot, the shape parameter should stabilize above an appropriate threshold.
 
+These are under the **POT Diagnostics** tab on the left. The tabs at the bottom will switch between the 3 graphs described above.
+
 ![MRL plot for threshold selection](../images/usgs-pot-mrl.png)
+
 *Figure 5: Mean Residual Life plot supporting the 650 cfs threshold*
 
 ![Modified scale stability plot](../images/usgs-pot-modified-scale.png)
+
 *Figure 6: Modified scale stability plot*
 
 ![Shape stability plot](../images/usgs-pot-shape.png)
+
 *Figure 7: Shape stability plot*
 
 ### Viewing the Properties Panel
 
 1. With the POT Input Data element selected, open the **Properties** panel
 2. The panel shows the POT configuration:
-   - **Exact Data Method:** Peaks-Over-Threshold Series
-   - **Time Series Element:** The source daily discharge element
+   - **Data Entry Method:** Peaks-Over-Threshold Series
+   - **Time Series:** The source daily discharge element
    - **Threshold:** 650 (cfs)
-   - **Min Steps Between Peaks:** 5 (days, matching the daily time interval)
+   - **Minimum Steps [Between Peaks]:** 5 (days, matching the daily time interval)
 
 ![Properties panel showing POT settings](../images/usgs-pot-properties.png)
+
 *Figure 8: Properties panel for a POT Input Data element*
 
 ### Creating Your Own POT Element
 
 To create a new Peaks-Over-Threshold Input Data element:
 
-1. Right-click **Input Data** in the Project Explorer and select **Create New**
+1. Right-click **Input Data** in the Project Explorer and select **New Input Data**
 2. Enter a descriptive name for the element
 3. In the Properties panel:
-   - Set **Exact Data Method** to **Peaks-Over-Threshold Series**
-   - Select a **Time Series Element** from the dropdown
+   - Set **Data Entry Method** to **Peaks-Over-Threshold Series**
+   - Select a **Time Series** from the dropdown
    - Set the **Threshold** value -- start with a value that captures a reasonable number of events per year (typically 1--5 events per year is a good target)
-   - Set **Min Steps Between Peaks** to ensure independence (5--10 days for daily discharge data)
+   - Set **Minimum Steps [Between Peaks]** to ensure independence (5--10 days for daily discharge data)
 4. Review the threshold diagnostic plots (MRL, Modified Scale, Shape) to confirm your threshold choice
 5. Adjust the threshold if the diagnostic plots suggest a different value
 

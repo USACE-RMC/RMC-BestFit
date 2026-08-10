@@ -59,10 +59,6 @@ Each Bivariate Distribution Analysis element references two existing Univariate 
 
 Compare candidates by AIC / BIC; Gumbel and Frank are the typical winners for hydrologic peaks.
 
-## Screenshot Images
-
-Capture screenshots into `images/` subfolders next to each example. Naming convention: `<example-slug>-<view-name>.png` (e.g., `waimea-joint-density.png`, `sum-two-normals-marginal-x.png`).
-
 ## Next Steps
 
 After bivariate / CFA analysis:

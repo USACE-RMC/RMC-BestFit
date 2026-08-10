@@ -61,20 +61,23 @@ This project contains 6 time series elements, all from the same station:
 4. The Project Explorer will show 6 elements under **Time Series Data**
 
 ![RMC-BestFit Project Explorer showing all 6 CHMN time series elements for station 08MG005](../images/chmn-project-explorer.png)
+
 *Figure 1: Project Explorer with all CHMN time series elements*
 
 ### Exploring Daily Discharge
 
 1. Click **CHMN - 08MG005 - Daily Discharge** in the Project Explorer
-2. The **Time Series** tab displays the daily streamflow record beginning in 1914
+2. The **Time Series** tab on the left displays the daily streamflow record beginning in 1914
 3. Notice the strong seasonal pattern: low winter baseflow and high summer flows from snowmelt and glacial melt
-4. Click the **Seasonality** tab to see the annual flow cycle peaking in June-July
-5. The **ACF** tab shows strong serial correlation typical of daily streamflow
+4. Click the **Seasonality** on the left tab to see the annual flow cycle peaking in June-July
+5. The **ACF** tab on the left shows strong serial correlation typical of daily streamflow
 
 ![Time series plot showing daily discharge for Lillooet River](../images/chmn-daily-discharge-ts-plot.png)
+
 *Figure 2: Daily discharge for Lillooet River near Pemberton, BC (CHMN 08MG005)*
 
 ![Seasonality plot for Lillooet River showing summer snowmelt/glacial melt peak](../images/chmn-daily-discharge-seasonality.png)
+
 *Figure 3: Seasonality plot -- glacial-fed river with June-July peak typical of Coast Mountain catchments*
 
 ### Exploring Peak Discharge
@@ -84,6 +87,7 @@ This project contains 6 time series elements, all from the same station:
 3. Peak data is the most commonly used input for flood frequency analysis and can be used directly in a Univariate Analysis element without extracting annual maxima from daily data
 
 ![Time series plot showing annual peak discharge values for Lillooet River](../images/chmn-peak-discharge-ts-plot.png)
+
 *Figure 4: Annual peak discharge for Lillooet River (CHMN 08MG005)*
 
 ### Exploring Instantaneous Data
@@ -94,6 +98,7 @@ This project contains 6 time series elements, all from the same station:
 4. Note: instantaneous data from WSC is typically limited to the recent real-time period
 
 ![Time series plot showing 5-minute instantaneous discharge for Lillooet River](../images/chmn-instantaneous-discharge-ts-plot.png)
+
 *Figure 5: Instantaneous (5-minute) discharge for Lillooet River (CHMN 08MG005)*
 
 ### Viewing the Properties Panel
@@ -106,14 +111,15 @@ This project contains 6 time series elements, all from the same station:
    - **Download** button to refresh the data
 
 ![Properties panel showing CHMN site number, data type dropdown, and Download button](../images/chmn-properties-panel.png)
+
 *Figure 6: Properties panel for a CHMN time series element*
 
 ### Downloading Your Own CHMN Data
 
 To create a new CHMN time series element:
 
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **CHMN**
+1. Right-click **Time Series Data** in the Project Explorer and select **New Time Series**
+2. After naming the time series, in the Properties panel, set **Entry Method** to **CHMN**
 3. Enter a valid **CHMN Station ID** (7 characters, e.g., `08MG005`)
 4. Select the desired **Data Type** from the dropdown
 5. Click **Download**

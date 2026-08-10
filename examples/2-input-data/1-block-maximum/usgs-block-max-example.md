@@ -26,6 +26,7 @@ Open `usgs-block-max-example.bestfit` in RMC-BestFit. The Project Explorer shows
 | USGS - 01134500 - Block Max - Water Year | Input Data | Annual maximum using October--September blocks |
 
 ![Project Explorer showing the time series and two block maximum Input Data elements](../images/block-max-project-explorer.png)
+
 *Figure 1: Project Explorer with time series and block maximum elements*
 
 ## Step-by-Step Guide
@@ -40,25 +41,28 @@ Open `usgs-block-max-example.bestfit` in RMC-BestFit. The Project Explorer shows
 ### Exploring the Source Time Series
 
 1. Click **USGS - 01134500 - Daily Discharge** in the Project Explorer
-2. The **Time Series** tab displays the full daily hydrograph spanning 1947 to present
-3. Click the **Seasonality** tab to see the annual cycle -- note the spring snowmelt peak between March and May, which is typical of New England rivers
+2. The **Time Series** tab on the left displays the full daily hydrograph spanning 1947 to present
+3. Click the **Seasonality** tab on the left to see the annual cycle -- note the spring snowmelt peak between March and May, which is typical of New England rivers
 
 ![Daily discharge hydrograph for Moose River at Victory, VT](../images/block-max-daily-discharge.png)
+
 *Figure 2: Daily discharge hydrograph for Moose River at Victory, VT*
 
 ### Exploring the Calendar Year Block Maximum
 
 1. Click **USGS - 01134500 - Block Max - Calendar Year** in the Project Explorer
-2. The **Chronology** tab shows the extracted annual maximum series plotted against year
-3. Click the **Frequency** tab to see the empirical frequency curve (plotting positions)
-4. Click the **Seasonality** tab to see when annual maxima occur -- most fall in spring (March--May)
-5. The **Density**, **Histogram**, and **Q-Q** tabs provide additional views of the sample distribution
-6. The **ACF** and **PACF** tabs show the autocorrelation structure of the annual maximum series
+2. The **Chronology** tab at the bottom shows the extracted annual maximum series plotted against year
+3. Click the **Frequency** tab at the bottom to see the empirical frequency curve (plotting positions)
+4. Click the **Seasonality** tab on the left to see when annual maxima occur -- most fall in spring (March--May)
+5. The **Density**, **Histogram**, and **Q-Q** tabs to the left provide additional views of the sample distribution
+6. The **ACF** and **PACF** tabs to the left show the autocorrelation structure of the annual maximum series
 
 ![Chronology plot of calendar year annual maxima](../images/block-max-calendar-chronology.png)
+
 *Figure 3: Calendar year annual maximum series*
 
 ![Frequency plot showing empirical plotting positions](../images/block-max-calendar-frequency.png)
+
 *Figure 4: Empirical frequency curve for calendar year annual maxima*
 
 ### Exploring the Water Year Block Maximum
@@ -68,6 +72,7 @@ Open `usgs-block-max-example.bestfit` in RMC-BestFit. The Project Explorer shows
 3. The water year (October 1 through September 30) is the standard block used in U.S. flood frequency practice because it keeps the winter-spring flood season within a single year
 
 ![Chronology plot of water year annual maxima](../images/block-max-wateryear-chronology.png)
+
 *Figure 5: Water year annual maximum series*
 
 ### Comparing Calendar Year vs Water Year
@@ -90,19 +95,23 @@ The calendar year and water year series will often be identical for stations whe
    - **Block Function:** Maximum
    - **Time Block:** Calendar Year or Water Year
    - **Start Month / End Month:** Defines the custom block boundaries (relevant when Time Block is set to Custom Year)
+   - **Smoothing:**
+   - **Plotting Position Parameter:**
+   - **Threshold Value:**
 
 ![Properties panel showing block maximum settings](../images/block-max-properties.png)
+
 *Figure 6: Properties panel for a block maximum Input Data element*
 
 ### Creating Your Own Block Maximum Element
 
 To create a new block maximum Input Data element:
 
-1. Right-click **Input Data** in the Project Explorer and select **Create New**
+1. Right-click **Input Data** in the Project Explorer and select **New Input Data**
 2. Enter a descriptive name for the element
 3. In the Properties panel:
-   - Set **Exact Data Method** to **Time Series**
-   - Select a **Time Series Element** from the dropdown (must already exist in the project)
+   - Set **Data Entry Method** to **Block Series**
+   - Select a **Time Series** from the dropdown (must already exist in the project)
    - Set **Block Function** to **Maximum** (or Minimum, Mean)
    - Set **Time Block** to **Water Year**, **Calendar Year**, or **Custom Year**
    - If using Custom Year, set the **Start Month** and **End Month**

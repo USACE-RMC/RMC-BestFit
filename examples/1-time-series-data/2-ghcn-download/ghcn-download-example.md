@@ -54,19 +54,22 @@ This project contains 2 time series elements from cooperative observer stations 
 4. The Project Explorer will show 2 elements under **Time Series Data**
 
 ![RMC-BestFit Project Explorer showing the 2 GHCN time series elements](../images/ghcn-project-explorer.png)
+
 *Figure 1: Project Explorer with GHCN time series elements*
 
 ### Exploring Daily Precipitation (Big Bear Lake)
 
 1. Click **GHCN - USC00040741 - Daily Precipitation** in the Project Explorer
-2. The **Time Series** tab displays the daily precipitation record
+2. The **Time Series** tab on the left displays the daily precipitation record
 3. Notice the episodic nature of precipitation -- many zero values with occasional storms
-4. Click the **Seasonality** tab to see the wet season (winter) and dry season (summer) pattern typical of California's Mediterranean climate
+4. Click the **Seasonality** tab on the left to see the wet season (winter) and dry season (summer) pattern typical of California's Mediterranean climate
 
 ![Time series plot showing daily precipitation for Big Bear Lake, CA](../images/ghcn-precipitation-ts-plot.png)
+
 *Figure 2: Daily precipitation for Big Bear Lake, CA (GHCN USC00040741)*
 
-![Seasonality plot for Big Bear Lake precipitation showing winter wet season](../images/ghcn-precipitation-seasonality.png)
+![Seasonality plot for Big Bear Lake precipitation showing winter wet season](../images/ghcn-precipitation-seasonality-plot.png)
+
 *Figure 3: Seasonality plot -- California's Mediterranean climate with winter-dominant precipitation*
 
 ### Exploring Daily Snowfall (Paradise)
@@ -77,6 +80,7 @@ This project contains 2 time series elements from cooperative observer stations 
 4. The **Seasonality** tab clearly shows the November-March snow season
 
 ![Time series plot showing daily snowfall for Paradise, CA](../images/ghcn-snow-ts-plot.png)
+
 *Figure 4: Daily snowfall for Paradise, CA (GHCN USC00046685)*
 
 ### Viewing the Properties Panel
@@ -90,14 +94,15 @@ This project contains 2 time series elements from cooperative observer stations 
    - **Download** button to refresh the data
 
 ![Properties panel showing GHCN site number, data type, depth unit, and Download button](../images/ghcn-properties-panel.png)
+
 *Figure 5: Properties panel for a GHCN time series element*
 
 ### Downloading Your Own GHCN Data
 
 To create a new GHCN time series element:
 
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **GHCN**
+1. Right-click **Time Series Data** in the Project Explorer and select **New Time Series**
+2. After naming the time series, in the Properties panel, set **Entry Method** to **GHCN**
 3. Enter a valid **GHCN Station ID** (11 characters, e.g., `USC00040741`)
 4. Select the **Data Type** (Daily Precipitation or Daily Snow)
 5. Select the **Depth Unit** (Inches, Millimeters, or Centimeters)

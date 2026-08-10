@@ -52,19 +52,22 @@ This project contains 8 time series elements from 4 USGS gaging stations:
 4. The Project Explorer will show 8 elements under **Time Series Data**
 
 ![RMC-BestFit Project Explorer showing all 8 USGS time series elements](../images/usgs-project-explorer.png)
+
 *Figure 1: Project Explorer with all USGS time series elements*
 
 ### Exploring Daily Discharge (Moose River)
 
 1. Click **USGS - 01134500 - Daily Discharge** in the Project Explorer
-2. The **Time Series** tab displays the full daily hydrograph
-3. Click the **Seasonality** tab to see the annual cycle of streamflow -- note the spring snowmelt peak typical of New England rivers
-4. Click the **ACF** and **PACF** tabs to view the autocorrelation structure of daily flows
+2. The **Time Series** tab on the left displays the full daily hydrograph
+3. Click the **Seasonality** tab on the left to see the annual cycle of streamflow -- note the spring snowmelt peak typical of New England rivers
+4. Click the **ACF** and **PACF** tabs on the left to view the autocorrelation structure of daily flows
 
 ![Time series plot showing daily discharge for Moose River at Victory, VT](../images/usgs-daily-discharge-ts-plot.png)
+
 *Figure 2: Daily discharge hydrograph for Moose River at Victory, VT (USGS 01134500)*
 
 ![Seasonality plot for Moose River daily discharge showing spring snowmelt peak](../images/usgs-daily-discharge-seasonality.png)
+
 *Figure 3: Seasonality plot for Moose River*
 
 ### Exploring Instantaneous Data (Potomac River)
@@ -75,6 +78,7 @@ This project contains 8 time series elements from 4 USGS gaging stations:
 4. Zoom in on individual flood events to see the high-resolution hydrograph shape
 
 ![Time series plot showing instantaneous discharge for Potomac River](../images/usgs-instantaneous-discharge-ts-plot.png)
+
 *Figure 4: Instantaneous discharge for Potomac River near Washington, DC (USGS 01646500)*
 
 ### Exploring Peak Data (Back Creek)
@@ -85,6 +89,7 @@ This project contains 8 time series elements from 4 USGS gaging stations:
 4. Click **USGS - 01614000 - Peak Stage** to see the corresponding annual peak gage heights
 
 ![Time series plot showing annual peak discharge for Back Creek near Jones Springs, WV](../images/usgs-peak-discharge-ts-plot.png)
+
 *Figure 5: Annual peak discharge for Back Creek near Jones Springs, WV (USGS 01614000)*
 
 ### Exploring Measured Data (Susquehanna River)
@@ -94,6 +99,7 @@ This project contains 8 time series elements from 4 USGS gaging stations:
 3. Measured discharge and stage pairs are commonly used for rating curve development
 
 ![Time series plot showing individual field measurements for Susquehanna River](../images/usgs-measured-discharge-ts-plot.png)
+
 *Figure 6: Field-measured discharge for Susquehanna River at Harrisburg, PA (USGS 01570500)*
 
 ### Viewing the Properties Panel
@@ -106,14 +112,15 @@ This project contains 8 time series elements from 4 USGS gaging stations:
    - **Download** button to refresh the data from USGS NWIS
 
 ![Properties panel showing USGS site number, data type dropdown, and Download button](../images/usgs-properties-panel.png)
+
 *Figure 7: Properties panel for a USGS time series element*
 
 ### Downloading Your Own USGS Data
 
 To create a new USGS time series element from scratch:
 
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **USGS**
+1. Right-click **Time Series Data** in the Project Explorer and select **New Time Series**
+2. After naming the time series, in the Properties panel, set **Entry Method** to **USGS**
 3. Enter a valid **USGS Site Number** (8-15 digits). You can look up site numbers at https://waterdata.usgs.gov
 4. Select the desired **Data Type** from the dropdown
 5. Click **Download**
