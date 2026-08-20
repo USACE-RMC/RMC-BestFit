@@ -325,11 +325,14 @@ as failure history. Commit `ccd5842` removed every time-series Verification assi
 `BayesianAnalysis` setting. The production defaults are asserted before and after recovery sampling;
 the required central 95% interval is computed independently from the default 10,000 retained draws
 without changing the production 90% reporting setting. AR MLE, default-DEMCzs AR Bayesian, MA MLE,
-and default-DEMCzs MA Bayesian pass their unchanged gates. ARIMA MLE then failed because its MA
-coefficient was `0.3230227122104127`, outside the fixed `0.25 ± 0.0375` 15% gate. ARIMA Bayesian and
-both ARIMAX cells were not run. No seed search, threshold, optimizer, likelihood, prior, sampler,
-production default, or algorithm change is authorized. Phase 5 cannot transition to
-`phase-5-complete` without an approved disposition for the ARIMA MLE recovery finding.
+and default-DEMCzs MA Bayesian pass their unchanged gates. The original ARIMA MLE fixed-percentage
+failure was diagnosed with an independent R conditional-likelihood/profile oracle committed before
+reevaluation. All C# parameter-parity assertions passed, but the C# estimate's likelihood differs
+from the R optimum by `1.1491787E-5`, above the frozen `1E-5` gate. The rerun stopped without a
+tolerance change. ARIMA Bayesian and both ARIMAX cells were not run. No seed search, threshold,
+optimizer, likelihood, prior, sampler, production default, or algorithm change is authorized. Phase
+5 cannot transition to `phase-5-complete` without a separately approved disposition for this ARIMA
+MLE recovery finding.
 
 Findings and required direction:
 

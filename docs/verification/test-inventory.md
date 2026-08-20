@@ -487,7 +487,7 @@ is retained in the time-series report. No full Verification run occurred.
 | `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; unchanged production DEMCzs defaults asserted before/after; independently calculated central 95%, MAP 25%, R-hat/ESS, one-step recurrence | **Passed** - 1/1 in 24.611 s |
 | `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 110-step burn-in, 1,000 retained observations, seed 12345, unchanged 5% gate | **Passed** - 1/1 in 0.198 s |
 | `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and unchanged production-default Bayesian recovery contract | **Passed** - 1/1 in 24.097 s |
-| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R logarithmic ARIMA(1,1,1), 1,000 observations, seed 51037, 15% coefficients/10% scale | **Failed** - MA `0.3230227122104127` is outside `0.25 ± 0.0375` |
+| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; `1E-3` coefficients, `1E-5` scale/likelihood | **Failed** - parameter parity passed; likelihood gap `1.1491787E-5` exceeds `1E-5` |
 | `Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture and unchanged production-default Bayesian recovery contract | Not run - stopped by preceding failure |
 | `Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, 15% coefficients/10% scale | Not run - stopped by preceding failure |
 | `Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture and unchanged production-default Bayesian recovery contract | Not run - stopped by preceding failure |
@@ -495,7 +495,9 @@ is retained in the time-series report. No full Verification run occurred.
 The artifact was committed before C# recovery evaluation. The mistakenly changed AR/MA seeds,
 corrected-seed fixture without stationary burn-in, and artificially capped AR Bayesian run remain
 failure history. Commit `ccd5842` removed the cap and all time-series Verification assignments to
-`BayesianAnalysis` settings. The corrected AR Bayesian and both MA cells pass; ARIMA MLE fails its
-unchanged coefficient gate, so the remaining three methods were not run. No alternate seed,
-tolerance, optimizer, sampler setting, or full Verification run was attempted. See the time-series
-report for hashes, exact commands, runtimes, and failure history.
+`BayesianAnalysis` settings. The corrected AR Bayesian and both MA cells pass. The independent ARIMA
+MLE oracle and acceptance contract were committed before reevaluation; all parameter comparisons
+passed, but its C#-estimate likelihood missed the frozen R-optimum gate by `1.491787E-6`. The
+remaining three methods were not run. No alternate seed, tolerance, optimizer, sampler setting, or
+full Verification run was attempted. See the time-series report for hashes, exact commands,
+runtimes, and failure history.

@@ -16,11 +16,13 @@ contract. Haden Smith approved 110 discarded stationary initialization steps whi
 established seeds, 1,000 observations, and unchanged gates. The 1,000 limit applies to fixtures and
 generator-moment methods, not MCMC. Commit `ccd5842` removes all time-series Verification
 assignments to `BayesianAnalysis` settings; every Bayesian recovery uses and asserts the production
-DEMCzs defaults. AR/MA MLE and Bayesian cells pass. Final Phase 5 closure is blocked by ARIMA MLE:
-its MA coefficient `0.3230227122104127` is outside the fixed `0.25 ± 0.0375` gate. ARIMA Bayesian
-and both ARIMAX cells were not run, no production or numerical setting was changed, and the full
-Verification project was not run. The earlier capped AR Bayesian R-hat failure remains documented
-as superseded test-configuration history.
+DEMCzs defaults. AR/MA MLE and Bayesian cells pass. The original ARIMA MLE percentage-gate failure
+was diagnosed against an independent R conditional-likelihood/profile oracle committed before
+reevaluation. All parameter-parity assertions pass, but the C# estimate's likelihood differs from
+the R optimum by `1.1491787E-5`, above the frozen `1E-5` gate. Final Phase 5 closure remains blocked;
+ARIMA Bayesian and both ARIMAX cells were not run, no production or numerical setting was changed,
+and the full Verification project was not run. Earlier fixed-percentage and capped-Bayesian failures
+remain documented as failure history.
 
 ## Summary
 
