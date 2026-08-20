@@ -483,17 +483,18 @@ is retained in the time-series report. No full Verification run occurred.
 
 | Method | Oracle or recovery contract | Status |
 |---|---|---|
-| `AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Independent R AR(1), 1,000 observations, seed 12345, unchanged 5% gate, finite likelihood/prior, one-step recurrence | **Failed** - corrected-seed intercept `10.569486830922324` exceeds `10 ± 0.5` |
-| `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; resolved-default assertions; test-only 1,000-step cap; central 95%, MAP 25%, R-hat/ESS, one-step recurrence | Not run - stopped by preceding failure |
-| `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 1,000 observations, seed 12345, unchanged 5% gate | Not run |
+| `AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Independent R AR(1), 110-step burn-in, 1,000 retained observations, seed 12345, unchanged 5% gate, finite likelihood/prior, one-step recurrence | **Passed** - 1/1 after approved burn-in correction |
+| `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; resolved-default assertions; test-only 1,000-step cap; central 95%, MAP 25%, R-hat/ESS, one-step recurrence | **Failed** - intercept R-hat `1.1478771` exceeds `< 1.1` |
+| `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 110-step burn-in, 1,000 retained observations, seed 12345, unchanged 5% gate | Not run - stopped by preceding failure |
 | `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and capped Bayesian recovery contract | Not run |
 | `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R logarithmic ARIMA(1,1,1), 1,000 observations, seed 51037, 15% coefficients/10% scale | Not run |
 | `Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture and capped Bayesian recovery contract | Not run |
 | `Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, 15% coefficients/10% scale | Not run |
 | `Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture and capped Bayesian recovery contract | Not run |
 
-The artifact was committed before C# recovery evaluation. The first run used mistakenly changed
-AR/MA seeds and is retained as invalid-fixture history; after restoring established seed 12345 and
-committing the corrected artifact, the first cell still failed its unchanged gate. Per the approved
-matrix rule, no later method, alternate seed, changed tolerance, or full Verification run occurred.
-See the time-series report for hashes, exact command, runtimes, and failure history.
+The artifact was committed before C# recovery evaluation. The mistakenly changed AR/MA seeds and
+the corrected-seed fixture without stationary burn-in remain failure history. After the approved
+110-step burn-in correction was committed, AR MLE passed its unchanged gate and AR Bayesian failed
+its unchanged R-hat gate after exactly 1,000 steps per chain. Per the approved matrix rule, the
+remaining six methods, alternate seeds, changed thresholds, and the full Verification project were
+not run. See the time-series report for hashes, exact commands, runtimes, and failure history.

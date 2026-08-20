@@ -12,10 +12,12 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 
 Phase 5 recovery checkpoint (20 August 2026): TR-035 through TR-041 and TR-046 retain their
 completed regression and independent-oracle evidence, and TR-042 retains its refreshed closed
-contract. Final Phase 5 closure is blocked by the first integrated recovery cell: with the required
-1,000-observation cap and restored established seed 12345, AR MLE estimated process mean
-`10.569486830922324`, outside the unchanged 5% gate `10 ± 0.5`. The remaining seven cells were not
-run, no production or numerical setting was changed, and the full Verification project was not run.
+contract. Haden Smith approved 110 discarded stationary initialization steps while retaining the
+established seeds, 1,000 observations, 1,000 Bayesian steps, and unchanged gates. The regenerated
+independent artifact was committed before evaluation; AR MLE then passed 1/1. Final Phase 5 closure
+is blocked by AR Bayesian intercept R-hat `1.1478771`, which exceeds the predeclared `< 1.1` gate.
+The remaining six cells were not run, no production or numerical setting was changed, and the full
+Verification project was not run.
 
 ## Summary
 

@@ -681,7 +681,7 @@ same exact guarded command then passed with the configured environment. The firs
 collided with an already-running test logger; after that process completed, the isolated UI suite
 passed 578/578. The complete Verification project was not run.
 
-## Integrated recovery matrix — in progress after approved burn-in correction
+## Integrated recovery matrix — blocked at AR Bayesian convergence gate
 
 **Fixture and execution contract.** Package 10 adds the committed R artifact
 `verification/data/time-series/phase5-recovery-fixtures.json` and generator
@@ -710,8 +710,8 @@ default changes. The recovery source SHA-256 is
 | Cell | Fully qualified method | Disposition |
 |---|---|---|
 | AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Passed 1/1 after approved 110-step burn-in correction |
-| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Next cell; not yet run |
-| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Not run |
+| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Failed 0/1: intercept R-hat `1.1478771` exceeds `< 1.1` |
+| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Not run because AR Bayesian stopped the matrix |
 | MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Not run |
 | ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Not run |
 | ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Not run |
@@ -747,6 +747,20 @@ resolution, and ran no test. The same exact guarded command then passed 1/1 in 0
 AR MLE stop condition without changing the retained sample size, seed, 5% gate, production code,
 optimizer, likelihood, prior, or numerical defaults.
 
+The next exact guarded command selected only
+`RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1`. Its
+pre-sampling assertions confirmed the unchanged production DEMCzs defaults. The test instance then
+used six chains, thinning one, 833 configured iterations, 416 configured warmup iterations, 300
+unchanged initialization iterations, and 1,000 retained rows; the configured outer sampler budget
+was exactly `833 + ceil(1000/6) = 1,000` steps per chain. The test failed 0/1 after 2.256 s under
+`20260820-135105-...` because the intercept R-hat was `1.1478771`, above the predeclared strict
+threshold `< 1.1`. The intercept truth-in-95%-interval and MAP-within-25% assertions precede this
+gate and passed. The intercept ESS and every later parameter assertion were not reached. The TRX
+SHA-256 is `326063CA79A0E538DE42AC222A52EC5EE3142C0945F760788CF705541CFC7136`.
+No additional seed, chain, iteration, prior, sampler, threshold, or production-default configuration
+was attempted. The remaining six recovery cells stopped unrun, and the complete Verification
+project was not run.
+
 **Failure history.** The initial R generation attempt could not read repository renv junctions in
 the sandbox and wrote no artifact; the same script ran in the configured environment. The first C#
 compile exposed three test-only type/index errors and ran no test; explicit established types fixed
@@ -754,8 +768,8 @@ them. The first AR MLE run used mistakenly assigned AR/MA seeds `51035/51036` an
 coefficient gate (`0.5458503824113965` versus `0.6 ± 0.03`) under `20260820-132537-...`. That run
 did not represent the approved existing-seed contract. The generator, artifact, and manifest were
 then committed with seed `12345` before the corrected-seed reevaluation. The subsequent missing
-burn-in failure and its approved correction remain recorded rather than replaced. At this checkpoint,
-the seven later recovery methods and the complete Verification project have not been run.
+burn-in failure and its approved correction remain recorded rather than replaced. The AR MLE pass
+and AR Bayesian convergence failure are the current operative recovery evidence.
 
 ## Phase 5 findings
 
@@ -770,7 +784,7 @@ the seven later recovery methods and the complete Verification project have not 
 | TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1; integrated recovery is blocked before ARIMAX |
 | TR-042 AIC/BIC kernel | Closed; refresh complete | Counting data-likelihood/MAP routing regression passes in Core 3,227/3,227 | Five-analysis data-only criterion and flat-prior parity oracle passes 1/1 |
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
-| Integrated recovery | Blocked | Eight exact cells implemented with 1,000-observation independent fixtures | Corrected-seed AR MLE failed 5% intercept gate; remaining seven not run |
+| Integrated recovery | Blocked | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations | AR MLE passes unchanged 5% gate; AR Bayesian intercept R-hat `1.1478771` fails `< 1.1`; remaining six not run |
 
 The complete Verification project is not run during Phase 5. Every numerical or recovery result
 will be executed as one exact fully qualified method through `scripts/run-verification-test.ps1`.
