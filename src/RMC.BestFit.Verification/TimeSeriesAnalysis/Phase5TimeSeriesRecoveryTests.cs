@@ -98,6 +98,7 @@ public class Phase5TimeSeriesRecoveryTests
     public async Task BayesianArimax10D1LevelCovariateRecoversGeneratingParameters()
     {
         JsonElement fixture = LoadFixture("arimax");
+        JsonElement oracle = LoadArimaxMleOracle();
         ARIMAX model = CreateArimaxModel(fixture);
         double[] truth = GetArimaxTruth(fixture);
         var analysis = new ARIMAXAnalysis(model);
@@ -106,7 +107,7 @@ public class Phase5TimeSeriesRecoveryTests
         await analysis.RunAsync();
 
         Assert.IsTrue(analysis.IsEstimated, "ARIMAX Bayesian estimation did not complete.");
-        AssertBayesianRecovery("ARIMAX", model, analysis.BayesianAnalysis, truth);
+        AssertBayesianRecovery("ARIMAX", model, analysis.BayesianAnalysis, truth, oracle);
         AssertArimaxPrediction(model, truth, fixture);
     }
 
@@ -535,17 +536,44 @@ public class Phase5TimeSeriesRecoveryTests
 
             independentMapElement = oracleRoot.GetProperty("conditional_posterior_map");
             JsonElement oracleMap = independentMapElement.Value;
-            Assert.AreEqual("Uniform(-2,2)", oracleMap.GetProperty("coefficient_prior").GetString());
-            Assert.AreEqual(
-                "Uniform(.Machine$double.eps,1)",
-                oracleMap.GetProperty("scale_prior").GetString());
             Assert.IsTrue(oracleMap.GetProperty("jeffreys_scale_prior").GetBoolean());
-            independentMap =
-            [
-                oracleMap.GetProperty("phi").GetDouble(),
-                oracleMap.GetProperty("theta").GetDouble(),
-                oracleMap.GetProperty("sigma").GetDouble(),
-            ];
+            string? artifactId = oracleRoot
+                .GetProperty("metadata")
+                .GetProperty("artifact_id")
+                .GetString();
+            if (artifactId == "TS-PHASE5-ARIMA-MLE-001")
+            {
+                Assert.AreEqual("Uniform(-2,2)", oracleMap.GetProperty("coefficient_prior").GetString());
+                Assert.AreEqual(
+                    "Uniform(.Machine$double.eps,1)",
+                    oracleMap.GetProperty("scale_prior").GetString());
+                independentMap =
+                [
+                    oracleMap.GetProperty("phi").GetDouble(),
+                    oracleMap.GetProperty("theta").GetDouble(),
+                    oracleMap.GetProperty("sigma").GetDouble(),
+                ];
+            }
+            else if (artifactId == "TS-PHASE5-ARIMAX-MLE-001")
+            {
+                Assert.AreEqual("Uniform(0.01,10)", oracleMap.GetProperty("intercept_prior").GetString());
+                Assert.AreEqual("Uniform(-10,10)", oracleMap.GetProperty("covariate_prior").GetString());
+                Assert.AreEqual("Uniform(-2,2)", oracleMap.GetProperty("ar_prior").GetString());
+                Assert.AreEqual(
+                    "Uniform(.Machine$double.eps,100)",
+                    oracleMap.GetProperty("scale_prior").GetString());
+                independentMap =
+                [
+                    oracleMap.GetProperty("intercept").GetDouble(),
+                    oracleMap.GetProperty("beta").GetDouble(),
+                    oracleMap.GetProperty("phi").GetDouble(),
+                    oracleMap.GetProperty("sigma").GetDouble(),
+                ];
+            }
+            else
+            {
+                Assert.Fail($"Unsupported posterior-MAP oracle artifact '{artifactId}'.");
+            }
             Assert.AreEqual(map.Length, independentMap.Length, $"{label} independent MAP count.");
         }
 
