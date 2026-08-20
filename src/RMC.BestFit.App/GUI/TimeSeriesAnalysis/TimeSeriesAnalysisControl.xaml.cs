@@ -1023,7 +1023,8 @@ namespace RMC_BestFit
                 if (Element != null && Element.BayesianAnalysis != null && Element.IsValid == true && Element.BayesianAnalysis.IsEstimated == true)
                 {
                     var points = new List<DataPoint>();
-                    for (int i = 0; i < Element.ARIMAX.TrainingTimeSteps; i++)
+                    int residualCount = Math.Min(_residuals!.Length, Element.ARIMAX.TrainingTimeSeries.Count);
+                    for (int i = 0; i < residualCount; i++)
                     {
                         points.Add(new DataPoint(Element.ARIMAX.TrainingTimeSeries[i].Index.ToOADate(), _residuals[i]));
                     }

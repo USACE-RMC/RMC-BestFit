@@ -54,7 +54,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
-| [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Confirmed defect; corrected | Complete | Passed - date/index regressions and independent R oracle | [Report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment) | 2026-08-20 |
 | [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -709,17 +709,35 @@ seed, likelihood definition, or convergence default changed.
 <a id="tr-041"></a>
 ## TR-041 — Differenced ARIMAX Raw-Time Alignment Is Inconsistent
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. Differenced model step $k$ now maps to raw response index
+$k+d$ and retains that later raw timestamp. Training contains exactly $T-d$ model steps for a
+$T$-observation raw prefix; conditional evaluation begins at $k=\max(p,q)$. Level covariates are
+selected by exact response timestamp and are never differenced. Missing or duplicate required
+timestamps make validation fail and numerical evaluation return negative infinity; extra dates
+outside the required window are harmless. The transform Jacobian covers raw indices
+$d+\max(p,q)$ through $T-1$.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Seven fast Core regressions cover `d=0,1,2`, later timestamps,
+training/holdout isolation, shifted/duplicate/extra covariate dates, level-covariate likelihood,
+direct timestamp and conditional-order mutation, and scalar/pointwise/component parity. The App residual plot follows the corrected differenced
+training count and timestamps. The exact guarded R-backed verification passes 1/1 at `1E-10`.
 
-**Evidence.** With `DiffOrderD=d`, differenced response index `t` corresponds to raw response index `t+d`. Residual regression nevertheless uses covariate index `t`. The transform Jacobian ends at raw index `TrainingTimeSteps-1`, although a training prefix of that many differenced values extends through raw index `TrainingTimeSteps+d-1`.
+**Evidence.** Before correction, differenced response index $t$ represented raw response index
+$t+d$, but residual regression used covariate position $t$, differencing reset dates to the first
+raw timestamp, and training selected the first $T$ differences rather than the $T-d$ differences
+available inside the raw training prefix. That admitted response holdout values and misassigned the
+conditional Jacobian observation set.
 
-**Impact.** Exogenous effects are shifted relative to the response and the transformed likelihood omits/misassigns raw observations when `d>0`.
+**Impact.** Corrected: exogenous effects, transformed responses, Jacobian contributions, residual
+dates, and plotted residual indices share one explicit raw/model map. Prediction reintegration and
+generation remain separately governed by TR-037 and TR-039.
 
-**Follow-up.** Specify whether covariates enter levels or differences, align by `DateTime` rather than positional index, and derive/test the exact Jacobian observation set.
+**Correction.** No public/protected UI/App signature, existing XML meaning, XAML binding, model
+tuple, sampler, prior, optimizer, seed, tolerance, or convergence default changed. See the complete
+fixture, oracle, compatibility, execution, and failure history in the
+[time-series verification report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment).
 
 <a id="tr-042"></a>
 ## TR-042 — Time-Series and Rating-Curve AIC/BIC Included Prior Density

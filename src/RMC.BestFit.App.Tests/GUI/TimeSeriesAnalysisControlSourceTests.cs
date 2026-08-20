@@ -53,6 +53,20 @@ namespace RMC.BestFit.App.Tests.GUI
         }
 
         /// <summary>
+        /// Verifies the residual plot follows the transformed/differenced training series rather
+        /// than indexing it with the longer raw training-window count.
+        /// </summary>
+        [TestMethod]
+        public void ResidualPlot_UsesDateAlignedDifferencedCount()
+        {
+            string source = ReadAppSource(Path.Combine("GUI", "TimeSeriesAnalysis", "TimeSeriesAnalysisControl.xaml.cs"));
+
+            StringAssert.Contains(source, "int residualCount = Math.Min(_residuals!.Length, Element.ARIMAX.TrainingTimeSeries.Count);");
+            StringAssert.Contains(source, "for (int i = 0; i < residualCount; i++)");
+            StringAssert.Contains(source, "Element.ARIMAX.TrainingTimeSeries[i].Index.ToOADate()");
+        }
+
+        /// <summary>
         /// Reads an App source file using a byte-preserving single-byte decoding.
         /// </summary>
         /// <param name="relativePath">The source path relative to the App project root.</param>

@@ -277,6 +277,107 @@ defect; its deterministic state fixture was narrowed so Package 4 does not pre-e
 approved alignment correction. No seed, tolerance, prior, sampler, optimizer, likelihood
 definition, or convergence default changed. The complete Verification project was not run.
 
+## TR-041 — ARIMAX differencing, date, covariate, and Jacobian alignment
+
+**Disposition and behavior.** The confirmed defect is corrected for likelihood, pointwise
+decomposition, residuals, validation, and residual plotting. Previously, a raw training prefix of
+`T` observations selected the first `T` differences, so `d>0` admitted holdout responses; Numerics
+differencing reset the first result to the first raw date; ARIMAX selected covariates by position
+`k` even though model step `k` represented raw response `k+d`; the conditional start included the
+covariate lag order; and the transform Jacobian covered the wrong raw observations. The App then
+indexed the shorter differenced residual series with the raw training count.
+
+After correction, one map governs these paths. A raw training prefix `[0,T)` produces exactly
+`T-d` transformed differences. Model step `k` maps to raw response index `r=k+d` and retains the
+timestamp of that later raw observation. Conditional evaluation starts at `k=max(p,q)`. Each
+level covariate is selected by exact timestamp at the corresponding raw-response date and is never
+differenced; its lag `j` uses the date at model step `k-j`. The Box-Cox/Yeo-Johnson Jacobian covers
+raw response indices `d+max(p,q)` through `T-1`. Response and covariate values at raw indices
+`T...N-1` cannot enter training state, defaults, residuals, or likelihood. The residual plot uses
+the differenced training count and those preserved dates.
+
+Missing or duplicate covariate timestamps required by the training map emit explicit validation
+errors. Scalar evaluation returns exact negative infinity, while pointwise arrays and component
+lists retain their documented conditional lengths and metadata with negative-infinity values.
+There is no positional fallback. Extra covariate dates outside the required window are harmless.
+This package does not change the separately scoped prediction reintegration or generation
+algorithms; TR-037 and TR-039 remain open.
+
+**Compatibility.** No public or protected UI/App signature, XAML binding, property name, enum,
+existing XML element/attribute meaning, prediction/generation tuple, or `GenerateRandomValues`
+signature changed. The Core public API is also unchanged in this package. The final full fast runs
+pass Core 3,208/3,208, UI 578/578, App 440/440, and API 498/498. Both captured UI/App signature
+baselines match exactly. The strict Debug solution build with `EnforceXmlDocumentation=true`
+passes all ten projects with zero warnings/errors in 3.03 s. The documented
+`scripts/validate-code-xml-docs.ps1` command remains absent from this checkout, so the active
+strict solution-build fallback was used.
+
+**Fast regressions.** `RMC.BestFit.Tests.TimeSeriesModels.ARIMAXAlignmentTests` owns seven
+deterministic tests:
+
+- `Differencing_PreservesLaterRawDatesAndTrainingBoundary` covers `d=0,1,2`, later raw dates,
+  full/training difference values, and the exact `T-d` boundary;
+- `TrainingState_IsolatedFromResponseAndCovariateHoldout` mutates both holdout tails and pins
+  training values, defaults, residuals, and likelihood;
+- `ShiftedCovariate_IsRejectedWithoutPositionalFallback` uses a same-length one-period shift and
+  pins validation, exact negative infinity, and decomposition shapes;
+- `CovariateValidation_RejectsRequiredDuplicatesAndAllowsExtraDates` separates required-date
+  uniqueness from harmless outside-window dates; and
+- `CovariateTimestampMutation_AtomicallyRefreshesNumericalAlignment` proves direct timestamp
+  edits invalidate and restore numerical alignment without a separate validation call; and
+- `ConditionalOrderChanges_RebuildAlignedJacobian` proves post-attachment AR/MA order changes
+  rebuild the conditional Jacobian range; and
+- `DifferencedLikelihood_UsesDateIndexedLevelCovariateAndAlignedJacobian` hand-computes a
+  differenced recurrence and pins scalar/pointwise/component equality at `1E-12`.
+
+`RMC.BestFit.App.Tests.GUI.TimeSeriesAnalysisControlSourceTests.ResidualPlot_UsesDateAlignedDifferencedCount`
+pins the App plot loop to the shorter differenced count and retained response timestamps. UI/App
+signature and legacy/new XML regressions are part of their complete passing suites.
+
+**Independent R oracle.** The exact Verification method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle`.
+It reads [phase5-arimax-alignment-oracle.json](../../verification/data/time-series/phase5-arimax-alignment-oracle.json),
+which was generated and committed at `4e3f42c` before C# output was evaluated. Its independent R
+implementation applies Box-Cox transformation, successive first differences with later raw dates,
+an exact-date join to undifferenced level covariates, the declared ARMA recurrence, the conditional
+change-of-variable Jacobian, and the Gaussian log density without calling production code.
+
+The fixed daily fixture begins `2001-02-03`, contains ten positive raw responses and a dated,
+time-varying covariate, and uses `TrainingTimeSteps=8`, two holdout observations, Box-Cox
+`lambda=0.4`, `p=q=1`, `b=0`, intercept `0.25`, level-covariate coefficient `1.1`, `phi=0.3`,
+`theta=-0.2`, and `sigma=0.75`. It evaluates `d=0,1,2`. Alternate response holdout values are
+`[3002,0.041]`; the artifact contains every expected date, transformed difference, mapped raw
+index, matched covariate, prediction, residual, Jacobian, pointwise value, and scalar likelihood.
+No random seed or simulated sample size applies. The tolerance was fixed at `1E-10` absolute.
+
+R 4.4.3, jsonlite 2.0.0, and digest 0.6.39 produced the artifact against source commit
+`ac661e9229d661f89064eca4f3b035a4e67e90bd`. Generator SHA-256 is
+`27a8d86bc8a0f6b2488674d2e6899735b5d83d7ea4fd703a98b00e0e8f8058f8`; artifact SHA-256 is
+`11d82c2c984989e2f2bc177d6293453b43387b3c58fc7e738e95eb845ec22b21`. Both match the manifest.
+
+**Execution evidence and history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4
+built against the configured local Numerics project. From oracle commit `4e3f42c` plus the scoped
+Package 5 production/test diff, the guarded command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle'
+```
+
+The final focused build reported zero warnings/errors and the exact method passed 1/1 in 0.370 s.
+Its TRX is under `TestResults/VerificationFocused/20260820-113316-...`. Earlier pre-finalization
+package runs also passed 1/1 in 0.541 s and 0.406 s and are retained as preliminary evidence. The first guarded attempt
+could not read the installed NuGet configuration inside the filesystem sandbox and ran no test;
+the identical exact command then passed with approved SDK access. Initial regression compilation
+exposed test-only `TimeSeries` namespace and `Transform` enum ambiguities, which were resolved by
+explicit aliases. The test platform ignored a requested fast-test filter, ran the complete Core
+project, and one unrelated cancellation timing test failed transiently; the unchanged test passed
+in the final serial Core run of 3,208/3,208. The first strict build after adding the conditional-order
+regression reported two missing test XML parameter tags; documentation was completed and the final
+strict build passed. No seed, tolerance, prior, sampler, optimizer,
+likelihood definition, or convergence default was changed. The complete Verification project was
+not run.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
@@ -287,7 +388,7 @@ definition, or convergence default changed. The complete Verification project wa
 | TR-038 AR/MA/ARIMA generation | Approved; implementation pending | Planned fixed-seed and transform-order tests | Planned algebraic and Monte Carlo oracles |
 | TR-039 ARIMAX generation | Approved; implementation pending | Planned scale/order/date tests | Planned algebraic, Monte Carlo, and recovery evidence |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
-| TR-041 ARIMAX alignment | Approved; implementation pending | Planned date, holdout, and Jacobian tests | Planned date-indexed likelihood oracle and recovery |
+| TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1 at `1E-10`; recovery remains Package 10 |
 | TR-042 AIC/BIC kernel | Closed; refresh pending | Planned deterministic routing regression | Planned data-likelihood/MAP oracle |
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
 

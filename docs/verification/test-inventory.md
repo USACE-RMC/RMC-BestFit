@@ -392,3 +392,21 @@ API DTO/service regressions cover omitted/manual values, JSON names, all four fa
 requests. App passes 438/438 and API passes 498/498. UI/App signature baselines remain exact; the
 Core baseline contains only the four approved additive getters. The R artifact and generator were
 committed before C# evaluation and retain their manifest SHA-256 hashes.
+
+## TR-041 ARIMAX date/index alignment
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `ARIMAXAlignmentTests.Differencing_PreservesLaterRawDatesAndTrainingBoundary` | Core Tests | `d=0,1,2`; model step `k` maps to raw index `k+d`; exactly `T-d` training steps | Exact dates/counts; values `1E-12`; passed |
+| `ARIMAXAlignmentTests.TrainingState_IsolatedFromResponseAndCovariateHoldout` | Core Tests | Response/covariate holdout mutations cannot affect training state, defaults, residuals, or likelihood | `1E-12`; passed |
+| `ARIMAXAlignmentTests.ShiftedCovariate_IsRejectedWithoutPositionalFallback` | Core Tests | Same-length one-period shift fails exact-date validation and all likelihood decompositions retain shape | Exact messages/negative infinity/length; passed |
+| `ARIMAXAlignmentTests.CovariateValidation_RejectsRequiredDuplicatesAndAllowsExtraDates` | Core Tests | Required duplicate date fails; extra dates outside the required window are harmless | Exact validation contract; passed |
+| `ARIMAXAlignmentTests.CovariateTimestampMutation_AtomicallyRefreshesNumericalAlignment` | Core Tests | Direct timestamp edits refresh cached alignment before numerical evaluation | Exact negative infinity then finite restoration; passed |
+| `ARIMAXAlignmentTests.ConditionalOrderChanges_RebuildAlignedJacobian` | Core Tests | AR/MA order changes after data attachment rebuild the conditional Jacobian range | Exact parity with preconfigured-order controls; passed |
+| `ARIMAXAlignmentTests.DifferencedLikelihood_UsesDateIndexedLevelCovariateAndAlignedJacobian` | Core Tests | Level covariate at raw date `k+d`; scalar/pointwise/component parity | `1E-12`; passed |
+| `TimeSeriesAnalysisControlSourceTests.ResidualPlot_UsesDateAlignedDifferencedCount` | App Tests | Residual plot uses the differenced training count and later raw timestamps | Exact source contract; passed |
+| `Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle` | Verification | Independent R transform, differencing, date join, ARMA recurrence, conditional Jacobian, and Gaussian likelihood for `d=0,1,2` | `1E-10`; guarded pass 1/1 |
+
+The complete final package gates pass Core 3,208/3,208, UI 578/578, App 440/440, and API
+498/498. The strict Debug solution build reports zero warnings/errors and UI/App signature
+baselines remain exact. The R artifact and generator were committed before C# evaluation.

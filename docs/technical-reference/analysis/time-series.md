@@ -28,6 +28,13 @@ $$
 
 where $\mathcal I$ is the model-specific conditional-likelihood index set. None of the classes implements an exact initial-state/Kalman likelihood. Response intervals must be regular; missing timestamps are not imputed; coefficients and innovation variance are fixed through time.
 
+For ARIMA and ARIMAX with raw training length $T$ and differencing order $d$, model step $k$
+maps to raw response index $k+d$, and the training model series has $T-d$ values. ARIMAX uses
+level covariates matched by exact timestamp at that raw index; covariates are never differenced.
+Conditional evaluation starts at $k=\max(p,q)$, so the transform Jacobian uses raw indices
+$d+\max(p,q)$ through $T-1$. Required missing or duplicate ARIMAX covariate timestamps invalidate
+evaluation; extra dates outside the required window are ignored.
+
 When the optional Jeffreys rule is enabled, each model adds the scale contribution
 $\log \pi_J(\sigma)=-\log(\sigma)$ for $\sigma>0$. Pointwise prior diagnostics classify this
 term as `JeffreysScalePrior`, separately from each parameter's configured marginal
@@ -92,9 +99,10 @@ AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log li
 | AR/MA, no fitted transform | Available subject to conditional-likelihood assumptions | Available subject to diagnostic checks |
 | AR/MA with fitted transform | Available with training-only frozen lambda | Back-transform is median-like; transform uncertainty omitted |
 | ARIMA/ARIMAX with $d=0$, no transform | Available | Available, subject to ARIMAX covariate scenario |
-| ARIMA/ARIMAX with $d>0$ | Conditional likelihood can be inspected | Unavailable: reintegration defect TR-037 |
+| ARIMA with $d>0$ | Conditional likelihood can be inspected | Unavailable: reintegration defect TR-037 |
+| ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Unavailable: reintegration/generation defects TR-037/TR-039 |
 | ARIMA transformed/differenced simulation | — | Unavailable: TR-038 |
-| ARIMAX transformed/differenced simulation | — | Unavailable: TR-039 and TR-041 |
+| ARIMAX transformed/differenced simulation | — | Unavailable: TR-039 |
 
 This table is deliberately conservative because the software supports life-safety work. A finite result is not evidence that a defective path is safe to publish.
 

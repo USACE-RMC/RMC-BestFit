@@ -172,6 +172,9 @@ namespace RMC.BestFit.Models
         private bool _useJeffreysRuleForScale = true;
         private int _trainingTimeSteps;
         private bool _useDefaultTrainingSteps = true;
+        private int[,,]? _trainingCovariatePositions;
+        private readonly List<string> _covariateAlignmentValidationMessages = new();
+        private readonly HashSet<SeriesOrdinate<DateTime, double>> _subscribedCovariateOrdinates = new();
 
         /// <summary>
         /// Enumeration of trend types for the time series model.
@@ -433,6 +436,7 @@ namespace RMC.BestFit.Models
                 {
                     _arOrderP = value;
                     RaisePropertyChange(nameof(AROrderP));
+                    SetTrainingData();
                     SetDefaultParameters();
                 }
             }
@@ -476,6 +480,7 @@ namespace RMC.BestFit.Models
                 {
                     _maOrderQ = value;
                     RaisePropertyChange(nameof(MAOrderQ));
+                    SetTrainingData();
                     SetDefaultParameters();
                 }
             }
@@ -497,6 +502,7 @@ namespace RMC.BestFit.Models
                 {
                     _xOrderB = value;
                     RaisePropertyChange(nameof(XOrderB));
+                    RebuildTrainingCovariateAlignment();
                     SetDefaultParameters();
                 }
             }
@@ -594,9 +600,95 @@ namespace RMC.BestFit.Models
         /// <param name="covariates">List of time series to use as exogenous predictors.</param>
         public void SetCovariates(List<TimeSeries> covariates)
         {
+            DetachCovariateSubscriptions();
             _covariates = covariates;
+            AttachCovariateSubscriptions();
+            RebuildTrainingCovariateAlignment();
             RaisePropertyChange(nameof(Covariates));
             SetDefaultParameters();
+        }
+
+        /// <summary>
+        /// Attaches change handlers to configured covariate collections and ordinates.
+        /// </summary>
+        private void AttachCovariateSubscriptions()
+        {
+            if (_covariates == null)
+                return;
+
+            foreach (TimeSeries covariate in _covariates)
+                covariate.CollectionChanged += Covariate_CollectionChanged;
+            RefreshCovariateOrdinateSubscriptions();
+        }
+
+        /// <summary>
+        /// Detaches every covariate collection and ordinate change handler.
+        /// </summary>
+        private void DetachCovariateSubscriptions()
+        {
+            if (_covariates != null)
+            {
+                foreach (TimeSeries covariate in _covariates)
+                    covariate.CollectionChanged -= Covariate_CollectionChanged;
+            }
+
+            foreach (SeriesOrdinate<DateTime, double> ordinate in _subscribedCovariateOrdinates)
+                ordinate.PropertyChanged -= CovariateOrdinate_PropertyChanged;
+            _subscribedCovariateOrdinates.Clear();
+        }
+
+        /// <summary>
+        /// Refreshes ordinate-level subscriptions after a covariate collection changes.
+        /// </summary>
+        private void RefreshCovariateOrdinateSubscriptions()
+        {
+            foreach (SeriesOrdinate<DateTime, double> ordinate in _subscribedCovariateOrdinates)
+                ordinate.PropertyChanged -= CovariateOrdinate_PropertyChanged;
+            _subscribedCovariateOrdinates.Clear();
+
+            if (_covariates == null)
+                return;
+
+            foreach (TimeSeries covariate in _covariates)
+            {
+                foreach (SeriesOrdinate<DateTime, double> ordinate in covariate)
+                {
+                    if (_subscribedCovariateOrdinates.Add(ordinate))
+                        ordinate.PropertyChanged += CovariateOrdinate_PropertyChanged;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Rebuilds date alignment when a configured covariate series changes.
+        /// </summary>
+        /// <param name="sender">The covariate series that changed.</param>
+        /// <param name="e">The collection-change event data.</param>
+        private void Covariate_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            RefreshCovariateOrdinateSubscriptions();
+            RefreshCovariateDependentState();
+        }
+
+        /// <summary>
+        /// Rebuilds date alignment when a covariate ordinate timestamp or value changes.
+        /// </summary>
+        /// <param name="sender">The changed covariate ordinate.</param>
+        /// <param name="e">The property-change event data.</param>
+        private void CovariateOrdinate_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            RefreshCovariateDependentState();
+        }
+
+        /// <summary>
+        /// Refreshes alignment, notifications, and flat-prior defaults after a covariate change.
+        /// </summary>
+        private void RefreshCovariateDependentState()
+        {
+            RebuildTrainingCovariateAlignment();
+            RaisePropertyChange(nameof(Covariates));
+            if (UseDefaultFlatPriors)
+                SetDefaultParameters();
         }
 
         /// <summary>
@@ -673,6 +765,8 @@ namespace RMC.BestFit.Models
             {
                 _transformFitValidationMessage = null;
                 _logJacobian = 0;
+                _trainingCovariatePositions = null;
+                _covariateAlignmentValidationMessages.Clear();
                 if (TransformType == Transform.None || TransformType == Transform.Logarithmic)
                 {
                     _lambda = 0;
@@ -743,16 +837,14 @@ namespace RMC.BestFit.Models
                     _transformedTimeSeries.Add(ordinate);
                 }
 
-                _diffSeries = DiffOrderD > 0
-                    ? _transformedTimeSeries.Difference(1, DiffOrderD)
-                    : _transformedTimeSeries.Clone();
+                _diffSeries = DifferenceWithLaterTimestamps(_transformedTimeSeries, DiffOrderD);
 
-                int effectiveTrainingSteps = Math.Min(TrainingTimeSteps, _diffSeries.Count);
+                int effectiveTrainingSteps = Math.Max(0, effectiveRawTrainingSteps - DiffOrderD);
                 _trainingTimeSeries = new TimeSeries(_diffSeries.TimeInterval);
                 for (int i = 0; i < effectiveTrainingSteps; i++)
                     _trainingTimeSeries.Add(_diffSeries[i].Clone());
 
-                int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+                int maxOrder = Math.Max(AROrderP, MAOrderQ);
                 int startRawIdx = DiffOrderD + maxOrder;
                 int endRawIdx = effectiveRawTrainingSteps - 1;
                 if (TransformType != Transform.None && endRawIdx >= startRawIdx)
@@ -762,11 +854,118 @@ namespace RMC.BestFit.Models
                         ? YeoJohnson.LogJacobian(rawSubset, _lambda)
                         : BoxCox.LogJacobian(rawSubset, _lambda);
                 }
+
+                RebuildTrainingCovariateAlignment();
             }
             finally
             {
                 if (notifyTransformLambda && _lambda != previousLambda)
                     RaisePropertyChange(nameof(TransformLambda));
+            }
+        }
+
+        /// <summary>
+        /// Differences a series while assigning each result the timestamp of its later raw value.
+        /// </summary>
+        /// <param name="series">The transformed level series.</param>
+        /// <param name="order">The number of successive first differences.</param>
+        /// <returns>The differenced series with date-preserving later-value timestamps.</returns>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="order"/> is negative.</exception>
+        private static TimeSeries DifferenceWithLaterTimestamps(TimeSeries series, int order)
+        {
+            if (order < 0)
+                throw new ArgumentOutOfRangeException(nameof(order), "Differencing order cannot be negative.");
+
+            TimeSeries result = series.Clone();
+            for (int difference = 0; difference < order; difference++)
+            {
+                var next = new TimeSeries(result.TimeInterval);
+                for (int i = 1; i < result.Count; i++)
+                {
+                    var ordinate = result[i].Clone();
+                    ordinate.Value = result[i].Value - result[i - 1].Value;
+                    next.Add(ordinate);
+                }
+
+                result = next;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Rebuilds the exact-date map from transformed/differenced model steps to level covariates.
+        /// </summary>
+        /// <remarks>
+        /// Model step <c>k</c> maps to raw response index <c>k + d</c>. Covariates remain on their
+        /// level scale and are selected by the response timestamp at that raw index. Lagged
+        /// covariates use preceding model-step timestamps; dates outside the required window are
+        /// ignored.
+        /// </remarks>
+        private void RebuildTrainingCovariateAlignment()
+        {
+            _trainingCovariatePositions = null;
+            _covariateAlignmentValidationMessages.Clear();
+
+            if (TimeSeries == null || _trainingTimeSeries == null || _trainingTimeSeries.Count == 0 ||
+                Covariates == null || Covariates.Count == 0 || XOrderB < 0)
+            {
+                return;
+            }
+
+            int trainingCount = _trainingTimeSeries.Count;
+            _trainingCovariatePositions = new int[Covariates.Count, trainingCount, XOrderB + 1];
+            for (int covariateIndex = 0; covariateIndex < Covariates.Count; covariateIndex++)
+            {
+                TimeSeries covariate = Covariates[covariateIndex];
+                var positionsByDate = new Dictionary<DateTime, List<int>>();
+                for (int position = 0; position < covariate.Count; position++)
+                {
+                    DateTime date = covariate[position].Index;
+                    if (!positionsByDate.TryGetValue(date, out List<int>? positions))
+                    {
+                        positions = new List<int>();
+                        positionsByDate.Add(date, positions);
+                    }
+
+                    positions.Add(position);
+                }
+
+                var reportedMissing = new HashSet<DateTime>();
+                var reportedDuplicate = new HashSet<DateTime>();
+                for (int modelIndex = 0; modelIndex < trainingCount; modelIndex++)
+                {
+                    for (int lag = 0; lag <= XOrderB; lag++)
+                    {
+                        _trainingCovariatePositions[covariateIndex, modelIndex, lag] = -1;
+                        if (lag > modelIndex)
+                            continue;
+
+                        DateTime requiredDate = _trainingTimeSeries[modelIndex - lag].Index;
+                        int rawIndex = DiffOrderD + modelIndex - lag;
+                        if (!positionsByDate.TryGetValue(requiredDate, out List<int>? matches))
+                        {
+                            if (reportedMissing.Add(requiredDate))
+                            {
+                                _covariateAlignmentValidationMessages.Add(
+                                    $"Error: Covariate {covariateIndex + 1} is missing required timestamp {requiredDate:O} for raw response index {rawIndex}.");
+                            }
+                            continue;
+                        }
+
+                        if (matches.Count != 1)
+                        {
+                            if (reportedDuplicate.Add(requiredDate))
+                            {
+                                _covariateAlignmentValidationMessages.Add(
+                                    $"Error: Covariate {covariateIndex + 1} contains duplicate required timestamp {requiredDate:O} for raw response index {rawIndex}.");
+                            }
+                            continue;
+                        }
+
+                        _trainingCovariatePositions[covariateIndex, modelIndex, lag] = matches[0];
+                    }
+                }
             }
         }
 
@@ -1213,6 +1412,9 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override double DataLogLikelihood(double[] parameters)
         {
+            if (_covariateAlignmentValidationMessages.Count > 0)
+                return double.NegativeInfinity;
+
             // Validate parameters
             for (int i = 0; i < parameters.Length; i++)
             {
@@ -1227,7 +1429,7 @@ namespace RMC.BestFit.Models
             if (!Tools.IsFinite(sigma) || sigma <= 0) return double.NegativeInfinity;
             var normDist = new Normal(0, sigma);
             var residuals = Residuals(parameters);
-            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+            int maxOrder = Math.Max(AROrderP, MAOrderQ);
             double logLH = 0;
 
             // Compute conditional log-likelihood (use residuals.Length to account for differencing)
@@ -1242,13 +1444,19 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override double[] PointwiseDataLogLikelihood(double[] parameters)
         {
-            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+            int maxOrder = Math.Max(AROrderP, MAOrderQ);
 
-            // Account for differencing reducing the series length
-            int effectiveTrainingSteps = _diffSeries != null ? Math.Min(TrainingTimeSteps, _diffSeries.Count) : TrainingTimeSteps;
+            int effectiveTrainingSteps = _trainingTimeSeries?.Count ?? 0;
             int n = effectiveTrainingSteps - maxOrder;
             if (n <= 0)
                 return Array.Empty<double>();
+
+            if (_covariateAlignmentValidationMessages.Count > 0)
+            {
+                var invalid = new double[n];
+                Array.Fill(invalid, double.NegativeInfinity);
+                return invalid;
+            }
 
             // Validate parameters
             for (int i = 0; i < parameters.Length; i++)
@@ -1288,16 +1496,26 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override List<DataComponent> PointwiseDataLogLikelihoodComponents(double[] parameters)
         {
-            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+            int maxOrder = Math.Max(AROrderP, MAOrderQ);
 
-            // Account for differencing reducing the series length
-            int effectiveTrainingSteps = _diffSeries != null ? Math.Min(TrainingTimeSteps, _diffSeries.Count) : TrainingTimeSteps;
+            int effectiveTrainingSteps = _trainingTimeSeries?.Count ?? 0;
             int n = effectiveTrainingSteps - maxOrder;
             if (n <= 0)
                 return new List<DataComponent>();
 
             var result = new List<DataComponent>(n);
             var responseValues = _trainingTimeSeries?.ValuesToArray();
+
+            if (_covariateAlignmentValidationMessages.Count > 0)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    int modelIndex = maxOrder + j;
+                    double value = responseValues != null && modelIndex < responseValues.Length ? responseValues[modelIndex] : 0;
+                    result.Add(new DataComponent(j, double.NegativeInfinity, value, DataComponentType.Exact, 1, $"t={modelIndex}"));
+                }
+                return result;
+            }
 
             // Validate parameters
             for (int i = 0; i < parameters.Length; i++)
@@ -1404,14 +1622,23 @@ namespace RMC.BestFit.Models
         /// <returns>Array of residuals on the transformed scale.</returns>
         public double[] Residuals(double[] parameters)
         {
-            // Use effective training steps to account for differencing reducing the series length
-            int effectiveTrainingSteps = _diffSeries != null ? Math.Min(TrainingTimeSteps, _diffSeries.Count) : TrainingTimeSteps;
+            TimeSeries? trainingSeries = _trainingTimeSeries;
+            if (trainingSeries == null)
+                return Array.Empty<double>();
+
+            int effectiveTrainingSteps = trainingSeries.Count;
 
             var y = new double[effectiveTrainingSteps];
             var mean = new double[effectiveTrainingSteps];
             var epsilon = new double[effectiveTrainingSteps];
             var residuals = new double[effectiveTrainingSteps];
-            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+            int maxOrder = Math.Max(AROrderP, MAOrderQ);
+
+            if (_covariateAlignmentValidationMessages.Count > 0)
+            {
+                Array.Fill(residuals, double.NaN);
+                return residuals;
+            }
 
             // Extract parameters
             int k = 0;
@@ -1486,28 +1713,16 @@ namespace RMC.BestFit.Models
                     mean[t] += psi[0] * Math.Sin(angle) + psi[1] * Math.Cos(angle);
                 }
 
-                // Covariate component (includes current and lagged values if XOrderB > 0)
-                if (beta != null && Covariates != null && t >= 0)
+                // Level covariates are matched to the raw-response date represented by this
+                // transformed/differenced model step. Covariates are never differenced.
+                if (beta != null && Covariates != null && _trainingCovariatePositions != null)
                 {
                     for (int i = 0; i < Covariates.Count; i++)
                     {
-                        if (XOrderB == 0)
+                        for (int lag = 0; lag <= XOrderB && lag <= t; lag++)
                         {
-                            // Use current value only
-                            mean[t] += beta[i, 0] * _covariates[i][t].Value;
-                        }
-                        else
-                        {
-                            // Use current value X[t]
-                            if (t < _covariates[i].Count)
-                                mean[t] += beta[i, 0] * _covariates[i][t].Value;
-
-                            // Use lagged values X[t-1], ..., X[t-b]
-                            for (int j = 1; j <= XOrderB && t - j >= 0; j++)
-                            {
-                                if (t - j < _covariates[i].Count)
-                                    mean[t] += beta[i, j] * _covariates[i][t - j].Value;
-                            }
+                            int position = _trainingCovariatePositions[i, t, lag];
+                            mean[t] += beta[i, lag] * _covariates[i][position].Value;
                         }
                     }
                 }
@@ -1518,7 +1733,7 @@ namespace RMC.BestFit.Models
                 {
                     for (int p = 1; p <= AROrderP; p++)
                     {
-                        ar += phi[p - 1] * (_diffSeries![t - p].Value - mean[t - p]);
+                        ar += phi[p - 1] * (trainingSeries[t - p].Value - mean[t - p]);
                     }
                 }
 
@@ -1532,7 +1747,7 @@ namespace RMC.BestFit.Models
                 // Complete prediction
                 if (t < maxOrder)
                 {
-                    y[t] = _diffSeries![t].Value;
+                    y[t] = trainingSeries[t].Value;
                 }
                 else
                 {
@@ -1542,7 +1757,7 @@ namespace RMC.BestFit.Models
                 // Update epsilon for MA. _diffSeries, y, and residuals are all on the
                 // transformed + differenced scale (the parameter scale), so subtraction is
                 // well-defined without per-transform branches.
-                epsilon[t] = _diffSeries![t].Value - y[t];
+                epsilon[t] = trainingSeries[t].Value - y[t];
                 residuals[t] = epsilon[t];
             }
 
@@ -2078,12 +2293,15 @@ namespace RMC.BestFit.Models
                 messages.Add("Error: Training time steps cannot exceed time series length.");
             }
 
-            // Warn if training time steps exceeds differenced series length
-            if (DiffOrderD > 0 && TrainingTimeSteps > TimeSeries.Count - DiffOrderD)
+            int effectiveRawTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
+            int trainingDifferenceCount = Math.Max(0, effectiveRawTrainingSteps - DiffOrderD);
+            int conditionalOrder = Math.Max(AROrderP, MAOrderQ);
+            if (trainingDifferenceCount <= conditionalOrder)
             {
-                messages.Add($"Warning: TrainingTimeSteps ({TrainingTimeSteps}) exceeds the differenced series length " +
-                    $"({TimeSeries.Count - DiffOrderD}). Effective training will use {TimeSeries.Count - DiffOrderD} time steps. " +
-                    "Consider setting TrainingTimeSteps = TimeSeries.Count - DiffOrderD for clarity.");
+                isValid = false;
+                messages.Add(
+                    $"Error: The raw training window provides {trainingDifferenceCount} differenced model steps, " +
+                    $"which must exceed the conditional AR/MA order ({conditionalOrder}).");
             }
 
             // Check orders
@@ -2136,16 +2354,15 @@ namespace RMC.BestFit.Models
                     "Consider using either differencing (d > 0) OR explicit Fourier seasonality, but not both.");
             }
 
-            // Check covariates
+            // Check exact-date level-covariate alignment. Extra dates outside the required
+            // transformed/differenced training window are intentionally harmless.
             if (Covariates != null && Covariates.Count > 0)
             {
-                for (int i = 0; i < Covariates.Count; i++)
+                RebuildTrainingCovariateAlignment();
+                if (_covariateAlignmentValidationMessages.Count > 0)
                 {
-                    if (Covariates[i].Count != TimeSeries.Count)
-                    {
-                        isValid = false;
-                        messages.Add($"Error: Covariate {i + 1} length ({Covariates[i].Count}) does not match time series length ({TimeSeries.Count}).");
-                    }
+                    isValid = false;
+                    messages.AddRange(_covariateAlignmentValidationMessages);
                 }
             }
 

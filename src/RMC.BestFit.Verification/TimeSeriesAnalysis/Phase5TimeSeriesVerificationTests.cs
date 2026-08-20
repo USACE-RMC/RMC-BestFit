@@ -214,6 +214,149 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
+    /// Verifies ARIMAX differencing, conditional likelihood, transformation Jacobian, and
+    /// level-covariate alignment against the independently generated R oracle for
+    /// differencing orders zero, one, and two.
+    /// </summary>
+    /// <remarks>
+    /// Model step <c>k</c> must map to raw response index <c>k+d</c>. The level covariate is
+    /// selected by the exact later-response timestamp and is never differenced. The committed
+    /// oracle fixes the Box-Cox exponent, training boundary, parameters, and 1E-10 absolute
+    /// tolerance before C# evaluation.
+    /// </remarks>
+    [TestMethod]
+    public void ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle()
+    {
+        JsonElement oracle = LoadOracle("phase5-arimax-alignment-oracle.json");
+        JsonElement metadata = oracle.GetProperty("metadata");
+        JsonElement fixture = oracle.GetProperty("fixture");
+        double tolerance = metadata.GetProperty("tolerance_absolute").GetDouble();
+        DateTime startDate = DateTime.Parse(fixture.GetProperty("dates")[0].GetString()!);
+        double[] raw = ReadDoubleArray(fixture.GetProperty("raw"));
+        double[] alternateHoldout = ReadDoubleArray(fixture.GetProperty("alternate_holdout"));
+        double[] covariate = ReadDoubleArray(fixture.GetProperty("covariate_values"));
+        int trainingSteps = fixture.GetProperty("training_steps").GetInt32();
+        double lambda = fixture.GetProperty("lambda").GetDouble();
+        double[] parameters =
+        {
+            fixture.GetProperty("intercept").GetDouble(),
+            fixture.GetProperty("beta").GetDouble(),
+            fixture.GetProperty("phi").GetDouble(),
+            fixture.GetProperty("theta").GetDouble(),
+            fixture.GetProperty("sigma").GetDouble(),
+        };
+
+        foreach (JsonElement testCase in oracle.GetProperty("cases").EnumerateArray())
+        {
+            int differencingOrder = testCase.GetProperty("differencing_order").GetInt32();
+            string context = $"d={differencingOrder}";
+            ARIMAX model = CreateAlignedArimax(raw, covariate, startDate, trainingSteps, differencingOrder, lambda);
+
+            Assert.AreEqual(
+                testCase.GetProperty("training_difference_count").GetInt32(),
+                model.TrainingTimeSeries.Count,
+                $"{context} training count");
+            AssertArrayEqual(
+                ReadDoubleArray(testCase.GetProperty("training_difference_values")),
+                model.TrainingTimeSeries.ValuesToArray(),
+                tolerance,
+                $"{context} training differences");
+
+            string[] expectedDates = testCase.GetProperty("difference_dates")
+                .EnumerateArray()
+                .Select(item => item.GetString()!)
+                .ToArray();
+            Assert.AreEqual(expectedDates.Length, model.DifferencedSeries.Count, $"{context} full date count");
+            for (int i = 0; i < expectedDates.Length; i++)
+                Assert.AreEqual(DateTime.Parse(expectedDates[i]), model.DifferencedSeries[i].Index, $"{context} date {i}");
+
+            double[] expectedResiduals = ReadDoubleArray(testCase.GetProperty("residuals"));
+            double[] expectedPointwise = ReadDoubleArray(testCase.GetProperty("pointwise_log_likelihood"));
+            double[] actualResiduals = model.Residuals(parameters);
+            double[] actualPointwise = model.PointwiseDataLogLikelihood(parameters);
+            List<DataComponent> components = model.PointwiseDataLogLikelihoodComponents(parameters);
+            AssertArrayEqual(expectedResiduals, actualResiduals, tolerance, $"{context} residuals");
+            AssertArrayEqual(expectedPointwise, actualPointwise, tolerance, $"{context} pointwise");
+            Assert.AreEqual(expectedPointwise.Length, components.Count, $"{context} component count");
+            AssertArrayEqual(
+                expectedPointwise,
+                components.Select(component => component.LogLikelihood).ToArray(),
+                tolerance,
+                $"{context} components");
+            Assert.AreEqual(
+                testCase.GetProperty("log_likelihood").GetDouble(),
+                model.DataLogLikelihood(parameters),
+                tolerance,
+                $"{context} scalar likelihood");
+
+            double[] mutatedRaw = raw.Take(trainingSteps).Concat(alternateHoldout).ToArray();
+            ARIMAX holdoutMutation = CreateAlignedArimax(
+                mutatedRaw,
+                covariate,
+                startDate,
+                trainingSteps,
+                differencingOrder,
+                lambda);
+            AssertArrayEqual(
+                model.TrainingTimeSeries.ValuesToArray(),
+                holdoutMutation.TrainingTimeSeries.ValuesToArray(),
+                1E-12,
+                $"{context} holdout training isolation");
+            Assert.AreEqual(
+                model.DataLogLikelihood(parameters),
+                holdoutMutation.DataLogLikelihood(parameters),
+                1E-12,
+                $"{context} holdout likelihood isolation");
+        }
+    }
+
+    /// <summary>
+    /// Creates the fixed ARIMAX alignment fixture from the committed oracle.
+    /// </summary>
+    /// <param name="raw">The raw response values.</param>
+    /// <param name="covariate">The level-covariate values.</param>
+    /// <param name="startDate">The first exact response and covariate timestamp.</param>
+    /// <param name="trainingSteps">The raw training boundary.</param>
+    /// <param name="differencingOrder">The response differencing order.</param>
+    /// <param name="lambda">The fixed Box-Cox exponent.</param>
+    /// <returns>The configured ARIMAX model.</returns>
+    private static ARIMAX CreateAlignedArimax(
+        double[] raw,
+        double[] covariate,
+        DateTime startDate,
+        int trainingSteps,
+        int differencingOrder,
+        double lambda)
+    {
+        var model = new ARIMAX
+        {
+            IncludeIntercept = true,
+            AROrderP = 1,
+            DiffOrderD = differencingOrder,
+            MAOrderQ = 1,
+            XOrderB = 0,
+            TransformType = Transform.BoxCox,
+        };
+        model.SetTransformParameters(lambda, double.NaN);
+        model.TimeSeries = CreateDailySeries(raw, startDate);
+        model.UseDefaultTrainingSteps = false;
+        model.TrainingTimeSteps = trainingSteps;
+        model.SetCovariates(new List<Numerics.Data.TimeSeries> { CreateDailySeries(covariate, startDate) });
+        return model;
+    }
+
+    /// <summary>
+    /// Creates a daily time series beginning at an exact date.
+    /// </summary>
+    /// <param name="values">The ordinate values.</param>
+    /// <param name="startDate">The first timestamp.</param>
+    /// <returns>The daily time series.</returns>
+    private static Numerics.Data.TimeSeries CreateDailySeries(double[] values, DateTime startDate)
+    {
+        return new Numerics.Data.TimeSeries(Numerics.Data.TimeInterval.OneDay, startDate, values);
+    }
+
+    /// <summary>
     /// Compares one model's pointwise Jeffreys component with the analytical oracle.
     /// </summary>
     /// <param name="model">The time-series model under verification.</param>

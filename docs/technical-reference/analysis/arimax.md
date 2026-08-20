@@ -37,7 +37,7 @@ where bracketed blocks appear only when configured. Coefficients inherit the uni
 
 ## Likelihood and Prior
 
-Let $r=\max(p,q,b)$. Presample residuals and fitted residuals before $r$ are conditioned out. For $t\ge r$,
+Let $r=\max(p,q)$. Presample residuals and fitted residuals before $r$ are conditioned out. For $t\ge r$,
 
 $$
 e_t=w_t-m_t-
@@ -53,15 +53,33 @@ $$
 -\frac{1}{2\sigma^2}\sum_{t=r}^{T_d-1}e_t^2+J_g. \tag{AX.5}
 $$
 
-This is a conditional Gaussian likelihood, not an exact state-space likelihood. Marginal parameter priors are bounded uniforms by default and `UseJeffreysRuleForScale` adds $-\log\sigma$. Unlike AR/MA/ARIMA, ARIMAX correctly types that term as `JeffreysScalePrior` in pointwise metadata. Pointwise data likelihood still lacks the scalar nonpositive-scale guard ([TR-040](../review-findings.md#tr-040)).
+This is a conditional Gaussian likelihood, not an exact state-space likelihood. Marginal parameter priors are bounded uniforms by default and `UseJeffreysRuleForScale` adds $-\log\sigma$. All four time-series models type that term as `JeffreysScalePrior` in pointwise metadata and consistently reject non-finite or non-positive innovation scales with negative infinity ([TR-035](../review-findings.md#tr-035), [TR-040](../review-findings.md#tr-040)).
 
-Box–Cox/Yeo–Johnson parameters are plug-in values fitted on the entire response ([TR-036](../review-findings.md#tr-036)); they are not jointly estimated and their uncertainty is not propagated. Manual transform configuration leaves derived state stale ([TR-046](../review-findings.md#tr-046)).
+Box–Cox/Yeo–Johnson parameters are plug-in values fitted on the raw training prefix and frozen
+before transformation of the complete response; they are not jointly estimated and their
+uncertainty is not propagated. Manual transform assignment rebuilds transformed/differenced
+state and preserves fitted/manual provenance through persistence ([TR-036](../review-findings.md#tr-036),
+[TR-046](../review-findings.md#tr-046)).
 
 ## Covariate Alignment and Lags
 
-`SetCovariates` requires every covariate to have the same count as the response. Likelihood code indexes covariates positionally; it does not inner-join or verify `DateTime` equality. Users must supply identical interval, start time, timestamps, missing-value treatment, units, and provenance. Lag $j$ means $j$ array positions, not necessarily a hydrologically meaningful elapsed duration if the metadata are wrong.
+For a raw training prefix of $T$ observations and differencing order $d$, `ARIMAX` forms exactly
+$T_d=T-d$ model steps. Model index $k$ represents raw response index $k+d$ and receives that
+later raw timestamp. Level covariate $x_{i,k}$ is selected by exact equality with this timestamp;
+covariates are not differenced. Lag $j$ uses the timestamp of model step $k-j$. Pre-sample lags
+are omitted under the conditional convention.
 
-For $d>0$, differenced response position $t$ corresponds to raw position $t+d$, but the code uses $x_{k,t}$ and computes a Jacobian ending $d$ observations too early. This is [TR-041](../review-findings.md#tr-041). Covariate regression with differencing is therefore not scientifically usable until its level/difference convention and alignment are corrected.
+Missing or duplicate covariate timestamps required by the training window invalidate the model;
+numerical evaluation returns negative infinity rather than falling back to positional matching.
+Extra dates outside the required window are harmless. The conditional transform Jacobian is
+
+$$
+J_g=\sum_{u=d+r}^{T-1}\log|g'(y_u)|,\qquad r=\max(p,q),
+\tag{AX.6}
+$$
+
+so response, level covariates, conditional residuals, and change-of-variable terms share one raw
+index set ([TR-041](../review-findings.md#tr-041)).
 
 Trend and Fourier seasonality are explicitly rejected when `DiffOrderD>0`, avoiding an additional deterministic-term ambiguity. With $d=0$, the single Fourier harmonic is useful for a stable sinusoidal cycle but cannot represent changing phase, multiple seasonal frequencies, or event-timed hydrology.
 
@@ -80,7 +98,13 @@ These mechanisms represent empirical continuation scenarios, not a probabilistic
 
 For $d=0$ and no transform, `Predict` uses observed response/residual history inside training and recursive response/noise afterward. `ARIMAXAnalysis` combines posterior parameter and innovation draws. Its bands also include whichever covariate extension is invoked, so clearly state that scenario.
 
-For $d>0$, forecast reintegration is shifted ([TR-037](../review-findings.md#tr-037)). `GenerateRandomValues` additionally mixes transformed and original scales and inverse-transforms before integration ([TR-039](../review-findings.md#tr-039)). Therefore transformed/differenced posterior predictive checks and forecasts are unavailable. Analysis AIC/BIC use the data log likelihood at the stored MAP and exclude prior-density terms; they are comparable with MLE criteria only when every active prior is constant ([TR-042](../review-findings.md#tr-042)).
+For $d>0$, likelihood and residual diagnostics now use the verified exact-date map, but forecast
+reintegration remains shifted ([TR-037](../review-findings.md#tr-037)). `GenerateRandomValues`
+additionally mixes transformed and original scales and inverse-transforms before integration
+([TR-039](../review-findings.md#tr-039)). Therefore transformed/differenced posterior predictive
+checks and forecasts remain unavailable until those separate findings close. Analysis AIC/BIC use
+the data log likelihood at the stored MAP and exclude prior-density terms; they are comparable with
+MLE criteria only when every active prior is constant ([TR-042](../review-findings.md#tr-042)).
 
 AR stationarity and MA invertibility are warned using sums of absolute coefficients, not enforced by roots or reparameterization. Polynomial trends extrapolate without bound, empirical covariate extension can leave the historical support, and collinear lag blocks can make $\beta$, trend, seasonality, and AR persistence weakly identifiable.
 
@@ -141,7 +165,11 @@ The last four response/covariate observations are holdout values, not future ext
 
 ## Traceability and Evidence
 
-Implementation: `Models/TimeSeries/ARIMAX.cs`; orchestration: `Analyses/TimeSeries/ARIMAXAnalysis.cs`. Fast tests cover configuration, serialization, prediction shapes, covariate extension, and broad transformations. The recovery verification source was inspected under `RMC.BestFit.Verification/TimeSeriesModels/ARIMAXMLERecoveryTests.cs` but not executed. Existing tests do not establish the raw-time alignment or scale identities in TR-037, TR-039, and TR-041.
+Implementation: `Models/TimeSeries/ARIMAX.cs`; orchestration:
+`Analyses/TimeSeries/ARIMAXAnalysis.cs`. Fast tests cover configuration, serialization, prediction
+shapes, covariate extension, transformations, exact-date alignment, holdout isolation, and
+likelihood decomposition. The independent R alignment oracle verifies `d=0,1,2` at `1E-10`.
+Prediction reintegration and generation scale identities remain assigned to TR-037 and TR-039.
 
 ## References
 

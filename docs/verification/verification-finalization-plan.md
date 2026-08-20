@@ -320,7 +320,12 @@ Findings and required direction:
 - TR-038: simulate ARIMA on the transformed/differenced scale, integrate, then inverse-transform once.
 - TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
 - TR-040: complete. AR, MA, ARIMA, and ARIMAX scalar, pointwise, component, and prior paths reject non-finite or non-positive innovation scales with exact negative infinity while preserving decomposed shape/metadata. Fast parity and the analytical Gaussian/prior oracle pass.
-- TR-041: align ARIMAX covariates and Jacobians by date and the exact differencing index map.
+- TR-041: complete. ARIMAX model step `k` maps to raw response index `k+d`; training contains
+  exactly `T-d` differences, later raw timestamps are retained, level covariates are matched by
+  exact date without differencing, and the Jacobian spans raw indices `d+max(p,q)` through `T-1`.
+  Missing/duplicate required dates fail validation and return negative infinity. Fast alignment,
+  holdout, decomposition, and App residual-index regressions pass, as does the independent R
+  likelihood oracle for `d=0,1,2` at `1E-10`.
 - TR-042: criteria defect closed in Phase 2. Retain regressions proving that AR, MA, ARIMA, ARIMAX, and rating-curve AIC/BIC use data likelihood at MAP; the later phase must not restate prior-density removal as open work.
 - TR-046: complete. The unchanged setter atomically rebuilds transform-dependent state;
   `lambda2` is documented and tested as an ignored compatibility placeholder. Clone, UI
