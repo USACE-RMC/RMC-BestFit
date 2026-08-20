@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "artifact_id": "TS-PHASE5-ARIMAX-MLE-001",
+    "finding": "PHASE5-RECOVERY-ARIMAX-MLE",
+    "generator": "verification/r/time-series/generate_phase5_arimax_mle_oracle.R",
+    "generator_sha256": "af3fb972f8a6bd78b65ced0a5edc64817b22cbc93e657f7b7a121db7cf6bce93",
+    "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
+    "input_fixture_sha256": "d1a1c4f1b519bf8fce438164fb0e3dcc8669f6704ac7fbee3375d5188661e228",
+    "source_commit": "e481d087088423c966ceb7b505c71a774341708a",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "jsonlite_version": "2.0.0",
+    "digest_version": "0.6.39",
+    "generated_utc": "2026-08-20 22:19:51 UTC",
+    "tolerances": {
+      "optimizer_coefficient_absolute": 0.001,
+      "optimizer_scale_absolute": 1e-05,
+      "log_likelihood_absolute": 1e-05,
+      "sampled_map_relative": 0.05,
+      "sampled_map_absolute_floor": 0.001,
+      "posterior_log_likelihood_absolute": 1e-05,
+      "deterministic_recurrence_absolute": 1e-12
+    }
+  },
+  "fixture": {
+    "seed": 51038,
+    "burn_in": 110,
+    "raw_sample_size": 1000,
+    "difference_count": 999,
+    "conditional_likelihood_count": 998,
+    "transform": "None",
+    "differencing_order": 1,
+    "ar_order": 1,
+    "ma_order": 0,
+    "covariate_lag_order": 0,
+    "include_intercept": true,
+    "truth": {
+      "intercept": 0.25,
+      "beta": 1.5,
+      "phi": 0.4,
+      "sigma": 0.5
+    }
+  },
+  "default_parameter_state": {
+    "intercept": 0.242709512787434,
+    "beta": 0,
+    "phi": 0,
+    "sigma": 1.3384085904249,
+    "lower": [0.01, -10, -2, 2.22044604925031e-16],
+    "upper": [10, 10, 2, 100]
+  },
+  "conditional_mle": {
+    "intercept": 0.236896678521822,
+    "beta": 1.54037088921619,
+    "phi": 0.364772089115024,
+    "sigma": 0.505264570723146,
+    "data_log_likelihood": -734.792917833545,
+    "start_default_function_evaluations": 17,
+    "start_default_convergence": 0,
+    "start_truth_convergence": 0
+  },
+  "conditional_posterior_map": {
+    "intercept": 0.236896678521822,
+    "beta": 1.54037088921619,
+    "phi": 0.364772089115024,
+    "sigma": 0.505011622236343,
+    "data_log_likelihood": -734.793168167337,
+    "prior_log_likelihood": -10.6056075776802,
+    "posterior_log_likelihood": -745.398775745017,
+    "intercept_prior": "Uniform(0.01,10)",
+    "covariate_prior": "Uniform(-10,10)",
+    "ar_prior": "Uniform(-2,2)",
+    "scale_prior": "Uniform(.Machine$double.eps,100)",
+    "jeffreys_scale_prior": true
+  },
+  "same_point_truth": {
+    "intercept": 0.25,
+    "beta": 1.5,
+    "phi": 0.4,
+    "sigma": 0.5,
+    "data_log_likelihood": -736.59510901955
+  }
+}

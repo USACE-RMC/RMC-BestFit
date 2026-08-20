@@ -73,14 +73,17 @@ public class Phase5TimeSeriesRecoveryTests
     public void MleArimax10D1LevelCovariateRecoversGeneratingParameters()
     {
         JsonElement fixture = LoadFixture("arimax");
+        JsonElement oracle = LoadArimaxMleOracle();
         ARIMAX model = CreateArimaxModel(fixture);
         double[] truth = GetArimaxTruth(fixture);
         var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
 
+        AssertArimaxLikelihoodAgainstIndependentOracle(model, truth, oracle);
+
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "ARIMAX MLE did not complete.");
-        AssertMleRecovery("ARIMAX", model, truth, mle.BestParameterSet.Values, 0.15, 0.10);
+        AssertArimaxMleRecoveryAgainstIndependentOracle(model, mle.BestParameterSet.Values, oracle);
         AssertArimaxPrediction(model, truth, fixture);
     }
 
@@ -148,6 +151,20 @@ public class Phase5TimeSeriesRecoveryTests
             AppContext.BaseDirectory,
             "VerificationData",
             "phase5-arima-mle-recovery-oracle.json");
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+        return document.RootElement.Clone();
+    }
+
+    /// <summary>
+    /// Loads the independently generated conditional ARIMAX MLE and posterior-MAP oracle.
+    /// </summary>
+    /// <returns>A detached JSON oracle element.</returns>
+    private static JsonElement LoadArimaxMleOracle()
+    {
+        string path = Path.Combine(
+            AppContext.BaseDirectory,
+            "VerificationData",
+            "phase5-arimax-mle-recovery-oracle.json");
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
         return document.RootElement.Clone();
     }
@@ -363,6 +380,113 @@ public class Phase5TimeSeriesRecoveryTests
         Assert.IsTrue(double.IsFinite(oraclePointDataLogLikelihood), "ARIMA oracle-point data likelihood.");
         Assert.IsTrue(double.IsFinite(estimatedDataLogLikelihood), "ARIMA recovered data likelihood.");
         Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), "ARIMA recovered prior.");
+    }
+
+    /// <summary>
+    /// Verifies the ARIMAX conditional likelihood at the generating parameter vector before
+    /// interpreting any optimizer result.
+    /// </summary>
+    /// <param name="model">The configured ARIMAX model.</param>
+    /// <param name="truth">The generating parameter vector.</param>
+    /// <param name="oracle">The committed independent R oracle.</param>
+    private static void AssertArimaxLikelihoodAgainstIndependentOracle(
+        ARIMAX model,
+        double[] truth,
+        JsonElement oracle)
+    {
+        JsonElement metadata = oracle.GetProperty("metadata");
+        Assert.AreEqual("TS-PHASE5-ARIMAX-MLE-001", metadata.GetProperty("artifact_id").GetString());
+        Assert.AreEqual("PHASE5-RECOVERY-ARIMAX-MLE", metadata.GetProperty("finding").GetString());
+        double likelihoodTolerance = metadata
+            .GetProperty("tolerances")
+            .GetProperty("log_likelihood_absolute")
+            .GetDouble();
+        Assert.AreEqual(1E-5, likelihoodTolerance, 0.0, "ARIMAX predeclared likelihood tolerance.");
+
+        JsonElement oracleFixture = oracle.GetProperty("fixture");
+        Assert.AreEqual(51038, oracleFixture.GetProperty("seed").GetInt32());
+        Assert.AreEqual(RecoveryBurnInSteps, oracleFixture.GetProperty("burn_in").GetInt32());
+        Assert.AreEqual(MaximumVerificationSteps, oracleFixture.GetProperty("raw_sample_size").GetInt32());
+        Assert.AreEqual(999, oracleFixture.GetProperty("difference_count").GetInt32());
+        Assert.AreEqual(998, oracleFixture.GetProperty("conditional_likelihood_count").GetInt32());
+        Assert.AreEqual("None", oracleFixture.GetProperty("transform").GetString());
+        Assert.AreEqual(1, oracleFixture.GetProperty("differencing_order").GetInt32());
+        Assert.AreEqual(1, oracleFixture.GetProperty("ar_order").GetInt32());
+        Assert.AreEqual(0, oracleFixture.GetProperty("ma_order").GetInt32());
+        Assert.AreEqual(0, oracleFixture.GetProperty("covariate_lag_order").GetInt32());
+        Assert.IsTrue(oracleFixture.GetProperty("include_intercept").GetBoolean());
+
+        JsonElement samePoint = oracle.GetProperty("same_point_truth");
+        double[] committedTruth =
+        [
+            samePoint.GetProperty("intercept").GetDouble(),
+            samePoint.GetProperty("beta").GetDouble(),
+            samePoint.GetProperty("phi").GetDouble(),
+            samePoint.GetProperty("sigma").GetDouble(),
+        ];
+        CollectionAssert.AreEqual(truth, committedTruth, "ARIMAX oracle and fixture truths differ.");
+        Assert.AreEqual(
+            samePoint.GetProperty("data_log_likelihood").GetDouble(),
+            model.DataLogLikelihood(committedTruth),
+            likelihoodTolerance,
+            "ARIMAX data likelihood at the common generating parameter vector.");
+    }
+
+    /// <summary>
+    /// Verifies the ARIMAX conditional MLE against the independent R optimum after formula parity
+    /// has already been established at a common parameter vector.
+    /// </summary>
+    /// <param name="model">The configured ARIMAX model.</param>
+    /// <param name="estimated">The C# conditional maximum-likelihood estimate.</param>
+    /// <param name="oracle">The committed independent R oracle.</param>
+    private static void AssertArimaxMleRecoveryAgainstIndependentOracle(
+        ARIMAX model,
+        double[] estimated,
+        JsonElement oracle)
+    {
+        JsonElement tolerances = oracle.GetProperty("metadata").GetProperty("tolerances");
+        double coefficientTolerance = tolerances.GetProperty("optimizer_coefficient_absolute").GetDouble();
+        double scaleTolerance = tolerances.GetProperty("optimizer_scale_absolute").GetDouble();
+        double likelihoodTolerance = tolerances.GetProperty("log_likelihood_absolute").GetDouble();
+        Assert.AreEqual(1E-3, coefficientTolerance, 0.0, "ARIMAX coefficient tolerance.");
+        Assert.AreEqual(1E-5, scaleTolerance, 0.0, "ARIMAX scale tolerance.");
+
+        JsonElement conditionalMle = oracle.GetProperty("conditional_mle");
+        double[] expected =
+        [
+            conditionalMle.GetProperty("intercept").GetDouble(),
+            conditionalMle.GetProperty("beta").GetDouble(),
+            conditionalMle.GetProperty("phi").GetDouble(),
+            conditionalMle.GetProperty("sigma").GetDouble(),
+        ];
+        Assert.AreEqual(expected.Length, estimated.Length, "ARIMAX parameter count.");
+        Assert.AreEqual(
+            conditionalMle.GetProperty("data_log_likelihood").GetDouble(),
+            model.DataLogLikelihood(expected),
+            likelihoodTolerance,
+            "ARIMAX data likelihood at the independent conditional optimum.");
+
+        var failures = new List<string>();
+        for (int index = 0; index < expected.Length; index++)
+        {
+            double tolerance = index == expected.Length - 1 ? scaleTolerance : coefficientTolerance;
+            if (Math.Abs(expected[index] - estimated[index]) > tolerance)
+            {
+                failures.Add(
+                    $"{model.Parameters[index].Name}: expected {expected[index]:G17}, " +
+                    $"actual {estimated[index]:G17}, tolerance {tolerance:G17}");
+            }
+        }
+
+        if (failures.Count > 0)
+        {
+            Assert.Fail(
+                "ARIMAX C# optimizer differs from the independent conditional optimum. " +
+                string.Join("; ", failures));
+        }
+
+        Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(estimated)), "ARIMAX recovered likelihood.");
+        Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), "ARIMAX recovered prior.");
     }
 
     /// <summary>
