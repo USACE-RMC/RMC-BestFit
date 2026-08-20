@@ -82,7 +82,7 @@ generate_arima_fixture <- function() {
 
 generate_ar_fixture <- function() {
   sample_size <- 1000L
-  seed <- 51035L
+  seed <- 12345L
   mu <- 10.0
   phi <- 0.6
   sigma <- 5.0
@@ -113,7 +113,7 @@ generate_ar_fixture <- function() {
 
 generate_ma_fixture <- function() {
   sample_size <- 1000L
-  seed <- 51036L
+  seed <- 12345L
   mu <- 10.0
   theta <- 0.6
   sigma <- 5.0
