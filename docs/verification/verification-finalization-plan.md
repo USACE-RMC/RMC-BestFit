@@ -342,7 +342,11 @@ Findings and required direction:
   Missing/duplicate required dates fail validation and return negative infinity. Fast alignment,
   holdout, decomposition, and App residual-index regressions pass, as does the independent R
   likelihood oracle for `d=0,1,2` at `1E-10`.
-- TR-042: criteria defect closed in Phase 2. Retain regressions proving that AR, MA, ARIMA, ARIMAX, and rating-curve AIC/BIC use data likelihood at MAP; the later phase must not restate prior-density removal as open work.
+- TR-042: complete refreshed regression. The Phase 2 production correction remains unchanged.
+  A counting fast test proves that result construction calls only data likelihood at the stored
+  MAP, and the exact five-analysis oracle proves data-only AIC/BIC at `1E-10` plus analytical
+  flat-prior MAP/MLE parity at `1E-6`. Its largest fixture has 40 observations and one injected
+  posterior row; no optimizer, sampler, simulation, API, or serialization contract changed.
 - TR-046: complete. The unchanged setter atomically rebuilds transform-dependent state;
   `lambda2` is documented and tested as an ignored compatibility placeholder. Clone, UI
   copy/save/open/undo/redo, API mapping, and the independent likelihood oracle pass.

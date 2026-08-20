@@ -614,6 +614,73 @@ sampler, optimizer, likelihood definition, or convergence default changed. The f
 ARIMAX MLE/Bayesian recovery pair remains Package 10 evidence. The complete Verification project
 was not run.
 
+## TR-042 — information criteria use data likelihood at MAP
+
+**Disposition and behavior.** The Phase 2 correction remains closed and is refreshed here as a
+Phase 5 regression contract. AR, MA, ARIMA, ARIMAX, and rating-curve result builders evaluate
+`DataLogLikelihood` exactly once at the stored MAP parameter vector and pass that data-only value
+to AIC/BIC. Prior density is excluded. With constant priors, the analytical MAP and constrained
+MLE parameter vectors coincide; nonconstant priors may move MAP but are never added to the
+reported criteria. This package changes no production behavior.
+
+**Compatibility and fast regression.** No Core, UI, App, or API public/protected signature, XAML
+binding, property, enum, XML name, or persisted meaning changed. The deterministic
+`AnalysisInformationCriteriaRoutingTests.TimeSeriesCriteria_UseOneDataLikelihoodCallAtMap` test
+uses an injected one-row posterior and a counting order-zero AR model. It proves one data-
+likelihood call at the stored MAP, zero posterior/prior calls, and hand AIC/BIC formulas. The final
+serial gates pass Core 3,227/3,227, UI 578/578, App 440/440, and API 498/498; the UI and App runs
+include their exact signature-baseline checks. The strict serial Debug solution build with
+`EnforceXmlDocumentation=true` passes all ten projects with zero warnings/errors in 17.23 s. The
+documented XML validation script remains absent, so this strict build is the active XML gate.
+
+**Independent numerical oracle.** The exact method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior`.
+It injects a single stored MAP row into each concrete analysis and independently computes
+
+$$
+\mathrm{AIC}=-2\ell_{\mathrm{data}}(\hat\theta_{MAP})+2k,\qquad
+\mathrm{BIC}=-2\ell_{\mathrm{data}}(\hat\theta_{MAP})+k\log n.
+$$
+
+The AR, MA, ARIMA, and ARIMAX fixtures use 40 daily responses with order zero and MAP
+`[10,1.5]`; their default raw training boundaries are retained. The rating-curve fixture uses 20
+exact stage/discharge pairs and MAP `[0.5,1.0,1.5,0.05]`. Active Jeffreys scale priors make each
+posterior kernel numerically distinguishable from its data likelihood. A separate flat-prior
+order-zero Gaussian cell derives mean and maximum-likelihood scale from the 32-point training
+prefix, proves the same vector is a local optimum for data and posterior objectives, and enforces
+MAP/MLE parity at `1E-6`. Criterion acceptance is `1E-10` absolute. No optimizer, sampler,
+simulation, external package, or source artifact is invoked; the largest fixture has 40 time
+steps and the injected posterior has one row, both below the Phase 5 cap of 1,000.
+
+The fast-test and Verification source SHA-256 values are respectively
+`BD26248DFA8012737571E7EA857675642EF01A0917CFE65BF10237A9E83B43F1` and
+`CE0FC65CA76125EF4DA73E7A5A460ACD352D4F059C785C13BC700CB54FF29F14`. The passing TRX SHA-256
+is `629C76B20DF807626C718C59E5152C59E17D72A8CDD4FA700F8EFB3604F96E08`.
+
+**Execution evidence and failure history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk
+3.6.4 built against the configured local Numerics project. From commit `a4db99a` plus the scoped
+Package 9 test/report diff, the guarded command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior'
+```
+
+The final exact method passed 1/1 in 0.329 s; its TRX is under
+`TestResults/VerificationFocused/20260820-130334-...`. Two initial compile attempts ran no test:
+the first exposed test-only namespace/type ambiguities and the second used a nonexistent MAP enum
+member; aliases and the established `PosteriorMode` member corrected those fixture errors. The
+next runs retained deliberately invalid fixtures and failed rather than masking them: six ARIMAX
+observations violated its 30-observation validation minimum (`20260820-130014-...`), six rating
+pairs violated its 10-pair minimum (`20260820-130113-...`), and the analytical Gaussian oracle
+used the 40-value response rather than the model's 32-value training prefix
+(`20260820-130139-...`). Correcting only those fixture boundaries produced the final pass; no
+tolerance, formula, likelihood, prior, optimizer, sampler, seed, or convergence default changed.
+An initial sandboxed final rerun could not read the user NuGet configuration and ran no test; the
+same exact guarded command then passed with the configured environment. The first UI gate retry
+collided with an already-running test logger; after that process completed, the isolated UI suite
+passed 578/578. The complete Verification project was not run.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
@@ -625,7 +692,7 @@ was not run.
 | TR-039 ARIMAX generation | Complete | Seven scale/order/date/anchor/extension and exact legacy-seed regressions pass | Algebraic plus 1,000-step moment method passes 1/1; recovery remains Package 10 |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
 | TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1 at `1E-10`; recovery remains Package 10 |
-| TR-042 AIC/BIC kernel | Closed; refresh pending | Planned deterministic routing regression | Planned data-likelihood/MAP oracle |
+| TR-042 AIC/BIC kernel | Closed; refresh complete | Counting data-likelihood/MAP routing regression passes in Core 3,227/3,227 | Five-analysis data-only criterion and flat-prior parity oracle passes 1/1 |
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
 
 The complete Verification project is not run during Phase 5. Every numerical or recovery result

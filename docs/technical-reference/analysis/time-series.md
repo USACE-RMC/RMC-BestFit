@@ -103,6 +103,10 @@ Choose orders using scientific plausibility, ACF/PACF as exploratory tools, resi
 
 AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log likelihood evaluated at the stored MAP; prior-density terms are excluded. The values agree with MLE criteria only when every active prior is constant and MAP coincides with the constrained MLE. The default Jeffreys scale option is nonconstant, so analyses using it—or any informative prior—should use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than treating the MAP-evaluated fields as conventional AIC/BIC. See [TR-042](../review-findings.md#tr-042).
 
+The Phase 5 refresh verifies this routing independently for AR, MA, ARIMA, ARIMAX, and rating
+curve, with an analytical flat-prior order-zero Gaussian parity cell. It changes no production,
+UI/App/API, or persistence contract.
+
 ## Current Scientific Availability
 
 | Configuration | Estimation likelihood | Forecast/predictive simulation |

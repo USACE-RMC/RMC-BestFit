@@ -465,3 +465,16 @@ The package gates pass Core 3,226/3,226, UI 578/578, App 440/440, and API 498/49
 serial strict Debug build reports zero warnings/errors; UI/App signature baselines remain exact.
 The initial Verification compile failure and parallel-build file-lock failure are retained in the
 time-series report. No full Verification run occurred.
+
+## TR-042 information-criterion regression
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `AnalysisInformationCriteriaRoutingTests.TimeSeriesCriteria_UseOneDataLikelihoodCallAtMap` | Core Tests | Injected MAP and counting AR model prove one data-likelihood call, no prior/posterior call, and hand AIC/BIC routing | Exact call counts; `1E-10`; passed |
+| `Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior` | Verification | AR, MA, ARIMA, ARIMAX, and rating-curve data-only criteria plus analytical flat-prior Gaussian MAP/MLE parity | Criteria `1E-10`; parameters `1E-6`; guarded pass 1/1 |
+
+The exact method uses 40 or fewer observations and one injected posterior row; it runs no
+optimizer, sampler, or simulation and remains below the 1,000-step cap. Package gates pass Core
+3,227/3,227, UI 578/578, App 440/440, and API 498/498. UI/App signature baselines remain exact and
+the strict serial Debug build has zero warnings/errors. Fixture and infrastructure failure history
+is retained in the time-series report. No full Verification run occurred.

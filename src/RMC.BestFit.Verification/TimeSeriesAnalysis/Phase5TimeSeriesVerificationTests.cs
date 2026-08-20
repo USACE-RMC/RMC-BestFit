@@ -1,6 +1,13 @@
+using System.Reflection;
 using System.Text.Json;
 using System.Xml.Linq;
+using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
+using RMC.BestFit.Analyses;
+using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using RatingCurveModel = RMC.BestFit.Models.RatingCurve;
 
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
@@ -605,6 +612,231 @@ public class Phase5TimeSeriesVerificationTests
                 intercept - beta * covariate[rawIndex];
         }
         AssertIndependentGaussianMoments(innovations, 0.0, sigma, "ARIMAX innovation moments");
+    }
+
+    /// <summary>
+    /// Verifies AR, MA, ARIMA, ARIMAX, and rating-curve AIC/BIC use data likelihood at the stored
+    /// MAP, exclude prior density, and retain the analytical flat-prior MAP/MLE identity.
+    /// </summary>
+    /// <remarks>
+    /// Criteria use 1E-10 absolute acceptance. The independent Gaussian flat-prior optimum uses
+    /// 1E-6 parameter acceptance. No optimizer, sampler, simulation, or time-series fixture above
+    /// 1,000 steps is invoked; time-series analyses use 40 observations and one injected posterior row.
+    /// </remarks>
+    [TestMethod]
+    public async Task InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior()
+    {
+        const double tolerance = 1E-10;
+        DateTime startDate = new(2002, 3, 4);
+        double[] responsePattern = { 9, 11, 10, 12, 8, 10 };
+        double[] responseValues = Enumerable.Range(0, 40)
+            .Select(index => responsePattern[index % responsePattern.Length])
+            .ToArray();
+        double[] timeSeriesMap = { 10.0, 1.5 };
+
+        var ar = new AutoRegressive(CreateDailySeries(responseValues, startDate), 0, true)
+        {
+            UseJeffreysRuleForScale = true,
+        };
+        await VerifyAnalysisCriteriaAsync(
+            "AR",
+            new ARAnalysis(ar),
+            ar,
+            timeSeriesMap,
+            responseValues.Length,
+            tolerance);
+
+        var ma = new MovingAverage(CreateDailySeries(responseValues, startDate), 0, true)
+        {
+            UseJeffreysRuleForScale = true,
+        };
+        await VerifyAnalysisCriteriaAsync(
+            "MA",
+            new MAAnalysis(ma),
+            ma,
+            timeSeriesMap,
+            responseValues.Length,
+            tolerance);
+
+        var arima = new ARIMA(CreateDailySeries(responseValues, startDate), 0, 0, 0, true)
+        {
+            UseJeffreysRuleForScale = true,
+        };
+        await VerifyAnalysisCriteriaAsync(
+            "ARIMA",
+            new ARIMAAnalysis(arima),
+            arima,
+            timeSeriesMap,
+            responseValues.Length,
+            tolerance);
+
+        var arimax = new ARIMAX(CreateDailySeries(responseValues, startDate))
+        {
+            IncludeIntercept = true,
+            AROrderP = 0,
+            DiffOrderD = 0,
+            MAOrderQ = 0,
+            UseJeffreysRuleForScale = true,
+        };
+        arimax.SetDefaultParameters();
+        await VerifyAnalysisCriteriaAsync(
+            "ARIMAX",
+            new ARIMAXAnalysis(arimax),
+            arimax,
+            timeSeriesMap,
+            arimax.TrainingTimeSteps,
+            tolerance);
+
+        double[] stages = Enumerable.Range(0, 20)
+            .Select(index => 1.0 + 0.25 * index)
+            .ToArray();
+        double[] ratingMap = { 0.5, 1.0, 1.5, 0.05 };
+        double[] discharges = stages
+            .Select(stage => 10.0 * Math.Pow(stage - ratingMap[0], ratingMap[2]))
+            .ToArray();
+        var ratingCurve = new RatingCurveModel(
+            CreateDailySeries(stages, startDate),
+            CreateDailySeries(discharges, startDate),
+            numberOfSegments: 1)
+        {
+            UseJeffreysRuleForScale = true,
+        };
+        await VerifyAnalysisCriteriaAsync(
+            "RatingCurve",
+            new RatingCurveAnalysis(ratingCurve),
+            ratingCurve,
+            ratingMap,
+            stages.Length,
+            tolerance);
+
+        var flatModel = new AutoRegressive(CreateDailySeries(responseValues, startDate), 0, true)
+        {
+            UseDefaultFlatPriors = true,
+            UseJeffreysRuleForScale = false,
+        };
+        flatModel.SetDefaultParameters();
+        double[] flatTrainingValues = responseValues
+            .Take(flatModel.TrainingTimeSteps)
+            .ToArray();
+        double analyticalMean = flatTrainingValues.Average();
+        double analyticalSigma = Math.Sqrt(flatTrainingValues
+            .Select(value => Math.Pow(value - analyticalMean, 2.0))
+            .Average());
+        double[] analyticalMle = { analyticalMean, analyticalSigma };
+        double[] analyticalMap = { analyticalMean, analyticalSigma };
+        AssertArrayEqual(analyticalMle, analyticalMap, 1E-6, "Flat-prior MAP/MLE parameters");
+        AssertLocalGaussianOptimum(flatModel, analyticalMle, usePosterior: false);
+        AssertLocalGaussianOptimum(flatModel, analyticalMap, usePosterior: true);
+    }
+
+    /// <summary>
+    /// Verifies one concrete analysis result builder against hand AIC/BIC formulas.
+    /// </summary>
+    /// <param name="label">The model label.</param>
+    /// <param name="analysis">The concrete analysis instance.</param>
+    /// <param name="model">The concrete model instance.</param>
+    /// <param name="mapValues">The injected stored MAP parameters.</param>
+    /// <param name="sampleSize">The analysis-specific BIC sample size.</param>
+    /// <param name="tolerance">The fixed criterion tolerance.</param>
+    /// <returns>A task representing deterministic result construction.</returns>
+    private static async Task VerifyAnalysisCriteriaAsync(
+        string label,
+        object analysis,
+        ModelBase model,
+        double[] mapValues,
+        int sampleSize,
+        double tolerance)
+    {
+        double dataLogLikelihood = model.DataLogLikelihood(mapValues);
+        double priorLogLikelihood = model.PriorLogLikelihood(mapValues);
+        Assert.IsTrue(double.IsFinite(dataLogLikelihood), $"{label} data likelihood must be finite.");
+        Assert.IsTrue(Math.Abs(priorLogLikelihood) > 1E-6, $"{label} prior fixture must distinguish the posterior kernel.");
+
+        BayesianAnalysis bayesian = analysis switch
+        {
+            ARAnalysis value => value.BayesianAnalysis,
+            MAAnalysis value => value.BayesianAnalysis,
+            ARIMAAnalysis value => value.BayesianAnalysis,
+            ARIMAXAnalysis value => value.BayesianAnalysis,
+            RatingCurveAnalysis value => value.BayesianAnalysis,
+            _ => throw new ArgumentOutOfRangeException(nameof(analysis), analysis.GetType().Name, "Unsupported criterion analysis."),
+        };
+        bayesian.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMode;
+        bayesian.SetCustomMCMCResults(
+            new MCMCResults(
+                new ParameterSet((double[])mapValues.Clone(), dataLogLikelihood + priorLogLikelihood),
+                new List<ParameterSet>
+                {
+                    new((double[])mapValues.Clone(), dataLogLikelihood + priorLogLikelihood),
+                },
+                alpha: 0.1),
+            skipInformationCriteria: true);
+        SetAnalysisResults(analysis, new UncertaintyAnalysisResults());
+
+        switch (analysis)
+        {
+            case ARAnalysis value: await value.UpdatePointEstimateResultsAsync(); break;
+            case MAAnalysis value: await value.UpdatePointEstimateResultsAsync(); break;
+            case ARIMAAnalysis value: await value.UpdatePointEstimateResultsAsync(); break;
+            case ARIMAXAnalysis value: await value.UpdatePointEstimateResultsAsync(); break;
+            case RatingCurveAnalysis value: await value.UpdatePointEstimateResultsAsync(); break;
+        }
+
+        UncertaintyAnalysisResults results = GetAnalysisResults(analysis);
+        double expectedAic = -2.0 * dataLogLikelihood + 2.0 * model.NumberOfParameters;
+        double expectedBic = -2.0 * dataLogLikelihood + model.NumberOfParameters * Math.Log(sampleSize);
+        double posteriorAic = -2.0 * (dataLogLikelihood + priorLogLikelihood) + 2.0 * model.NumberOfParameters;
+        double posteriorBic = -2.0 * (dataLogLikelihood + priorLogLikelihood) + model.NumberOfParameters * Math.Log(sampleSize);
+        Assert.AreEqual(expectedAic, results.AIC, tolerance, $"{label} AIC");
+        Assert.AreEqual(expectedBic, results.BIC, tolerance, $"{label} BIC");
+        Assert.IsTrue(Math.Abs(results.AIC - posteriorAic) > 1E-6, $"{label} AIC included prior density.");
+        Assert.IsTrue(Math.Abs(results.BIC - posteriorBic) > 1E-6, $"{label} BIC included prior density.");
+    }
+
+    /// <summary>
+    /// Assigns a deterministic result container through an analysis's private setter.
+    /// </summary>
+    /// <param name="analysis">The concrete analysis.</param>
+    /// <param name="results">The empty result container.</param>
+    private static void SetAnalysisResults(object analysis, UncertaintyAnalysisResults results)
+    {
+        PropertyInfo property = analysis.GetType().GetProperty("AnalysisResults")!;
+        property.GetSetMethod(nonPublic: true)!.Invoke(analysis, new object[] { results });
+    }
+
+    /// <summary>
+    /// Gets the populated result container from a concrete analysis.
+    /// </summary>
+    /// <param name="analysis">The concrete analysis.</param>
+    /// <returns>The populated results.</returns>
+    private static UncertaintyAnalysisResults GetAnalysisResults(object analysis)
+    {
+        PropertyInfo property = analysis.GetType().GetProperty("AnalysisResults")!;
+        return (UncertaintyAnalysisResults)property.GetValue(analysis)!;
+    }
+
+    /// <summary>
+    /// Confirms the analytical Gaussian optimum dominates small perturbations in both coordinates.
+    /// </summary>
+    /// <param name="model">The flat-prior order-zero Gaussian model.</param>
+    /// <param name="parameters">The analytical mean and maximum-likelihood scale.</param>
+    /// <param name="usePosterior">Whether to evaluate the flat-prior posterior objective.</param>
+    private static void AssertLocalGaussianOptimum(AutoRegressive model, double[] parameters, bool usePosterior)
+    {
+        const double perturbation = 1E-4;
+        Func<double[], double> objective = usePosterior ? model.LogLikelihood : model.DataLogLikelihood;
+        double optimum = objective(parameters);
+        for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
+        {
+            foreach (double direction in new[] { -1.0, 1.0 })
+            {
+                double[] candidate = (double[])parameters.Clone();
+                candidate[parameterIndex] += direction * perturbation;
+                Assert.IsTrue(
+                    optimum >= objective(candidate),
+                    $"Analytical {(usePosterior ? "MAP" : "MLE")} optimum failed coordinate {parameterIndex} direction {direction}.");
+            }
+        }
     }
 
     /// <summary>

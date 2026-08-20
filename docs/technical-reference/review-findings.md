@@ -55,7 +55,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Confirmed defect; corrected | Complete | Passed - scale/order/date regressions and algebraic/moment oracle | [Report](../verification/time-series.md#tr-039--arimax-transformed-and-differenced-generation) | 2026-08-20 |
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
 | [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Confirmed defect; corrected | Complete | Passed - date/index regressions and independent R oracle | [Report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment) | 2026-08-20 |
-| [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
+| [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Complete | Passed - counting regression and five-analysis oracle refreshed | [Report](../verification/time-series.md#tr-042--information-criteria-use-data-likelihood-at-map) | 2026-08-20 |
 | [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -778,9 +778,15 @@ fixture, oracle, compatibility, execution, and failure history in the
 
 **Implementation status.** Fixed without public API or serialization changes. AR, MA, ARIMA, ARIMAX, and rating-curve analyses now evaluate their data likelihoods at `Results.MAP.Values`.
 
-**Verification status.** Passed by the shared focused MAP criterion regression and the source-call-site audit; see [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
+**Verification status.** Passed by the shared focused MAP criterion regression and source-call-site
+audit, then refreshed in Phase 5 by a deterministic counting regression and the exact five-analysis
+data-likelihood/MAP oracle. See [time-series verification](../verification/time-series.md#tr-042--information-criteria-use-data-likelihood-at-map)
+and [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
 
-**Evidence.** Prior-density terms are no longer passed to `GoodnessOfFit.AIC/BIC`. Each analysis retains its existing parameter count and observation/training sample-size convention.
+**Evidence.** Prior-density terms are no longer passed to `GoodnessOfFit.AIC/BIC`. Each analysis
+retains its existing parameter count and observation/training sample-size convention. The Phase 5
+oracle covers AR, MA, ARIMA, ARIMAX, and rating curve at `1E-10`, and separately proves analytical
+flat-prior MAP/MLE parameter parity at `1E-6` without invoking an optimizer or sampler.
 
 **Impact.** Prior normalization constants no longer shift the reported criteria. Flat-prior fits can be compared with their constrained-MLE counterparts; nonconstant priors can move MAP away from MLE, so those values require the documented Bayesian caveat.
 
