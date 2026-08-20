@@ -80,6 +80,65 @@ generate_arima_fixture <- function() {
   )
 }
 
+generate_ar_fixture <- function() {
+  sample_size <- 1000L
+  seed <- 51035L
+  mu <- 10.0
+  phi <- 0.6
+  sigma <- 5.0
+  dates <- seq(as.Date("2002-01-01"), by = "month", length.out = sample_size)
+
+  set.seed(seed)
+  innovations <- stats::rnorm(sample_size, mean = 0.0, sd = sigma)
+  raw <- numeric(sample_size)
+  raw[[1L]] <- mu + innovations[[1L]]
+  for (position in 2:sample_size) {
+    raw[[position]] <- mu + phi * (raw[[position - 1L]] - mu) + innovations[[position]]
+  }
+
+  list(
+    dates = format(dates, "%Y-%m-%d"),
+    raw = unname(raw),
+    innovations = unname(innovations),
+    sample_size = sample_size,
+    seed = seed,
+    ar_order = 1L,
+    include_intercept = TRUE,
+    mu = mu,
+    phi = phi,
+    sigma = sigma,
+    next_raw_zero_innovation = unname(mu + phi * (tail(raw, 1L) - mu))
+  )
+}
+
+generate_ma_fixture <- function() {
+  sample_size <- 1000L
+  seed <- 51036L
+  mu <- 10.0
+  theta <- 0.6
+  sigma <- 5.0
+  dates <- seq(as.Date("2003-01-01"), by = "month", length.out = sample_size)
+
+  set.seed(seed)
+  innovations <- stats::rnorm(sample_size, mean = 0.0, sd = sigma)
+  previous_innovations <- c(0.0, innovations[-sample_size])
+  raw <- mu + innovations + theta * previous_innovations
+
+  list(
+    dates = format(dates, "%Y-%m-%d"),
+    raw = unname(raw),
+    innovations = unname(innovations),
+    sample_size = sample_size,
+    seed = seed,
+    ma_order = 1L,
+    include_intercept = TRUE,
+    mu = mu,
+    theta = theta,
+    sigma = sigma,
+    next_raw_zero_innovation = unname(mu + theta * tail(innovations, 1L))
+  )
+}
+
 generate_arimax_fixture <- function() {
   sample_size <- 1000L
   seed <- 51038L
@@ -157,6 +216,8 @@ artifact <- list(
     bayesian_rhat_maximum = 1.1,
     bayesian_ess_minimum = 100L
   ),
+  ar = generate_ar_fixture(),
+  ma = generate_ma_fixture(),
   arima = generate_arima_fixture(),
   arimax = generate_arimax_fixture()
 )
