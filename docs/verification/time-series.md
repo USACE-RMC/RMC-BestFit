@@ -805,6 +805,30 @@ its MA coefficient: `0.3230227122104127` versus generating `0.25`, an absolute e
 tolerance, optimizer, likelihood, prior, sampler, or algorithm was attempted. ARIMA Bayesian and
 both ARIMAX cells remain unrun. The complete Verification project was not run.
 
+**Approved ARIMA MLE verification correction, frozen before reevaluation.** Independent diagnosis
+reproduced the C# conditional-likelihood optimum rather than identifying a production defect. The
+committed R 4.4.3 generator directly evaluates the exact fixture recurrence with the first
+difference conditioned and zero initial innovation, profiles nuisance parameters, and includes the
+logarithmic-transform Jacobian over raw indices `2...999`. It obtains
+`phi=0.400116305060459`, `theta=0.323088117478691`, `sigma=0.0392046536277865`, and data log
+likelihood `-2889.20015515601`. Its independently profiled 95% intervals are
+`[0.311503785384669, 0.484293437691628]`, `[0.232573294769585, 0.40844941072935]`, and
+`[0.0375456561516624, 0.0409895227567874]`; each contains its generating value. The theta standard
+error is `0.0448675484525076`, so the rejected fixed `±0.0375` gate has only approximately
+`59.67%` asymptotic coverage for this fixture. R `stats::arima` independently gives theta
+`0.323065157866208` by CSS and `0.32246945930031` by exact ML.
+
+Before another C# result is inspected, the replacement acceptance contract is fixed as: absolute
+C#-to-R differences no greater than `1E-3` for phi/theta, `1E-5` for sigma, and `1E-5` for total
+data log likelihood; all three generating values inside the independent 95% profile-likelihood
+intervals; deterministic recurrence tolerance `1E-12`; finite data and prior likelihoods; and the
+unchanged one-step prediction check. The fixture, seed, 110-step burn-in, 1,000 retained raw
+observations, optimizer, likelihood, production code, and all Bayesian settings remain unchanged.
+The artifact `phase5-arima-mle-recovery-oracle.json` has SHA-256
+`73137D84A69FF69B681BF4FB466DA1C1692A0718C70BE37206134D87465F865F`; its generator has SHA-256
+`61E7C788CA6FBADAD9274AD1338B6F38A6BDCC167A347073B8DBEC8A719B90C2`. This acceptance contract
+will be committed before the C# verification method is changed or rerun.
+
 **Failure history.** The initial R generation attempt could not read repository renv junctions in
 the sandbox and wrote no artifact; the same script ran in the configured environment. The first C#
 compile exposed three test-only type/index errors and ran no test; explicit established types fixed

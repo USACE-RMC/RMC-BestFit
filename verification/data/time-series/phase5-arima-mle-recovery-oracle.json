@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "artifact_id": "TS-PHASE5-ARIMA-MLE-001",
+    "finding": "PHASE5-RECOVERY-ARIMA-MLE",
+    "generator": "verification/r/time-series/generate_phase5_arima_mle_oracle.R",
+    "generator_sha256": "61e7c788ca6fbadad9274ad1338b6f38a6bdcc167a347073b8dbec8a719b90c2",
+    "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
+    "input_fixture_sha256": "d858b551c60508192017f21f41b42745b22fe1d4b018ec507804d93fbdbdbb8d",
+    "source_commit": "a977204c55f9830f6da9065b23c0a7e8076db33b",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "jsonlite_version": "2.0.0",
+    "digest_version": "0.6.39",
+    "generated_utc": "2026-08-20 21:43:16 UTC",
+    "tolerances": {
+      "optimizer_coefficient_absolute": 0.001,
+      "optimizer_scale_absolute": 1e-05,
+      "log_likelihood_absolute": 1e-05,
+      "deterministic_recurrence_absolute": 1e-12
+    },
+    "profile_confidence_level": 0.95,
+    "profile_log_likelihood_cutoff": 1.92072941034706
+  },
+  "fixture": {
+    "seed": 51037,
+    "burn_in": 110,
+    "raw_sample_size": 1000,
+    "difference_count": 999,
+    "conditional_likelihood_count": 998,
+    "transform": "Logarithmic",
+    "differencing_order": 1,
+    "ar_order": 1,
+    "ma_order": 1,
+    "include_intercept": false,
+    "truth": {
+      "phi": 0.45,
+      "theta": 0.25,
+      "sigma": 0.04
+    }
+  },
+  "conditional_mle": {
+    "phi": 0.400116305060459,
+    "theta": 0.323088117478691,
+    "sigma": 0.0392046536277865,
+    "gaussian_log_likelihood": 1816.38124845049,
+    "log_jacobian": -4705.58140360651,
+    "data_log_likelihood": -2889.20015515601,
+    "start_zero_function_evaluations": 95,
+    "start_zero_convergence": 0,
+    "start_truth_convergence": 0
+  },
+  "profile_likelihood_95": {
+    "phi": [0.311503785384669, 0.484293437691628],
+    "theta": [0.232573294769585, 0.40844941072935],
+    "sigma": [0.0375456561516624, 0.0409895227567874]
+  },
+  "diagnosis": {
+    "theta_standard_error": 0.0448675484525076,
+    "theta_observed_z": 1.62897506103002,
+    "theta_two_sided_probability": 0.103318298496159,
+    "theta_fixed_15_percent_absolute_gate": 0.0375,
+    "theta_fixed_gate_asymptotic_coverage": 0.596728848983298,
+    "stats_css": {
+      "phi": 0.400138200093422,
+      "theta": 0.323065157866208,
+      "sigma": 0.03920465363355
+    },
+    "stats_exact_ml": {
+      "phi": 0.401793020484059,
+      "theta": 0.32246945930031,
+      "sigma": 0.039275945623388
+    }
+  }
+}
