@@ -2,6 +2,8 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets;
 using RMC.BestFit.Verification.Datasets.TimeSeriesData;
+using Numerics.Data;
+using System.Text.Json;
 
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
@@ -28,8 +30,8 @@ public class MAAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of MA(1) parameters against known true values from synthetic data.
-    /// Uses a 500-observation time series and validates that the posterior mode recovers the generating
-    /// parameters within 25% tolerance, accounting for Monte Carlo variability.
+    /// Uses the independent 1,000-observation Phase 5 fixture and validates central-interval, MAP,
+    /// R-hat, ESS, finite-likelihood, and one-step-prediction recovery.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -42,22 +44,32 @@ public class MAAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_MA1()
     {
-        var data = SyntheticTimeSeriesData.GetMA1Data(10, 0.6, 5, 500);
-        var model = new MovingAverage(data.TimeSeries, order: 1, includeIntercept: true)
+        JsonElement fixture = Phase5TimeSeriesRecoveryTests.LoadFixture("ma");
+        double[] truth = Phase5TimeSeriesRecoveryTests.GetMaTruth(fixture);
+        var model = new MovingAverage(
+            Phase5TimeSeriesRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
+            order: 1,
+            includeIntercept: true)
         {
-            UseJeffreysRuleForScale = false,
             UseDefaultTrainingSteps = false
         };
-        model.TrainingTimeSteps = data.TimeSeries.Count;
+        model.TrainingTimeSteps = 1000;
 
         var analysis = new MAAnalysis(model);
+        Phase5TimeSeriesRecoveryTests.AssertResolvedBayesianDefaults(
+            "MA",
+            analysis.BayesianAnalysis,
+            model.NumberOfParameters);
+        Phase5TimeSeriesRecoveryTests.ApplyVerificationExecutionCap(analysis.BayesianAnalysis);
         await analysis.RunAsync();
 
-        Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        Assert.IsTrue(analysis.IsEstimated, "Bayesian estimation failed.");
+        Phase5TimeSeriesRecoveryTests.AssertBayesianRecovery(
+            "MA",
+            model,
+            analysis.BayesianAnalysis,
+            truth);
+        Phase5TimeSeriesRecoveryTests.AssertMaPrediction(model, truth, fixture);
     }
 
     /// <summary>

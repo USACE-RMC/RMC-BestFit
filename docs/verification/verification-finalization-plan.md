@@ -306,13 +306,23 @@ Phase exit criteria:
 
 ## Phase 5 - Time-Series Models
 
-Status: in progress. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
+Status: in progress and blocked at the first integrated recovery cell. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
 
 Execution cap (20 August 2026): every remaining Phase 5 Verification fixture/run must use no more
 than 1,000 simulation, time-series, or sampling steps. The generator moment cells use exactly
 1,000 for consistency with existing repository recovery tests.
 
 Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 App public/protected signature lines with committed SHA-256 hashes. Legacy AR, MA, ARIMA, ARIMAX, and pre-v2 `ARMAX` persistence contracts pass; the App transform selector retains its existing XAML/property path and enum values. Core passes 3,180/3,180, UI 576/576, App 431/431, and API 496/496. The strict Debug solution build with `EnforceXmlDocumentation=true` passes with zero warnings/errors; the separately documented validation script is absent from this checkout. No production code or Verification method changed in this package.
+
+Recovery checkpoint (20 August 2026): all eight approved cells are implemented against committed
+independent R fixtures containing exactly 1,000 observations. The initial AR MLE execution used an
+incorrect new AR/MA fixture seed and is retained as invalid-fixture failure history. After restoring
+and committing established seed 12345, the corrected AR MLE run estimated intercept
+`10.569486830922324`, outside the unchanged 5% gate `10 ± 0.5`. The other seven methods were not
+run. No seed search, threshold, optimizer, likelihood, prior, sampler, production default, or
+algorithm change is authorized. Phase 5 cannot transition to `phase-5-complete` unless Haden Smith
+approves a separate disposition for the finite-sample conflict between the new 1,000-observation
+ceiling and the retained 5% large-sample AR/MA gate.
 
 Findings and required direction:
 

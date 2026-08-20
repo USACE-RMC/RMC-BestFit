@@ -4,6 +4,7 @@ using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets;
 using RMC.BestFit.Verification.Datasets.TimeSeriesData;
+using System.Text.Json;
 
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
@@ -18,7 +19,7 @@ public class MovingAverageMLERecoveryTests
 
     /// <summary>
     /// Tests MLE estimation of MA(1) parameters against known true values from synthetic data.
-    /// Uses a 10,000-observation time series and validates that the optimizer recovers the generating
+    /// Uses an independently generated 1,000-observation time series and validates that the optimizer recovers the generating
     /// parameters within 5% tolerance.
     /// </summary>
     /// <remarks>
@@ -27,28 +28,34 @@ public class MovingAverageMLERecoveryTests
     /// </para>
     /// <para>
     /// True parameters: μ = 10, θ₁ = 0.6, σ = 5.
-    /// A 5% tolerance is used because MLE with large samples (10,000 obs) should achieve high precision.
+    /// The predeclared 5% large-sample tolerance is retained under the Phase 5 1,000-step ceiling.
     /// </para>
     /// </remarks>
     [TestMethod]
     public void Test_EstimateParameters_MA1()
     {
-        var data = SyntheticTimeSeriesData.GetMA1Data(10, 0.6, 5, 10000);
-        var model = new MovingAverage(data.TimeSeries, order: 1, includeIntercept: true)
+        JsonElement fixture = Phase5TimeSeriesRecoveryTests.LoadFixture("ma");
+        double[] truth = Phase5TimeSeriesRecoveryTests.GetMaTruth(fixture);
+        var model = new MovingAverage(
+            Phase5TimeSeriesRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
+            order: 1,
+            includeIntercept: true)
         {
             UseDefaultTrainingSteps = false
         };
-        model.TrainingTimeSteps = data.TimeSeries.Count;
+        model.TrainingTimeSteps = 1000;
         var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
         mle.Estimate();
 
-        // Assert that the model was fitted successfully
-        Assert.AreEqual(true, mle.IsEstimated, "Model fitting failed.");
-        // Assert that estimated parameters are close to true parameters
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], mle.BestParameterSet.Values[i], Math.Abs(data.TrueParameters[i] * 0.05), "Estimated parameter is incorrect.");
-        }
+        Assert.IsTrue(mle.IsEstimated, "Model fitting failed.");
+        Phase5TimeSeriesRecoveryTests.AssertMleRecovery(
+            "MA",
+            model,
+            truth,
+            mle.BestParameterSet.Values,
+            coefficientTolerance: 0.05,
+            scaleTolerance: 0.05);
+        Phase5TimeSeriesRecoveryTests.AssertMaPrediction(model, truth, fixture);
     }
 
     /// <summary>

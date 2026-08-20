@@ -10,6 +10,13 @@ This is the canonical register for disagreements among statistical theory, the p
 
 Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest. Phase 3 is closed in its approved scope. The original Phase 4 findings are complete: TR-014 independently resamples the actual retained outputs used by Composite and coincident-frequency propagation, while `BivariateAnalysis` remains intentionally conditional on fixed marginals. The unchanged extreme-tail Composite method passed after the approved `XTransform.None` correction, bringing the 30-method recovery supplement to 24 passes. The six remaining Bayesian competing-risk findings are explicitly deferred for separate research and no longer gate Phase 5; none of the original Phase 4 finding dispositions is reopened.
 
+Phase 5 recovery checkpoint (20 August 2026): TR-035 through TR-041 and TR-046 retain their
+completed regression and independent-oracle evidence, and TR-042 retains its refreshed closed
+contract. Final Phase 5 closure is blocked by the first integrated recovery cell: with the required
+1,000-observation cap and restored established seed 12345, AR MLE estimated process mean
+`10.569486830922324`, outside the unchanged 5% gate `10 ± 0.5`. The remaining seven cells were not
+run, no production or numerical setting was changed, and the full Verification project was not run.
+
 ## Summary
 
 | ID | Finding | Severity | Review disposition | Implementation | Verification | Evidence | Updated |

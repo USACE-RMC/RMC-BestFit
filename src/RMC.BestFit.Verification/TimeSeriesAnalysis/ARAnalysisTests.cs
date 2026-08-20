@@ -2,6 +2,8 @@ using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets;
 using RMC.BestFit.Verification.Datasets.TimeSeriesData;
+using Numerics.Data;
+using System.Text.Json;
 
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
@@ -26,27 +28,37 @@ public class ARAnalysisTests
     #region Estimation Tests
 
     /// <summary>
-    /// Tests Bayesian MCMC estimation of AR(1) parameters against known true values from synthetic data.
+    /// Tests Bayesian AR(1) recovery, diagnostics, and prediction against the independent 1,000-observation fixture.
     /// </summary>
     [TestMethod]
     public async Task Test_EstimateParameters_AR1()
     {
-        var data = SyntheticTimeSeriesData.GetAR1Data(10, 0.6, 5, 500);
-        var model = new AutoRegressive(data.TimeSeries, order: 1, includeIntercept: true)
+        JsonElement fixture = Phase5TimeSeriesRecoveryTests.LoadFixture("ar");
+        double[] truth = Phase5TimeSeriesRecoveryTests.GetArTruth(fixture);
+        var model = new AutoRegressive(
+            Phase5TimeSeriesRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
+            order: 1,
+            includeIntercept: true)
         {
-            UseJeffreysRuleForScale = false,
             UseDefaultTrainingSteps = false
         };
-        model.TrainingTimeSteps = data.TimeSeries.Count;
+        model.TrainingTimeSteps = 1000;
 
         var analysis = new ARAnalysis(model);
+        Phase5TimeSeriesRecoveryTests.AssertResolvedBayesianDefaults(
+            "AR",
+            analysis.BayesianAnalysis,
+            model.NumberOfParameters);
+        Phase5TimeSeriesRecoveryTests.ApplyVerificationExecutionCap(analysis.BayesianAnalysis);
         await analysis.RunAsync();
 
-        Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), "Estimated parameter is incorrect.");
-        }
+        Assert.IsTrue(analysis.IsEstimated, "Bayesian estimation failed.");
+        Phase5TimeSeriesRecoveryTests.AssertBayesianRecovery(
+            "AR",
+            model,
+            analysis.BayesianAnalysis,
+            truth);
+        Phase5TimeSeriesRecoveryTests.AssertArPrediction(model, truth, fixture);
     }
 
     /// <summary>

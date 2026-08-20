@@ -478,3 +478,22 @@ optimizer, sampler, or simulation and remains below the 1,000-step cap. Package 
 3,227/3,227, UI 578/578, App 440/440, and API 498/498. UI/App signature baselines remain exact and
 the strict serial Debug build has zero warnings/errors. Fixture and infrastructure failure history
 is retained in the time-series report. No full Verification run occurred.
+
+## Phase 5 integrated recovery matrix
+
+| Method | Oracle or recovery contract | Status |
+|---|---|---|
+| `AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Independent R AR(1), 1,000 observations, seed 12345, unchanged 5% gate, finite likelihood/prior, one-step recurrence | **Failed** - corrected-seed intercept `10.569486830922324` exceeds `10 ± 0.5` |
+| `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; resolved-default assertions; test-only 1,000-step cap; central 95%, MAP 25%, R-hat/ESS, one-step recurrence | Not run - stopped by preceding failure |
+| `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 1,000 observations, seed 12345, unchanged 5% gate | Not run |
+| `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and capped Bayesian recovery contract | Not run |
+| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R logarithmic ARIMA(1,1,1), 1,000 observations, seed 51037, 15% coefficients/10% scale | Not run |
+| `Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture and capped Bayesian recovery contract | Not run |
+| `Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, 15% coefficients/10% scale | Not run |
+| `Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture and capped Bayesian recovery contract | Not run |
+
+The artifact was committed before C# recovery evaluation. The first run used mistakenly changed
+AR/MA seeds and is retained as invalid-fixture history; after restoring established seed 12345 and
+committing the corrected artifact, the first cell still failed its unchanged gate. Per the approved
+matrix rule, no later method, alternate seed, changed tolerance, or full Verification run occurred.
+See the time-series report for hashes, exact command, runtimes, and failure history.

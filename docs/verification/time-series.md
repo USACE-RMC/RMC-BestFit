@@ -681,19 +681,79 @@ same exact guarded command then passed with the configured environment. The firs
 collided with an already-running test logger; after that process completed, the isolated UI suite
 passed 578/578. The complete Verification project was not run.
 
+## Integrated recovery matrix — blocked at first corrected-seed cell
+
+**Fixture and execution contract.** Package 10 adds the committed R artifact
+`verification/data/time-series/phase5-recovery-fixtures.json` and generator
+`verification/r/time-series/generate_phase5_recovery_fixtures.R`. The artifact implements AR(1),
+MA(1), logarithmic ARIMA(1,1,1), and differenced ARIMAX(1,1,0) with a dated level covariate
+without calling Numerics or BestFit. Every fixture contains exactly 1,000 raw observations. AR and
+MA retain the established seed `12345`; ARIMA and ARIMAX retain approved seeds `51037` and
+`51038`. The artifact and generator SHA-256 values are respectively
+`7418FFDCD670F13ED7A06ED65A6C2C3E05684B5D7F34CF861CC71330D079DA2D` and
+`7FA49C873169B44ED0E3933468CDF424DEB05B3BB89D2357D45171F6D15DDC24`.
+
+The four Bayesian cells assert the unchanged resolved DEMCzs production defaults before applying
+the later user-directed Verification ceiling to the test instance only. The cap uses thinning one,
+1,000 retained rows, and `Iterations + ceil(OutputLength/NumberOfChains) = 1,000` outer sampler
+steps per chain; credible intervals are reported at the predeclared 95% level. No production
+default changes. The recovery source SHA-256 is
+`1395D5002AA4CDFB793F9FC765F38C67AED5EDDA7ABDC5FF979AB94797E61732`.
+
+**Predeclared matrix.** The exact methods and current dispositions are:
+
+| Cell | Fully qualified method | Disposition |
+|---|---|---|
+| AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Failed corrected-seed 5% intercept gate; recovery finding |
+| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Not run because AR MLE stopped the matrix |
+| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Not run |
+| MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Not run |
+| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Not run |
+| ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Not run |
+| ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run |
+| ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run |
+
+**Recovery finding.** From commit `1497a58` plus the scoped Package 10 test diff, the guarded
+command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1'
+```
+
+The corrected-seed run failed 0/1 in 0.619 s under `20260820-132714-...`. The estimated process
+mean was `10.569486830922324`, outside the unchanged generating value and 5% gate `10 ± 0.5`.
+The TRX SHA-256 is
+`0C8794B6B68C2969027D2181739BFBFD800D148C1EED78C752D292E65662CBF3`. This is insufficient
+evidence of a production algorithm defect: under the new 1,000-observation ceiling, the retained
+5% large-sample gate can reject ordinary finite-sample variation. It is nevertheless a failed
+predeclared recovery criterion, so Phase 5 closure stops exactly as approved. No alternate seed,
+tolerance, optimizer, likelihood, prior, sampler, formula, or convergence default was tried.
+
+**Failure history.** The initial R generation attempt could not read repository renv junctions in
+the sandbox and wrote no artifact; the same script ran in the configured environment. The first C#
+compile exposed three test-only type/index errors and ran no test; explicit established types fixed
+them. The first AR MLE run used mistakenly assigned AR/MA seeds `51035/51036` and failed the AR
+coefficient gate (`0.5458503824113965` versus `0.6 ± 0.03`) under `20260820-132537-...`. That run
+did not represent the approved existing-seed contract. The generator, artifact, and manifest were
+then committed with seed `12345` before the corrected-seed reevaluation. The corrected-seed failure
+above is the operative recovery finding; both histories remain recorded. The seven later recovery
+methods and the complete Verification project were not run.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
 |---|---|---|---|
 | TR-035 Jeffreys component type | Complete | Three Core metadata/decomposition regressions pass | Analytical four-scale oracle passes 1/1 at `1E-12` |
-| TR-036 training-only transform fitting | Complete | Core holdout/state/clone plus UI XML/copy/undo and API mapping pass | R training-only profile oracle passes 1/1 at fixed cross-language tolerance; transformed recovery remains Package 10 |
-| TR-037 reintegration index | Complete | ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, and `d=0` golden regressions pass | Hand recurrence oracle passes 1/1 at `1E-10`; predictive recovery checks remain Package 10 |
+| TR-036 training-only transform fitting | Complete | Core holdout/state/clone plus UI XML/copy/undo and API mapping pass | R training-only profile oracle passes 1/1; integrated transformed recovery is blocked before its cell |
+| TR-037 reintegration index | Complete | ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, and `d=0` golden regressions pass | Hand recurrence oracle passes 1/1; integrated predictive recovery is blocked before its cells |
 | TR-038 AR/MA/ARIMA generation | Complete | Six transform/order/anchor/length and exact legacy-seed regressions pass | Two algebraic plus 1,000-step moment methods pass 1/1; failed 50,000-step overflow history retained |
-| TR-039 ARIMAX generation | Complete | Seven scale/order/date/anchor/extension and exact legacy-seed regressions pass | Algebraic plus 1,000-step moment method passes 1/1; recovery remains Package 10 |
+| TR-039 ARIMAX generation | Complete | Seven scale/order/date/anchor/extension and exact legacy-seed regressions pass | Algebraic plus 1,000-step moment method passes 1/1; integrated recovery is blocked before ARIMAX |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
-| TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1 at `1E-10`; recovery remains Package 10 |
+| TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1; integrated recovery is blocked before ARIMAX |
 | TR-042 AIC/BIC kernel | Closed; refresh complete | Counting data-likelihood/MAP routing regression passes in Core 3,227/3,227 | Five-analysis data-only criterion and flat-prior parity oracle passes 1/1 |
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
+| Integrated recovery | Blocked | Eight exact cells implemented with 1,000-observation independent fixtures | Corrected-seed AR MLE failed 5% intercept gate; remaining seven not run |
 
 The complete Verification project is not run during Phase 5. Every numerical or recovery result
 will be executed as one exact fully qualified method through `scripts/run-verification-test.ps1`.
