@@ -438,7 +438,7 @@ source hash and exact command/TRX evidence are recorded in [Time-Series Verifica
 | `TimeSeriesGenerationTransformTests.ArimaGeneration_SampleSizeAtOrBelowD_ReturnsRequestedAnchors` | Core Tests | Requested observed/zero anchors only, exact length, no model-scale values | `1E-12`; passed |
 | `TimeSeriesGenerationTransformTests.NoneD0FixedSeedGeneration_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change AR, MA, and ARIMA `Transform.None`/`d=0` arrays | Exact double equality; passed |
 | `Phase5TimeSeriesVerificationTests.ArAndMaTransformedGeneratorsMatchIndependentOracle` | Verification | Independent exponential/Box-Cox algebra plus 1,000-step model-scale Gaussian moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
-| `Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle` | Verification | Independent Yeo-Johnson/integration algebra plus 1,000 first-difference moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
+| `Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle` | Verification | Independent Yeo-Johnson/integration algebra plus 1,000 generated steps/999 first-difference moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
 
 The package gates pass Core 3,219/3,219, UI 578/578, App 440/440, and API 498/498; the strict
 Debug build has zero warnings/errors. The failed 50,000-step logarithmic overflow run and the

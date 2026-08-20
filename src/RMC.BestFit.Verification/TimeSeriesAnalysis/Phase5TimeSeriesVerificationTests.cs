@@ -461,9 +461,9 @@ public class Phase5TimeSeriesVerificationTests
     /// inverse-transform, and model-scale Monte Carlo moment oracles.
     /// </summary>
     /// <remarks>
-    /// The fixed algebraic tolerance is 1E-10. The stochastic check evaluates exactly 1,000
-    /// independently generated first differences using the same four-standard-error/three-percent
-    /// acceptance rule as the AR/MA method.
+    /// The fixed algebraic tolerance is 1E-10. The stochastic check generates exactly 1,000
+    /// raw steps and evaluates their 999 independently generated first differences using the
+    /// same four-standard-error/three-percent acceptance rule as the AR/MA method.
     /// </remarks>
     [TestMethod]
     public void ArimaDifferencedTransformedGeneratorMatchesIndependentOracle()
@@ -498,7 +498,7 @@ public class Phase5TimeSeriesVerificationTests
             tolerance,
             "ARIMA transformed recurrence");
 
-        const int differenceCount = 1000;
+        const int generatedStepCount = 1000;
         const double mean = 0.2;
         const double sigma = 0.5;
         var iidArima = new ARIMA
@@ -510,9 +510,9 @@ public class Phase5TimeSeriesVerificationTests
             TransformType = Transform.Logarithmic,
         };
         iidArima.SetParameterValues(new[] { mean, sigma });
-        double[] generated = iidArima.GenerateRandomValues(differenceCount + 1, 52039);
+        double[] generated = iidArima.GenerateRandomValues(generatedStepCount, 52039);
         double[] transformed = generated.Select(value => Math.Log(value)).ToArray();
-        var differences = new double[differenceCount];
+        var differences = new double[generatedStepCount - 1];
         for (int i = 0; i < differences.Length; i++)
             differences[i] = transformed[i + 1] - transformed[i];
         AssertIndependentGaussianMoments(differences, mean, sigma, "ARIMA difference moments");

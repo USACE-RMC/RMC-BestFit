@@ -483,15 +483,17 @@ pre-change ARMA(1,1) seed `13581` model-scale sequence as seven first difference
 Yeo-Johnson transformed anchor of two, `lambda=0.6`, and independent integration/inversion.
 Algebraic acceptance is `1E-10` absolute.
 
-Each method also evaluates exactly 1,000 seeded independent model-scale Gaussian values. AR and
-MA use zero dynamic coefficients, intercept `0.2`, `sigma=0.6`, and seeds `52037`/`52038`; ARIMA
-uses `(p,d,q)=(0,1,0)`, intercept `0.2`, `sigma=0.5`, zero transformed anchor, logarithmic
-transformation, and seed `52039`. Mean acceptance is four Monte Carlo standard errors. Variance
-acceptance is the larger of four analytical variance standard errors or 3% relative. The
-1,000-step count supersedes the initially planned 50,000 values by explicit user direction on
-20 August 2026 and is consistent with other repository recovery fixtures. No external artifact or
-R package applies; the independent formulas are embedded. Verification source SHA-256 is
-`9ED5A63D199887D156A2A2268D27AA251F688E7B141859D6F38FCBFFB0BDE477`.
+Each method generates exactly 1,000 seeded raw/model steps. AR and MA evaluate all 1,000
+independent model-scale Gaussian values using zero dynamic coefficients, intercept `0.2`,
+`sigma=0.6`, and seeds `52037`/`52038`. ARIMA uses `(p,d,q)=(0,1,0)`, intercept `0.2`,
+`sigma=0.5`, zero transformed anchor, logarithmic transformation, and seed `52039`; its 1,000
+raw steps contain 999 independently generated first differences. Mean acceptance is four Monte
+Carlo standard errors. Variance acceptance is the larger of four analytical variance standard
+errors or 3% relative. The 1,000-step cap supersedes the initially planned 50,000 values by
+explicit user direction on 20 August 2026 and is consistent with other repository recovery
+fixtures. No external artifact or R package applies; the independent formulas are embedded.
+Verification source SHA-256 is
+`3879366DC56194AD76011DCD0E60B2A42ED0C6FEE415026BF95DC6AE282B6DAB`.
 
 **Execution evidence and failure history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk
 3.6.4 built against the configured local Numerics project. From commit `3d79c31` plus the scoped
@@ -506,14 +508,18 @@ Package 7 diff, the final guarded commands were:
 ```
 
 With the approved 1,000-step fixtures, the methods passed 1/1 in 0.199 s and 1/1 in 0.204 s. Their
-TRX directories begin `20260820-122714-...` and `20260820-122728-...`. Before that direction, the
+TRX directories begin `20260820-122714-...` and `20260820-122728-...`. The ARIMA method was then
+made literally step-capped by changing its request from 1,001 raw outputs/1,000 differences to
+1,000 raw outputs/999 differences; the guarded rerun passed 1/1 in 0.483 s under
+`20260820-123708-...`. Before the 1,000-step direction, the
 AR/MA method passed its 50,000-value fixture in 0.363 s, but the ARIMA method failed: a
 positive-drift 50,000-step logarithmic random walk exceeded the finite double range after inverse
 transformation, consecutive infinities yielded a NaN recovered difference, and the sample mean
 was NaN rather than `0.2` within `0.00894427190999916`. That failed TRX remains under
 `20260820-120231-...`; it was not erased or reclassified as production evidence. The correction
-changed only the user-directed sample count to 1,000. Seeds, generating parameters, formulas,
-tolerances, production algorithms, priors, samplers, and convergence defaults were unchanged.
+changed only the user-directed sample count and literal generated-step cap. Seeds, generating
+parameters, formulas, tolerances, production algorithms, priors, samplers, and convergence
+defaults were unchanged.
 The complete Verification project was not run.
 
 ## Phase 5 findings
