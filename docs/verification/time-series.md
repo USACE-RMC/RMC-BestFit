@@ -681,7 +681,14 @@ same exact guarded command then passed with the configured environment. The firs
 collided with an already-running test logger; after that process completed, the isolated UI suite
 passed 578/578. The complete Verification project was not run.
 
-## Integrated recovery matrix — blocked at AR Bayesian convergence gate
+The default-settings audit in commit `ccd5842` removed the test-only point-estimator assignment from
+this oracle. An exact guarded rerun from that commit passed 1/1 in 0.611 s under
+`20260820-140838-...`; the TRX SHA-256 is
+`A6C65950ACB89E016E90A33C4226FD2027410E30E8CAC1A97F1B15080C7F5E5A`. The oracle now asserts
+the default posterior-mean selection and still proves that AIC/BIC use the stored MAP data
+likelihood. No `BayesianAnalysis` setting is assigned.
+
+## Integrated recovery matrix — blocked at ARIMA MLE recovery gate
 
 **Fixture and execution contract.** Package 10 adds the committed R artifact
 `verification/data/time-series/phase5-recovery-fixtures.json` and generator
@@ -698,25 +705,29 @@ The burn-in generator was committed as `c3b924f`; the regenerated artifact was c
 `D858B551C60508192017F21F41B42745B22FE1D4B018EC507804D93FBDBDBB8D` and
 `2E3D1F75D7B77C26D60157E538EE73925CF536F0A1C3073CC87AEC4F78F6A557`.
 
-The four Bayesian cells assert the unchanged resolved DEMCzs production defaults before applying
-the later user-directed Verification ceiling to the test instance only. The cap uses thinning one,
-1,000 retained rows, and `Iterations + ceil(OutputLength/NumberOfChains) = 1,000` outer sampler
-steps per chain; credible intervals are reported at the predeclared 95% level. No production
-default changes. The recovery source SHA-256 is
-`7FB63A12DF255D4C6DB24E718420987C8A4E46D21841FE54EE70CB344F8C5587`.
+The 1,000 limit applies to retained fixture observations and the separate generator-moment methods;
+it does not cap MCMC. The four Bayesian cells use the resolved production `BayesianAnalysis`
+defaults without assigning any sampler or analysis setting. For the three-parameter AR, MA, and
+ARIMA cells these are DEMCzs, six chains, thinning 30, 3,500 iterations, 1,750 warmup iterations,
+300 initialization iterations, 10,000 retained rows, seed 12345, posterior mean, and the standard
+dimension-scaled jump, jump-threshold, snooker, and noise defaults. The tests assert these values
+before sampling and again after results are returned. The production 90% reporting interval remains
+unchanged; the predeclared central 95% recovery interval is calculated independently from the 10,000
+retained draws. The recovery source SHA-256 is
+`183FB2281A6FEB197FD68069255FEB6EB9912470DBA62AEE6082B6B9024AE91F`.
 
 **Predeclared matrix.** The exact methods and current dispositions are:
 
 | Cell | Fully qualified method | Disposition |
 |---|---|---|
 | AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Passed 1/1 after approved 110-step burn-in correction |
-| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Failed 0/1: intercept R-hat `1.1478771` exceeds `< 1.1` |
-| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Not run because AR Bayesian stopped the matrix |
-| MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Not run |
-| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Not run |
-| ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Not run |
-| ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run |
-| ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run |
+| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 with unchanged production DEMCzs defaults |
+| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 at the unchanged 5% gate |
+| MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 with unchanged production DEMCzs defaults |
+| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Failed 0/1: MA coefficient `0.3230227122104127` is outside `0.25 ± 0.0375` |
+| ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Not run because ARIMA MLE stopped the matrix |
+| ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run because ARIMA MLE stopped the matrix |
+| ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run because ARIMA MLE stopped the matrix |
 
 **Recovery checkpoint.** The exact guarded AR MLE command was:
 
@@ -761,6 +772,39 @@ No additional seed, chain, iteration, prior, sampler, threshold, or production-d
 was attempted. The remaining six recovery cells stopped unrun, and the complete Verification
 project was not run.
 
+That result is retained as failure history but is not evidence for the approved recovery contract:
+the test had replaced the production iteration, warmup, thinning, output-length, and interval
+settings after asserting them. Commit `ccd5842` removed the cap and every time-series Verification
+assignment to a `BayesianAnalysis` setting. A source audit found no remaining setting assignment,
+and Core, UI, App, and API gates passed 3,230/3,230, 578/578, 443/443, and 498/498 respectively.
+
+The corrected recovery methods were then run one at a time with .NET SDK 10.0.303 and MSTest.Sdk
+3.6.4. Each command had the form
+`scripts/run-verification-test.ps1 -Test '<fully-qualified-method>'`; the fully qualified methods
+are listed in the matrix above. Actual evidence from commit `ccd5842` is:
+
+| Cell | Duration | Result directory | TRX SHA-256 |
+|---|---:|---|---|
+| AR Bayesian | 24.611 s | `20260820-140856-...` | `7E9032EC34973A06D7162BE379A3C77E9D19260037240F8D8A2B5965509287FC` |
+| MA MLE | 0.198 s | `20260820-140942-...` | `FE353686EA1307BEED322A3590E1557C14AEA9D094B1B905D8956C9435AA113F` |
+| MA Bayesian | 24.097 s | `20260820-140953-...` | `94328FA21C63782206BF22565D4D4DF8355CC7BFF2E6B21F8B52AD3C7EB71C59` |
+| ARIMA MLE | 0.061 s | `20260820-141029-...` | `86ACB856588C87401B804E07664921CB4D6D9D683574E52362522DE28258E236` |
+
+The required `scripts/validate-code-xml-docs.ps1` file is absent from this checkout. The first strict
+fallback solution build could not replace the executable held by the running BestFit desktop
+process and therefore failed only at the copy step. The application was not stopped. Repeating the
+same Debug build with `EnforceXmlDocumentation=true` in an isolated artifacts directory succeeded
+with zero warnings and zero errors.
+
+AR Bayesian and MA Bayesian each returned exactly the default 10,000 retained rows, retained every
+asserted default before and after sampling, contained the generating truth in the independently
+calculated central 95% interval, met the 25% MAP, `< 1.1` R-hat, and `> 100` ESS gates, produced
+finite data/prior likelihoods, and passed their one-step generating recurrence. ARIMA MLE stopped at
+its MA coefficient: `0.3230227122104127` versus generating `0.25`, an absolute error
+`0.0730227122104127` greater than the fixed 15% allowance `0.0375`. No alternate seed, fixture,
+tolerance, optimizer, likelihood, prior, sampler, or algorithm was attempted. ARIMA Bayesian and
+both ARIMAX cells remain unrun. The complete Verification project was not run.
+
 **Failure history.** The initial R generation attempt could not read repository renv junctions in
 the sandbox and wrote no artifact; the same script ran in the configured environment. The first C#
 compile exposed three test-only type/index errors and ran no test; explicit established types fixed
@@ -768,8 +812,9 @@ them. The first AR MLE run used mistakenly assigned AR/MA seeds `51035/51036` an
 coefficient gate (`0.5458503824113965` versus `0.6 ± 0.03`) under `20260820-132537-...`. That run
 did not represent the approved existing-seed contract. The generator, artifact, and manifest were
 then committed with seed `12345` before the corrected-seed reevaluation. The subsequent missing
-burn-in failure and its approved correction remain recorded rather than replaced. The AR MLE pass
-and AR Bayesian convergence failure are the current operative recovery evidence.
+burn-in failure and its approved correction remain recorded rather than replaced. The capped AR
+Bayesian failure is retained as superseded test-configuration history. The current operative
+evidence is four recovery passes followed by the ARIMA MLE parameter-recovery failure.
 
 ## Phase 5 findings
 
@@ -782,9 +827,9 @@ and AR Bayesian convergence failure are the current operative recovery evidence.
 | TR-039 ARIMAX generation | Complete | Seven scale/order/date/anchor/extension and exact legacy-seed regressions pass | Algebraic plus 1,000-step moment method passes 1/1; integrated recovery is blocked before ARIMAX |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
 | TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1; integrated recovery is blocked before ARIMAX |
-| TR-042 AIC/BIC kernel | Closed; refresh complete | Counting data-likelihood/MAP routing regression passes in Core 3,227/3,227 | Five-analysis data-only criterion and flat-prior parity oracle passes 1/1 |
+| TR-042 AIC/BIC kernel | Closed; refresh complete | Counting data-likelihood/MAP routing regression passes in Core 3,230/3,230 | Five-analysis data-only criterion and flat-prior parity oracle passes 1/1 with default point estimator |
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
-| Integrated recovery | Blocked | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations | AR MLE passes unchanged 5% gate; AR Bayesian intercept R-hat `1.1478771` fails `< 1.1`; remaining six not run |
+| Integrated recovery | Blocked | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations; Bayesian cells assert unchanged defaults before and after sampling | AR/MA MLE and Bayesian cells pass; ARIMA MLE MA coefficient fails fixed 15% gate; remaining three unrun |
 
 The complete Verification project is not run during Phase 5. Every numerical or recovery result
 will be executed as one exact fully qualified method through `scripts/run-verification-test.ps1`.

@@ -13,11 +13,14 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 Phase 5 recovery checkpoint (20 August 2026): TR-035 through TR-041 and TR-046 retain their
 completed regression and independent-oracle evidence, and TR-042 retains its refreshed closed
 contract. Haden Smith approved 110 discarded stationary initialization steps while retaining the
-established seeds, 1,000 observations, 1,000 Bayesian steps, and unchanged gates. The regenerated
-independent artifact was committed before evaluation; AR MLE then passed 1/1. Final Phase 5 closure
-is blocked by AR Bayesian intercept R-hat `1.1478771`, which exceeds the predeclared `< 1.1` gate.
-The remaining six cells were not run, no production or numerical setting was changed, and the full
-Verification project was not run.
+established seeds, 1,000 observations, and unchanged gates. The 1,000 limit applies to fixtures and
+generator-moment methods, not MCMC. Commit `ccd5842` removes all time-series Verification
+assignments to `BayesianAnalysis` settings; every Bayesian recovery uses and asserts the production
+DEMCzs defaults. AR/MA MLE and Bayesian cells pass. Final Phase 5 closure is blocked by ARIMA MLE:
+its MA coefficient `0.3230227122104127` is outside the fixed `0.25 ± 0.0375` gate. ARIMA Bayesian
+and both ARIMAX cells were not run, no production or numerical setting was changed, and the full
+Verification project was not run. The earlier capped AR Bayesian R-hat failure remains documented
+as superseded test-configuration history.
 
 ## Summary
 

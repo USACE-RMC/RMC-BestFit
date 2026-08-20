@@ -306,27 +306,30 @@ Phase exit criteria:
 
 ## Phase 5 - Time-Series Models
 
-Status: in progress and blocked at the second integrated recovery cell. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
+Status: in progress and blocked at the fifth integrated recovery cell. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
 
-Execution cap (20 August 2026): every remaining Phase 5 Verification fixture retains exactly 1,000
-time-series observations, and every Bayesian cell uses exactly 1,000 outer sampler steps per chain.
-The approved fixture correction separately discards 110 stationary ARMA initialization steps before
-the retained series. Generator moment cells use exactly 1,000 realizations for consistency with
-existing repository recovery tests.
+Execution contract (20 August 2026): every remaining Phase 5 Verification fixture retains exactly
+1,000 time-series observations. The approved fixture correction separately discards 110 stationary
+ARMA initialization steps before the retained series, and generator moment cells use exactly 1,000
+realizations. The 1,000 limit does not apply to MCMC. Every time-series Bayesian Verification run
+uses the resolved production `BayesianAnalysis` defaults without changing sampler, chains, thinning,
+iterations, warmup, initialization, output length, seed, credible-interval width, point estimator,
+jump, snooker, or noise settings.
 
 Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 App public/protected signature lines with committed SHA-256 hashes. Legacy AR, MA, ARIMA, ARIMAX, and pre-v2 `ARMAX` persistence contracts pass; the App transform selector retains its existing XAML/property path and enum values. Core passes 3,180/3,180, UI 576/576, App 431/431, and API 496/496. The strict Debug solution build with `EnforceXmlDocumentation=true` passes with zero warnings/errors; the separately documented validation script is absent from this checkout. No production code or Verification method changed in this package.
 
 Recovery checkpoint (20 August 2026): all eight approved cells are implemented against committed
-independent R fixtures containing 1,000 retained observations. The initial AR MLE seed error and
-missing-burn-in failure remain recorded. Haden Smith approved the repository-standard 110-step
-stationary burn-in while retaining seed 12345, 1,000 observations, and the unchanged 5% gate; the
-regenerated artifact was committed before evaluation and AR MLE then passed 1/1. AR Bayesian next
-failed because intercept R-hat `1.1478771` exceeded the predeclared `< 1.1` gate after exactly 1,000
-steps per chain. Its intercept truth-in-95%-interval and MAP-within-25% checks passed; intercept ESS
-and later parameter assertions were not reached. The remaining six methods were not run. No seed
-search, threshold, optimizer, likelihood, prior, sampler, production default, or algorithm change is
-authorized. Phase 5 cannot transition to `phase-5-complete` without an approved disposition for this
-1,000-step convergence finding.
+independent R fixtures containing 1,000 retained observations. The initial AR MLE seed error,
+missing-burn-in failure, and artificially capped AR Bayesian convergence failure remain documented
+as failure history. Commit `ccd5842` removed every time-series Verification assignment to a
+`BayesianAnalysis` setting. The production defaults are asserted before and after recovery sampling;
+the required central 95% interval is computed independently from the default 10,000 retained draws
+without changing the production 90% reporting setting. AR MLE, default-DEMCzs AR Bayesian, MA MLE,
+and default-DEMCzs MA Bayesian pass their unchanged gates. ARIMA MLE then failed because its MA
+coefficient was `0.3230227122104127`, outside the fixed `0.25 ± 0.0375` 15% gate. ARIMA Bayesian and
+both ARIMAX cells were not run. No seed search, threshold, optimizer, likelihood, prior, sampler,
+production default, or algorithm change is authorized. Phase 5 cannot transition to
+`phase-5-complete` without an approved disposition for the ARIMA MLE recovery finding.
 
 Findings and required direction:
 
