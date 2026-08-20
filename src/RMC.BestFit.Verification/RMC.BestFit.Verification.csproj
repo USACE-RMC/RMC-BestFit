@@ -49,6 +49,7 @@
     <None Include="..\..\verification\data\time-series\phase5-transform-lambda-oracle.json" Link="VerificationData\phase5-transform-lambda-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\time-series\phase5-arimax-alignment-oracle.json" Link="VerificationData\phase5-arimax-alignment-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\time-series\phase5-recovery-fixtures.json" Link="VerificationData\phase5-recovery-fixtures.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-arima-mle-recovery-oracle.json" Link="VerificationData\phase5-arima-mle-recovery-oracle.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

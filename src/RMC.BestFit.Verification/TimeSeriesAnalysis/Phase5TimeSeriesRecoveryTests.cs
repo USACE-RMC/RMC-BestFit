@@ -30,6 +30,7 @@ public class Phase5TimeSeriesRecoveryTests
     public void MleArima111LogD1RecoversGeneratingParameters()
     {
         JsonElement fixture = LoadFixture("arima");
+        JsonElement oracle = LoadArimaMleOracle();
         ARIMA model = CreateArimaModel(fixture);
         double[] truth = GetArimaTruth(fixture);
         var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
@@ -37,7 +38,11 @@ public class Phase5TimeSeriesRecoveryTests
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "ARIMA MLE did not complete.");
-        AssertMleRecovery("ARIMA", model, truth, mle.BestParameterSet.Values, 0.15, 0.10);
+        AssertArimaMleRecoveryAgainstIndependentOracle(
+            model,
+            truth,
+            mle.BestParameterSet.Values,
+            oracle);
         AssertArimaPrediction(model, truth, fixture);
     }
 
@@ -130,6 +135,20 @@ public class Phase5TimeSeriesRecoveryTests
         Assert.AreEqual(MaximumVerificationSteps, fixture.GetProperty("dates").GetArrayLength());
         Assert.AreEqual(MaximumVerificationSteps, fixture.GetProperty("raw").GetArrayLength());
         return fixture.Clone();
+    }
+
+    /// <summary>
+    /// Loads the independently generated conditional ARIMA MLE and profile-likelihood oracle.
+    /// </summary>
+    /// <returns>A detached JSON oracle element.</returns>
+    private static JsonElement LoadArimaMleOracle()
+    {
+        string path = Path.Combine(
+            AppContext.BaseDirectory,
+            "VerificationData",
+            "phase5-arima-mle-recovery-oracle.json");
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+        return document.RootElement.Clone();
     }
 
     /// <summary>
@@ -245,6 +264,100 @@ public class Phase5TimeSeriesRecoveryTests
         }
         Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(estimated)), $"{label} recovered likelihood.");
         Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), $"{label} recovered prior.");
+    }
+
+    /// <summary>
+    /// Asserts the unchanged ARIMA MLE against the independently committed R optimum and profiles.
+    /// </summary>
+    /// <param name="model">The fitted ARIMA model.</param>
+    /// <param name="truth">The generating parameters from the recovery fixture.</param>
+    /// <param name="estimated">The C# conditional maximum-likelihood estimate.</param>
+    /// <param name="oracle">The committed independent R oracle.</param>
+    private static void AssertArimaMleRecoveryAgainstIndependentOracle(
+        ARIMA model,
+        double[] truth,
+        double[] estimated,
+        JsonElement oracle)
+    {
+        JsonElement metadata = oracle.GetProperty("metadata");
+        Assert.AreEqual("TS-PHASE5-ARIMA-MLE-001", metadata.GetProperty("artifact_id").GetString());
+        Assert.AreEqual("PHASE5-RECOVERY-ARIMA-MLE", metadata.GetProperty("finding").GetString());
+        Assert.AreEqual(0.95, metadata.GetProperty("profile_confidence_level").GetDouble(), 0.0);
+
+        JsonElement tolerances = metadata.GetProperty("tolerances");
+        double coefficientTolerance = tolerances.GetProperty("optimizer_coefficient_absolute").GetDouble();
+        double scaleTolerance = tolerances.GetProperty("optimizer_scale_absolute").GetDouble();
+        double likelihoodTolerance = tolerances.GetProperty("log_likelihood_absolute").GetDouble();
+        Assert.AreEqual(1E-3, coefficientTolerance, 0.0, "Predeclared coefficient tolerance.");
+        Assert.AreEqual(1E-5, scaleTolerance, 0.0, "Predeclared scale tolerance.");
+        Assert.AreEqual(1E-5, likelihoodTolerance, 0.0, "Predeclared likelihood tolerance.");
+        Assert.AreEqual(
+            1E-12,
+            tolerances.GetProperty("deterministic_recurrence_absolute").GetDouble(),
+            0.0,
+            "Predeclared deterministic recurrence tolerance.");
+
+        JsonElement oracleFixture = oracle.GetProperty("fixture");
+        Assert.AreEqual(51037, oracleFixture.GetProperty("seed").GetInt32());
+        Assert.AreEqual(RecoveryBurnInSteps, oracleFixture.GetProperty("burn_in").GetInt32());
+        Assert.AreEqual(MaximumVerificationSteps, oracleFixture.GetProperty("raw_sample_size").GetInt32());
+        Assert.AreEqual(999, oracleFixture.GetProperty("difference_count").GetInt32());
+        Assert.AreEqual(998, oracleFixture.GetProperty("conditional_likelihood_count").GetInt32());
+        Assert.AreEqual("Logarithmic", oracleFixture.GetProperty("transform").GetString());
+        Assert.AreEqual(1, oracleFixture.GetProperty("differencing_order").GetInt32());
+        Assert.AreEqual(1, oracleFixture.GetProperty("ar_order").GetInt32());
+        Assert.AreEqual(1, oracleFixture.GetProperty("ma_order").GetInt32());
+        Assert.IsFalse(oracleFixture.GetProperty("include_intercept").GetBoolean());
+
+        JsonElement oracleTruth = oracleFixture.GetProperty("truth");
+        double[] committedTruth =
+        [
+            oracleTruth.GetProperty("phi").GetDouble(),
+            oracleTruth.GetProperty("theta").GetDouble(),
+            oracleTruth.GetProperty("sigma").GetDouble(),
+        ];
+        CollectionAssert.AreEqual(truth, committedTruth, "Oracle and recovery fixture truths differ.");
+
+        JsonElement conditionalMle = oracle.GetProperty("conditional_mle");
+        double[] expected =
+        [
+            conditionalMle.GetProperty("phi").GetDouble(),
+            conditionalMle.GetProperty("theta").GetDouble(),
+            conditionalMle.GetProperty("sigma").GetDouble(),
+        ];
+        Assert.AreEqual(expected.Length, estimated.Length, "ARIMA parameter count.");
+        for (int index = 0; index < expected.Length; index++)
+        {
+            double tolerance = index == expected.Length - 1 ? scaleTolerance : coefficientTolerance;
+            Assert.AreEqual(
+                expected[index],
+                estimated[index],
+                tolerance,
+                $"ARIMA MLE parameter {model.Parameters[index].Name} versus independent R optimum.");
+        }
+
+        double dataLogLikelihood = model.DataLogLikelihood(estimated);
+        Assert.AreEqual(
+            conditionalMle.GetProperty("data_log_likelihood").GetDouble(),
+            dataLogLikelihood,
+            likelihoodTolerance,
+            "ARIMA data log likelihood versus independent R oracle.");
+
+        JsonElement profileIntervals = oracle.GetProperty("profile_likelihood_95");
+        string[] parameterKeys = ["phi", "theta", "sigma"];
+        for (int index = 0; index < parameterKeys.Length; index++)
+        {
+            JsonElement interval = profileIntervals.GetProperty(parameterKeys[index]);
+            double lower = interval[0].GetDouble();
+            double upper = interval[1].GetDouble();
+            Assert.IsTrue(
+                truth[index] >= lower && truth[index] <= upper,
+                $"ARIMA generating {parameterKeys[index]} is outside independent 95% profile interval " +
+                $"[{lower:G17}, {upper:G17}].");
+        }
+
+        Assert.IsTrue(double.IsFinite(dataLogLikelihood), "ARIMA recovered data likelihood.");
+        Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), "ARIMA recovered prior.");
     }
 
     /// <summary>
