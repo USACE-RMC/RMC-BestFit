@@ -51,7 +51,9 @@ The source-audited recovery supplement pins Numerics commit
 two- and three-component minimum/maximum fixtures through both BestFit MLE and Bayesian
 analysis, then adds two fixed-correlation cases. After the authorized MAP-initialization change,
 all 20 methods were rerun individually through the guarded runner. Fourteen passed and six
-Default-DEMCzs methods exposed unresolved findings; Phase 5 remains gated.
+Default-DEMCzs methods exposed supplemental findings. On 20 August 2026, the technical authority
+approved deferring those six findings for separate research without changing production behavior;
+they no longer block Phase 5 and were not rerun for that disposition.
 
 BestFit deliberately limits competing-risk models and analyses to one through three component
 distributions as an identifiability guard, matching the mixture-analysis limit. Constructor,
@@ -135,12 +137,13 @@ was changed in response to the results.
 ## Disposition
 
 TR-012 remains complete. Every supported dependency mode controls production simulation and has
-direct analytical rank/CDF evidence. The recovery supplement completed all 20 exact focused runs,
-but its six Default-DEMCzs findings keep the additional Phase 4 evidence gate open and Phase 5
-blocked. MAP initialization resolved the former separated three-Weibull R-hat finding but did not
-resolve the aggregate-identification, heterogeneous-ridge, correlated-dependence, or Gamma
-postprocessing findings. No distribution formula, seed default, public signature, DEMCzs sampling
-setting, or verification tolerance was changed in response to a failed cell.
+direct analytical rank/CDF evidence. The recovery supplement completed all 20 exact focused runs.
+Its six Default-DEMCzs findings are explicitly deferred, nonblocking research items covering
+separated-component/aggregate identification, heterogeneous ridges, correlated-dependence R-hat
+or ESS, and Gamma inverse-CDF uncertainty postprocessing. MAP initialization resolved the former
+separated three-Weibull R-hat finding. No distribution formula, seed default, public signature,
+DEMCzs sampling setting, fixture, or verification tolerance changed in response to a failed cell
+or in granting the deferral.
 
 ---
 

@@ -46,8 +46,9 @@ The runner rejects broad filters and requires exactly one TRX result.
 - **Blocked:** an external dependency, upstream correction, or scientific decision prevents completion.
 
 All 30 recovery-supplement methods and both existing TR-014 methods have been run individually
-under the execution rule. Twenty-three supplement methods and both TR-014 methods pass; seven
-supplement findings remain unresolved, so Phase 5 stays gated. The supplement pins Numerics
+under the execution rule. Twenty-four supplement methods and both TR-014 methods pass. The six
+remaining Bayesian competing-risk findings have an approved deferred-research disposition, so
+Phase 5 is open and in progress. The supplement pins Numerics
 `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk
 `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`.
 

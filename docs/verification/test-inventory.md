@@ -323,7 +323,7 @@ require finite R-hat below `1.1` and ESS above `100` for every parameter.
 |---|---|---|
 | `CompositeRecoveryTests.MixtureCdf_MatchesExactWeightedNormalSum` | exact weighted three-Normal CDF | Passed - 0.354 s |
 | `CompositeRecoveryTests.MixtureQuantiles_MatchPublishedRMistrTable45` | 25 published R `mistr` Table 45 quantiles | Passed - 0.387 s |
-| `CompositeRecoveryTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` | direct Normal CDF and probability-dependent inversion bound | Failed - 0.174 s; extreme-tail residual `1.02566838E-8` |
+| `CompositeRecoveryTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` | direct Normal CDF and probability-dependent inversion bound | Passed - 0.770 s exact rerun on 20 August 2026; prior logarithmic-X run failed with extreme-tail residual `1.02566838E-8` |
 | `CompositeRecoveryTests.MaximumComposite_MatchesIndependentAndComonotonicClosedForms` | independent product and comonotonic minimum identities | Passed - 0.432 s |
 | `CompositeRecoveryTests.MinimumComposite_MatchesIndependentAndComonotonicClosedForms` | independent union and comonotonic maximum identities | Passed - 0.444 s |
 | `CompositeRecoveryTests.CombinationRules_SatisfyTheoreticalBracketingAndRemainDistinct` | mixture/maximum/minimum brackets and material separation | Passed - 0.547 s |
@@ -336,3 +336,8 @@ The three posterior methods use explicit 5,000-draw `MCMCResults`, 20 determinis
 per child, seed 20260803, five nonexceedance probabilities, 90% limits, mean tolerance `0.02`, and
 limit tolerance `0.05`. Each also requires the fixed parent curve to remain inside its band.
 Analytical formulas and the short published table are embedded; no new oracle artifact is added.
+
+The Composite supplement now passes 10/10 methods. The six failed Default-DEMCzs competing-risk
+cells remain recorded above and have an approved deferred-research disposition; they were not
+rerun for the Phase 5 prerequisite and no sampler, seed, prior, fixture, formula, or tolerance was
+changed. The combined supplement checkpoint is therefore 24/30 passed and six deferred findings.

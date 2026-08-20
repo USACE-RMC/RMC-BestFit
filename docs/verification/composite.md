@@ -87,7 +87,7 @@ production composite constructor.
 |---|---|---|---|
 | `CompositeRecoveryTests.MixtureCdf_MatchesExactWeightedNormalSum` | weighted three-Normal CDF identity | `1E-12` absolute | Passed - 0.354 s |
 | `CompositeRecoveryTests.MixtureQuantiles_MatchPublishedRMistrTable45` | 25 R `mistr` Table 45 quantiles | 1% relative | Passed - 0.387 s |
-| `CompositeRecoveryTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` | analytical CDF at each production quantile | `max(1E-8, 5E-3 * min(AEP, 1-AEP))` | Failed - 0.174 s; `1.02566838E-8` residual at AEP `2E-6` exceeds `1E-8` |
+| `CompositeRecoveryTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` | analytical CDF at each production quantile | `max(1E-8, 5E-3 * min(AEP, 1-AEP))` | Passed - 0.770 s exact rerun, 20 August 2026; prior logarithmic-X run failed at AEP `2E-6` with residual `1.02566838E-8` |
 | `CompositeRecoveryTests.MaximumComposite_MatchesIndependentAndComonotonicClosedForms` | product and minimum child-CDF identities | `1E-10` absolute | Passed - 0.432 s |
 | `CompositeRecoveryTests.MinimumComposite_MatchesIndependentAndComonotonicClosedForms` | union and maximum child-CDF identities | `1E-10` absolute | Passed - 0.444 s |
 | `CompositeRecoveryTests.CombinationRules_SatisfyTheoreticalBracketingAndRemainDistinct` | mixture child envelope, maximum/minimum bounds, and material rule separation | `1E-12` slack; separation at least `0.10` | Passed - 0.547 s |
@@ -96,11 +96,13 @@ production composite constructor.
 | `CompositeRecoveryTests.MinimumPosterior_MatchesCompleteCartesianOracle` | three-child independent minimum product posterior | mean `0.02`; limits `0.05` | Passed - 4.766 s |
 | `CompositeRecoveryTests.CorrelationMatrix_MinimumAndMaximumMatchBivariateNormalOrthants` | two Normal(10, 1) medians at latent rho 0.6 | `1E-8` absolute | Passed - 0.347 s |
 
-All ten methods were executed individually. Nine passed. The inversion cell fails only at the
-most extreme AEP because BestFit constructs its production quantile search with a logarithmic
-X transform, while the pinned TotalRisk oracle uses its default untransformed X search. Changing
-that production search convention or the declared TotalRisk tolerance requires separate numerical
-authority; neither was altered during this run.
+All ten methods now pass. The inversion cell originally failed only at the most extreme AEP when
+the analysis used a logarithmic X search despite exposing no user-visible transform configuration.
+After `CompositeAnalysis` adopted the approved `XTransform.None` contract, the same exact method
+passed through `scripts/run-verification-test.ps1` without changing its fixture, formula, seed, or
+probability-dependent tolerance. The 20 August 2026 invocation built with zero warnings/errors,
+executed one test, produced one passing TRX under `TestResults/VerificationFocused/20260820-093600-*`,
+and ran the method in 0.770 s. The earlier residual remains recorded in the table as failure history.
 
 The posterior fixtures retain 5,000 draws per child by repeating 20 evenly spaced mean supports:
 9.8-10.2, 19.8-20.2, and 29.8-30.2, with standard deviations fixed at 2, 1, and 5. They use
@@ -122,9 +124,9 @@ duplicate those deterministic contracts as long-running methods.
 
 TR-013 and TR-015 remain complete with fast programmatic evidence. TR-014 retains its existing
 fast and independent numerical evidence, and both exact TR-014 methods passed again. The
-ten-method recovery supplement completed exact focused execution, but its one unresolved inversion
-finding keeps the additional Phase 4 evidence gate open and Phase 5 blocked. The complete
-Verification project was not run.
+ten-method recovery supplement now passes every method after the unchanged inversion cell passed
+its exact 20 August 2026 rerun under the approved `XTransform.None` contract. The Composite
+supplement no longer blocks Phase 5. The complete Verification project was not run.
 
 ---
 

@@ -1,4 +1,4 @@
-<!-- verification-plan-status: phase-4-in-progress -->
+<!-- verification-plan-status: phase-5-in-progress -->
 
 # RMC.BestFit Verification Finalization Plan
 
@@ -22,7 +22,7 @@ Implementation checkpoint (3 August 2026): BestFit scientific behavior is closed
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1, 2, 3, and the original Phase 4 findings are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement completed focused execution with 23 passes and seven unresolved findings, so it continues to gate Phase 5. TR-014 implements the approved product-posterior resampling policy in Composite and CFA while leaving `BivariateAnalysis` unchanged.
+The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1, 2, 3, and the original Phase 4 findings are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement now records 24 passes and six explicitly deferred Bayesian findings after the unchanged extreme-tail Composite inversion method passed its 20 August 2026 focused rerun. The approved disposition makes those six supplemental research findings nonblocking and opens Phase 5 without changing a sampler, seed, prior, formula, or tolerance. TR-014 implements the approved product-posterior resampling policy in Composite and CFA while leaving `BivariateAnalysis` unchanged.
 
 Reconciled checkpoint (3 August 2026): Core 3,134/3,134, UI 571/571, App 428/428, and Numerics 2,072/2,072 on each of net481/net8/net9/net10 pass with zero failures. Strict XML documentation and Verification compilation gates pass. Both exact TR-014 methods pass separately through the guarded runner. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
 
@@ -84,7 +84,7 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 
 ### Current Phase Checkpoint
 
-Phases 1 through 3 and the original Phase 4 finding scopes are formally closed. Phase 4 includes point-process TR-004/TR-005, mixture TR-006/TR-007/TR-008, competing-risk simulation TR-012, composite criterion handling TR-013, independent Composite/CFA posterior resampling TR-014, and correlation-matrix configuration TR-015. The recovery supplement has now run all 20 competing-risk and ten composite methods individually through the guarded runner; its seven unresolved findings keep the supplemental Phase 4 gate open and prevent Phase 5 from starting.
+Phases 1 through 3 and Phase 4 are formally closed for their approved scopes. Phase 4 includes point-process TR-004/TR-005, mixture TR-006/TR-007/TR-008, competing-risk simulation TR-012, composite criterion handling TR-013, independent Composite/CFA posterior resampling TR-014, and correlation-matrix configuration TR-015. The recovery supplement has run all 20 competing-risk and ten composite methods individually through the guarded runner. All ten Composite methods pass, and the six remaining Bayesian competing-risk findings have an approved deferred-research disposition. Phase 5 is open and in progress.
 
 Completed Phase 2 findings:
 
@@ -276,7 +276,7 @@ Phase exit criteria:
 
 ## Phase 4 - Point Processes and Composite Models
 
-Status: original findings complete for the approved scope; recovery supplement focused execution complete with seven unresolved findings. The point-process subset (TR-004/TR-005), mixture subset (TR-006/TR-007/TR-008), competing-risk simulation (TR-012), criterion handling (TR-013), independent posterior resampling (TR-014), and correlation-matrix configuration (TR-015) remain closed with direct evidence. Phase 5 stays gated pending disposition of the supplement findings.
+Status: complete for the approved scope. The point-process subset (TR-004/TR-005), mixture subset (TR-006/TR-007/TR-008), competing-risk simulation (TR-012), criterion handling (TR-013), independent posterior resampling (TR-014), and correlation-matrix configuration (TR-015) remain closed with direct evidence. The Composite supplement now passes all ten methods. The six remaining Bayesian competing-risk findings have an approved deferred-research disposition and do not block Phase 5.
 
 Findings and required direction:
 
@@ -296,17 +296,17 @@ Recovery supplement implementation:
 - `CompetingRiskRecoveryTests` adds ten MLE and ten Bayesian methods reproducing the eight pinned Numerics min/max fixtures plus two latent-correlation-0.6 cases. Generation uses seed 12345 and 1,000/1,500 observations. Every case requires true-parameter likelihood parity at `1E-10`, successful finite estimation, and parent-CDF recovery at `0.05` or `0.06`. The approved hybrid parameter gate is limited to the identifiable two-Weibull shapes and separated two-Normal means.
 - Bayesian recovery always uses the unchanged production DEMCzs sampling defaults and asserts them before and after sampling. Current resolved defaults are 3,500 iterations, 1,750 warmup, 10,000 outputs, 90% intervals, posterior mean, seed 12345, and dimension-scaled chain/thinning/initialization values. `CompetingRiskAnalysis` supplies an authorized MAP-centered `UserDefined` population: bounded posterior Hessian, initialization-only regularized Moore-Penrose fallback for singular information, fixed covariance inflation 1.5, sampler-seed draws, and randomized fallback. Focused methods assert that successful post-run results retained MAP initialization.
 - `CompositeRecoveryTests` adds ten analytical, published-table, closed-form, Cartesian-posterior, and correlation-orthant methods. Three posterior cells use explicit 5,000-draw child `MCMCResults`, 20-point mean supports, seed 20260803, five probabilities, mean tolerance `0.02`, limit tolerance `0.05`, and fixed-parent band containment.
-- All 30 new methods were rerun one at a time after MAP initialization. All ten MLE methods, four Default-DEMCzs methods, and nine Composite methods pass. Six Bayesian cells and one extreme-tail Composite inversion cell fail their predeclared gates. MAP initialization resolved the former separated three-Weibull R-hat failure, while correlated two-Weibull ESS now fails; the total remains 23 passes and seven findings. Analytical formulas and the short R `mistr` table are embedded, so no new generated artifact or manifest entry is required.
+- All 30 new methods were initially rerun one at a time after MAP initialization, producing 23 passes and seven findings. After `CompositeAnalysis` adopted its user-visible `XTransform.None` contract, the unchanged `CompositeRecoveryTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` method passed an exact guarded rerun on 20 August 2026 in 0.770 s at its original probability-dependent tolerance. The supplement therefore records 24 passing methods and six deferred Bayesian competing-risk findings. MAP initialization resolved the former separated three-Weibull R-hat failure, while the remaining findings cover aggregate identification, heterogeneous ridges, correlated-dependence diagnostics, and Gamma uncertainty postprocessing. Analytical formulas and the short R `mistr` table are embedded, so no new generated artifact or manifest entry is required.
 
 Phase exit criteria:
 
 - Point-process simulation, mixture likelihoods, zero-inflation, composite weighting, and competing-risk dependency handling are internally coherent and verified against analytical or simulation fixtures.
 - Independent Composite/CFA posterior propagation passes fast seed/range/immutability/cache contracts and separately guarded Cartesian and closed-form oracles. Saved pre-TR-014 summaries require reprocessing.
-- Before Phase 5, resolve or receive an approved disposition for the seven supplement findings without changing algorithms, defaults, seeds, or tolerances implicitly. The two existing TR-014 methods pass their repeated exact runs. Run the three mandatory fast Core/UI/App suites before any final commit because the working unit also contains the current TR-014 core/UI work.
+- The Composite finding is resolved by its unchanged exact rerun, and the six Bayesian competing-risk findings have an approved deferred-research disposition. No algorithm, default, seed, prior, or tolerance changed to open Phase 5. The two existing TR-014 methods pass their repeated exact runs.
 
 ## Phase 5 - Time-Series Models
 
-Status: planned; gated by the Phase 4 competing-risk/composite recovery supplement.
+Status: in progress. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
 
 Findings and required direction:
 
@@ -436,7 +436,7 @@ Read docs/verification/verification-finalization-plan.md first, then docs/techni
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: Phase 0 infrastructure is operational; Phases 1 through 3 and the original Phase 4 findings are closed for their approved scopes. TR-014 independently resamples actual retained Composite and CFA sources with the existing seed, while `BivariateAnalysis` remains unchanged and conditional on fixed marginals. The 30-method recovery supplement completed focused execution with 23 passes and seven unresolved findings, so Phase 5 remains gated. Bulletin 17C remains a valid composite child for Equal/AIC/BIC/RMSE and receives zero weight rather than type rejection when DIC/WAIC/LOOIC is unavailable and another child is usable.
+Current checkpoint: Phase 0 infrastructure is operational; Phases 1 through 4 are closed for their approved scopes, and Phase 5 is in progress. TR-014 independently resamples actual retained Composite and CFA sources with the existing seed, while `BivariateAnalysis` remains unchanged and conditional on fixed marginals. The 30-method recovery supplement records 24 passes and six explicitly deferred Bayesian competing-risk findings after the unchanged extreme-tail Composite method passed its 20 August 2026 guarded rerun. Bulletin 17C remains a valid composite child for Equal/AIC/BIC/RMSE and receives zero weight rather than type rejection when DIC/WAIC/LOOIC is unavailable and another child is usable.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
