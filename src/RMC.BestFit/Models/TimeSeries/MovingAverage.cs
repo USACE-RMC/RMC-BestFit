@@ -1157,7 +1157,26 @@ namespace RMC.BestFit.Models
                 result[t] = value;
             }
 
-            return result;
+            return InverseTransformGeneratedSeries(result);
+        }
+
+        /// <summary>
+        /// Converts a completed model-scale simulation to the raw response scale.
+        /// </summary>
+        /// <param name="values">The complete simulated model-scale series.</param>
+        /// <returns>The raw-scale series, or the original array when no transform is configured.</returns>
+        private double[] InverseTransformGeneratedSeries(double[] values)
+        {
+            if (TransformType == Transform.None)
+                return values;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = TransformType == Transform.YeoJohnson
+                    ? YeoJohnson.InverseTransform(values[i], _lambda)
+                    : BoxCox.InverseTransform(values[i], _lambda);
+            }
+            return values;
         }
 
         #endregion

@@ -308,6 +308,10 @@ Phase exit criteria:
 
 Status: in progress. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
 
+Execution cap (20 August 2026): every remaining Phase 5 Verification fixture/run must use no more
+than 1,000 simulation, time-series, or sampling steps. The generator moment cells use exactly
+1,000 for consistency with existing repository recovery tests.
+
 Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 App public/protected signature lines with committed SHA-256 hashes. Legacy AR, MA, ARIMA, ARIMAX, and pre-v2 `ARMAX` persistence contracts pass; the App transform selector retains its existing XAML/property path and enum values. Core passes 3,180/3,180, UI 576/576, App 431/431, and API 496/496. The strict Debug solution build with `EnforceXmlDocumentation=true` passes with zero warnings/errors; the separately documented validation script is absent from this checkout. No production code or Verification method changed in this package.
 
 Findings and required direction:
@@ -321,7 +325,11 @@ Findings and required direction:
   once, and map component `k` to raw slot `k+d`. Hand `d=1`/`d=2`, transformed, component,
   horizon, and exact `d=0` fixed-seed regressions pass, as does the analytical recurrence oracle
   at `1E-10`.
-- TR-038: simulate ARIMA on the transformed/differenced scale, integrate, then inverse-transform once.
+- TR-038: complete. AR/MA recursions remain entirely on transformed model scale until one final
+  inverse transform. ARIMA generates exactly `max(0,sampleSize-d)` differences, integrates from
+  observed or zero transformed anchors, inverse-transforms once, and returns exactly `sampleSize`.
+  Six fast contracts and two exact algebraic/1,000-step moment methods pass; the superseded
+  50,000-step logarithmic overflow failure remains in the report.
 - TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
 - TR-040: complete. AR, MA, ARIMA, and ARIMAX scalar, pointwise, component, and prior paths reject non-finite or non-positive innovation scales with exact negative infinity while preserving decomposed shape/metadata. Fast parity and the analytical Gaussian/prior oracle pass.
 - TR-041: complete. ARIMAX model step `k` maps to raw response index `k+d`; training contains

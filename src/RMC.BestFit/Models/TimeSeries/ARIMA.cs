@@ -1415,20 +1415,22 @@ namespace RMC.BestFit.Models
             double sigma = Parameters[paramIndex].Value;
             var normal = new Numerics.Distributions.Normal(0, sigma);
 
-            var series = new double[sampleSize];
-            var epsilon = new double[sampleSize];
+            int modelSampleSize = Math.Max(0, sampleSize - DOrder);
+            var series = new double[modelSampleSize];
+            var epsilon = new double[modelSampleSize];
 
-            for (int t = 0; t < sampleSize; t++)
+            for (int t = 0; t < modelSampleSize; t++)
             {
                 epsilon[t] = normal.InverseCDF(rng.NextDouble());
             }
 
-            for (int t = 0; t < Math.Max(POrder, QOrder); t++)
+            int maxOrder = Math.Max(POrder, QOrder);
+            for (int t = 0; t < Math.Min(maxOrder, modelSampleSize); t++)
             {
                 series[t] = intercept + epsilon[t];
             }
 
-            for (int t = Math.Max(POrder, QOrder); t < sampleSize; t++)
+            for (int t = maxOrder; t < modelSampleSize; t++)
             {
                 double value = intercept;
 
@@ -1446,7 +1448,77 @@ namespace RMC.BestFit.Models
                 series[t] = value;
             }
 
-            return series;
+            double[] transformedLevels = DOrder > 0
+                ? IntegrateGeneratedDifferences(series, sampleSize)
+                : series;
+            return InverseTransformGeneratedSeries(transformedLevels);
+        }
+
+        /// <summary>
+        /// Reconstructs transformed levels from generated highest-order differences using observed
+        /// transformed anchors when data are attached and zero transformed anchors otherwise.
+        /// </summary>
+        /// <param name="differences">The generated values on the highest-order difference scale.</param>
+        /// <param name="sampleSize">The requested raw-scale output length.</param>
+        /// <returns>Exactly <paramref name="sampleSize"/> transformed levels.</returns>
+        /// <exception cref="InvalidOperationException">Attached data do not provide every required anchor.</exception>
+        private double[] IntegrateGeneratedDifferences(double[] differences, int sampleSize)
+        {
+            int anchorCount = Math.Min(DOrder, sampleSize);
+            var anchors = new double[anchorCount];
+            TimeSeries? observedAnchors = _trainingTimeSeries;
+            if (observedAnchors != null && observedAnchors.Count > 0)
+            {
+                if (observedAnchors.Count < anchorCount)
+                    throw new InvalidOperationException($"At least {anchorCount} transformed observations are required as generation anchors.");
+                for (int i = 0; i < anchorCount; i++)
+                    anchors[i] = observedAnchors[i].Value;
+            }
+
+            if (sampleSize <= DOrder)
+                return anchors;
+
+            var initialValues = new double[DOrder];
+            var workingAnchors = (double[])anchors.Clone();
+            initialValues[0] = workingAnchors[0];
+            int workingCount = DOrder;
+            for (int level = 1; level < DOrder; level++)
+            {
+                for (int i = 0; i < workingCount - 1; i++)
+                    workingAnchors[i] = workingAnchors[i + 1] - workingAnchors[i];
+                workingCount--;
+                initialValues[level] = workingAnchors[0];
+            }
+
+            double[] current = (double[])differences.Clone();
+            for (int level = DOrder - 1; level >= 0; level--)
+            {
+                var integrated = new double[current.Length + 1];
+                integrated[0] = initialValues[level];
+                for (int i = 0; i < current.Length; i++)
+                    integrated[i + 1] = integrated[i] + current[i];
+                current = integrated;
+            }
+            return current;
+        }
+
+        /// <summary>
+        /// Converts a completed transformed-level simulation to the raw response scale.
+        /// </summary>
+        /// <param name="values">The complete simulated transformed-level series.</param>
+        /// <returns>The raw-scale series, or the original array when no transform is configured.</returns>
+        private double[] InverseTransformGeneratedSeries(double[] values)
+        {
+            if (TransformType == Transform.None)
+                return values;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = TransformType == Transform.YeoJohnson
+                    ? YeoJohnson.InverseTransform(values[i], _lambda)
+                    : BoxCox.InverseTransform(values[i], _lambda);
+            }
+            return values;
         }
 
         #endregion

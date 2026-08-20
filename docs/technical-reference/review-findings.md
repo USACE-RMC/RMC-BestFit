@@ -51,7 +51,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Confirmed defect; corrected | Complete | Passed - fast decomposition and analytical oracle | [Report](../verification/time-series.md#tr-035--jeffreys-prior-metadata) | 2026-08-20 |
 | [TR-036](#tr-036) | Transform fitting holdout leakage | High | Confirmed defect; corrected | Complete | Passed - fast lifecycle and R training-only oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Confirmed defect; corrected | Complete | Passed - recurrence, compatibility, and fixed-seed regressions | [Report](../verification/time-series.md#tr-037--arima-and-arimax-prediction-reintegration) | 2026-08-20 |
-| [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Confirmed defect; corrected | Complete | Passed - transform/order regressions and algebraic/moment oracles | [Report](../verification/time-series.md#tr-038--ar-ma-and-arima-transformed-generation) | 2026-08-20 |
 | [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
 | [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Confirmed defect; corrected | Complete | Passed - date/index regressions and independent R oracle | [Report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment) | 2026-08-20 |
@@ -675,17 +675,29 @@ and TR-039; final ARIMA/ARIMAX recovery adds one-step predictive checks in Packa
 <a id="tr-038"></a>
 ## TR-038 — ARIMA Simulation Ignores Differencing and Transformations
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. AR and MA complete their recursion on transformed model
+scale before one inverse transform. ARIMA generates `max(0,sampleSize-d)` transformed differences,
+integrates them from observed transformed anchors when data are attached or zero anchors otherwise,
+and inverse-transforms the complete `sampleSize` vector once.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Six deterministic fast contracts cover logarithmic, Box-Cox,
+and Yeo-Johnson recurrences, attached/zero anchors, `sampleSize<=d`, lengths, and exact
+`Transform.None`/`d=0` seeds. Two exact guarded algebraic/Monte Carlo methods pass at `1E-10` and
+the four-standard-error/3% moment rule using the user-directed 1,000-step cap.
 
 **Evidence.** `ARIMA.GenerateRandomValues()` simulates a stationary ARMA recursion from intercept, AR, MA, and scale, then returns it directly. It does not apply `DOrder`, inverse Box-Cox/Yeo-Johnson transformation, or the configured initial conditions.
 
-**Impact.** Prior/posterior predictive checks and any `ISimulatable<double[]>` consumer generate from a different model whenever `d>0` or `TransformType != None`.
+**Impact.** Corrected for AR, MA, and ARIMA: `ISimulatable<double[]>` consumers now receive raw-
+scale values from the configured transformed/differenced model and the requested output length.
 
-**Follow-up.** Simulate innovations on the fitted transformed/differenced scale, integrate with an explicit initial-condition policy, inverse-transform last, and verify distributional properties for every transform and `d`.
+**Correction.** Existing signatures, validation, parameter order, and `Transform.None`/`d=0`
+fixed-seed sequences are unchanged. The initial 50,000-step logarithmic ARIMA moment fixture
+overflowed the finite raw double range; that failure remains documented. The explicit 1,000-step
+direction changed only verification sample count, not its seeds, model parameters, formulas, or
+acceptance rules. See
+[time-series verification](../verification/time-series.md#tr-038--ar-ma-and-arima-transformed-generation).
 
 <a id="tr-039"></a>
 ## TR-039 — ARIMAX Simulation Mixes Original and Transformed Scales

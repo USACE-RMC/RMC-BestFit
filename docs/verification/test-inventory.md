@@ -426,3 +426,21 @@ The complete package gates pass Core 3,213/3,213, UI 578/578, App 440/440, and A
 The strict Debug solution build reports zero warnings/errors, and UI/App signature baselines remain
 exact. No external artifact is required for the embedded analytical recurrence; the verification
 source hash and exact command/TRX evidence are recorded in [Time-Series Verification](time-series.md).
+
+## TR-038 AR/MA/ARIMA transformed generation
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `TimeSeriesGenerationTransformTests.ArLogarithmicGeneration_InverseTransformsCompletedModelRecurrence` | Core Tests | Fixed-seed AR(2) model-scale recurrence followed by one exponential inverse | `1E-12`; passed |
+| `TimeSeriesGenerationTransformTests.MaBoxCoxGeneration_InverseTransformsCompletedModelRecurrence` | Core Tests | Fixed-seed MA(2) recurrence followed by manual-lambda Box-Cox inverse | `1E-12`; passed |
+| `TimeSeriesGenerationTransformTests.ArimaYeoJohnsonD1Generation_IntegratesThenInverseTransforms` | Core Tests | Fixed ARMA differences, observed transformed anchor, complete integration, then Yeo-Johnson inverse | `1E-12`; passed |
+| `TimeSeriesGenerationTransformTests.ArimaD2Generation_UsesObservedOrZeroTransformedAnchors` | Core Tests | Attached first two transformed levels versus zero-anchor polynomial | `1E-12`; passed |
+| `TimeSeriesGenerationTransformTests.ArimaGeneration_SampleSizeAtOrBelowD_ReturnsRequestedAnchors` | Core Tests | Requested observed/zero anchors only, exact length, no model-scale values | `1E-12`; passed |
+| `TimeSeriesGenerationTransformTests.NoneD0FixedSeedGeneration_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change AR, MA, and ARIMA `Transform.None`/`d=0` arrays | Exact double equality; passed |
+| `Phase5TimeSeriesVerificationTests.ArAndMaTransformedGeneratorsMatchIndependentOracle` | Verification | Independent exponential/Box-Cox algebra plus 1,000-step model-scale Gaussian moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
+| `Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle` | Verification | Independent Yeo-Johnson/integration algebra plus 1,000 first-difference moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
+
+The package gates pass Core 3,219/3,219, UI 578/578, App 440/440, and API 498/498; the strict
+Debug build has zero warnings/errors. The failed 50,000-step logarithmic overflow run and the
+subsequent explicit 1,000-step direction are retained in the time-series report. No full
+Verification run occurred.

@@ -99,9 +99,9 @@ AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log li
 | AR/MA, no fitted transform | Available subject to conditional-likelihood assumptions | Available subject to diagnostic checks |
 | AR/MA with fitted transform | Available with training-only frozen lambda | Back-transform is median-like; transform uncertainty omitted |
 | ARIMA/ARIMAX with $d=0$, no transform | Available | Available, subject to ARIMAX covariate scenario |
-| ARIMA with $d>0$ | Conditional likelihood can be inspected | Prediction available with verified reintegration; predictive simulation unavailable under TR-038 |
+| ARIMA with $d>0$ | Conditional likelihood can be inspected | Prediction and simulation available with verified reintegration and explicit observed/zero anchors |
 | ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Prediction available with verified reintegration/date alignment; predictive simulation unavailable under TR-039 |
-| ARIMA transformed/differenced simulation | — | Unavailable: TR-038 |
+| ARIMA transformed/differenced simulation | — | Available; full model-scale recursion, integration, then one inverse transform |
 | ARIMAX transformed/differenced simulation | — | Unavailable: TR-039 |
 
 This table is deliberately conservative because the software supports life-safety work. A finite result is not evidence that a defective path is safe to publish.

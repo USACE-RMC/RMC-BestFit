@@ -64,6 +64,10 @@ to lie outside the unit circle. The implementation checks the exact AR(1) and AR
 
 `Predict(parameters, forecastSteps, seed)` uses observed transformed lags inside the training window and recursively predicted lags afterward. With `seed=-1`, it returns the conditional-median path on the original scale after inverse transformation. A nonnegative seed adds independent Gaussian innovations after the $p$ seed observations. `ARAnalysis.CreateUncertaintyAnalysisResultsAsync()` combines posterior parameter draws with seeded innovation draws, so its bands are posterior-predictive bands, not parameter-only credible bands.
 
+`GenerateRandomValues(sampleSize, seed)` likewise completes the full AR recursion on transformed
+model scale and inverse-transforms the completed vector exactly once. The returned length is
+`sampleSize`; `Transform.None` retains the established seeded sequence bit for bit.
+
 For nonlinear inverse transforms, $g^{-1}\{E(Z)\}\ne E\{g^{-1}(Z)\}$; the deterministic back-transform is not a mean forecast and no lognormal/Box–Cox bias correction is applied. Forecasts also assume fixed parameters, a regular interval, no missing times, and no observation error.
 
 ## Compile-Checked Workflow
@@ -107,7 +111,10 @@ Run the analysis asynchronously, require satisfactory chain diagnostics, inspect
 
 ## Validation and Traceability
 
-Implementation: `Models/TimeSeries/AutoRegressive.cs` and `Analyses/TimeSeries/ARAnalysis.cs`. Fast tests cover construction, likelihood decomposition, transforms, prediction state, and analysis lifecycle. Long-running recovery/forecast sources reside under `RMC.BestFit.Verification/TimeSeriesModels/AutoRegressiveMLERecoveryTests.cs` and `TimeSeriesAnalysis/ARAnalysisTests.cs`; they were not executed during this documentation pass.
+Implementation: `Models/TimeSeries/AutoRegressive.cs` and `Analyses/TimeSeries/ARAnalysis.cs`.
+Fast tests cover construction, likelihood decomposition, transforms, prediction state, generation
+algebra, and analysis lifecycle. The focused generator oracle verifies inverse-transform algebra
+and 1,000 model-scale moment values; recovery remains in the Phase 5 matrix.
 
 ## References
 

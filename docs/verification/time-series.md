@@ -442,6 +442,80 @@ described above; after replacing that contradictory contract with exact approved
 final Core run passed. No seed, tolerance, prior, sampler, optimizer, likelihood definition, or
 convergence default changed. The complete Verification project was not run.
 
+## TR-038 — AR, MA, and ARIMA transformed generation
+
+**Disposition and behavior.** The confirmed generation defect is corrected. Previously, AR and
+MA returned their completed recursion directly on the transformed model scale, while ARIMA always
+simulated `sampleSize` stationary ARMA values and ignored both `DOrder` and `TransformType`. AR
+and MA now complete the entire recursion on model scale and inverse-transform the finished vector
+once. ARIMA generates exactly `max(0,sampleSize-d)` transformed highest-order differences,
+integrates the complete vector, and inverse-transforms once, returning exactly `sampleSize`
+values.
+
+When ARIMA has attached data, the first `min(d,sampleSize)` transformed observations are its
+integration anchors; without data, the transformed anchors are zero. If `sampleSize<=d`, the
+method returns only those requested observed/zero anchors after inverse transformation and draws
+no innovations. Existing validation, parameter order, method signatures, and positive sample-size
+requirement remain. `Transform.None` with `d=0` preserves the pre-change fixed-seed AR, MA, and
+ARIMA sequences bit for bit.
+
+**Compatibility.** No UI/App public or protected signature, XAML binding, property, enum, XML
+name, or persisted meaning changed. UI/App signature baselines pass in their complete suites.
+Core passes 3,219/3,219, UI 578/578, App 440/440, and API 498/498. The strict Debug solution
+build with `EnforceXmlDocumentation=true` passes all ten projects with zero warnings/errors in
+21.16 s. The separately documented XML-validation script remains absent.
+
+**Fast regressions.** `TimeSeriesGenerationTransformTests` owns six contracts: logarithmic AR
+inverse transformation after the complete recurrence; manual-lambda Box-Cox MA inversion;
+Yeo-Johnson ARIMA(1,1,1) integration before inversion; attached versus zero transformed anchors
+for `d=2`; attached/unattached behavior when `sampleSize<=d`; and exact fixed-seed
+`Transform.None`/`d=0` arrays for AR, MA, and ARIMA. Expected transformed paths and inverse
+formulas are evaluated independently at `1E-12` except the bit-for-bit golden arrays, which use
+exact double equality.
+
+**Independent numerical oracles.** The exact methods are
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArAndMaTransformedGeneratorsMatchIndependentOracle`
+and
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle`.
+The first uses the pre-change model-scale AR(2) seed `13579` and MA(2) seed `13580` sequences and
+independently applies exponential and Box-Cox (`lambda=0.5`) inverse formulas. The second uses the
+pre-change ARMA(1,1) seed `13581` model-scale sequence as seven first differences, an observed
+Yeo-Johnson transformed anchor of two, `lambda=0.6`, and independent integration/inversion.
+Algebraic acceptance is `1E-10` absolute.
+
+Each method also evaluates exactly 1,000 seeded independent model-scale Gaussian values. AR and
+MA use zero dynamic coefficients, intercept `0.2`, `sigma=0.6`, and seeds `52037`/`52038`; ARIMA
+uses `(p,d,q)=(0,1,0)`, intercept `0.2`, `sigma=0.5`, zero transformed anchor, logarithmic
+transformation, and seed `52039`. Mean acceptance is four Monte Carlo standard errors. Variance
+acceptance is the larger of four analytical variance standard errors or 3% relative. The
+1,000-step count supersedes the initially planned 50,000 values by explicit user direction on
+20 August 2026 and is consistent with other repository recovery fixtures. No external artifact or
+R package applies; the independent formulas are embedded. Verification source SHA-256 is
+`9ED5A63D199887D156A2A2268D27AA251F688E7B141859D6F38FCBFFB0BDE477`.
+
+**Execution evidence and failure history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk
+3.6.4 built against the configured local Numerics project. From commit `3d79c31` plus the scoped
+Package 7 diff, the final guarded commands were:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArAndMaTransformedGeneratorsMatchIndependentOracle'
+
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle'
+```
+
+With the approved 1,000-step fixtures, the methods passed 1/1 in 0.199 s and 1/1 in 0.204 s. Their
+TRX directories begin `20260820-122714-...` and `20260820-122728-...`. Before that direction, the
+AR/MA method passed its 50,000-value fixture in 0.363 s, but the ARIMA method failed: a
+positive-drift 50,000-step logarithmic random walk exceeded the finite double range after inverse
+transformation, consecutive infinities yielded a NaN recovered difference, and the sample mean
+was NaN rather than `0.2` within `0.00894427190999916`. That failed TRX remains under
+`20260820-120231-...`; it was not erased or reclassified as production evidence. The correction
+changed only the user-directed sample count to 1,000. Seeds, generating parameters, formulas,
+tolerances, production algorithms, priors, samplers, and convergence defaults were unchanged.
+The complete Verification project was not run.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
@@ -449,7 +523,7 @@ convergence default changed. The complete Verification project was not run.
 | TR-035 Jeffreys component type | Complete | Three Core metadata/decomposition regressions pass | Analytical four-scale oracle passes 1/1 at `1E-12` |
 | TR-036 training-only transform fitting | Complete | Core holdout/state/clone plus UI XML/copy/undo and API mapping pass | R training-only profile oracle passes 1/1 at fixed cross-language tolerance; transformed recovery remains Package 10 |
 | TR-037 reintegration index | Complete | ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, and `d=0` golden regressions pass | Hand recurrence oracle passes 1/1 at `1E-10`; predictive recovery checks remain Package 10 |
-| TR-038 AR/MA/ARIMA generation | Approved; implementation pending | Planned fixed-seed and transform-order tests | Planned algebraic and Monte Carlo oracles |
+| TR-038 AR/MA/ARIMA generation | Complete | Six transform/order/anchor/length and exact legacy-seed regressions pass | Two algebraic plus 1,000-step moment methods pass 1/1; failed 50,000-step overflow history retained |
 | TR-039 ARIMAX generation | Approved; implementation pending | Planned scale/order/date tests | Planned algebraic, Monte Carlo, and recovery evidence |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
 | TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1 at `1E-10`; recovery remains Package 10 |

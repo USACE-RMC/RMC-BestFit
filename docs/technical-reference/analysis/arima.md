@@ -77,10 +77,13 @@ component step $k$ is stored at raw slot $k+d$. This behavior closes
 [TR-037](../review-findings.md#tr-037); `Transform.None` with $d=0$ retains its pre-correction
 fixed-seed values bit for bit.
 
-`GenerateRandomValues` still ignores $d$ and the configured transform
-([TR-038](../review-findings.md#tr-038)). Consequently, estimation and `Predict` are available
-subject to the conditional-model assumptions, but prior/posterior predictive simulation is not
-scientifically usable when $d>0$ or `TransformType != None` until TR-038 closes.
+`GenerateRandomValues(sampleSize, seed)` now simulates exactly
+$\max(0,\text{sampleSize}-d)$ highest-order differences on transformed model scale. With attached
+data, the first $\min(d,\text{sampleSize})$ transformed observations are anchors; without data,
+the anchors are zero on transformed scale. The complete path is integrated before one inverse
+transform. Requests with `sampleSize<=d` return only the requested anchors after inverse
+transformation. This closes [TR-038](../review-findings.md#tr-038) while retaining the exact
+`Transform.None`, $d=0$ seeded sequence.
 
 ## Compile-Checked Configuration
 
@@ -119,8 +122,7 @@ private static ARIMAAnalysis ConfigureArimaAnalysis()
 }
 ```
 
-This block demonstrates the verified prediction API for $d=1$. Do not use its production
-generator for predictive checks until TR-038 closes.
+This block demonstrates the verified prediction and generation order for $d=1$.
 
 ## Assumptions, Diagnostics, and Evidence
 
@@ -129,8 +131,9 @@ The model assumes regular spacing, fixed coefficients, Gaussian homoscedastic in
 Implementation: `Models/TimeSeries/ARIMA.cs`; orchestration:
 `Analyses/TimeSeries/ARIMAAnalysis.cs`. Fast tests verify `d=1` linear and `d=2` quadratic
 reintegration, transformed prediction, output/component alignment, and exact $d=0$ fixed-seed
-compatibility. The focused analytical hand-recurrence method passes at `1E-10`; integrated
-parameter recovery remains part of the Phase 5 recovery matrix.
+compatibility. Generation tests additionally verify transformed recurrence, observed/zero anchors,
+`sampleSize<=d`, and exact legacy sequences. Focused prediction and generator methods pass their
+algebraic and 1,000-step moment rules; integrated parameter recovery remains in the Phase 5 matrix.
 
 ## References
 

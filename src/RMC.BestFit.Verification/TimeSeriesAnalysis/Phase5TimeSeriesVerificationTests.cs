@@ -374,6 +374,151 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
+    /// Verifies transformed AR and MA generators against fixed model-scale recurrences and
+    /// independently evaluated inverse-transform and Monte Carlo moment oracles.
+    /// </summary>
+    /// <remarks>
+    /// The algebraic acceptance tolerance is 1E-10. Each Monte Carlo check uses 1,000 seeded,
+    /// independent model-scale values. The sample mean must be within four standard errors and
+    /// the sample variance within the larger of four standard errors or three percent relative.
+    /// </remarks>
+    [TestMethod]
+    public void ArAndMaTransformedGeneratorsMatchIndependentOracle()
+    {
+        const double algebraicTolerance = 1E-10;
+        double[] arModelScale =
+        {
+            0.5275903734293788, 0.19367432545682162, 0.598464731025482,
+            0.8573412905998781, 0.3188682234957716, 0.9177848551790461,
+            2.6350006057479343, 2.635215407976874,
+        };
+        var ar = new AutoRegressive
+        {
+            Order = 2,
+            IncludeIntercept = true,
+            TransformType = Transform.Logarithmic,
+        };
+        ar.SetParameterValues(new[] { 1.25, 0.35, -0.15, 0.75 });
+        AssertArrayEqual(
+            arModelScale.Select(value => Math.Exp(value)).ToArray(),
+            ar.GenerateRandomValues(8, 13579),
+            algebraicTolerance,
+            "AR logarithmic algebra");
+
+        const double boxCoxLambda = 0.5;
+        double[] maModelScale =
+        {
+            1.0227687685036484, 0.4974530014652585, 1.1363812293685684,
+            0.8964366966232473, 1.3833833036998602, 0.6973654912089674,
+            0.15873803749631565, 0.2074704533451301,
+        };
+        var ma = new MovingAverage
+        {
+            Order = 2,
+            IncludeIntercept = true,
+            TransformType = Transform.BoxCox,
+        };
+        ma.SetTransformParameters(boxCoxLambda, double.NaN);
+        ma.SetParameterValues(new[] { 0.75, -0.2, 0.3, 0.6 });
+        AssertArrayEqual(
+            maModelScale.Select(value => IndependentBoxCoxInverse(value, boxCoxLambda)).ToArray(),
+            ma.GenerateRandomValues(8, 13580),
+            algebraicTolerance,
+            "MA Box-Cox algebra");
+
+        const int realizationCount = 1000;
+        const double mean = 0.2;
+        const double sigma = 0.6;
+        var iidAr = new AutoRegressive
+        {
+            Order = 1,
+            IncludeIntercept = true,
+            TransformType = Transform.Logarithmic,
+        };
+        iidAr.SetParameterValues(new[] { mean, 0.0, sigma });
+        double[] arModelValues = iidAr.GenerateRandomValues(realizationCount, 52037)
+            .Select(value => Math.Log(value))
+            .ToArray();
+        AssertIndependentGaussianMoments(arModelValues, mean, sigma, "AR model-scale moments");
+
+        const double yeoJohnsonLambda = 0.6;
+        var iidMa = new MovingAverage
+        {
+            Order = 1,
+            IncludeIntercept = true,
+            TransformType = Transform.YeoJohnson,
+        };
+        iidMa.SetTransformParameters(yeoJohnsonLambda, double.NaN);
+        iidMa.SetParameterValues(new[] { mean, 0.0, sigma });
+        double[] maModelValues = iidMa.GenerateRandomValues(realizationCount, 52038)
+            .Select(value => IndependentYeoJohnsonTransform(value, yeoJohnsonLambda))
+            .ToArray();
+        AssertIndependentGaussianMoments(maModelValues, mean, sigma, "MA model-scale moments");
+    }
+
+    /// <summary>
+    /// Verifies differenced/transformed ARIMA generation against fixed recurrence, anchor,
+    /// inverse-transform, and model-scale Monte Carlo moment oracles.
+    /// </summary>
+    /// <remarks>
+    /// The fixed algebraic tolerance is 1E-10. The stochastic check evaluates exactly 1,000
+    /// independently generated first differences using the same four-standard-error/three-percent
+    /// acceptance rule as the AR/MA method.
+    /// </remarks>
+    [TestMethod]
+    public void ArimaDifferencedTransformedGeneratorMatchesIndependentOracle()
+    {
+        const double tolerance = 1E-10;
+        const double lambda = 0.6;
+        DateTime startDate = new(2004, 5, 6);
+        double[] modelDifferences =
+        {
+            1.5504888464633453, 2.245464762138672, 0.2062780780166804,
+            0.49593324179260784, 0.9224018499700285, 0.8145819937498172,
+            2.459490777492791,
+        };
+        double[] transformedData = { 2, 3, 4, 5, 6 };
+        double[] rawData = transformedData
+            .Select(value => IndependentYeoJohnsonInverse(value, lambda))
+            .ToArray();
+        var arima = new ARIMA(CreateDailySeries(rawData, startDate), 1, 1, 1, true)
+        {
+            TransformType = Transform.YeoJohnson,
+        };
+        arima.SetTransformParameters(lambda, double.NaN);
+        arima.SetParameterValues(new[] { 1.1, 0.4, -0.25, 0.7 });
+
+        var expectedTransformed = new double[8];
+        expectedTransformed[0] = transformedData[0];
+        for (int i = 1; i < expectedTransformed.Length; i++)
+            expectedTransformed[i] = expectedTransformed[i - 1] + modelDifferences[i - 1];
+        AssertArrayEqual(
+            expectedTransformed.Select(value => IndependentYeoJohnsonInverse(value, lambda)).ToArray(),
+            arima.GenerateRandomValues(8, 13581),
+            tolerance,
+            "ARIMA transformed recurrence");
+
+        const int differenceCount = 1000;
+        const double mean = 0.2;
+        const double sigma = 0.5;
+        var iidArima = new ARIMA
+        {
+            POrder = 0,
+            DOrder = 1,
+            QOrder = 0,
+            IncludeIntercept = true,
+            TransformType = Transform.Logarithmic,
+        };
+        iidArima.SetParameterValues(new[] { mean, sigma });
+        double[] generated = iidArima.GenerateRandomValues(differenceCount + 1, 52039);
+        double[] transformed = generated.Select(value => Math.Log(value)).ToArray();
+        var differences = new double[differenceCount];
+        for (int i = 0; i < differences.Length; i++)
+            differences[i] = transformed[i + 1] - transformed[i];
+        AssertIndependentGaussianMoments(differences, mean, sigma, "ARIMA difference moments");
+    }
+
+    /// <summary>
     /// Creates the fixed ARIMAX alignment fixture from the committed oracle.
     /// </summary>
     /// <param name="raw">The raw response values.</param>
@@ -601,6 +746,84 @@ public class Phase5TimeSeriesVerificationTests
         return -0.5 * Math.Log(2 * Math.PI)
             - Math.Log(sigma)
             - residual * residual / (2 * sigma * sigma);
+    }
+
+    /// <summary>
+    /// Evaluates the positive-branch Box-Cox inverse independently of production transform code.
+    /// </summary>
+    /// <param name="value">The transformed value.</param>
+    /// <param name="lambda">The transform exponent.</param>
+    /// <returns>The raw positive value.</returns>
+    private static double IndependentBoxCoxInverse(double value, double lambda)
+    {
+        return lambda == 0.0
+            ? Math.Exp(value)
+            : Math.Pow(1.0 + lambda * value, 1.0 / lambda);
+    }
+
+    /// <summary>
+    /// Evaluates the Yeo-Johnson transform independently of production transform code.
+    /// </summary>
+    /// <param name="value">The raw value.</param>
+    /// <param name="lambda">The transform exponent.</param>
+    /// <returns>The transformed value.</returns>
+    private static double IndependentYeoJohnsonTransform(double value, double lambda)
+    {
+        if (value >= 0.0)
+        {
+            return lambda == 0.0
+                ? Math.Log(value + 1.0)
+                : (Math.Pow(value + 1.0, lambda) - 1.0) / lambda;
+        }
+
+        return lambda == 2.0
+            ? -Math.Log(1.0 - value)
+            : -(Math.Pow(1.0 - value, 2.0 - lambda) - 1.0) / (2.0 - lambda);
+    }
+
+    /// <summary>
+    /// Evaluates the Yeo-Johnson inverse independently of production transform code.
+    /// </summary>
+    /// <param name="value">The transformed value.</param>
+    /// <param name="lambda">The transform exponent.</param>
+    /// <returns>The raw value.</returns>
+    private static double IndependentYeoJohnsonInverse(double value, double lambda)
+    {
+        if (value >= 0.0)
+        {
+            return lambda == 0.0
+                ? Math.Exp(value) - 1.0
+                : Math.Pow(1.0 + lambda * value, 1.0 / lambda) - 1.0;
+        }
+
+        return lambda == 2.0
+            ? 1.0 - Math.Exp(-value)
+            : 1.0 - Math.Pow(1.0 - (2.0 - lambda) * value, 1.0 / (2.0 - lambda));
+    }
+
+    /// <summary>
+    /// Compares seeded independent Gaussian sample moments with their analytical sampling errors.
+    /// </summary>
+    /// <param name="values">The model-scale sample.</param>
+    /// <param name="expectedMean">The generating mean.</param>
+    /// <param name="sigma">The generating standard deviation.</param>
+    /// <param name="context">The assertion context.</param>
+    private static void AssertIndependentGaussianMoments(
+        double[] values,
+        double expectedMean,
+        double sigma,
+        string context)
+    {
+        double sampleMean = values.Average();
+        double sumSquares = values.Sum(value => (value - sampleMean) * (value - sampleMean));
+        double sampleVariance = sumSquares / (values.Length - 1);
+        double expectedVariance = sigma * sigma;
+        double meanBound = 4.0 * sigma / Math.Sqrt(values.Length);
+        double varianceStandardError = expectedVariance * Math.Sqrt(2.0 / (values.Length - 1));
+        double varianceBound = Math.Max(4.0 * varianceStandardError, 0.03 * expectedVariance);
+
+        Assert.AreEqual(expectedMean, sampleMean, meanBound, $"{context} mean");
+        Assert.AreEqual(expectedVariance, sampleVariance, varianceBound, $"{context} variance");
     }
 
     /// <summary>

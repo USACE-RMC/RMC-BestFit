@@ -63,6 +63,10 @@ to lie outside the unit circle under the sign convention in (MA.1). `IsInvertibl
 
 Inside the training window, `Predict` reconstructs innovations from observations. After the window, a deterministic forecast sets future innovations to zero; a seeded predictive realization injects new Gaussian innovations and feeds them through the finite MA recursion. Consequently, the conditional mean reaches $\mu$ after at most $q$ future steps. Inverse-transformed deterministic paths are conditional medians without bias correction.
 
+`GenerateRandomValues(sampleSize, seed)` draws the innovations and completes the finite MA
+recursion entirely on transformed model scale, then inverse-transforms the completed vector once.
+It returns exactly `sampleSize` values; `Transform.None` retains its established fixed-seed values.
+
 `MAAnalysis` propagates joint posterior parameter uncertainty and innovations by calling `Predict` for posterior draws. Its bands are posterior predictive. Its AIC/BIC fields use the data log likelihood at the stored MAP and exclude prior-density terms. They are comparable with MLE criteria only when all active priors are constant; with the Jeffreys scale option or another nonconstant prior, use posterior criteria instead ([TR-042](../review-findings.md#tr-042)).
 
 ## Compile-Checked Workflow
@@ -106,7 +110,11 @@ The example treats the series as an already detrended anomaly. For raw streamflo
 
 The model assumes regular spacing, no missing times, Gaussian homoscedastic innovations on the fitted scale, fixed parameters, and an error-free response. It does not model seasonal MA factors, state-dependent variance, intervention effects, or exact initial-state uncertainty.
 
-Implementation: `Models/TimeSeries/MovingAverage.cs`; orchestration: `Analyses/TimeSeries/MAAnalysis.cs`. Fast tests cover API behavior and deterministic calculations. Recovery verification resides under `RMC.BestFit.Verification/TimeSeriesModels/MovingAverageMLERecoveryTests.cs`; it was not run in this program.
+Implementation: `Models/TimeSeries/MovingAverage.cs`; orchestration:
+`Analyses/TimeSeries/MAAnalysis.cs`. Fast tests cover API behavior, deterministic calculations,
+generation transform algebra, and exact seed compatibility. The focused numerical oracle checks
+independent inverse formulas and 1,000 model-scale Gaussian moment values; recovery remains in the
+Phase 5 matrix.
 
 ## References
 
