@@ -3,19 +3,22 @@
     "artifact_id": "TS-PHASE5-ARIMA-MLE-001",
     "finding": "PHASE5-RECOVERY-ARIMA-MLE",
     "generator": "verification/r/time-series/generate_phase5_arima_mle_oracle.R",
-    "generator_sha256": "61e7c788ca6fbadad9274ad1338b6f38a6bdcc167a347073b8dbec8a719b90c2",
+    "generator_sha256": "55dfbe0da4641ebe83682845037fbdef213119593de8d7412a3a98315c1af3d6",
     "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
     "input_fixture_sha256": "d1a1c4f1b519bf8fce438164fb0e3dcc8669f6704ac7fbee3375d5188661e228",
-    "source_commit": "fc4bc30f1f585af76d4460a278325e6c1c3116f8",
+    "source_commit": "1c0cecdac9fe7d6a492801b21b98347de8ecb9a2",
     "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
     "jsonlite_version": "2.0.0",
     "digest_version": "0.6.39",
-    "generated_utc": "2026-08-20 22:07:43 UTC",
+    "generated_utc": "2026-08-20 22:13:07 UTC",
     "tolerances": {
       "optimizer_coefficient_absolute": 0.001,
       "optimizer_scale_absolute": 1e-05,
       "log_likelihood_absolute": 1e-05,
-      "deterministic_recurrence_absolute": 1e-12
+      "deterministic_recurrence_absolute": 1e-12,
+      "sampled_map_relative": 0.05,
+      "sampled_map_absolute_floor": 0.001,
+      "posterior_log_likelihood_absolute": 1e-05
     },
     "profile_confidence_level": 0.95,
     "profile_log_likelihood_cutoff": 1.92072941034706
@@ -47,6 +50,17 @@
     "start_zero_function_evaluations": 95,
     "start_zero_convergence": 0,
     "start_truth_convergence": 0
+  },
+  "conditional_posterior_map": {
+    "phi": 0.400116305060459,
+    "theta": 0.323088117478691,
+    "sigma": 0.0391850267661671,
+    "data_log_likelihood": -2889.20040548981,
+    "prior_log_likelihood": 0.466871853165997,
+    "posterior_log_likelihood": -2888.73353363664,
+    "coefficient_prior": "Uniform(-2,2)",
+    "scale_prior": "Uniform(.Machine$double.eps,1)",
+    "jeffreys_scale_prior": true
   },
   "profile_likelihood_95": {
     "phi": [0.311503785384669, 0.484293437691628],

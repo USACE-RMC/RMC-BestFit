@@ -89,11 +89,26 @@ theta_hat <- unname(fit_from_zero$par[[2L]])
 fitted_residuals <- conditional_residuals(phi_hat, theta_hat)
 sigma_hat <- sqrt(mean(fitted_residuals^2))
 gaussian_log_likelihood <- sum(stats::dnorm(fitted_residuals, 0.0, sigma_hat, log = TRUE))
+posterior_sigma_hat <- sqrt(sum(fitted_residuals^2) / (length(fitted_residuals) + 1.0))
 
 # ARIMA evaluates the logarithmic-transform Jacobian on raw indices
 # d + max(p,q) through T - 1. R is one-based, so this is raw[3:T].
 log_jacobian <- -sum(log(raw[3:length(raw)]))
 data_log_likelihood <- gaussian_log_likelihood + log_jacobian
+posterior_gaussian_log_likelihood <- sum(
+  stats::dnorm(fitted_residuals, 0.0, posterior_sigma_hat, log = TRUE)
+)
+posterior_data_log_likelihood <- posterior_gaussian_log_likelihood + log_jacobian
+
+# ARIMA's default coefficient priors are Uniform(-2,2), its scale prior is
+# Uniform(.Machine$double.eps, 1) for this fixture, and Jeffreys' 1/sigma rule
+# is enabled. The constant uniform terms do not move the posterior mode.
+scale_prior_upper <- 10^(ceiling(log10(stats::sd(differences))) + 1.0)
+stopifnot(scale_prior_upper == 1.0)
+posterior_prior_log_likelihood <- -2.0 * log(4.0) -
+  log(scale_prior_upper - .Machine$double.eps) -
+  log(posterior_sigma_hat)
+posterior_log_likelihood <- posterior_data_log_likelihood + posterior_prior_log_likelihood
 
 profile_cutoff_delta <- stats::qchisq(0.95, df = 1L) / 2.0
 profile_cutoff <- fit_from_zero$value + profile_cutoff_delta
@@ -217,7 +232,10 @@ artifact <- list(
       optimizer_coefficient_absolute = 1e-3,
       optimizer_scale_absolute = 1e-5,
       log_likelihood_absolute = 1e-5,
-      deterministic_recurrence_absolute = 1e-12
+      deterministic_recurrence_absolute = 1e-12,
+      sampled_map_relative = 0.05,
+      sampled_map_absolute_floor = 1e-3,
+      posterior_log_likelihood_absolute = 1e-5
     ),
     profile_confidence_level = 0.95,
     profile_log_likelihood_cutoff = profile_cutoff_delta
@@ -249,6 +267,17 @@ artifact <- list(
     start_zero_function_evaluations = unname(fit_from_zero$counts[[1L]]),
     start_zero_convergence = unname(fit_from_zero$convergence),
     start_truth_convergence = unname(fit_from_truth$convergence)
+  ),
+  conditional_posterior_map = list(
+    phi = phi_hat,
+    theta = theta_hat,
+    sigma = unname(posterior_sigma_hat),
+    data_log_likelihood = unname(posterior_data_log_likelihood),
+    prior_log_likelihood = unname(posterior_prior_log_likelihood),
+    posterior_log_likelihood = unname(posterior_log_likelihood),
+    coefficient_prior = "Uniform(-2,2)",
+    scale_prior = "Uniform(.Machine$double.eps,1)",
+    jeffreys_scale_prior = TRUE
   ),
   profile_likelihood_95 = list(
     phi = unname(phi_interval),

@@ -53,6 +53,7 @@ public class Phase5TimeSeriesRecoveryTests
     public async Task BayesianArima111LogD1RecoversGeneratingParameters()
     {
         JsonElement fixture = LoadFixture("arima");
+        JsonElement oracle = LoadArimaMleOracle();
         ARIMA model = CreateArimaModel(fixture);
         double[] truth = GetArimaTruth(fixture);
         var analysis = new ARIMAAnalysis(model);
@@ -61,7 +62,7 @@ public class Phase5TimeSeriesRecoveryTests
         await analysis.RunAsync();
 
         Assert.IsTrue(analysis.IsEstimated, "ARIMA Bayesian estimation did not complete.");
-        AssertBayesianRecovery("ARIMA", model, analysis.BayesianAnalysis, truth);
+        AssertBayesianRecovery("ARIMA", model, analysis.BayesianAnalysis, truth, oracle);
         AssertArimaPrediction(model, truth, fixture);
     }
 
@@ -371,11 +372,13 @@ public class Phase5TimeSeriesRecoveryTests
     /// <param name="model">The fitted model.</param>
     /// <param name="analysis">The completed Bayesian analysis.</param>
     /// <param name="truth">The generating parameters.</param>
+    /// <param name="mapOracle">Optional independent posterior-MAP oracle for point recovery.</param>
     internal static void AssertBayesianRecovery(
         string label,
         ModelBase model,
         BayesianAnalysis analysis,
-        double[] truth)
+        double[] truth,
+        JsonElement? mapOracle = null)
     {
         Assert.IsNotNull(analysis.Results, $"{label} Bayesian results.");
         AssertResolvedBayesianDefaults(label, analysis, model.NumberOfParameters);
@@ -383,6 +386,40 @@ public class Phase5TimeSeriesRecoveryTests
         double[] map = analysis.Results.MAP.Values;
         Assert.AreEqual(truth.Length, map.Length, $"{label} MAP parameter count.");
         Assert.AreEqual(truth.Length, analysis.Results.ParameterResults.Length, $"{label} summary count.");
+
+        double[]? independentMap = null;
+        double sampledMapRelativeTolerance = 0.0;
+        double sampledMapAbsoluteFloor = 0.0;
+        double posteriorLogLikelihoodTolerance = 0.0;
+        JsonElement? independentMapElement = null;
+        if (mapOracle.HasValue)
+        {
+            JsonElement oracleRoot = mapOracle.Value;
+            JsonElement tolerances = oracleRoot.GetProperty("metadata").GetProperty("tolerances");
+            sampledMapRelativeTolerance = tolerances.GetProperty("sampled_map_relative").GetDouble();
+            sampledMapAbsoluteFloor = tolerances.GetProperty("sampled_map_absolute_floor").GetDouble();
+            posteriorLogLikelihoodTolerance = tolerances
+                .GetProperty("posterior_log_likelihood_absolute")
+                .GetDouble();
+            Assert.AreEqual(0.05, sampledMapRelativeTolerance, 0.0, $"{label} MAP relative tolerance.");
+            Assert.AreEqual(1E-3, sampledMapAbsoluteFloor, 0.0, $"{label} MAP absolute floor.");
+            Assert.AreEqual(1E-5, posteriorLogLikelihoodTolerance, 0.0, $"{label} posterior tolerance.");
+
+            independentMapElement = oracleRoot.GetProperty("conditional_posterior_map");
+            JsonElement oracleMap = independentMapElement.Value;
+            Assert.AreEqual("Uniform(-2,2)", oracleMap.GetProperty("coefficient_prior").GetString());
+            Assert.AreEqual(
+                "Uniform(.Machine$double.eps,1)",
+                oracleMap.GetProperty("scale_prior").GetString());
+            Assert.IsTrue(oracleMap.GetProperty("jeffreys_scale_prior").GetBoolean());
+            independentMap =
+            [
+                oracleMap.GetProperty("phi").GetDouble(),
+                oracleMap.GetProperty("theta").GetDouble(),
+                oracleMap.GetProperty("sigma").GetDouble(),
+            ];
+            Assert.AreEqual(map.Length, independentMap.Length, $"{label} independent MAP count.");
+        }
 
         for (int index = 0; index < truth.Length; index++)
         {
@@ -397,11 +434,25 @@ public class Phase5TimeSeriesRecoveryTests
             Assert.IsTrue(
                 truth[index] >= lower95 && truth[index] <= upper95,
                 $"{label} truth for {parameterName} is outside [{lower95:G8}, {upper95:G8}].");
-            Assert.AreEqual(
-                truth[index],
-                map[index],
-                Math.Abs(truth[index]) * 0.25,
-                $"{label} MAP parameter {parameterName}.");
+            if (independentMap == null)
+            {
+                Assert.AreEqual(
+                    truth[index],
+                    map[index],
+                    Math.Abs(truth[index]) * 0.25,
+                    $"{label} MAP parameter {parameterName} versus generating truth.");
+            }
+            else
+            {
+                double mapTolerance = Math.Max(
+                    sampledMapAbsoluteFloor,
+                    Math.Abs(independentMap[index]) * sampledMapRelativeTolerance);
+                Assert.AreEqual(
+                    independentMap[index],
+                    map[index],
+                    mapTolerance,
+                    $"{label} sampled MAP parameter {parameterName} versus independent posterior MAP.");
+            }
             Assert.IsTrue(
                 double.IsFinite(summary.Rhat) && summary.Rhat < 1.1,
                 $"{label} {parameterName} R-hat {summary.Rhat:G8}.");
@@ -412,6 +463,25 @@ public class Phase5TimeSeriesRecoveryTests
 
         Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(map)), $"{label} MAP data likelihood.");
         Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(map)), $"{label} MAP prior.");
+        if (independentMap != null && independentMapElement.HasValue)
+        {
+            JsonElement oracleMap = independentMapElement.Value;
+            Assert.AreEqual(
+                oracleMap.GetProperty("data_log_likelihood").GetDouble(),
+                model.DataLogLikelihood(independentMap),
+                posteriorLogLikelihoodTolerance,
+                $"{label} independent-MAP data likelihood.");
+            Assert.AreEqual(
+                oracleMap.GetProperty("prior_log_likelihood").GetDouble(),
+                model.PriorLogLikelihood(independentMap),
+                posteriorLogLikelihoodTolerance,
+                $"{label} independent-MAP prior likelihood.");
+            Assert.AreEqual(
+                oracleMap.GetProperty("posterior_log_likelihood").GetDouble(),
+                model.LogLikelihood(independentMap),
+                posteriorLogLikelihoodTolerance,
+                $"{label} independent-MAP posterior likelihood.");
+        }
     }
 
     /// <summary>
