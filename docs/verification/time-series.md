@@ -681,31 +681,36 @@ same exact guarded command then passed with the configured environment. The firs
 collided with an already-running test logger; after that process completed, the isolated UI suite
 passed 578/578. The complete Verification project was not run.
 
-## Integrated recovery matrix — blocked at first corrected-seed cell
+## Integrated recovery matrix — in progress after approved burn-in correction
 
 **Fixture and execution contract.** Package 10 adds the committed R artifact
 `verification/data/time-series/phase5-recovery-fixtures.json` and generator
 `verification/r/time-series/generate_phase5_recovery_fixtures.R`. The artifact implements AR(1),
 MA(1), logarithmic ARIMA(1,1,1), and differenced ARIMAX(1,1,0) with a dated level covariate
-without calling Numerics or BestFit. Every fixture contains exactly 1,000 raw observations. AR and
-MA retain the established seed `12345`; ARIMA and ARIMAX retain approved seeds `51037` and
-`51038`. The artifact and generator SHA-256 values are respectively
-`7418FFDCD670F13ED7A06ED65A6C2C3E05684B5D7F34CF861CC71330D079DA2D` and
-`7FA49C873169B44ED0E3933468CDF424DEB05B3BB89D2357D45171F6D15DDC24`.
+without calling Numerics or BestFit. Every fixture contains exactly 1,000 raw observations retained
+after 110 discarded stationary ARMA recursion steps. AR and MA therefore generate 1,110 model
+steps; differenced ARIMA and ARIMAX generate 1,109 model-scale differences before the approved raw
+anchor supplies the first retained level. AR and MA retain the established seed `12345`; ARIMA and
+ARIMAX retain approved seeds `51037` and `51038`. The burn-in follows the repository convention
+`max(p,q) * 10 + 100` and is conservative relative to R `stats::arima.sim`'s root-dependent default.
+The burn-in generator was committed as `c3b924f`; the regenerated artifact was committed as
+`5493304` before any corrected C# result. The artifact and generator SHA-256 values are respectively
+`D858B551C60508192017F21F41B42745B22FE1D4B018EC507804D93FBDBDBB8D` and
+`2E3D1F75D7B77C26D60157E538EE73925CF536F0A1C3073CC87AEC4F78F6A557`.
 
 The four Bayesian cells assert the unchanged resolved DEMCzs production defaults before applying
 the later user-directed Verification ceiling to the test instance only. The cap uses thinning one,
 1,000 retained rows, and `Iterations + ceil(OutputLength/NumberOfChains) = 1,000` outer sampler
 steps per chain; credible intervals are reported at the predeclared 95% level. No production
 default changes. The recovery source SHA-256 is
-`1395D5002AA4CDFB793F9FC765F38C67AED5EDDA7ABDC5FF979AB94797E61732`.
+`7FB63A12DF255D4C6DB24E718420987C8A4E46D21841FE54EE70CB344F8C5587`.
 
 **Predeclared matrix.** The exact methods and current dispositions are:
 
 | Cell | Fully qualified method | Disposition |
 |---|---|---|
-| AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Failed corrected-seed 5% intercept gate; recovery finding |
-| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Not run because AR MLE stopped the matrix |
+| AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Passed 1/1 after approved 110-step burn-in correction |
+| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Next cell; not yet run |
 | MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Not run |
 | MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Not run |
 | ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Not run |
@@ -713,22 +718,34 @@ default changes. The recovery source SHA-256 is
 | ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run |
 | ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Not run |
 
-**Recovery finding.** From commit `1497a58` plus the scoped Package 10 test diff, the guarded
-command was:
+**Recovery checkpoint.** The exact guarded AR MLE command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
   'RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1'
 ```
 
-The corrected-seed run failed 0/1 in 0.619 s under `20260820-132714-...`. The estimated process
+Before the burn-in correction, the corrected-seed run failed 0/1 in 0.619 s under
+`20260820-132714-...`. The estimated process
 mean was `10.569486830922324`, outside the unchanged generating value and 5% gate `10 ± 0.5`.
 The TRX SHA-256 is
 `0C8794B6B68C2969027D2181739BFBFD800D148C1EED78C752D292E65662CBF3`. This is insufficient
 evidence of a production algorithm defect: under the new 1,000-observation ceiling, the retained
 5% large-sample gate can reject ordinary finite-sample variation. It is nevertheless a failed
-predeclared recovery criterion, so Phase 5 closure stops exactly as approved. No alternate seed,
-tolerance, optimizer, likelihood, prior, sampler, formula, or convergence default was tried.
+predeclared recovery criterion, so execution stopped exactly as approved. No alternate seed,
+tolerance, optimizer, likelihood, prior, sampler, formula, or convergence default was tried. After
+source review established that the independent fixture omitted standard stationary initialization,
+Haden Smith approved 110 discarded steps while retaining 1,000 observations and the unchanged gate.
+The generator self-checks reproduce every retained AR/MA/ARIMA/ARIMAX recurrence at `1E-12`.
+Commit `a9e9bbd` additionally makes every C# recovery cell assert the burn-in, retained-sample, and
+model-step budgets before estimation.
+
+The first sandboxed corrected run could not read the user NuGet configuration, failed during SDK
+resolution, and ran no test. The same exact guarded command then passed 1/1 in 0.499 s from commit
+`a9e9bbd` under `20260820-134940-...`. Its TRX SHA-256 is
+`AEDDD87466F9FB3757C1CBEB0E1D08F4940095175AD2DD5224CEEBA158146B81`. This result resolves the
+AR MLE stop condition without changing the retained sample size, seed, 5% gate, production code,
+optimizer, likelihood, prior, or numerical defaults.
 
 **Failure history.** The initial R generation attempt could not read repository renv junctions in
 the sandbox and wrote no artifact; the same script ran in the configured environment. The first C#
@@ -736,9 +753,9 @@ compile exposed three test-only type/index errors and ran no test; explicit esta
 them. The first AR MLE run used mistakenly assigned AR/MA seeds `51035/51036` and failed the AR
 coefficient gate (`0.5458503824113965` versus `0.6 ± 0.03`) under `20260820-132537-...`. That run
 did not represent the approved existing-seed contract. The generator, artifact, and manifest were
-then committed with seed `12345` before the corrected-seed reevaluation. The corrected-seed failure
-above is the operative recovery finding; both histories remain recorded. The seven later recovery
-methods and the complete Verification project were not run.
+then committed with seed `12345` before the corrected-seed reevaluation. The subsequent missing
+burn-in failure and its approved correction remain recorded rather than replaced. At this checkpoint,
+the seven later recovery methods and the complete Verification project have not been run.
 
 ## Phase 5 findings
 
