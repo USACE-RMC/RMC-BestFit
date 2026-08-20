@@ -11,15 +11,17 @@ namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 /// Verifies Phase 5 time-series parameter recovery from independently generated R fixtures.
 /// </summary>
 /// <remarks>
-/// Every raw fixture contains exactly 1,000 observations. Bayesian runs first assert the unchanged
-/// production DEMCzs defaults, then apply the later user-directed test-only execution ceiling: one
-/// thinning step, 1,000 retained rows, and exactly 1,000 outer sampler steps per chain including
-/// the output phase. Production defaults are not changed.
+/// Every raw fixture contains exactly 1,000 observations retained after a 110-step stationary
+/// ARMA initialization period. Bayesian runs first assert the unchanged production DEMCzs defaults,
+/// then apply the later user-directed test-only execution ceiling: one thinning step, 1,000 retained
+/// rows, and exactly 1,000 outer sampler steps per chain including the output phase. Production
+/// defaults are not changed.
 /// </remarks>
 [TestClass]
 public class Phase5TimeSeriesRecoveryTests
 {
     private const int MaximumVerificationSteps = 1000;
+    private const int RecoveryBurnInSteps = 110;
     private const double PredictionTolerance = 1E-10;
 
     /// <summary>
@@ -112,8 +114,24 @@ public class Phase5TimeSeriesRecoveryTests
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
         JsonElement metadata = document.RootElement.GetProperty("metadata");
         Assert.AreEqual(MaximumVerificationSteps, metadata.GetProperty("maximum_steps").GetInt32());
+        Assert.AreEqual(MaximumVerificationSteps, metadata.GetProperty("retained_sample_size").GetInt32());
+        Assert.AreEqual(RecoveryBurnInSteps, metadata.GetProperty("burn_in").GetInt32());
+        Assert.AreEqual(
+            "discarded stationary ARMA recursion",
+            metadata.GetProperty("initialization_policy").GetString());
         JsonElement fixture = document.RootElement.GetProperty(name);
         Assert.AreEqual(MaximumVerificationSteps, fixture.GetProperty("sample_size").GetInt32());
+        Assert.AreEqual(RecoveryBurnInSteps, fixture.GetProperty("burn_in").GetInt32());
+        int differencingOrder = fixture.TryGetProperty("differencing_order", out JsonElement order)
+            ? order.GetInt32()
+            : 0;
+        int retainedModelSteps = MaximumVerificationSteps - differencingOrder;
+        Assert.AreEqual(retainedModelSteps, fixture.GetProperty("retained_model_steps").GetInt32());
+        Assert.AreEqual(
+            RecoveryBurnInSteps + retainedModelSteps,
+            fixture.GetProperty("total_model_steps").GetInt32());
+        Assert.AreEqual(MaximumVerificationSteps, fixture.GetProperty("dates").GetArrayLength());
+        Assert.AreEqual(MaximumVerificationSteps, fixture.GetProperty("raw").GetArrayLength());
         return fixture.Clone();
     }
 
