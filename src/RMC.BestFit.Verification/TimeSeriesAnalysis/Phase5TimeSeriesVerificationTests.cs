@@ -761,7 +761,10 @@ public class Phase5TimeSeriesVerificationTests
             RatingCurveAnalysis value => value.BayesianAnalysis,
             _ => throw new ArgumentOutOfRangeException(nameof(analysis), analysis.GetType().Name, "Unsupported criterion analysis."),
         };
-        bayesian.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMode;
+        Assert.AreEqual(
+            BayesianAnalysis.PointEstimateType.PosteriorMean,
+            bayesian.PointEstimator,
+            $"{label} point-estimator default.");
         bayesian.SetCustomMCMCResults(
             new MCMCResults(
                 new ParameterSet((double[])mapValues.Clone(), dataLogLikelihood + priorLogLikelihood),

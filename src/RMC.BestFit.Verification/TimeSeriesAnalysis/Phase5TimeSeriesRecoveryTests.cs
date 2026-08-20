@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Numerics.Data;
+using Numerics.Data.Statistics;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -12,10 +13,8 @@ namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 /// </summary>
 /// <remarks>
 /// Every raw fixture contains exactly 1,000 observations retained after a 110-step stationary
-/// ARMA initialization period. Bayesian runs first assert the unchanged production DEMCzs defaults,
-/// then apply the later user-directed test-only execution ceiling: one thinning step, 1,000 retained
-/// rows, and exactly 1,000 outer sampler steps per chain including the output phase. Production
-/// defaults are not changed.
+/// ARMA initialization period. Bayesian recovery uses the resolved production
+/// <see cref="BayesianAnalysis"/> defaults without test-side changes to the sampler or its settings.
 /// </remarks>
 [TestClass]
 public class Phase5TimeSeriesRecoveryTests
@@ -53,7 +52,6 @@ public class Phase5TimeSeriesRecoveryTests
         double[] truth = GetArimaTruth(fixture);
         var analysis = new ARIMAAnalysis(model);
         AssertResolvedBayesianDefaults("ARIMA", analysis.BayesianAnalysis, model.NumberOfParameters);
-        ApplyVerificationExecutionCap(analysis.BayesianAnalysis);
 
         await analysis.RunAsync();
 
@@ -91,7 +89,6 @@ public class Phase5TimeSeriesRecoveryTests
         double[] truth = GetArimaxTruth(fixture);
         var analysis = new ARIMAXAnalysis(model);
         AssertResolvedBayesianDefaults("ARIMAX", analysis.BayesianAnalysis, model.NumberOfParameters);
-        ApplyVerificationExecutionCap(analysis.BayesianAnalysis);
 
         await analysis.RunAsync();
 
@@ -186,7 +183,7 @@ public class Phase5TimeSeriesRecoveryTests
     }
 
     /// <summary>
-    /// Asserts the unchanged resolved production DEMCzs defaults before a capped recovery run.
+    /// Asserts the unchanged resolved production DEMCzs defaults used by a recovery run.
     /// </summary>
     /// <param name="label">The model label.</param>
     /// <param name="analysis">The Bayesian analysis.</param>
@@ -217,30 +214,6 @@ public class Phase5TimeSeriesRecoveryTests
         Assert.AreEqual(0.1, analysis.JumpThreshold, 0.0, $"{label} jump-threshold default.");
         Assert.AreEqual(0.1, analysis.SnookerThreshold, 0.0, $"{label} snooker default.");
         Assert.AreEqual(1E-12, analysis.Noise, 0.0, $"{label} noise default.");
-    }
-
-    /// <summary>
-    /// Applies the user-directed 1,000-step ceiling to this Verification instance only.
-    /// </summary>
-    /// <param name="analysis">The Bayesian analysis to cap.</param>
-    internal static void ApplyVerificationExecutionCap(BayesianAnalysis analysis)
-    {
-        int outputIterationsPerChain = (int)Math.Ceiling(
-            MaximumVerificationSteps / (double)analysis.NumberOfChains);
-        analysis.UseSimulationDefaults = false;
-        analysis.ThinningInterval = 1;
-        analysis.Iterations = MaximumVerificationSteps - outputIterationsPerChain;
-        analysis.WarmupIterations = analysis.Iterations / 2;
-        analysis.OutputLength = MaximumVerificationSteps;
-        analysis.CredibleIntervalWidth = 0.95;
-
-        Assert.AreEqual(
-            MaximumVerificationSteps,
-            analysis.Iterations + outputIterationsPerChain,
-            "Configured outer sampler steps per chain exceed the Phase 5 ceiling.");
-        Assert.IsTrue(analysis.WarmupIterations <= MaximumVerificationSteps);
-        Assert.IsTrue(analysis.InitialIterations <= MaximumVerificationSteps);
-        Assert.IsTrue(analysis.OutputLength <= MaximumVerificationSteps);
     }
 
     /// <summary>
@@ -288,7 +261,8 @@ public class Phase5TimeSeriesRecoveryTests
         double[] truth)
     {
         Assert.IsNotNull(analysis.Results, $"{label} Bayesian results.");
-        Assert.AreEqual(MaximumVerificationSteps, analysis.Results.Output.Count, $"{label} retained output count.");
+        AssertResolvedBayesianDefaults(label, analysis, model.NumberOfParameters);
+        Assert.AreEqual(analysis.OutputLength, analysis.Results.Output.Count, $"{label} retained output count.");
         double[] map = analysis.Results.MAP.Values;
         Assert.AreEqual(truth.Length, map.Length, $"{label} MAP parameter count.");
         Assert.AreEqual(truth.Length, analysis.Results.ParameterResults.Length, $"{label} summary count.");
@@ -297,9 +271,15 @@ public class Phase5TimeSeriesRecoveryTests
         {
             var summary = analysis.Results.ParameterResults[index].SummaryStatistics;
             string parameterName = model.Parameters[index].Name;
+            double[] retainedValues = analysis.Results.Output
+                .Select(parameterSet => parameterSet.Values[index])
+                .OrderBy(value => value)
+                .ToArray();
+            double lower95 = Statistics.Percentile(retainedValues, 0.025, true);
+            double upper95 = Statistics.Percentile(retainedValues, 0.975, true);
             Assert.IsTrue(
-                truth[index] >= summary.LowerCI && truth[index] <= summary.UpperCI,
-                $"{label} truth for {parameterName} is outside [{summary.LowerCI:G8}, {summary.UpperCI:G8}].");
+                truth[index] >= lower95 && truth[index] <= upper95,
+                $"{label} truth for {parameterName} is outside [{lower95:G8}, {upper95:G8}].");
             Assert.AreEqual(
                 truth[index],
                 map[index],

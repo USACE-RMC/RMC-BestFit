@@ -49,7 +49,6 @@ public class ARAnalysisTests
             "AR",
             analysis.BayesianAnalysis,
             model.NumberOfParameters);
-        Phase5TimeSeriesRecoveryTests.ApplyVerificationExecutionCap(analysis.BayesianAnalysis);
         await analysis.RunAsync();
 
         Assert.IsTrue(analysis.IsEstimated, "Bayesian estimation failed.");
