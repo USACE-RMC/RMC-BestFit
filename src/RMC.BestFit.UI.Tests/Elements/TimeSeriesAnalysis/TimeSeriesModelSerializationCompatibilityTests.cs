@@ -29,6 +29,7 @@ public class TimeSeriesModelSerializationCompatibilityTests
         Assert.IsFalse(model.UseDefaultFlatPriors);
         Assert.IsTrue(model.UseJeffreysRuleForScale);
         Assert.AreEqual(BestFitTransform.Logarithmic, model.TransformType);
+        Assert.AreEqual(0.0, model.TransformLambda, 0.0);
         Assert.AreEqual(12, model.TrainingTimeSteps);
         Assert.IsFalse(model.UseDefaultTrainingSteps);
         AssertEstablishedAttributes(model.ToXElement(), "AutoRegressive", "Order", "2");
@@ -52,6 +53,7 @@ public class TimeSeriesModelSerializationCompatibilityTests
         Assert.IsFalse(model.UseDefaultFlatPriors);
         Assert.IsTrue(model.UseJeffreysRuleForScale);
         Assert.AreEqual(BestFitTransform.YeoJohnson, model.TransformType);
+        Assert.IsTrue(double.IsFinite(model.TransformLambda));
         Assert.AreEqual(13, model.TrainingTimeSteps);
         Assert.IsFalse(model.UseDefaultTrainingSteps);
         AssertEstablishedAttributes(model.ToXElement(), "MovingAverage", "Order", "3");
@@ -77,6 +79,7 @@ public class TimeSeriesModelSerializationCompatibilityTests
         Assert.IsFalse(model.UseDefaultFlatPriors);
         Assert.IsTrue(model.UseJeffreysRuleForScale);
         Assert.AreEqual(BestFitTransform.Logarithmic, model.TransformType);
+        Assert.AreEqual(0.0, model.TransformLambda, 0.0);
         Assert.AreEqual(14, model.TrainingTimeSteps);
         Assert.IsFalse(model.UseDefaultTrainingSteps);
         AssertEstablishedAttributes(model.ToXElement(), "ARIMA", "DOrder", "1");
@@ -97,6 +100,7 @@ public class TimeSeriesModelSerializationCompatibilityTests
         var model = new ARIMAX(CreatePositiveSeries(), xml);
 
         Assert.AreEqual(BestFitTransform.YeoJohnson, model.TransformType);
+        Assert.IsTrue(double.IsFinite(model.TransformLambda));
         Assert.AreEqual(ARIMAX.CovariateExtensionMethod.BlockBootstrap, model.CovariateExtension);
         Assert.IsTrue(model.IncludeIntercept);
         Assert.IsTrue(model.IncludeSeasonality);
@@ -110,6 +114,43 @@ public class TimeSeriesModelSerializationCompatibilityTests
         Assert.IsFalse(model.UseDefaultFlatPriors);
         Assert.IsTrue(model.UseJeffreysRuleForScale);
         AssertEstablishedAttributes(model.ToXElement(), "ARIMAX", "DiffOrderD", "1");
+    }
+
+    /// <summary>
+    /// Verifies the additive manual-lambda attributes restore and re-emit exactly for all four
+    /// time-series model types without changing established XML names.
+    /// </summary>
+    [TestMethod]
+    public void ManualTransformLambda_NewXml_RoundTripsAllModelTypes()
+    {
+        TimeSeries series = CreatePositiveSeries();
+        var models = new ModelBase[]
+        {
+            new AutoRegressive(series.Clone(), XElement.Parse(
+                "<AutoRegressive Order=\"1\" IncludeIntercept=\"False\" TransformType=\"BoxCox\" TrainingTimeSteps=\"12\" UseDefaultTrainingSteps=\"False\" TransformLambda=\"-0.35\" TransformLambdaIsManual=\"True\"><Parameters /></AutoRegressive>")),
+            new MovingAverage(series.Clone(), XElement.Parse(
+                "<MovingAverage Order=\"1\" IncludeIntercept=\"False\" TransformType=\"BoxCox\" TrainingTimeSteps=\"12\" UseDefaultTrainingSteps=\"False\" TransformLambda=\"-0.35\" TransformLambdaIsManual=\"True\"><Parameters /></MovingAverage>")),
+            new ARIMA(series.Clone(), XElement.Parse(
+                "<ARIMA POrder=\"1\" DOrder=\"1\" QOrder=\"0\" IncludeIntercept=\"False\" TransformType=\"BoxCox\" TrainingTimeSteps=\"12\" UseDefaultTrainingSteps=\"False\" TransformLambda=\"-0.35\" TransformLambdaIsManual=\"True\"><Parameters /></ARIMA>")),
+            new ARIMAX(series.Clone(), XElement.Parse(
+                "<ARIMAX AROrderP=\"1\" DiffOrderD=\"1\" MAOrderQ=\"0\" XOrderB=\"0\" IncludeIntercept=\"False\" TransformType=\"BoxCox\" TrainingTimeSteps=\"12\" UseDefaultTrainingSteps=\"False\" TransformLambda=\"-0.35\" TransformLambdaIsManual=\"True\"><Parameters /></ARIMAX>")),
+        };
+
+        foreach (ModelBase model in models)
+        {
+            double lambda = model switch
+            {
+                AutoRegressive ar => ar.TransformLambda,
+                MovingAverage ma => ma.TransformLambda,
+                ARIMA arima => arima.TransformLambda,
+                ARIMAX arimax => arimax.TransformLambda,
+                _ => double.NaN,
+            };
+            XElement saved = model.ToXElement();
+            Assert.AreEqual(-0.35, lambda, 1E-12, model.GetType().Name);
+            Assert.AreEqual("-0.35", saved.Attribute("TransformLambda")?.Value, model.GetType().Name);
+            Assert.AreEqual("True", saved.Attribute("TransformLambdaIsManual")?.Value, model.GetType().Name);
+        }
     }
 
     /// <summary>

@@ -114,6 +114,18 @@ namespace RMC.BestFit.Models
             var jeffreysAttr = xElement.Attribute(nameof(UseJeffreysRuleForScale));
             if (jeffreysAttr != null)
                 bool.TryParse(jeffreysAttr.Value, out _useJeffreysRuleForScale);
+            double? persistedTransformLambda = null;
+            var transformLambdaAttr = xElement.Attribute(nameof(TransformLambda));
+            if (transformLambdaAttr != null &&
+                double.TryParse(transformLambdaAttr.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedLambda) &&
+                double.IsFinite(parsedLambda))
+            {
+                persistedTransformLambda = parsedLambda;
+            }
+            bool persistedTransformLambdaIsManual = false;
+            var transformLambdaIsManualAttr = xElement.Attribute("TransformLambdaIsManual");
+            if (transformLambdaIsManualAttr != null)
+                bool.TryParse(transformLambdaIsManualAttr.Value, out persistedTransformLambdaIsManual);
 
             var parms = new List<ModelParameter>();
             var parmsElement = xElement.Element(nameof(Parameters));
@@ -124,7 +136,14 @@ namespace RMC.BestFit.Models
             }
             Parameters = parms;
 
+            if (persistedTransformLambda.HasValue)
+            {
+                _lambda = persistedTransformLambda.Value;
+                _transformLambdaIsManual = persistedTransformLambdaIsManual;
+                _usePersistedTransformLambda = true;
+            }
             SetTrainingData();
+            _usePersistedTransformLambda = false;
         }
 
         #endregion
@@ -137,7 +156,8 @@ namespace RMC.BestFit.Models
         private TimeSeries _trainingTimeSeries = null!;
         private Transform _transformType = Transform.None;
         private double _lambda = 0;
-        private double _lambda2 = 0;
+        private bool _transformLambdaIsManual;
+        private bool _usePersistedTransformLambda;
         private double _logJacobian = 0;
         private string? _transformFitValidationMessage;
         private bool _includeIntercept = true;
@@ -215,6 +235,7 @@ namespace RMC.BestFit.Models
                 if (_timeSeries != null)
                     _timeSeries.CollectionChanged -= TimeSeries_CollectionChanged;
 
+                _usePersistedTransformLambda = false;
                 _timeSeries = value;
 
                 if (_timeSeries != null)
@@ -249,10 +270,15 @@ namespace RMC.BestFit.Models
             {
                 if (_transformType != value)
                 {
+                    double previousLambda = _lambda;
                     _transformType = value;
-                    SetTrainingData();
-                    RaisePropertyChange(nameof(TransformType));
+                    _transformLambdaIsManual = false;
+                    _usePersistedTransformLambda = false;
+                    SetTrainingData(false);
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
+                    RaisePropertyChange(nameof(TransformType));
                 }
             }
         }
@@ -261,6 +287,17 @@ namespace RMC.BestFit.Models
         /// Gets the transformed and differenced time series used for model calibration.
         /// </summary>
         public TimeSeries TrainingTimeSeries => _trainingTimeSeries;
+
+        /// <summary>
+        /// Gets the effective Box-Cox or Yeo-Johnson transformation exponent.
+        /// </summary>
+        /// <remarks>
+        /// The value is fitted from the training prefix unless it was assigned through
+        /// <see cref="SetTransformParameters(double, double)"/>. None and logarithmic transforms
+        /// use the canonical value zero. This model-state property is hidden from property grids.
+        /// </remarks>
+        [Browsable(false)]
+        public double TransformLambda => _lambda;
 
         /// <summary>
         /// Gets the differenced (but not transformed) time series.
@@ -539,12 +576,6 @@ namespace RMC.BestFit.Models
         /// </summary>
         private void TimeSeries_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            // Set negative value offset for transforms
-            _lambda2 = 0;
-            double min = _timeSeries.MinValue();
-            if (min <= 0)
-                _lambda2 = 0 - min + 1;
-
             UpdateSeasonalPeriod();
 
             if (_useDefaultTrainingSteps)
@@ -634,145 +665,108 @@ namespace RMC.BestFit.Models
         /// is what the AR/MA structure is intended to model. Box-Cox refuses non-positive
         /// inputs; the raw series must be positive (Validate() enforces this).
         /// </remarks>
-        private void SetTrainingData()
+        /// <param name="notifyTransformLambda">Whether to notify observers when the effective exponent changes.</param>
+        private void SetTrainingData(bool notifyTransformLambda = true)
         {
-            _transformFitValidationMessage = null;
-            if (TimeSeries == null || TrainingTimeSteps == 0) return;
-
-            int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
-
-            // Step 1: Transform the raw time series (whole length).
-            _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-
-            if (TransformType == Transform.None)
+            double previousLambda = _lambda;
+            try
             {
-                _lambda = 0;
-                for (int i = 0; i < TimeSeries.Count; i++)
-                    _transformedTimeSeries.Add(TimeSeries[i].Clone());
-            }
-            else if (TransformType == Transform.Logarithmic)
-            {
-                _lambda = 0;
-                for (int i = 0; i < TimeSeries.Count; i++)
-                {
-                    var ord = TimeSeries[i].Clone();
-                    ord.Value = BoxCox.Transform(TimeSeries[i].Value, _lambda);
-                    _transformedTimeSeries.Add(ord);
-                }
-            }
-            else if (TransformType == Transform.BoxCox)
-            {
-                try
-                {
-                    BoxCox.FitLambda(TimeSeries.ValuesToList(), out _lambda);
-                }
-                catch (ArithmeticException ex)
-                {
-                    _lambda = 0;
-                    _logJacobian = 0;
-                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
-                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
-                    System.Diagnostics.Debug.WriteLine(ex);
-                    return;
-                }
-
-
-                if (!double.IsFinite(_lambda))
-                {
-                    _lambda = 0;
-                    _logJacobian = 0;
-                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _transformFitValidationMessage = "Error: Box-Cox lambda estimation failed. Select a different transform or revise the time-series data.";
-                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
-                    return;
-                }
-
-                for (int i = 0; i < TimeSeries.Count; i++)
-                {
-                    var ord = TimeSeries[i].Clone();
-                    ord.Value = BoxCox.Transform(TimeSeries[i].Value, _lambda);
-                    _transformedTimeSeries.Add(ord);
-                }
-            }
-            else if (TransformType == Transform.YeoJohnson)
-            {
-                try
-                {
-                    YeoJohnson.FitLambda(TimeSeries.ValuesToList(), out _lambda);
-                }
-                catch (ArithmeticException ex)
-                {
-                    _lambda = 0;
-                    _logJacobian = 0;
-                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data. Solver message: " + ex.Message;
-                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
-                    System.Diagnostics.Debug.WriteLine(ex);
-                    return;
-                }
-
-
-                if (!double.IsFinite(_lambda))
-                {
-                    _lambda = 0;
-                    _logJacobian = 0;
-                    _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
-                    _transformFitValidationMessage = "Error: Yeo-Johnson lambda estimation failed. Select a different transform or revise the time-series data.";
-                    System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
-                    return;
-                }
-
-                for (int i = 0; i < TimeSeries.Count; i++)
-                {
-                    var ord = TimeSeries[i].Clone();
-                    ord.Value = YeoJohnson.Transform(TimeSeries[i].Value, _lambda);
-                    _transformedTimeSeries.Add(ord);
-                }
-            }
-
-            // Step 2: Difference the transformed series.
-            _diffSeries = DiffOrderD > 0
-                ? _transformedTimeSeries.Difference(1, DiffOrderD)
-                : _transformedTimeSeries.Clone();
-
-            int effectiveTrainingSteps = Math.Min(TrainingTimeSteps, _diffSeries.Count);
-
-            // Step 3: Training series is the first effectiveTrainingSteps entries of _diffSeries.
-            _trainingTimeSeries = new TimeSeries(_diffSeries.TimeInterval);
-            for (int i = 0; i < effectiveTrainingSteps; i++)
-                _trainingTimeSeries.Add(_diffSeries[i].Clone());
-
-            // Step 4: Jacobian correction for the likelihood, computed on the RAW values
-            // whose densities the likelihood is evaluating (t = maxOrder + DiffOrderD .. TrainingTimeSteps - 1).
-            // Differencing is a linear operator so adds no Jacobian term.
-            if (TransformType == Transform.None)
-            {
+                _transformFitValidationMessage = null;
                 _logJacobian = 0;
-            }
-            else
-            {
+                if (TransformType == Transform.None || TransformType == Transform.Logarithmic)
+                {
+                    _lambda = 0;
+                    _transformLambdaIsManual = false;
+                    _usePersistedTransformLambda = false;
+                }
+                if (TimeSeries == null)
+                {
+                    _transformedTimeSeries = null!;
+                    _diffSeries = null!;
+                    _trainingTimeSeries = null!;
+                    return;
+                }
+
+                _transformedTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                _diffSeries = new TimeSeries(TimeSeries.TimeInterval);
+                _trainingTimeSeries = new TimeSeries(TimeSeries.TimeInterval);
+                int effectiveRawTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
+
+                if (TransformType == Transform.None || TransformType == Transform.Logarithmic)
+                {
+                    _lambda = 0;
+                    _transformLambdaIsManual = false;
+                    _usePersistedTransformLambda = false;
+                }
+                else if (effectiveRawTrainingSteps == 0)
+                {
+                    _lambda = 0;
+                    return;
+                }
+                else if (!_transformLambdaIsManual && !_usePersistedTransformLambda)
+                {
+                    var fittingValues = TimeSeries.ValuesToArray().Subset(0, effectiveRawTrainingSteps - 1);
+                    try
+                    {
+                        if (TransformType == Transform.BoxCox)
+                            BoxCox.FitLambda(fittingValues, out _lambda);
+                        else
+                            YeoJohnson.FitLambda(fittingValues, out _lambda);
+                    }
+                    catch (ArithmeticException ex)
+                    {
+                        _lambda = 0;
+                        string transformName = TransformType == Transform.BoxCox ? "Box-Cox" : "Yeo-Johnson";
+                        _transformFitValidationMessage = $"Error: {transformName} lambda estimation failed. Select a different transform or revise the time-series data. Solver message: {ex.Message}";
+                        System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                        System.Diagnostics.Debug.WriteLine(ex);
+                        return;
+                    }
+
+                    if (!double.IsFinite(_lambda))
+                    {
+                        _lambda = 0;
+                        string transformName = TransformType == Transform.BoxCox ? "Box-Cox" : "Yeo-Johnson";
+                        _transformFitValidationMessage = $"Error: {transformName} lambda estimation failed. Select a different transform or revise the time-series data.";
+                        System.Diagnostics.Debug.WriteLine($"ARIMAX.SetTrainingData: {_transformFitValidationMessage}");
+                        return;
+                    }
+                }
+
+                for (int i = 0; i < TimeSeries.Count; i++)
+                {
+                    var ordinate = TimeSeries[i].Clone();
+                    if (TransformType == Transform.Logarithmic || TransformType == Transform.BoxCox)
+                        ordinate.Value = BoxCox.Transform(ordinate.Value, _lambda);
+                    else if (TransformType == Transform.YeoJohnson)
+                        ordinate.Value = YeoJohnson.Transform(ordinate.Value, _lambda);
+                    _transformedTimeSeries.Add(ordinate);
+                }
+
+                _diffSeries = DiffOrderD > 0
+                    ? _transformedTimeSeries.Difference(1, DiffOrderD)
+                    : _transformedTimeSeries.Clone();
+
+                int effectiveTrainingSteps = Math.Min(TrainingTimeSteps, _diffSeries.Count);
+                _trainingTimeSeries = new TimeSeries(_diffSeries.TimeInterval);
+                for (int i = 0; i < effectiveTrainingSteps; i++)
+                    _trainingTimeSeries.Add(_diffSeries[i].Clone());
+
+                int maxOrder = Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
                 int startRawIdx = DiffOrderD + maxOrder;
-                int endRawIdx = TrainingTimeSteps - 1;
-                if (endRawIdx >= startRawIdx && endRawIdx < TimeSeries.Count)
+                int endRawIdx = effectiveRawTrainingSteps - 1;
+                if (TransformType != Transform.None && endRawIdx >= startRawIdx)
                 {
                     var rawSubset = TimeSeries.ValuesToArray().Subset(startRawIdx, endRawIdx);
                     _logJacobian = TransformType == Transform.YeoJohnson
                         ? YeoJohnson.LogJacobian(rawSubset, _lambda)
                         : BoxCox.LogJacobian(rawSubset, _lambda);
                 }
-                else
-                {
-                    _logJacobian = 0;
-                }
+            }
+            finally
+            {
+                if (notifyTransformLambda && _lambda != previousLambda)
+                    RaisePropertyChange(nameof(TransformLambda));
             }
         }
 
@@ -780,11 +774,35 @@ namespace RMC.BestFit.Models
         /// Sets the transformation parameters manually.
         /// </summary>
         /// <param name="lambda1">The primary transformation parameter (λ for Box-Cox/Yeo-Johnson).</param>
-        /// <param name="lambda2">The offset for handling non-positive values (default = 0).</param>
+        /// <param name="lambda2">Compatibility placeholder retained for existing callers; the value is intentionally ignored.</param>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="lambda1"/> is not finite.</exception>
+        /// <remarks>
+        /// For Box-Cox and Yeo-Johnson, the supplied exponent becomes manual state and remains fixed
+        /// when the training window changes. None and logarithmic transforms canonicalize the exponent
+        /// to zero and discard manual state.
+        /// </remarks>
         public void SetTransformParameters(double lambda1 = 0, double lambda2 = 0)
         {
-            _lambda = lambda1;
-            _lambda2 = lambda2;
+            if (!double.IsFinite(lambda1))
+                throw new ArgumentOutOfRangeException(nameof(lambda1), "The transformation exponent must be finite.");
+
+            _usePersistedTransformLambda = false;
+            if (TransformType == Transform.None || TransformType == Transform.Logarithmic)
+            {
+                _lambda = 0;
+                _transformLambdaIsManual = false;
+            }
+            else
+            {
+                _lambda = lambda1;
+                _transformLambdaIsManual = true;
+            }
+
+            SetTrainingData(false);
+            if (UseDefaultFlatPriors)
+                SetDefaultParameters();
+            RaisePropertyChange(nameof(TransformLambda));
+            RaisePropertyChange(nameof(TransformType));
         }
 
         /// <summary>
@@ -904,14 +922,13 @@ namespace RMC.BestFit.Models
             double sigmaLB = Tools.DoubleMachineEpsilon;
             double sigmaUB = 10;
 
-            // Get data statistics from differenced series (original scale)
-            // Parameters are interpreted on original scale, transformation only affects residuals
-            // Match ARIMA's approach for min/max bounds and sigmaUB calculation
-            if (_diffSeries != null && _diffSeries.Count > 0)
+            // Derive defaults only from the transformed/differenced training prefix. The full
+            // differenced series also contains holdout values and must not influence calibration.
+            if (_trainingTimeSeries != null && _trainingTimeSeries.Count > 0)
             {
-                N = TrainingTimeSteps;
-                mean = _diffSeries.MeanValue();
-                sigma = _diffSeries.StandardDeviation();
+                N = _trainingTimeSeries.Count;
+                mean = _trainingTimeSeries.MeanValue();
+                sigma = _trainingTimeSeries.StandardDeviation();
 
                 // Match ARIMA's min/max calculation based on mean
                 double tempMin = Math.Sign(mean) * Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(mean)) - 1));
@@ -926,7 +943,7 @@ namespace RMC.BestFit.Models
                 range = max - min;
 
                 // Trend parameter scales
-                delta1 = (_diffSeries[Math.Min(TrainingTimeSteps - 1, _diffSeries.Count - 1)].Value - _diffSeries.First().Value) / N;
+                delta1 = (_trainingTimeSeries[^1].Value - _trainingTimeSeries.First().Value) / N;
                 delta2 = delta1 / N;
                 delta3 = delta2 / N;
                 delta1 = Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(delta1)) + 1));
@@ -946,12 +963,12 @@ namespace RMC.BestFit.Models
             double interceptInit = mean;
             double gamma1Init = 0, gamma2Init = 0, gamma3Init = 0;
 
-            if (TrendType != Trend.None && _diffSeries != null && _diffSeries.Count > 1)
+            if (TrendType != Trend.None && _trainingTimeSeries != null && _trainingTimeSeries.Count > 1)
             {
-                int n = Math.Min(_diffSeries.Count, TrainingTimeSteps);
+                int n = _trainingTimeSeries.Count;
                 var y = new double[n];
                 for (int i = 0; i < n; i++)
-                    y[i] = _diffSeries[i].Value;
+                    y[i] = _trainingTimeSeries[i].Value;
 
                 if (TrendType == Trend.Linear)
                 {
@@ -1972,13 +1989,19 @@ namespace RMC.BestFit.Models
                 _useJeffreysRuleForScale = UseJeffreysRuleForScale,
                 _trainingTimeSteps = TrainingTimeSteps,
                 _useDefaultTrainingSteps = UseDefaultTrainingSteps,
+                _lambda = TransformLambda,
+                _transformLambdaIsManual = _transformLambdaIsManual,
                 Parameters = parms
             };
 
             result.TimeSeries = TimeSeries?.Clone()!;
             result._trainingTimeSteps = TrainingTimeSteps;
             result._useDefaultTrainingSteps = UseDefaultTrainingSteps;
+            result._lambda = TransformLambda;
+            result._transformLambdaIsManual = _transformLambdaIsManual;
+            result._usePersistedTransformLambda = true;
             result.SetTrainingData();
+            result._usePersistedTransformLambda = false;
             if (_covariates != null)
             {
                 result.SetCovariates(_covariates.Select(c => c.Clone()).ToList());
@@ -1992,6 +2015,8 @@ namespace RMC.BestFit.Models
         {
             var result = new XElement(nameof(ARIMAX));
             result.SetAttributeValue(nameof(TransformType), TransformType.ToString());
+            result.SetAttributeValue(nameof(TransformLambda), TransformLambda.ToString("R", CultureInfo.InvariantCulture));
+            result.SetAttributeValue("TransformLambdaIsManual", _transformLambdaIsManual.ToString());
             result.SetAttributeValue(nameof(CovariateExtension), CovariateExtension.ToString());
             result.SetAttributeValue(nameof(IncludeIntercept), IncludeIntercept.ToString());
             result.SetAttributeValue(nameof(IncludeSeasonality), IncludeSeasonality.ToString());

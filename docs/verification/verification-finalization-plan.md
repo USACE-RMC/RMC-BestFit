@@ -313,14 +313,18 @@ Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 A
 Findings and required direction:
 
 - TR-035: complete. AR, MA, and ARIMA now emit `JeffreysScalePrior`; ARIMAX is unchanged. Fast metadata/decomposition regressions and the four-case analytical `-log(sigma)` oracle pass at `1E-12`.
-- TR-036: fit transform parameters on training data only and prove holdout invariance.
+- TR-036: complete. All four models fit Box-Cox/Yeo-Johnson lambda on the raw training prefix,
+  freeze it for the full response, persist fitted/manual provenance, and pass holdout-isolation
+  regressions plus the independently implemented R profile-likelihood oracle.
 - TR-037: correct raw/differenced index maps and test hand-computable `d=1` and `d=2` sequences.
 - TR-038: simulate ARIMA on the transformed/differenced scale, integrate, then inverse-transform once.
 - TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
 - TR-040: complete. AR, MA, ARIMA, and ARIMAX scalar, pointwise, component, and prior paths reject non-finite or non-positive innovation scales with exact negative infinity while preserving decomposed shape/metadata. Fast parity and the analytical Gaussian/prior oracle pass.
 - TR-041: align ARIMAX covariates and Jacobians by date and the exact differencing index map.
 - TR-042: criteria defect closed in Phase 2. Retain regressions proving that AR, MA, ARIMA, ARIMAX, and rating-curve AIC/BIC use data likelihood at MAP; the later phase must not restate prior-density removal as open work.
-- TR-046: make transform updates atomic: rebuild transformed/differenced data, reset parameters/results, and either implement or compatibility-deprecate the unused offset.
+- TR-046: complete. The unchanged setter atomically rebuilds transform-dependent state;
+  `lambda2` is documented and tested as an ignored compatibility placeholder. Clone, UI
+  copy/save/open/undo/redo, API mapping, and the independent likelihood oracle pass.
 
 Verification must include algebraic fixtures, scalar/pointwise decomposition, training/holdout isolation, seeded Monte Carlo moments, transformed simulation, exclusion of prior-density terms from AIC/BIC, and flat-prior parity with MLE criteria.
 

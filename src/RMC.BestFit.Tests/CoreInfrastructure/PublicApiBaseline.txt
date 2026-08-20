@@ -1043,6 +1043,7 @@ TYPE class RMC.BestFit.Models.ARIMA
   PROPERTY System.Boolean IncludeIntercept {get;set;}
   PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
   PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Double TransformLambda {get;}
   PROPERTY System.Int32 DOrder {get;set;}
   PROPERTY System.Int32 ForecastingTimeSteps {get;}
   PROPERTY System.Int32 POrder {get;set;}
@@ -1083,6 +1084,7 @@ TYPE class RMC.BestFit.Models.ARIMAX
   PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
   PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
   PROPERTY System.Collections.Generic.List<Numerics.Data.TimeSeries> Covariates {get;}
+  PROPERTY System.Double TransformLambda {get;}
   PROPERTY System.Int32 AROrderP {get;set;}
   PROPERTY System.Int32 DiffOrderD {get;set;}
   PROPERTY System.Int32 MAOrderQ {get;set;}
@@ -1141,6 +1143,7 @@ TYPE class RMC.BestFit.Models.AutoRegressive
   PROPERTY System.Boolean IncludeIntercept {get;set;}
   PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
   PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Double TransformLambda {get;}
   PROPERTY System.Int32 ForecastingTimeSteps {get;}
   PROPERTY System.Int32 Order {get;set;}
   PROPERTY System.Int32 TrainingTimeSteps {get;set;}
@@ -1703,6 +1706,7 @@ TYPE class RMC.BestFit.Models.MovingAverage
   PROPERTY System.Boolean IncludeIntercept {get;set;}
   PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
   PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
+  PROPERTY System.Double TransformLambda {get;}
   PROPERTY System.Int32 ForecastingTimeSteps {get;}
   PROPERTY System.Int32 Order {get;set;}
   PROPERTY System.Int32 TrainingTimeSteps {get;set;}

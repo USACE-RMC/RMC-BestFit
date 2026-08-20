@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using RMC.BestFit.Models;
 
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
@@ -102,6 +103,117 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
+    /// Verifies automatic Box-Cox and Yeo-Johnson exponents use only the raw training prefix for
+    /// all four time-series models and match the independently implemented R profile oracle.
+    /// </summary>
+    /// <remarks>
+    /// The committed artifact fixes the raw values, six-observation training boundary, R/package
+    /// versions, and acceptance rule before C# evaluation. Acceptance is 1E-8 absolute or 1E-7
+    /// relative. Altering the three-observation holdout tail must not change the exponent,
+    /// transformed training values, or conditional likelihood.
+    /// </remarks>
+    [TestMethod]
+    public void TransformLambdaMatchesIndependentTrainingOnlyOracle()
+    {
+        JsonElement oracle = LoadOracle("phase5-transform-lambda-oracle.json");
+        JsonElement tolerances = oracle.GetProperty("metadata").GetProperty("tolerances");
+        double absoluteTolerance = tolerances.GetProperty("cross_language_absolute").GetDouble();
+        double relativeTolerance = tolerances.GetProperty("cross_language_relative").GetDouble();
+
+        foreach (string transformName in new[] { "box_cox", "yeo_johnson" })
+        {
+            JsonElement transformCase = oracle.GetProperty("fitted").GetProperty(transformName);
+            double[] raw = ReadDoubleArray(transformCase.GetProperty("raw"));
+            double[] alternateHoldout = ReadDoubleArray(transformCase.GetProperty("alternate_holdout"));
+            double[] mutated = raw.Take(6).Concat(alternateHoldout).ToArray();
+            double expectedLambda = transformCase.GetProperty("expected_lambda").GetDouble();
+            double[] expectedTraining = ReadDoubleArray(transformCase.GetProperty("expected_training_transformed"));
+            Transform transform = transformName == "box_cox" ? Transform.BoxCox : Transform.YeoJohnson;
+
+            foreach (string modelName in new[] { nameof(AutoRegressive), nameof(MovingAverage), nameof(ARIMA), nameof(ARIMAX) })
+            {
+                ModelBase model = CreateAutomaticallyTransformedModel(modelName, raw, transform, 6);
+                ModelBase holdoutMutation = CreateAutomaticallyTransformedModel(modelName, mutated, transform, 6);
+                double actualLambda = GetTransformLambda(model);
+
+                AssertClose(expectedLambda, actualLambda, absoluteTolerance, relativeTolerance, $"{modelName} {transform}");
+                AssertClose(expectedLambda, GetTransformLambda(holdoutMutation), absoluteTolerance, relativeTolerance, $"{modelName} {transform} holdout");
+                AssertArrayClose(expectedTraining, GetTrainingValues(model), absoluteTolerance, relativeTolerance, $"{modelName} {transform} training");
+                AssertArrayClose(GetTrainingValues(model), GetTrainingValues(holdoutMutation), 1E-12, 0.0, $"{modelName} {transform} holdout state");
+                Assert.AreEqual(
+                    model.DataLogLikelihood(CreateFixedTimeSeriesParameters(model)),
+                    holdoutMutation.DataLogLikelihood(CreateFixedTimeSeriesParameters(holdoutMutation)),
+                    1E-12,
+                    $"{modelName} {transform} holdout likelihood");
+
+                XElement fittedXml = model.ToXElement();
+                Assert.AreEqual("False", fittedXml.Attribute("TransformLambdaIsManual")?.Value, modelName);
+                ModelBase restored = RestoreTimeSeriesModel(modelName, CreateSeries(raw), fittedXml);
+                Assert.AreEqual(actualLambda, GetTransformLambda(restored), 1E-12, $"{modelName} restored fitted value");
+
+                SetTrainingSteps(restored, 7);
+                Assert.AreNotEqual(actualLambda, GetTransformLambda(restored), $"{modelName} automatic training-window refit");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Verifies a manual Yeo-Johnson assignment atomically rebuilds transformed observations,
+    /// residual recurrences, Jacobians, and conditional likelihoods against the independent R
+    /// oracle for AR, MA, ARIMA, and ARIMAX.
+    /// </summary>
+    /// <remarks>
+    /// The fixed fixture uses ten raw values, eight training observations, lambda 0.6, AR
+    /// coefficient 0.35, MA coefficient -0.25, and innovation scale 0.8. Cross-language
+    /// acceptance is 1E-8 absolute or 1E-7 relative; serialization state identities use 1E-12.
+    /// </remarks>
+    [TestMethod]
+    public void ManualTransformLambdaRebuildMatchesIndependentLikelihoodOracle()
+    {
+        JsonElement oracle = LoadOracle("phase5-transform-lambda-oracle.json");
+        JsonElement tolerances = oracle.GetProperty("metadata").GetProperty("tolerances");
+        double absoluteTolerance = tolerances.GetProperty("cross_language_absolute").GetDouble();
+        double relativeTolerance = tolerances.GetProperty("cross_language_relative").GetDouble();
+        JsonElement manual = oracle.GetProperty("manual");
+        double[] raw = ReadDoubleArray(manual.GetProperty("raw"));
+        int trainingSteps = manual.GetProperty("training_steps").GetInt32();
+        double lambda = manual.GetProperty("lambda").GetDouble();
+        double phi = manual.GetProperty("phi").GetDouble();
+        double theta = manual.GetProperty("theta").GetDouble();
+        double sigma = manual.GetProperty("sigma").GetDouble();
+        double[] expectedTraining = ReadDoubleArray(manual.GetProperty("expected_full_transformed"))
+            .Take(trainingSteps)
+            .ToArray();
+        double[] expectedArResiduals = ReadDoubleArray(manual.GetProperty("expected_ar_residuals"));
+        double[] expectedMaResiduals = ReadDoubleArray(manual.GetProperty("expected_ma_residuals"));
+        double expectedArLikelihood = manual.GetProperty("expected_ar_log_likelihood").GetDouble();
+        double expectedMaLikelihood = manual.GetProperty("expected_ma_log_likelihood").GetDouble();
+
+        foreach (string modelName in new[] { nameof(AutoRegressive), nameof(MovingAverage), nameof(ARIMA), nameof(ARIMAX) })
+        {
+            ModelBase model = CreateManuallyTransformedModel(modelName, raw, lambda, trainingSteps);
+            AssertArrayClose(expectedTraining, GetTrainingValues(model), absoluteTolerance, relativeTolerance, $"{modelName} transformed");
+
+            double[] parameters = modelName == nameof(MovingAverage)
+                ? new[] { theta, sigma }
+                : new[] { phi, sigma };
+            double[] residuals = GetResiduals(model, parameters);
+            double[] expectedResiduals = modelName == nameof(MovingAverage) ? expectedMaResiduals : expectedArResiduals;
+            if (modelName != nameof(MovingAverage))
+                residuals = residuals.Skip(1).ToArray();
+            AssertArrayClose(expectedResiduals, residuals, absoluteTolerance, relativeTolerance, $"{modelName} residuals");
+
+            double expectedLikelihood = modelName == nameof(MovingAverage) ? expectedMaLikelihood : expectedArLikelihood;
+            AssertClose(expectedLikelihood, model.DataLogLikelihood(parameters), absoluteTolerance, relativeTolerance, $"{modelName} likelihood");
+
+            XElement xml = model.ToXElement();
+            ModelBase restored = RestoreTimeSeriesModel(modelName, CreateSeries(raw), xml);
+            Assert.AreEqual(lambda, GetTransformLambda(restored), 1E-12, $"{modelName} restored lambda");
+            AssertClose(expectedLikelihood, restored.DataLogLikelihood(parameters), absoluteTolerance, relativeTolerance, $"{modelName} restored likelihood");
+        }
+    }
+
+    /// <summary>
     /// Compares one model's pointwise Jeffreys component with the analytical oracle.
     /// </summary>
     /// <param name="model">The time-series model under verification.</param>
@@ -139,6 +251,68 @@ public class Phase5TimeSeriesVerificationTests
             nameof(ARIMA) => new ARIMA(),
             nameof(ARIMAX) => new ARIMAX(),
             _ => throw new ArgumentOutOfRangeException(nameof(modelName), modelName, "Unknown oracle model."),
+        };
+    }
+
+    /// <summary>
+    /// Creates a model that fits its exponent after the raw training boundary is fixed.
+    /// </summary>
+    /// <param name="modelName">The model type name.</param>
+    /// <param name="values">The raw response.</param>
+    /// <param name="transform">The transform to fit.</param>
+    /// <param name="trainingSteps">The raw training boundary.</param>
+    /// <returns>The configured model.</returns>
+    private static ModelBase CreateAutomaticallyTransformedModel(string modelName, double[] values, Transform transform, int trainingSteps)
+    {
+        ModelBase model = CreateUnattachedTimeSeriesModel(modelName);
+        SetTimeSeries(model, CreateSeries(values));
+        SetUseDefaultTrainingSteps(model, false);
+        SetTrainingSteps(model, trainingSteps);
+        SetTransformType(model, transform);
+        return model;
+    }
+
+    /// <summary>
+    /// Creates a model whose manual exponent is installed before response attachment.
+    /// </summary>
+    /// <param name="modelName">The model type name.</param>
+    /// <param name="values">The raw response.</param>
+    /// <param name="lambda">The manual Yeo-Johnson exponent.</param>
+    /// <param name="trainingSteps">The raw training boundary.</param>
+    /// <returns>The configured model.</returns>
+    private static ModelBase CreateManuallyTransformedModel(string modelName, double[] values, double lambda, int trainingSteps)
+    {
+        ModelBase model = CreateUnattachedTimeSeriesModel(modelName);
+        SetTransformType(model, Transform.YeoJohnson);
+        SetTransformParameters(model, lambda);
+        SetTimeSeries(model, CreateSeries(values));
+        SetUseDefaultTrainingSteps(model, false);
+        SetTrainingSteps(model, trainingSteps);
+        return model;
+    }
+
+    /// <summary>
+    /// Creates an unattached one-lag, no-intercept model.
+    /// </summary>
+    /// <param name="modelName">The model type name.</param>
+    /// <returns>The model.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown for an unknown model name.</exception>
+    private static ModelBase CreateUnattachedTimeSeriesModel(string modelName)
+    {
+        return modelName switch
+        {
+            nameof(AutoRegressive) => new AutoRegressive { Order = 1, IncludeIntercept = false },
+            nameof(MovingAverage) => new MovingAverage { Order = 1, IncludeIntercept = false },
+            nameof(ARIMA) => new ARIMA { POrder = 1, DOrder = 0, QOrder = 0, IncludeIntercept = false },
+            nameof(ARIMAX) => new ARIMAX
+            {
+                AROrderP = 1,
+                DiffOrderD = 0,
+                MAOrderQ = 0,
+                XOrderB = 0,
+                IncludeIntercept = false,
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(modelName), modelName, "Unknown model."),
         };
     }
 
@@ -263,6 +437,213 @@ public class Phase5TimeSeriesVerificationTests
         Assert.AreEqual(expected.Length, actual.Length, context);
         for (int i = 0; i < expected.Length; i++)
             Assert.AreEqual(expected[i], actual[i], tolerance, $"{context}, index {i}");
+    }
+
+    /// <summary>
+    /// Compares two values using the predeclared combined absolute/relative rule.
+    /// </summary>
+    /// <param name="expected">The oracle value.</param>
+    /// <param name="actual">The production value.</param>
+    /// <param name="absoluteTolerance">The absolute tolerance.</param>
+    /// <param name="relativeTolerance">The relative tolerance.</param>
+    /// <param name="context">The assertion context.</param>
+    private static void AssertClose(double expected, double actual, double absoluteTolerance, double relativeTolerance, string context)
+    {
+        double bound = Math.Max(absoluteTolerance, relativeTolerance * Math.Abs(expected));
+        Assert.AreEqual(expected, actual, bound, context);
+    }
+
+    /// <summary>
+    /// Compares two vectors using the predeclared combined absolute/relative rule.
+    /// </summary>
+    /// <param name="expected">The oracle values.</param>
+    /// <param name="actual">The production values.</param>
+    /// <param name="absoluteTolerance">The absolute tolerance.</param>
+    /// <param name="relativeTolerance">The relative tolerance.</param>
+    /// <param name="context">The assertion context.</param>
+    private static void AssertArrayClose(double[] expected, double[] actual, double absoluteTolerance, double relativeTolerance, string context)
+    {
+        Assert.AreEqual(expected.Length, actual.Length, context);
+        for (int i = 0; i < expected.Length; i++)
+            AssertClose(expected[i], actual[i], absoluteTolerance, relativeTolerance, $"{context}, index {i}");
+    }
+
+    /// <summary>
+    /// Creates fixed valid parameters for the common one-lag, no-intercept fixture.
+    /// </summary>
+    /// <param name="model">The configured model.</param>
+    /// <returns>The parameter vector.</returns>
+    private static double[] CreateFixedTimeSeriesParameters(ModelBase model)
+    {
+        var parameters = new double[model.Parameters.Count];
+        parameters[0] = 0.35;
+        parameters[^1] = 0.8;
+        return parameters;
+    }
+
+    /// <summary>
+    /// Gets the effective transform exponent.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <returns>The exponent.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static double GetTransformLambda(ModelBase model)
+    {
+        return model switch
+        {
+            AutoRegressive ar => ar.TransformLambda,
+            MovingAverage ma => ma.TransformLambda,
+            ARIMA arima => arima.TransformLambda,
+            ARIMAX arimax => arimax.TransformLambda,
+            _ => throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model."),
+        };
+    }
+
+    /// <summary>
+    /// Gets transformed training values.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <returns>The transformed training values.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static double[] GetTrainingValues(ModelBase model)
+    {
+        return model switch
+        {
+            AutoRegressive ar => ar.TrainingTimeSeries.ValuesToArray(),
+            MovingAverage ma => ma.TrainingTimeSeries.ValuesToArray(),
+            ARIMA arima => arima.TrainingTimeSeries.ValuesToArray(),
+            ARIMAX arimax => arimax.TrainingTimeSeries.ValuesToArray(),
+            _ => throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model."),
+        };
+    }
+
+    /// <summary>
+    /// Gets conditional residuals from a supported time-series model.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="parameters">The fixed parameter vector.</param>
+    /// <returns>The residual vector.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static double[] GetResiduals(ModelBase model, double[] parameters)
+    {
+        return model switch
+        {
+            AutoRegressive ar => ar.Residuals(parameters),
+            MovingAverage ma => ma.Residuals(parameters),
+            ARIMA arima => arima.Residuals(parameters),
+            ARIMAX arimax => arimax.Residuals(parameters),
+            _ => throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model."),
+        };
+    }
+
+    /// <summary>
+    /// Restores one model from serialized state.
+    /// </summary>
+    /// <param name="modelName">The model type name.</param>
+    /// <param name="series">The response series.</param>
+    /// <param name="xml">The serialized model.</param>
+    /// <returns>The restored model.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The model name is unknown.</exception>
+    private static ModelBase RestoreTimeSeriesModel(string modelName, Numerics.Data.TimeSeries series, XElement xml)
+    {
+        return modelName switch
+        {
+            nameof(AutoRegressive) => new AutoRegressive(series, xml),
+            nameof(MovingAverage) => new MovingAverage(series, xml),
+            nameof(ARIMA) => new ARIMA(series, xml),
+            nameof(ARIMAX) => new ARIMAX(series, xml),
+            _ => throw new ArgumentOutOfRangeException(nameof(modelName), modelName, "Unknown model."),
+        };
+    }
+
+    /// <summary>
+    /// Assigns the transform type.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="transform">The transform.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static void SetTransformType(ModelBase model, Transform transform)
+    {
+        switch (model)
+        {
+            case AutoRegressive ar: ar.TransformType = transform; break;
+            case MovingAverage ma: ma.TransformType = transform; break;
+            case ARIMA arima: arima.TransformType = transform; break;
+            case ARIMAX arimax: arimax.TransformType = transform; break;
+            default: throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model.");
+        }
+    }
+
+    /// <summary>
+    /// Assigns a manual transform exponent.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="lambda">The exponent.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static void SetTransformParameters(ModelBase model, double lambda)
+    {
+        switch (model)
+        {
+            case AutoRegressive ar: ar.SetTransformParameters(lambda, double.NaN); break;
+            case MovingAverage ma: ma.SetTransformParameters(lambda, double.NaN); break;
+            case ARIMA arima: arima.SetTransformParameters(lambda, double.NaN); break;
+            case ARIMAX arimax: arimax.SetTransformParameters(lambda, double.NaN); break;
+            default: throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model.");
+        }
+    }
+
+    /// <summary>
+    /// Assigns a response series.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="series">The response series.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static void SetTimeSeries(ModelBase model, Numerics.Data.TimeSeries series)
+    {
+        switch (model)
+        {
+            case AutoRegressive ar: ar.TimeSeries = series; break;
+            case MovingAverage ma: ma.TimeSeries = series; break;
+            case ARIMA arima: arima.TimeSeries = series; break;
+            case ARIMAX arimax: arimax.TimeSeries = series; break;
+            default: throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model.");
+        }
+    }
+
+    /// <summary>
+    /// Assigns default-training-window state.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="value">The requested state.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static void SetUseDefaultTrainingSteps(ModelBase model, bool value)
+    {
+        switch (model)
+        {
+            case AutoRegressive ar: ar.UseDefaultTrainingSteps = value; break;
+            case MovingAverage ma: ma.UseDefaultTrainingSteps = value; break;
+            case ARIMA arima: arima.UseDefaultTrainingSteps = value; break;
+            case ARIMAX arimax: arimax.UseDefaultTrainingSteps = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model.");
+        }
+    }
+
+    /// <summary>
+    /// Assigns the raw training boundary.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="value">The training boundary.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The model type is unsupported.</exception>
+    private static void SetTrainingSteps(ModelBase model, int value)
+    {
+        switch (model)
+        {
+            case AutoRegressive ar: ar.TrainingTimeSteps = value; break;
+            case MovingAverage ma: ma.TrainingTimeSteps = value; break;
+            case ARIMA arima: arima.TrainingTimeSteps = value; break;
+            case ARIMAX arimax: arimax.TrainingTimeSteps = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unsupported model.");
+        }
     }
 
     /// <summary>

@@ -40,7 +40,21 @@ infinity, and pointwise data/prior decompositions retain their configured length
 with a negative-infinity scale contribution. They do not construct a Gaussian distribution or
 throw. This evaluation guard does not narrow the configured positive parameter bounds.
 
-`Transform.None`, logarithmic Box–Cox, fitted Box–Cox, and fitted Yeo–Johnson are supported. Transformation fitting is preprocessing, not part of $\theta$. Current fitting uses the full response and leaks holdout data ([TR-036](../review-findings.md#tr-036)); the manual parameter setter does not rebuild the transformed model ([TR-046](../review-findings.md#tr-046)). Use `Transform.None` for publishable holdout comparisons until corrected, or preprocess with an independently frozen training-only transform.
+`Transform.None`, logarithmic Box–Cox, fitted Box–Cox, and fitted Yeo–Johnson are supported.
+Transformation fitting is preprocessing, not part of $\theta$. Box-Cox and Yeo-Johnson lambda are
+fit from raw observations `[0, TrainingTimeSteps)` and then frozen while the transform is applied
+to the full response. Consequently, changing holdout values cannot change the training transform,
+Jacobian, likelihood, or defaults. The effective read-only `TransformLambda` is fitted
+automatically unless assigned through `SetTransformParameters`. A manual lambda remains fixed
+when only the training window changes; a fitted lambda refits when the response, training window,
+or transform type changes. None and logarithmic transforms use canonical lambda zero.
+
+Transform state is rebuilt atomically before numerical results are reused. Existing XML remains
+valid; optional invariant-culture `TransformLambda` and `TransformLambdaIsManual` attributes
+preserve the effective exponent and its provenance through save/open and clone/copy workflows.
+The setter's second argument, `lambda2`, remains accepted but is intentionally ignored for API
+compatibility; it is not a shift or offset parameter. See [TR-036](../review-findings.md#tr-036)
+and [TR-046](../review-findings.md#tr-046).
 
 ## Analysis Lifecycle
 
@@ -76,7 +90,7 @@ AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log li
 | Configuration | Estimation likelihood | Forecast/predictive simulation |
 |---|---|---|
 | AR/MA, no fitted transform | Available subject to conditional-likelihood assumptions | Available subject to diagnostic checks |
-| AR/MA with fitted transform | Holdout evaluation compromised by TR-036 | Back-transform is median-like; transform uncertainty omitted |
+| AR/MA with fitted transform | Available with training-only frozen lambda | Back-transform is median-like; transform uncertainty omitted |
 | ARIMA/ARIMAX with $d=0$, no transform | Available | Available, subject to ARIMAX covariate scenario |
 | ARIMA/ARIMAX with $d>0$ | Conditional likelihood can be inspected | Unavailable: reintegration defect TR-037 |
 | ARIMA transformed/differenced simulation | — | Unavailable: TR-038 |

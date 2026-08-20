@@ -49,7 +49,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-033](#tr-033) | GMM objective/gradient scale | High | Rejected non-defect | No change required | Passed | [Model-estimation verification](../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) | 2026-07-25 |
 | [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Confirmed defect - resolved | Fit and covariance fixed | Passed - R `gmm` parameter/objective and fixed-weight/two-step covariance parity | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) / [Artifact](../../verification/data/model-estimation/gmm-specification-oracle.json) | 2026-07-27 |
 | [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Confirmed defect; corrected | Complete | Passed - fast decomposition and analytical oracle | [Report](../verification/time-series.md#tr-035--jeffreys-prior-metadata) | 2026-08-20 |
-| [TR-036](#tr-036) | Transform fitting holdout leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-036](#tr-036) | Transform fitting holdout leakage | High | Confirmed defect; corrected | Complete | Passed - fast lifecycle and R training-only oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -59,7 +59,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-046](#tr-046) | Manual transform state rebuild | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-046](#tr-046) | Manual transform state rebuild | High | Confirmed defect; corrected | Complete | Passed - fast persistence and independent likelihood oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-048](#tr-048) | Spatial missing-site marginalization | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-049](#tr-049) | Spatial likelihood decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -625,17 +625,26 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 <a id="tr-036"></a>
 ## TR-036 — Time-Series Transform Fitting Leaks Holdout Data
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. All four models fit Box-Cox/Yeo-Johnson lambda from raw
+observations `[0, TrainingTimeSteps)`, freeze it before transforming the full response, and keep
+holdout values out of training state and ARIMAX default initialization. The additive read-only
+`TransformLambda` getter exposes the effective state without changing UI/App signatures.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by deterministic Core/UI/API lifecycle regressions and the exact
+R training-only profile-likelihood oracle; see [time-series verification](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle).
 
 **Evidence.** AR, MA, ARIMA, and ARIMAX call `BoxCox.FitLambda(TimeSeries.ValuesToList(), ...)` or the Yeo-Johnson equivalent on the entire response series. `TrainingTimeSteps` is applied only afterward. ARIMAX also transforms the entire response before selecting the training prefix.
 
 **Impact.** Transformation choice uses validation/holdout observations, so reported out-of-sample performance is not genuinely out of sample. Forecast-era additions can change calibration without changing the training window.
 
-**Follow-up.** Fit every preprocessing parameter on the training subset only, freeze it for validation/forecasting, serialize it, and test invariance to changes beyond `TrainingTimeSteps`.
+**Correction.** Fitted and manual provenance is persisted through optional invariant-culture XML
+attributes and clone/copy/save/open paths. A restored fitted value is used for the loaded response
+and refits after later data/training changes; a restored manual value remains fixed across
+training-window changes. Legacy XML retains automatic fitting. The R oracle was committed before
+C# evaluation and both named methods pass at their fixed tolerances. No optimizer, sampler, prior,
+seed, likelihood definition, or convergence default changed.
 
 <a id="tr-037"></a>
 ## TR-037 — ARIMA and ARIMAX Reintegration Is Off by One
@@ -775,17 +784,26 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 <a id="tr-046"></a>
 ## TR-046 — Manual Transform Parameters Do Not Rebuild Model Data
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. The unchanged two-argument setter validates finite
+`lambda1`, treats `lambda2` as an accepted but intentionally ignored compatibility placeholder,
+and atomically rebuilds transformed/differenced data, Jacobian, applicable defaults, validation,
+and dependent analysis state. None/log transforms canonicalize lambda to zero.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed by Core state/invalidation tests, UI serialization/copy/undo tests,
+API mapping tests, and the exact independent transformed-likelihood oracle; see
+[time-series verification](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle).
 
 **Evidence.** `SetTransformParameters(lambda1,lambda2)` in AR, MA, ARIMA, and ARIMAX only assigns backing fields. It does not re-transform the training series, recompute differences or Jacobians, reset parameters, or clear analysis results. The stored `lambda2` offset is not used by the shown transform calls.
 
 **Impact.** Calling the public method can leave the reported transform parameters inconsistent with the data and likelihood actually evaluated; `lambda2` suggests an unsupported offset capability.
 
-**Follow-up.** Make transform configuration atomic and observable, either remove the unused offset or implement it consistently, rebuild dependent state, and test serialization and likelihood changes.
+**Correction.** `TransformLambda` is additive, read-only, and hidden from property grids. Optional
+XML attributes preserve effective lambda and manual/fitted provenance without changing existing
+names or meanings. UI/App public and protected signature baselines remain exact, while the Core
+baseline changes only by the approved four getters. `lambda2` remains present so existing callers
+retain source and binary compatibility.
 
 <a id="tr-047"></a>
 ## TR-047 — Bivariate AIC and BIC Included the Copula Prior

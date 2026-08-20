@@ -36,6 +36,7 @@ namespace RMC.BestFit.Api.Mappers
             BayesianAnalysis bayesian;
             IReadOnlyList<ModelParameter> parameters;
             string transform;
+            double transformLambda;
             int dataLength;
             int trainingSteps;
             int forecastSteps;
@@ -51,6 +52,7 @@ namespace RMC.BestFit.Api.Mappers
                     bayesian = analysis.BayesianAnalysis;
                     parameters = model.Parameters;
                     transform = model.TransformType.ToString();
+                    transformLambda = model.TransformLambda;
                     dataLength = model.TimeSeries?.Count ?? 0;
                     trainingSteps = model.TrainingTimeSteps;
                     forecastSteps = analysis.ForecastingTimeSteps;
@@ -65,6 +67,7 @@ namespace RMC.BestFit.Api.Mappers
                     bayesian = analysis.BayesianAnalysis;
                     parameters = model.Parameters;
                     transform = model.TransformType.ToString();
+                    transformLambda = model.TransformLambda;
                     dataLength = model.TimeSeries?.Count ?? 0;
                     trainingSteps = model.TrainingTimeSteps;
                     forecastSteps = analysis.ForecastingTimeSteps;
@@ -79,6 +82,7 @@ namespace RMC.BestFit.Api.Mappers
                     bayesian = analysis.BayesianAnalysis;
                     parameters = model.Parameters;
                     transform = model.TransformType.ToString();
+                    transformLambda = model.TransformLambda;
                     dataLength = model.TimeSeries?.Count ?? 0;
                     trainingSteps = model.TrainingTimeSteps;
                     forecastSteps = analysis.ForecastingTimeSteps;
@@ -95,6 +99,7 @@ namespace RMC.BestFit.Api.Mappers
                     bayesian = analysis.BayesianAnalysis;
                     parameters = model.Parameters;
                     transform = model.TransformType.ToString();
+                    transformLambda = model.TransformLambda;
                     dataLength = model.TimeSeries?.Count ?? 0;
                     trainingSteps = model.TrainingTimeSteps;
                     forecastSteps = analysis.ForecastingTimeSteps;
@@ -144,6 +149,7 @@ namespace RMC.BestFit.Api.Mappers
                 Kind = EnumHelper.ToCamelCase(resource.Kind.ToString()),
                 ModelType = EnumHelper.ToCamelCase(resource.TimeSeriesModel.ToString()!),
                 TransformType = EnumHelper.ToCamelCase(transform),
+                TransformLambda = transformLambda,
                 DataLength = dataLength,
                 TrainingTimeSteps = trainingSteps,
                 ForecastingTimeSteps = forecastSteps,

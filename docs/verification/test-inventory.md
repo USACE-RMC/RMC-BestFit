@@ -377,3 +377,18 @@ fast project. No optimizer, sampler, recovery fixture, or production generator i
 
 The complete Core project passes 3,189/3,189. The Verification method is the only TR-040 method
 run from the Verification project.
+
+## TR-036/TR-046 time-series transform lifecycle
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `TimeSeriesTransformStateTests.*` | Core Tests | Read-only/non-browsable getter; atomic rebuild; training-prefix holdout isolation; automatic/manual provenance; XML/clone; canonicalization; ignored `lambda2`; invalidation | Exact state and `1E-12`; passed in Core 3,201/3,201 |
+| `TimeSeriesModelSerializationCompatibilityTests.ManualTransformLambda_NewXml_RoundTripsAllModelTypes` | UI.Tests | New optional XML state across AR, MA, ARIMA, and ARIMAX while legacy/unknown-attribute fixtures remain valid | Exact state; passed in UI 578/578 |
+| `TimeSeriesAnalysisTests.ManualTransformLambda_CopyUndoAndRedoPreserveEffectiveState` | UI.Tests | Copy and undo/redo preserve effective manual state | Exact state; passed |
+| `Phase5TimeSeriesVerificationTests.TransformLambdaMatchesIndependentTrainingOnlyOracle` | Verification | R Box-Cox/Yeo-Johnson profile fit on six training values with mutated three-value holdouts | `1E-8` absolute or `1E-7` relative; guarded pass 1/1 |
+| `Phase5TimeSeriesVerificationTests.ManualTransformLambdaRebuildMatchesIndependentLikelihoodOracle` | Verification | R transform, Jacobian, residual, and conditional Gaussian likelihood recurrence | Same cross-language rule; deterministic identities `1E-12`; guarded pass 1/1 |
+
+API DTO/service regressions cover omitted/manual values, JSON names, all four families, and invalid
+requests. App passes 438/438 and API passes 498/498. UI/App signature baselines remain exact; the
+Core baseline contains only the four approved additive getters. The R artifact and generator were
+committed before C# evaluation and retain their manifest SHA-256 hashes.

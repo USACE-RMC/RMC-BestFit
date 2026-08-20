@@ -730,6 +730,39 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies UI copy and model-snapshot undo/redo preserve the effective manual transform
+    /// exponent without adding a public UI wrapper property.
+    /// </summary>
+    [STATestMethod]
+    public void ManualTransformLambda_CopyUndoAndRedoPreserveEffectiveState()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("LambdaLifecycleTSA", _collection!);
+        tsa.ARIMAX.TransformType = RMC.BestFit.Models.Transform.YeoJohnson;
+        tsa.ARIMAX.SetTransformParameters(0.4, double.NaN);
+        tsa.TimeSeriesData = CreateTimeSeriesElement(
+            "LambdaLifecycleSeries",
+            20,
+            TimeInterval.OneYear,
+            new DateTime(2000, 1, 1));
+        tsa.ARIMAX.UseDefaultTrainingSteps = false;
+        tsa.ARIMAX.TrainingTimeSteps = 16;
+
+        tsa.ARIMAX.SetTransformParameters(0.75, double.PositiveInfinity);
+        Assert.AreEqual(0.75, tsa.ARIMAX.TransformLambda, 1E-12);
+        Assert.IsTrue(tsa.UndoManager.CanUndo);
+
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(0.4, tsa.ARIMAX.TransformLambda, 1E-12);
+
+        tsa.UndoManager.Redo();
+        Assert.AreEqual(0.75, tsa.ARIMAX.TransformLambda, 1E-12);
+
+        var copy = (UI.TimeSeriesAnalysis)tsa.Copy("LambdaLifecycleTSA-Copy");
+        Assert.AreEqual(0.75, copy.ARIMAX.TransformLambda, 1E-12);
+        Assert.AreEqual("True", copy.ARIMAX.ToXElement().Attribute("TransformLambdaIsManual")?.Value);
+    }
+
+    /// <summary>
     /// Gets an axis from a plot by key.
     /// </summary>
     /// <param name="plot">The plot containing the target axis.</param>

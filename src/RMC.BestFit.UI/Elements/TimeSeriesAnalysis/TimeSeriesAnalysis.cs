@@ -352,7 +352,7 @@ namespace RMC.BestFit.UI
         private static readonly HashSet<string> ModelUndoProperties = new()
         {
             "Parameters", "UseJeffreysRuleForScale", "AROrderP", "MAOrderQ",
-            "DiffOrderD", "IncludeIntercept", "TransformType",
+            "DiffOrderD", "IncludeIntercept", "TransformType", "TransformLambda",
             "TrainingTimeSteps", "UseDefaultTrainingSteps",
             "XOrderB", "IncludeSeasonality", "TrendType", "CovariateExtension"
         };

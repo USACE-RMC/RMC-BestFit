@@ -46,6 +46,7 @@
     <None Include="..\..\verification\data\model-estimation\psis-loo-oracle.json" Link="VerificationData\psis-loo-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\time-series\phase5-jeffreys-prior-oracle.json" Link="VerificationData\phase5-jeffreys-prior-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\time-series\phase5-invalid-scale-oracle.json" Link="VerificationData\phase5-invalid-scale-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-transform-lambda-oracle.json" Link="VerificationData\phase5-transform-lambda-oracle.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
