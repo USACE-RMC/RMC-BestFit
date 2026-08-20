@@ -308,6 +308,8 @@ Phase exit criteria:
 
 Status: in progress. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
 
+Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 App public/protected signature lines with committed SHA-256 hashes. Legacy AR, MA, ARIMA, ARIMAX, and pre-v2 `ARMAX` persistence contracts pass; the App transform selector retains its existing XAML/property path and enum values. Core passes 3,180/3,180, UI 576/576, App 431/431, and API 496/496. The strict Debug solution build with `EnforceXmlDocumentation=true` passes with zero warnings/errors; the separately documented validation script is absent from this checkout. No production code or Verification method changed in this package.
+
 Findings and required direction:
 
 - TR-035: correct pointwise Jeffreys component classification and scalar/pointwise identities.

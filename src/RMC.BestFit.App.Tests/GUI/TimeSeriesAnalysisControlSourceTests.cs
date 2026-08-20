@@ -26,6 +26,33 @@ namespace RMC.BestFit.App.Tests.GUI
         }
 
         /// <summary>
+        /// Verifies that the transform selector remains bound to the established ARIMAX property path.
+        /// </summary>
+        [TestMethod]
+        public void TransformSelector_RetainsEstablishedBindingContract()
+        {
+            string xaml = ReadAppSource(Path.Combine("GUI", "TimeSeriesAnalysis", "TimeSeriesAnalysisPropertiesControl.xaml"));
+
+            StringAssert.Contains(xaml, "ItemsSource=\"{Binding TransformTypeItems, UpdateSourceTrigger=PropertyChanged}\"");
+            StringAssert.Contains(xaml, "SelectedValue=\"{Binding Element.ARIMAX.TransformType, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}\"");
+            StringAssert.Contains(xaml, "DisplayMemberPath=\"DisplayName\" SelectedValuePath=\"Value\"");
+        }
+
+        /// <summary>
+        /// Verifies that the App continues exposing the four established transform choices and enum members.
+        /// </summary>
+        [TestMethod]
+        public void TransformSelector_RetainsEstablishedItems()
+        {
+            string source = ReadAppSource(Path.Combine("GUI", "TimeSeriesAnalysis", "TimeSeriesAnalysisPropertiesControl.xaml.cs"));
+
+            StringAssert.Contains(source, "new TransformTypeItem(\"None\", RMC.BestFit.Models.Transform.None)");
+            StringAssert.Contains(source, "new TransformTypeItem(\"Logarithmic\", RMC.BestFit.Models.Transform.Logarithmic)");
+            StringAssert.Contains(source, "new TransformTypeItem(\"Box-Cox\", RMC.BestFit.Models.Transform.BoxCox)");
+            StringAssert.Contains(source, "new TransformTypeItem(\"Yeo-Johnson\", RMC.BestFit.Models.Transform.YeoJohnson)");
+        }
+
+        /// <summary>
         /// Reads an App source file using a byte-preserving single-byte decoding.
         /// </summary>
         /// <param name="relativePath">The source path relative to the App project root.</param>

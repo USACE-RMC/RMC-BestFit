@@ -1,0 +1,1657 @@
+TYPE class RMC_BestFit.AlternativeControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.AlternativeControl()
+  METHOD public System.Void AddAllChecked()
+  METHOD public System.Void RemoveAll()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.IAnalysisElement Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.AnalysisAlternativeItem> AnalysisList {public get;}
+  PROPERTY System.Type AlternativeFilterType {public get;public set;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.AnalysisAddedEventHandler AnalysisAdded {public add;public remove;}
+  EVENT RMC_BestFit.AnalysisRemovedEventHandler AnalysisRemoved {public add;public remove;}
+TYPE class RMC_BestFit.AlternativeTimeSeriesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.AlternativeTimeSeriesControl()
+  METHOD public System.Void AddAllChecked()
+  METHOD public System.Void RemoveAll()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.TimeSeriesAlternativeItem> TimeSeriesList {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.TimeSeriesAddedEventHandler TimeSeriesAdded {public add;public remove;}
+  EVENT RMC_BestFit.TimeSeriesRemovedEventHandler TimeSeriesRemoved {public add;public remove;}
+TYPE class RMC_BestFit.AnalysisAddedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.AnalysisAddedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(RMC_BestFit.AnalysisAlternativeItem, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(RMC_BestFit.AnalysisAlternativeItem)
+TYPE class RMC_BestFit.AnalysisAlternativeItem
+  BASE System.Object
+  INTERFACE System.IDisposable
+  CTOR public RMC_BestFit.AnalysisAlternativeItem(RMC.BestFit.UI.IAnalysisElement)
+  METHOD public sealed-virtual System.Void Dispose()
+  PROPERTY OxyPlot.Wpf.AreaSeries CredibleIntervals {public get;}
+  PROPERTY OxyPlot.Wpf.LineSeries PosteriorMode {public get;}
+  PROPERTY OxyPlot.Wpf.LineSeries PosteriorPredictive {public get;}
+  PROPERTY RMC.BestFit.UI.IAnalysisElement Alternative {public get;}
+  PROPERTY System.Boolean IsChecked {public get;public set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged {public add;public remove;}
+TYPE class RMC_BestFit.AnalysisRemovedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.AnalysisRemovedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(RMC_BestFit.AnalysisAlternativeItem, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(RMC_BestFit.AnalysisAlternativeItem)
+TYPE class RMC_BestFit.App
+  BASE System.Windows.Application
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  CTOR public RMC_BestFit.App()
+  METHOD public System.Void InitializeComponent()
+  METHOD public static System.Void Main()
+TYPE class RMC_BestFit.AutocorrelationControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.AutocorrelationControl()
+  METHOD public System.Void SetPlot(OxyPlot.Wpf.Plot)
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.AutocorrelationControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.AutocorrelationControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.AutocorrelationControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.AutocorrelationControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.AutocorrelationControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.AutocorrelationControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.AverageMethodItem
+  BASE System.Object
+  CTOR public RMC_BestFit.AverageMethodItem(System.String, RMC.BestFit.Analyses.AverageMethod, System.String optional="")
+  PROPERTY RMC.BestFit.Analyses.AverageMethod Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.B17CAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.B17CAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.B17CAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.B17CAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.B17CAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.B17CAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.B17CAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.B17CAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.B17CAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.B17CAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.B17CAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.B17CAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.Generic.List<System.Double> AEPOptions {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.InputData> InputDataList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.B17CUncertaintyOptionItem> UncertaintyMethodList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CredibleIntervalItem> CredibleIntervalItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.GMMEstimationTypeItem> EstimationMethodList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.PointEstimatorItem> PointEstimatorItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.UnivariateDistributionItem> DistributionList {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.B17CUncertaintyOptionItem
+  BASE System.Object
+  CTOR public RMC_BestFit.B17CUncertaintyOptionItem(System.String, RMC.BestFit.Analyses.UncertaintyMethod, System.String optional="")
+  PROPERTY RMC.BestFit.Analyses.UncertaintyMethod Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.BatchRunItemViewModel
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.BatchRunItemViewModel(FrameworkInterfaces.IElement, RMC.BestFit.UI.IAnalysisElement)
+  PROPERTY FrameworkInterfaces.IElement Element {public get;}
+  PROPERTY RMC.BestFit.UI.IAnalysisElement Analysis {public get;}
+  PROPERTY RMC_BestFit.BatchRunStatus Status {public get;public set;}
+  PROPERTY System.Boolean IsProgressIndeterminate {public get;}
+  PROPERTY System.Double Progress {public get;public set;}
+  PROPERTY System.Nullable<System.TimeSpan> Duration {public get;public set;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String DurationText {public get;}
+  PROPERTY System.String ProgressText {public get;}
+  PROPERTY System.String StatusMessage {public get;public set;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged {public add;public remove;}
+TYPE enum RMC_BestFit.BatchRunStatus
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD public RMC_BestFit.BatchRunStatus Canceled = 4
+  FIELD public RMC_BestFit.BatchRunStatus Failed = 3
+  FIELD public RMC_BestFit.BatchRunStatus Pending = 0
+  FIELD public RMC_BestFit.BatchRunStatus Running = 1
+  FIELD public RMC_BestFit.BatchRunStatus Succeeded = 2
+  FIELD public System.Int32 value__
+TYPE class RMC_BestFit.BatchRunStatusToIconConverter
+  BASE System.Object
+  INTERFACE System.Windows.Data.IValueConverter
+  CTOR public RMC_BestFit.BatchRunStatusToIconConverter()
+  METHOD public sealed-virtual System.Object Convert(System.Object, System.Type, System.Object, System.Globalization.CultureInfo)
+  METHOD public sealed-virtual System.Object ConvertBack(System.Object, System.Type, System.Object, System.Globalization.CultureInfo)
+TYPE class RMC_BestFit.BatchRunWindow
+  BASE GenericControls.MetroWindow
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.IWindowService
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.BatchRunWindow()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<FrameworkInterfaces.IElement> Analyses {public get;public set;}
+  FIELD public System.Windows.DependencyProperty AnalysesProperty
+TYPE class RMC_BestFit.BayesianOptionsControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.BayesianOptionsControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.SamplerTypeItem> SamplerTypeItems {public get;}
+  PROPERTY System.Double ActualPropertyWidth {public get;public set;}
+  FIELD public System.Windows.DependencyProperty ActualPropertyWidthProperty
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.BayesianOptionsControl+ShowPropertyAttributesEventHandler ShowPropertyAttributes {public add;public remove;}
+TYPE class RMC_BestFit.BayesianOptionsControl+ShowPropertyAttributesEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.BayesianOptionsControl+ShowPropertyAttributesEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.String, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.String, System.Object)
+TYPE class RMC_BestFit.BayesianOutputControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.BayesianOutputControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CredibleIntervalItem> CredibleIntervalItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.PointEstimatorItem> PointEstimatorItems {public get;}
+  PROPERTY System.Double ActualPropertyWidth {public get;public set;}
+  FIELD public System.Windows.DependencyProperty ActualPropertyWidthProperty
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.BayesianOutputControl+ShowPropertyAttributesEventHandler ShowPropertyAttributes {public add;public remove;}
+TYPE class RMC_BestFit.BayesianOutputControl+ShowPropertyAttributesEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.BayesianOutputControl+ShowPropertyAttributesEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.String, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.String, System.Object)
+TYPE class RMC_BestFit.BestFitStyles
+  BASE System.Windows.ResourceDictionary
+  INTERFACE System.Collections.ICollection
+  INTERFACE System.Collections.IDictionary
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.INameScope
+  INTERFACE System.Windows.Markup.IUriContext
+  CTOR public RMC_BestFit.BestFitStyles()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+TYPE class RMC_BestFit.BivariateAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.BivariateAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.BivariateAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.BivariateAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.BivariateAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.BivariateAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.BivariateAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.BivariateAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.BivariateAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.BivariateAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.BivariateAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.BivariateAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.IUnivariate> UnivariateAnalysisList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CopulaEstimationItem> MethodList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CopulaItem> CopulaList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CredibleIntervalItem> CredibleIntervalItems {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.BivariateHeatMapControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.BivariateHeatMapControl()
+  METHOD public System.Void SetPlot(OxyPlot.Wpf.Plot)
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  PROPERTY System.Boolean SimpleView {public get;public set;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.BivariateHeatMapControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.BivariateHeatMapControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.BivariateHeatMapControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.BivariateHeatMapControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.BivariateHeatMapControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.BivariateHeatMapControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.BlockFunctionItem
+  BASE System.Object
+  CTOR public RMC_BestFit.BlockFunctionItem(System.String, Numerics.Data.BlockFunctionType)
+  PROPERTY Numerics.Data.BlockFunctionType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.CoincidentFrequencyControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.CoincidentFrequencyControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.CoincidentFrequencyAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.CoincidentFrequencyControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.CoincidentFrequencyControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.CoincidentFrequencyControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.CoincidentFrequencyControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.CoincidentFrequencyControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.CoincidentFrequencyControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.CoincidentFrequencyPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.CoincidentFrequencyPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.CoincidentFrequencyAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.BivariateAnalysis> BivariateAnalysisList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CredibleIntervalItem> CredibleIntervalItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.InputDataSelectionItem> InputDataList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.PointEstimatorItem> PointEstimatorItems {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+TYPE class RMC_BestFit.CoincidentFrequencyTablePoint
+  BASE System.Object
+  CTOR public RMC_BestFit.CoincidentFrequencyTablePoint(System.Double, System.Double, System.Double, System.Double, System.Double)
+  PROPERTY System.Double Lower {public get;public set;}
+  PROPERTY System.Double Mode {public get;public set;}
+  PROPERTY System.Double Predictive {public get;public set;}
+  PROPERTY System.Double Upper {public get;public set;}
+  PROPERTY System.Double Z {public get;public set;}
+TYPE class RMC_BestFit.CompositeAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.CompositeAnalysisControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.CompositeAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.CompositeAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.CompositeAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.CompositeAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.CompositeAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.CompositeAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.CompositeAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.CompositeAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Markup.IStyleConnector
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.CompositeAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.CompositeAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.IUnivariate> UnivariateAnalysisList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.AverageMethodItem> AverageMethodList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CompositeTypeItem> CompositeTypeList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CredibleIntervalItem> CredibleIntervalItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.DependencyItem> DependencyList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.InputDataSelectionItem> InputDataList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.PointEstimatorItem> PointEstimatorItems {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.CompositeTypeItem
+  BASE System.Object
+  CTOR public RMC_BestFit.CompositeTypeItem(System.String, RMC.BestFit.Analyses.CompositeType, System.String optional="")
+  PROPERTY RMC.BestFit.Analyses.CompositeType Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.CopulaEstimationItem
+  BASE System.Object
+  CTOR public RMC_BestFit.CopulaEstimationItem(System.String, Numerics.Distributions.Copulas.CopulaEstimationMethod, System.String optional="")
+  PROPERTY Numerics.Distributions.Copulas.CopulaEstimationMethod Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.CopulaItem
+  BASE System.Object
+  CTOR public RMC_BestFit.CopulaItem(System.String, Numerics.Distributions.Copulas.CopulaType)
+  PROPERTY Numerics.Distributions.Copulas.CopulaType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.CovariateExtensionItem
+  BASE System.Object
+  CTOR public RMC_BestFit.CovariateExtensionItem(System.String, RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod)
+  PROPERTY RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.CredibleIntervalItem
+  BASE System.Object
+  CTOR public RMC_BestFit.CredibleIntervalItem(System.String, System.Double)
+  PROPERTY System.Double Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.DSSPathSelectorWindow
+  BASE GenericControls.MetroWindow
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.IWindowService
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.DSSPathSelectorWindow()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY System.String FullFileName {public get;public set;}
+  PROPERTY System.String SelectedPathname {public get;public set;}
+  FIELD public System.Windows.DependencyProperty FullFileNameProperty
+  FIELD public System.Windows.DependencyProperty SelectedPathnameProperty
+TYPE class RMC_BestFit.DSSPathnameItem
+  BASE System.Object
+  CTOR public RMC_BestFit.DSSPathnameItem(System.String, System.String, System.String, System.String, System.String, System.String)
+  FIELD public System.String PartA
+  FIELD public System.String PartB
+  FIELD public System.String PartC
+  FIELD public System.String PartD
+  FIELD public System.String PartE
+  FIELD public System.String PartF
+TYPE class RMC_BestFit.DateValuePoint
+  BASE System.Object
+  CTOR public RMC_BestFit.DateValuePoint(System.DateTime, System.Double)
+  PROPERTY System.DateTime DateTime {public get;public set;}
+  PROPERTY System.Double Value {public get;public set;}
+TYPE class RMC_BestFit.DependencyItem
+  BASE System.Object
+  CTOR public RMC_BestFit.DependencyItem(System.String, Numerics.Data.Statistics.Probability+DependencyType, System.String optional="")
+  PROPERTY Numerics.Data.Statistics.Probability+DependencyType Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.DepthUnitItem
+  BASE System.Object
+  CTOR public RMC_BestFit.DepthUnitItem(System.String, Numerics.Data.TimeSeriesDownload+DepthUnit)
+  PROPERTY Numerics.Data.TimeSeriesDownload+DepthUnit Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.ExactDataMethodItem
+  BASE System.Object
+  CTOR public RMC_BestFit.ExactDataMethodItem(System.String, RMC.BestFit.UI.InputData+ExactDataEntryType)
+  PROPERTY RMC.BestFit.UI.InputData+ExactDataEntryType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.ExactDataRowItem
+  BASE GenericControls.DataGridRowItem
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.ExactDataRowItem()
+  CTOR public RMC_BestFit.ExactDataRowItem(System.Collections.ObjectModel.ObservableCollection<System.Object>, RMC.BestFit.Models.ExactData, RMC.BestFit.Models.DataSeries, System.Boolean optional=false)
+  METHOD public System.Void RefreshPlottingPosition()
+  METHOD public System.Void SetOrdinate(RMC.BestFit.Models.ExactData)
+  METHOD public override System.Boolean IsGridDisplayable(System.String)
+  METHOD public override System.String PropertyDisplayName(System.String)
+  METHOD public override System.Void AddValidationRules()
+  PROPERTY System.Boolean IsLowOutlier {public get;}
+  PROPERTY System.DateTime DateTime {public get;}
+  PROPERTY System.Double PlottingPosition {public get;}
+  PROPERTY System.Double Value {public get;public set;}
+  PROPERTY System.Int32 Index {public get;public set;}
+TYPE class RMC_BestFit.FittedDistributionStatistic
+  BASE System.Object
+  CTOR public RMC_BestFit.FittedDistributionStatistic(System.String, System.Double[], System.String[])
+  PROPERTY System.Double[] Value {public get;}
+  PROPERTY System.String Name {public get;}
+  PROPERTY System.String[] ToolTip {public get;}
+TYPE class RMC_BestFit.FittingAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.FittingAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.FittingAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.Models.FittedDistribution> FilteredDistributions {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.FittingAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.FittingAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.FittingAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.FittingAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.FittingAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.FittingAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.FittingAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.FittingAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.FittingAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.InputData> InputDataList {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.FrequencyCurvePoint
+  BASE System.Object
+  CTOR public RMC_BestFit.FrequencyCurvePoint(System.DateTime, System.Double, System.Double, System.Double, System.Double)
+  CTOR public RMC_BestFit.FrequencyCurvePoint(System.Double, System.Double, System.Double, System.Double, System.Double)
+  CTOR public RMC_BestFit.FrequencyCurvePoint(System.Double, System.Double, System.Double, System.Double, System.Double, System.Double)
+  PROPERTY System.DateTime DateTime {public get;public set;}
+  PROPERTY System.Double Lower {public get;public set;}
+  PROPERTY System.Double Mode {public get;public set;}
+  PROPERTY System.Double Predictive {public get;public set;}
+  PROPERTY System.Double Probability {public get;public set;}
+  PROPERTY System.Double Upper {public get;public set;}
+  PROPERTY System.Double X {public get;public set;}
+  PROPERTY System.Double Y {public get;public set;}
+TYPE class RMC_BestFit.GMMEstimationTypeItem
+  BASE System.Object
+  CTOR public RMC_BestFit.GMMEstimationTypeItem(System.String, RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy, System.String optional="")
+  PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments+GMMEstimationStrategy Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.GMMReportControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.GMMReportControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.B17CAnalysis Element {public get;public set;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+TYPE class RMC_BestFit.HistogramControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.HistogramControl()
+  METHOD public System.Void SetPlot(OxyPlot.Wpf.Plot)
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  PROPERTY System.Boolean SimpleView {public get;public set;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.HistogramControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.HistogramControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.HistogramControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.HistogramControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.HistogramControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.HistogramControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.HypothesisTestResult
+  BASE System.Object
+  CTOR public RMC_BestFit.HypothesisTestResult(System.String, System.String, System.String optional="", System.String optional="")
+  PROPERTY System.String Inference {public get;public set;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String PValue {public get;public set;}
+  PROPERTY System.String Significance {public get;public set;}
+TYPE enum RMC_BestFit.InfluenceControlMode
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD public RMC_BestFit.InfluenceControlMode Bayesian = 0
+  FIELD public RMC_BestFit.InfluenceControlMode GMM = 1
+  FIELD public System.Int32 value__
+TYPE class RMC_BestFit.InfluenceDiagnosticsControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.InfluenceDiagnosticsControl()
+  METHOD public System.Void SetPlot(OxyPlot.Wpf.Plot)
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments GMMAnalysis {public get;public set;}
+  PROPERTY RMC_BestFit.InfluenceControlMode Mode {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  FIELD public System.Windows.DependencyProperty GMMAnalysisProperty
+  FIELD public System.Windows.DependencyProperty ModeProperty
+  EVENT RMC_BestFit.InfluenceDiagnosticsControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.InfluenceDiagnosticsControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.InfluenceDiagnosticsControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.InfluenceDiagnosticsControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.InfluenceDiagnosticsControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.InfluenceDiagnosticsControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.InputDataControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Markup.IStyleConnector
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.InputDataControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot ACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ChronologyPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot DensityPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot HistogramPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot MRLPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ModifiedScalePlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot PACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot QQPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot SeasonalityPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ShapePlot {public get;}
+  PROPERTY RMC.BestFit.UI.InputData Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<System.Object> ExactDataOrdinates {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<System.Object> IntervalDataOrdinates {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<System.Object> ThresholdDataOrdinates {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<System.Object> UncertainDataOrdinates {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.InputDataControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.InputDataControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.InputDataControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.InputDataControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.InputDataControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.InputDataControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.InputDataPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.InputDataPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.InputData Element {public get;public set;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.BlockFunctionItem> BlockFunctionOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.ExactDataMethodItem> ExactDataMethodOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.MonthItem> MonthOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.PlottingPositionItem> ParameterOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.SmoothingFunctionItem> SmoothingFunctionOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.TimeBlockItem> TimeBlockOptions {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.TimeSeriesElement> TimeSeriesElements {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.InputDataSelectionItem
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IDisposable
+  CTOR public RMC_BestFit.InputDataSelectionItem(RMC.BestFit.UI.InputData)
+  METHOD public sealed-virtual System.Void Dispose()
+  METHOD public static RMC_BestFit.InputDataSelectionItem CreateNone()
+  PROPERTY RMC.BestFit.UI.InputData Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String SortKey {public get;}
+  FIELD public System.String NoneDisplayName = "<None>"
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged {public add;public remove;}
+TYPE class RMC_BestFit.IntervalDataRowItem
+  BASE GenericControls.DataGridRowItem
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.IntervalDataRowItem()
+  CTOR public RMC_BestFit.IntervalDataRowItem(System.Collections.ObjectModel.ObservableCollection<System.Object>, RMC.BestFit.Models.IntervalData, RMC.BestFit.Models.DataFrame, RMC.BestFit.Models.DataSeries)
+  METHOD public System.Void RefreshPlottingPosition()
+  METHOD public System.Void SetOrdinate(RMC.BestFit.Models.IntervalData)
+  METHOD public override System.Boolean IsGridDisplayable(System.String)
+  METHOD public override System.String PropertyDisplayName(System.String)
+  METHOD public override System.Void AddValidationRules()
+  PROPERTY System.Double LowerValue {public get;public set;}
+  PROPERTY System.Double PlottingPosition {public get;}
+  PROPERTY System.Double UpperValue {public get;public set;}
+  PROPERTY System.Double Value {public get;public set;}
+  PROPERTY System.Int32 Index {public get;public set;}
+TYPE class RMC_BestFit.KernelDensityControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.KernelDensityControl()
+  METHOD public System.Void SetPlot(OxyPlot.Wpf.Plot)
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  PROPERTY System.Boolean SimpleView {public get;public set;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.KernelDensityControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.KernelDensityControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.KernelDensityControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.KernelDensityControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.KernelDensityControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.KernelDensityControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.MCMCReportControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.MCMCReportControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+TYPE class RMC_BestFit.MainProjectNode
+  BASE FrameworkUI.FrameworkUIController
+  INTERFACE MS.Internal.Controls.IGeneratorHost
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.Controls.Primitives.IContainItemStorage
+  INTERFACE System.Windows.Controls.Primitives.IHierarchicalVirtualizationAndScrollInfo
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.MainProjectNode(FrameworkInterfaces.IProject)
+  METHOD protected override System.Void DefineHelpMenuItems()
+  METHOD protected override System.Void DefineProjectExplorerMenuItems()
+  METHOD protected override System.Void DefineProjectMenuItems()
+  METHOD protected override System.Void DefineToolsMenuItems()
+  METHOD public override FrameworkInterfaces.IElement GetControlElement(System.Windows.UIElement)
+  METHOD public override System.Void DocumentClosed(System.Windows.UIElement)
+  METHOD public override System.Void PropertiesClosed(System.Windows.UIElement)
+  METHOD public override System.Windows.Controls.Control GetDocumentControl(FrameworkInterfaces.IElement)
+  METHOD public override System.Windows.Controls.Control GetPropertiesControl(FrameworkInterfaces.IElement)
+  METHOD public override System.Windows.Controls.Control GetPropertiesControl(System.Windows.UIElement)
+  PROPERTY System.Boolean CanMultiSelect {public get;}
+TYPE class RMC_BestFit.MarkovChainTraceControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.MarkovChainTraceControl()
+  METHOD public System.Void SetPlot(OxyPlot.Wpf.Plot)
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.MarkovChainTraceControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.MarkovChainTraceControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.MarkovChainTraceControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.MarkovChainTraceControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.MarkovChainTraceControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.MarkovChainTraceControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.MathFunctionItem
+  BASE System.Object
+  CTOR public RMC_BestFit.MathFunctionItem(System.String, Numerics.Data.MathFunctionType)
+  PROPERTY Numerics.Data.MathFunctionType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.MeanLikelihoodControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.MeanLikelihoodControl()
+  METHOD public System.Void SetPlot(OxyPlot.Wpf.Plot)
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+  EVENT RMC_BestFit.MeanLikelihoodControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.MeanLikelihoodControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.MeanLikelihoodControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.MeanLikelihoodControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.MeanLikelihoodControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.MeanLikelihoodControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.MixtureAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.MixtureAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.MixtureAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.MixtureAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.MixtureAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.MixtureAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.MixtureAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.MixtureAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.MixtureAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.MixtureAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Markup.IStyleConnector
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.MixtureAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.MixtureAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.InputData> InputDataList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CredibleIntervalItem> CredibleIntervalItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.UnivariateDistributionItem> DistributionList {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.MonthItem
+  BASE System.Object
+  CTOR public RMC_BestFit.MonthItem(System.String, System.Int32)
+  PROPERTY System.Int32 Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.OrdinateRowItem
+  BASE GenericControls.DataGridRowItem
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.OrdinateRowItem()
+  CTOR public RMC_BestFit.OrdinateRowItem(System.Collections.ObjectModel.ObservableCollection<System.Object>, System.Double)
+  METHOD public override System.Boolean IsGridDisplayable(System.String)
+  METHOD public override System.String PropertyDisplayName(System.String)
+  METHOD public override System.Void AddValidationRules()
+  PROPERTY System.Double Value {public get;public set;}
+TYPE class RMC_BestFit.OrdinatesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.OrdinatesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<System.Double> Ordinates {public get;public set;}
+  PROPERTY System.Type RowItemType {public get;public set;}
+  FIELD public System.Windows.DependencyProperty OrdinatesProperty
+  FIELD public System.Windows.DependencyProperty RowItemTypeProperty
+TYPE class RMC_BestFit.ParameterPriorItem
+  BASE System.Object
+  CTOR public RMC_BestFit.ParameterPriorItem(System.String, Numerics.Distributions.UnivariateDistributionBase, System.String)
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {public get;public set;}
+  PROPERTY System.String Label {public get;public set;}
+  PROPERTY System.String Name {public get;public set;}
+TYPE class RMC_BestFit.ParameterPriorsControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Markup.IStyleConnector
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.ParameterPriorsControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.Models.IModel Model {public get;public set;}
+  FIELD public System.Windows.DependencyProperty ModelProperty
+  EVENT RMC_BestFit.ParameterPriorsControl+ShowPropertyAttributesEventHandler ShowPropertyAttributes {public add;public remove;}
+TYPE class RMC_BestFit.ParameterPriorsControl+ShowPropertyAttributesEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.ParameterPriorsControl+ShowPropertyAttributesEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.String, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.String, System.Object)
+TYPE class RMC_BestFit.ParameterSetsControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.ParameterSetsControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis Analysis {public get;public set;}
+  PROPERTY System.Boolean ShowLikelihoodColumn {public get;public set;}
+  FIELD public System.Windows.DependencyProperty AnalysisProperty
+TYPE class RMC_BestFit.PlottingPositionItem
+  BASE System.Object
+  CTOR public RMC_BestFit.PlottingPositionItem(System.String, System.Double, System.String)
+  PROPERTY System.Double Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+  PROPERTY System.String ToolTip {public get;public set;}
+TYPE class RMC_BestFit.PointEstimatorItem
+  BASE System.Object
+  CTOR public RMC_BestFit.PointEstimatorItem(System.String, RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType, System.String optional="")
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis+PointEstimateType Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.PointProcessAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.PointProcessAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.PointProcessAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.PointProcessAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.PointProcessAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.PointProcessAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.PointProcessAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.PointProcessAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.PointProcessAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.PointProcessAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.PointProcessAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.PointProcessAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.MonthItem> MonthOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.TimeBlockItem> TimeBlockOptions {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.InputData> InputDataList {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.QuantilePriorsControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Markup.IStyleConnector
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.QuantilePriorsControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.Models.IQuantilePriors Model {public get;public set;}
+  PROPERTY System.Boolean ShowSingleQuantileCheckBox {public get;public set;}
+  PROPERTY System.Collections.Generic.List<System.Double> QuantileOptions {public get;}
+  FIELD public System.Windows.DependencyProperty ModelProperty
+  FIELD public System.Windows.DependencyProperty ShowSingleQuantileCheckBoxProperty
+  EVENT RMC_BestFit.QuantilePriorsControl+ShowPropertyAttributesEventHandler ShowPropertyAttributes {public add;public remove;}
+TYPE class RMC_BestFit.QuantilePriorsControl+ShowPropertyAttributesEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.QuantilePriorsControl+ShowPropertyAttributesEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.String, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.String, System.Object)
+TYPE class RMC_BestFit.RatingCurveAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.RatingCurveAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.RatingCurveAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.RatingCurveAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.RatingCurveAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.RatingCurveAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.RatingCurveAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.RatingCurveAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.RatingCurveAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.RatingCurveAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.RatingCurveAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.RatingCurveAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.TimeSeriesElement> TimeSeriesElements {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.SamplerTypeItem
+  BASE System.Object
+  CTOR public RMC_BestFit.SamplerTypeItem(System.String, RMC.BestFit.Estimation.BayesianAnalysis+SamplerType, System.String optional="")
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis+SamplerType Value {public get;}
+  PROPERTY System.String DisplayName {public get;}
+  PROPERTY System.String ToolTip {public get;}
+TYPE class RMC_BestFit.SmoothingFunctionItem
+  BASE System.Object
+  CTOR public RMC_BestFit.SmoothingFunctionItem(System.String, Numerics.Data.SmoothingFunctionType)
+  PROPERTY Numerics.Data.SmoothingFunctionType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.SummaryStatistic
+  BASE System.Object
+  CTOR public RMC_BestFit.SummaryStatistic(System.String, System.Double, System.Double optional=NaN, System.String optional="")
+  PROPERTY System.Double Value {public get;public set;}
+  PROPERTY System.Double Value2 {public get;public set;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String Significance {public get;public set;}
+TYPE class RMC_BestFit.ThresholdDataRowItem
+  BASE GenericControls.DataGridRowItem
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.ThresholdDataRowItem()
+  CTOR public RMC_BestFit.ThresholdDataRowItem(System.Collections.ObjectModel.ObservableCollection<System.Object>, RMC.BestFit.Models.ThresholdData, RMC.BestFit.Models.DataSeries)
+  METHOD public System.Void SetOrdinate(RMC.BestFit.Models.ThresholdData)
+  METHOD public override System.Boolean IsGridDisplayable(System.String)
+  METHOD public override System.String PropertyDisplayName(System.String)
+  METHOD public override System.Void AddValidationRules()
+  PROPERTY System.Double Value {public get;public set;}
+  PROPERTY System.Int32 EndIndex {public get;public set;}
+  PROPERTY System.Int32 NumberAbove {public get;public set;}
+  PROPERTY System.Int32 StartIndex {public get;public set;}
+TYPE class RMC_BestFit.TimeBlockItem
+  BASE System.Object
+  CTOR public RMC_BestFit.TimeBlockItem(System.String, Numerics.Data.TimeBlockWindow)
+  PROPERTY Numerics.Data.TimeBlockWindow Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.TimeIntervalItem
+  BASE System.Object
+  CTOR public RMC_BestFit.TimeIntervalItem(System.String, Numerics.Data.TimeInterval)
+  PROPERTY Numerics.Data.TimeInterval Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.TimeSeriesAddedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.TimeSeriesAddedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(RMC_BestFit.TimeSeriesAlternativeItem, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(RMC_BestFit.TimeSeriesAlternativeItem)
+TYPE class RMC_BestFit.TimeSeriesAlternativeItem
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.TimeSeriesAlternativeItem(RMC.BestFit.UI.TimeSeriesElement)
+  METHOD public System.Void Detach()
+  PROPERTY OxyPlot.Wpf.LineSeries TimeSeriesLine {public get;}
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement Alternative {public get;}
+  PROPERTY System.Boolean HasData {public get;}
+  PROPERTY System.Boolean IsChecked {public get;public set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged {public add;public remove;}
+TYPE class RMC_BestFit.TimeSeriesAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.TimeSeriesAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.TimeSeriesAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.TimeSeriesAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.TimeSeriesAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.TimeSeriesAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.TimeSeriesAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.TimeSeriesAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.TimeSeriesAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.TimeSeriesAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Markup.IStyleConnector
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.TimeSeriesAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.TimeSeriesAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.TimeSeriesElement> TimeSeriesElements {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.CovariateExtensionItem> CovariateExtensionOptions {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.TransformTypeItem> TransformTypeItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.TrendTypeItem> TrendTypeItems {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.TimeSeriesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.TimeSeriesControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY OxyPlot.Wpf.Plot ACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot PACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot SeasonalityPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot TimeSeriesPlot {public get;}
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.TimeSeriesControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.TimeSeriesControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.TimeSeriesControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.TimeSeriesControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.TimeSeriesControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.TimeSeriesControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.TimeSeriesEntryMethodItem
+  BASE System.Object
+  CTOR public RMC_BestFit.TimeSeriesEntryMethodItem(System.String, RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod, System.String optional="")
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+  PROPERTY System.String ToolTip {public get;public set;}
+TYPE class RMC_BestFit.TimeSeriesPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.TimeSeriesPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement Element {public get;public set;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.DepthUnitItem> DepthUnitOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.TimeIntervalItem> TimeIntervalOptions {public get;}
+  PROPERTY System.Collections.Generic.List<RMC_BestFit.TimeSeriesEntryMethodItem> EntryMethodOptions {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.TimeSeriesRemovedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.TimeSeriesRemovedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(RMC_BestFit.TimeSeriesAlternativeItem, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(RMC_BestFit.TimeSeriesAlternativeItem)
+TYPE static-class RMC_BestFit.TimeSeriesResultTimeline
+  BASE System.Object
+  METHOD public static System.Collections.Generic.List<System.DateTime> CreateDates(Numerics.Data.TimeSeries, System.Int32)
+TYPE class RMC_BestFit.TimeSeriesTypeItem
+  BASE System.Object
+  CTOR public RMC_BestFit.TimeSeriesTypeItem(System.String, Numerics.Data.TimeSeriesDownload+TimeSeriesType)
+  PROPERTY Numerics.Data.TimeSeriesDownload+TimeSeriesType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.TransformTypeItem
+  BASE System.Object
+  CTOR public RMC_BestFit.TransformTypeItem(System.String, RMC.BestFit.Models.Transform)
+  PROPERTY RMC.BestFit.Models.Transform Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.TrendModelItem
+  BASE System.Object
+  CTOR public RMC_BestFit.TrendModelItem(System.String, RMC.BestFit.Models.TrendFunctions.Support.TrendModelType)
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.TrendModelRowItem
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.TrendModelRowItem(System.String, RMC.BestFit.Models.TrendFunctions.Support.TrendModelType)
+  PROPERTY RMC.BestFit.Models.TrendFunctions.Support.TrendModelType Value {public get;public set;}
+  PROPERTY System.String Name {public get;public set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged {public add;public remove;}
+TYPE class RMC_BestFit.TrendTypeItem
+  BASE System.Object
+  CTOR public RMC_BestFit.TrendTypeItem(System.String, RMC.BestFit.Models.ARIMAX+Trend)
+  PROPERTY RMC.BestFit.Models.ARIMAX+Trend Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.UncertainDataRowItem
+  BASE GenericControls.DataGridRowItem
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.UncertainDataRowItem()
+  CTOR public RMC_BestFit.UncertainDataRowItem(System.Collections.ObjectModel.ObservableCollection<System.Object>, RMC.BestFit.Models.UncertainData, RMC.BestFit.Models.DataFrame, RMC.BestFit.Models.DataSeries)
+  METHOD public System.Void RefreshPlottingPosition()
+  METHOD public System.Void SetOrdinate(RMC.BestFit.Models.UncertainData)
+  METHOD public override System.Boolean IsGridDisplayable(System.String)
+  METHOD public override System.String PropertyDisplayName(System.String)
+  METHOD public override System.Void AddValidationRules()
+  PROPERTY Numerics.Distributions.UnivariateDistributionBase Distribution {public get;public set;}
+  PROPERTY System.Double PlottingPosition {public get;}
+  PROPERTY System.Int32 Index {public get;public set;}
+TYPE class RMC_BestFit.UnivariateAnalysisControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.UnivariateAnalysisControl()
+  METHOD public OxyPlot.Wpf.Plot GetCurrentPlot()
+  METHOD public OxyPlotControls.OxyPlotToolbar GetCurrentPlotToolbar()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.UnivariateAnalysis Element {public get;public set;}
+  PROPERTY System.Boolean PlotClicked {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  EVENT RMC_BestFit.UnivariateAnalysisControl+PlotPropertiesCalledEventHandler PlotPropertiesCalled {public add;public remove;}
+  EVENT RMC_BestFit.UnivariateAnalysisControl+PreviewControlClickedEventHandler PreviewControlClicked {public add;public remove;}
+TYPE class RMC_BestFit.UnivariateAnalysisControl+PlotPropertiesCalledEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.UnivariateAnalysisControl+PlotPropertiesCalledEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(OxyPlot.Wpf.Plot, System.Boolean, System.Nullable<OxyPlotControls.OxyPlotPropertiesControl+PropertyEXP>, System.Object)
+TYPE class RMC_BestFit.UnivariateAnalysisControl+PreviewControlClickedEventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC_BestFit.UnivariateAnalysisControl+PreviewControlClickedEventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, System.Boolean, OxyPlot.Wpf.Plot)
+TYPE class RMC_BestFit.UnivariateAnalysisPropertiesControl
+  BASE System.Windows.Controls.UserControl
+  INTERFACE System.ComponentModel.ISupportInitialize
+  INTERFACE System.Windows.IFrameworkInputElement
+  INTERFACE System.Windows.IInputElement
+  INTERFACE System.Windows.Markup.IAddChild
+  INTERFACE System.Windows.Markup.IComponentConnector
+  INTERFACE System.Windows.Markup.IHaveResources
+  INTERFACE System.Windows.Markup.IQueryAmbient
+  INTERFACE System.Windows.Markup.IStyleConnector
+  INTERFACE System.Windows.Media.Animation.IAnimatable
+  INTERFACE System.Windows.Media.Composition.DUCE+IResource
+  CTOR public RMC_BestFit.UnivariateAnalysisPropertiesControl()
+  METHOD public sealed-virtual System.Void InitializeComponent()
+  PROPERTY RMC.BestFit.UI.UnivariateAnalysis Element {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.InputData> InputDataList {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.TrendModelItem> TrendFunctionItems {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC_BestFit.UnivariateDistributionItem> DistributionList {public get;}
+  PROPERTY System.String[] ExistingNames {public get;}
+  FIELD public System.Windows.DependencyProperty ElementProperty
+  FIELD public System.Windows.DependencyProperty ExistingNamesProperty
+TYPE class RMC_BestFit.UnivariateDistributionItem
+  BASE System.Object
+  CTOR public RMC_BestFit.UnivariateDistributionItem(System.String, Numerics.Distributions.UnivariateDistributionType)
+  PROPERTY Numerics.Distributions.UnivariateDistributionType Value {public get;public set;}
+  PROPERTY System.String DisplayName {public get;public set;}
+TYPE class RMC_BestFit.XOrdinateRowItem
+  BASE RMC_BestFit.OrdinateRowItem
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.XOrdinateRowItem()
+  CTOR public RMC_BestFit.XOrdinateRowItem(System.Collections.ObjectModel.ObservableCollection<System.Object>, System.Double)
+  METHOD public override System.String PropertyDisplayName(System.String)
+TYPE class RMC_BestFit.YOrdinateRowItem
+  BASE RMC_BestFit.OrdinateRowItem
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC_BestFit.YOrdinateRowItem()
+  CTOR public RMC_BestFit.YOrdinateRowItem(System.Collections.ObjectModel.ObservableCollection<System.Object>, System.Double)
+  METHOD public override System.String PropertyDisplayName(System.String)
+TYPE class XamlGeneratedNamespace.GeneratedInternalTypeHelper
+  BASE System.Windows.Markup.InternalTypeHelper
+  CTOR public XamlGeneratedNamespace.GeneratedInternalTypeHelper()
+  METHOD protected override System.Delegate CreateDelegate(System.Type, System.Object, System.String)
+  METHOD protected override System.Object CreateInstance(System.Type, System.Globalization.CultureInfo)
+  METHOD protected override System.Object GetPropertyValue(System.Reflection.PropertyInfo, System.Object, System.Globalization.CultureInfo)
+  METHOD protected override System.Void AddEventHandler(System.Reflection.EventInfo, System.Object, System.Delegate)
+  METHOD protected override System.Void SetPropertyValue(System.Reflection.PropertyInfo, System.Object, System.Object, System.Globalization.CultureInfo)

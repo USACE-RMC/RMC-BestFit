@@ -341,3 +341,16 @@ The Composite supplement now passes 10/10 methods. The six failed Default-DEMCzs
 cells remain recorded above and have an approved deferred-research disposition; they were not
 rerun for the Phase 5 prerequisite and no sampler, seed, prior, fixture, formula, or tolerance was
 changed. The combined supplement checkpoint is therefore 24/30 passed and six deferred findings.
+
+## Phase 5 compatibility guardrails
+
+| Fast method | Project | Contract | Status |
+|---|---|---|---|
+| `PublicApiCompatibilityTests.PublicApi_MatchesCapturedBaseline` | UI.Tests | 853-line exported public/protected UI signature baseline | Passed - UI project 576/576 |
+| `PublicApiCompatibilityTests.PublicApi_MatchesCapturedBaseline` | App.Tests | 1,657-line exported public/protected App signature baseline | Passed - App project 431/431 |
+| `TimeSeriesModelSerializationCompatibilityTests.*` | UI.Tests | Legacy AR, MA, ARIMA, and ARIMAX XML settings plus unknown optional attribute | Passed - 4 methods |
+| `TimeSeriesAnalysisControlSourceTests.TransformSelector_RetainsEstablishedBindingContract` | App.Tests | Existing XAML item source and two-way `Element.ARIMAX.TransformType` binding | Passed |
+| `TimeSeriesAnalysisControlSourceTests.TransformSelector_RetainsEstablishedItems` | App.Tests | None, Logarithmic, Box-Cox, and Yeo-Johnson labels and enum values | Passed |
+
+These are deterministic compatibility regressions, not numerical Verification methods. Baseline
+hashes and command evidence are recorded in [Time-Series Verification](time-series.md).

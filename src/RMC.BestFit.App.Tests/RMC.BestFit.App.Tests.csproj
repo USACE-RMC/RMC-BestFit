@@ -16,6 +16,7 @@
   <ItemGroup>
     <!-- Link shared MSTest parallelization settings for public unit tests. -->
     <Compile Include="..\TestCommon\MSTestSettings.cs" Link="MSTestSettings.cs" />
+    <Compile Include="..\TestCommon\PublicApiContractSnapshot.cs" Link="CoreInfrastructure\PublicApiContractSnapshot.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,6 +41,11 @@
     <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
     <ProjectReference Include="..\RMC.BestFit.UI\RMC.BestFit.UI.csproj" />
     <ProjectReference Include="..\RMC.BestFit.App\RMC.BestFit.App.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="CoreInfrastructure\PublicApiBaseline.txt"
+                      LogicalName="RMC.BestFit.App.Tests.CoreInfrastructure.PublicApiBaseline.txt" />
   </ItemGroup>
 
 </Project>
