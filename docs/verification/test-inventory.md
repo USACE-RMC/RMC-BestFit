@@ -366,3 +366,14 @@ hashes and command evidence are recorded in [Time-Series Verification](time-seri
 
 The Verification method is numerical; the three state/decomposition contracts remain in the
 fast project. No optimizer, sampler, recovery fixture, or production generator is invoked.
+
+## TR-040 invalid time-series innovation scale
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `TimeSeriesInvalidScaleTests.InvalidInnovationScale_ReturnsNegativeInfinityAcrossAllPaths` | Core Tests | Five invalid-scale rows across AR, MA, ARIMA, ARIMAX scalar/pointwise/component/prior paths; metadata and lengths retained | Exact negative infinity and metadata; 5 passing rows |
+| `TimeSeriesInvalidScaleTests.FinitePositiveInnovationScale_RetainsValidEvaluation` | Core Tests | Representative finite-positive control | Scalar/pointwise parity; passed |
+| `Phase5TimeSeriesVerificationTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle` | Verification | Independent Gaussian, uniform-normalization, and Jeffreys formulas plus invalid domain | `1E-12` valid; exact negative infinity invalid; guarded pass 1/1 |
+
+The complete Core project passes 3,189/3,189. The Verification method is the only TR-040 method
+run from the Verification project.

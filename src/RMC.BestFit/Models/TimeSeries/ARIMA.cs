@@ -770,10 +770,10 @@ namespace RMC.BestFit.Models
 
             var residuals = Residuals(parameters);
             double sigma = parameters.Last();
-            // Guard against non-positive sigma — Numerics.Distributions.Normal throws on
-            // sigma <= 0, which would crash the sampler instead of being rejected as a
+            // Guard against non-finite or non-positive sigma — Numerics.Distributions.Normal
+            // rejects it, which would crash the sampler instead of being treated as a
             // boundary move. User-defined priors with non-positive support trigger this.
-            if (sigma <= 0) return double.NegativeInfinity;
+            if (!Tools.IsFinite(sigma) || sigma <= 0) return double.NegativeInfinity;
             var normDist = new Normal(0, sigma);
             double logLH = 0;
 
@@ -809,6 +809,12 @@ namespace RMC.BestFit.Models
 
             var residuals = Residuals(parameters);
             double sigma = parameters.Last();
+            if (!Tools.IsFinite(sigma) || sigma <= 0)
+            {
+                var invalid = new double[n];
+                Array.Fill(invalid, double.NegativeInfinity);
+                return invalid;
+            }
             var normDist = new Normal(0, sigma);
             var result = new double[n];
 
@@ -852,6 +858,16 @@ namespace RMC.BestFit.Models
 
             var residuals = Residuals(parameters);
             double sigma = parameters.Last();
+            if (!Tools.IsFinite(sigma) || sigma <= 0)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    int tIdx = maxOrder + j;
+                    double value = responseValues != null && tIdx < responseValues.Length ? responseValues[tIdx] : 0;
+                    result.Add(new DataComponent(j, double.NegativeInfinity, value, DataComponentType.Exact, 1, $"t={tIdx}"));
+                }
+                return result;
+            }
             var normDist = new Normal(0, sigma);
             double jacobianPerObs = _logJacobian / n;
 
@@ -873,6 +889,8 @@ namespace RMC.BestFit.Models
                 return double.NegativeInfinity;
 
             double sigma = parameters.Last();
+            if (!Tools.IsFinite(sigma) || sigma <= 0)
+                return double.NegativeInfinity;
             double logLH = 0;
 
             for (int i = 0; i < Parameters.Count; i++)
@@ -895,18 +913,21 @@ namespace RMC.BestFit.Models
         public override List<PriorComponent> PointwisePriorLogLikelihood(double[] parameters)
         {
             var result = new List<PriorComponent>();
+            double sigma = parameters.Last();
+            bool isValidScale = Tools.IsFinite(sigma) && sigma > 0;
 
             for (int i = 0; i < Parameters.Count; i++)
             {
-                double ll = Parameters[i].PriorDistribution.LogPDF(parameters[i]);
+                double ll = i == Parameters.Count - 1 && !isValidScale
+                    ? double.NegativeInfinity
+                    : Parameters[i].PriorDistribution.LogPDF(parameters[i]);
                 string paramName = string.IsNullOrEmpty(Parameters[i].OwnerName) ? Parameters[i].Name : Parameters[i].OwnerName;
                 result.Add(new PriorComponent($"Parameter Prior: {paramName}", ll, PriorComponentType.ParameterPrior));
             }
 
             if (UseJeffreysRuleForScale)
             {
-                double sigma = parameters.Last();
-                double ll = sigma > 0 ? -Math.Log(sigma) : double.NegativeInfinity;
+                double ll = isValidScale ? -Math.Log(sigma) : double.NegativeInfinity;
                 result.Add(new PriorComponent("Jeffreys' rule for σ", ll, PriorComponentType.JeffreysScalePrior));
             }
 

@@ -133,6 +133,61 @@ encountered the test platform's fixed-log file lock; after the original process 
 was rerun serially and passed 576/576 in 33.027 s. Neither event changed a numerical algorithm,
 oracle value, seed, tolerance, prior, sampler, likelihood, or acceptance criterion.
 
+## TR-040 — Invalid innovation-scale parity
+
+**Disposition and behavior.** The confirmed defect is corrected. Previously, scalar data
+likelihoods guarded only `sigma<=0`, while pointwise and component paths constructed a Numerics
+`Normal` first; positive infinity could also reach the distribution constructor. All four models
+now require finite `sigma>0` before Gaussian evaluation. Zero, a negative scale, NaN, positive
+infinity, and negative infinity return exact negative infinity from scalar data/prior and combined
+likelihoods. Pointwise data arrays and `DataComponent` lists retain their valid-path lengths,
+indices, values, types, counts, and labels with negative-infinity contributions. Pointwise priors
+retain names/types/counts and mark the scale marginal and Jeffreys term impossible.
+
+**Compatibility.** No public/protected signature, validation exception outside numerical
+evaluation, XAML binding, property, enum, or serialization change. Core passes 3,189/3,189, UI
+576/576, App 431/431, and API 496/496; both UI/App signature baselines remain exact. The strict
+Debug solution build with `EnforceXmlDocumentation=true` passes all ten projects with zero
+warnings/errors.
+
+**Fast regressions.** `RMC.BestFit.Tests.TimeSeriesModels.TimeSeriesInvalidScaleTests` owns the
+five-row `InvalidInnovationScale_ReturnsNegativeInfinityAcrossAllPaths` contract and the
+`FinitePositiveInnovationScale_RetainsValidEvaluation` control. Each row evaluates AR, MA,
+ARIMA, and ARIMAX and compares rejected decomposition metadata with the corresponding valid
+path. Every final recovery cell will also require a finite likelihood at its recovered parameter
+set; no separate estimator run is justified for this numerical-domain guard.
+
+**Numerical oracle.** The exact Verification method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle`.
+It reads [phase5-invalid-scale-oracle.json](../../verification/data/time-series/phase5-invalid-scale-oracle.json).
+The raw response is `[1.25,-0.5,2,0.75,-1.5]`, with AR(1), MA(1), ARIMA(1,0,0), and
+ARIMAX(1,0,0,0), zero dynamic coefficients, no intercept, `Transform.None`, five training
+observations, no holdout, and `sigma=1.75`. The oracle independently applies
+$-\tfrac12\log(2\pi)-\log(\sigma)-e^2/(2\sigma^2)$, uniform widths 4 and 100, and the Jeffreys
+$-\log(\sigma)$ term. Expected data totals are `-7.067278509050176` for AR/ARIMA/ARIMAX and
+`-8.800934871006598` for MA; expected prior total is `-6.551080335043405`. Seed and simulated
+sample size are not applicable. Valid acceptance is `1E-12` absolute; every invalid result must
+equal negative infinity. Artifact SHA-256
+`09fb544892e8e9d268ab4fd4c3b13c6262d50755042665c2a06fcde28d0e0001` matches the manifest.
+
+**Execution evidence and history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4
+built against the configured local Numerics project; no R or external package was required. From
+commit `c7b08d4` plus the scoped TR-040 diff, the final guarded command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle'
+```
+
+The artifact-backed method built with zero warnings/errors and passed 1/1 in 0.409 s; its TRX is
+under `TestResults/VerificationFocused/20260820-101753-...`. The first compile exposed an
+ambiguous test-only `Transform` enum import and was corrected by fully qualifying the established
+BestFit enum. The first Core run passed all invalid-scale rows but its auxiliary `sigma=1E-4`
+control assumed a finite normal density where the unchanged Numerics implementation underflows;
+the control was corrected to representative `sigma=0.1` and Core then passed 3,189/3,189. No
+production formula, oracle value, seed, tolerance, prior, sampler, likelihood definition, or
+acceptance criterion changed. The complete Verification project was not run.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
@@ -142,7 +197,7 @@ oracle value, seed, tolerance, prior, sampler, likelihood, or acceptance criteri
 | TR-037 reintegration index | Approved; implementation pending | Planned `d=1`/`d=2` recurrence tests | Planned independent recurrence oracle and recovery |
 | TR-038 AR/MA/ARIMA generation | Approved; implementation pending | Planned fixed-seed and transform-order tests | Planned algebraic and Monte Carlo oracles |
 | TR-039 ARIMAX generation | Approved; implementation pending | Planned scale/order/date tests | Planned algebraic, Monte Carlo, and recovery evidence |
-| TR-040 invalid scale | Approved; implementation pending | Planned scalar/pointwise guard tests | Planned independent Gaussian decomposition oracle |
+| TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
 | TR-041 ARIMAX alignment | Approved; implementation pending | Planned date, holdout, and Jacobian tests | Planned date-indexed likelihood oracle and recovery |
 | TR-042 AIC/BIC kernel | Closed; refresh pending | Planned deterministic routing regression | Planned data-likelihood/MAP oracle |
 | TR-046 manual transform rebuild | Approved with TR-036; implementation pending | Planned atomic-state and persistence tests | Planned independent likelihood oracle |

@@ -317,7 +317,7 @@ Findings and required direction:
 - TR-037: correct raw/differenced index maps and test hand-computable `d=1` and `d=2` sequences.
 - TR-038: simulate ARIMA on the transformed/differenced scale, integrate, then inverse-transform once.
 - TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
-- TR-040: apply identical invalid-scale guards to scalar and pointwise likelihoods.
+- TR-040: complete. AR, MA, ARIMA, and ARIMAX scalar, pointwise, component, and prior paths reject non-finite or non-positive innovation scales with exact negative infinity while preserving decomposed shape/metadata. Fast parity and the analytical Gaussian/prior oracle pass.
 - TR-041: align ARIMAX covariates and Jacobians by date and the exact differencing index map.
 - TR-042: criteria defect closed in Phase 2. Retain regressions proving that AR, MA, ARIMA, ARIMAX, and rating-curve AIC/BIC use data likelihood at MAP; the later phase must not restate prior-density removal as open work.
 - TR-046: make transform updates atomic: rebuild transformed/differenced data, reset parameters/results, and either implement or compatibility-deprecate the unused offset.

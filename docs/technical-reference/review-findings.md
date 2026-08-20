@@ -53,7 +53,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
 | [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -685,17 +685,17 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 <a id="tr-040"></a>
 ## TR-040 — Pointwise Time-Series Likelihoods Can Throw at Invalid Scale
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. Every scalar, pointwise, component, and prior path in AR, MA, ARIMA, and ARIMAX now enforces the same finite-positive innovation-scale domain.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Six fast cases cover zero, a negative value, NaN, both infinities, and a valid positive control across all four models. The exact guarded Gaussian/prior oracle passes at `1E-12` for valid values and exact negative infinity for invalid values.
 
-**Evidence.** Scalar AR, MA, ARIMA, and ARIMAX data likelihoods reject `sigma<=0` before constructing a Numerics `Normal`. Their pointwise likelihood and component methods construct `Normal(0,sigma)` without the same guard.
+**Evidence.** Before correction, scalar data likelihoods rejected `sigma<=0`, but non-finite positive scales could reach Numerics and pointwise/component paths constructed `Normal(0,sigma)` without the same guard. The corrected scalar and decomposed paths now agree exactly and preserve pointwise lengths and metadata on rejection.
 
-**Impact.** A parameter set that correctly returns negative infinity from the scalar likelihood can throw from WAIC/LOO or influence diagnostics, violating scalar/pointwise decomposition behavior.
+**Impact.** Corrected: invalid scale proposals are uniformly rejected with negative infinity and cannot throw from WAIC/LOO or influence diagnostics.
 
-**Follow-up.** Apply identical validation to scalar and pointwise paths and test zero, negative, NaN, and positive scales.
+**Correction.** The guard is limited to numerical parameter evaluation. Valid positive-scale formulas, public signatures, serialization, validation messages, priors, samplers, likelihood definitions, and convergence defaults are unchanged. See [time-series verification](../verification/time-series.md#tr-040--invalid-innovation-scale-parity).
 
 <a id="tr-041"></a>
 ## TR-041 — Differenced ARIMAX Raw-Time Alignment Is Inconsistent

@@ -2,7 +2,7 @@
 
 Every committed oracle file must be listed before a C# verification test consumes it.
 
-Integrity recheck (3 August 2026): independently recomputed SHA-256 values for the original 16 artifacts exactly match this manifest (nine Phase 1 distribution-fitting artifacts and seven Phase 2 model-estimation artifacts). The Phase 5 analytical time-series artifact was added and hash-checked on 20 August 2026. No Phase 3/Bulletin 17C artifact is present.
+Integrity recheck (3 August 2026): independently recomputed SHA-256 values for the original 16 artifacts exactly match this manifest (nine Phase 1 distribution-fitting artifacts and seven Phase 2 model-estimation artifacts). Phase 5 analytical time-series artifacts were added and hash-checked on 20 August 2026. No Phase 3/Bulletin 17C artifact is present.
 
 | Family | File | Oracle | Version | Generator | Seed | Tolerance | SHA-256 | Status |
 |---|---|---|---|---|---|---|---|---|
@@ -23,5 +23,6 @@ Integrity recheck (3 August 2026): independently recomputed SHA-256 values for t
 | True profile likelihood | [profile-likelihood-oracle.json](model-estimation/profile-likelihood-oracle.json) | R `bbmle` nuisance reoptimization and closed-form correlated quadratic | R 4.4.3 / bbmle 1.0.25.1 | `generate_profile_likelihood_oracle.R` | Deterministic, $\rho=0.8$, eight grid points | `1e-8` fit/interval; `1e-10` log likelihood | `bba52e51fc5d201391985fbffdfe762dd3b9968c3f1ea90d079f0f5b88826c03` | Passed - TR-023 MLE/MAP corrected, 3 exact methods |
 | GMM specification, fixed-weight fitting, and sandwich covariance | [gmm-specification-oracle.json](model-estimation/gmm-specification-oracle.json) | R `gmm` fixed-weight fit, `specTest`, and `vcov()` plus analytical centered IID sandwiches | R 4.4.3 / gmm 1.9.1 | `generate_gmm_specification_oracle.R` | Deterministic one-parameter, two-moment fixture | `1e-5` parameter; `1e-8` objective/covariance/p-value; `1e-7` J | `331534e7d889987ee6073eb0c7ef16272271d3f6ecff62b26151771b08c49b7f` | Passed - TR-026/TR-034, 4 exact methods |
 | Time-series Jeffreys scale metadata | [phase5-jeffreys-prior-oracle.json](time-series/phase5-jeffreys-prior-oracle.json) | Analytical $\log(1/\sigma)=-\log(\sigma)$ | .NET SDK 10.0.303 | Independent analytical evaluation | Deterministic scales 0.125, 0.5, 2, and 8 | `1e-12` absolute | `636a5fea60bd200af418d06ac2e9b5b840cb091a5d5078bd64ae8732fb0e7094` | Passed - TR-035, 1 exact method |
+| Time-series invalid innovation scale | [phase5-invalid-scale-oracle.json](time-series/phase5-invalid-scale-oracle.json) | Analytical Gaussian log density, uniform normalization, Jeffreys density, and finite-positive domain | .NET SDK 10.0.303 | Independent analytical evaluation | Five fixed responses, `sigma=1.75`, five invalid scales | `1e-12` valid absolute; exact negative infinity invalid | `09fb544892e8e9d268ab4fd4c3b13c6262d50755042665c2a06fcde28d0e0001` | Passed - TR-040, 1 exact method |
 
 Generated files are reviewed and committed deliberately. Verification tests read committed artifacts and never invoke R, Python, package managers, or network services at test runtime.

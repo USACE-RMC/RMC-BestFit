@@ -34,6 +34,12 @@ term as `JeffreysScalePrior`, separately from each parameter's configured margin
 `ParameterPrior`; the sum of all pointwise prior components equals the scalar prior likelihood at
 valid parameter sets. This classification is diagnostic metadata and does not alter the prior.
 
+The innovation scale domain is finite $\sigma>0$. Zero, negative, NaN, and infinite scales are
+impossible numerical parameter evaluations: scalar data/prior likelihoods return negative
+infinity, and pointwise data/prior decompositions retain their configured lengths and metadata
+with a negative-infinity scale contribution. They do not construct a Gaussian distribution or
+throw. This evaluation guard does not narrow the configured positive parameter bounds.
+
 `Transform.None`, logarithmic Box–Cox, fitted Box–Cox, and fitted Yeo–Johnson are supported. Transformation fitting is preprocessing, not part of $\theta$. Current fitting uses the full response and leaks holdout data ([TR-036](../review-findings.md#tr-036)); the manual parameter setter does not rebuild the transformed model ([TR-046](../review-findings.md#tr-046)). Use `Transform.None` for publishable holdout comparisons until corrected, or preprocess with an independently frozen training-only transform.
 
 ## Analysis Lifecycle

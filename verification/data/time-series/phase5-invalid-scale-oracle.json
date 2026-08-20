@@ -1,0 +1,36 @@
+{
+  "finding": "TR-040",
+  "oracle": "Gaussian log density and finite-positive scale domain",
+  "generator": "Independent analytical evaluation",
+  "absolute_tolerance": 1e-12,
+  "response": [1.25, -0.5, 2.0, 0.75, -1.5],
+  "sigma": 1.75,
+  "parameter_prior_widths": [4.0, 100.0],
+  "invalid_scales": [0.0, -1.0, "NaN", "PositiveInfinity", "NegativeInfinity"],
+  "cases": [
+    {
+      "model": "AutoRegressive",
+      "residuals": [-0.5, 2.0, 0.75, -1.5],
+      "expected_data_log_likelihood": -7.067278509050176,
+      "expected_prior_log_likelihood": -6.551080335043405
+    },
+    {
+      "model": "MovingAverage",
+      "residuals": [1.25, -0.5, 2.0, 0.75, -1.5],
+      "expected_data_log_likelihood": -8.800934871006598,
+      "expected_prior_log_likelihood": -6.551080335043405
+    },
+    {
+      "model": "ARIMA",
+      "residuals": [-0.5, 2.0, 0.75, -1.5],
+      "expected_data_log_likelihood": -7.067278509050176,
+      "expected_prior_log_likelihood": -6.551080335043405
+    },
+    {
+      "model": "ARIMAX",
+      "residuals": [-0.5, 2.0, 0.75, -1.5],
+      "expected_data_log_likelihood": -7.067278509050176,
+      "expected_prior_log_likelihood": -6.551080335043405
+    }
+  ]
+}
