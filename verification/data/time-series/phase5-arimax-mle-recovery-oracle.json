@@ -3,14 +3,14 @@
     "artifact_id": "TS-PHASE5-ARIMAX-MLE-001",
     "finding": "PHASE5-RECOVERY-ARIMAX-MLE",
     "generator": "verification/r/time-series/generate_phase5_arimax_mle_oracle.R",
-    "generator_sha256": "af3fb972f8a6bd78b65ced0a5edc64817b22cbc93e657f7b7a121db7cf6bce93",
+    "generator_sha256": "4f94e214ef00b9a6b5e86dfbee5c74144e14af1ab6a44e5274a643606bc3d973",
     "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
     "input_fixture_sha256": "d1a1c4f1b519bf8fce438164fb0e3dcc8669f6704ac7fbee3375d5188661e228",
-    "source_commit": "e481d087088423c966ceb7b505c71a774341708a",
+    "source_commit": "cd8f6b33c87d4b7247ba480f3312a481aa041775",
     "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
     "jsonlite_version": "2.0.0",
     "digest_version": "0.6.39",
-    "generated_utc": "2026-08-20 22:19:51 UTC",
+    "generated_utc": "2026-08-20 22:24:05 UTC",
     "tolerances": {
       "optimizer_coefficient_absolute": 0.001,
       "optimizer_scale_absolute": 1e-05,
@@ -78,5 +78,27 @@
     "phi": 0.4,
     "sigma": 0.5,
     "data_log_likelihood": -736.59510901955
+  },
+  "diagnosis": {
+    "r_nelder_mead_from_default": {
+      "parameters": [0.236896681543286, 1.54037091029567, 0.364772064691937],
+      "convergence": 0,
+      "function_evaluations": 284
+    },
+    "r_nelder_mead_from_truth": {
+      "parameters": [0.236896703303593, 1.54037095540235, 0.364772043257778],
+      "convergence": 0,
+      "function_evaluations": 144
+    },
+    "r_full_nelder_mead_from_default": {
+      "parameters": [0.236896646746597, 1.54037084838498, 0.364772016359127, 0.505264565309248],
+      "convergence": 0,
+      "function_evaluations": 539
+    },
+    "r_full_nelder_mead_from_truth": {
+      "parameters": [0.236896674486922, 1.54037090978781, 0.364772089340332, 0.505264555605168],
+      "convergence": 0,
+      "function_evaluations": 389
+    }
   }
 }

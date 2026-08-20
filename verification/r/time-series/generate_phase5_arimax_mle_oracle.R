@@ -97,12 +97,51 @@ stopifnot(fit_from_default$convergence == 0L)
 stopifnot(fit_from_truth$convergence == 0L)
 stopifnot(max(abs(fit_from_default$par - fit_from_truth$par)) < 1e-6)
 
+# Diagnose whether a second independent implementation of unconstrained
+# Nelder-Mead reaches the same interior optimum from the production defaults.
+nelder_mead_from_default <- stats::optim(
+  default_start,
+  profile_negative_log_likelihood,
+  method = "Nelder-Mead",
+  control = list(reltol = 1e-14, maxit = 100000L)
+)
+nelder_mead_from_truth <- stats::optim(
+  truth_start,
+  profile_negative_log_likelihood,
+  method = "Nelder-Mead",
+  control = list(reltol = 1e-14, maxit = 100000L)
+)
+stopifnot(nelder_mead_from_default$convergence == 0L)
+stopifnot(nelder_mead_from_truth$convergence == 0L)
+stopifnot(max(abs(nelder_mead_from_default$par - fit_from_default$par)) < 1e-5)
+stopifnot(max(abs(nelder_mead_from_truth$par - fit_from_default$par)) < 1e-5)
+
 intercept_hat <- unname(fit_from_default$par[[1L]])
 beta_hat <- unname(fit_from_default$par[[2L]])
 phi_hat <- unname(fit_from_default$par[[3L]])
 fitted_residuals <- conditional_residuals(intercept_hat, beta_hat, phi_hat)
 sigma_hat <- sqrt(mean(fitted_residuals^2))
 gaussian_log_likelihood <- sum(stats::dnorm(fitted_residuals, 0.0, sigma_hat, log = TRUE))
+
+full_negative_log_likelihood <- function(parameters) {
+  if (parameters[[4L]] <= 0.0) return(Inf)
+  epsilon <- conditional_residuals(parameters[[1L]], parameters[[2L]], parameters[[3L]])
+  -sum(stats::dnorm(epsilon, 0.0, parameters[[4L]], log = TRUE))
+}
+full_nelder_mead_from_default <- stats::optim(
+  c(default_start, stats::sd(differences)),
+  full_negative_log_likelihood,
+  method = "Nelder-Mead",
+  control = list(reltol = 1e-14, maxit = 100000L)
+)
+full_nelder_mead_from_truth <- stats::optim(
+  c(truth_start, arimax_fixture$sigma),
+  full_negative_log_likelihood,
+  method = "Nelder-Mead",
+  control = list(reltol = 1e-14, maxit = 100000L)
+)
+stopifnot(full_nelder_mead_from_default$convergence == 0L)
+stopifnot(full_nelder_mead_from_truth$convergence == 0L)
 
 # Uniform parameter priors are constant within the model bounds. Jeffreys'
 # scale prior changes only the conditional posterior mode for sigma.
@@ -205,6 +244,28 @@ artifact <- list(
     phi = arimax_fixture$phi,
     sigma = arimax_fixture$sigma,
     data_log_likelihood = unname(truth_data_log_likelihood)
+  ),
+  diagnosis = list(
+    r_nelder_mead_from_default = list(
+      parameters = unname(nelder_mead_from_default$par),
+      convergence = unname(nelder_mead_from_default$convergence),
+      function_evaluations = unname(nelder_mead_from_default$counts[[1L]])
+    ),
+    r_nelder_mead_from_truth = list(
+      parameters = unname(nelder_mead_from_truth$par),
+      convergence = unname(nelder_mead_from_truth$convergence),
+      function_evaluations = unname(nelder_mead_from_truth$counts[[1L]])
+    ),
+    r_full_nelder_mead_from_default = list(
+      parameters = unname(full_nelder_mead_from_default$par),
+      convergence = unname(full_nelder_mead_from_default$convergence),
+      function_evaluations = unname(full_nelder_mead_from_default$counts[[1L]])
+    ),
+    r_full_nelder_mead_from_truth = list(
+      parameters = unname(full_nelder_mead_from_truth$par),
+      convergence = unname(full_nelder_mead_from_truth$convergence),
+      function_evaluations = unname(full_nelder_mead_from_truth$counts[[1L]])
+    )
   )
 )
 

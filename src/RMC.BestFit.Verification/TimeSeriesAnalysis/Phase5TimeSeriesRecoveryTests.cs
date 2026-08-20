@@ -76,7 +76,11 @@ public class Phase5TimeSeriesRecoveryTests
         JsonElement oracle = LoadArimaxMleOracle();
         ARIMAX model = CreateArimaxModel(fixture);
         double[] truth = GetArimaxTruth(fixture);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model);
+        Assert.AreEqual(
+            OptimizationMethod.DifferentialEvolution,
+            mle.OptimizerMethod,
+            "ARIMAX production MLE optimizer default.");
 
         AssertArimaxLikelihoodAgainstIndependentOracle(model, truth, oracle);
 
