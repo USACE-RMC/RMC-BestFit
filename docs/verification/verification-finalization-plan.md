@@ -316,7 +316,11 @@ Findings and required direction:
 - TR-036: complete. All four models fit Box-Cox/Yeo-Johnson lambda on the raw training prefix,
   freeze it for the full response, persist fitted/manual provenance, and pass holdout-isolation
   regressions plus the independently implemented R profile-likelihood oracle.
-- TR-037: correct raw/differenced index maps and test hand-computable `d=1` and `d=2` sequences.
+- TR-037: complete. ARIMA and ARIMAX predict exactly `T-d+h` model-scale differences, rebuild
+  `T+h` transformed levels from the first `d` observed transformed anchors, inverse-transform
+  once, and map component `k` to raw slot `k+d`. Hand `d=1`/`d=2`, transformed, component,
+  horizon, and exact `d=0` fixed-seed regressions pass, as does the analytical recurrence oracle
+  at `1E-10`.
 - TR-038: simulate ARIMA on the transformed/differenced scale, integrate, then inverse-transform once.
 - TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
 - TR-040: complete. AR, MA, ARIMA, and ARIMAX scalar, pointwise, component, and prior paths reject non-finite or non-positive innovation scales with exact negative infinity while preserving decomposed shape/metadata. Fast parity and the analytical Gaussian/prior oracle pass.

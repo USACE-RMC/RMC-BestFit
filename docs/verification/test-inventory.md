@@ -410,3 +410,19 @@ committed before C# evaluation and retain their manifest SHA-256 hashes.
 The complete final package gates pass Core 3,208/3,208, UI 578/578, App 440/440, and API
 498/498. The strict Debug solution build reports zero warnings/errors and UI/App signature
 baselines remain exact. The R artifact and generator were committed before C# evaluation.
+
+## TR-037 ARIMA/ARIMAX prediction reintegration
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `TimeSeriesPredictionReintegrationTests.ArimaD1LinearPrediction_ReintegratesExactLengthAndComponents` | Core Tests | `d=1`, zero/positive horizon, raw length and component `k+d` map | `1E-12`; two passing rows |
+| `TimeSeriesPredictionReintegrationTests.ArimaD2QuadraticPrediction_ReintegratesExactRecurrence` | Core Tests | Constant second differences reconstruct square-number levels and a two-slot conditioning prefix | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.ArimaxD1Prediction_UsesDateIndexedLevelCovariateAndReintegrates` | Core Tests | Exact-date level covariate drives first differences at raw slots `k+1` | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.LogTransformedD1Predictions_ReintegrateBeforeInverseTransform` | Core Tests | ARIMA and ARIMAX integrate on log scale and inverse-transform the complete path once | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.NoneD0FixedSeedPrediction_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change ARIMA/ARIMAX `Transform.None`, `d=0` values and every component vector | Exact double equality; passed |
+| `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Verification | Hand ARIMA(0,2,0) square recurrence and logarithmic ARIMAX(0,1,0,0) level-covariate recurrence | `1E-10`; guarded pass 1/1 |
+
+The complete package gates pass Core 3,213/3,213, UI 578/578, App 440/440, and API 498/498.
+The strict Debug solution build reports zero warnings/errors, and UI/App signature baselines remain
+exact. No external artifact is required for the embedded analytical recurrence; the verification
+source hash and exact command/TRX evidence are recorded in [Time-Series Verification](time-series.md).

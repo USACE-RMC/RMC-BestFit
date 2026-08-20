@@ -50,7 +50,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Confirmed defect - resolved | Fit and covariance fixed | Passed - R `gmm` parameter/objective and fixed-weight/two-step covariance parity | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) / [Artifact](../../verification/data/model-estimation/gmm-specification-oracle.json) | 2026-07-27 |
 | [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Confirmed defect; corrected | Complete | Passed - fast decomposition and analytical oracle | [Report](../verification/time-series.md#tr-035--jeffreys-prior-metadata) | 2026-08-20 |
 | [TR-036](#tr-036) | Transform fitting holdout leakage | High | Confirmed defect; corrected | Complete | Passed - fast lifecycle and R training-only oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
-| [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Confirmed defect; corrected | Complete | Passed - recurrence, compatibility, and fixed-seed regressions | [Report](../verification/time-series.md#tr-037--arima-and-arimax-prediction-reintegration) | 2026-08-20 |
 | [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
@@ -649,17 +649,28 @@ seed, likelihood definition, or convergence default changed.
 <a id="tr-037"></a>
 ## TR-037 — ARIMA and ARIMAX Reintegration Is Off by One
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. Both predictors calculate exactly $T-d+h$ model-scale
+differences, map model step $k$ to raw slot $k+d$, rebuild $T+h$ transformed levels from the first
+$d$ observed transformed anchors, and inverse-transform once. Existing tuple signatures and raw
+component lengths are unchanged; the first $d$ component slots are zero.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Fast tests cover `d=1`, `d=2`, zero/positive horizons,
+transformed and untransformed paths, exact-date ARIMAX level covariates, component mapping, and
+bit-for-bit `Transform.None`/`d=0` fixed-seed values. The exact guarded analytical recurrence
+method passes 1/1 at `1E-10`.
 
 **Evidence.** For first differences, `Difference` stores `d[0]=x[1]-x[0]`. `Predict()` allocates `TrainingTimeSteps + forecastSteps` differenced entries, then overwrites `integrated[0]` with `x[0]` and evaluates `integrated[i]=anchor[i-1]+integrated[i]`. Thus `d[0]` is discarded and output index 1 uses `d[1]`; the differenced vector is also `d` entries too long for an output of the requested undifferenced length. ARIMA and ARIMAX share this integration pattern.
 
-**Impact.** Fitted values and forecasts for `d>0` are time-shifted and can be numerically biased even though array lengths and uncertainty-band widths look plausible.
+**Impact.** Corrected: fitted and forecast values retain every predicted difference at its raw
+response index, and output/component lengths now match the established UI/App contract.
 
-**Follow-up.** Define explicit raw/differenced index maps, predict `T-d+h` differences, reconstruct from the required `d` initial conditions, and add hand-computable linear/quadratic sequence tests for `d=1,2`.
+**Correction.** The approved raw/differenced map and integration anchors are implemented without
+changing a public UI/App signature, persisted meaning, seed policy, sampler, prior, tolerance,
+likelihood, optimizer, or convergence default. Generation remains separately governed by TR-038
+and TR-039; final ARIMA/ARIMAX recovery adds one-step predictive checks in Package 10. See
+[time-series verification](../verification/time-series.md#tr-037--arima-and-arimax-prediction-reintegration).
 
 <a id="tr-038"></a>
 ## TR-038 — ARIMA Simulation Ignores Differencing and Transformations

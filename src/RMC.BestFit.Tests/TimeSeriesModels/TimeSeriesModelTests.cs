@@ -115,68 +115,6 @@ public class PredictNoiseInTrainingTests
             "ARIMAX.Predict must inject residual noise throughout the training window.");
     }
 
-    /// <summary>
-    /// ARIMAX.Predict with DiffOrderD=1 must produce a training-region CI with roughly
-    /// constant width (bounded by a small multiple of sigma) instead of a random-walk
-    /// cone that grows like sqrt(t). This guards the integration-anchoring fix.
-    /// </summary>
-    [TestMethod]
-    public void ARIMAX_Predict_Differenced_TrainingCIBoundedBySigma()
-    {
-        var ts = MakeTimeSeries();
-        var model = new ARIMAX(ts)
-        {
-            AROrderP = 1,
-            DiffOrderD = 1,
-            MAOrderQ = 1,
-            IncludeIntercept = true,
-            UseDefaultTrainingSteps = false,
-            UseJeffreysRuleForScale = false
-        };
-        model.TrainingTimeSteps = ts.Count;
-        model.SetDefaultParameters();
-
-        // Reasonable ARIMA(1,1,1) parameters for a noisy series with moderate variance.
-        // Layout: intercept, phi1, theta1, sigma
-        double[] pars = { 0.5, 0.3, -0.2, 30.0 };
-        model.SetParameterValues(pars);
-        double sigma = pars[3];
-
-        // Generate 200 realizations at fixed parameters; empirical width = 97.5% - 2.5%.
-        const int realz = 200;
-        int n = ts.Count; // no future forecast for this assertion
-        var samples = new double[n, realz];
-        for (int r = 0; r < realz; r++)
-        {
-            var y = model.Predict(pars, forecastSteps: 0, seed: r + 1).Y;
-            for (int t = 0; t < n; t++)
-                samples[t, r] = y[t];
-        }
-
-        // Width at an early training index should be comparable to width at a late one.
-        // A random-walk cone would have late/early ratio ~ sqrt(t_late / t_early).
-        double widthAt(int t)
-        {
-            var row = new double[realz];
-            for (int r = 0; r < realz; r++) row[r] = samples[t, r];
-            Array.Sort(row);
-            return row[(int)(0.975 * realz)] - row[(int)(0.025 * realz)];
-        }
-
-        // Use a reasonable pair of training indices well past the seeding region.
-        double earlyWidth = widthAt(5);
-        double lateWidth = widthAt(n - 5);
-
-        // Upper bound: late width should not exceed ~6 * sigma. A random-walk cone over
-        // 50 points with sigma=30 would produce width ≈ 1.96 * 2 * sqrt(50) * 30 ≈ 830.
-        // After the anchoring fix it should be roughly constant ≈ 4 * sigma ≈ 120.
-        Assert.IsTrue(lateWidth < 6.0 * sigma * Math.Sqrt(2),
-            $"Late-training CI width {lateWidth:F1} indicates the integration anchor was bypassed (expected <= ~{6.0 * sigma * Math.Sqrt(2):F1}).");
-
-        // Sanity: width should not be zero either (ensures noise was injected at all).
-        Assert.IsTrue(earlyWidth > 0.1 * sigma,
-            $"Early-training CI width {earlyWidth:F1} is near zero; noise injection likely failed.");
-    }
 }
 
 /// <summary>

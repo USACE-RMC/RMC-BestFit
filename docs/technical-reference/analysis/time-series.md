@@ -99,8 +99,8 @@ AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log li
 | AR/MA, no fitted transform | Available subject to conditional-likelihood assumptions | Available subject to diagnostic checks |
 | AR/MA with fitted transform | Available with training-only frozen lambda | Back-transform is median-like; transform uncertainty omitted |
 | ARIMA/ARIMAX with $d=0$, no transform | Available | Available, subject to ARIMAX covariate scenario |
-| ARIMA with $d>0$ | Conditional likelihood can be inspected | Unavailable: reintegration defect TR-037 |
-| ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Unavailable: reintegration/generation defects TR-037/TR-039 |
+| ARIMA with $d>0$ | Conditional likelihood can be inspected | Prediction available with verified reintegration; predictive simulation unavailable under TR-038 |
+| ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Prediction available with verified reintegration/date alignment; predictive simulation unavailable under TR-039 |
 | ARIMA transformed/differenced simulation | — | Unavailable: TR-038 |
 | ARIMAX transformed/differenced simulation | — | Unavailable: TR-039 |
 
@@ -112,7 +112,10 @@ State the variable and units, interval, calendar/water-year convention, missing-
 
 ## Traceability and References
 
-Implementation is under `Models/TimeSeries/`; orchestration is under `Analyses/TimeSeries/`. Fast tests are under `RMC.BestFit.Tests/TimeSeriesModels/` and `TimeSeriesAnalysis/`. Computational verification sources are under the matching `RMC.BestFit.Verification` directories and were inspected but not run.
+Implementation is under `Models/TimeSeries/`; orchestration is under `Analyses/TimeSeries/`. Fast
+tests are under `RMC.BestFit.Tests/TimeSeriesModels/` and `TimeSeriesAnalysis/`. Focused Phase 5
+Verification methods are under the matching `RMC.BestFit.Verification` directories and are run
+only by exact fully qualified name; the complete Verification project is not run.
 
 <a id="ref-1"></a>[1] G. E. P. Box, G. M. Jenkins, G. C. Reinsel, and G. M. Ljung, *Time Series Analysis: Forecasting and Control*, 5th ed., Wiley, 2015.
 

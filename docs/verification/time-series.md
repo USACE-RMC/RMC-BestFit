@@ -378,13 +378,77 @@ strict build passed. No seed, tolerance, prior, sampler, optimizer,
 likelihood definition, or convergence default was changed. The complete Verification project was
 not run.
 
+## TR-037 — ARIMA and ARIMAX prediction reintegration
+
+**Disposition and behavior.** The confirmed off-by-one defect is corrected. Previously, both
+prediction paths allocated `T+h` entries on the differenced scale, overwrote the first entry with
+an integration anchor, and consequently discarded the first stored difference while shifting the
+remaining recurrence. For `d>0`, they now calculate exactly `T-d+h` transformed-difference
+values. Model step `k` maps to raw slot `k+d`; inverse differencing begins with the first `d`
+observed transformed levels and reconstructs exactly `T+h` transformed levels; the inverse
+transform is applied once after reconstruction. For `d=0`, the original recursion, draw order,
+and fixed-seed values are retained bit for bit.
+
+Every existing prediction tuple signature and component name remains unchanged. Component arrays
+have raw output length `T+h`; slots `0...d-1` are zero conditioning entries, and model component
+`k` is stored at raw slot `k+d`. ARIMAX prediction uses the Package 5 exact-date level-covariate
+map for both observed and regularly extended response dates. No generation path changes in this
+package; TR-038 and TR-039 remain open.
+
+**Compatibility.** No UI/App public or protected signature, XAML binding, property name, enum,
+or serialization meaning changed. The UI and App signature-baseline tests pass in their complete
+suites. Core passes 3,213/3,213, UI 578/578, App 440/440, and API 498/498. The strict Debug
+solution build with `EnforceXmlDocumentation=true` passes all ten projects with zero warnings or
+errors in 9.56 s. The documented XML-validation script remains absent from this checkout.
+
+**Fast regressions.** `TimeSeriesPredictionReintegrationTests` covers ARIMA `d=1` linear
+reconstruction with zero and positive forecast horizons, ARIMA `d=2` quadratic reconstruction,
+ARIMAX `d=1` exact-date level covariates, logarithmic ARIMA/ARIMAX integration before inverse
+transformation, raw output/component lengths, and the zero conditioning prefix. Its fixed-seed
+control pins every established `Transform.None`, `d=0` output and component value bit for bit for
+both models. The older `ARIMAX_Predict_Differenced_TrainingCIBoundedBySigma` regression was
+removed because it required re-anchoring every in-sample prediction to the preceding observation,
+which directly contradicted the approved complete-path reintegration contract. The replacement
+tests evaluate exact recurrence identities without Monte Carlo thresholds.
+
+**Independent oracle.** The exact Verification method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle`.
+The embedded analytical oracle uses ARIMA(0,2,0) with intercept two, raw training levels
+`[1,4,9,16,25,36]`, `T=6`, `h=2`, `Transform.None`, and no innovations (`seed=-1`); the first
+two levels and constant second differences produce `[1,4,9,16,25,36,49,64]`. Its ARIMAX case
+uses ARIMAX(0,1,0,0), no intercept, eight exact-date level-covariate values
+`[999,1,1,1,1,1,1,1]`, coefficient one, raw training levels `exp(1)...exp(6)`, `T=6`, `h=2`,
+`Transform.Logarithmic`, and no innovations. The resulting model-scale first differences are one
+and the raw oracle is `exp(1)...exp(8)`. The fixed absolute tolerance is `1E-10`; no external
+package, stochastic sample, or external artifact is applicable. The verification source SHA-256
+is `FEB8326A8F70EA56463F8515E16E162F8301583B2BAE65A3C656946D6814B577`.
+
+**Execution evidence and history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4
+built against the configured local Numerics project. From commit `02f766b` plus the scoped
+Package 6 production/test/report diff, the guarded command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle'
+```
+
+The exact method passed 1/1 in 0.393 s. Its TRX is under
+`TestResults/VerificationFocused/20260820-114723-...`. The first guarded attempt could not read
+the installed NuGet configuration inside the filesystem sandbox and ran no test; the identical
+exact command then passed with approved SDK access. Initial test compilation exposed an ambiguous
+test-only `Transform` import and an integer-to-double method-group mismatch, both corrected before
+execution. The first complete Core run then exposed the obsolete in-sample re-anchoring contract
+described above; after replacing that contradictory contract with exact approved recurrences, the
+final Core run passed. No seed, tolerance, prior, sampler, optimizer, likelihood definition, or
+convergence default changed. The complete Verification project was not run.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
 |---|---|---|---|
 | TR-035 Jeffreys component type | Complete | Three Core metadata/decomposition regressions pass | Analytical four-scale oracle passes 1/1 at `1E-12` |
 | TR-036 training-only transform fitting | Complete | Core holdout/state/clone plus UI XML/copy/undo and API mapping pass | R training-only profile oracle passes 1/1 at fixed cross-language tolerance; transformed recovery remains Package 10 |
-| TR-037 reintegration index | Approved; implementation pending | Planned `d=1`/`d=2` recurrence tests | Planned independent recurrence oracle and recovery |
+| TR-037 reintegration index | Complete | ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, and `d=0` golden regressions pass | Hand recurrence oracle passes 1/1 at `1E-10`; predictive recovery checks remain Package 10 |
 | TR-038 AR/MA/ARIMA generation | Approved; implementation pending | Planned fixed-seed and transform-order tests | Planned algebraic and Monte Carlo oracles |
 | TR-039 ARIMAX generation | Approved; implementation pending | Planned scale/order/date tests | Planned algebraic, Monte Carlo, and recovery evidence |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |

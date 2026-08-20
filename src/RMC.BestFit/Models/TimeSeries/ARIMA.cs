@@ -973,12 +973,14 @@ namespace RMC.BestFit.Models
                 throw new InvalidOperationException("TimeSeries must be set.");
 
             int totalSteps = TrainingTimeSteps + forecastSteps;
+            int modelSteps = totalSteps - DOrder;
+            int trainingModelSteps = TrainingTimeSteps - DOrder;
 
-            var y = new double[totalSteps];
+            var modelY = new double[modelSteps];
             var interceptPart = new double[totalSteps];
             var arPart = new double[totalSteps];
             var maPart = new double[totalSteps];
-            var epsilon = new double[totalSteps];
+            var epsilon = new double[modelSteps];
 
             int k = 0;
             double mu = IncludeIntercept ? parameters[k++] : 0;
@@ -995,9 +997,10 @@ namespace RMC.BestFit.Models
 
             int maxOrder = Math.Max(POrder, QOrder);
 
-            for (int t = 0; t < totalSteps; t++)
+            for (int t = 0; t < modelSteps; t++)
             {
-                interceptPart[t] = mu;
+                int rawIndex = t + DOrder;
+                interceptPart[rawIndex] = mu;
 
                 double ar = 0;
                 double ma = 0;
@@ -1008,13 +1011,13 @@ namespace RMC.BestFit.Models
                     // via predicted y[t-p] once we leave it (validation + future forecast).
                     for (int p = 1; p <= POrder; p++)
                     {
-                        if (_diffSeries != null && t - p < TrainingTimeSteps && t - p < _diffSeries.Count)
+                        if (_diffSeries != null && t - p < trainingModelSteps && t - p < _diffSeries.Count)
                         {
                             ar += phi[p - 1] * (_diffSeries[t - p].Value - mu);
                         }
                         else
                         {
-                            ar += phi[p - 1] * (y[t - p] - mu);
+                            ar += phi[p - 1] * (modelY[t - p] - mu);
                         }
                     }
 
@@ -1025,113 +1028,49 @@ namespace RMC.BestFit.Models
                     }
                 }
 
-                arPart[t] = ar;
-                maPart[t] = ma;
+                arPart[rawIndex] = ar;
+                maPart[rawIndex] = ma;
 
                 // Compute y[t]. For t < maxOrder, seed from observed so the AR/MA buffer
                 // has real values. For t >= maxOrder, use the model prediction on the
                 // differenced scale — noise is injected below when seeded.
                 if (t < maxOrder && _diffSeries != null && t < _diffSeries.Count)
                 {
-                    y[t] = _diffSeries[t].Value;
+                    modelY[t] = _diffSeries[t].Value;
                     epsilon[t] = 0;
                 }
                 else
                 {
-                    y[t] = mu + ar + ma;
+                    modelY[t] = mu + ar + ma;
                 }
 
                 // Pre-noise epsilon inside the fit window = observed - model prediction.
                 // Keeps MA recursion anchored to true residuals through training.
-                if (_diffSeries != null && t >= maxOrder && t < TrainingTimeSteps && t < _diffSeries.Count)
+                if (_diffSeries != null && t >= maxOrder && t < trainingModelSteps && t < _diffSeries.Count)
                 {
-                    epsilon[t] = _diffSeries[t].Value - y[t];
+                    epsilon[t] = _diffSeries[t].Value - modelY[t];
                 }
 
                 // Residual noise: draw every step once AR/MA buffer is seeded so CIs
                 // wrap observations in training and fan out past the fit window.
                 if (prng != null && t >= maxOrder)
                 {
-                    double mt = y[t];
+                    double mt = modelY[t];
                     double error = errDist!.InverseCDF(prng.NextDouble());
-                    y[t] += error;
+                    modelY[t] += error;
 
                     // Epsilon overwrite only outside the fit window so validation + forecast
                     // MA fan-out uses injected noise.
-                    if (t >= TrainingTimeSteps)
-                        epsilon[t] = y[t] - mt;
+                    if (t >= trainingModelSteps)
+                        epsilon[t] = modelY[t] - mt;
                 }
             }
 
-            // Post-processing: y is on the transformed + differenced scale.
-            //
-            // Step A — Integrate (reverse differencing) to the transformed + undifferenced
-            // scale. Inside the fit window we anchor each integration level to the
-            // appropriate intermediate-difference of the observed transformed series, so
-            // a one-step-ahead CI wraps observations with roughly constant width rather
-            // than a random-walk cone. Outside the fit window we use a plain cumsum so
-            // per-step noise compounds and the CI fans out as expected for forecasts.
-            //
-            // For DOrder >= 2 we precompute the chain of intermediate differences:
-            //   anchorSeries[k] = k-th difference of _trainingTimeSeries (k = 0 .. DOrder).
-            // At integration iteration d we are reversing the (DOrder - d)-th difference,
-            // so the correct anchor is anchorSeries[DOrder - 1 - d]. The previous
-            // implementation only used the original (k = 0) series at d == 0 and plain
-            // cumsum for d >= 1, which produced biased forecasts whenever DOrder >= 2.
-            if (DOrder > 0)
-            {
-                var integrated = new double[totalSteps];
-                Array.Copy(y, integrated, totalSteps);
-
-                // Precompute anchor series at each intermediate differencing level.
-                // anchorSeries[0] is the original transformed series; anchorSeries[k]
-                // is its k-th difference. Built only when training data exists.
-                List<TimeSeries>? anchorSeries = null;
-                if (_trainingTimeSeries != null && _trainingTimeSeries.Count > 0)
-                {
-                    anchorSeries = new List<TimeSeries> { _trainingTimeSeries };
-                    for (int level = 1; level < DOrder; level++)
-                        anchorSeries.Add(Difference(anchorSeries[level - 1], 1));
-                }
-
-                for (int d = 0; d < DOrder; d++)
-                {
-                    int anchorLevel = DOrder - 1 - d;
-                    TimeSeries? anchor = anchorSeries != null && anchorLevel < anchorSeries.Count
-                        ? anchorSeries[anchorLevel]
-                        : null;
-                    bool useObservedAnchor = anchor != null && anchor.Count > 0;
-
-                    if (useObservedAnchor)
-                    {
-                        integrated[0] = anchor![0].Value;
-
-                        int anchorEnd = Math.Min(TrainingTimeSteps, totalSteps);
-                        for (int i = 1; i < anchorEnd; i++)
-                        {
-                            int obsIdx = i - 1;
-                            if (obsIdx < anchor.Count)
-                                integrated[i] = anchor[obsIdx].Value + integrated[i];
-                            else
-                                integrated[i] = integrated[i - 1] + integrated[i];
-                        }
-
-                        for (int i = Math.Max(1, anchorEnd); i < totalSteps; i++)
-                        {
-                            integrated[i] = integrated[i - 1] + integrated[i];
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 1; i < totalSteps; i++)
-                        {
-                            integrated[i] = integrated[i - 1] + integrated[i];
-                        }
-                    }
-                }
-
-                y = integrated;
-            }
+            // Model step k maps to raw slot k+d. Exactly T-d+h model-scale differences are
+            // reconstructed from the first d observed transformed levels, yielding T+h levels.
+            double[] y = DOrder > 0
+                ? IntegratePredictedDifferences(modelY, _trainingTimeSeries, DOrder)
+                : modelY;
 
             // Step B — Inverse transform back to the original scale. Posterior-median point
             // forecast; no bias correction (matches R's forecast::forecast.Arima convention).
@@ -1147,6 +1086,48 @@ namespace RMC.BestFit.Models
             }
 
             return (y, interceptPart, arPart, maPart);
+        }
+
+        /// <summary>
+        /// Reconstructs transformed levels from highest-order predicted differences and the first
+        /// observed transformed anchors.
+        /// </summary>
+        /// <param name="differences">Predicted values on the <paramref name="order"/>-difference scale.</param>
+        /// <param name="transformedLevels">Observed transformed levels supplying the first <paramref name="order"/> anchors.</param>
+        /// <param name="order">The differencing order.</param>
+        /// <returns>The reconstructed transformed levels.</returns>
+        /// <exception cref="InvalidOperationException">Fewer than <paramref name="order"/> observed transformed anchors are available.</exception>
+        private static double[] IntegratePredictedDifferences(double[] differences, TimeSeries transformedLevels, int order)
+        {
+            if (transformedLevels == null || transformedLevels.Count < order)
+                throw new InvalidOperationException($"At least {order} transformed observations are required to reverse differencing.");
+
+            var initialValues = new double[order];
+            var workingAnchors = new double[order];
+            for (int i = 0; i < order; i++)
+                workingAnchors[i] = transformedLevels[i].Value;
+            initialValues[0] = workingAnchors[0];
+
+            int anchorCount = order;
+            for (int level = 1; level < order; level++)
+            {
+                for (int i = 0; i < anchorCount - 1; i++)
+                    workingAnchors[i] = workingAnchors[i + 1] - workingAnchors[i];
+                anchorCount--;
+                initialValues[level] = workingAnchors[0];
+            }
+
+            double[] current = (double[])differences.Clone();
+            for (int level = order - 1; level >= 0; level--)
+            {
+                var integrated = new double[current.Length + 1];
+                integrated[0] = initialValues[level];
+                for (int i = 0; i < current.Length; i++)
+                    integrated[i + 1] = integrated[i] + current[i];
+                current = integrated;
+            }
+
+            return current;
         }
 
         /// <summary>

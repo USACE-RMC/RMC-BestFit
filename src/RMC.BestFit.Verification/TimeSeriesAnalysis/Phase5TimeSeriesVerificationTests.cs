@@ -311,6 +311,69 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
+    /// Verifies ARIMA and ARIMAX prediction reintegration against hand-evaluated first- and
+    /// second-difference recurrences, including inverse transformation and component alignment.
+    /// </summary>
+    /// <remarks>
+    /// For the ARIMA case, the fixed second difference is two and the first two transformed
+    /// levels are one and four, giving the exact square-number sequence. For the ARIMAX case,
+    /// a unit level covariate supplies every first difference on the logarithmic scale, giving
+    /// <c>exp(1), ..., exp(8)</c>. The absolute acceptance tolerance is fixed at 1E-10.
+    /// </remarks>
+    [TestMethod]
+    public void ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle()
+    {
+        const double tolerance = 1E-10;
+        DateTime startDate = new(2002, 3, 4);
+
+        double[] quadratic = { 1, 4, 9, 16, 25, 36 };
+        var arima = new ARIMA(CreateDailySeries(quadratic, startDate), 0, 2, 0, true)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = Transform.None,
+        };
+        arima.TrainingTimeSteps = quadratic.Length;
+        var arimaPrediction = arima.Predict(new[] { 2.0, 1.0 }, 2, -1);
+        double[] expectedSquares = { 1, 4, 9, 16, 25, 36, 49, 64 };
+        AssertArrayEqual(expectedSquares, arimaPrediction.Y, tolerance, "ARIMA d=2 levels");
+        AssertArrayEqual(
+            new[] { 0.0, 0.0, 2, 2, 2, 2, 2, 2 },
+            arimaPrediction.InterceptPart,
+            tolerance,
+            "ARIMA d=2 component map");
+
+        double[] logarithmic = Enumerable.Range(1, 6).Select(value => Math.Exp(value)).ToArray();
+        var arimax = new ARIMAX
+        {
+            IncludeIntercept = false,
+            AROrderP = 0,
+            DiffOrderD = 1,
+            MAOrderQ = 0,
+            XOrderB = 0,
+            CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
+            UseDefaultTrainingSteps = false,
+            TransformType = Transform.Logarithmic,
+        };
+        arimax.TimeSeries = CreateDailySeries(logarithmic, startDate);
+        arimax.TrainingTimeSteps = logarithmic.Length;
+        arimax.SetCovariates(new List<Numerics.Data.TimeSeries>
+        {
+            CreateDailySeries(new[] { 999.0, 1, 1, 1, 1, 1, 1, 1 }, startDate),
+        });
+
+        var arimaxPrediction = arimax.Predict(new[] { 1.0, 0.25 }, 2, -1);
+        double[] expectedLogarithmic = Enumerable.Range(1, 8)
+            .Select(value => Math.Exp(value))
+            .ToArray();
+        AssertArrayEqual(expectedLogarithmic, arimaxPrediction.Y, tolerance, "ARIMAX log d=1 levels");
+        AssertArrayEqual(
+            new[] { 0.0, 1, 1, 1, 1, 1, 1, 1 },
+            arimaxPrediction.CovariatePart,
+            tolerance,
+            "ARIMAX d=1 component map");
+    }
+
+    /// <summary>
     /// Creates the fixed ARIMAX alignment fixture from the committed oracle.
     /// </summary>
     /// <param name="raw">The raw response values.</param>

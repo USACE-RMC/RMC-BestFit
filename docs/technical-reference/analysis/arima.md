@@ -67,16 +67,20 @@ The prior is the product of configured marginal priors and, by default, $1/\sigm
 
 ## Forecasting and Current Restriction
 
-The intended forecast sequence is: predict $w_{T_d+h}$ recursively, reconstruct $x_{T+h}$ from the last $d$ observed integration states, then return $g^{-1}(x_{T+h})$. Process uncertainty accumulates under integration, and posterior uncertainty requires repeating the recursion for joint parameter draws.
+`Predict` calculates exactly $T-d+h$ values on the transformed, $d$-difference scale. Model step
+$k$ maps to raw response slot $k+d$. Inverse differencing begins with the first $d$ observed
+transformed levels and successively reconstructs exactly $T+h$ transformed levels; only then is
+$g^{-1}$ applied once. Process uncertainty therefore accumulates through the integration
+recurrence, and posterior uncertainty requires repeating the recursion for joint parameter draws.
+The component vectors retain raw length $T+h$: their first $d$ conditioning entries are zero and
+component step $k$ is stored at raw slot $k+d$. This behavior closes
+[TR-037](../review-findings.md#tr-037); `Transform.None` with $d=0$ retains its pre-correction
+fixed-seed values bit for bit.
 
-The current `Predict` reintegration discards the first stored difference and shifts later differences by one while allocating too many differenced entries. This is [TR-037](../review-findings.md#tr-037). `GenerateRandomValues` also ignores $d$ and the transform ([TR-038](../review-findings.md#tr-038)). Consequently:
-
-- estimation on the transformed/differenced scale can be inspected;
-- `Predict`/`ARIMAAnalysis` fitted curves, forecasts, and uncertainty bands for $d>0$ are not scientifically usable;
-- prior/posterior predictive checks are not usable when $d>0$ or `TransformType != None`;
-- $d=0$ behavior reduces to the documented conditional ARMA model.
-
-These are production defects requiring a separately authorized correction; the documentation does not substitute an aspirational algorithm for the executed one.
+`GenerateRandomValues` still ignores $d$ and the configured transform
+([TR-038](../review-findings.md#tr-038)). Consequently, estimation and `Predict` are available
+subject to the conditional-model assumptions, but prior/posterior predictive simulation is not
+scientifically usable when $d>0$ or `TransformType != None` until TR-038 closes.
 
 ## Compile-Checked Configuration
 
@@ -115,13 +119,18 @@ private static ARIMAAnalysis ConfigureArimaAnalysis()
 }
 ```
 
-This block demonstrates the API exactly; because it selects $d=1$, do not publish its forecast until TR-037 is fixed and verification passes. A defensible interim analysis may set `dOrder: 0` and model a demonstrably stationary series, or difference externally with an independently verified reconstruction workflow.
+This block demonstrates the verified prediction API for $d=1$. Do not use its production
+generator for predictive checks until TR-038 closes.
 
 ## Assumptions, Diagnostics, and Evidence
 
 The model assumes regular spacing, fixed coefficients, Gaussian homoscedastic innovations, a fully observed response, and a differencing order chosen without mining the validation set. Diagnose residual serial dependence, conditional variance, structural breaks, root proximity, and forecast calibration. Polynomial drift after repeated integration is an extrapolation assumption, not a physical law.
 
-Implementation: `Models/TimeSeries/ARIMA.cs`; orchestration: `Analyses/TimeSeries/ARIMAAnalysis.cs`. Fast tests largely establish configuration, serialization, array shape, and broad back-transformation behavior; they do not currently catch the index identity in TR-037. Long-running recovery sources were inspected but not executed.
+Implementation: `Models/TimeSeries/ARIMA.cs`; orchestration:
+`Analyses/TimeSeries/ARIMAAnalysis.cs`. Fast tests verify `d=1` linear and `d=2` quadratic
+reintegration, transformed prediction, output/component alignment, and exact $d=0$ fixed-seed
+compatibility. The focused analytical hand-recurrence method passes at `1E-10`; integrated
+parameter recovery remains part of the Phase 5 recovery matrix.
 
 ## References
 

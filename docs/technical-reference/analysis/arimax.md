@@ -94,17 +94,22 @@ Trend and Fourier seasonality are explicitly rejected when `DiffOrderD>0`, avoid
 
 These mechanisms represent empirical continuation scenarios, not a probabilistic model fitted jointly with the response. They do not propagate parameter uncertainty in a covariate forecast model, preserve cross-covariate dependence by construction, or condition on climate/operations scenarios. For defensible engineering forecasts, provide explicit aligned future covariates or model their joint uncertainty outside BestFit and pass scenario paths realization by realization.
 
-## Forecast and Simulation Restrictions
+## Forecasting and Simulation Restriction
 
-For $d=0$ and no transform, `Predict` uses observed response/residual history inside training and recursive response/noise afterward. `ARIMAXAnalysis` combines posterior parameter and innovation draws. Its bands also include whichever covariate extension is invoked, so clearly state that scenario.
+`Predict` calculates exactly $T-d+h$ model-scale values and uses the same exact-date level-
+covariate map as the likelihood. Model step $k$ maps to raw slot $k+d$; inverse differencing begins
+with the first $d$ observed transformed levels, reconstructs exactly $T+h$ transformed levels, and
+then inverse-transforms once. Component arrays retain raw length, with zero conditioning values in
+slots $0,ldots,d-1$. This closes [TR-037](../review-findings.md#tr-037). `ARIMAXAnalysis`
+combines posterior parameter and innovation draws, and its bands include whichever covariate
+extension is invoked, so clearly state that scenario.
 
-For $d>0$, likelihood and residual diagnostics now use the verified exact-date map, but forecast
-reintegration remains shifted ([TR-037](../review-findings.md#tr-037)). `GenerateRandomValues`
-additionally mixes transformed and original scales and inverse-transforms before integration
-([TR-039](../review-findings.md#tr-039)). Therefore transformed/differenced posterior predictive
-checks and forecasts remain unavailable until those separate findings close. Analysis AIC/BIC use
-the data log likelihood at the stored MAP and exclude prior-density terms; they are comparable with
-MLE criteria only when every active prior is constant ([TR-042](../review-findings.md#tr-042)).
+`GenerateRandomValues` still mixes transformed and original scales and inverse-transforms before
+integration ([TR-039](../review-findings.md#tr-039)). Therefore transformed/differenced
+prior/posterior predictive simulation remains unavailable until TR-039 closes, although the
+corrected prediction path is available. Analysis AIC/BIC use the data log likelihood at the stored
+MAP and exclude prior-density terms; they are comparable with MLE criteria only when every active
+prior is constant ([TR-042](../review-findings.md#tr-042)).
 
 AR stationarity and MA invertibility are warned using sums of absolute coefficients, not enforced by roots or reparameterization. Polynomial trends extrapolate without bound, empirical covariate extension can leave the historical support, and collinear lag blocks can make $\beta$, trend, seasonality, and AR persistence weakly identifiable.
 
@@ -169,7 +174,8 @@ Implementation: `Models/TimeSeries/ARIMAX.cs`; orchestration:
 `Analyses/TimeSeries/ARIMAXAnalysis.cs`. Fast tests cover configuration, serialization, prediction
 shapes, covariate extension, transformations, exact-date alignment, holdout isolation, and
 likelihood decomposition. The independent R alignment oracle verifies `d=0,1,2` at `1E-10`.
-Prediction reintegration and generation scale identities remain assigned to TR-037 and TR-039.
+Fast linear/logarithmic recurrence and fixed-seed tests plus the focused analytical oracle verify
+prediction reintegration at `1E-10`. Generation scale identities remain assigned to TR-039.
 
 ## References
 
