@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "artifact_id": "TS-PHASE5-TRANSFORM-001",
+    "findings": ["TR-036", "TR-046"],
+    "generator": "verification/r/time-series/generate_phase5_transform_oracle.R",
+    "generator_sha256": "decc17e5b0c66ac07dc07b2b1cacc43c2c366e9cc2b6ca3fb58be4e8f0e78410",
+    "source_commit": "54f25188397e8fa0dc83acc5cea36b3ef96fb4f9",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "jsonlite_version": "2.0.0",
+    "digest_version": "0.6.39",
+    "generated_utc": "2026-08-20 16:29:11 UTC",
+    "training_boundary": 6,
+    "tolerances": {
+      "cross_language_absolute": 1e-08,
+      "cross_language_relative": 1e-07,
+      "deterministic_state_absolute": 1e-12
+    }
+  },
+  "fitted": {
+    "box_cox": {
+      "raw": [1.1, 1.3, 1.8, 2.7, 5, 12, 18, 31, 54],
+      "alternate_holdout": [1800, 0.031, 5400],
+      "expected_lambda": -0.541199913033891,
+      "expected_profile_log_likelihood": -12.9824828942026,
+      "expected_training_transformed": [0.092893767241196, 0.244588700703483, 0.503468873160337, 0.768331540946856, 1.07442509618647, 1.36625359293784],
+      "expected_training_jacobian": -9.29814760864749
+    },
+    "yeo_johnson": {
+      "raw": [-4, -2, -0.5, 0.5, 2, 4, -12, 9, 20],
+      "alternate_holdout": [-1200, 900, 0.01],
+      "expected_lambda": 1.00000001490262,
+      "expected_profile_log_likelihood": -14.2422587138814,
+      "expected_training_transformed": [-3.99999993968629, -1.99999998068864, -0.499999998387572, 0.500000001612428, 2.00000001931136, 4.00000006031371],
+      "expected_training_jacobian": 0
+    }
+  },
+  "manual": {
+    "transform": "YeoJohnson",
+    "raw": [-3.5, -1.7, -0.4, 0.2, 1.1, 2.4, 4, 6.2, -30, 40],
+    "training_steps": 8,
+    "lambda": 0.6,
+    "phi": 0.35,
+    "theta": -0.25,
+    "sigma": 0.8,
+    "expected_full_transformed": [-5.15208472539877, -2.15504914221028, -0.429780641573009, 0.192667702883046, 0.934572751152271, 1.80658377684108, 2.71087967400628, 3.78147318818666, -86.7394439497566, 13.8043574689111],
+    "expected_ar_residuals": [-0.351819488320712, 0.32448655820059, 0.343090927433599, 0.867139055143205, 1.47948331393779, 2.0785753521119, 2.83266530228446],
+    "expected_ma_residuals": [-5.15208472539877, -3.44307032355997, -1.290548222463, -0.129969352732705, 0.902080412969095, 2.03210388008335, 3.21890564402712, 4.58619959919344],
+    "expected_ar_jacobian": -1.76073170478802,
+    "expected_ma_jacobian": -1.15910074607751,
+    "expected_ar_log_likelihood": -18.8438349293109,
+    "expected_ma_log_likelihood": -66.4277204273909
+  }
+}
