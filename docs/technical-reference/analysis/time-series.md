@@ -63,6 +63,17 @@ The setter's second argument, `lambda2`, remains accepted but is intentionally i
 compatibility; it is not a shift or offset parameter. See [TR-036](../review-findings.md#tr-036)
 and [TR-046](../review-findings.md#tr-046).
 
+Prediction and simulation follow the inverse statistical order. ARIMA/ARIMAX first construct all
+intercept, trend, seasonality, exact-date level-covariate, AR, MA, and innovation contributions on
+the transformed/highest-difference model scale. For $d>0$, the completed vector is integrated from
+the first $d$ observed transformed levels when data are attached or zero transformed anchors
+otherwise. The inverse response transform is applied once, after the complete transformed level
+path exists. Thus preprocessing is raw response $\rightarrow$ transform $\rightarrow$ difference,
+while simulation is model recurrence $\rightarrow$ integration $\rightarrow$ inverse transform.
+For component arrays, model step $k$ maps to raw slot $k+d$ and the first $d$ conditioning slots
+are zero. See [TR-037](../review-findings.md#tr-037),
+[TR-038](../review-findings.md#tr-038), and [TR-039](../review-findings.md#tr-039).
+
 ## Analysis Lifecycle
 
 `ARAnalysis`, `MAAnalysis`, `ARIMAAnalysis`, and `ARIMAXAnalysis` follow the common `AnalysisBase` lifecycle:
@@ -100,9 +111,9 @@ AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log li
 | AR/MA with fitted transform | Available with training-only frozen lambda | Back-transform is median-like; transform uncertainty omitted |
 | ARIMA/ARIMAX with $d=0$, no transform | Available | Available, subject to ARIMAX covariate scenario |
 | ARIMA with $d>0$ | Conditional likelihood can be inspected | Prediction and simulation available with verified reintegration and explicit observed/zero anchors |
-| ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Prediction available with verified reintegration/date alignment; predictive simulation unavailable under TR-039 |
+| ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Prediction and simulation available with verified reintegration/date alignment and explicit observed/zero anchors |
 | ARIMA transformed/differenced simulation | — | Available; full model-scale recursion, integration, then one inverse transform |
-| ARIMAX transformed/differenced simulation | — | Unavailable: TR-039 |
+| ARIMAX transformed/differenced simulation | — | Available; all components on model scale, exact-date level covariates, integration, then one inverse transform |
 
 This table is deliberately conservative because the software supports life-safety work. A finite result is not evidence that a defective path is safe to publish.
 

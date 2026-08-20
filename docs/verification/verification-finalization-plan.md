@@ -330,7 +330,11 @@ Findings and required direction:
   observed or zero transformed anchors, inverse-transforms once, and returns exactly `sampleSize`.
   Six fast contracts and two exact algebraic/1,000-step moment methods pass; the superseded
   50,000-step logarithmic overflow failure remains in the report.
-- TR-039: keep ARIMAX regression and ARMA recursion on one model scale and inverse-transform only at the end.
+- TR-039: complete. ARIMAX constructs intercept, trend, seasonality, exact-date level-covariate,
+  AR, MA, and innovation terms entirely on transformed/differenced model scale, integrates from
+  observed or zero transformed anchors, and inverse-transforms once. Seven fast contracts and the
+  exact algebraic/1,000-step moment oracle pass while the three-argument generation signature,
+  extension policy, output length, and `Transform.None`/`d=0` seed path remain unchanged.
 - TR-040: complete. AR, MA, ARIMA, and ARIMAX scalar, pointwise, component, and prior paths reject non-finite or non-positive innovation scales with exact negative infinity while preserving decomposed shape/metadata. Fast parity and the analytical Gaussian/prior oracle pass.
 - TR-041: complete. ARIMAX model step `k` maps to raw response index `k+d`; training contains
   exactly `T-d` differences, later raw timestamps are retained, level covariates are matched by

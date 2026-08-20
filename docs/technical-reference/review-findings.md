@@ -52,7 +52,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-036](#tr-036) | Transform fitting holdout leakage | High | Confirmed defect; corrected | Complete | Passed - fast lifecycle and R training-only oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Confirmed defect; corrected | Complete | Passed - recurrence, compatibility, and fixed-seed regressions | [Report](../verification/time-series.md#tr-037--arima-and-arimax-prediction-reintegration) | 2026-08-20 |
 | [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Confirmed defect; corrected | Complete | Passed - transform/order regressions and algebraic/moment oracles | [Report](../verification/time-series.md#tr-038--ar-ma-and-arima-transformed-generation) | 2026-08-20 |
-| [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Confirmed defect; corrected | Complete | Passed - scale/order/date regressions and algebraic/moment oracle | [Report](../verification/time-series.md#tr-039--arimax-transformed-and-differenced-generation) | 2026-08-20 |
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
 | [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Confirmed defect; corrected | Complete | Passed - date/index regressions and independent R oracle | [Report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment) | 2026-08-20 |
 | [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
@@ -702,17 +702,26 @@ acceptance rules. See
 <a id="tr-039"></a>
 ## TR-039 — ARIMAX Simulation Mixes Original and Transformed Scales
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. Every deterministic and stochastic term remains on the
+transformed/differenced model scale; the completed differences are integrated from observed or
+zero transformed anchors and inverse-transformed once.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Seven fast contracts cover component scale, date alignment,
+anchors, explicit and extended covariates, missing dates, length, and exact legacy seed output.
+The exact guarded algebraic/1,000-step moment oracle passes at `1E-10` and the fixed four-standard-
+error/3% rule.
 
 **Evidence.** `ARIMAX.GenerateRandomValues()` constructs its deterministic mean and ARMA recursion on the fitted transformed/differenced parameter scale. For Box-Cox or Yeo-Johnson it then calls `Transform(deterministic)` again, adds noise, and immediately inverse-transforms each value. Subsequent AR/MA residual recursion combines those original-scale values with transformed-scale means, and differencing is reversed only after the inverse transform.
 
 **Impact.** Generated data do not follow the fitted ARIMAX model under a transform and/or differencing, invalidating predictive checks and synthetic uncertainty studies.
 
-**Follow-up.** Keep the complete regression/ARMA recursion on one model scale, integrate differences on that scale, inverse-transform once at the end, and add deterministic algebra plus Monte Carlo moment tests.
+**Correction.** Model step `k` maps to raw response index `k+d`; its level covariate is selected by
+exact date and never differenced. Existing signatures, parameter order, covariate extension policy,
+and `Transform.None`/`d=0` fixed-seed results are unchanged. Observed transformed anchors are used
+when data are attached and zero anchors otherwise. See
+[time-series verification](../verification/time-series.md#tr-039--arimax-transformed-and-differenced-generation).
 
 <a id="tr-040"></a>
 ## TR-040 — Pointwise Time-Series Likelihoods Can Throw at Invalid Scale

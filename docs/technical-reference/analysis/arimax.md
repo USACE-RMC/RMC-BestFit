@@ -94,7 +94,7 @@ Trend and Fourier seasonality are explicitly rejected when `DiffOrderD>0`, avoid
 
 These mechanisms represent empirical continuation scenarios, not a probabilistic model fitted jointly with the response. They do not propagate parameter uncertainty in a covariate forecast model, preserve cross-covariate dependence by construction, or condition on climate/operations scenarios. For defensible engineering forecasts, provide explicit aligned future covariates or model their joint uncertainty outside BestFit and pass scenario paths realization by realization.
 
-## Forecasting and Simulation Restriction
+## Forecasting and Simulation
 
 `Predict` calculates exactly $T-d+h$ model-scale values and uses the same exact-date level-
 covariate map as the likelihood. Model step $k$ maps to raw slot $k+d$; inverse differencing begins
@@ -104,10 +104,14 @@ slots $0,ldots,d-1$. This closes [TR-037](../review-findings.md#tr-037). `ARIMAX
 combines posterior parameter and innovation draws, and its bands include whichever covariate
 extension is invoked, so clearly state that scenario.
 
-`GenerateRandomValues` still mixes transformed and original scales and inverse-transforms before
-integration ([TR-039](../review-findings.md#tr-039)). Therefore transformed/differenced
-prior/posterior predictive simulation remains unavailable until TR-039 closes, although the
-corrected prediction path is available. Analysis AIC/BIC use the data log likelihood at the stored
+`GenerateRandomValues` applies the same model-step/raw-index map. Intercept, trend, Fourier
+seasonality, exact-date level-covariate, AR, MA, and Gaussian innovation terms are combined on the
+transformed/highest-difference scale. The completed difference path is integrated from the first
+$d$ observed transformed levels when data are attached or zero transformed anchors otherwise,
+then inverse-transformed once. An explicit generation covariate path overrides the configured
+extension; otherwise `None`, block-bootstrap, and KNN retain the policies above. Missing or
+duplicate required generation timestamps throw instead of using position. This closes
+[TR-039](../review-findings.md#tr-039). Analysis AIC/BIC use the data log likelihood at the stored
 MAP and exclude prior-density terms; they are comparable with MLE criteria only when every active
 prior is constant ([TR-042](../review-findings.md#tr-042)).
 

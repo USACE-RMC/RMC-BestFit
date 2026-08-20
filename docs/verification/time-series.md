@@ -522,6 +522,98 @@ parameters, formulas, tolerances, production algorithms, priors, samplers, and c
 defaults were unchanged.
 The complete Verification project was not run.
 
+## TR-039 — ARIMAX transformed and differenced generation
+
+**Disposition and behavior.** The confirmed scale-order defect is corrected. Previously,
+`ARIMAX.GenerateRandomValues` built a transformed/differenced deterministic mean, transformed that
+mean a second time, added an innovation, and immediately inverse-transformed each recursion step.
+The next AR/MA step consequently combined raw-scale simulated values with model-scale means and
+residuals. For `d>0`, it then cumulatively integrated those already inverse-transformed values and
+seeded each integration level with the intercept.
+
+Generation now evaluates intercept, trend, seasonality, exact-date level-covariate, AR, MA, and
+innovation terms entirely on the transformed/highest-difference model scale. It generates exactly
+`max(0,sampleSize-d)` model steps, integrates the completed difference vector using the first `d`
+observed transformed response levels when data are attached or zero transformed anchors otherwise,
+and inverse-transforms the completed `sampleSize` level vector once. Requests with
+`sampleSize<=d` return only the requested observed/zero anchors after inversion and draw no
+innovations. Model step `k` uses the level covariate whose exact timestamp matches raw response
+index `k+d`; covariates and their lags are not differenced. Missing or duplicate required
+timestamps throw an explicit `InvalidOperationException` rather than falling back to position.
+
+The existing three-argument `GenerateRandomValues(int,int,List<TimeSeries>?)` signature, explicit
+covariate override, `None`/block-bootstrap/KNN extension choices, output length, parameter order,
+positive-size validation, and extension seed policy remain. With no attached response, the first
+generation covariate defines the response-date calendar and every other covariate must match it by
+exact date. `Transform.None` with `d=0` preserves the pre-change seed-24682 sequence bit for bit.
+
+**Compatibility.** No Core, UI, App, or API public/protected signature, XAML binding, property,
+enum, XML name, or persisted meaning changed. The complete UI and App suites include their exact
+signature-baseline checks and pass. Core passes 3,226/3,226, UI 578/578, App 440/440, and API
+498/498. A serial strict Debug solution build with `EnforceXmlDocumentation=true` passes all ten
+projects with zero warnings/errors in 9.76 s. The documented
+`scripts/validate-code-xml-docs.ps1` remains absent, so the strict build is the active XML gate.
+
+**Fast regressions.** `TimeSeriesArimaxGenerationTests` owns seven deterministic contracts:
+
+- `ArimaxYeoJohnsonD1Generation_UsesDateAlignedModelScaleRecurrence` pins an ARIMAX(1,1), `d=1`,
+  time-varying level-covariate recurrence, observed transformed anchor, integration, and single
+  Yeo-Johnson inverse at `1E-12`;
+- `ArimaxLogGeneration_DeterministicComponentsRemainOnModelScale` isolates intercept, linear
+  trend, Fourier seasonality, and level-covariate shifts on logarithmic scale;
+- `ArimaxD1Generation_UsesObservedOrZeroAnchors` and
+  `ArimaxGeneration_SampleSizeAtOrBelowD_ReturnsRequestedAnchors` cover attached/unattached and
+  short-request anchor rules;
+- `ArimaxGeneration_ExplicitCovariatesUseExactResponseDates` proves an explicitly supplied
+  covariate gives identical values even when its ordinate order is reversed;
+- `ArimaxGeneration_MissingRequiredCovariateTimestampThrows` pins missing-date rejection; and
+- `ArimaxNoneD0FixedSeedGeneration_RetainsGoldenArrayBitForBit` pins the complete pre-change
+  sequence exactly.
+
+The existing `ARIMAXTests` block-bootstrap, KNN, and explicit-covariate override regressions pass in
+the same complete Core run, covering the unchanged extension policy and length behavior.
+
+**Independent numerical oracle.** The exact method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle`.
+Its algebraic cell uses the pre-change ARIMAX(1,1) model-scale seed-24682 sequence, an observed
+Yeo-Johnson transformed anchor of two, `lambda=0.6`, intercept `0.25`, level-covariate coefficient
+`1.1`, `phi=0.3`, `theta=-0.2`, `sigma=0.75`, and daily level covariates
+`[99,2,-1,0.5,3,-2,1.5,4]`. Model step zero matches raw index one, so the sentinel 99 is not used.
+The independent oracle cumulatively integrates the seven fixed differences and applies the
+closed-form Yeo-Johnson inverse. Algebraic acceptance is `1E-10` absolute.
+
+The moment cell requests exactly 1,000 generated raw steps from logarithmic ARIMAX(0,1,0,0),
+leaving 999 innovations. It uses seed `52040`, zero transformed anchor, intercept `0.02`,
+alternating dated covariate values `-1/+1`, coefficient `0.05`, and `sigma=0.4`. The independent
+calculation log-transforms the output, first-differences it, and removes the exact-date deterministic
+term. Mean acceptance is four Monte Carlo standard errors; variance acceptance is the larger of
+four analytical variance standard errors or 3% relative. No external package or artifact applies;
+the independent formulas are embedded. Production, fast-test, and Verification source SHA-256
+values are respectively `55D38426AE41AB795AB3A1F112D3C41BBF0D21BCFB9A6BDE1C0CFBB68990E817`,
+`277309DD1A62DD6CA237B296A8B958DE34D7F016E51F25B984E26BDD24F7FF71`, and
+`93DDA459D28B9EEB2D69E464E93BDA1FC84C46D26D62082ADD74B01318F28409`.
+
+**Execution evidence and failure history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk
+3.6.4 built against the configured local Numerics project. From commit `b2332c0` plus the scoped
+Package 8 diff, the guarded command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle'
+```
+
+The final exact method passed 1/1 in 0.444 s; its TRX is under
+`TestResults/VerificationFocused/20260820-124611-...`. The first guarded attempt stopped during
+compilation because `Select(Math.Log)` was ambiguous between indexed and non-indexed overloads; it
+ran no test. Replacing the test-only method group with an explicit lambda resolved that compile
+error without changing the oracle. The first strict solution build then encountered transient
+locks on the API static-web-assets cache and UI output DLL and failed with one warning/one error;
+the serial `-m:1` rerun passed with zero warnings/errors. Neither failure was erased or treated as
+numerical evidence. No production signature, extension policy, seed rule, tolerance, prior,
+sampler, optimizer, likelihood definition, or convergence default changed. The final independent
+ARIMAX MLE/Bayesian recovery pair remains Package 10 evidence. The complete Verification project
+was not run.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
@@ -530,7 +622,7 @@ The complete Verification project was not run.
 | TR-036 training-only transform fitting | Complete | Core holdout/state/clone plus UI XML/copy/undo and API mapping pass | R training-only profile oracle passes 1/1 at fixed cross-language tolerance; transformed recovery remains Package 10 |
 | TR-037 reintegration index | Complete | ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, and `d=0` golden regressions pass | Hand recurrence oracle passes 1/1 at `1E-10`; predictive recovery checks remain Package 10 |
 | TR-038 AR/MA/ARIMA generation | Complete | Six transform/order/anchor/length and exact legacy-seed regressions pass | Two algebraic plus 1,000-step moment methods pass 1/1; failed 50,000-step overflow history retained |
-| TR-039 ARIMAX generation | Approved; implementation pending | Planned scale/order/date tests | Planned algebraic, Monte Carlo, and recovery evidence |
+| TR-039 ARIMAX generation | Complete | Seven scale/order/date/anchor/extension and exact legacy-seed regressions pass | Algebraic plus 1,000-step moment method passes 1/1; recovery remains Package 10 |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
 | TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle passes 1/1 at `1E-10`; recovery remains Package 10 |
 | TR-042 AIC/BIC kernel | Closed; refresh pending | Planned deterministic routing regression | Planned data-likelihood/MAP oracle |

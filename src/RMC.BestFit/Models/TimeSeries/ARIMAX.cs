@@ -2563,6 +2563,9 @@ namespace RMC.BestFit.Models
         /// <para>
         /// where γ(t) is the trend component (Linear: γ₁t, Quadratic: γ₁t + γ₂t², Cubic: γ₁t + γ₂t² + γ₃t³),
         /// ψ(t) is the seasonal component: ψ₁sin(2πt/S) + ψ₂cos(2πt/S), and β*X(t) is the covariate effect.
+        /// Every term is evaluated on the transformed/differenced model scale. Generated highest-order
+        /// differences are integrated from observed transformed anchors, when available, or zero anchors,
+        /// and the completed level series is inverse-transformed exactly once.
         /// </para>
         /// <para>
         /// <b>Covariate handling:</b> When covariates are present and <paramref name="sampleSize"/> exceeds
@@ -2583,11 +2586,16 @@ namespace RMC.BestFit.Models
         /// <returns>Array of generated random values.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when sampleSize is not positive.</exception>
         /// <exception cref="InvalidOperationException">Thrown when <see cref="CovariateExtension"/> is
-        /// <see cref="CovariateExtensionMethod.None"/> and covariates are insufficient.</exception>
+        /// <see cref="CovariateExtensionMethod.None"/> and covariates are insufficient, when required
+        /// response/covariate timestamps are missing or duplicated, or when attached data do not provide
+        /// the required transformed differencing anchors.</exception>
         public double[] GenerateRandomValues(int sampleSize, int seed = -1, List<TimeSeries>? generateCovariates = null)
         {
             if (sampleSize <= 0)
                 throw new ArgumentOutOfRangeException(nameof(sampleSize), "Sample size must be positive.");
+
+            if (DiffOrderD > 0 && sampleSize <= DiffOrderD)
+                return InverseTransformGeneratedSeries(GetGenerationAnchors(sampleSize));
 
             var rng = seed >= 0 ? new Numerics.Sampling.MersenneTwister(seed) : new Numerics.Sampling.MersenneTwister();
 
@@ -2689,6 +2697,14 @@ namespace RMC.BestFit.Models
                     // Covariates are sufficient, use original
                     useCovariates = Covariates;
                 }
+
+                if (useCovariates == null)
+                    throw new InvalidOperationException($"Unsupported covariate extension method: {CovariateExtension}.");
+                if (useCovariates.Count != Covariates.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Generation requires {Covariates.Count} covariate series but {useCovariates.Count} were supplied.");
+                }
             }
 
             // Extract AR coefficients
@@ -2708,20 +2724,24 @@ namespace RMC.BestFit.Models
             double sigma = Parameters[k].Value;
             var normal = new Numerics.Distributions.Normal(0, sigma);
 
-            // Arrays for generated series and innovations
-            var series = new double[sampleSize];
-            var mean = new double[sampleSize];
-            var epsilon = new double[sampleSize];  // Residuals on original scale (for MA)
+            int modelSampleSize = Math.Max(0, sampleSize - DiffOrderD);
+            int[,,]? generationCovariatePositions = beta != null && useCovariates != null
+                ? BuildGenerationCovariatePositions(useCovariates, modelSampleSize)
+                : null;
 
-            // Pre-generate Gaussian noise for adding on transformed scale
-            var noise = new double[sampleSize];
-            for (int t = 0; t < sampleSize; t++)
+            // All recursion arrays remain on the transformed/differenced model scale.
+            var series = new double[modelSampleSize];
+            var mean = new double[modelSampleSize];
+            var epsilon = new double[modelSampleSize];
+
+            var noise = new double[modelSampleSize];
+            for (int t = 0; t < modelSampleSize; t++)
             {
                 noise[t] = normal.InverseCDF(rng.NextDouble());
             }
 
             // Pre-compute mean at each time step (matches Residuals method)
-            for (int t = 0; t < sampleSize; t++)
+            for (int t = 0; t < modelSampleSize; t++)
             {
                 mean[t] = mu;
 
@@ -2743,33 +2763,22 @@ namespace RMC.BestFit.Models
                     mean[t] += psi[0] * Math.Sin(angle) + psi[1] * Math.Cos(angle);
                 }
 
-                // Covariate component (includes current and lagged values if XOrderB > 0)
-                if (beta != null && useCovariates != null && t < useCovariates[0].Count)
+                // Level covariates use the exact raw-response date represented by model step t.
+                if (beta != null && useCovariates != null && generationCovariatePositions != null)
                 {
                     for (int i = 0; i < useCovariates.Count; i++)
                     {
-                        if (XOrderB == 0)
+                        for (int lag = 0; lag <= XOrderB && lag <= t; lag++)
                         {
-                            // Use current value only
-                            mean[t] += beta[i, 0] * useCovariates[i][t].Value;
-                        }
-                        else
-                        {
-                            // Use current value X[t]
-                            mean[t] += beta[i, 0] * useCovariates[i][t].Value;
-
-                            // Use lagged values X[t-1], ..., X[t-b]
-                            for (int j = 1; j <= XOrderB && t - j >= 0; j++)
-                            {
-                                mean[t] += beta[i, j] * useCovariates[i][t - j].Value;
-                            }
+                            int position = generationCovariatePositions[i, t, lag];
+                            mean[t] += beta[i, lag] * useCovariates[i][position].Value;
                         }
                     }
                 }
             }
 
             // Generate series (matches structure in Residuals/Predict methods)
-            for (int t = 0; t < sampleSize; t++)
+            for (int t = 0; t < modelSampleSize; t++)
             {
                 // AR component (mean-centered, only for t >= AROrderP)
                 double ar = 0;
@@ -2788,58 +2797,161 @@ namespace RMC.BestFit.Models
                     ma += theta[q - 1] * epsilon[t - q];
                 }
 
-                // Compute deterministic part: mean[t] + ar + ma
                 double deterministic = mean[t] + ar + ma;
+                series[t] = deterministic + noise[t];
 
-                // Add stochastic error following same pattern as Predict():
-                // - Transform.None: additive error on original scale
-                // - BoxCox/YeoJohnson: additive error on transformed scale, then inverse transform
-                if (TransformType == Transform.None)
-                {
-                    series[t] = deterministic + noise[t];
-                }
-                else if (TransformType == Transform.Logarithmic || TransformType == Transform.BoxCox)
-                {
-                    // Add error on transformed scale, then inverse transform back
-                    // This matches Predict() behavior for stochastic forecasting
-                    series[t] = BoxCox.InverseTransform(BoxCox.Transform(deterministic, _lambda) + noise[t], _lambda);
-                }
-                else if (TransformType == Transform.YeoJohnson)
-                {
-                    series[t] = YeoJohnson.InverseTransform(YeoJohnson.Transform(deterministic, _lambda) + noise[t], _lambda);
-                }
-
-                // Compute epsilon (residual on original scale) for MA at future time steps
-                // This matches how Residuals/Predict compute epsilon
+                // Retain the established subtraction path so Transform.None/d=0 fixed-seed
+                // roundoff and downstream MA terms remain bit-for-bit compatible.
                 epsilon[t] = series[t] - deterministic;
             }
 
-            // If differencing was applied, integrate back to original scale.
-            // Synthetic data has no observed series to anchor against, so each
-            // integration level is seeded with mu (a stable anchor for stationary
-            // synthetic generation). Without per-level seeding, level-d integration
-            // for d >= 2 produced cumsum-of-cumsum sequences whose mean drifted
-            // unbounded; seeding each level keeps the synthetic series stationary
-            // around mu.
-            if (DiffOrderD > 0)
+            double[] transformedLevels = DiffOrderD > 0
+                ? IntegrateGeneratedDifferences(series, sampleSize)
+                : series;
+            return InverseTransformGeneratedSeries(transformedLevels);
+        }
+
+        /// <summary>
+        /// Builds the exact-date level-covariate map for every generated model step.
+        /// </summary>
+        /// <param name="covariates">The supplied or extended level covariates.</param>
+        /// <param name="modelSteps">The number of transformed/differenced model steps.</param>
+        /// <returns>Covariate positions indexed by covariate, model step, and lag.</returns>
+        /// <exception cref="InvalidOperationException">A required response/covariate timestamp is missing or duplicated.</exception>
+        private int[,,] BuildGenerationCovariatePositions(List<TimeSeries> covariates, int modelSteps)
+        {
+            var result = new int[covariates.Count, modelSteps, XOrderB + 1];
+            for (int covariateIndex = 0; covariateIndex < covariates.Count; covariateIndex++)
             {
-                var integrated = new double[sampleSize];
-                Array.Copy(series, integrated, sampleSize);
-
-                for (int d = 0; d < DiffOrderD; d++)
+                TimeSeries covariate = covariates[covariateIndex];
+                var positionsByDate = new Dictionary<DateTime, List<int>>();
+                for (int position = 0; position < covariate.Count; position++)
                 {
-                    integrated[0] = mu + integrated[0];
-
-                    for (int i = 1; i < sampleSize; i++)
+                    DateTime date = covariate[position].Index;
+                    if (!positionsByDate.TryGetValue(date, out List<int>? positions))
                     {
-                        integrated[i] = integrated[i - 1] + integrated[i];
+                        positions = new List<int>();
+                        positionsByDate.Add(date, positions);
                     }
+                    positions.Add(position);
                 }
 
-                return integrated;
+                for (int modelIndex = 0; modelIndex < modelSteps; modelIndex++)
+                {
+                    for (int lag = 0; lag <= XOrderB && lag <= modelIndex; lag++)
+                    {
+                        int rawIndex = DiffOrderD + modelIndex - lag;
+                        DateTime requiredDate = GetGenerationResponseDate(covariates, rawIndex);
+                        if (!positionsByDate.TryGetValue(requiredDate, out List<int>? matches))
+                        {
+                            throw new InvalidOperationException(
+                                $"Covariate {covariateIndex + 1} is missing required timestamp {requiredDate:O} for raw response index {rawIndex}.");
+                        }
+                        if (matches.Count != 1)
+                        {
+                            throw new InvalidOperationException(
+                                $"Covariate {covariateIndex + 1} contains duplicate required timestamp {requiredDate:O} for raw response index {rawIndex}.");
+                        }
+                        result[covariateIndex, modelIndex, lag] = matches[0];
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the response timestamp represented by one generated raw output index.
+        /// </summary>
+        /// <param name="covariates">The supplied or extended level covariates.</param>
+        /// <param name="rawIndex">The zero-based raw output index.</param>
+        /// <returns>The observed, regularly extended, or covariate-defined response timestamp.</returns>
+        /// <exception cref="InvalidOperationException">Neither response nor covariate timestamps cover the required index.</exception>
+        private DateTime GetGenerationResponseDate(List<TimeSeries> covariates, int rawIndex)
+        {
+            if (TimeSeries != null && TimeSeries.Count > 0)
+            {
+                if (rawIndex < TimeSeries.Count)
+                    return TimeSeries[rawIndex].Index;
+
+                DateTime date = TimeSeries[TimeSeries.Count - 1].Index;
+                for (int index = TimeSeries.Count; index <= rawIndex; index++)
+                    date = TimeSeries.AddTimeInterval(date, TimeSeries.TimeInterval);
+                return date;
             }
 
-            return series;
+            if (covariates.Count == 0 || covariates[0].Count <= rawIndex)
+                throw new InvalidOperationException($"No response or covariate timestamp is available for raw response index {rawIndex}.");
+            return covariates[0][rawIndex].Index;
+        }
+
+        /// <summary>
+        /// Gets observed transformed generation anchors when data are attached and zero anchors otherwise.
+        /// </summary>
+        /// <param name="anchorCount">The number of transformed anchors to return.</param>
+        /// <returns>The requested transformed anchors.</returns>
+        /// <exception cref="InvalidOperationException">Attached data do not contain every required transformed anchor.</exception>
+        private double[] GetGenerationAnchors(int anchorCount)
+        {
+            var anchors = new double[anchorCount];
+            if (TimeSeries == null || TimeSeries.Count == 0)
+                return anchors;
+            if (_transformedTimeSeries == null || _transformedTimeSeries.Count < anchorCount)
+                throw new InvalidOperationException($"At least {anchorCount} transformed observations are required as generation anchors.");
+
+            for (int i = 0; i < anchorCount; i++)
+                anchors[i] = _transformedTimeSeries[i].Value;
+            return anchors;
+        }
+
+        /// <summary>
+        /// Reconstructs transformed levels from generated highest-order differences.
+        /// </summary>
+        /// <param name="differences">The completed transformed/differenced model-scale simulation.</param>
+        /// <param name="sampleSize">The requested raw-scale output length.</param>
+        /// <returns>Exactly <paramref name="sampleSize"/> transformed levels.</returns>
+        private double[] IntegrateGeneratedDifferences(double[] differences, int sampleSize)
+        {
+            var workingAnchors = GetGenerationAnchors(DiffOrderD);
+            var initialValues = new double[DiffOrderD];
+            initialValues[0] = workingAnchors[0];
+            int workingCount = DiffOrderD;
+            for (int level = 1; level < DiffOrderD; level++)
+            {
+                for (int i = 0; i < workingCount - 1; i++)
+                    workingAnchors[i] = workingAnchors[i + 1] - workingAnchors[i];
+                workingCount--;
+                initialValues[level] = workingAnchors[0];
+            }
+
+            double[] current = (double[])differences.Clone();
+            for (int level = DiffOrderD - 1; level >= 0; level--)
+            {
+                var integrated = new double[current.Length + 1];
+                integrated[0] = initialValues[level];
+                for (int i = 0; i < current.Length; i++)
+                    integrated[i + 1] = integrated[i] + current[i];
+                current = integrated;
+            }
+            return current;
+        }
+
+        /// <summary>
+        /// Converts a completed transformed-level simulation to the raw response scale.
+        /// </summary>
+        /// <param name="values">The complete simulated transformed-level series.</param>
+        /// <returns>The raw-scale series, or the original array when no transform is configured.</returns>
+        private double[] InverseTransformGeneratedSeries(double[] values)
+        {
+            if (TransformType == Transform.None)
+                return values;
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                values[i] = TransformType == Transform.YeoJohnson
+                    ? YeoJohnson.InverseTransform(values[i], _lambda)
+                    : BoxCox.InverseTransform(values[i], _lambda);
+            }
+            return values;
         }
 
         #endregion

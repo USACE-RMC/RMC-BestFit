@@ -444,3 +444,24 @@ The package gates pass Core 3,219/3,219, UI 578/578, App 440/440, and API 498/49
 Debug build has zero warnings/errors. The failed 50,000-step logarithmic overflow run and the
 subsequent explicit 1,000-step direction are retained in the time-series report. No full
 Verification run occurred.
+
+## TR-039 ARIMAX transformed/differenced generation
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `TimeSeriesArimaxGenerationTests.ArimaxYeoJohnsonD1Generation_UsesDateAlignedModelScaleRecurrence` | Core Tests | ARIMAX(1,1), `d=1`, dated level covariate, observed anchor, integration, one Yeo-Johnson inverse | `1E-12`; passed |
+| `TimeSeriesArimaxGenerationTests.ArimaxLogGeneration_DeterministicComponentsRemainOnModelScale` | Core Tests | Intercept, trend, Fourier seasonality, and covariate shifts remain additive on log scale | `1E-12`; passed |
+| `TimeSeriesArimaxGenerationTests.ArimaxD1Generation_UsesObservedOrZeroAnchors` | Core Tests | Identical innovations isolate observed versus zero transformed anchors | `1E-12`; passed |
+| `TimeSeriesArimaxGenerationTests.ArimaxGeneration_SampleSizeAtOrBelowD_ReturnsRequestedAnchors` | Core Tests | Requested observed/zero anchors only, exact length, no innovations | Exact; passed |
+| `TimeSeriesArimaxGenerationTests.ArimaxGeneration_ExplicitCovariatesUseExactResponseDates` | Core Tests | Reversed ordinate order produces identical exact-date covariate path | Exact; passed |
+| `TimeSeriesArimaxGenerationTests.ArimaxGeneration_MissingRequiredCovariateTimestampThrows` | Core Tests | Same-length dated covariate with one required timestamp missing | Explicit exception/message; passed |
+| `TimeSeriesArimaxGenerationTests.ArimaxNoneD0FixedSeedGeneration_RetainsGoldenArrayBitForBit` | Core Tests | Pre-change seed-24682 `Transform.None`/`d=0` complete ARIMAX array | Exact double equality; passed |
+| `ARIMAXTests.Test_GenerateRandomValues_CovariateExtensionBlockBootstrap_ExtendsCovariates` | Core Tests | Existing block-bootstrap extension and output length | Passed |
+| `ARIMAXTests.Test_GenerateRandomValues_CovariateExtensionKNN_ExtendsCovariates` | Core Tests | Existing KNN extension and output length | Passed |
+| `ARIMAXTests.Test_GenerateRandomValues_ExplicitCovariates_OverridesExtensionSetting` | Core Tests | Existing explicit generation-covariate override | Passed |
+| `Phase5TimeSeriesVerificationTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle` | Verification | Fixed algebraic Yeo-Johnson recurrence plus 1,000 generated steps/999 innovation moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
+
+The package gates pass Core 3,226/3,226, UI 578/578, App 440/440, and API 498/498. The final
+serial strict Debug build reports zero warnings/errors; UI/App signature baselines remain exact.
+The initial Verification compile failure and parallel-build file-lock failure are retained in the
+time-series report. No full Verification run occurred.

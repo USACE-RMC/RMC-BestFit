@@ -519,6 +519,95 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
+    /// Verifies transformed/differenced ARIMAX generation against independent recurrence,
+    /// exact-date level-covariate, integration, inverse-transform, and Gaussian-moment oracles.
+    /// </summary>
+    /// <remarks>
+    /// The fixed algebraic tolerance is 1E-10. The stochastic check requests exactly 1,000 raw
+    /// generated steps and evaluates the 999 independent innovations implied by first differencing,
+    /// using the predeclared four-standard-error/three-percent moment rule.
+    /// </remarks>
+    [TestMethod]
+    public void ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle()
+    {
+        const double tolerance = 1E-10;
+        const double lambda = 0.6;
+        DateTime startDate = new(2005, 6, 7);
+        double[] modelDifferences =
+        {
+            2.2620632327954455, -0.6690412732355178, 2.2364682873083486,
+            2.718481409956337, -3.097232432613497, 1.0828631290683435,
+            3.8879909176213205,
+        };
+        double[] transformedData = { 2, 3, 4, 5, 6 };
+        double[] rawData = transformedData
+            .Select(value => IndependentYeoJohnsonInverse(value, lambda))
+            .ToArray();
+        var arimax = new ARIMAX(CreateDailySeries(rawData, startDate))
+        {
+            IncludeIntercept = true,
+            AROrderP = 1,
+            DiffOrderD = 1,
+            MAOrderQ = 1,
+            XOrderB = 0,
+            TransformType = Transform.YeoJohnson,
+            CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
+        };
+        arimax.SetCovariates(new List<Numerics.Data.TimeSeries>
+        {
+            CreateDailySeries(new[] { 99.0, 2, -1, 0.5, 3, -2, 1.5, 4.0 }, startDate),
+        });
+        arimax.SetDefaultParameters();
+        arimax.SetTransformParameters(lambda, double.NaN);
+        arimax.SetParameterValues(new[] { 0.25, 1.1, 0.3, -0.2, 0.75 });
+
+        var expectedTransformed = new double[8];
+        expectedTransformed[0] = transformedData[0];
+        for (int i = 1; i < expectedTransformed.Length; i++)
+            expectedTransformed[i] = expectedTransformed[i - 1] + modelDifferences[i - 1];
+        AssertArrayEqual(
+            expectedTransformed.Select(value => IndependentYeoJohnsonInverse(value, lambda)).ToArray(),
+            arimax.GenerateRandomValues(8, 24682),
+            tolerance,
+            "ARIMAX transformed/differenced recurrence");
+
+        const int generatedStepCount = 1000;
+        const double intercept = 0.02;
+        const double beta = 0.05;
+        const double sigma = 0.4;
+        double[] covariate = Enumerable.Range(0, generatedStepCount)
+            .Select(index => index % 2 == 0 ? -1.0 : 1.0)
+            .ToArray();
+        var iidArimax = new ARIMAX
+        {
+            IncludeIntercept = true,
+            AROrderP = 0,
+            DiffOrderD = 1,
+            MAOrderQ = 0,
+            XOrderB = 0,
+            TransformType = Transform.Logarithmic,
+            CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
+        };
+        iidArimax.SetCovariates(new List<Numerics.Data.TimeSeries>
+        {
+            CreateDailySeries(covariate, startDate),
+        });
+        iidArimax.SetDefaultParameters();
+        iidArimax.SetParameterValues(new[] { intercept, beta, sigma });
+
+        double[] generated = iidArimax.GenerateRandomValues(generatedStepCount, 52040);
+        double[] transformed = generated.Select(value => Math.Log(value)).ToArray();
+        var innovations = new double[generatedStepCount - 1];
+        for (int i = 0; i < innovations.Length; i++)
+        {
+            int rawIndex = i + 1;
+            innovations[i] = transformed[rawIndex] - transformed[rawIndex - 1] -
+                intercept - beta * covariate[rawIndex];
+        }
+        AssertIndependentGaussianMoments(innovations, 0.0, sigma, "ARIMAX innovation moments");
+    }
+
+    /// <summary>
     /// Creates the fixed ARIMAX alignment fixture from the committed oracle.
     /// </summary>
     /// <param name="raw">The raw response values.</param>
