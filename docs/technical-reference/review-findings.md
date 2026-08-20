@@ -48,7 +48,7 @@ Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are c
 | [TR-032](#tr-032) | GMM influence labeled Pareto k | High | Confirmed defect - resolved | Legacy overloads obsolete; supported GMM paths correctly labeled | Passed - compatibility, attribute, and mapping regressions | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) | 2026-07-27 |
 | [TR-033](#tr-033) | GMM objective/gradient scale | High | Rejected non-defect | No change required | Passed | [Model-estimation verification](../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) | 2026-07-25 |
 | [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Confirmed defect - resolved | Fit and covariance fixed | Passed - R `gmm` parameter/objective and fixed-weight/two-step covariance parity | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) / [Artifact](../../verification/data/model-estimation/gmm-specification-oracle.json) | 2026-07-27 |
-| [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Confirmed defect; corrected | Complete | Passed - fast decomposition and analytical oracle | [Report](../verification/time-series.md#tr-035--jeffreys-prior-metadata) | 2026-08-20 |
 | [TR-036](#tr-036) | Transform fitting holdout leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -610,17 +610,17 @@ The displaced-prior Log10-Normal calculation also tested the observation trace a
 <a id="tr-035"></a>
 ## TR-035 — Time-Series Jeffreys Terms Are Misclassified in Pointwise Prior Output
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Not started.
+**Implementation status.** Complete. AR, MA, and ARIMA now identify the existing Jeffreys scale contribution as `JeffreysScalePrior`; ARIMAX remains the unchanged reference implementation.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Three deterministic fast regressions cover enabled/disabled metadata, component identity and density, scalar/decomposed equality, and the unchanged ARIMAX contract. The exact guarded verification method passes four independently tabulated $-\log(\sigma)$ values at `1E-12` absolute tolerance.
 
-**Evidence.** AR, MA, and ARIMA pointwise-prior methods type their Jeffreys scale contribution as `ParameterPrior` rather than `JeffreysScalePrior`. The scalar sum can remain correct, but downstream grouping relies on the component type.
+**Evidence.** The pre-change AR, MA, and ARIMA pointwise-prior methods typed their Jeffreys scale contribution as `ParameterPrior` rather than `JeffreysScalePrior`. The scalar sum remained correct, but downstream grouping relied on the component type. The corrected output now passes explicit type/count and scalar-decomposition regressions for all four models.
 
-**Impact.** Prior-influence summaries can attribute scale-invariant prior information to an ordinary marginal prior.
+**Impact.** Corrected: prior-influence summaries can now separate the scale-invariant Jeffreys contribution from ordinary marginal priors.
 
-**Follow-up.** Emit the correct component type, test scalar-versus-pointwise decomposition, and audit transformed and ARIMAX variants.
+**Correction.** Only the three component-type enum arguments changed. Scalar prior values, model parameters, public signatures, serialization, transforms, likelihoods, estimation, and ARIMAX behavior are unchanged. See the complete evidence in the [time-series verification report](../verification/time-series.md#tr-035--jeffreys-prior-metadata).
 
 <a id="tr-036"></a>
 ## TR-036 — Time-Series Transform Fitting Leaks Holdout Data

@@ -762,7 +762,7 @@ namespace RMC.BestFit.Models
             {
                 double sigma = parameters.Last();
                 double ll = sigma > 0 ? -Math.Log(sigma) : double.NegativeInfinity;
-                result.Add(new PriorComponent("Jeffreys' rule for σ", ll, PriorComponentType.ParameterPrior));
+                result.Add(new PriorComponent("Jeffreys' rule for σ", ll, PriorComponentType.JeffreysScalePrior));
             }
 
             return result;

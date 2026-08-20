@@ -312,7 +312,7 @@ Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 A
 
 Findings and required direction:
 
-- TR-035: correct pointwise Jeffreys component classification and scalar/pointwise identities.
+- TR-035: complete. AR, MA, and ARIMA now emit `JeffreysScalePrior`; ARIMAX is unchanged. Fast metadata/decomposition regressions and the four-case analytical `-log(sigma)` oracle pass at `1E-12`.
 - TR-036: fit transform parameters on training data only and prove holdout invariance.
 - TR-037: correct raw/differenced index maps and test hand-computable `d=1` and `d=2` sequences.
 - TR-038: simulate ARIMA on the transformed/differenced scale, integrate, then inverse-transform once.

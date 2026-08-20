@@ -354,3 +354,15 @@ changed. The combined supplement checkpoint is therefore 24/30 passed and six de
 
 These are deterministic compatibility regressions, not numerical Verification methods. Baseline
 hashes and command evidence are recorded in [Time-Series Verification](time-series.md).
+
+## TR-035 time-series Jeffreys metadata
+
+| Method | Project | Oracle or contract | Tolerance/status |
+|---|---|---|---|
+| `TimeSeriesPriorMetadataTests.PointwisePriorMetadata_ClassifiesExactlyOneJeffreysScaleComponentWhenEnabled` | Core Tests | One scale component when enabled, none disabled, correct identity/type/density in AR, MA, ARIMA, and ARIMAX | Exact metadata; `1E-12` density; passed in Core 3,183/3,183 |
+| `TimeSeriesPriorMetadataTests.PointwisePriorMetadata_SumsToScalarPriorLikelihood` | Core Tests | Decomposed sum equals scalar prior | `1E-12`; passed |
+| `TimeSeriesPriorMetadataTests.ARIMAX_JeffreysScaleMetadata_RemainsEstablishedReference` | Core Tests | Unchanged ARIMAX name, type, and value | Exact name/type; `1E-12` value; passed |
+| `Phase5TimeSeriesVerificationTests.JeffreysScaleMetadataMatchesIndependentPriorOracle` | Verification | Committed analytical $-\log(\sigma)$ oracle at four fixed scales | `1E-12`; guarded pass 1/1 |
+
+The Verification method is numerical; the three state/decomposition contracts remain in the
+fast project. No optimizer, sampler, recovery fixture, or production generator is invoked.

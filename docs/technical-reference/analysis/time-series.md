@@ -28,6 +28,12 @@ $$
 
 where $\mathcal I$ is the model-specific conditional-likelihood index set. None of the classes implements an exact initial-state/Kalman likelihood. Response intervals must be regular; missing timestamps are not imputed; coefficients and innovation variance are fixed through time.
 
+When the optional Jeffreys rule is enabled, each model adds the scale contribution
+$\log \pi_J(\sigma)=-\log(\sigma)$ for $\sigma>0$. Pointwise prior diagnostics classify this
+term as `JeffreysScalePrior`, separately from each parameter's configured marginal
+`ParameterPrior`; the sum of all pointwise prior components equals the scalar prior likelihood at
+valid parameter sets. This classification is diagnostic metadata and does not alter the prior.
+
 `Transform.None`, logarithmic Box–Cox, fitted Box–Cox, and fitted Yeo–Johnson are supported. Transformation fitting is preprocessing, not part of $\theta$. Current fitting uses the full response and leaks holdout data ([TR-036](../review-findings.md#tr-036)); the manual parameter setter does not rebuild the transformed model ([TR-046](../review-findings.md#tr-046)). Use `Transform.None` for publishable holdout comparisons until corrected, or preprocess with an independently frozen training-only transform.
 
 ## Analysis Lifecycle

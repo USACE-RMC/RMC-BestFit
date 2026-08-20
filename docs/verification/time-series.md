@@ -80,11 +80,64 @@ checkout, so the active `EnforceXmlDocumentation=true` solution-build gate was r
 the missing-script discrepancy is retained in this report. No production file changed in this
 package, and no Verification method was run.
 
+## TR-035 — Jeffreys prior metadata
+
+**Disposition and behavior.** The confirmed defect is corrected. Before this package, AR, MA,
+and ARIMA calculated the correct Jeffreys contribution but labeled it as `ParameterPrior` in
+pointwise diagnostic output; ARIMAX already labeled the same contribution as
+`JeffreysScalePrior`. Afterward, only those three enum arguments change. The scalar prior,
+configured marginal priors, parameter order, likelihood, estimator behavior, and unchanged
+ARIMAX name/value/type contract are preserved.
+
+**Compatibility.** No public or protected signature, XAML binding, property name, enum value, or
+XML element/attribute changes. UI passes 576/576, App 431/431, and API 496/496 with the Package 1
+signature baselines intact. Core passes 3,183/3,183. The strict Debug solution build with
+`EnforceXmlDocumentation=true` reports zero warnings and errors.
+
+**Fast regressions.** `RMC.BestFit.Tests.TimeSeriesModels.TimeSeriesPriorMetadataTests` owns:
+
+- `PointwisePriorMetadata_ClassifiesExactlyOneJeffreysScaleComponentWhenEnabled`;
+- `PointwisePriorMetadata_SumsToScalarPriorLikelihood`; and
+- `ARIMAX_JeffreysScaleMetadata_RemainsEstablishedReference`.
+
+They assert exactly one Jeffreys component when enabled and none when disabled, the `σ` identity,
+the independent `-log(sigma)` density, the unchanged ARIMAX reference metadata, and equality of
+the pointwise sum with `PriorLogLikelihood` at valid defaults.
+
+**Numerical oracle.** The exact Verification method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.JeffreysScaleMetadataMatchesIndependentPriorOracle`.
+It reads [phase5-jeffreys-prior-oracle.json](../../verification/data/time-series/phase5-jeffreys-prior-oracle.json),
+which independently tabulates $\log(1/\sigma)=-\log(\sigma)$ for AR at `sigma=0.125`, MA at
+`0.5`, ARIMA at `2`, and ARIMAX at `8`. The fixed acceptance rule is `1E-12` absolute. These use
+the default AR(1), MA(1), ARIMA(1,0,0), and ARIMAX(1,0,0,0) parameter layouts with no response
+attached and `Transform.None`; training boundary, sample size, and random seed are not applicable.
+The artifact SHA-256 is
+`636a5fea60bd200af418d06ac2e9b5b840cb091a5d5078bd64ae8732fb0e7094` and matches the manifest.
+
+**Execution evidence.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4 built against
+the configured local Numerics project. R and external statistical packages were not used for
+this analytical identity. From commit `6cb363e` plus the scoped TR-035 package diff, the guarded
+command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.JeffreysScaleMetadataMatchesIndependentPriorOracle'
+```
+
+The final artifact-backed run built with zero warnings/errors and passed 1/1 in 0.381 s. The TRX
+is under `TestResults/VerificationFocused/20260820-100331-...`. An earlier in-code analytical run
+also passed 1/1 in 0.385 s; it is retained as preliminary rather than final artifact evidence.
+The first Debug build exposed use of an unavailable MSTest `Assert.HasCount` helper and was
+corrected to an ordinary count assertion before any test ran. A concurrent UI confirmation then
+encountered the test platform's fixed-log file lock; after the original process ended, the suite
+was rerun serially and passed 576/576 in 33.027 s. Neither event changed a numerical algorithm,
+oracle value, seed, tolerance, prior, sampler, likelihood, or acceptance criterion.
+
 ## Phase 5 findings
 
 | Finding | Status | Regression evidence | Numerical/recovery evidence |
 |---|---|---|---|
-| TR-035 Jeffreys component type | Approved; implementation pending | Planned Core metadata/decomposition tests | Planned independent `-log(sigma)` oracle |
+| TR-035 Jeffreys component type | Complete | Three Core metadata/decomposition regressions pass | Analytical four-scale oracle passes 1/1 at `1E-12` |
 | TR-036 training-only transform fitting | Approved; implementation pending | Planned holdout, state, clone, and XML tests | Planned R transform oracle and transformed recovery |
 | TR-037 reintegration index | Approved; implementation pending | Planned `d=1`/`d=2` recurrence tests | Planned independent recurrence oracle and recovery |
 | TR-038 AR/MA/ARIMA generation | Approved; implementation pending | Planned fixed-seed and transform-order tests | Planned algebraic and Monte Carlo oracles |
