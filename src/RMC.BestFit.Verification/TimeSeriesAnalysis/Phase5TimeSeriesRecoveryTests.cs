@@ -515,19 +515,31 @@ public class Phase5TimeSeriesRecoveryTests
     }
 
     /// <summary>
-    /// Asserts the deterministic ARIMA one-step prediction against the committed R recurrence.
+    /// Asserts the deterministic ARIMA forecast difference and complete reintegrated path.
     /// </summary>
     /// <param name="model">The ARIMA model.</param>
     /// <param name="truth">The generating parameters.</param>
     /// <param name="fixture">The ARIMA fixture.</param>
     private static void AssertArimaPrediction(ARIMA model, double[] truth, JsonElement fixture)
     {
-        double actual = model.Predict(truth, forecastSteps: 1).Y[^1];
-        AssertPrediction(fixture, actual, "ARIMA");
+        var prediction = model.Predict(truth, forecastSteps: 1);
+        double forecastDifference = prediction.InterceptPart[^1] +
+            prediction.ARPart[^1] +
+            prediction.MAPart[^1];
+        AssertPrediction(
+            fixture,
+            forecastDifference,
+            "ARIMA forecast difference",
+            "next_difference_zero_innovation");
+        AssertPrediction(
+            fixture,
+            prediction.Y[^1],
+            "ARIMA complete path",
+            "prediction_complete_path_zero_innovation");
     }
 
     /// <summary>
-    /// Asserts the deterministic ARIMAX one-step prediction against the committed R recurrence.
+    /// Asserts the deterministic ARIMAX forecast difference and complete reintegrated path.
     /// </summary>
     /// <param name="model">The ARIMAX model.</param>
     /// <param name="truth">The generating parameters.</param>
@@ -540,20 +552,40 @@ public class Phase5TimeSeriesRecoveryTests
             System.Globalization.CultureInfo.InvariantCulture).AddDays(1.0);
         double nextCovariate = fixture.GetProperty("next_covariate").GetDouble();
         var tail = new NumericTimeSeries(TimeInterval.OneDay, forecastDate, [nextCovariate]);
-        double actual = model.Predict(truth, forecastSteps: 1, forecastCovariates: [tail]).Y[^1];
-        AssertPrediction(fixture, actual, "ARIMAX");
+        var prediction = model.Predict(truth, forecastSteps: 1, forecastCovariates: [tail]);
+        double forecastDifference = prediction.InterceptPart[^1] +
+            prediction.TrendPart[^1] +
+            prediction.SeasonalityPart[^1] +
+            prediction.CovariatePart[^1] +
+            prediction.ARPart[^1] +
+            prediction.MAPart[^1];
+        AssertPrediction(
+            fixture,
+            forecastDifference,
+            "ARIMAX forecast difference",
+            "next_difference_zero_innovation");
+        AssertPrediction(
+            fixture,
+            prediction.Y[^1],
+            "ARIMAX complete path",
+            "prediction_complete_path_zero_innovation");
     }
 
     /// <summary>
-    /// Compares a deterministic one-step prediction with the committed zero-innovation recurrence.
+    /// Compares a deterministic prediction value with a committed R fixture value.
     /// </summary>
     /// <param name="fixture">The recovery fixture.</param>
     /// <param name="actual">The production prediction.</param>
     /// <param name="label">The model label.</param>
-    private static void AssertPrediction(JsonElement fixture, double actual, string label)
+    /// <param name="expectedProperty">The fixture property containing the expected value.</param>
+    private static void AssertPrediction(
+        JsonElement fixture,
+        double actual,
+        string label,
+        string expectedProperty = "next_raw_zero_innovation")
     {
-        double expected = fixture.GetProperty("next_raw_zero_innovation").GetDouble();
+        double expected = fixture.GetProperty(expectedProperty).GetDouble();
         double tolerance = Math.Max(PredictionTolerance, Math.Abs(expected) * PredictionTolerance);
-        Assert.AreEqual(expected, actual, tolerance, $"{label} one-step recurrence.");
+        Assert.AreEqual(expected, actual, tolerance, $"{label} recurrence.");
     }
 }
