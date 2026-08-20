@@ -487,17 +487,18 @@ is retained in the time-series report. No full Verification run occurred.
 | `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; unchanged production DEMCzs defaults asserted before/after; independently calculated central 95%, MAP 25%, R-hat/ESS, one-step recurrence | **Passed** - 1/1 in 24.611 s |
 | `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 110-step burn-in, 1,000 retained observations, seed 12345, unchanged 5% gate | **Passed** - 1/1 in 0.198 s |
 | `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and unchanged production-default Bayesian recovery contract | **Passed** - 1/1 in 24.097 s |
-| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; `1E-3` coefficients, `1E-5` scale/likelihood | **Failed** - parameter parity passed; likelihood gap `1.1491787E-5` exceeds `1E-5` |
-| `Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture and unchanged production-default Bayesian recovery contract | Not run - stopped by preceding failure |
-| `Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, 15% coefficients/10% scale | Not run - stopped by preceding failure |
-| `Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture and unchanged production-default Bayesian recovery contract | Not run - stopped by preceding failure |
+| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; same-point likelihood and complete-path prediction | **Passed** - 1/1 against the direct conditional oracle |
+| `Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 30.642 s |
+| `Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R conditional ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, same-point likelihood; unchanged production Differential Evolution default | **Passed** - 1/1 in 0.516 s |
+| `Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 37.241 s |
 
 The artifact was committed before C# recovery evaluation. The mistakenly changed AR/MA seeds,
 corrected-seed fixture without stationary burn-in, and artificially capped AR Bayesian run remain
 failure history. Commit `ccd5842` removed the cap and all time-series Verification assignments to
-`BayesianAnalysis` settings. The corrected AR Bayesian and both MA cells pass. The independent ARIMA
-MLE oracle and acceptance contract were committed before reevaluation; all parameter comparisons
-passed, but its C#-estimate likelihood missed the frozen R-optimum gate by `1.491787E-6`. The
-remaining three methods were not run. No alternate seed, tolerance, optimizer, sampler setting, or
-full Verification run was attempted. See the time-series report for hashes, exact commands,
-runtimes, and failure history.
+`BayesianAnalysis` settings. The independent ARIMA/ARIMAX conditional MLE and posterior-MAP oracles
+were committed before their final C# evaluations. Formula comparisons use common parameter vectors;
+sampled Bayesian point recovery uses `Results.MAP`, while generating truth remains a central-95%
+coverage criterion. The forced bounded-Nelder-Mead ARIMAX failure is retained; the passing cell uses
+the unchanged production Differential Evolution default and changes no optimizer implementation or
+default. All eight cells pass. No alternate seed, tolerance, sampler setting, or full Verification
+run was attempted. See the time-series report for hashes, exact commands, runtimes, and history.

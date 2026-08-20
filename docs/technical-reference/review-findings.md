@@ -10,19 +10,20 @@ This is the canonical register for disagreements among statistical theory, the p
 
 Closeout reconciliation (20 August 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest. Phase 3 is closed in its approved scope. The original Phase 4 findings are complete: TR-014 independently resamples the actual retained outputs used by Composite and coincident-frequency propagation, while `BivariateAnalysis` remains intentionally conditional on fixed marginals. The unchanged extreme-tail Composite method passed after the approved `XTransform.None` correction, bringing the 30-method recovery supplement to 24 passes. The six remaining Bayesian competing-risk findings are explicitly deferred for separate research and no longer gate Phase 5; none of the original Phase 4 finding dispositions is reopened.
 
-Phase 5 recovery checkpoint (20 August 2026): TR-035 through TR-041 and TR-046 retain their
-completed regression and independent-oracle evidence, and TR-042 retains its refreshed closed
-contract. Haden Smith approved 110 discarded stationary initialization steps while retaining the
-established seeds, 1,000 observations, and unchanged gates. The 1,000 limit applies to fixtures and
-generator-moment methods, not MCMC. Commit `ccd5842` removes all time-series Verification
-assignments to `BayesianAnalysis` settings; every Bayesian recovery uses and asserts the production
-DEMCzs defaults. AR/MA MLE and Bayesian cells pass. The original ARIMA MLE percentage-gate failure
-was diagnosed against an independent R conditional-likelihood/profile oracle committed before
-reevaluation. All parameter-parity assertions pass, but the C# estimate's likelihood differs from
-the R optimum by `1.1491787E-5`, above the frozen `1E-5` gate. Final Phase 5 closure remains blocked;
-ARIMA Bayesian and both ARIMAX cells were not run, no production or numerical setting was changed,
-and the full Verification project was not run. Earlier fixed-percentage and capped-Bayesian failures
-remain documented as failure history.
+Phase 5 closeout (20 August 2026): TR-035 through TR-041 and TR-046 are complete, and TR-042 retains
+its refreshed closed contract. Haden Smith approved 110 discarded stationary initialization steps
+while retaining the established seeds and exactly 1,000 observations. The 1,000 limit applies to
+fixtures and generator-moment methods, not MCMC. Commit `ccd5842` removed all time-series
+Verification assignments to `BayesianAnalysis` settings; every Bayesian recovery uses and asserts
+the production DEMCzs defaults. All eight MLE/Bayesian recovery cells pass. ARIMA and ARIMAX point
+recovery compares C# conditional MLE and sampled posterior MAP with independently implemented R
+conditional MLE/default-prior MAP oracles; generating truth remains a central-95% coverage
+criterion. `stats::arima(method="ML")` is retained only as a Kalman/state-space diagnostic, not as
+an exact likelihood oracle. The ARIMAX MLE cell uses the unchanged production Differential
+Evolution default after the forced bounded-Nelder-Mead test override was shown to settle on a
+boundary solution despite same-point R/C# likelihood parity. No production optimizer, likelihood,
+prior, sampler, seed, tolerance, convergence rule, or Bayesian default changed. Earlier failures
+remain documented in full, and the complete Verification project was not run.
 
 ## Summary
 

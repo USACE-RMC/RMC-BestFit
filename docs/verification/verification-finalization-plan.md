@@ -1,4 +1,4 @@
-<!-- verification-plan-status: phase-5-in-progress -->
+<!-- verification-plan-status: phase-5-complete -->
 
 # RMC.BestFit Verification Finalization Plan
 
@@ -18,11 +18,11 @@ A new session should read these files in this order:
 6. `verification/data/MANIFEST.md`
 7. The relevant technical-reference chapter for the current finding
 
-Implementation checkpoint (3 August 2026): BestFit scientific behavior is closed through `9d252f6` plus the current TR-014 and recovery-supplement working-tree changes, including the authorized competing-risk MAP initializer. The recovery supplement pins Numerics `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`; Numerics clone correction `e57af20` preserves the configured logarithm base. The canonical Phase 4 correction anchors remain `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
+Implementation checkpoint (20 August 2026): Phase 5 production and verification code is complete through `b0dff5c`. TR-035 through TR-041 and TR-046 are closed; TR-042 retains its closed data-likelihood-at-MAP contract with refreshed evidence. The recovery supplement pins Numerics `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`; Numerics clone correction `e57af20` preserves the configured logarithm base. The canonical Phase 4 correction anchors remain `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1, 2, 3, and the original Phase 4 findings are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement now records 24 passes and six explicitly deferred Bayesian findings after the unchanged extreme-tail Composite inversion method passed its 20 August 2026 focused rerun. The approved disposition makes those six supplemental research findings nonblocking and opens Phase 5 without changing a sampler, seed, prior, formula, or tolerance. TR-014 implements the approved product-posterior resampling policy in Composite and CFA while leaving `BivariateAnalysis` unchanged.
+The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1 through 5 are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement records 24 passes and six explicitly deferred Bayesian research findings. Phase 5 closes the eight time-series findings with API-compatible production corrections, deterministic regressions, independent numerical oracles, and an eight-cell MLE/Bayesian recovery matrix. No sampler, seed policy, prior, production optimizer default, likelihood definition, or convergence default changed.
 
 Reconciled checkpoint (3 August 2026): Core 3,134/3,134, UI 571/571, App 428/428, and Numerics 2,072/2,072 on each of net481/net8/net9/net10 pass with zero failures. Strict XML documentation and Verification compilation gates pass. Both exact TR-014 methods pass separately through the guarded runner. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
 
@@ -81,10 +81,11 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 - Phase 2 model estimation and diagnostics are closed for the approved scope.
 - Phase 3 data handling and Bulletin 17C are closed for the approved scope.
 - Phase 4 closes TR-004 through TR-008 and TR-012 through TR-015.
+- Phase 5 closes TR-035 through TR-041 and TR-046; TR-042 remains closed with refreshed evidence.
 
 ### Current Phase Checkpoint
 
-Phases 1 through 3 and Phase 4 are formally closed for their approved scopes. Phase 4 includes point-process TR-004/TR-005, mixture TR-006/TR-007/TR-008, competing-risk simulation TR-012, composite criterion handling TR-013, independent Composite/CFA posterior resampling TR-014, and correlation-matrix configuration TR-015. The recovery supplement has run all 20 competing-risk and ten composite methods individually through the guarded runner. All ten Composite methods pass, and the six remaining Bayesian competing-risk findings have an approved deferred-research disposition. Phase 5 is open and in progress.
+Phases 1 through 5 are formally closed for their approved scopes. The Phase 4 recovery supplement has run all 20 competing-risk and ten Composite methods individually through the guarded runner; all ten Composite methods pass, and the six remaining Bayesian competing-risk findings have an approved deferred-research disposition. Phase 5's named numerical methods and eight integrated recovery cells pass individually through the guarded runner. The full Verification project was not run.
 
 Completed Phase 2 findings:
 
@@ -306,7 +307,7 @@ Phase exit criteria:
 
 ## Phase 5 - Time-Series Models
 
-Status: in progress and blocked at the fifth integrated recovery cell. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
+Status: complete for the approved scope. The Phase 4 prerequisite was satisfied on 20 August 2026: the exact Composite rerun passed and the six Bayesian competing-risk findings were explicitly deferred for separate research.
 
 Execution contract (20 August 2026): every remaining Phase 5 Verification fixture retains exactly
 1,000 time-series observations. The approved fixture correction separately discards 110 stationary
@@ -318,21 +319,28 @@ jump, snooker, or noise settings.
 
 Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 App public/protected signature lines with committed SHA-256 hashes. Legacy AR, MA, ARIMA, ARIMAX, and pre-v2 `ARMAX` persistence contracts pass; the App transform selector retains its existing XAML/property path and enum values. Core passes 3,180/3,180, UI 576/576, App 431/431, and API 496/496. The strict Debug solution build with `EnforceXmlDocumentation=true` passes with zero warnings/errors; the separately documented validation script is absent from this checkout. No production code or Verification method changed in this package.
 
-Recovery checkpoint (20 August 2026): all eight approved cells are implemented against committed
-independent R fixtures containing 1,000 retained observations. The initial AR MLE seed error,
-missing-burn-in failure, and artificially capped AR Bayesian convergence failure remain documented
-as failure history. Commit `ccd5842` removed every time-series Verification assignment to a
-`BayesianAnalysis` setting. The production defaults are asserted before and after recovery sampling;
-the required central 95% interval is computed independently from the default 10,000 retained draws
-without changing the production 90% reporting setting. AR MLE, default-DEMCzs AR Bayesian, MA MLE,
-and default-DEMCzs MA Bayesian pass their unchanged gates. The original ARIMA MLE fixed-percentage
-failure was diagnosed with an independent R conditional-likelihood/profile oracle committed before
-reevaluation. All C# parameter-parity assertions passed, but the C# estimate's likelihood differs
-from the R optimum by `1.1491787E-5`, above the frozen `1E-5` gate. The rerun stopped without a
-tolerance change. ARIMA Bayesian and both ARIMAX cells were not run. No seed search, threshold,
-optimizer, likelihood, prior, sampler, production default, or algorithm change is authorized. Phase
-5 cannot transition to `phase-5-complete` without a separately approved disposition for this ARIMA
-MLE recovery finding.
+Recovery checkpoint (20 August 2026): all eight approved cells pass against committed independent R
+fixtures containing 1,000 retained observations after 110 discarded stationary initialization
+steps. The ARIMA and ARIMAX oracles directly implement BestFit's conditional recurrences and compare
+likelihoods exactly at common parameter vectors. R `stats::arima(method="ML")` state-space/Kalman
+fits remain diagnostic rather than exact parameter targets. Fitted MLE values are compared with
+independent conditional-likelihood optima and profiles; Bayesian recovery uses
+`analysis.Results.MAP.Values` and independent posterior MAP values under the exact production
+default priors. Every Bayesian method asserts the resolved `BayesianAnalysis` defaults before and
+after sampling and assigns no MCMC setting. ARIMAX MLE uses the unchanged production Differential
+Evolution default instead of forcing a test-only bounded Nelder-Mead path. The initial seed,
+burn-in, capped-MCMC, mismatched-vector likelihood, prediction-reanchoring, truth-versus-MAP, and
+forced-Nelder-Mead failures remain documented with their artifacts. No seed search, tolerance,
+likelihood, prior, sampler, production optimizer default, convergence default, or production
+algorithm changed.
+
+Final repository gate (20 August 2026): strict Debug compilation with
+`EnforceXmlDocumentation=true` passes with zero warnings/errors. Serial fast gates pass Core
+3,231/3,231, UI 578/578, App 443/443, and API 498/498. UI/App signature baselines match exactly; the
+Core baseline differs from the pre-Phase-5 baseline only by the approved read-only
+`TransformLambda` getter on AR, MA, ARIMA, and ARIMAX. Legacy, new, and unknown-optional-attribute
+serialization regressions pass. Artifact hashes are recorded in the report and manifest. The full
+Verification project was not run.
 
 Findings and required direction:
 
@@ -375,7 +383,7 @@ Verification must include algebraic fixtures, scalar/pointwise decomposition, tr
 
 Phase exit criteria:
 
-- Time-series likelihood, forecasting, simulation, preprocessing, criteria, and pointwise decomposition behavior are consistent with the stated model scale and data indexing.
+- Complete. Time-series likelihood, forecasting, simulation, preprocessing, criteria, and pointwise decomposition behavior are consistent with the stated model scale and data indexing.
 
 ## Phase 6 - Rating Curve, Bivariate, and Spatial Models
 
@@ -487,7 +495,7 @@ Read docs/verification/verification-finalization-plan.md first, then docs/techni
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: Phase 0 infrastructure is operational; Phases 1 through 4 are closed for their approved scopes, and Phase 5 is in progress. TR-014 independently resamples actual retained Composite and CFA sources with the existing seed, while `BivariateAnalysis` remains unchanged and conditional on fixed marginals. The 30-method recovery supplement records 24 passes and six explicitly deferred Bayesian competing-risk findings after the unchanged extreme-tail Composite method passed its 20 August 2026 guarded rerun. Bulletin 17C remains a valid composite child for Equal/AIC/BIC/RMSE and receives zero weight rather than type rejection when DIC/WAIC/LOOIC is unavailable and another child is usable.
+Current checkpoint: Phase 0 infrastructure is operational and Phases 1 through 5 are closed for their approved scopes. Phase 5 closes TR-035 through TR-041 and TR-046; TR-042 remains closed with refreshed evidence. Every named time-series numerical method and all eight integrated recovery cells pass individually through the guarded runner. The Bayesian cells use untouched production `BayesianAnalysis` defaults and compare sampled MAP with independent posterior MAP under those defaults. The full Verification project was not run.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
@@ -502,7 +510,7 @@ Constraints:
 - Preserve unrelated modified/untracked files.
 
 First task:
-Obtain an approved technical disposition for the seven recovery-supplement findings before beginning Phase 5. Preserve the closed Phase 1-4 numerical and compatibility contracts. Never run the full Verification project.
+Begin the separately approved Phase 6 scope from this Phase 5 closeout checkpoint. Preserve the closed Phase 1-5 numerical, API, serialization, and recovery contracts. Never run the full Verification project.
 ```
 
 ## Off-Ramps

@@ -12,7 +12,7 @@ The active handoff and batching plan is maintained in [Verification Finalization
 |---|---|---|
 | Repository integration | Operational - validated 4 August 2026 | Strict Debug XML build and Verification compilation: 0 warnings/errors; Release solution excludes Verification; the method-level ownership cleanup is complete |
 | Public API baseline | Captured; UI/App boundary refreshed 20 August 2026 | Core exported API plus exact UI/App public-and-protected signatures enforced by `PublicApiCompatibilityTests`; see [Time-Series Verification](time-series.md#ui-and-app-compatibility-baseline) |
-| Fast regression gate | Phase 5 compatibility checkpoint passed 20 August 2026 | Core 3,180; UI 576; App 431; API 496; 0 failures; strict Debug XML build 0 warnings/errors |
+| Fast regression gate | Phase 5 final gate passed 20 August 2026 | Core 3,231; UI 578; App 443; API 498; 0 failures; strict Debug XML build 0 warnings/errors |
 | External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
 | Test ownership audit | Complete - 4 August 2026 | All 84 Verification C# files were reviewed; 435 of 1,196 methods remain, 761 redundant/non-verification methods were removed, and 35 missing deterministic contracts were added to the fast core project. Core line/branch/method coverage increased from 64.73/59.46/86.94% to 66.03/60.43/88.25%. See [Test Inventory](test-inventory.md) |
 | Distribution fitting | Closed - Phase 1 | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. All nine Phase 1 artifact hashes match the manifest. See [Distribution Fitting](distribution-fitting.md) |
@@ -22,7 +22,7 @@ The active handoff and batching plan is maintained in [Verification Finalization
 | Mixture correction | TR-006/TR-007/TR-008 closed; initialization rerun pending | Public EM/Numerics parity remains unchanged. `MixtureAnalysis` now uses EM-seeded, prior-aware local MAP population construction with fast structural coverage. The new informative-prior method and three affected Bayesian recovery methods are `Ready - focused run`. See [Mixture Verification](mixture.md). |
 | Competing-risk simulation and recovery | TR-012 closed; recovery supplement failed 6 of 20 | Fast seed/matrix contracts and four analytical rank/CDF methods pass. All ten MLE recovery methods and four Default-DEMCzs methods with MAP-centered initialization pass; six Bayesian cells expose convergence, identifiability, ESS, or uncertainty-curve findings. See [Competing-Risks Verification](competing-risks.md). |
 | Composite and cross-analysis posterior propagation | TR-013/TR-014/TR-015 closed; recovery supplement passes 10 of 10 | Fast weighting/matrix/seed/cache contracts and both guarded posterior-resampling methods pass. The unchanged extreme-tail inversion cell passed after the approved `XTransform.None` correction. `BivariateAnalysis` remains conditional on fixed marginals. See [Composite Verification](composite.md). |
-| Time-series models | Phase 5 in progress; TR-035/TR-040 closed | UI/App API and legacy XML compatibility guardrails pass. Jeffreys metadata and finite-positive innovation-scale parity pass fast regressions and exact analytical oracles. See [Time-Series Verification](time-series.md). |
+| Time-series models | Phase 5 complete | TR-035 through TR-041 and TR-046 are closed; TR-042 remains closed with refreshed evidence. UI/App signatures and serialization remain compatible, every named numerical method passes, and the eight-cell MLE/Bayesian recovery matrix passes with 1,000 retained observations and untouched Bayesian defaults. See [Time-Series Verification](time-series.md). |
 
 ## Evidence rule
 
@@ -49,7 +49,7 @@ The runner rejects broad filters and requires exactly one TRX result.
 All 30 recovery-supplement methods and both existing TR-014 methods have been run individually
 under the execution rule. Twenty-four supplement methods and both TR-014 methods pass. The six
 remaining Bayesian competing-risk findings have an approved deferred-research disposition, so
-Phase 5 is open and in progress. The supplement pins Numerics
+Phase 5 is complete for its approved scope. The supplement pins Numerics
 `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk
 `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`.
 
