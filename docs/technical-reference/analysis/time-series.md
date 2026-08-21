@@ -32,8 +32,11 @@ For ARIMA and ARIMAX with raw training length $T$ and differencing order $d$, mo
 maps to raw response index $k+d$, and the training model series has $T-d$ values. ARIMAX uses
 level covariates matched by exact timestamp at that raw index; covariates are never differenced.
 Conditional evaluation starts at $k=\max(p,q)$ for AR, MA and ARIMA and at $k=\max(p,q,b)$ for
-ARIMAX, so the transform Jacobian uses raw indices $d+k$ through $T-1$. Required missing or
-duplicate ARIMAX covariate timestamps invalidate
+ARIMAX, so the transform Jacobian uses raw indices $d+k$ through $T-1$. The pointwise data
+log-likelihood attributes each observation's own change-of-variables term $\log|g'(y_{k+d})|$ to
+the model step that evaluates that observation, so the pointwise terms sum to the scalar
+data log-likelihood and WAIC/PSIS-LOO see the actual per-observation contributions. Required
+missing or duplicate ARIMAX covariate timestamps invalidate
 evaluation; extra dates outside the required window are ignored.
 
 When the optional Jeffreys rule is enabled, each model adds the scale contribution

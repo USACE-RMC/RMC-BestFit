@@ -81,7 +81,7 @@ evaluate_case <- function(order, raw, dates, covariate_values, training_steps,
   evaluation_raw_indices <- raw_indices[evaluation_positions]
   jacobian <- sum((lambda - 1.0) * log(raw[evaluation_raw_indices + 1L]))
   gaussian_terms <- gaussian_log_density(residuals[evaluation_positions], sigma)
-  pointwise <- gaussian_terms + jacobian / length(gaussian_terms)
+  pointwise <- gaussian_terms + (lambda - 1.0) * log(raw[evaluation_raw_indices + 1L])
 
   list(
     differencing_order = order,

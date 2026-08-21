@@ -348,6 +348,9 @@ time-varying covariate, and uses `TrainingTimeSteps=8`, two holdout observations
 `theta=-0.2`, and `sigma=0.75`. It evaluates `d=0,1,2`. Alternate response holdout values are
 `[3002,0.041]`; the artifact contains every expected date, transformed difference, mapped raw
 index, matched covariate, prediction, residual, Jacobian, pointwise value, and scalar likelihood.
+Each pointwise value carries the Gaussian term of its model step plus the change-of-variable term
+`(lambda - 1) log(y)` of the raw observation evaluated at that step, so the pointwise values sum
+to the scalar likelihood and expose the per-observation Jacobian contribution.
 No random seed or simulated sample size applies. The tolerance was fixed at `1E-10` absolute.
 
 R 4.4.3, jsonlite 2.0.0, and digest 0.6.39 produced the artifact against source commit

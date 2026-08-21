@@ -144,6 +144,7 @@ namespace RMC.BestFit.Models
         private bool _transformLambdaIsManual;
         private bool _usePersistedTransformLambda;
         private double _logJacobian = 0;
+        private double[]? _logJacobianTerms;
         private string? _transformFitValidationMessage;
 
         // Training/forecasting split members
@@ -415,6 +416,7 @@ namespace RMC.BestFit.Models
             {
                 _transformFitValidationMessage = null;
                 _logJacobian = 0;
+                _logJacobianTerms = null;
                 if (TransformType == Transform.None || TransformType == Transform.Logarithmic)
                 {
                     _lambda = 0;
@@ -492,6 +494,7 @@ namespace RMC.BestFit.Models
                     _logJacobian = TransformType == Transform.YeoJohnson
                         ? YeoJohnson.LogJacobian(likelihoodValues, _lambda)
                         : BoxCox.LogJacobian(likelihoodValues, _lambda);
+                    _logJacobianTerms = ComputeLogJacobianTerms(likelihoodValues);
                 }
             }
             finally
@@ -727,10 +730,10 @@ namespace RMC.BestFit.Models
             var normDist = new Normal(0, sigma);
             var result = new double[n];
 
-            double jacobianPerObs = _logJacobian / n;
+            double[] jacobianTerms = GetLogJacobianTerms(n);
             for (int t = 0; t < n; t++)
             {
-                result[t] = normDist.LogPDF(residuals[t]) + jacobianPerObs;
+                result[t] = normDist.LogPDF(residuals[t]) + jacobianTerms[t];
             }
 
             return result;
@@ -774,11 +777,11 @@ namespace RMC.BestFit.Models
                 return result;
             }
             var normDist = new Normal(0, sigma);
-            double jacobianPerObs = _logJacobian / n;
+            double[] jacobianTerms = GetLogJacobianTerms(n);
 
             for (int t = 0; t < n; t++)
             {
-                double logLH = normDist.LogPDF(residuals[t]) + jacobianPerObs;
+                double logLH = normDist.LogPDF(residuals[t]) + jacobianTerms[t];
                 double value = responseValues != null && t < responseValues.Length ? responseValues[t] : 0;
                 result.Add(new DataComponent(t, logLH, value, DataComponentType.Exact, 1, $"t={t}"));
             }
@@ -1178,6 +1181,48 @@ namespace RMC.BestFit.Models
                     : BoxCox.InverseTransform(values[i], _lambda);
             }
             return values;
+        }
+
+        /// <summary>
+        /// Computes the log-Jacobian term of each raw observation in the likelihood window.
+        /// </summary>
+        /// <param name="values">The raw observations whose transformed values enter the likelihood.</param>
+        /// <returns>One log-Jacobian term per observation; the terms sum to the scalar log Jacobian.</returns>
+        private double[] ComputeLogJacobianTerms(double[] values)
+        {
+            var terms = new double[values.Length];
+            var single = new double[1];
+            for (int i = 0; i < values.Length; i++)
+            {
+                single[0] = values[i];
+                terms[i] = TransformType == Transform.YeoJohnson
+                    ? YeoJohnson.LogJacobian(single, _lambda)
+                    : BoxCox.LogJacobian(single, _lambda);
+            }
+
+            return terms;
+        }
+
+        /// <summary>
+        /// Gets the per-observation log-Jacobian terms aligned with the evaluated model steps.
+        /// </summary>
+        /// <param name="count">The number of evaluated model steps.</param>
+        /// <returns>One term per evaluated step; zeros when no transform is active.</returns>
+        /// <remarks>
+        /// Each observation carries its own change-of-variables term, so pointwise terms reflect
+        /// that observation's actual contribution. If the stored terms do not match the evaluated
+        /// count, the scalar log Jacobian is spread uniformly so the pointwise sum still equals
+        /// the scalar data log-likelihood.
+        /// </remarks>
+        private double[] GetLogJacobianTerms(int count)
+        {
+            if (_logJacobianTerms != null && _logJacobianTerms.Length == count)
+                return _logJacobianTerms;
+
+            var terms = new double[count];
+            if (count > 0 && _logJacobian != 0d)
+                Array.Fill(terms, _logJacobian / count);
+            return terms;
         }
 
         #endregion
