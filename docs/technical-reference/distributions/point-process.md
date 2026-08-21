@@ -102,6 +102,8 @@ $$
 N_{y1}=N_y\frac{k_1+366-k_2}{366},
 \qquad
 N_{y2}=N_y\frac{k_2-k_1}{366}. \tag{8}
+
+The block-day index \(k\) counts elapsed days from the block start, so a non-leap block reaches day 365 while the exposure fractions divide by 366; the resulting exposure difference is below 0.3% and is accepted.
 $$
 
 Each exact event contributes the intensity-density term from its assigned season, and each season contributes its own \(-N_{ys}\Lambda_{u,s}\) term. **POTDays** is the one-based elapsed day from the selected calendar- or water-year block start. This elapsed-day calculation, rather than a month shift, is shared by observed and generated events and preserves leap days. Uncertain, interval, and threshold-count records do not carry a usable day assignment.

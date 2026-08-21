@@ -94,6 +94,24 @@ remain documented in full, and the complete Verification project was not run.
 | [TR-063](#tr-063) | Whole-series replacement leaves plotting positions stale | Medium | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-063---whole-series-replacement-refresh) / [Artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json) | 2026-07-24 |
 | [TR-064](#tr-064) | DE/BFGS optimizer tolerance parity | Medium | Rejected non-defect | N/A | Passed - SciPy parity | [Report](../verification/distribution-fitting.md#tr-064---distribution-fitting-optimizer-tolerance) / [Artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json) | 2026-07-25 |
 | [TR-065](#tr-065) | GMM influence Hessian scale depends on penalty presence | High | Confirmed defect | Fixed | Passed - R `gmm` parity | [Report](../verification/model-estimation.md#gmm-calibration-against-r) / [Artifact](../../verification/data/model-estimation/gmm-influence-oracle.json) | 2026-07-25 |
+| [TR-066](#tr-066) | ARIMAX conditional order omitted covariate lags | High | Confirmed defect | Fixed | Passed - hand-derived distributed-lag likelihood, regenerated R alignment oracle, recovery cells | [Report](../verification/time-series.md) / [Artifact](../../verification/data/time-series/phase5-arimax-alignment-oracle.json) | 2026-08-21 |
+| [TR-067](#tr-067) | ARIMA and AR order setters left the transform Jacobian stale | Medium | Confirmed defect | Fixed | Passed - fast order-change likelihood parity | [Report](../verification/time-series.md) | 2026-08-21 |
+| [TR-068](#tr-068) | Empty conditional likelihood sum returned zero | Medium | Confirmed defect | Fixed | Passed - fast negative-infinity and validation contracts | [Report](../verification/time-series.md) | 2026-08-21 |
+| [TR-069](#tr-069) | Pointwise transform Jacobian was spread uniformly | Medium | Confirmed defect | Fixed | Passed - per-observation pins, regenerated alignment oracle | [Report](../verification/time-series.md) / [Artifact](../../verification/data/time-series/phase5-arimax-alignment-oracle.json) | 2026-08-21 |
+| [TR-070](#tr-070) | Time-series residual, prediction-window, and transform-reset guards | Low | Confirmed defect | Fixed | Passed - fast contracts | [Report](../verification/time-series.md) | 2026-08-21 |
+| [TR-071](#tr-071) | Seasonal Gumbel-limit annualization sign | High | Confirmed defect | Fixed | Passed - hand value, continuity, point-process recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
+| [TR-072](#tr-072) | Point-process clone rate and seasonal quantile priors | Medium | Confirmed defect | Fixed | Passed - fast clone and prior contracts, recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
+| [TR-073](#tr-073) | Competing-risk empirical CDF grid lost resolution for heavy tails (Numerics) | High | Confirmed defect | Fixed in Numerics (local) | Passed - Numerics root-solve parity, composite and competing-risk cells | [Report](../verification/composite.md) | 2026-08-21 |
+| [TR-074](#tr-074) | Composite zero inflation inferred from roundoff | Medium | Confirmed defect | Fixed | Passed - 1 ulp weight-sum contract | [Report](../verification/composite.md) | 2026-08-21 |
+| [TR-075](#tr-075) | Composite correlation undo and coincident-frequency cache thread safety | Low | Confirmed defect | Fixed | Passed - UI undo round trip, fast cache contracts | [Report](../verification/composite.md) | 2026-08-21 |
+| [TR-076](#tr-076) | Bulletin 17C bootstrap diagnostics counted realizations as replicates | High | Confirmed regression | Fixed | Passed - per-replicate rate and legacy XML contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-077](#tr-077) | Parent-fit substitution reported as a point mass | High | Confirmed defect; substitution retained by decision | Fixed (reporting) | Passed - report contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-078](#tr-078) | Converged-within-tolerance refit acceptance requires objective improvement | Medium | Confirmed defect | Fixed | Pending - reliability grid rerun | [Report](../verification/bulletin-17c.md) | 2026-08-21 |
+| [TR-079](#tr-079) | Pivot bound repairs and z-limit clips are counted | Medium | Confirmed defect | Fixed | Passed - fast report and counter contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-080](#tr-080) | Bulletin 17C status counters, loop progress, and documentation corrections | Low | Confirmed defect | Fixed | Passed - fast report contracts, documentation review | [Report](../verification/bulletin-17c.md) | 2026-08-21 |
+| [TR-081](#tr-081) | Log-scale penalty centers perturbed on the log scale | Low | Confirmed latent defect | Fixed | Pending - penalty verification rerun | [Report](../verification/bulletin-17c.md) | 2026-08-21 |
+| [TR-082](#tr-082) | Strict distribution XML parsers verified against 2.1.4 payloads | Medium | Compatibility risk | Verified | Passed - fifteen literal 2.1.4 payloads and embedding elements | [Report](../verification/test-inventory.md) | 2026-08-21 |
+| [TR-083](#tr-083) | Example project SQLite sidecars were tracked | Low | Repository hygiene | Fixed | N/A | [Report](../verification/test-inventory.md) | 2026-08-21 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -179,7 +197,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Verification status.** Complete in the approved scope. All ten guarded current-source cells pass. Recovery fixtures use 1,000 observations and the untouched `BayesianAnalysis` defaults. Calendar-year uniform recovery, October-water-year block-origin parity, nonseasonal production recovery, and seasonal production recovery pass; the robust defaults eliminate the former seasonal second-Kappa miss. The initial water-year failure was a verification-coordinate error: the fixture changed `K1/K2` from `170/350` to `80/260` rather than keeping the parent block-day parameters fixed while changing only the block origin.
 
-**Evidence.** Seasonal exposure is \(w_1=(k_1+366-k_2)/366\) and \(w_2=(k_2-k_1)/366\). Default supports are \([1,251)\) and \([200,367)\); the linear-time rotated monthly histogram may supply five-month flat windows, while ambiguous, insufficient, flat, or undated timing retains broad defaults. Independent exponential-clock Poisson and analytical Hosking-GPA fixtures support the scientific checks.
+**Evidence.** Seasonal exposure is \(w_1=(k_1+366-k_2)/366\) and \(w_2=(k_2-k_1)/366\). Default supports are \([1,251)\) and \([200,367)\); the linear-time rotated monthly histogram may supply five-month flat windows, while ambiguous, insufficient, flat, or undated timing retains broad defaults. Independent exponential-clock Poisson and analytical Hosking-GPA fixtures support the scientific checks. The seasonal exposure fractions divide by a fixed 366 block days while the block-day index of a non-leap block reaches 365, an exposure difference below 0.3% that is documented rather than corrected.
 
 **Impact.** Generated counts, component assignments, dates, and marks now follow the approved Poisson-GPA parent process. Automatic changepoint priors enter a broad seasonal neighborhood without profile likelihood, MAP preprocessing, or changes to GEV defaults.
 
@@ -192,7 +210,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Implementation status.** Numerics retains its full-$K$ copy-and-normalize boundary. BestFit retains full $K$ for model configuration, configured priors, public likelihood methods, EM output, and project-model XML, while new mixture `MCMCResults` store the identified $K-1$ sampled coordinates.
 
-**Verification status.** The mixture-focused Core batch passes 132/132; UI passes 578/578, App 439/439, API 498/498, and Numerics' focused mixture class passes 21/21 on .NET 10. The three exact Numerics/BestFit likelihood-and-EM parity methods remain historical passing evidence. The three Bayesian `MixtureAnalysis` recovery methods require separately authorized focused reruns.
+**Verification status.** The mixture-focused Core batch, the UI, App, and API suites, and Numerics' focused mixture class pass. The three exact Numerics/BestFit likelihood-and-EM parity methods remain historical passing evidence. The three Bayesian `MixtureAnalysis` recovery methods require separately authorized focused reruns.
 
 **Evidence.** For sampled coordinates $(w_1,\ldots,w_{K-1},\boldsymbol\theta)$, BestFit derives $w_K=m-\sum_{k<K}w_k$, rejects infeasible proposals, and evaluates the established full-$K$ posterior so every configured weight prior contributes. The responsibility covariance has negative off-diagonal terms and zero full-$K$ row sums. Diagnostics expose stored coordinates; physical consumers reconstruct full $K$ locally.
 
@@ -521,7 +539,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Verification status.** Passed by source/model-contract audit and one exact focused coupled-prior characterization.
 
-**Evidence.** `PriorPredictiveCheck.SampleFromPriors()` independently samples each `ModelParameter.PriorDistribution`, clamps values to bounds, and rejects sets whose full prior log likelihood is non-finite. It does not sample or reweight coupled quantile priors, Jeffreys factors, transformation Jacobians, spatial terms, or other non-marginal contributions implemented only in `IModel.PriorLogLikelihood`. `ParameterSet.Fitness` stores the negative joint prior log likelihood for each accepted draw; it is not a likelihood or posterior score. A fixed-seed 20,000-draw fixture with independent Uniform$(-1,1)$ marginals and a narrow $y\mid x$ coupling confirms that the draws remain marginally independent even though fitness records the coupled density.
+**Evidence.** `PriorPredictiveCheck.SampleFromPriors()` independently samples each `ModelParameter.PriorDistribution`, clamps values to bounds, and records each set's full prior log likelihood in `ParameterSet.Fitness`; `GeneratePriorPredictive()` skips sets whose prior log likelihood is non-finite, leaving their slots empty without reporting the skipped count. It does not sample or reweight coupled quantile priors, Jeffreys factors, transformation Jacobians, spatial terms, or other non-marginal contributions implemented only in `IModel.PriorLogLikelihood`. `ParameterSet.Fitness` stores the negative joint prior log likelihood for each accepted draw; it is not a likelihood or posterior score. A fixed-seed 20,000-draw fixture with independent Uniform$(-1,1)$ marginals and a narrow $y\mid x$ coupling confirms that the draws remain marginally independent even though fitness records the coupled density.
 
 **Impact.** The resulting ensemble is a valid direct prior sample only when the model prior factorizes into the sampled parameter marginals subject to the rejection rule. It is not a general joint-prior sampler for models with additional coupled prior structure.
 
@@ -679,7 +697,7 @@ sentinels, exact-date level covariates, component mapping, and bit-for-bit `Tran
 fixed-seed values. The corrected guarded analytical recurrence passes at `1E-10`; an additional
 exactly 1,000-realization oracle verifies that differenced uncertainty remains conditional in
 training and begins recursive accumulation only after the forecast boundary. All four affected
-ARIMA/ARIMAX MLE/Bayesian recovery cells pass against the restored R boundary oracle.
+ARIMA/ARIMAX MLE/Bayesian recovery cells pass against the R boundary oracle.
 
 **Evidence.** For first differences, `Difference` stores `d[0]=x[1]-x[0]`. `Predict()` allocates `TrainingTimeSteps + forecastSteps` differenced entries, then overwrites `integrated[0]` with `x[0]` and evaluates `integrated[i]=anchor[i-1]+integrated[i]`. Thus `d[0]` is discarded and output index 1 uses `d[1]`; the differenced vector is also `d` entries too long for an output of the requested undifferenced length. ARIMA and ARIMAX share this integration pattern.
 
@@ -1187,6 +1205,205 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 **Impact.** GMM fit influence now has one estimator-consistent scale regardless of penalty configuration. The combined leverage plot and percentages no longer jump by a factor of two when a negligible penalty is toggled.
 
 **Follow-up.** Retain the pinned R artifact and focused methods. Do not compare GMM Cook magnitudes directly with likelihood-based MAP Cook magnitudes.
+
+<a id="tr-066"></a>
+## TR-066 - ARIMAX Conditional Order Omitted Covariate Lags
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. ARIMAX conditions its likelihood, pointwise terms, components, residuals, Jacobian start, generation, and prediction on `max(p, q, b)` through one `ConditionalOrder` helper, the convention of the 2.0.0 release. Pure distributed-lag regressions no longer include model steps whose mean omits lagged covariate terms, and validation names the conditional AR/MA/covariate-lag order.
+
+**Verification status.** Passed. `TimeSeriesConditioningOrderTests` pins a hand-derived `p = q = 0, b = 2` likelihood and the `d = 0` and `d = 1` prediction sequences with credible-band width guards; the regenerated ARIMAX alignment oracle carries `covariate_lag_order >= 1`; the time-series recovery and alignment cells pass.
+
+**Impact.** Distributed-lag ARIMAX fits are no longer biased in the covariate coefficients and innovation scale. Bit-for-bit `Transform.None`, `d = 0`, `b = 0` sequences are unchanged.
+
+<a id="tr-067"></a>
+## TR-067 - ARIMA and AR Order Setters Left the Transform Jacobian Stale
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `ARIMA.POrder`, `ARIMA.QOrder`, and `AutoRegressive.Order` call `SetTrainingData()`, so the log-Jacobian and conditional range follow the new order immediately, as ARIMAX already did.
+
+**Verification status.** Passed. A fast test establishes that `DataLogLikelihood` after an order change equals that of a freshly constructed model.
+
+**Impact.** AIC, BIC, and DIC comparisons across orders no longer shift by a constant number of Jacobian terms.
+
+<a id="tr-068"></a>
+## TR-068 - Empty Conditional Likelihood Sum Returned Zero
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. ARIMA and ARIMAX `DataLogLikelihood` and the pointwise methods return negative infinity when the training series has no conditional step, and `ARIMA.Validate` reports a training difference count at or below the conditional order.
+
+**Verification status.** Passed. Fast tests cover the negative-infinite likelihood and the validation message.
+
+**Impact.** An unfittable model cannot report a perfect likelihood or `AIC = 2k`.
+
+<a id="tr-069"></a>
+## TR-069 - Pointwise Transform Jacobian Was Spread Uniformly
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. Each pointwise term carries its own change-of-variables term, `(lambda - 1) log x_t` for Box-Cox/Yeo-Johnson and `-log x_t` for the logarithmic transform, computed once per observation; the scalar sum is unchanged.
+
+**Verification status.** Passed. `TimeSeriesPointwiseJacobianTests` pins the per-term values and the unchanged sum; the regenerated ARIMAX alignment oracle records per-observation terms and its manifest hash is updated.
+
+**Impact.** WAIC, PSIS-LOO, Pareto k, and leverage diagnostics see the true per-observation dispersion instead of an artificially flattened one.
+
+<a id="tr-070"></a>
+## TR-070 - Time-Series Residual, Prediction-Window, and Transform-Reset Guards
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `ARIMA.Residuals` returns an empty array before data are attached; covariate dates missing only in the holdout or forecast window and transform-level failures are validation messages rather than exceptions inside the fire-and-forget uncertainty task; the `TransformType` setter resets priors only when `UseDefaultFlatPriors` is true, matching `SetTransformParameters`.
+
+**Verification status.** Passed by fast contracts.
+
+**Impact.** No unobserved exceptions from the uncertainty task; custom priors survive a transform change.
+
+<a id="tr-071"></a>
+## TR-071 - Seasonal Gumbel-Limit Annualization Sign
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. The zero-shape branch of the seasonal annualization uses `xi + alpha ln p` in `SetParameterValues` and `GetDistribution`, with the same `1E-4` shape cutoff as the exact-event terms; the general branch `xi + (alpha / kappa)(1 - p^-kappa)` is unchanged.
+
+**Verification status.** Passed. `PointProcessSeasonalAnnualizationTests` checks the hand value and continuity at `kappa = ±1e-7`; the point-process recovery cells pass.
+
+**Impact.** A seasonal annual maximum with zero shape shifts down by `alpha |ln p|` as the product of the seasonal distribution functions requires, rather than up.
+
+<a id="tr-072"></a>
+## TR-072 - Point-Process Clone Rate and Seasonal Quantile Priors
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `Clone()` recomputes the event rate from the copied `TotalYears`; seasonal quantile priors are evaluated on the annualized distribution in both the scalar and pointwise prior paths, returning a negative-infinite prior when the change points are invalid, matching the likelihood.
+
+**Verification status.** Passed. Fast tests cover the clone rate, the scalar prior hand value on the annualized object, and the pointwise prior sum; the point-process recovery cells pass.
+
+**Impact.** Copies no longer carry an inflated rate into simulation and the Madsen scale; annual-quantile priors apply at the annual scale.
+
+<a id="tr-073"></a>
+## TR-073 - Competing-Risk Empirical CDF Grid Lost Resolution for Heavy Tails (Numerics)
+
+**Review disposition.** Confirmed defect; fixed in the local Numerics checkout without a package version change.
+
+**Implementation status.** Fixed. `CompetingRisks.CreateEmpiricalCDF` stratifies on log-spaced bins of the offset axis for any `XTransform`; the offset is zero for positive supports, so existing log-grid results for positive children are unchanged, and BestFit keeps `XTransform.None`.
+
+**Verification status.** Passed. A Numerics test checks GEV, LP3, and negative-support children against a root-solved inversion within 0.5%; `CompositeRecoveryTests` (10/10), the competing-risk dependency and posterior-resampling cells, and the heavy-tailed composite cell pass.
+
+**Impact.** Composite quantiles of heavy-tailed children are no longer interpolated inside one wide uniform bin (a GEV child's 1% AEP quantile moved from about 521 to the correct 251).
+
+<a id="tr-074"></a>
+## TR-074 - Composite Zero Inflation Inferred From Roundoff
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. The composite infers zero inflation only when the weights sum to less than one by more than `1e-10`, symmetric with `Validate`, and `EstimateModelWeights` renormalizes whenever the sum is positive.
+
+**Verification status.** Passed. A fast test with weights summing to `1 - 1 ulp` is not zero-inflated.
+
+**Impact.** A normalized composite is not silently converted into a positive-hurdle law.
+
+<a id="tr-075"></a>
+## TR-075 - Composite Correlation Undo and Coincident-Frequency Cache Thread Safety
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. The UI `CorrelationMatrix` setter records an undo entry through `RecordPropertyChange`; the coincident-frequency posterior index cache is guarded by a lock.
+
+**Verification status.** Passed. A UI undo round-trip test and the fast cache contracts pass.
+
+**Impact.** Matrix edits are undoable, and the UI thread cannot race the estimation task on the cache.
+
+<a id="tr-076"></a>
+## TR-076 - Bulletin 17C Bootstrap Diagnostics Counted Realizations as Replicates
+
+**Review disposition.** Confirmed regression.
+
+**Implementation status.** Fixed. `BootstrapDiagnostics` rates are per requested replicate: `FailedReplicates` counts substituted replicates, the new `AttemptedRealizations` counts data realizations including retries, `ValidReplicates` is requested minus substituted, and the ordinary bootstrap sets `RetainedReplicates` to requested minus substituted. Files written by earlier versions, which stored the realization count under `AttemptedReplicates`, restore with the same per-replicate rates.
+
+**Verification status.** Passed. The merged `BootstrapDiagnosticsTests` and `Bulletin17CReportDiagnosticsTests` cover the per-replicate rates, the realization count, the legacy attribute mapping, and the discard warnings (a quarter of the replicates substituted after ten attempts each triggers the 10% warning).
+
+**Impact.** The discard-rate warnings can fire again (their supremum is no longer 10%), and the per-replicate retry and evaluation averages are labelled correctly.
+
+<a id="tr-077"></a>
+## TR-077 - Parent-Fit Substitution Reported as a Point Mass
+
+**Review disposition.** Confirmed defect in reporting; the substitution itself is retained by decision so a run is never aborted.
+
+**Implementation status.** Fixed. The bootstrap report lists the realizations attempted, the substituted replicates with their per-replicate fraction, the replicates used, and a note that substituted replicates form a point mass at the parent estimate and narrow the reported limits; the pivotal path reports the same counts.
+
+**Verification status.** Passed by report contracts.
+
+**Impact.** Substitution is visible in every report; the point-mass consequence is stated rather than implied.
+
+<a id="tr-078"></a>
+## TR-078 - Converged-Within-Tolerance Refit Acceptance Requires Objective Improvement
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. A refit that does not report `Success` is accepted only when the iterative GMM converged within tolerance over at least two weighting passes and its final objective improves on the objective of its own start candidate under the same selected weighting; a stalled inner optimizer is rejected and the next ranked candidate is tried.
+
+**Verification status.** Pending the reliability-grid rerun (`B17CBootstrapRefitReliabilityTests`), which asserts zero retries through `AttemptedRealizations` and that the optimizer status counts cover every realization.
+
+**Impact.** The widened acceptance gate cannot admit an optimizer that never moved off its start.
+
+<a id="tr-079"></a>
+## TR-079 - Pivot Bound Repairs and z-Limit Clips Are Counted
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `BoundRepairs` counts pivot draws whose inverse-linked parameters were moved inside the model bounds; `PivotRejections` counts draws whose standardized pivot was clipped at the z-limit; both are reported with per-replicate rates. Repaired and clipped draws are retained. The Mahalanobis counter is never incremented by the current methods and is retained only for diagnostics saved by earlier versions.
+
+**Verification status.** Passed by fast counter and report contracts.
+
+**Impact.** Bound repairs and clips are visible; no draw is silently altered.
+
+<a id="tr-080"></a>
+## TR-080 - Bulletin 17C Status Counters, Loop Progress, and Documentation Corrections
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. Optimizer status counts are documented and labelled per start candidate; the three bootstrap loops use `AnalysisProgress.ShouldReportLoopProgress`, so progress ticks for any replicate count; the Pearson III `mu_5` documentation reads `sigma^5 gamma (10 + 3 gamma^2)`; the Gamma quadrature comments pair the larger weight with the smaller node and give `w1 = 0.724, w2 = 0.276` at `a = 4`.
+
+**Verification status.** Passed by fast report contracts and documentation review.
+
+**Impact.** Correct documentation and progress reporting; no numerical change.
+
+<a id="tr-081"></a>
+## TR-081 - Log-Scale Penalty Centers Perturbed on the Log Scale
+
+**Review disposition.** Confirmed latent defect.
+
+**Implementation status.** Fixed. `SetRandomPenaltyFunction` perturbs a `UseLog` penalty center on the log scale with the delta-method standard deviation `sqrt(MSE) / Mean`, so the center stays positive; `ParameterPenalty.Function` writes a debug line when a log-scale penalty contributes nothing. The real-scale perturbation and the random sequence are unchanged.
+
+**Verification status.** Pending the penalty verification rerun (`B17CPenalityTests`).
+
+**Impact.** A log-scale penalty cannot silently contribute zero for a replicate.
+
+<a id="tr-082"></a>
+## TR-082 - Strict Distribution XML Parsers Verified Against 2.1.4 Payloads
+
+**Review disposition.** Compatibility risk; verified.
+
+**Implementation status.** No production change. `LegacyDistributionXmlTests` loads the literal `ToXElement()` output of the public RMC.Numerics 2.1.4 package for all fifteen supported families through the strict factory with exact type and parameter values, and through the BestFit elements that embed a distribution (`UnivariateDistribution`, `UncertainData`, `FittedDistribution`, `ModelParameter`).
+
+**Verification status.** Passed.
+
+**Impact.** Projects saved by the 2.0.0 release load through the strict parsers.
+
+<a id="tr-083"></a>
+## TR-083 - Example Project SQLite Sidecars Were Tracked
+
+**Review disposition.** Repository hygiene.
+
+**Implementation status.** Fixed. `*.bestfit-shm`, `*.bestfit-wal`, and `*.bestfit-journal` are ignored and the two tracked sidecars were removed from the index. The policy for re-saved example binaries (Git LFS or save-without-results) remains an open decision.
+
+**Verification status.** Not applicable.
+
+**Impact.** No stale SQLite sidecar can ship with an example project.
+
 ## Resolution Rule
 
 A documentation-only clarification may close a finding when the implementation is intentional and mathematically coherent. A defect in production behavior is never silently corrected by documentation. It moves to a separately authorized code-change task, receives focused unit tests, and uses the repository's mandated build/test gates. The complete `RMC.BestFit.Verification` suite is never run as one command; verification executes one exact fully qualified method at a time through the guarded runner.

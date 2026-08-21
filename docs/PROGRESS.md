@@ -38,7 +38,7 @@
 
 ## 2026-07-31
 
-- Implemented the TR-006/TR-007/TR-008 mixture correction. The original full-$K$ BestFit model, sampler, posterior-result, and persistence contract has since been restored; likelihood evaluation copies and normalizes all $K$ weights without mutating caller arrays.
+- Implemented the TR-006/TR-007/TR-008 mixture correction. BestFit keeps the full-$K$ model, prior, public likelihood, and project-model contract while the sampler stores the identified $K-1$ coordinates; likelihood evaluation copies and normalizes all $K$ weights without mutating caller arrays.
 - Corrected the exact-zero positive-hurdle law across density, CDF, quantiles, simulation, mixed-observation likelihoods, and EM; exact atom estimation uses exact annual records only, and impossible EM rows now fail with row context.
 - The focused Numerics mixture batch is reachable as `3e69a93`; the current normalized .NET 10 Release gate passes 2,024/2,024 with zero warnings, errors, or failures. The correction was also validated across all configured target frameworks before subsequent tests were added.
 - Added BestFit fast coverage and three compiled recovery-parity methods. The strict XML Debug build, Release solution build, public API baseline, and Verification compilation pass with zero warnings/errors; normalized fast suites pass Core 3,116/3,116, UI 568/568, and App 428/428.

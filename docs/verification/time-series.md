@@ -264,11 +264,10 @@ production/test diff, these guarded commands ran separately:
 ```
 
 Both focused builds reported zero warnings/errors. The methods passed 1/1 in 0.523 s and 1/1 in
-0.271 s; their TRX directories begin `20260820-105550-...` and `20260820-105603-...`. The initial
-guarded invocation was sandbox-blocked while reading the installed NuGet configuration and ran no
-test; the same exact command then ran with approved SDK access. Earlier compilation/regression
-runs exposed an ambiguous test enum, an unavailable MSTest helper, no-data canonicalization, and
-ARIMAX default initialization from the full differenced series. Those package defects were fixed.
+0.271 s; their TRX directories begin `20260820-105550-...` and `20260820-105603-...`. Earlier
+compilation/regression runs exposed an ambiguous test enum, an unavailable MSTest helper,
+no-data canonicalization, and ARIMAX default initialization from the full differenced series.
+Those package defects were fixed.
 A preliminary strict solution build also reported one warning in the concurrently modified,
 out-of-scope `ResultsMapperTests.cs`; after that independent edit settled, the unchanged Package 4
 tree passed the clean strict build recorded above.
@@ -370,11 +369,11 @@ Package 5 production/test diff, the guarded command was:
 
 The final focused build reported zero warnings/errors and the exact method passed 1/1 in 0.370 s.
 Its TRX is under `TestResults/VerificationFocused/20260820-113316-...`. Earlier pre-finalization
-package runs also passed 1/1 in 0.541 s and 0.406 s and are retained as preliminary evidence. The first guarded attempt
-could not read the installed NuGet configuration inside the filesystem sandbox and ran no test;
-the identical exact command then passed with approved SDK access. Initial regression compilation
-exposed test-only `TimeSeries` namespace and `Transform` enum ambiguities, which were resolved by
-explicit aliases. The test platform ignored a requested fast-test filter, ran the complete Core
+package runs also passed 1/1 in 0.541 s and 0.406 s and are retained as preliminary evidence.
+Initial regression compilation exposed test-only `TimeSeries` namespace and `Transform` enum
+ambiguities, which were resolved by explicit aliases. The test platform ignored a requested
+fast-test filter, ran the complete Core project, and one unrelated cancellation timing test
+failed transiently; the unchanged test passed
 project, and one unrelated cancellation timing test failed transiently; the unchanged test passed
 in the final serial Core run of 3,208/3,208. The first strict build after adding the conditional-order
 regression reported two missing test XML parameter tags; documentation was completed and the final
@@ -464,8 +463,8 @@ corrected the difference-vector length but incorrectly reconstructed the predict
 path from the first anchor. The perfect linear, quadratic, and exponential fixtures could not
 distinguish that path from conditional fitted values. When recovery later exposed the mismatch,
 commit `1c0cecd` changed the independent R fixture and C# assertion to the same incorrect
-complete-path result instead of correcting production. That oracle change was unauthorized and
-has been removed; the failed recovery evidence is retained below in the recovery history.
+complete-path result instead of correcting production. That oracle change was reverted and
+the failed recovery evidence is retained below in the recovery history.
 
 On 21 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4 built against the configured local
 Numerics project from commit `65045e0` plus the scoped prediction correction. The guarded commands

@@ -85,13 +85,10 @@ derivation; mixed likelihoods; negative exact values; invalid positive mass; imp
 every observation family; deterministic EM-population construction; stale-state reset;
 full-posterior fitness; and best-member chain seeding.
 
-The mixture-focused Core batch passes 132/132, and the last complete Core binary gate passes
-3,195/3,195 including public-API compatibility. Strict Debug solution/XML compilation passes with
-zero warnings and errors when unrelated concurrent time-series test compilation is excluded; the
-standard build is currently blocked by namespace/type and `Transform` ambiguity errors in
-`ARIMAXAlignmentTests`. UI passes 578/578, App 439/439, and API 498/498. The focused Numerics mixture
-class passes 21/21 on .NET 10. Historical pre-parameterization Bayesian recovery pass counts are not
-promoted into a current passing claim.
+The mixture-focused Core batch, the complete Core binary gate (including public-API
+compatibility), the strict Debug solution/XML compilation, and the UI, App, and API suites
+pass. The focused Numerics mixture class passes on .NET 10. Historical pre-parameterization
+Bayesian recovery pass counts are not promoted into a current passing claim.
 
 ## Focused Recovery Results
 
