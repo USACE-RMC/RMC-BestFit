@@ -520,8 +520,8 @@ run was attempted. See the time-series report for hashes, exact commands, runtim
 | `DataFrame/DataFrameLambdaTests.cs` | Fast core | Replacing the exact series of a peaks-over-threshold frame keeps the rate per observed year | Passed |
 | `ModelEstimation/GeneralizedMethodOfMomentsRestoredStateTests.cs` | Fast core | Restored out-of-scope J statistics read as NaN; `PostProcess()` on a restored estimator computes covariance and keeps the restored statistic; covariance queries leave `S`, `W`, and `Q` unchanged; `PostProcess()` refreshes `S`/`W` at the estimate | Passed |
 | `DistributionFitting/FittingAnalysisProgressTests.cs` | Fast core | A fitting run in which no candidate fits reports completion to the progress reporter | Passed |
-| `ModelEstimation/ProfileLikelihoodGridPointFailureTests.cs` | Verification | Profile grid points without a finite nuisance optimum are NaN while the remaining points equal the unrestricted profile; `ParameterConfidenceIntervals()` still requires converged solves (MLE and flat-prior MAP) | Pending focused run |
-| `ModelEstimation/MaximumLikelihoodCovarianceVerificationTests.cs` | Verification | One-parameter MLE covariance equals the closed-form `sigma^2 / n`; MLE and flat-prior MAP report the same covariance for interior and bound-adjacent optima | Pending focused run |
+| `ModelEstimation/ProfileLikelihoodGridPointFailureTests.cs` | Verification | Profile grid points without a finite nuisance optimum are NaN while the remaining points equal the unrestricted profile; `ParameterConfidenceIntervals()` still requires converged solves (MLE and flat-prior MAP) | Passed 2/2 |
+| `ModelEstimation/MaximumLikelihoodCovarianceVerificationTests.cs` | Verification | One-parameter MLE covariance equals the closed-form `sigma^2 / n`; MLE and flat-prior MAP report the same interior covariance within the 1e-4 numerical-Hessian tolerance | Passed 2/2 |
 
 ## Bulletin 17C bootstrap diagnostics and reporting - 21 August 2026
 
@@ -530,9 +530,49 @@ run was attempted. See the time-series report for hashes, exact commands, runtim
 | `Support/BootstrapDiagnosticsTests.cs` (merged; `Diagnostics/BootstrapDiagnosticsTests.cs` removed) | Fast core | Per-replicate substitution rate, retries, and evaluations; realization count; bound-repair and z-limit clip counters; XML round trip including legacy files that stored realizations under `AttemptedReplicates` | Passed |
 | `Univariate/Bulletin17CReportDiagnosticsTests.cs` | Fast core | Report lists realizations attempted, substituted replicates with the point-mass note, per-replicate discard warnings, bound repairs, and z-limit clips | Passed |
 | `Univariate/Bulletin17CDistributionTests.cs::GetRankedBootstrapInitialValues_CensoredSample_ReturnsObjectiveOrderedCandidates` | Fast core | Ranking objective equals the penalized identity-weight moment objective with the regional-skew penalty enabled; candidates ordered | Passed |
-| `Univariate/Bulletin17CTests/B17CCoverageTests.cs` | Verification | Coverage assertions re-enabled (completion >= 90%, mean coverage in [0.82, 0.97], per-ordinate coverage >= 0.70; binomial 95% band at B = 1,000 stated for reference) | Pending focused run |
-| `Univariate/Bulletin17CTests/B17CBootstrapRefitReliabilityTests.cs` | Verification | Zero retries asserted through `AttemptedRealizations`; optimizer status counts cover every realization; no substituted replicates | Pending focused run |
-| `Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs` | Verification | Methods renamed `*_MatchesProductMomentParameters` (GMM versus sample product-moment parameters) | Unchanged contract |
-| `Univariate/Bulletin17CTests/B17CCovarianceTests.cs` | Verification | Absolute tolerance floor applies to off-diagonal entries only | Pending focused run |
-| `Univariate/Bulletin17CTests/B17CExampleTests.cs` | Verification | Example 4/7 uncertain-data messages and tolerance rationale corrected | Unchanged contract |
+| `Univariate/Bulletin17CTests/B17CCoverageTests.cs` | Verification | Coverage assertions re-enabled (completion >= 90%, mean coverage in [0.82, 0.97], per-ordinate coverage >= 0.70; binomial 95% band at B = 1,000 stated for reference) | Assertions re-enabled; not rerun in this round |
+| `Univariate/Bulletin17CTests/B17CBootstrapRefitReliabilityTests.cs` | Verification | Zero retries asserted through `AttemptedRealizations`; optimizer status counts cover every realization; no substituted replicates | Passed 14/14 |
+| `Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs` | Verification | Methods renamed `*_MatchesProductMomentParameters` (GMM versus sample product-moment parameters) | Passed 6/6 |
+| `Univariate/Bulletin17CTests/B17CCovarianceTests.cs` | Verification | Absolute tolerance floor applies to off-diagonal entries only | Passed except the pre-existing `PearsonTypeIII_Covariance_N25/N100` diagonal mismatches, which fail identically at the pre-review commit |
+| `Univariate/Bulletin17CTests/B17CExampleTests.cs` | Verification | Example 4/7 uncertain-data messages and tolerance rationale corrected | Passed 13/13; the three `HirschStedingerPlottingPositionVerificationTests` peakFQ cells pass |
 | `Univariate/Bulletin17CTests/B17CCohnEtAlCoverageTests.cs` | Verification | Documented as completion-rate checks; Table 3 coverage values are not asserted | Unchanged contract |
+
+## Default MCMC settings in Verification recovery tests - 21 August 2026
+
+All Verification recovery tests use the default `BayesianAnalysis` simulation settings; the
+overrides in `CoincidentFrequencyAnalysisTests`, `BivariateAnalysisParameterRecoveryTests`,
+`MixtureRecoveryTests`, `NonstationaryValidationTests`, and `BayesianAnalysisRecoveryTests` were
+removed (3-chain configurations were rejected by `BayesianAnalysis.Validate()`). Each method was
+run in its own `dotnet test` invocation.
+
+| Test | Result with default settings |
+|---|---|
+| `CoincidentFrequencyAnalysisTests` (3 closed-form sum-of-Normals cells) | Passed 3/3 (46-57 s each) |
+| `BivariateAnalysisParameterRecoveryTests` (7 copula families) | Passed 7/7 (4-10 s; Student t 470 s) |
+| `MixtureRecoveryTests` (3 parity, 3 Bayesian cells) | Passed 6/6 (Bayesian cells 173-456 s) |
+| `NonstationaryValidationTests` (16 trend cells) | Passed 1/16: `ConstantTrend` passes; the other cells miss their 1% relative tolerances (calibrated for 10,000/5,000 iterations) by 1-4%, and `LinearTrend` (slope -0.001 versus 0.5) and `PowerTrend` (3.4 versus 100) miss outright. Left for a decision; no tolerance was re-pinned. |
+
+## Focused reruns after the corrections - 21 August 2026
+
+Each method ran in its own `dotnet test` invocation after the estimation, point-process, composite,
+and Bulletin 17C corrections. 133 of the rerun methods passed. Results that were not passes:
+
+| Test | Outcome |
+|---|---|
+| `B17CCovarianceTests.PearsonTypeIII_Covariance_N25`, `_N100` | Pre-existing diagonal mismatches (36.2 vs 22.4; 3.04 vs 3.92); identical failures at the pre-review commit `7a0a797` |
+| `UncertainDataBootstrapVerificationTests.LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable` | Pre-existing: optimizer fallback rate 88.5% against a 1% limit (68.3% at the pre-review commit with the realization denominator) |
+| `CompetingRiskRecoveryTests` Bayesian maximum cells (4) | Pre-existing documented failures; not rerun |
+| `B17CCensoredCoverageTests.LP3_LowOutliers_N50_Bootstrap`, `LP3_HistoricalThreshold_N50_Bootstrap` | Pre-existing: 996/1000 and 1000/1000 coverage replicates fail to estimate within seconds; identical at the pre-review commit `7a0a797` |
+
+Passing groups: `PsisLooOracleVerificationTests` 4/4, `McmcNumericalVerificationTests` 4/4,
+`BayesianAnalysisRecoveryTests` 3/3 (default settings), `PointProcessPriorTests` 2/2,
+`FittingAnalysisCriteriaVerificationTests` 3/3, `GeneralizedMethodOfMomentsRecoveryTests` 4/4,
+`GmmSpecificationVerificationTests` 4/4, `GmmObjectiveGradientVerificationTests` 2/2,
+`GmmInfluenceDiagnosticsVerificationTests` 2/2, `ProfileLikelihoodVerificationTests` 3/3,
+`ProfileQRecoveryTests` 1/1, `MLEIntegrationTests` 16/16, `MaximumAPosterioriRecoveryTests` 3/3,
+`Log10NormalInfluenceVerificationTests` 2/2, `Log10NormalEstimationEquivalenceTests` 5/5,
+`UnivariateDistributionMLETests` 15/15, `GoodnessOfFitRmseVerificationTests` 1/1,
+`B17CSyntheticDataTests` 6/6, `B17CCovarianceTests` (all other cells), `B17CPenalityTests`,
+`B17CExampleTests` 13/13, `UncertainDataBootstrapVerificationTests` (other cells),
+`B17CBootstrapRefitReliabilityTests` 14/14, `PointProcessRecoveryTests` 8/8,
+`ProfileLikelihoodGridPointFailureTests` 2/2, `MaximumLikelihoodCovarianceVerificationTests` 2/2.

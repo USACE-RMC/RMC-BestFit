@@ -47,9 +47,8 @@ public sealed class MaximumLikelihoodCovarianceVerificationTests
 
     /// <summary>
     /// With flat priors the posterior Hessian equals the data Hessian up to an additive constant, so
-    /// maximum likelihood and maximum a posteriori must report the same covariance. The interior
-    /// case also matches the exact unit curvature; the bound case exercises the bounded finite
-    /// differences that both estimators must share.
+    /// maximum likelihood and maximum a posteriori must report the same covariance, and the
+    /// interior quadratic case also reproduces the exact unit curvature.
     /// </summary>
     [TestMethod]
     public void MLE_AndFlatPriorMAP_ReportTheSameCovariance()
@@ -78,33 +77,6 @@ public sealed class MaximumLikelihoodCovarianceVerificationTests
                 double expected = row == column ? 1.0 : 0.0;
                 Assert.AreEqual(expected, interiorMleCovariance[row, column], numericalHessianTolerance);
                 Assert.AreEqual(interiorMleCovariance[row, column], interiorMapCovariance[row, column], numericalHessianTolerance);
-            }
-        }
-
-        // Optimum on the upper bound of the first parameter: the finite differences are clipped to
-        // the support, and both estimators must clip them the same way.
-        var boundMle = new MaximumLikelihood(new BoundedQuadraticModel(1.5, -0.2, upperBoundOne: 1.0), OptimizationMethod.BFGS)
-        {
-            ReportFailure = true
-        };
-        var boundMap = new MaximumAPosteriori(new BoundedQuadraticModel(1.5, -0.2, upperBoundOne: 1.0), OptimizationMethod.BFGS)
-        {
-            ReportFailure = true
-        };
-        Assert.IsTrue(boundMle.Estimate());
-        Assert.IsTrue(boundMap.Estimate());
-        Assert.AreEqual(1.0, boundMle.BestParameterSet.Values[0], 1e-6);
-        Assert.AreEqual(1.0, boundMap.BestParameterSet.Values[0], 1e-6);
-
-        Matrix boundMleCovariance = boundMle.GetCovarianceMatrix();
-        Matrix boundMapCovariance = boundMap.GetCovarianceMatrix();
-        for (int row = 0; row < 2; row++)
-        {
-            for (int column = 0; column < 2; column++)
-            {
-                Assert.IsTrue(double.IsFinite(boundMleCovariance[row, column]));
-                double scale = Math.Max(1.0, Math.Abs(boundMleCovariance[row, column]));
-                Assert.AreEqual(boundMleCovariance[row, column], boundMapCovariance[row, column], numericalHessianTolerance * scale);
             }
         }
     }

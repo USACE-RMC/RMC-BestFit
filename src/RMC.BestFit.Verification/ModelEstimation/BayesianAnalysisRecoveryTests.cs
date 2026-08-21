@@ -73,12 +73,7 @@ public class BayesianAnalysisRecoveryTests
         // Arrange - known parameters μ=100, σ=15
         var dataFrame = CreateNormalTestData();
         var model = new UnivariateDistribution(dataFrame, UnivariateDistributionType.Normal);
-        var bayesian = new BayesianAnalysis(model)
-        {
-            NumberOfChains = 3,
-            Iterations = 10000,
-            WarmupIterations = 2000
-        };
+        var bayesian = new BayesianAnalysis(model);
 
         // Act
         await bayesian.RunAsync();
@@ -103,12 +98,7 @@ public class BayesianAnalysisRecoveryTests
         // The true value may be outside the posterior CI due to sampling variation
         var dataFrame = CreateNormalTestData();
         var model = new UnivariateDistribution(dataFrame, UnivariateDistributionType.Normal);
-        var bayesian = new BayesianAnalysis(model)
-        {
-            NumberOfChains = 3,
-            Iterations = 10000,
-            WarmupIterations = 2000
-        };
+        var bayesian = new BayesianAnalysis(model);
 
         // Act
         await bayesian.RunAsync();
@@ -151,12 +141,7 @@ public class BayesianAnalysisRecoveryTests
         // Set informative prior on mean (centered well above the data mean)
         model.Parameters[0].PriorDistribution = new Normal(120, 5);
 
-        var bayesian = new BayesianAnalysis(model)
-        {
-            NumberOfChains = 3,
-            Iterations = 10000,
-            WarmupIterations = 2000
-        };
+        var bayesian = new BayesianAnalysis(model);
 
         // Act
         await bayesian.RunAsync();
