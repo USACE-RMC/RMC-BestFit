@@ -972,7 +972,7 @@ namespace RMC.BestFit.Analyses
                         XTransform = Transform.None,
                         ProbabilityTransform = Transform.NormalZ
                     };
-                    if (sum < 1)
+                    if (1.0 - sum > 1e-10)
                     {
                         ((Mixture)mode).IsZeroInflated = true;
                         ((Mixture)mode).ZeroWeight = 1 - sum;
@@ -997,7 +997,7 @@ namespace RMC.BestFit.Analyses
                             XTransform = Transform.None,
                             ProbabilityTransform = Transform.NormalZ
                         };
-                        if (sum < 1)
+                        if (1.0 - sum > 1e-10)
                         {
                             ((Mixture)results[idx]).IsZeroInflated = true;
                             ((Mixture)results[idx]).ZeroWeight = 1 - sum;
@@ -1086,7 +1086,7 @@ namespace RMC.BestFit.Analyses
                     XTransform = Transform.None,
                     ProbabilityTransform = Transform.NormalZ
                 };
-                if (sum < 1)
+                if (1.0 - sum > 1e-10)
                 {
                     mix.IsZeroInflated = true;
                     mix.ZeroWeight = 1 - sum;

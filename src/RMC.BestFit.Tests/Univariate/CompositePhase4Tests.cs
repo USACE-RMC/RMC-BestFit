@@ -72,6 +72,48 @@ public class CompositePhase4Tests
     }
 
     /// <summary>
+    /// Creates an estimated generalized extreme-value child with a deterministic posterior.
+    /// </summary>
+    /// <param name="location">The GEV location.</param>
+    /// <param name="scale">The GEV scale.</param>
+    /// <param name="kappa">The Hosking GEV shape (negative for a heavy upper tail).</param>
+    /// <returns>An estimated child analysis.</returns>
+    private static UnivariateAnalysis CreateEstimatedGevChild(double location, double scale, double kappa)
+    {
+        var dataFrame = new BestFitDataFrame();
+        for (int index = 0; index < 12; index++)
+            dataFrame.ExactSeries.Add(new ExactData(2000 + index, location + scale * (index - 5.5d) / 5d));
+
+        var model = new UnivariateDistribution(dataFrame, UnivariateDistributionType.GeneralizedExtremeValue);
+        var analysis = new UnivariateAnalysis(model);
+        analysis.ProbabilityOrdinates.Clear();
+        analysis.ProbabilityOrdinates.Add(0.01d);
+        analysis.ProbabilityOrdinates.Add(0.5d);
+        analysis.ProbabilityOrdinates.Add(0.99d);
+        double[] parameterValues = { location, scale, kappa };
+        var output = new List<ParameterSet>();
+        for (int index = 0; index < 100; index++)
+            output.Add(new ParameterSet((double[])parameterValues.Clone(), 0d));
+
+        analysis.BayesianAnalysis.OutputLength = output.Count;
+        analysis.BayesianAnalysis.SetCustomMCMCResults(
+            new MCMCResults(new ParameterSet((double[])parameterValues.Clone(), 0d), output, 0.1d),
+            skipInformationCriteria: true);
+        SetPrivateCriterion(analysis.BayesianAnalysis, nameof(BayesianAnalysis.DIC), 100d);
+        SetPrivateCriterion(analysis.BayesianAnalysis, nameof(BayesianAnalysis.WAIC), 100d);
+        SetPrivateCriterion(analysis.BayesianAnalysis, nameof(BayesianAnalysis.LOOIC), 100d);
+
+        typeof(AnalysisBase)
+            .GetField("_isEstimated", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(analysis, true);
+        typeof(UnivariateAnalysis)
+            .GetProperty(nameof(UnivariateAnalysis.AnalysisResults), BindingFlags.Instance | BindingFlags.Public)!
+            .SetValue(analysis, new UncertaintyAnalysisResults { AIC = 100d, BIC = 100d, RMSE = 100d });
+
+        return analysis;
+    }
+
+    /// <summary>
     /// Creates an estimated Normal child with a deliberately varying retained posterior.
     /// </summary>
     /// <param name="pointMean">The point-estimate Normal mean.</param>
@@ -380,6 +422,68 @@ public class CompositePhase4Tests
         Assert.IsTrue(firstMean.Where((value, index) =>
             Math.Abs(value - composite.AnalysisResults!.MeanCurve![index]) > 1E-8).Any());
         CollectionAssert.AreEqual(firstMode, composite.AnalysisResults!.ModeCurve!);
+    }
+
+    /// <summary>
+    /// Verifies mixture weights that sum to one within floating-point roundoff do not create a
+    /// zero-inflated mixture, so negative quantiles of the children are preserved.
+    /// </summary>
+    /// <returns>A task representing the asynchronous result construction.</returns>
+    [TestMethod]
+    public async Task MixtureWeights_SummingToOneWithinRoundoff_AreNotZeroInflated()
+    {
+        CompositeAnalysis composite = CreateComposite(
+            CreateEstimatedChild(0d, 10d, 100d),
+            CreateEstimatedChild(5d, 12d, 100d),
+            CreateEstimatedChild(-5d, 8d, 100d));
+        composite.CompositeDistributionType = CompositeType.Mixture;
+        composite.Analyses[0].Weight = 0.7d;
+        composite.Analyses[1].Weight = 0.2d;
+        composite.Analyses[2].Weight = 0.1d;
+
+        double sum = 0d;
+        foreach (WeightedUnivariateAnalysis entry in composite.Analyses)
+            sum += entry.Weight;
+        Assert.IsTrue(sum < 1d && 1d - sum < 1E-12, $"The fixture must sum to one within roundoff but below one; sum = {sum:R}.");
+
+        var pointEstimate = (Mixture)composite.GetPointEstimateDistribution()!;
+        Assert.IsFalse(pointEstimate.IsZeroInflated, "Roundoff below one must not create a zero atom.");
+        Assert.IsTrue(pointEstimate.InverseCDF(0.05d) < 0d, "Negative quantiles of the children must be preserved.");
+
+        await composite.CreateFrequencyAnalysisResultsAsync();
+
+        UncertaintyAnalysisResults? results = composite.AnalysisResults;
+        Assert.IsNotNull(results);
+        Assert.IsTrue(results.ModeCurve![2] < 0d, "The 0.99 exceedance ordinate must remain negative.");
+    }
+
+    /// <summary>
+    /// Verifies a competing-risks composite of heavy-tailed children resolves its upper quantiles
+    /// to within half a percent of a root-solved inversion of the composite distribution.
+    /// </summary>
+    [TestMethod]
+    public void CompetingRisksPointEstimate_HeavyTailedChildren_MatchesRootSolvedQuantiles()
+    {
+        CompositeAnalysis composite = CreateComposite(
+            CreateEstimatedGevChild(100d, 20d, -0.2d),
+            CreateEstimatedGevChild(130d, 25d, -0.15d));
+        composite.CompositeDistributionType = CompositeType.CompetingRisks;
+
+        var pointEstimate = (CompetingRisks)composite.GetPointEstimateDistribution()!;
+        var reference = new CompetingRisks(composite.Analyses
+            .Select(entry => entry.UnivariateAnalysis!.GetDistribution(0)!)
+            .ToArray())
+        {
+            MinimumOfRandomVariables = pointEstimate.MinimumOfRandomVariables,
+            Dependency = pointEstimate.Dependency,
+        };
+
+        foreach (double probability in new[] { 0.5d, 0.9d, 0.99d, 0.999d })
+        {
+            double expected = reference.InverseCDF(probability);
+            double actual = pointEstimate.InverseCDF(probability);
+            Assert.AreEqual(expected, actual, Math.Abs(expected) * 0.005d, $"quantile at p = {probability}");
+        }
     }
 
     /// <summary>

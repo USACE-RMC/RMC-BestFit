@@ -156,6 +156,7 @@ namespace RMC.BestFit.Analyses
         private int _numberOfBins = 50;
         private MCMCResults? _marginalXChain;
         private MCMCResults? _marginalYChain;
+        private readonly object _posteriorRandomIndexLock = new();
         private int[][]? _posteriorRandomIndexes;
         private int[]? _posteriorRandomIndexSourceCounts;
         private int _posteriorRandomIndexSeed = -1;
@@ -391,18 +392,23 @@ namespace RMC.BestFit.Analyses
 
             if (sourceOutputCounts.Any(count => count <= 0)) return null;
 
-            bool cacheMatches = _posteriorRandomIndexes != null &&
-                _posteriorRandomIndexSourceCounts != null &&
-                _posteriorRandomIndexSeed == BayesianAnalysis.PRNGSeed &&
-                _posteriorRandomIndexSourceCounts.SequenceEqual(sourceOutputCounts);
-            if (cacheMatches) return _posteriorRandomIndexes;
+            // The cache is read by the estimation task and by UI-thread callers such as
+            // GetEmpiricalDistribution, so the check-and-regenerate sequence is serialized.
+            lock (_posteriorRandomIndexLock)
+            {
+                bool cacheMatches = _posteriorRandomIndexes != null &&
+                    _posteriorRandomIndexSourceCounts != null &&
+                    _posteriorRandomIndexSeed == BayesianAnalysis.PRNGSeed &&
+                    _posteriorRandomIndexSourceCounts.SequenceEqual(sourceOutputCounts);
+                if (cacheMatches) return _posteriorRandomIndexes;
 
-            _posteriorRandomIndexes = PosteriorIndexResampler.CreateRandomIndexes(
-                sourceOutputCounts,
-                BayesianAnalysis.PRNGSeed);
-            _posteriorRandomIndexSourceCounts = sourceOutputCounts.ToArray();
-            _posteriorRandomIndexSeed = BayesianAnalysis.PRNGSeed;
-            return _posteriorRandomIndexes;
+                _posteriorRandomIndexes = PosteriorIndexResampler.CreateRandomIndexes(
+                    sourceOutputCounts,
+                    BayesianAnalysis.PRNGSeed);
+                _posteriorRandomIndexSourceCounts = sourceOutputCounts.ToArray();
+                _posteriorRandomIndexSeed = BayesianAnalysis.PRNGSeed;
+                return _posteriorRandomIndexes;
+            }
         }
 
         /// <summary>
@@ -414,9 +420,12 @@ namespace RMC.BestFit.Analyses
         /// </remarks>
         private void InvalidatePosteriorRandomIndexes()
         {
-            _posteriorRandomIndexes = null;
-            _posteriorRandomIndexSourceCounts = null;
-            _posteriorRandomIndexSeed = -1;
+            lock (_posteriorRandomIndexLock)
+            {
+                _posteriorRandomIndexes = null;
+                _posteriorRandomIndexSourceCounts = null;
+                _posteriorRandomIndexSeed = -1;
+            }
         }
 
         /// <summary>

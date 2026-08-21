@@ -395,6 +395,29 @@ public class CompositeAnalysisTests
     }
 
     /// <summary>
+    /// Verifies a correlation-matrix change is recorded for undo and redo and restores the
+    /// previous matrix by value.
+    /// </summary>
+    [STATestMethod]
+    public void CorrelationMatrix_UndoRedo_RestoresMatrix()
+    {
+        var composite = new CompositeAnalysis("MatrixComposite", _collection!);
+        var first = new[,] { { 1d, 0.3d }, { 0.3d, 1d } };
+        var second = new[,] { { 1d, 0.6d }, { 0.6d, 1d } };
+        composite.CorrelationMatrix = first;
+        composite.UndoManager.Clear();
+
+        composite.CorrelationMatrix = second;
+        Assert.IsTrue(composite.UndoManager.CanUndo, "A correlation-matrix change must be recorded for undo.");
+        Assert.AreEqual(0.6d, composite.CorrelationMatrix[0, 1], 0d);
+
+        composite.UndoManager.Undo();
+        Assert.AreEqual(0.3d, composite.CorrelationMatrix[0, 1], 0d, "Undo must restore the previous matrix.");
+        composite.UndoManager.Redo();
+        Assert.AreEqual(0.6d, composite.CorrelationMatrix[0, 1], 0d, "Redo must reapply the matrix.");
+    }
+
+    /// <summary>
     /// Verifies the posterior-resampling seed is preserved by copy and participates in
     /// the Bayesian-settings undo bridge.
     /// </summary>

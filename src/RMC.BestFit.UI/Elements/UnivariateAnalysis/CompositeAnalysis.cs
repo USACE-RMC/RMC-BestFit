@@ -484,8 +484,7 @@ namespace RMC.BestFit.UI
                 _innerAnalysis.CorrelationMatrix = value;
                 SetIsValid();
                 if (!UndoManager.IsExecutingAction) ClearResults();
-                SetIsDirty(true);
-                RaisePropertyChange(nameof(CorrelationMatrix));
+                RecordPropertyChange(nameof(CorrelationMatrix), old, (double[,])value?.Clone());
             }
         }
 
