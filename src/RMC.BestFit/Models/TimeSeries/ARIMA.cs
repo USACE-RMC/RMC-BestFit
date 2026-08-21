@@ -221,6 +221,7 @@ namespace RMC.BestFit.Models
                 {
                     _pOrder = value;
                     RaisePropertyChange(nameof(POrder));
+                    SetTrainingData();
                     SetDefaultParameters();
                 }
             }
@@ -264,6 +265,7 @@ namespace RMC.BestFit.Models
                 {
                     _qOrder = value;
                     RaisePropertyChange(nameof(QOrder));
+                    SetTrainingData();
                     SetDefaultParameters();
                 }
             }
@@ -309,7 +311,8 @@ namespace RMC.BestFit.Models
                     _transformLambdaIsManual = false;
                     _usePersistedTransformLambda = false;
                     SetTrainingData(false);
-                    SetDefaultParameters();
+                    if (UseDefaultFlatPriors)
+                        SetDefaultParameters();
                     if (_lambda != previousLambda)
                         RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(TransformType));
@@ -734,9 +737,10 @@ namespace RMC.BestFit.Models
         /// <returns>Array of residuals on the differenced/transformed scale.</returns>
         public double[] Residuals(double[] parameters)
         {
-            int effectiveTrainingSteps = _diffSeries != null
-                ? Math.Min(TrainingTimeSteps - DOrder, _diffSeries.Count)
-                : TrainingTimeSteps;
+            if (_diffSeries == null)
+                return Array.Empty<double>();
+
+            int effectiveTrainingSteps = Math.Min(TrainingTimeSteps - DOrder, _diffSeries.Count);
 
             var residuals = new double[effectiveTrainingSteps];
             var epsilon = new double[effectiveTrainingSteps];
@@ -804,6 +808,12 @@ namespace RMC.BestFit.Models
             double logLH = 0;
 
             int maxOrder = Math.Max(POrder, QOrder);
+
+            // An empty conditional sum means no model step is evaluated; the model is invalid for
+            // the attached training window rather than a perfect fit.
+            if (residuals.Length <= maxOrder)
+                return double.NegativeInfinity;
+
             for (int t = maxOrder; t < residuals.Length; t++)
             {
                 logLH += normDist.LogPDF(residuals[t]);
@@ -1306,6 +1316,16 @@ namespace RMC.BestFit.Models
             {
                 isValid = false;
                 messages.Add($"Error: Time series length ({TimeSeries.Count}) must exceed max order + differencing ({maxOrder + DOrder}).");
+            }
+
+            int effectiveRawTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
+            int trainingDifferenceCount = Math.Max(0, effectiveRawTrainingSteps - DOrder);
+            if (trainingDifferenceCount <= maxOrder)
+            {
+                isValid = false;
+                messages.Add(
+                    $"Error: The raw training window provides {trainingDifferenceCount} differenced model steps, " +
+                    $"which must exceed the conditional AR/MA order ({maxOrder}).");
             }
 
             if (DOrder > 0 && TrainingTimeSteps > TimeSeries.Count - DOrder)

@@ -278,7 +278,8 @@ namespace RMC.BestFit.Models
                     _transformLambdaIsManual = false;
                     _usePersistedTransformLambda = false;
                     SetTrainingData(false);
-                    SetDefaultParameters();
+                    if (UseDefaultFlatPriors)
+                        SetDefaultParameters();
                     if (_lambda != previousLambda)
                         RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(TransformType));
@@ -844,7 +845,7 @@ namespace RMC.BestFit.Models
                 for (int i = 0; i < effectiveTrainingSteps; i++)
                     _trainingTimeSeries.Add(_diffSeries[i].Clone());
 
-                int maxOrder = Math.Max(AROrderP, MAOrderQ);
+                int maxOrder = ConditionalOrder;
                 int startRawIdx = DiffOrderD + maxOrder;
                 int endRawIdx = effectiveRawTrainingSteps - 1;
                 if (TransformType != Transform.None && endRawIdx >= startRawIdx)
@@ -1429,8 +1430,13 @@ namespace RMC.BestFit.Models
             if (!Tools.IsFinite(sigma) || sigma <= 0) return double.NegativeInfinity;
             var normDist = new Normal(0, sigma);
             var residuals = Residuals(parameters);
-            int maxOrder = Math.Max(AROrderP, MAOrderQ);
+            int maxOrder = ConditionalOrder;
             double logLH = 0;
+
+            // An empty conditional sum means no model step is evaluated; the model is invalid for
+            // the attached training window rather than a perfect fit.
+            if (residuals.Length <= maxOrder)
+                return double.NegativeInfinity;
 
             // Compute conditional log-likelihood (use residuals.Length to account for differencing)
             for (int t = maxOrder; t < residuals.Length; t++)
@@ -1444,7 +1450,7 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override double[] PointwiseDataLogLikelihood(double[] parameters)
         {
-            int maxOrder = Math.Max(AROrderP, MAOrderQ);
+            int maxOrder = ConditionalOrder;
 
             int effectiveTrainingSteps = _trainingTimeSeries?.Count ?? 0;
             int n = effectiveTrainingSteps - maxOrder;
@@ -1496,7 +1502,7 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override List<DataComponent> PointwiseDataLogLikelihoodComponents(double[] parameters)
         {
-            int maxOrder = Math.Max(AROrderP, MAOrderQ);
+            int maxOrder = ConditionalOrder;
 
             int effectiveTrainingSteps = _trainingTimeSeries?.Count ?? 0;
             int n = effectiveTrainingSteps - maxOrder;
@@ -1632,7 +1638,7 @@ namespace RMC.BestFit.Models
             var mean = new double[effectiveTrainingSteps];
             var epsilon = new double[effectiveTrainingSteps];
             var residuals = new double[effectiveTrainingSteps];
-            int maxOrder = Math.Max(AROrderP, MAOrderQ);
+            int maxOrder = ConditionalOrder;
 
             if (_covariateAlignmentValidationMessages.Count > 0)
             {
@@ -1806,9 +1812,7 @@ namespace RMC.BestFit.Models
             var mean = new double[modelSteps];
             var epsilon = new double[modelSteps];
 
-            int maxOrder = DiffOrderD == 0
-                ? Math.Max(DiffOrderD, Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB)))
-                : Math.Max(AROrderP, MAOrderQ);
+            int maxOrder = ConditionalOrder;
             Random? prng = seed >= 0 ? new Random(seed) : null;
             Normal? errDist = seed >= 0 ? new Normal(0, parameters.Last()) : null;
 
@@ -2306,13 +2310,13 @@ namespace RMC.BestFit.Models
 
             int effectiveRawTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
             int trainingDifferenceCount = Math.Max(0, effectiveRawTrainingSteps - DiffOrderD);
-            int conditionalOrder = Math.Max(AROrderP, MAOrderQ);
+            int conditionalOrder = ConditionalOrder;
             if (trainingDifferenceCount <= conditionalOrder)
             {
                 isValid = false;
                 messages.Add(
                     $"Error: The raw training window provides {trainingDifferenceCount} differenced model steps, " +
-                    $"which must exceed the conditional AR/MA order ({conditionalOrder}).");
+                    $"which must exceed the conditional AR/MA/covariate-lag order ({conditionalOrder}).");
             }
 
             // Check orders
@@ -2468,6 +2472,17 @@ namespace RMC.BestFit.Models
 
             return (isValid, messages);
         }
+
+        /// <summary>
+        /// Gets the number of leading model steps that condition the likelihood: max(p, q, b).
+        /// </summary>
+        /// <remarks>
+        /// Conditional evaluation, residuals, prediction seeding and the transform Jacobian window
+        /// all start at model step max(p, q, b), so every evaluated step has its p autoregressive
+        /// lags, q residual lags and b lagged covariate values available. Model step k maps to raw
+        /// index k + d.
+        /// </remarks>
+        private int ConditionalOrder => Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
 
         /// <summary>
         /// Gets the starting index of AR parameters in the parameter list.

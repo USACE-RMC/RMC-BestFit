@@ -249,7 +249,8 @@ namespace RMC.BestFit.Models
                     _transformLambdaIsManual = false;
                     _usePersistedTransformLambda = false;
                     SetTrainingData(false);
-                    SetDefaultParameters();
+                    if (UseDefaultFlatPriors)
+                        SetDefaultParameters();
                     if (_lambda != previousLambda)
                         RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(TransformType));

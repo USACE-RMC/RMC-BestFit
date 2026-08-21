@@ -37,7 +37,7 @@ where bracketed blocks appear only when configured. Coefficients inherit the uni
 
 ## Likelihood and Prior
 
-Let $r=\max(p,q)$. Presample residuals and fitted residuals before $r$ are conditioned out. For $t\ge r$,
+Let $r=\max(p,q,b)$. Presample residuals and fitted residuals before $r$ are conditioned out, so every evaluated step has its $p$ autoregressive lags, $q$ residual lags and $b$ lagged covariate values. For $t\ge r$,
 
 $$
 e_t=w_t-m_t-
@@ -74,7 +74,7 @@ numerical evaluation returns negative infinity rather than falling back to posit
 Extra dates outside the required window are harmless. The conditional transform Jacobian is
 
 $$
-J_g=\sum_{u=d+r}^{T-1}\log|g'(y_u)|,\qquad r=\max(p,q),
+J_g=\sum_{u=d+r}^{T-1}\log|g'(y_u)|,\qquad r=\max(p,q,b),
 \tag{AX.6}
 $$
 
