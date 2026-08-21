@@ -347,12 +347,12 @@ changed. The combined supplement checkpoint is therefore 24/30 passed and six de
 |---|---|---|---|
 | `PublicApiCompatibilityTests.PublicApi_MatchesCapturedBaseline` | UI.Tests | 853-line exported public/protected UI signature baseline | Passed - UI project 576/576 |
 | `PublicApiCompatibilityTests.PublicApi_MatchesCapturedBaseline` | App.Tests | 1,657-line exported public/protected App signature baseline | Passed - App project 431/431 |
-| `TimeSeriesModelSerializationCompatibilityTests.*` | UI.Tests | Legacy AR, MA, ARIMA, and ARIMAX XML settings plus unknown optional attribute | Passed - 4 methods |
-| `TimeSeriesAnalysisControlSourceTests.TransformSelector_RetainsEstablishedBindingContract` | App.Tests | Existing XAML item source and two-way `Element.ARIMAX.TransformType` binding | Passed |
-| `TimeSeriesAnalysisControlSourceTests.TransformSelector_RetainsEstablishedItems` | App.Tests | None, Logarithmic, Box-Cox, and Yeo-Johnson labels and enum values | Passed |
+| `TimeSeriesModelSerializationCompatibilityTests.*` | UI.Tests | Legacy AR, MA, ARIMA, and ARIMAX XML settings plus unknown optional attribute; the Yeo-Johnson exponent refit from the training window is pinned | Passed - 4 methods |
 
 These are deterministic compatibility regressions, not numerical Verification methods. Baseline
-hashes and command evidence are recorded in [Time-Series Verification](time-series.md).
+hashes and command evidence are recorded in [Time-Series Verification](time-series.md). The App
+transform-selector binding and item list are documented in the technical reference; source-text
+regressions that only matched App source files were removed because they did not exercise behaviour.
 
 ## TR-035 time-series Jeffreys metadata
 
@@ -403,7 +403,6 @@ committed before C# evaluation and retain their manifest SHA-256 hashes.
 | `ARIMAXAlignmentTests.CovariateTimestampMutation_AtomicallyRefreshesNumericalAlignment` | Core Tests | Direct timestamp edits refresh cached alignment before numerical evaluation | Exact negative infinity then finite restoration; passed |
 | `ARIMAXAlignmentTests.ConditionalOrderChanges_RebuildAlignedJacobian` | Core Tests | AR/MA order changes after data attachment rebuild the conditional Jacobian range | Exact parity with preconfigured-order controls; passed |
 | `ARIMAXAlignmentTests.DifferencedLikelihood_UsesDateIndexedLevelCovariateAndAlignedJacobian` | Core Tests | Level covariate at raw date `k+d`; scalar/pointwise/component parity | `1E-12`; passed |
-| `TimeSeriesAnalysisControlSourceTests.ResidualPlot_UsesDateAlignedDifferencedCount` | App Tests | Residual plot uses the differenced training count and later raw timestamps | Exact source contract; passed |
 | `Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle` | Verification | Independent R transform, differencing, date join, ARMA recurrence, conditional Jacobian, and Gaussian likelihood for `d=0,1,2` | `1E-10`; guarded pass 1/1 |
 
 The complete final package gates pass Core 3,208/3,208, UI 578/578, App 440/440, and API
@@ -426,7 +425,6 @@ baselines remain exact. The R artifact and generator were committed before C# ev
 | `TimeSeriesPredictionReintegrationTests.LogTransformedD1Predictions_ReintegrateBeforeInverseTransform` | Core Tests | Exact recurrence on log scale followed by one inverse transform | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.TransformedPredictions_UseOnlyModelScaleLagAndResidualStates` | Core Tests | AR, MA, ARIMA(1,1,1), and ARIMAX(1,1,1) use only log-scale lag/residual/difference states before one inverse transform; raw/transformed scale separation is deliberately large | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.NoneD0FixedSeedPrediction_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change ARIMA/ARIMAX `Transform.None`, `d=0` values and every component vector | Exact double equality; passed |
-| `TimeSeriesAnalysisControlSourceTests.PredictionPlot_SplitsAtFinalTrainingIndex` | App Tests | Training and prediction credible-interval series share the final training index and prediction begins there | Exact source contract; passed |
 | `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Verification | Irregular ARIMA `d=2` and logarithmic ARIMAX `d=1` hand recurrences distinguish observed training states, the first forecast anchor, later recursion, and holdout exclusion | `1E-10`; guarded pass 1/1 |
 | `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary` | Verification | Exactly 1,000 fixed seeds; conditional training and horizon-one variance `1`, then random-walk forecast variances `2` and `3` | Four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
 | `Phase5TimeSeriesVerificationTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle` | Verification | Independent Yeo-Johnson plus conditional ARMA(1,1) recurrence; exactly 1,000 fixed seeds verify accumulated transformed-level horizon variance before inverse transformation | `1E-10` recurrence; four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
@@ -481,7 +479,7 @@ time-series report. No full Verification run occurred.
 | Method | Project | Oracle or contract | Tolerance/status |
 |---|---|---|---|
 | `AnalysisInformationCriteriaRoutingTests.TimeSeriesCriteria_UseOneDataLikelihoodCallAtMap` | Core Tests | Injected MAP and counting AR model prove one data-likelihood call, no prior/posterior call, and hand AIC/BIC routing | Exact call counts; `1E-10`; passed |
-| `Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior` | Verification | AR, MA, ARIMA, ARIMAX, and rating-curve data-only criteria plus analytical flat-prior Gaussian MAP/MLE parity | Criteria `1E-10`; parameters `1E-6`; guarded pass 1/1 |
+| `Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior` | Verification | AR, MA, ARIMA, ARIMAX, and rating-curve data-only criteria (time-series likelihoods checked against an independent iid Gaussian evaluation) plus production MLE/MAP recovery of the analytical flat-prior Gaussian optimum | Criteria `1E-10`; estimator parameters `1E-3` |
 
 The exact method uses 40 or fewer observations and one injected posterior row; it runs no
 optimizer, sampler, or simulation and remains below the 1,000-step cap. Package gates pass Core

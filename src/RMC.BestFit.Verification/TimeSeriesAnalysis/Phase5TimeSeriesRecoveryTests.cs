@@ -285,7 +285,11 @@ public class Phase5TimeSeriesRecoveryTests
                 Math.Abs(truth[index]) * relativeTolerance,
                 $"{label} MLE parameter {model.Parameters[index].Name}.");
         }
-        Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(estimated)), $"{label} recovered likelihood.");
+        double recoveredLogLikelihood = model.DataLogLikelihood(estimated);
+        double truthLogLikelihood = model.DataLogLikelihood(truth);
+        Assert.IsTrue(
+            double.IsFinite(recoveredLogLikelihood) && recoveredLogLikelihood >= truthLogLikelihood - 1E-9,
+            $"{label} recovered likelihood {recoveredLogLikelihood:G17} must reach the generating-parameter likelihood {truthLogLikelihood:G17}.");
         Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), $"{label} recovered prior.");
     }
 
@@ -382,8 +386,11 @@ public class Phase5TimeSeriesRecoveryTests
         }
 
         double estimatedDataLogLikelihood = model.DataLogLikelihood(estimated);
+        double truthDataLogLikelihood = model.DataLogLikelihood(truth);
         Assert.IsTrue(double.IsFinite(oraclePointDataLogLikelihood), "ARIMA oracle-point data likelihood.");
-        Assert.IsTrue(double.IsFinite(estimatedDataLogLikelihood), "ARIMA recovered data likelihood.");
+        Assert.IsTrue(
+            double.IsFinite(estimatedDataLogLikelihood) && estimatedDataLogLikelihood >= truthDataLogLikelihood - 1E-9,
+            $"ARIMA recovered data likelihood {estimatedDataLogLikelihood:G17} must reach the generating-parameter likelihood {truthDataLogLikelihood:G17}.");
         Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), "ARIMA recovered prior.");
     }
 
@@ -490,7 +497,11 @@ public class Phase5TimeSeriesRecoveryTests
                 string.Join("; ", failures));
         }
 
-        Assert.IsTrue(double.IsFinite(model.DataLogLikelihood(estimated)), "ARIMAX recovered likelihood.");
+        double arimaxRecoveredLogLikelihood = model.DataLogLikelihood(estimated);
+        double arimaxOracleLogLikelihood = model.DataLogLikelihood(expected);
+        Assert.IsTrue(
+            double.IsFinite(arimaxRecoveredLogLikelihood) && arimaxRecoveredLogLikelihood >= arimaxOracleLogLikelihood - likelihoodTolerance,
+            $"ARIMAX recovered likelihood {arimaxRecoveredLogLikelihood:G17} must reach the independent optimum likelihood {arimaxOracleLogLikelihood:G17} within {likelihoodTolerance:G3}.");
         Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), "ARIMAX recovered prior.");
     }
 

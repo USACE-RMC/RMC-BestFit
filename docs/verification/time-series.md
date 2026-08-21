@@ -48,9 +48,9 @@ The following deterministic compatibility contracts also pass:
   ARIMAX XML with every established configuration attribute, ignores an unknown optional
   attribute, and re-emits the established semantic settings.
 - The existing UI legacy `ARMAX` database fixture continues loading into the ARIMAX wrapper.
-- `TimeSeriesAnalysisControlSourceTests` pins the two-way
-  `Element.ARIMAX.TransformType` XAML binding, item/value member paths, display labels, and all
-  four transform enum members.
+- The App transform selector binds two-way to `Element.ARIMAX.TransformType` and lists the four
+  transform enum members; this is documented App behaviour rather than a tested contract, because
+  the source-text regression that only matched App source files was removed.
 
 Commands executed on 20 August 2026 from base commit `8709263` plus the Package 1 working tree:
 
@@ -60,7 +60,7 @@ dotnet test src\RMC.BestFit.UI.Tests\RMC.BestFit.UI.Tests.csproj -c Debug `
   --results-directory .tmp\phase5-package1-ui
 
 dotnet test src\RMC.BestFit.App.Tests\RMC.BestFit.App.Tests.csproj -c Debug `
-  --filter "FullyQualifiedName~CoreInfrastructure.PublicApiCompatibilityTests|FullyQualifiedName~TimeSeriesAnalysisControlSourceTests" `
+  --filter "FullyQualifiedName~CoreInfrastructure.PublicApiCompatibilityTests" `
   --results-directory .tmp\phase5-package1-app
 
 dotnet test src\RMC.BestFit.Tests\RMC.BestFit.Tests.csproj -c Debug --no-build `
@@ -330,9 +330,10 @@ deterministic tests:
 - `DifferencedLikelihood_UsesDateIndexedLevelCovariateAndAlignedJacobian` hand-computes a
   differenced recurrence and pins scalar/pointwise/component equality at `1E-12`.
 
-`RMC.BestFit.App.Tests.GUI.TimeSeriesAnalysisControlSourceTests.ResidualPlot_UsesDateAlignedDifferencedCount`
-pins the App plot loop to the shorter differenced count and retained response timestamps. UI/App
-signature and legacy/new XML regressions are part of their complete passing suites.
+The App residual plot iterates the shorter differenced training count with the retained response
+timestamps; this App behaviour is documented rather than pinned by a test, because the source-text
+regression that only matched App source files was removed. UI/App signature and legacy/new XML
+regressions are part of their complete passing suites.
 
 **Independent R oracle.** The exact Verification method is
 `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle`.
@@ -435,10 +436,10 @@ complete-path simulation:
 
 Before the production correction, the complete Core run failed exactly the four new ARIMA/ARIMAX
 boundary cases while the AR and MA audit cases passed. After the correction, Core passed
-3,237/3,237. App regression
-`TimeSeriesAnalysisControlSourceTests.PredictionPlot_SplitsAtFinalTrainingIndex` confirms the blue
-training and red prediction intervals share raw index `TrainingTimeSteps-1`, so the display begins
-prediction at the established training boundary.
+3,237/3,237. In the App the blue training and red prediction intervals share raw index
+`TrainingTimeSteps-1`, so the display begins prediction at the training boundary; this is
+documented App behaviour rather than a tested contract, because the source-text regression that
+only matched App source files was removed.
 
 **Independent oracle.** The exact Verification method is
 `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle`.
@@ -765,10 +766,14 @@ The AR, MA, ARIMA, and ARIMAX fixtures use 40 daily responses with order zero an
 exact stage/discharge pairs and MAP `[0.5,1.0,1.5,0.05]`. Active Jeffreys scale priors make each
 posterior kernel numerically distinguishable from its data likelihood. A separate flat-prior
 order-zero Gaussian cell derives mean and maximum-likelihood scale from the 32-point training
-prefix, proves the same vector is a local optimum for data and posterior objectives, and enforces
-MAP/MLE parity at `1E-6`. Criterion acceptance is `1E-10` absolute. No optimizer, sampler,
-simulation, external package, or source artifact is invoked; the largest fixture has 40 time
-steps and the injected posterior has one row, both below the Phase 5 cap of 1,000.
+prefix, proves the same vector is a local optimum for data and posterior objectives, and runs the
+production MLE and MAP estimators from the model defaults, accepting the analytical optimum and
+MAP/MLE parity at `1E-3`. The four time-series criterion cells compare the production data
+log-likelihood with an independent iid Gaussian evaluation of the training window at `1E-10`
+before forming the criteria; the rating-curve cell is a routing check on the production
+likelihood. Criterion acceptance is `1E-10` absolute. No sampler, simulation, external package, or
+source artifact is invoked; the largest fixture has 40 time steps and the injected posterior has
+one row, both below the Phase 5 cap of 1,000.
 
 The fast-test and Verification source SHA-256 values are respectively
 `BD26248DFA8012737571E7EA857675642EF01A0917CFE65BF10237A9E83B43F1` and

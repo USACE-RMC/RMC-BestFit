@@ -764,12 +764,17 @@ public class Phase5TimeSeriesVerificationTests
 
     /// <summary>
     /// Verifies AR, MA, ARIMA, ARIMAX, and rating-curve AIC/BIC use data likelihood at the stored
-    /// MAP, exclude prior density, and retain the analytical flat-prior MAP/MLE identity.
+    /// MAP, exclude prior density, and that the production MLE and flat-prior MAP estimators reach
+    /// the analytical Gaussian optimum.
     /// </summary>
     /// <remarks>
-    /// Criteria use 1E-10 absolute acceptance. The independent Gaussian flat-prior optimum uses
-    /// 1E-6 parameter acceptance. No optimizer, sampler, simulation, or time-series fixture above
-    /// 1,000 steps is invoked; time-series analyses use 40 observations and one injected posterior row.
+    /// Criteria use 1E-10 absolute acceptance. The four time-series criterion cells compare the
+    /// production data log-likelihood with an independent iid Gaussian evaluation of the training
+    /// window before forming the criteria; the rating-curve cell is a routing check on the
+    /// production likelihood. The flat-prior Gaussian cell runs the production MLE and MAP
+    /// estimators from the model defaults and accepts the analytical optimum and MAP/MLE parity at
+    /// 1E-3. No sampler, simulation, or time-series fixture above 1,000 steps is invoked;
+    /// time-series analyses use 40 observations and one injected posterior row.
     /// </remarks>
     [TestMethod]
     public async Task InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior()
@@ -792,7 +797,8 @@ public class Phase5TimeSeriesVerificationTests
             ar,
             timeSeriesMap,
             responseValues.Length,
-            tolerance);
+            tolerance,
+            IndependentIidGaussianLogLikelihood(responseValues, ar.TrainingTimeSteps, timeSeriesMap));
 
         var ma = new MovingAverage(CreateDailySeries(responseValues, startDate), 0, true)
         {
@@ -804,7 +810,8 @@ public class Phase5TimeSeriesVerificationTests
             ma,
             timeSeriesMap,
             responseValues.Length,
-            tolerance);
+            tolerance,
+            IndependentIidGaussianLogLikelihood(responseValues, ma.TrainingTimeSteps, timeSeriesMap));
 
         var arima = new ARIMA(CreateDailySeries(responseValues, startDate), 0, 0, 0, true)
         {
@@ -816,7 +823,8 @@ public class Phase5TimeSeriesVerificationTests
             arima,
             timeSeriesMap,
             responseValues.Length,
-            tolerance);
+            tolerance,
+            IndependentIidGaussianLogLikelihood(responseValues, arima.TrainingTimeSteps, timeSeriesMap));
 
         var arimax = new ARIMAX(CreateDailySeries(responseValues, startDate))
         {
@@ -833,7 +841,8 @@ public class Phase5TimeSeriesVerificationTests
             arimax,
             timeSeriesMap,
             arimax.TrainingTimeSteps,
-            tolerance);
+            tolerance,
+            IndependentIidGaussianLogLikelihood(responseValues, arimax.TrainingTimeSteps, timeSeriesMap));
 
         double[] stages = Enumerable.Range(0, 20)
             .Select(index => 1.0 + 0.25 * index)
@@ -870,11 +879,22 @@ public class Phase5TimeSeriesVerificationTests
         double analyticalSigma = Math.Sqrt(flatTrainingValues
             .Select(value => Math.Pow(value - analyticalMean, 2.0))
             .Average());
-        double[] analyticalMle = { analyticalMean, analyticalSigma };
-        double[] analyticalMap = { analyticalMean, analyticalSigma };
-        AssertArrayEqual(analyticalMle, analyticalMap, 1E-6, "Flat-prior MAP/MLE parameters");
-        AssertLocalGaussianOptimum(flatModel, analyticalMle, usePosterior: false);
-        AssertLocalGaussianOptimum(flatModel, analyticalMap, usePosterior: true);
+        double[] analyticalOptimum = { analyticalMean, analyticalSigma };
+        AssertLocalGaussianOptimum(flatModel, analyticalOptimum, usePosterior: false);
+        AssertLocalGaussianOptimum(flatModel, analyticalOptimum, usePosterior: true);
+
+        // The production estimators must reach the analytical optimum from the model defaults,
+        // and under flat priors the MAP must coincide with the MLE. The 1E-3 acceptance reflects
+        // the global optimizer's convergence tolerance on a quadratic objective.
+        var mle = new MaximumLikelihood(flatModel);
+        mle.Estimate();
+        var map = new MaximumAPosteriori(flatModel);
+        map.Estimate();
+        Assert.IsTrue(mle.IsEstimated, "Flat-prior MLE estimation.");
+        Assert.IsTrue(map.IsEstimated, "Flat-prior MAP estimation.");
+        AssertArrayEqual(analyticalOptimum, mle.BestParameterSet.Values, 1E-3, "Production MLE versus analytical optimum");
+        AssertArrayEqual(analyticalOptimum, map.BestParameterSet.Values, 1E-3, "Production MAP versus analytical optimum");
+        AssertArrayEqual(mle.BestParameterSet.Values, map.BestParameterSet.Values, 1E-3, "Flat-prior MAP/MLE parity");
     }
 
     /// <summary>
@@ -886,6 +906,10 @@ public class Phase5TimeSeriesVerificationTests
     /// <param name="mapValues">The injected stored MAP parameters.</param>
     /// <param name="sampleSize">The analysis-specific BIC sample size.</param>
     /// <param name="tolerance">The fixed criterion tolerance.</param>
+    /// <param name="independentDataLogLikelihood">
+    /// The independently computed data log-likelihood at the stored MAP, or null when the
+    /// model's likelihood is not evaluated independently and the check is a routing check only.
+    /// </param>
     /// <returns>A task representing deterministic result construction.</returns>
     private static async Task VerifyAnalysisCriteriaAsync(
         string label,
@@ -893,11 +917,21 @@ public class Phase5TimeSeriesVerificationTests
         ModelBase model,
         double[] mapValues,
         int sampleSize,
-        double tolerance)
+        double tolerance,
+        double? independentDataLogLikelihood = null)
     {
         double dataLogLikelihood = model.DataLogLikelihood(mapValues);
         double priorLogLikelihood = model.PriorLogLikelihood(mapValues);
         Assert.IsTrue(double.IsFinite(dataLogLikelihood), $"{label} data likelihood must be finite.");
+        if (independentDataLogLikelihood.HasValue)
+        {
+            Assert.AreEqual(
+                independentDataLogLikelihood.Value,
+                dataLogLikelihood,
+                tolerance,
+                $"{label} data likelihood versus the independent Gaussian evaluation.");
+            dataLogLikelihood = independentDataLogLikelihood.Value;
+        }
         Assert.IsTrue(Math.Abs(priorLogLikelihood) > 1E-6, $"{label} prior fixture must distinguish the posterior kernel.");
 
         BayesianAnalysis bayesian = analysis switch
@@ -965,6 +999,17 @@ public class Phase5TimeSeriesVerificationTests
         PropertyInfo property = analysis.GetType().GetProperty("AnalysisResults")!;
         return (UncertaintyAnalysisResults)property.GetValue(analysis)!;
     }
+
+    /// <summary>
+    /// Evaluates the independent iid Gaussian log-likelihood of an intercept-only training window
+    /// at a stored mean and scale.
+    /// </summary>
+    /// <param name="values">The response values.</param>
+    /// <param name="trainingSteps">The number of leading values in the training window.</param>
+    /// <param name="map">The stored mean and scale.</param>
+    /// <returns>The sum of the Gaussian log densities of the training residuals.</returns>
+    private static double IndependentIidGaussianLogLikelihood(double[] values, int trainingSteps, double[] map) =>
+        values.Take(trainingSteps).Sum(value => IndependentGaussianLogDensity(value - map[0], map[1]));
 
     /// <summary>
     /// Confirms the analytical Gaussian optimum dominates small perturbations in both coordinates.

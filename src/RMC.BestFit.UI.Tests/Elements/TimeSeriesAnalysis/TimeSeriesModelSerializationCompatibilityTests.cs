@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Numerics.Data;
+using Numerics.Data.Statistics;
 using RMC.BestFit.Models;
 using BestFitTransform = RMC.BestFit.Models.Transform;
 
@@ -53,7 +54,7 @@ public class TimeSeriesModelSerializationCompatibilityTests
         Assert.IsFalse(model.UseDefaultFlatPriors);
         Assert.IsTrue(model.UseJeffreysRuleForScale);
         Assert.AreEqual(BestFitTransform.YeoJohnson, model.TransformType);
-        Assert.IsTrue(double.IsFinite(model.TransformLambda));
+        Assert.AreEqual(ExpectedYeoJohnsonLambda(13), model.TransformLambda, 1E-12);
         Assert.AreEqual(13, model.TrainingTimeSteps);
         Assert.IsFalse(model.UseDefaultTrainingSteps);
         AssertEstablishedAttributes(model.ToXElement(), "MovingAverage", "Order", "3");
@@ -100,7 +101,7 @@ public class TimeSeriesModelSerializationCompatibilityTests
         var model = new ARIMAX(CreatePositiveSeries(), xml);
 
         Assert.AreEqual(BestFitTransform.YeoJohnson, model.TransformType);
-        Assert.IsTrue(double.IsFinite(model.TransformLambda));
+        Assert.AreEqual(ExpectedYeoJohnsonLambda(15), model.TransformLambda, 1E-12);
         Assert.AreEqual(ARIMAX.CovariateExtensionMethod.BlockBootstrap, model.CovariateExtension);
         Assert.IsTrue(model.IncludeIntercept);
         Assert.IsTrue(model.IncludeSeasonality);
@@ -151,6 +152,19 @@ public class TimeSeriesModelSerializationCompatibilityTests
             Assert.AreEqual("-0.35", saved.Attribute("TransformLambda")?.Value, model.GetType().Name);
             Assert.AreEqual("True", saved.Attribute("TransformLambdaIsManual")?.Value, model.GetType().Name);
         }
+    }
+
+    /// <summary>
+    /// Computes the Yeo-Johnson exponent a model refits from its training window when the legacy
+    /// XML carries no exponent.
+    /// </summary>
+    /// <param name="trainingSteps">The number of leading raw observations in the training window.</param>
+    /// <returns>The fitted exponent.</returns>
+    private static double ExpectedYeoJohnsonLambda(int trainingSteps)
+    {
+        double[] values = CreatePositiveSeries().ValuesToArray().Take(trainingSteps).ToArray();
+        YeoJohnson.FitLambda(values, out double lambda);
+        return lambda;
     }
 
     /// <summary>

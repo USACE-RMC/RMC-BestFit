@@ -809,8 +809,10 @@ and [model-estimation verification](../verification/model-estimation.md#aic-and-
 
 **Evidence.** Prior-density terms are no longer passed to `GoodnessOfFit.AIC/BIC`. Each analysis
 retains its existing parameter count and observation/training sample-size convention. The Phase 5
-oracle covers AR, MA, ARIMA, ARIMAX, and rating curve at `1E-10`, and separately proves analytical
-flat-prior MAP/MLE parameter parity at `1E-6` without invoking an optimizer or sampler.
+cell covers AR, MA, ARIMA, ARIMAX, and rating curve at `1E-10`, with the four time-series
+likelihoods compared against an independent iid Gaussian evaluation of each training window, and
+separately runs the production MLE and flat-prior MAP estimators against the analytical Gaussian
+optimum, accepting the optimum and MAP/MLE parity at `1E-3`.
 
 **Impact.** Prior normalization constants no longer shift the reported criteria. Flat-prior fits can be compared with their constrained-MLE counterparts; nonconstant priors can move MAP away from MLE, so those values require the documented Bayesian caveat.
 
