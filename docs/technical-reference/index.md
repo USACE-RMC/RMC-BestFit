@@ -62,7 +62,7 @@ The Phase 5 estimator and diagnostic chapters are source-audited. They distingui
   - [ARIMAX models](analysis/arimax.md)
 - [Spatial extremes](spatial/spatial-extremes.md)
 
-Time-series and rating-curve chapters have completed their Phase 6 source audits. Bivariate, coincident-frequency, and spatial chapters have completed their Phase 7 source, likelihood, API, and evidence audits. Affected production paths are explicitly qualified by TR-036 through TR-062 in the review-findings register.
+Time-series and rating-curve chapters have completed their technical-reference source audits, and the bivariate, coincident-frequency, and spatial chapters have completed their source, likelihood, API, and evidence audits; these documentation audit rounds are distinct from the numbered phases of the verification finalization plan. Affected production paths are explicitly qualified by TR-036 through TR-062 in the review-findings register.
 
 ## Reviewer appendices
 

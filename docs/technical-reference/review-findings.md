@@ -25,6 +25,14 @@ boundary solution despite same-point R/C# likelihood parity. No production optim
 prior, sampler, seed, tolerance, convergence rule, or Bayesian default changed. Earlier failures
 remain documented in full, and the complete Verification project was not run.
 
+Phase 6 opening and register completion (21 August 2026): the register now runs through TR-090. TR-084
+through TR-090 record the Verification results and one fast-suite race that the 21 August reruns left
+without dispositions; they are open decision items worked after Phase 6 and do not block it. TR-078 and
+TR-081 are closed with 21 August evidence (the twelve `B17CPenalityTests` methods were rerun one at a
+time through the guarded runner, 12/12). The TR-052 failure mode is restated: a null covariate vector
+yields an intercept-only prediction rather than an exception. Phase 6 (rating curve, bivariate, and
+spatial models) begins from this checkpoint under the batch ledger in the finalization plan.
+
 ## Summary
 
 | ID | Finding | Severity | Review disposition | Implementation | Verification | Evidence | Updated |
@@ -80,7 +88,7 @@ remain documented in full, and the complete Verification project was not run.
 | [TR-049](#tr-049) | Spatial likelihood decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-050](#tr-050) | Spatial cross-validation result retention | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-051](#tr-051) | Spatial held-out-site leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-052](#tr-052) | Spatial held-out covariates | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-052](#tr-052) | Spatial held-out covariates | High | Unreviewed; failure mode restated | Not started | Planned | This register | 2026-08-21 |
 | [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - scoped correction complete | Corrected with caveats | Passed - source audit | [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-07-25 |
@@ -106,12 +114,19 @@ remain documented in full, and the complete Verification project was not run.
 | [TR-075](#tr-075) | Composite correlation undo and coincident-frequency cache thread safety | Low | Confirmed defect | Fixed | Passed - UI undo round trip, fast cache contracts | [Report](../verification/composite.md) | 2026-08-21 |
 | [TR-076](#tr-076) | Bulletin 17C bootstrap diagnostics counted realizations as replicates | High | Confirmed regression | Fixed | Passed - per-replicate rate and legacy XML contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
 | [TR-077](#tr-077) | Parent-fit substitution reported as a point mass | High | Confirmed defect; substitution retained by decision | Fixed (reporting) | Passed - report contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
-| [TR-078](#tr-078) | Converged-within-tolerance refit acceptance requires objective improvement | Medium | Confirmed defect | Fixed | Pending - reliability grid rerun | [Report](../verification/bulletin-17c.md) | 2026-08-21 |
+| [TR-078](#tr-078) | Converged-within-tolerance refit acceptance requires objective improvement | Medium | Confirmed defect | Fixed | Passed - 14/14 reliability-grid cells (21 August 2026) | [Test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
 | [TR-079](#tr-079) | Pivot bound repairs and z-limit clips are counted | Medium | Confirmed defect | Fixed | Passed - fast report and counter contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
 | [TR-080](#tr-080) | Bulletin 17C status counters, loop progress, and documentation corrections | Low | Confirmed defect | Fixed | Passed - fast report contracts, documentation review | [Report](../verification/bulletin-17c.md) | 2026-08-21 |
-| [TR-081](#tr-081) | Log-scale penalty centers perturbed on the log scale | Low | Confirmed latent defect | Fixed | Pending - penalty verification rerun | [Report](../verification/bulletin-17c.md) | 2026-08-21 |
+| [TR-081](#tr-081) | Log-scale penalty centers perturbed on the log scale | Low | Confirmed latent defect | Fixed | Passed - 12/12 `B17CPenalityTests` exact guarded reruns | [Test inventory](../verification/test-inventory.md#phase-6-prelude---21-august-2026) | 2026-08-21 |
 | [TR-082](#tr-082) | Strict distribution XML parsers verified against 2.1.4 payloads | Medium | Compatibility risk | Verified | Passed - fifteen literal 2.1.4 payloads and embedding elements | [Report](../verification/test-inventory.md) | 2026-08-21 |
 | [TR-083](#tr-083) | Example project SQLite sidecars were tracked | Low | Repository hygiene | Fixed | N/A | [Report](../verification/test-inventory.md) | 2026-08-21 |
+| [TR-084](#tr-084) | Nonstationary recovery tolerances under default MCMC settings | Medium | Open - decision pending | No change proposed | Failed - 15/16 cells under production defaults | [Test inventory](../verification/test-inventory.md#default-mcmc-settings-in-verification-recovery-tests---21-august-2026) | 2026-08-21 |
+| [TR-085](#tr-085) | Pearson Type III covariance diagonal mismatch | Medium | Open - pre-existing, needs diagnosis | Not started | Failed - 2 cells, identical at `7a0a797` | [Test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026) | 2026-08-21 |
+| [TR-086](#tr-086) | Move3-style uncertain-data bootstrap fallback rate | Medium | Open - pre-existing, needs diagnosis | Not started | Failed - 88.5% fallback versus the 1% limit | [Test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026) | 2026-08-21 |
+| [TR-087](#tr-087) | Censored-coverage bootstrap cells fail to estimate | Medium | Open - pre-existing, needs diagnosis | Not started | Failed - 2 cells, identical at `7a0a797` | [Test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026) | 2026-08-21 |
+| [TR-088](#tr-088) | Bulletin 17C coverage assertions re-enabled but not rerun | Low | Open - rerun pending | Assertions re-enabled | Pending - exact-method reruns on request | [Test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-089](#tr-089) | ARIMA/ARIMAX MAP recovery cells fail | Medium | Open - pre-existing, needs classification | Not started | Failed - 3 cells on the pre-review control worktree | [Progress](../PROGRESS.md) | 2026-08-21 |
+| [TR-090](#tr-090) | Intermittent fast-suite reprocess race | Low | Open - reported | Not started | Observed once; not reproduced on demand | [Progress](../PROGRESS.md) | 2026-08-21 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -529,6 +544,8 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 **Impact.** Numerical failure can no longer be silently presented as zero standard errors or zero influence. Callers can choose an explicit non-throwing branch or let covariance-dependent reporting fail fast.
 
 **Follow-up.** Preserve the singular, available, and regularized regressions. Scientific interpretation must still review `Regularized` results because successful numerical repair does not resolve weak identification.
+
+**Addendum (21 August 2026).** The MLE numerical Hessian now uses bound-aware finite-difference steps (`NumericalDiff.ComputeHessian` with the parameter bounds), matching the posterior Hessian used by `MaximumAPosteriori`, so bound-adjacent optima no longer produce steps outside the parameter support. `MaximumLikelihoodCovarianceVerificationTests` (2/2) verifies the closed-form $\sigma^2/n$ one-parameter covariance and MLE/flat-prior MAP covariance parity within the `1e-4` numerical-Hessian tolerance.
 
 <a id="tr-028"></a>
 ## TR-028 — Prior-Predictive Sampling Is Marginal, Not a General Joint-Prior Sampler
@@ -989,9 +1006,9 @@ retain source and binary compatibility.
 
 **Verification status.** Planned; no verification claim has been accepted.
 
-**Evidence.** `RunCrossValidationAsync` calls `PredictAtUngaugedLocation(coords, null, probs)`. `GeneralLinearFunction.PredictWithCovariates` requires a covariate vector whenever the fitted trend has covariates.
+**Evidence.** `RunCrossValidationAsync` calls `PredictAtUngaugedLocation(coords, null, probs)`. `GeneralLinearFunction.PredictWithCovariates` (`Models/TrendFunctions/GeneralLinearFunction.cs`) returns the intercept-only prediction when the covariate vector is null or empty and throws only for a non-null vector of the wrong length, so a fitted covariate trend is silently evaluated without its covariates.
 
-**Impact.** Cross-validation fails for the principal regional-regression use case or cannot evaluate the trend model actually fitted.
+**Impact.** Cross-validation silently evaluates an intercept-only trend for the principal regional-regression use case and therefore never evaluates the trend model actually fitted.
 
 **Follow-up.** Extract the held-out row from each trend model's covariate matrix, verify consistent covariate definitions across location, scale, and shape, and pass it to prediction.
 
@@ -1345,7 +1362,7 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 
 **Implementation status.** Fixed. A refit that does not report `Success` is accepted only when the iterative GMM converged within tolerance over at least two weighting passes and its final objective improves on the objective of its own start candidate under the same selected weighting; a stalled inner optimizer is rejected and the next ranked candidate is tried.
 
-**Verification status.** Pending the reliability-grid rerun (`B17CBootstrapRefitReliabilityTests`), which asserts zero retries through `AttemptedRealizations` and that the optimizer status counts cover every realization.
+**Verification status.** Passed. The 21 August 2026 focused reruns of the fourteen `B17CBootstrapRefitReliabilityTests` cells passed 14/14, asserting zero retries through `AttemptedRealizations`, optimizer status counts that cover every realization, and no substituted replicates; see the [test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026).
 
 **Impact.** The widened acceptance gate cannot admit an optimizer that never moved off its start.
 
@@ -1378,7 +1395,7 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 
 **Implementation status.** Fixed. `SetRandomPenaltyFunction` perturbs a `UseLog` penalty center on the log scale with the delta-method standard deviation `sqrt(MSE) / Mean`, so the center stays positive; `ParameterPenalty.Function` writes a debug line when a log-scale penalty contributes nothing. The real-scale perturbation and the random sequence are unchanged.
 
-**Verification status.** Pending the penalty verification rerun (`B17CPenalityTests`).
+**Verification status.** Passed. All twelve `B17CPenalityTests` methods (Log-Normal and Log-Pearson Type III parameter, quantile, and combined penalties at $n=25$ and $n=100$) passed one at a time through the guarded runner on 21 August 2026 against the closed-form multivariate inverse-variance weighting; see the [test inventory](../verification/test-inventory.md#phase-6-prelude---21-august-2026).
 
 **Impact.** A log-scale penalty cannot silently contribute zero for a replicate.
 
@@ -1403,6 +1420,97 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 **Verification status.** Not applicable.
 
 **Impact.** No stale SQLite sidecar can ship with an example project.
+
+<a id="tr-084"></a>
+## TR-084 - Nonstationary Recovery Tolerances Under Default MCMC Settings
+
+**Review disposition.** Open; decision pending (tolerance re-pin under the defaults, coverage-style acceptance, fixture diagnosis, or accepted limitation).
+
+**Implementation status.** No production change is proposed. The 21 August 2026 change removed the test-only MCMC overrides from `NonstationaryValidationTests` so that every Verification recovery method uses the production `BayesianAnalysis` defaults.
+
+**Verification status.** Failed 15/16 under production defaults. `ConstantTrend` passes; the remaining cells miss their 1% relative tolerances, which were calibrated for the former 10,000/5,000-iteration overrides, by 1-4%, and the `LinearTrend` slope (-0.001 versus 0.5) and `PowerTrend` (3.4 versus 100) cells miss outright. No tolerance was re-pinned; see the [test inventory](../verification/test-inventory.md#default-mcmc-settings-in-verification-recovery-tests---21-august-2026).
+
+**Impact.** The nonstationary trend recovery claims have no current passing evidence under the production defaults; the two outright misses need diagnosis before any tolerance decision.
+
+**Follow-up.** Worked after Phase 6: diagnose the linear/power misses, then decide between re-pinned tolerances under the defaults, coverage-style acceptance, or an accepted documented limitation. Any tolerance change requires explicit approval.
+
+<a id="tr-085"></a>
+## TR-085 - Pearson Type III Covariance Diagonal Mismatch
+
+**Review disposition.** Open; pre-existing, needs diagnosis of the analytical oracle versus the implementation.
+
+**Implementation status.** Not started.
+
+**Verification status.** Failed. `B17CCovarianceTests.PearsonTypeIII_Covariance_N25` and `_N100` report diagonal entries 36.2 versus 22.4 and 3.04 versus 3.92; the failures are identical at the pre-review commit `7a0a797`, and every other covariance cell passes with the off-diagonal absolute floor. See the [test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026).
+
+**Impact.** Either the Pearson III asymptotic covariance oracle or the implementation is wrong for these two cells; the Bulletin 17C Pearson III covariance claim is unverified until resolved.
+
+**Follow-up.** Worked after Phase 6: derive the expected diagonal independently before changing either side.
+
+<a id="tr-086"></a>
+## TR-086 - Move3-Style Uncertain-Data Bootstrap Fallback Rate
+
+**Review disposition.** Open; pre-existing, needs diagnosis.
+
+**Implementation status.** Not started.
+
+**Verification status.** Failed. `UncertainDataBootstrapVerificationTests.LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable` reports an optimizer fallback rate of 88.5% against the 1% limit (68.3% at `7a0a797` with the realization denominator); the other uncertain-data bootstrap cells pass. See the [test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026).
+
+**Impact.** The Move3-style uncertain-data bootstrap does not meet its declared reliability contract.
+
+**Follow-up.** Worked after Phase 6: determine whether the fixture specification or the refit path is at fault before any contract or code change.
+
+<a id="tr-087"></a>
+## TR-087 - Censored-Coverage Bootstrap Cells Fail to Estimate
+
+**Review disposition.** Open; pre-existing, needs diagnosis.
+
+**Implementation status.** Not started.
+
+**Verification status.** Failed. `B17CCensoredCoverageTests.LP3_LowOutliers_N50_Bootstrap` and `LP3_HistoricalThreshold_N50_Bootstrap` report 996/1000 and 1000/1000 coverage replicates that fail to estimate within seconds; identical at `7a0a797`. See the [test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026).
+
+**Impact.** Bootstrap coverage for censored Log-Pearson Type III samples is unverified for these two designs.
+
+**Follow-up.** Worked after Phase 6: diagnose the censored bootstrap estimation failure.
+
+<a id="tr-088"></a>
+## TR-088 - Bulletin 17C Coverage Assertions Re-enabled but Not Rerun
+
+**Review disposition.** Open; rerun pending.
+
+**Implementation status.** Assertions re-enabled on 21 August 2026 (completion at least 90%, mean coverage in [0.82, 0.97], per-ordinate coverage at least 0.70; binomial 95% band at B = 1,000 stated for reference).
+
+**Verification status.** Pending. The `B17CCoverageTests` cells were not rerun in the 21 August round; see the [test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026).
+
+**Impact.** The re-enabled coverage assertions have no recorded outcome.
+
+**Follow-up.** Exact-method reruns on request; record outcomes.
+
+<a id="tr-089"></a>
+## TR-089 - ARIMA and ARIMAX MAP Recovery Cells Fail
+
+**Review disposition.** Open; pre-existing, needs classification (redundant with the Phase 5 independent recovery matrix, or a diagnosable failure).
+
+**Implementation status.** Not started.
+
+**Verification status.** Failed. `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22`, `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX22`, and `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111` fail identically on the pre-review control worktree; they predate the Phase 5 independent recovery matrix, which passes, and are not recorded in the test inventory. See [progress](../PROGRESS.md).
+
+**Impact.** Three legacy time-series MAP recovery cells contradict their own acceptance rules while the independent Phase 5 oracles pass for the same model classes.
+
+**Follow-up.** Worked after Phase 6: either retire the cells as superseded by the Phase 5 matrix or diagnose them; no tolerance change without approval.
+
+<a id="tr-090"></a>
+## TR-090 - Intermittent Fast-Suite Reprocess Race
+
+**Review disposition.** Open; reported, not fixed.
+
+**Implementation status.** Not started.
+
+**Verification status.** Observed once. `UnivariateAnalysisPositivePathReprocessTests.CredibleIntervalWidthChange_EstimatedAnalysis_PreservesResultsReference` failed intermittently in the fast suite (fire-and-forget reprocess versus awaited reprocess) and passed on rerun; see [progress](../PROGRESS.md).
+
+**Impact.** A flaky fast test can mask or mimic a regression in the reprocess path.
+
+**Follow-up.** Worked after Phase 6: make the test deterministic by awaiting the reprocess completion signal, or fix the race if the production path is at fault.
 
 ## Resolution Rule
 

@@ -1,4 +1,4 @@
-<!-- verification-plan-status: phase-5-complete -->
+<!-- verification-plan-status: phase-6-in-progress -->
 
 # RMC.BestFit Verification Finalization Plan
 
@@ -18,11 +18,11 @@ A new session should read these files in this order:
 6. `verification/data/MANIFEST.md`
 7. The relevant technical-reference chapter for the current finding
 
-Implementation checkpoint (20 August 2026): Phase 5 production and verification code is complete through `b0dff5c`. TR-035 through TR-041 and TR-046 are closed; TR-042 retains its closed data-likelihood-at-MAP contract with refreshed evidence. The recovery supplement pins Numerics `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`; Numerics clone correction `e57af20` preserves the configured logarithm base. The canonical Phase 4 correction anchors remain `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
+Implementation checkpoint (21 August 2026): Phases 1 through 5 remain closed for their approved scopes; the post-closure corrections TR-066 through TR-083 (21 August 2026) and the register completion TR-084 through TR-090 are recorded, and Phase 6 is in progress under the batch ledger in its section below. Phase 5 production and verification code completed through `b0dff5c`; TR-035 through TR-041 and TR-046 are closed, and TR-042 retains its closed data-likelihood-at-MAP contract with refreshed evidence. The recovery supplement pins Numerics `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`; Numerics clone correction `e57af20` preserves the configured logarithm base. The canonical Phase 4 correction anchors remain `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1 through 5 are closed for their approved scopes. The 30-method competing-risk/composite recovery supplement records 24 passes and six explicitly deferred Bayesian research findings. Phase 5 closes the eight time-series findings with API-compatible production corrections, deterministic regressions, independent numerical oracles, and an eight-cell MLE/Bayesian recovery matrix. No sampler, seed policy, prior, production optimizer default, likelihood definition, or convergence default changed.
+The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1 through 5 are closed for their approved scopes, and Phase 6 (rating curve, bivariate, and spatial models) is in progress. The 30-method competing-risk/composite recovery supplement records 24 passes and six explicitly deferred Bayesian research findings. Phase 5 closes the eight time-series findings with API-compatible production corrections, deterministic regressions, independent numerical oracles, and an eight-cell MLE/Bayesian recovery matrix. No sampler, seed policy, prior, production optimizer default, likelihood definition, or convergence default changed.
 
 Reconciled checkpoint (3 August 2026): Core 3,134/3,134, UI 571/571, App 428/428, and Numerics 2,072/2,072 on each of net481/net8/net9/net10 pass with zero failures. Strict XML documentation and Verification compilation gates pass. Both exact TR-014 methods pass separately through the guarded runner. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
 
@@ -37,7 +37,7 @@ The mandatory workflow for each finding is:
 3. If a defect is confirmed, stop and present a focused fix plan.
 4. Implement an API-compatible fix only after approval.
 5. Add fast regression coverage when production code changes.
-6. Build and run the three unit-test projects after production changes.
+6. Build and run the four unit-test projects (Core, UI, App, and Api) after production changes.
 7. Run only the focused verification command required for the claim.
 8. Record the result in `review-findings.md`, the technical reference, and the verification report before continuing.
 
@@ -76,7 +76,7 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 - The guarded focused verification runner exists.
 - External validation folder structure and manifests exist.
 - Public API baseline tests exist.
-- The review-finding register contains summary rows and detailed sections for TR-001 through TR-065.
+- The review-finding register contains summary rows and detailed sections for TR-001 through TR-090; TR-066 through TR-083 record the 21 August 2026 post-closure corrections, and TR-084 through TR-090 hold the open decision items worked after Phase 6.
 - Phase 1 distribution fitting is complete for the currently scoped claims.
 - Phase 2 model estimation and diagnostics are closed for the approved scope.
 - Phase 3 data handling and Bulletin 17C are closed for the approved scope.
@@ -85,7 +85,7 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 
 ### Current Phase Checkpoint
 
-Phases 1 through 5 are formally closed for their approved scopes. The Phase 4 recovery supplement has run all 20 competing-risk and ten Composite methods individually through the guarded runner; all ten Composite methods pass, and the six remaining Bayesian competing-risk findings have an approved deferred-research disposition. Phase 5's named numerical methods and eight integrated recovery cells pass individually through the guarded runner. The full Verification project was not run.
+Phases 1 through 5 are formally closed for their approved scopes. The Phase 4 recovery supplement has run all 20 competing-risk and ten Composite methods individually through the guarded runner; all ten Composite methods pass, and the six remaining Bayesian competing-risk findings have an approved deferred-research disposition. Phase 5's named numerical methods and eight integrated recovery cells pass individually through the guarded runner. The full Verification project was not run. Phase 6 began on 21 August 2026 with Batch 6.0; see the Phase 6 batch ledger.
 
 Completed Phase 2 findings:
 
@@ -283,8 +283,8 @@ Findings and required direction:
 
 - TR-004: complete. Empirical count/rate, fitted threshold intensity, exposure metadata, and manual year/index fallback are implemented. Seasonal exact records require dates; annual/block-indexed non-exact records use the annual maximum of the two exposure-adjusted seasonal processes. Both guarded independent mixed-likelihood calculations pass.
 - TR-005: complete in the approved scope. All recovery fixtures use 1,000 observations and untouched `BayesianAnalysis` defaults. Calendar-year uniform, October-water-year block-origin parity, nonseasonal production, and seasonal production recovery pass. The initial water-year failure changed block-day parameters from `170/350` to `80/260`; the corrected parity cell keeps the parameters fixed and changes only the block origin. No sampler default, seed, prior, production formula, or tolerance changed.
-- TR-006: BestFit retains all $K$ weights in its public model, configured priors, public likelihood methods, EM output, and project-model serialization. New mixture `MCMCResults` store only the identified $K-1$ sampled weights; physical consumers derive $w_K=m-\sum_{k<K}w_k$ locally, and full-$K$ legacy results remain direct. Three exact parity methods remain passed; the three Bayesian `MixtureAnalysis` methods have prior guarded results that predate the parameterization change.
-- Mixture Bayesian initialization uses the identified EM center and responsibility-based covariance directly, with the established seed, 1.5 covariance multiplier, 20-retry limit, and randomized fallback. There is no mixture MAP/Hessian refinement or post-hoc chain conversion. The three Bayesian recovery methods are `Ready - focused rerun`; their earlier runtimes are not current passing evidence.
+- TR-006: BestFit retains all $K$ weights in its public model, configured priors, public likelihood methods, EM output, and project-model serialization. New mixture `MCMCResults` store only the identified $K-1$ sampled weights; physical consumers derive $w_K=m-\sum_{k<K}w_k$ locally, and full-$K$ legacy results remain direct. Three exact parity methods and the three Bayesian `MixtureAnalysis` recovery methods passed their separate 21 August 2026 reruns under the production DEMCzs defaults (6/6).
+- Mixture Bayesian initialization uses the identified EM center and responsibility-based covariance directly, with the established seed, 1.5 covariance multiplier, 20-retry limit, and randomized fallback. There is no mixture MAP/Hessian refinement or post-hoc chain conversion. The three Bayesian recovery methods passed on 21 August 2026 with the identified sampler and production defaults (173-456 s each).
 - TR-007: Numerics and BestFit implement one exact-zero positive-hurdle mixed measure with every continuous contribution conditioned on $X>0$; BestFit derives the fixed atom from exact annual records only. Both zero-inflated parity and Bayesian recovery passed, including the production-generator atom check.
 - TR-008: Numerics and BestFit EM fail explicitly with row context when any required total row probability is zero or nonfinite. Fast impossible-row regressions and all six guarded recovery methods pass without changing tolerances.
 - TR-012: complete. Numerics commit `cafe6cf3837988341912a5aa8bfda444ea55ff77` routes the existing simulation entry point through dependency-aware sampling while preserving the independent seeded sequence. Fast contracts and four separately guarded analytical rank/CDF methods cover Independent, PerfectlyPositive, PerfectlyNegative, and CorrelationMatrix modes.
@@ -393,7 +393,7 @@ Phase exit criteria:
 
 ## Phase 6 - Rating Curve, Bivariate, and Spatial Models
 
-Status: planned.
+Status: in progress (opened 21 August 2026). The approved Phase 6 scope is the full finding set below. TR-059 is limited to a rename/relabel with an obsolete forwarding alias, TR-060 is an additive distance-metric option whose default preserves the current Cartesian behavior, and TR-056 receives a real replicate refit whose resampling scheme is decided at its fix gate.
 
 Findings and required direction:
 
@@ -417,9 +417,36 @@ Findings and required direction:
 - TR-061: simulate correlated normals through the fitted spatial correlation matrix and map them through site-specific inverse GEV CDFs.
 - TR-062: make `RunAsync` dispatch the selected uncertainty method and record the method in result metadata.
 
+Execution plan (batches run in order; every production change follows the mandatory per-finding workflow and stops for approval at its fix gate):
+
+| Batch | Scope | Confirmation oracles and artifacts | Status |
+|---|---|---|---|
+| 6.0 | Register completion (TR-084 through TR-090), TR-078/TR-081 closure, TR-052 restatement, mixture and competing-risk status reconciliation, report book order, repository hygiene | None (documentation and git only); TR-081 reconfirmed by twelve exact `B17CPenalityTests` runs | Complete - 21 August 2026 |
+| 6.1 | Rating curve: TR-043 discharge-space Jacobian, TR-044 strictly positive exponent bound with two-sided continuity, TR-045 aligned-pair validation; recovery cells replicating the three synthetic cases of `examples/6-rating-curve-analysis` under production defaults | Base-10 lognormal density oracle (Numerics `LogNormal` plus SciPy artifact); analytical continuity limits; example-fixture artifact with independent SciPy conditional-MLE optima; `RatingCurveExampleRecoveryTests` (3 MLE + 3 Bayesian) | Planned |
+| 6.2 | Bivariate evidence consolidation (TR-047 closed): chapter, copula-estimation provenance artifact, 21 August default-settings results | Independent Python copula density/MPL/IFM artifact; existing R `copula` targets retained as historical values | Planned |
+| 6.3 | Spatial likelihood core: TR-048 observed-site copula submatrices, TR-049 data/prior decomposition with the Gaussian-process layer as prior structure, TR-057 consistent Godambe sensitivity/variability with explicit failure, TR-055 row/year criteria closure | R `mvtnorm`/`evd` missing-site copula artifact; scalar/pointwise identity and kernel-invariance contracts; R hand-sandwich Godambe artifact | Planned |
+| 6.4 | Spatial leave-one-site-out: TR-050 result retention, TR-051 actual reduced training model, TR-052 held-out covariates, TR-053 failed-fold accounting | Reduced-model parity (fast and guarded), covariate-row extraction, NaN-fold aggregation contracts | Planned |
+| 6.5 | Spatial prediction, uncertainty, simulation, and dispatch: TR-054 conditional Gaussian-process prediction per draw, TR-058 per-draw regional statistics, TR-061 dependent simulation, TR-056 replicate bootstrap refit, TR-062 uncertainty-method dispatch with result metadata | R `mvtnorm` conditional artifact; analytical per-draw regional oracle; seeded dependence targets; bootstrap structural contracts; injected-result dispatch contracts | Planned |
+| 6.6 | Spatial configuration: TR-059 heuristic-weight rename with obsolete alias, TR-060 additive distance metric (Cartesian default, validated geodesic option) | Forwarding and identity contracts; geodesic-distance artifact; Euclidean golden regression | Planned |
+| Exit | Chapters `rating-curve.md`, `bivariate.md`, and `spatial-extremes.md`; book order; README rows; MANIFEST rows; test inventory; register rows and sections; technical-reference chapters and appendices; API baseline additions; release notes; PROGRESS; plan checkpoint | - | Planned |
+
+Decision gates for Haden Smith, each answered before the corresponding fix is implemented: TR-043 observation measure (discharge-space as directed); TR-044 exponent lower bound and legacy-bounds handling; TR-045 message class; the example-replication acceptance rule; the copula oracle source; TR-048 subset-density implementation; TR-049 prior classification of the Gaussian-process densities; TR-052 null-covariate failure and TR-053 minimum successful folds; TR-054 conditional-residual default and TR-058 endpoint averages; TR-056 resampling scheme and per-replicate estimator; TR-062 method semantics and replicate defaults; TR-059 name and TR-060 geodesic range-prior bounds.
+
+Oracle environment: the locked R 4.4.3 (`mvtnorm`, `evd`, `sf`, `sandwich`, `jsonlite`, `digest`) and Python (`numpy`, `scipy`) environments; no package additions are planned. Tolerances follow the acceptance section; the declared exceptions are `1e-4` scaled parameters for global optimizers and `1e-4` relative for numerically differentiated Godambe matrices.
+
 Phase exit criteria:
 
 - Rating-curve likelihoods, bivariate criteria, and spatial missingness/dependence/prediction/uncertainty workflows are mathematically explicit and verified against analytical, external, or simulation oracles.
+
+## Phase 7 - Closeout
+
+Status: planned (after Phase 6).
+
+1. Dispose TR-084 through TR-090 through the mandatory workflow; tolerance re-pins and accept/fix choices are Haden Smith's decisions, and coverage cells are rerun only as exact methods on request.
+2. Reconcile status: set this plan's status marker to `finalized`; rewrite Start Here, Completed, the checkpoint paragraph, and the Fresh-Session Prompt to the final state; refresh the README table from a fresh fast-gate run; normalize chapter status markers; recheck every MANIFEST SHA-256; annotate the CLAUDE.md release checklist that the RMC.Numerics 2.1.4 pin is superseded by local fixes pending the separate Numerics release.
+3. Record external handoffs (not gates): the RMC.Numerics package release (57 commits past `v2.1.4` at this checkpoint) and the BestFit re-pin; conversion of `docs/release-notes-pending.md` into release notes; the TR-083 example-binary policy.
+4. Final gates: strict Debug build with `EnforceXmlDocumentation=true`, the four unit-test projects, public API baselines, serialization regressions, guarded focused reruns only; commit per logical unit; no push unless requested.
+5. PDF rendering of the verification report and technical reference only on explicit request.
 
 ## Completed Phase 2 Batch Record
 
@@ -495,18 +522,18 @@ Characterization is complete and Phase 2 is closed. A future, separately approve
 Use this prompt to continue from a clean session:
 
 ```text
-We are continuing RMC.BestFit verification finalization after completing the original Phase 1-4 finding scopes and running the Phase 4 competing-risk/composite recovery supplement. BestFit implementation checkpoint: 9d252f6 plus the current TR-014, recovery-test, and competing-risk MAP-initialization working-tree changes. Recovery sources are pinned to Numerics c361f28 and RMC-TotalRisk d4d43e6; the Numerics logarithmic-base clone correction is e57af20.
+We are continuing RMC.BestFit verification finalization in Phase 6 (rating curve, bivariate, and spatial models) after closing Phases 1-5 for their approved scopes. BestFit implementation checkpoint: the head of branch documentation-verification-updates; the Phase 6 batch ledger in the finalization plan records which batches are complete. Recovery sources are pinned to Numerics c361f28 and RMC-TotalRisk d4d43e6; the Numerics logarithmic-base clone correction is e57af20, and BestFit builds against the local C:\GIT\Numerics checkout.
 
 Read docs/verification/verification-finalization-plan.md first, then docs/technical-reference/review-findings.md, docs/verification/README.md, docs/verification/model-estimation.md, docs/verification/test-inventory.md, and verification/data/MANIFEST.md.
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: Phase 0 infrastructure is operational and Phases 1 through 5 are closed for their approved scopes. Phase 5 closes TR-035 through TR-041 and TR-046; TR-042 remains closed with refreshed evidence. Every named time-series numerical method and all eight integrated recovery cells pass individually through the guarded runner. The Bayesian cells use untouched production `BayesianAnalysis` defaults and compare sampled MAP with independent posterior MAP under those defaults. The full Verification project was not run.
+Current checkpoint: Phase 0 infrastructure is operational, Phases 1 through 5 are closed for their approved scopes, TR-066 through TR-083 record the 21 August 2026 post-closure corrections, and TR-084 through TR-090 hold the open decision items worked after Phase 6. Phase 6 is in progress: consult the Phase 6 batch ledger for the first batch whose status is not complete. Every Verification recovery method uses the untouched production `BayesianAnalysis` defaults. The full Verification project was not run.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
 - Run verification only with scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>.
-- Run the three unit-test projects after any RMC.BestFit/UI/App code change.
+- Run the four unit-test projects (Core, UI, App, Api) after any RMC.BestFit/UI/App/Api code change.
 - Do not change RMC.BestFit, UI, App, or Numerics production code until you first explain the proposed fix and I approve it.
 - Preserve public API signatures wherever possible.
 - Numerics reference should use local C:\GIT\Numerics, and Numerics work should use .NET 10 only.
@@ -516,7 +543,7 @@ Constraints:
 - Preserve unrelated modified/untracked files.
 
 First task:
-Begin the separately approved Phase 6 scope from this Phase 5 closeout checkpoint. Preserve the closed Phase 1-5 numerical, API, serialization, and recovery contracts. Never run the full Verification project.
+Continue Phase 6 at the first ledger batch that is not complete, following the per-finding workflow: construct the oracle test first, classify, present the fix plan, wait for approval, then implement. Preserve the closed Phase 1-5 numerical, API, serialization, and recovery contracts. Never run the full Verification project.
 ```
 
 ## Off-Ramps

@@ -9,4 +9,5 @@ point-process.md
 mixture.md
 competing-risks.md
 composite.md
+time-series.md
 references.md

@@ -140,7 +140,11 @@ TR-012 remains complete. Every supported dependency mode controls production sim
 direct analytical rank/CDF evidence. The recovery supplement completed all 20 exact focused runs.
 Its six Default-DEMCzs findings are explicitly deferred, nonblocking research items covering
 separated-component/aggregate identification, heterogeneous ridges, correlated-dependence R-hat
-or ESS, and Gamma inverse-CDF uncertainty postprocessing. MAP initialization resolved the former
+or ESS, and Gamma inverse-CDF uncertainty postprocessing. The six deferred methods are
+`Bayesian_Maximum_TwoSeparatedNormals_RecoversParent`, `Bayesian_Maximum_WeibullAndGumbel_RecoversParent`,
+`Bayesian_Maximum_ThreeSeparatedNormals_RecoversParent`, `Bayesian_Maximum_ThreeDifferentFamilies_RecoversParent`,
+`Bayesian_Minimum_CorrelatedTwoWeibulls_RecoversParent`, and `Bayesian_Maximum_CorrelatedTwoNormals_RecoversParent`;
+the 21 August 2026 rerun round produced no new evidence for them. MAP initialization resolved the former
 separated three-Weibull R-hat finding. No distribution formula, seed default, public signature,
 DEMCzs sampling setting, fixture, or verification tolerance changed in response to a failed cell
 or in granting the deferral.

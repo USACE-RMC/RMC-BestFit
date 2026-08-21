@@ -93,30 +93,31 @@ Bayesian recovery pass counts are not promoted into a current passing claim.
 ## Focused Recovery Results
 
 The original six methods generate $n=1000$ observations with seed 12345 through the production
-`MixtureModel.GenerateRandomValues` method. Each was previously run separately through
-`scripts/run-verification-test.ps1`. The three likelihood/EM parity results remain current because
-the public EM algorithm is unchanged. The three Bayesian results predate identified $K-1$ sampling
-and are retained only as historical evidence until explicitly authorized focused reruns occur.
+`MixtureModel.GenerateRandomValues` method. Each was run separately, most recently on 21 August 2026
+in its own `dotnet test` invocation after the test-only MCMC overrides were removed. The three
+likelihood/EM parity results remain current because the public EM algorithm is unchanged, and the
+three Bayesian results are current for the identified $K-1$ sampler under production DEMCzs defaults.
 
 | Exact method | Verification contract | Guarded duration | Status |
 |---|---|---:|---|
 | `NormalMixture2D_Recovery_Parity` | Two-component Normal generation, pre-fit likelihood parity, EM parity, and parent recovery | 1.426 s | Passed |
 | `ZeroInflatedNormalMixture2D_Recovery_Parity` | Positive-hurdle generation, likelihood parity, EM parity, and parent recovery | 1.852 s | Passed |
 | `NormalMixture3D_Recovery_Parity` | Three-component Normal generation, likelihood parity, EM parity, and parent recovery | 3.247 s | Passed |
-| `NormalMixture2D_BayesianRecovery` | Two-component `MixtureAnalysis` posterior recovery and diagnostics | 9.589 s prior run | Ready - focused rerun |
-| `ZeroInflatedNormalMixture2D_BayesianRecovery` | Positive-hurdle `MixtureAnalysis` recovery, atom check, and diagnostics | 21.346 s prior run | Ready - focused rerun |
-| `NormalMixture3D_BayesianRecovery` | Three-component `MixtureAnalysis` posterior recovery and diagnostics | 12.761 s prior run | Ready - focused rerun |
+| `NormalMixture2D_BayesianRecovery` | Two-component `MixtureAnalysis` posterior recovery and diagnostics | 21 August 2026 rerun; 173-456 s (range of the three cells) | Passed |
+| `ZeroInflatedNormalMixture2D_BayesianRecovery` | Positive-hurdle `MixtureAnalysis` recovery, atom check, and diagnostics | 21 August 2026 rerun; 173-456 s (range of the three cells) | Passed |
+| `NormalMixture3D_BayesianRecovery` | Three-component `MixtureAnalysis` posterior recovery and diagnostics | 21 August 2026 rerun; 173-456 s (range of the three cells) | Passed |
 
 The parity methods give Numerics and BestFit the same BestFit-generated sample, compare pre-fit data log likelihoods at $10^{-10}$, compare fitted engines at $10^{-8}$, location-sort component labels, and retain absolute recovery tolerance 0.1.
 
-The Bayesian recovery methods retain their declared DEMCzs configurations, seeds, recovery
-tolerances, R-hat threshold, ESS threshold, and positive-hurdle atom gate. None was changed to
-accommodate the identified sampler. No Verification method was run for this correction.
+The Bayesian recovery methods use the production DEMCzs defaults (the 21 August 2026 change removed
+the former test-only iteration, warmup, and chain overrides) and retain their seeds, 15% relative
+recovery tolerances with a 0.15 floor, R-hat below 1.1, ESS above 100, and the positive-hurdle atom
+gate. None was changed to accommodate the identified sampler.
 
 ## Closeout State
 
 TR-007 and TR-008 remain complete because the positive-hurdle and impossible-row contracts did not
 change. TR-006 now distinguishes the full-$K$ public/physical boundary from identified $K-1$
-posterior storage. The three Bayesian recovery methods remain `Ready - focused rerun`; no passing
-claim is made for the changed Bayesian parameterization, and the complete Verification project was
-not run.
+posterior storage. The three Bayesian recovery methods passed their separate 21 August 2026 reruns
+under production defaults, so the identified parameterization has current passing recovery evidence;
+the complete Verification project was not run.

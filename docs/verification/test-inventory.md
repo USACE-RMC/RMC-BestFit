@@ -216,9 +216,9 @@ parameterization path.
 | `MixtureRecoveryTests.NormalMixture2D_Recovery_Parity` | BestFit production generator, Numerics/BestFit likelihood and EM parity, two-component parent recovery | Passed - 1.426 s |
 | `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_Recovery_Parity` | BestFit positive-hurdle generator, Numerics/BestFit likelihood and EM parity, atom and parent recovery | Passed - 1.852 s |
 | `MixtureRecoveryTests.NormalMixture3D_Recovery_Parity` | BestFit production generator, Numerics/BestFit likelihood and EM parity, three-component parent recovery | Passed - 3.247 s |
-| `MixtureRecoveryTests.NormalMixture2D_BayesianRecovery` | Seeded DEMCzs posterior-mode recovery with split R-hat and ESS acceptance | Ready - focused rerun; prior result 9.589 s |
-| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_BayesianRecovery` | Seeded positive-hurdle DEMCzs recovery, binomial atom bound, split R-hat, and ESS | Ready - focused rerun; prior result 21.346 s |
-| `MixtureRecoveryTests.NormalMixture3D_BayesianRecovery` | Seeded three-component DEMCzs posterior-mode recovery with label sorting, split R-hat, and ESS | Ready - focused rerun; prior result 12.761 s |
+| `MixtureRecoveryTests.NormalMixture2D_BayesianRecovery` | Seeded DEMCzs posterior-mode recovery with split R-hat and ESS acceptance | Superseded - passed under production defaults on 21 August 2026 (see below); prior result 9.589 s |
+| `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_BayesianRecovery` | Seeded positive-hurdle DEMCzs recovery, binomial atom bound, split R-hat, and ESS | Superseded - passed under production defaults on 21 August 2026 (see below); prior result 21.346 s |
+| `MixtureRecoveryTests.NormalMixture3D_BayesianRecovery` | Seeded three-component DEMCzs posterior-mode recovery with label sorting, split R-hat, and ESS | Superseded - passed under production defaults on 21 August 2026 (see below); prior result 12.761 s |
 
 The parity methods retain pre-fit tolerance `1E-10`, cross-engine fitted tolerance `1E-8`, and
 absolute parent-recovery tolerance `0.1`. The Bayesian configurations, seeds, and acceptance gates
@@ -576,3 +576,36 @@ Passing groups: `PsisLooOracleVerificationTests` 4/4, `McmcNumericalVerification
 `B17CExampleTests` 13/13, `UncertainDataBootstrapVerificationTests` (other cells),
 `B17CBootstrapRefitReliabilityTests` 14/14, `PointProcessRecoveryTests` 8/8,
 `ProfileLikelihoodGridPointFailureTests` 2/2, `MaximumLikelihoodCovarianceVerificationTests` 2/2.
+
+## Phase 6 prelude - 21 August 2026
+
+Batch 6.0 of the finalization plan completed the register (TR-084 through TR-090 record the 21 August
+results that still lack dispositions), closed TR-078 with the 14/14 reliability-grid evidence above and
+TR-081 with the reruns below, and restated the TR-052 failure mode. No production code changed, so no
+unit-test gate was required. The twelve `B17CPenalityTests` methods were rerun one at a time through
+`scripts/run-verification-test.ps1` (TRX files under `TestResults/VerificationFocused/20260821-16*`);
+the recorded durations are wall-clock per guarded invocation and include the incremental build step.
+
+| Exact method | Contract | Status |
+|---|---|---|
+| `B17CPenalityTests.LogNormal_PenalityOnMu_N25` | Log-Normal, mean penalty, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 12.7 s |
+| `B17CPenalityTests.LogNormal_PenalityOnMu_N100` | Log-Normal, mean penalty, $n=100$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 4 s |
+| `B17CPenalityTests.LogNormal_PenalityOnSigma_N25` | Log-Normal, standard-deviation penalty, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 4.3 s |
+| `B17CPenalityTests.LogNormal_PenalityOnSigma_N100` | Log-Normal, standard-deviation penalty, $n=100$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.9 s |
+| `B17CPenalityTests.LogNormal_PenalityOnMuAndSigma_N25` | Log-Normal, mean and standard-deviation penalties, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.7 s |
+| `B17CPenalityTests.LogNormal_PenalityOnMuAndSigma_N100` | Log-Normal, mean and standard-deviation penalties, $n=100$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.6 s |
+| `B17CPenalityTests.LogNormal_PenalityOnQ99_N25` | Log-Normal, 0.99-quantile penalty, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.6 s |
+| `B17CPenalityTests.LogNormal_PenalityOnQ99_N100` | Log-Normal, 0.99-quantile penalty, $n=100$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.6 s |
+| `B17CPenalityTests.LogNormal_PenalityOnMuSigmaAndQ99_N25` | Log-Normal, mean, standard-deviation, and 0.99-quantile penalties, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.6 s |
+| `B17CPenalityTests.LogPearsonTypeIII_PenalityOnMuAndGamma_N25` | Log-Pearson Type III, mean and skew penalties, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.7 s |
+| `B17CPenalityTests.LogPearsonTypeIII_PenalityOnAllParams_N25` | Log-Pearson Type III, mean, standard-deviation, and skew penalties, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.7 s |
+| `B17CPenalityTests.LogPearsonTypeIII_PenalityOnAllParamsAndQ99_N25` | Log-Pearson Type III, all-parameter and 0.99-quantile penalties, $n=25$: penalized GMM equals the closed-form multivariate inverse-variance weighted combination | Passed - 3.8 s |
+
+Register completion: TR-084 (`NonstationaryValidationTests`, 1/16 under defaults), TR-085
+(`B17CCovarianceTests` Pearson III diagonals), TR-086 (Move3-style uncertain-data bootstrap fallback
+rate), TR-087 (`B17CCensoredCoverageTests` bootstrap cells), TR-088 (`B17CCoverageTests` re-enabled, not
+rerun), TR-089 (`ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22`,
+`ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX22`, and
+`ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111`, pre-existing failures), and TR-090 (the
+intermittent `UnivariateAnalysisPositivePathReprocessTests` race) point back to the 21 August sections
+of this inventory and to `docs/PROGRESS.md`.
