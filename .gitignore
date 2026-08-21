@@ -106,3 +106,8 @@ CLAUDE.md
 .claude/
 .codex/
 .codex-tmp/
+
+# SQLite sidecar files created while a .bestfit project is open
+*.bestfit-shm
+*.bestfit-wal
+*.bestfit-journal
