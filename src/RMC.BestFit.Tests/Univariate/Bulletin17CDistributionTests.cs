@@ -815,7 +815,12 @@ public class Bulletin17CDistributionTests
         var model = new Bulletin17CDistribution(
             frame, UnivariateDistributionType.LogPearsonTypeIII);
         double[] parentParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        // Enable the regional-skew penalty so the ranking objective exercises its penalized form.
+        model.ParameterPenalties[2].Enabled = true;
+        model.ParameterPenalties[2].Mean = parentParameters[2];
+        model.ParameterPenalties[2].MSE = 0.05;
         model.SetRandomPenaltyFunction(parentParameters, new Random(1234));
+        Assert.IsNotNull(model.PenaltyFunction, "The randomized bootstrap penalty must be installed.");
 
         IReadOnlyList<double[]> candidates =
             model.GetRankedBootstrapInitialValues(parentParameters);
@@ -828,6 +833,15 @@ public class Bulletin17CDistributionTests
             double[] candidate = candidates[candidateIndex];
             Assert.AreEqual(model.NumberOfParameters, candidate.Length);
             Assert.IsTrue(candidate.All(double.IsFinite));
+
+            // The ranking objective is the first-pass identity-weight objective with the penalty:
+            // 0.5 * g'g + P(candidate).
+            double[] moments = model.MomentConditionFunction(candidate).G.ToArray();
+            double expectedObjective = 0.5 * moments.Sum(value => value * value) + model.PenaltyFunction!(candidate);
+            double rankingObjective = model.EvaluateBootstrapInitialObjective(candidate);
+            Assert.IsTrue(double.IsFinite(rankingObjective) && rankingObjective < double.MaxValue);
+            Assert.AreEqual(expectedObjective, rankingObjective, 1e-12 * Math.Max(1.0, Math.Abs(expectedObjective)),
+                "The ranking objective must equal the penalized identity-weight moment objective.");
 
             for (int parameterIndex = 0; parameterIndex < candidate.Length; parameterIndex++)
             {

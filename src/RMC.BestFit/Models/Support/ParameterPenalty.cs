@@ -2,6 +2,7 @@ using Numerics;
 using Numerics.Distributions;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Xml.Linq;
 
@@ -277,9 +278,12 @@ namespace RMC.BestFit.Models
 
             if (UseLog)
             {
-                // Guard against non-positive values for log transform
+                // A log-scale penalty is undefined for non-positive values; it contributes nothing.
                 if (parameterValue <= 0 || Mean <= 0)
+                {
+                    Debug.WriteLine($"Parameter penalty '{Name}' contributes nothing: a log-scale penalty requires a positive value ({parameterValue}) and center ({Mean}).");
                     return 0.0;
+                }
 
                 // Convert real-space Mean/MSE to log-space via delta method:
                 // Var(ln(X)) ≈ Var(X) / E[X]²

@@ -1194,7 +1194,19 @@ namespace RMC.BestFit.Models
                 paramPenalties[i] = ParameterPenalties[i].Clone();
                 if (paramPenalties[i].Enabled)
                 {
-                    paramPenalties[i].Mean = parentParameters[i] + Math.Sqrt(paramPenalties[i].MSE) * Normal.StandardZ(prng.NextDouble());
+                    double standardNormal = Normal.StandardZ(prng.NextDouble());
+                    if (paramPenalties[i].UseLog && parentParameters[i] > 0 && paramPenalties[i].Mean > 0)
+                    {
+                        // A log-scale penalty is centered on the log scale so the perturbed center
+                        // stays positive; its log-scale standard deviation is the delta-method
+                        // value sqrt(MSE) / Mean used by the penalty itself.
+                        double logScaleStandardDeviation = Math.Sqrt(paramPenalties[i].MSE) / paramPenalties[i].Mean;
+                        paramPenalties[i].Mean = parentParameters[i] * Math.Exp(logScaleStandardDeviation * standardNormal);
+                    }
+                    else
+                    {
+                        paramPenalties[i].Mean = parentParameters[i] + Math.Sqrt(paramPenalties[i].MSE) * standardNormal;
+                    }
                 }
             }
 
@@ -1298,8 +1310,8 @@ namespace RMC.BestFit.Models
             UnivariateDistributionBase model;
             bool isLog10 = false;
 
-            // Disable model-based covariance when low outliers are present, since the
-            // Unconditional mu_4 through mu_6 formulas do not account for truncated contributions.
+            // Disable model-based covariance when low outliers are present: the unconditional
+            // mu_4 through mu_6 formulas do not account for truncated contributions.
             bool useModelCovariance = DataFrame.NumberOfLowOutliers == 0;
 
             if (DistributionType == UnivariateDistributionType.LogPearsonTypeIII)
@@ -1317,8 +1329,8 @@ namespace RMC.BestFit.Models
                 model = Distribution.Clone();
             }
 
-            // Return an invalid objective instead of throwing during repeated optimizer evaluations.
-            // during GMM optimization and exception overhead is significant
+            // Return an invalid objective instead of throwing: the optimizer evaluates this
+            // repeatedly and exception overhead is significant.
             var validation = model.ValidateParameters(parameters, false);
             if (validation is not null)
             {
@@ -1495,7 +1507,7 @@ namespace RMC.BestFit.Models
         /// <param name="sigma">The standard deviation sigma of the distribution.</param>
         /// <param name="gamma">The skewness coefficient gamma of the distribution.</param>
         /// <param name="mu4">Output: mu_4 = sigma^4(3 + 3 gamma^2 / 2).</param>
-        /// <param name="mu5">Output: mu_5 = sigma^5 gamma (10 + 3 gamma^2 / 2).</param>
+        /// <param name="mu5">Output: mu_5 = sigma^5 gamma (10 + 3 gamma^2).</param>
         /// <param name="mu6">Output: mu_6 = sigma^6(15 + 65 gamma^2 / 2 + 15 gamma^4 / 2).</param>
         /// <remarks>
         /// <para>
@@ -1740,10 +1752,10 @@ namespace RMC.BestFit.Models
             double mu2 = m[1];
             double mu3 = (q >= 3 && m.Length >= 3) ? m[2] : 0.0;
 
-            // Use the model sigma and gamma to obtain higher central moments mu_4 through mu_6.
-            // For q<3 distributions (Exponential, Gamma), the moments array m[]
-            // The q = 2 moment vector does not include mu_3, so gamma cannot be derived from m[] alone.
-            // The caller passes the model's StandardDeviation and Skewness directly.
+            // Use the model sigma and gamma to obtain the higher central moments mu_4 through mu_6.
+            // The q = 2 moment vector of the Exponential and Gamma distributions does not include
+            // mu_3, so gamma cannot be derived from m[] alone; the caller passes the model's
+            // StandardDeviation and Skewness directly.
             double sigma = modelSigma;
             double gamma = modelGamma;
 
@@ -2675,9 +2687,8 @@ namespace RMC.BestFit.Models
         /// <para>
         /// Used by the bootstrap uncertainty methods so each replicate estimates from the parent's
         /// fitted state. Assigning the resampled frame through the public <see cref="DataFrame"/>
-        /// setter instead would invoke <see cref="SetDefaultParameters"/>, which discards the cloned
-        /// initial values, disables every parameter penalty, and — when default-parameter derivation
-        /// fails for the resampled frame — empties the parameter list entirely.
+        /// setter would instead invoke <see cref="SetDefaultParameters"/>, which rebuilds the
+        /// initial values from the new data and disables every parameter penalty.
         /// </para>
         /// </remarks>
         public Bulletin17CDistribution CloneWithDataFrame(DataFrame dataFrame)

@@ -134,6 +134,7 @@ TYPE class RMC.BestFit.Analyses.BootstrapDiagnostics
   METHOD System.Void AddOptimizerFallbacks(System.Int32)
   METHOD System.Void AddRetries(System.Int32)
   METHOD System.Void IncrementAttempted()
+  METHOD System.Void IncrementBoundRepair()
   METHOD System.Void IncrementFailed()
   METHOD System.Void IncrementMahalanobisRejection()
   METHOD System.Void IncrementPivotRejection()
@@ -142,10 +143,13 @@ TYPE class RMC.BestFit.Analyses.BootstrapDiagnostics
   METHOD System.Xml.Linq.XElement ToXElement()
   PROPERTY System.Double AverageFunctionEvaluations {get;}
   PROPERTY System.Double AverageRetries {get;}
+  PROPERTY System.Double BoundRepairRate {get;}
   PROPERTY System.Double FailureRate {get;}
   PROPERTY System.Double MahalanobisRejectionRate {get;}
   PROPERTY System.Double PivotRejectionRate {get;}
+  PROPERTY System.Int32 AttemptedRealizations {get;}
   PROPERTY System.Int32 AttemptedReplicates {get;}
+  PROPERTY System.Int32 BoundRepairs {get;}
   PROPERTY System.Int32 FailedReplicates {get;}
   PROPERTY System.Int32 MahalanobisRejections {get;}
   PROPERTY System.Int32 OptimizerFallbacks {get;}

@@ -21,12 +21,15 @@ namespace RMC.BestFit.Analyses
     ///     measurements on the calling thread.
     /// </para>
     /// <para>
-    ///     Ordinary and pivotal bootstrap refits use bounded retries. After those retries are
-    ///     exhausted, phase one substitutes the fitted parent parameters (and, for the pivotal
-    ///     method, parent covariance) so downstream processing still receives the configured
-    ///     output length. <see cref="FailedReplicates"/> counts those substitutions. Later pivotal
-    ///     transform failures can still reduce <see cref="RetainedReplicates"/> and prevent the
-    ///     all-or-nothing uncertainty result from being published.
+    ///     Ordinary and pivotal bootstrap refits use bounded retries on fresh data realizations.
+    ///     After those retries are exhausted, the replicate is substituted with the fitted parent
+    ///     parameters (and, for the pivotal method, the parent covariance) so the delivered sample
+    ///     keeps the configured length; the run is not aborted. <see cref="FailedReplicates"/>
+    ///     counts those substitutions, which form a point mass at the parent fit and narrow the
+    ///     published limits, so the report states the substituted count and fraction. Rates are
+    ///     expressed per requested replicate; <see cref="AttemptedRealizations"/> records how many
+    ///     data realizations were drawn across all retries. Later pivotal transform failures can
+    ///     still reduce <see cref="RetainedReplicates"/>.
     /// </para>
     /// </remarks>
     public class BootstrapDiagnostics
@@ -39,16 +42,21 @@ namespace RMC.BestFit.Analyses
         private int _totalReplicates;
 
         /// <summary>
-        /// The total number of candidate replicates evaluated, including replacements.
-        /// A value of -1 indicates a legacy record where this count was not stored.
+        /// The total number of bootstrap data realizations drawn, including retries.
+        /// A value of -1 indicates a record where this count was not stored.
         /// </summary>
-        private int _attemptedReplicates = -1;
+        private int _attemptedRealizations = -1;
 
         /// <summary>
         /// The number of requested replicates whose phase-one refit exhausted every retry and was
-        /// replaced by the fitted parent parameters to preserve the configured output length.
+        /// substituted with the fitted parent parameters to preserve the configured output length.
         /// </summary>
         private int _failedReplicates;
+
+        /// <summary>
+        /// The number of pivot draws whose inverse-linked parameters were repaired to the model bounds.
+        /// </summary>
+        private int _boundRepairs;
 
         /// <summary>
         /// The number of parameter sets actually delivered to the results, or -1 when not recorded.
@@ -103,13 +111,14 @@ namespace RMC.BestFit.Analyses
         private int _totalFunctionEvaluations;
 
         /// <summary>
-        /// The number of pivot draws rejected because standardized pivots exceeded the z-limit (pivot bootstrap only).
+        /// The number of pivot draws whose standardized pivot was clipped at the z-limit (pivot bootstrap only).
         /// </summary>
         private int _pivotRejections;
 
         /// <summary>
-        /// The number of bootstrap replicates rejected because their Mahalanobis distance from the parent
-        /// estimate exceeded the χ²(p, 0.999) threshold, indicating a degenerate local optimum.
+        /// The number of bootstrap replicates rejected by a Mahalanobis-distance outlier test. The
+        /// current bootstrap methods do not apply that test; the counter is retained for diagnostics
+        /// saved by earlier versions.
         /// </summary>
         private int _mahalanobisRejections;
 
@@ -127,40 +136,66 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Gets the total number of candidate replicates evaluated, including replacements.
+        /// Gets the number of requested replicates whose refit was attempted. Every requested
+        /// replicate is attempted, so this equals <see cref="TotalReplicates"/> whenever the
+        /// requested count is recorded.
+        /// </summary>
+        /// <remarks>
+        /// Diagnostics serialized without a requested count fall back to the number of data
+        /// realizations that were drawn.
+        /// </remarks>
+        public int AttemptedReplicates => _totalReplicates > 0 ? _totalReplicates : Math.Max(0, _attemptedRealizations);
+
+        /// <summary>
+        /// Gets the total number of bootstrap data realizations drawn across all replicates,
+        /// including retries.
         /// </summary>
         /// <remarks>
         /// Diagnostics serialized before this counter was introduced fall back to
-        /// <see cref="TotalReplicates"/>.
+        /// <see cref="AttemptedReplicates"/>.
         /// </remarks>
-        public int AttemptedReplicates => _attemptedReplicates >= 0 ? _attemptedReplicates : _totalReplicates;
+        public int AttemptedRealizations => _attemptedRealizations >= 0 ? _attemptedRealizations : AttemptedReplicates;
 
         /// <summary>
         /// Gets the number of requested replicates whose phase-one refit exhausted every retry and
-        /// was replaced by the fitted parent parameters. Such replacements remain in the delivered
-        /// ordinary-bootstrap sample and enter pivotal phase two.
+        /// was substituted with the fitted parent parameters. Such substitutions remain in the
+        /// delivered ordinary-bootstrap sample and enter pivotal phase two, where they form a
+        /// point mass at the parent fit.
         /// </summary>
         public int FailedReplicates => _failedReplicates;
 
         /// <summary>
-        /// Gets the number of valid (successfully estimated) replicates.
+        /// Gets the number of requested replicates whose refit succeeded (requested minus substituted).
         /// </summary>
         public int ValidReplicates => Math.Max(0, AttemptedReplicates - _failedReplicates);
 
         /// <summary>
-        /// Gets or sets the number of parameter sets actually delivered to the results.
+        /// Gets or sets the number of refit parameter sets delivered to the results.
         /// </summary>
         /// <remarks>
-        /// For the pivot bootstrap this is smaller than <see cref="ValidReplicates"/> when
-        /// z-limit rejections or transform failures drop draws after the fitting phase. When
-        /// the value was never recorded (legacy serialized diagnostics), the getter falls back
-        /// to <see cref="ValidReplicates"/>.
+        /// For the ordinary bootstrap this is the requested count minus the substituted
+        /// replicates. For the pivot bootstrap it is the number of finite pivot draws, which can
+        /// be smaller when transform failures drop draws after the fitting phase. When the value
+        /// was never recorded (legacy serialized diagnostics), the getter falls back to
+        /// <see cref="ValidReplicates"/>.
         /// </remarks>
         public int RetainedReplicates
         {
             get => _retainedReplicates >= 0 ? _retainedReplicates : ValidReplicates;
             set => _retainedReplicates = value;
         }
+
+        /// <summary>
+        /// Gets the number of pivot draws whose inverse-linked parameters were repaired to the model bounds.
+        /// Only applicable to the pivot (bias-corrected) bootstrap method.
+        /// </summary>
+        public int BoundRepairs => _boundRepairs;
+
+        /// <summary>
+        /// Gets the bound-repair rate as a fraction (0 to 1) of the requested replicates.
+        /// Only meaningful for the pivot (bias-corrected) bootstrap method.
+        /// </summary>
+        public double BoundRepairRate => _totalReplicates > 0 ? (double)_boundRepairs / _totalReplicates : 0.0;
 
         /// <summary>
         /// Gets the number of pivot draws discarded because the link-space transform failed
@@ -173,11 +208,12 @@ namespace RMC.BestFit.Analyses
         /// Gets the number of replicate GMM attempts that ended with <see cref="OptimizationStatus.Success"/>.
         /// </summary>
         /// <remarks>
-        /// The status counters record every attempt, including retries, so their sum is
-        /// approximately <see cref="TotalReplicates"/> plus <see cref="TotalRetries"/> (attempts
-        /// that threw before the optimizer finished are not recorded). They exist to make the
-        /// replicate acceptance gate observable: a large max-iterations count with few failures
-        /// indicates best-effort terminations that are accepted, not rejected.
+        /// The status counters record every start candidate that the optimizer ran, so their sum
+        /// is at least <see cref="AttemptedRealizations"/> and grows with the number of candidates
+        /// tried per realization (a candidate that threw before the optimizer finished is
+        /// recorded with its last status). They exist to make the replicate acceptance gate
+        /// observable: a large max-iterations count with few substitutions indicates converged
+        /// best-effort terminations that passed the objective-quality check.
         /// </remarks>
         public int StatusSuccessCount => _statusSuccessCount;
 
@@ -207,7 +243,7 @@ namespace RMC.BestFit.Analyses
         public int OptimizerFallbacks => _optimizerFallbacks;
 
         /// <summary>
-        /// Gets the failure rate as a fraction (0 to 1).
+        /// Gets the fraction (0 to 1) of requested replicates that were substituted with the parent fit.
         /// </summary>
         public double FailureRate => AttemptedReplicates > 0 ? (double)_failedReplicates / AttemptedReplicates : 0.0;
 
@@ -217,7 +253,7 @@ namespace RMC.BestFit.Analyses
         public int TotalRetries => _totalRetries;
 
         /// <summary>
-        /// Gets the average number of retries per replicate.
+        /// Gets the average number of retries per requested replicate.
         /// </summary>
         public double AverageRetries => AttemptedReplicates > 0 ? (double)_totalRetries / AttemptedReplicates : 0.0;
 
@@ -227,29 +263,31 @@ namespace RMC.BestFit.Analyses
         public int TotalFunctionEvaluations => _totalFunctionEvaluations;
 
         /// <summary>
-        /// Gets the average number of GMM function evaluations per replicate.
+        /// Gets the average number of GMM function evaluations per requested replicate.
         /// </summary>
         public double AverageFunctionEvaluations => AttemptedReplicates > 0 ? (double)_totalFunctionEvaluations / AttemptedReplicates : 0.0;
 
         /// <summary>
-        /// Gets the number of pivot draws rejected because standardized pivots exceeded the z-limit.
+        /// Gets the number of pivot draws whose standardized pivot was clipped at the z-limit.
         /// Only applicable to the pivot (bias-corrected) bootstrap method.
         /// </summary>
         public int PivotRejections => _pivotRejections;
 
         /// <summary>
-        /// Gets the pivot rejection rate as a fraction (0 to 1).
+        /// Gets the pivot z-limit clip rate as a fraction (0 to 1) of the requested replicates.
         /// Only meaningful for the pivot (bias-corrected) bootstrap method.
         /// </summary>
         public double PivotRejectionRate => _totalReplicates > 0 ? (double)_pivotRejections / _totalReplicates : 0.0;
 
         /// <summary>
-        /// Gets the number of bootstrap replicates rejected via Mahalanobis distance outlier detection.
+        /// Gets the number of bootstrap replicates rejected by a Mahalanobis-distance outlier test.
+        /// The current bootstrap methods do not apply that test; the value is retained for
+        /// diagnostics saved by earlier versions.
         /// </summary>
         public int MahalanobisRejections => _mahalanobisRejections;
 
         /// <summary>
-        /// Gets the Mahalanobis rejection rate as a fraction (0 to 1).
+        /// Gets the Mahalanobis rejection rate as a fraction (0 to 1) of the requested replicates.
         /// </summary>
         public double MahalanobisRejectionRate => _totalReplicates > 0 ? (double)_mahalanobisRejections / _totalReplicates : 0.0;
 
@@ -273,11 +311,11 @@ namespace RMC.BestFit.Analyses
         #region Thread-Safe Increment Methods
 
         /// <summary>
-        /// Atomically increments the discarded replicate counter by one.
+        /// Atomically increments the substituted replicate counter by one.
         /// </summary>
         /// <remarks>
-        /// Called when a replicate has exhausted every retry attempt and is dropped from
-        /// the delivered sample.
+        /// Called when a replicate has exhausted every retry attempt and is substituted with the
+        /// parent fit in the delivered sample.
         /// </remarks>
         public void IncrementFailed()
         {
@@ -285,16 +323,28 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Atomically increments the attempted candidate counter by one.
+        /// Atomically records one bootstrap data realization (an initial attempt or a retry).
         /// </summary>
         public void IncrementAttempted()
         {
-            if (Volatile.Read(ref _attemptedReplicates) < 0)
+            if (Volatile.Read(ref _attemptedRealizations) < 0)
             {
-                Interlocked.CompareExchange(ref _attemptedReplicates, 0, -1);
+                Interlocked.CompareExchange(ref _attemptedRealizations, 0, -1);
             }
 
-            Interlocked.Increment(ref _attemptedReplicates);
+            Interlocked.Increment(ref _attemptedRealizations);
+        }
+
+        /// <summary>
+        /// Atomically increments the bound-repair counter by one.
+        /// </summary>
+        /// <remarks>
+        /// Called when a pivot draw's inverse-linked parameters were moved into the model bounds
+        /// before validation.
+        /// </remarks>
+        public void IncrementBoundRepair()
+        {
+            Interlocked.Increment(ref _boundRepairs);
         }
 
         /// <summary>
@@ -322,12 +372,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Atomically records the terminal optimizer status of one replicate GMM attempt.
+        /// Atomically records the terminal optimizer status of one replicate GMM start candidate.
         /// </summary>
         /// <param name="status">The final <see cref="OptimizationStatus"/> reported by the replicate estimator.</param>
         /// <remarks>
-        /// Recorded per attempt (including retries) so the report can show the distribution of
-        /// optimizer outcomes behind the replicate acceptance gate.
+        /// Recorded once per start candidate that the optimizer ran (a realization can try several
+        /// ranked candidates) so the report can show the distribution of optimizer outcomes behind
+        /// the replicate acceptance gate.
         /// </remarks>
         public void RecordGMMStatus(OptimizationStatus status)
         {
@@ -370,8 +421,12 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Atomically increments the pivot rejection counter by one.
+        /// Atomically increments the pivot z-limit clip counter by one.
         /// </summary>
+        /// <remarks>
+        /// Called when at least one component of a draw's standardized pivot was clipped at the
+        /// z-limit before the draw was mapped back to the parameter space.
+        /// </remarks>
         public void IncrementPivotRejection()
         {
             Interlocked.Increment(ref _pivotRejections);
@@ -380,6 +435,10 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Atomically increments the Mahalanobis outlier rejection counter by one.
         /// </summary>
+        /// <remarks>
+        /// The current bootstrap methods do not apply a Mahalanobis-distance rejection; the
+        /// counter is retained for diagnostics saved by earlier versions.
+        /// </remarks>
         public void IncrementMahalanobisRejection()
         {
             Interlocked.Increment(ref _mahalanobisRejections);
@@ -397,8 +456,13 @@ namespace RMC.BestFit.Analyses
         {
             var element = new XElement(nameof(BootstrapDiagnostics));
             element.SetAttributeValue(nameof(TotalReplicates), _totalReplicates.ToString(CultureInfo.InvariantCulture));
-            element.SetAttributeValue(nameof(AttemptedReplicates), _attemptedReplicates.ToString(CultureInfo.InvariantCulture));
+            // AttemptedReplicates is written with its per-replicate meaning so readers of earlier
+            // versions compute per-replicate rates; the raw realization count (including the -1
+            // "not recorded" sentinel) is persisted separately.
+            element.SetAttributeValue(nameof(AttemptedReplicates), AttemptedReplicates.ToString(CultureInfo.InvariantCulture));
+            element.SetAttributeValue(nameof(AttemptedRealizations), _attemptedRealizations.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(FailedReplicates), _failedReplicates.ToString(CultureInfo.InvariantCulture));
+            element.SetAttributeValue(nameof(BoundRepairs), _boundRepairs.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(TotalRetries), _totalRetries.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(TotalFunctionEvaluations), _totalFunctionEvaluations.ToString(CultureInfo.InvariantCulture));
             element.SetAttributeValue(nameof(PivotRejections), _pivotRejections.ToString(CultureInfo.InvariantCulture));
@@ -432,10 +496,19 @@ namespace RMC.BestFit.Analyses
 
             if (int.TryParse(element.Attribute(nameof(TotalReplicates))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int total))
                 diag._totalReplicates = total;
-            if (int.TryParse(element.Attribute(nameof(AttemptedReplicates))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int attempted))
-                diag._attemptedReplicates = attempted;
+            if (int.TryParse(element.Attribute(nameof(AttemptedRealizations))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int realizations))
+            {
+                diag._attemptedRealizations = realizations;
+            }
+            else if (int.TryParse(element.Attribute(nameof(AttemptedReplicates))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int attempted))
+            {
+                // Earlier versions stored the realization count under AttemptedReplicates.
+                diag._attemptedRealizations = attempted;
+            }
             if (int.TryParse(element.Attribute(nameof(FailedReplicates))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int failed))
                 diag._failedReplicates = failed;
+            if (int.TryParse(element.Attribute(nameof(BoundRepairs))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int boundRepairs))
+                diag._boundRepairs = boundRepairs;
             if (int.TryParse(element.Attribute(nameof(TotalRetries))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int retries))
                 diag._totalRetries = retries;
             if (int.TryParse(element.Attribute(nameof(TotalFunctionEvaluations))?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int funcEvals))

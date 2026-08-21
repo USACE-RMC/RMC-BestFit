@@ -522,3 +522,17 @@ run was attempted. See the time-series report for hashes, exact commands, runtim
 | `DistributionFitting/FittingAnalysisProgressTests.cs` | Fast core | A fitting run in which no candidate fits reports completion to the progress reporter | Passed |
 | `ModelEstimation/ProfileLikelihoodGridPointFailureTests.cs` | Verification | Profile grid points without a finite nuisance optimum are NaN while the remaining points equal the unrestricted profile; `ParameterConfidenceIntervals()` still requires converged solves (MLE and flat-prior MAP) | Pending focused run |
 | `ModelEstimation/MaximumLikelihoodCovarianceVerificationTests.cs` | Verification | One-parameter MLE covariance equals the closed-form `sigma^2 / n`; MLE and flat-prior MAP report the same covariance for interior and bound-adjacent optima | Pending focused run |
+
+## Bulletin 17C bootstrap diagnostics and reporting - 21 August 2026
+
+| Test | Project | Contract | Status |
+|---|---|---|---|
+| `Support/BootstrapDiagnosticsTests.cs` (merged; `Diagnostics/BootstrapDiagnosticsTests.cs` removed) | Fast core | Per-replicate substitution rate, retries, and evaluations; realization count; bound-repair and z-limit clip counters; XML round trip including legacy files that stored realizations under `AttemptedReplicates` | Passed |
+| `Univariate/Bulletin17CReportDiagnosticsTests.cs` | Fast core | Report lists realizations attempted, substituted replicates with the point-mass note, per-replicate discard warnings, bound repairs, and z-limit clips | Passed |
+| `Univariate/Bulletin17CDistributionTests.cs::GetRankedBootstrapInitialValues_CensoredSample_ReturnsObjectiveOrderedCandidates` | Fast core | Ranking objective equals the penalized identity-weight moment objective with the regional-skew penalty enabled; candidates ordered | Passed |
+| `Univariate/Bulletin17CTests/B17CCoverageTests.cs` | Verification | Coverage assertions re-enabled (completion >= 90%, mean coverage in [0.82, 0.97], per-ordinate coverage >= 0.70; binomial 95% band at B = 1,000 stated for reference) | Pending focused run |
+| `Univariate/Bulletin17CTests/B17CBootstrapRefitReliabilityTests.cs` | Verification | Zero retries asserted through `AttemptedRealizations`; optimizer status counts cover every realization; no substituted replicates | Pending focused run |
+| `Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs` | Verification | Methods renamed `*_MatchesProductMomentParameters` (GMM versus sample product-moment parameters) | Unchanged contract |
+| `Univariate/Bulletin17CTests/B17CCovarianceTests.cs` | Verification | Absolute tolerance floor applies to off-diagonal entries only | Pending focused run |
+| `Univariate/Bulletin17CTests/B17CExampleTests.cs` | Verification | Example 4/7 uncertain-data messages and tolerance rationale corrected | Unchanged contract |
+| `Univariate/Bulletin17CTests/B17CCohnEtAlCoverageTests.cs` | Verification | Documented as completion-rate checks; Table 3 coverage values are not asserted | Unchanged contract |

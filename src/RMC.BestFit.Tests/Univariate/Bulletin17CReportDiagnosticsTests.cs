@@ -32,11 +32,11 @@ public class Bulletin17CReportDiagnosticsTests
     }
 
     /// <summary>
-    /// Bootstrap-method sections report discarded and used counts with the bootstrap header
-    /// and the per-attempt GMM status distribution.
+    /// Bootstrap-method sections report the realizations attempted, the replicates substituted
+    /// with the parent fit, the replicates used, and the per-candidate GMM status distribution.
     /// </summary>
     [TestMethod]
-    public void Render_BootstrapMethod_ReportsDiscardedUsedAndStatusCounts()
+    public void Render_BootstrapMethod_ReportsSubstitutedUsedAndStatusCounts()
     {
         var diag = new BootstrapDiagnostics { TotalReplicates = 10_000 };
         for (int i = 0; i < 10_120; i++) diag.IncrementAttempted();
@@ -44,19 +44,69 @@ public class Bulletin17CReportDiagnosticsTests
         diag.AddOptimizerFallbacks(4);
         diag.RecordGMMStatus(OptimizationStatus.Success);
         diag.RecordGMMStatus(OptimizationStatus.MaximumIterationsReached);
-        diag.RetainedReplicates = 10_000;
+        diag.RetainedReplicates = 9_880;
 
         string text = Render(diag, UncertaintyMethod.Bootstrap);
 
         StringAssert.Contains(text, "BOOTSTRAP DIAGNOSTICS");
         StringAssert.Contains(text, "Replicates Requested:");
-        StringAssert.Contains(text, "Candidates Attempted:");
+        StringAssert.Contains(text, "Realizations Attempted:");
         StringAssert.Contains(text, "10,120");
-        StringAssert.Contains(text, "Candidate Fits Discarded:");
+        StringAssert.Contains(text, "Substituted (parent fit):");
+        StringAssert.Contains(text, "120 (1.2%)");
         StringAssert.Contains(text, "Replicates Used:");
-        StringAssert.Contains(text, "10,000");
+        StringAssert.Contains(text, "9,880");
         StringAssert.Contains(text, "Optimizer Fallbacks:");
-        StringAssert.Contains(text, "GMM Status Counts:");
+        StringAssert.Contains(text, "GMM Status Counts (per start candidate):");
+        StringAssert.Contains(text, "120 of 10,000 replicates (1.2%) were substituted with the parent fit");
+        StringAssert.Contains(text, "point mass at the parent estimate");
+    }
+
+    /// <summary>
+    /// The substitution fraction is per requested replicate, so a quarter of the replicates
+    /// substituted after ten attempts each triggers the high-discard warning.
+    /// </summary>
+    [TestMethod]
+    public void Render_SubstitutionFraction_IsPerReplicate_AndWarnsAboveTenPercent()
+    {
+        var diag = new BootstrapDiagnostics { TotalReplicates = 1_000 };
+        for (int i = 0; i < 1_000 + 9 * 250; i++) diag.IncrementAttempted();
+        for (int i = 0; i < 250; i++) diag.IncrementFailed();
+        diag.AddRetries(9 * 250);
+        diag.RetainedReplicates = 750;
+
+        string text = Render(diag, UncertaintyMethod.Bootstrap);
+
+        StringAssert.Contains(text, "Realizations Attempted:");
+        StringAssert.Contains(text, "3,250");
+        StringAssert.Contains(text, "250 (25.0%)");
+        StringAssert.Contains(text, "250 of 1,000 replicates (25.0%) were substituted with the parent fit");
+        StringAssert.Contains(text, "WARNING: High discard rate (>10%)");
+        Assert.IsFalse(text.Contains("WARNING: Very high discard rate (>30%)"),
+            "A 25% substitution rate must not trigger the 30% warning.");
+        Assert.IsFalse(text.Contains("WARNING: Fewer than half"),
+            "750 retained replicates of 1,000 must not trigger the half-retained warning.");
+    }
+
+    /// <summary>
+    /// Pivot-bootstrap bound repairs and z-limit clips are reported with their per-replicate rates.
+    /// </summary>
+    [TestMethod]
+    public void Render_BoundRepairsAndZLimitClips_ShowLines()
+    {
+        var diag = new BootstrapDiagnostics { TotalReplicates = 1_000 };
+        for (int i = 0; i < 1_000; i++) diag.IncrementAttempted();
+        for (int i = 0; i < 15; i++) diag.IncrementBoundRepair();
+        for (int i = 0; i < 4; i++) diag.IncrementPivotRejection();
+        diag.RetainedReplicates = 1_000;
+
+        string text = Render(diag, UncertaintyMethod.BiasCorrectedBootstrap);
+
+        StringAssert.Contains(text, "Bound Repairs:");
+        StringAssert.Contains(text, "15 (1.5%)");
+        StringAssert.Contains(text, "Pivot z-limit Clips:");
+        StringAssert.Contains(text, "4 (0.4%)");
+        StringAssert.Contains(text, "15 pivot draws (1.5%) were moved inside the parameter bounds");
     }
 
     /// <summary>

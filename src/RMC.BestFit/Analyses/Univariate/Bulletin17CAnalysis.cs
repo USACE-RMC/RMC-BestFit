@@ -1191,10 +1191,10 @@ namespace RMC.BestFit.Analyses
                             Interlocked.Increment(ref rejectionCount);
                     }
 
-                    // Preserve existing behavior by leaving rejected draws as default ParameterSet values.
-                    // (Values == null) and are filtered below; no parent-thetaHat fallback (high
-                    // rejection triggers full method fallback). ParameterSet is a struct, so the
-                    // default-initialized array slot already represents "no draw".
+                    // Rejected draws stay as default ParameterSet values (Values == null) and are
+                    // filtered below. There is no parent substitution on this path because a high
+                    // rejection rate triggers the full method fallback. ParameterSet is a struct, so
+                    // the default-initialized array slot already represents "no draw".
                     if (acceptedTheta != null)
                         results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
@@ -1497,10 +1497,9 @@ namespace RMC.BestFit.Analyses
         /// <param name="standardError">The GMM standard error for <paramref name="center"/>.</param>
         /// <returns>A <see cref="LogASinHLink"/> centered at <paramref name="center"/>.</returns>
         /// <remarks>
-        /// P3/LP3 scale now uses the same positive-parameter rule as the other B17C distribution
-        /// options. The wrapper is retained so the LP3/P3 scale decision stays explicit in the
-        /// LinkedMVN setup and can be tuned separately later if verification shows a distribution-
-        /// specific need.
+        /// The P3/LP3 scale uses the same positive-parameter link rule as the other B17C
+        /// distribution options. The wrapper keeps the LP3/P3 scale decision explicit in the
+        /// LinkedMVN setup.
         /// </remarks>
         private static LogASinHLink CreatePearsonScaleLink(double center, double standardError)
         {
@@ -1777,12 +1776,12 @@ namespace RMC.BestFit.Analyses
             }
 
             // 5a. Derive per-parameter nu from psi_i[j] kurtosis, then combine them for multivariate t.
-            // The multivariate t uses one nu for every dimension. Quantile-projection
-            // Quantile-influence kurtosis can over-emphasize the heaviest-tailed parameter, gamma,
-            // can give a nu that is too low for other parameters. The geometric mean of
-            // per-parameter nu values balances dimensions: it is less conservative than the
-            // harmonic mean, which is dominated by the smallest nu, but less liberal than the
-            // arithmetic mean, which is dominated by the largest nu.
+            // The multivariate t uses one nu for every dimension. Quantile-influence kurtosis can
+            // over-emphasize the heaviest-tailed parameter (gamma) and give a nu that is too low
+            // for the other parameters. The geometric mean of the per-parameter nu values balances
+            // the dimensions: it is less conservative than the harmonic mean, which is dominated
+            // by the smallest nu, but less liberal than the arithmetic mean, which is dominated by
+            // the largest nu.
             double logNuSum = 0;
             int nuCount = 0;
             for (int j = 0; j < nParams; j++)
@@ -1799,9 +1798,9 @@ namespace RMC.BestFit.Analyses
                 : 1000.0;
 
             // 5b. Per-parameter skewness for MVT center shift (BCa z0 equivalent).
-            // The skewness of psi_i[j] determines the multivariate-t center shift in
-            // Shift link-space component j by (skew_j / 6) * sqrt(VetaHat[j,j]).
-            // This is the influence-function analog of the BCa z0 bias correction.
+            // The skewness of psi_i[j] determines the multivariate-t center shift: link-space
+            // component j is shifted by (skew_j / 6) * sqrt(VetaHat[j,j]), the influence-function
+            // analog of the BCa z0 bias correction.
             for (int j = 0; j < nParams; j++)
             {
                 double[] psiJ = new double[n];
@@ -1984,9 +1983,9 @@ namespace RMC.BestFit.Analyses
                             diag.AddRetries(1);
                     }
 
-                    // Fall back to parent parameter vector if all retries failed — preserves prior
-                    // behavior where bootDistribution retained parent params after a Clone() with
-                    // no successful SetParameters call.
+                    // Substitute the parent fit when every retry failed. The substitution keeps the
+                    // delivered sample at the configured length; it is counted and reported because
+                    // the substituted replicates form a point mass at the parent estimate.
                     if (acceptedParams == null)
                     {
                         diag.IncrementFailed();
@@ -1996,13 +1995,13 @@ namespace RMC.BestFit.Analyses
                     results[idx] = new ParameterSet(acceptedParams, double.NaN);
 
                     int current = Interlocked.Increment(ref iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress((int)(100.0 * current / B));
                 });
 
                 phase1Stopwatch.Stop();
                 diag.Phase1Time = phase1Stopwatch.Elapsed;
-                diag.RetainedReplicates = results.Length;
+                diag.RetainedReplicates = results.Length - diag.FailedReplicates;
                 BootstrapResults = diag;
 
                 return results;
@@ -2041,8 +2040,11 @@ namespace RMC.BestFit.Analyses
         /// The bootstrap model is always cloned with the supplied data frame so the parent's bounds,
         /// links, and penalty configuration survive. The randomized penalty is drawn exactly once,
         /// before candidate ranking. Later candidates are therefore optimizer restarts for the same
-        /// statistical realization rather than different bootstrap targets. The outer caller retains
-        /// the existing fresh-realization retries and parent-fit fallback.
+        /// statistical realization rather than different bootstrap targets. A candidate that does not
+        /// report success is accepted only when the iterative GMM converged within tolerance over at
+        /// least two weighting passes and its final objective improves on the objective of its own
+        /// start candidate under the same selected weighting. The caller retries on fresh
+        /// realizations and substitutes the parent fit after the last retry.
         /// </remarks>
         private bool TryFitBootstrapRealization(
             DataFrame bootstrapDataFrame,
@@ -2112,10 +2114,27 @@ namespace RMC.BestFit.Analyses
 
                 if (bootstrapGmm.Status != OptimizationStatus.Success)
                 {
+                    // A converged-within-tolerance termination is accepted only when the fit moved
+                    // off its start: the final objective must improve on the start candidate's
+                    // objective under the same selected weighting.
+                    double startObjective = bootstrapGmm.Q(candidate);
+                    double finalObjective = bootstrapGmm.ObjectiveFunctionValue;
+                    if (bootstrapGmm.GMMIterations < 2 ||
+                        !double.IsFinite(finalObjective) ||
+                        !(finalObjective < startObjective))
+                    {
+                        Debug.WriteLine(
+                            $"{methodName} replicate {replicateIndex}, initialization {candidateIndex + 1}: " +
+                            $"rejected {bootstrapGmm.Status} because the converged-within-tolerance fit did not " +
+                            $"improve on its start (objective {finalObjective:G17} versus {startObjective:G17} " +
+                            $"after {bootstrapGmm.GMMIterations} iterations).");
+                        continue;
+                    }
+
                     Debug.WriteLine(
                         $"{methodName} replicate {replicateIndex}, initialization {candidateIndex + 1}: " +
                         $"accepted {bootstrapGmm.Status} because the iterative GMM converged " +
-                        $"within tolerance after {bootstrapGmm.GMMIterations} iterations.");
+                        $"within tolerance after {bootstrapGmm.GMMIterations} iterations and improved on its start.");
                 }
 
                 double[] bootstrapParameters = bootstrapGmm.BestParameterSet.Values;
@@ -2218,7 +2237,9 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// Finite out-of-bound values are moved just inside the corresponding bounds. Non-finite
         /// values use the parent component before the same bound repair. The interior margin avoids
-        /// passing an exclusive distribution boundary after floating-point roundoff.
+        /// passing an exclusive distribution boundary after floating-point roundoff. The repair is
+        /// applied after the inverse link, in the natural parameter space where the model bounds
+        /// are defined; repaired draws are retained and counted in the bootstrap diagnostics.
         /// </remarks>
         internal static bool RepairPivotParametersToBounds(
             double[] pivotParameters,
@@ -2408,7 +2429,9 @@ namespace RMC.BestFit.Analyses
                             diag.AddRetries(1);
                     }
 
-                    // Fall back to parent fit if all retries failed.
+                    // Substitute the parent fit and covariance when every retry failed; the
+                    // substitution is counted and reported because it places a point mass at the
+                    // parent estimate.
                     if (acceptedParams == null || acceptedSigma == null)
                     {
                         acceptedParams = thetaHat;
@@ -2420,7 +2443,7 @@ namespace RMC.BestFit.Analyses
                     bootSigma[idx] = acceptedSigma;
 
                     int current = Interlocked.Increment(ref phase1Iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress((int)(98.0 * current / B));
                 });
             }
@@ -2522,13 +2545,19 @@ namespace RMC.BestFit.Analyses
                             diffMatrix[j, 0] = diff[j];
                         var zMatrix = LStarInv * diffMatrix;
 
-                        // Extract z, add smoothing jitter, and clip bounds
+                        // Extract z, add smoothing jitter, and clip to the z-limit. Clipped draws
+                        // are retained and counted.
                         var z = new double[p];
+                        bool clipped = false;
                         for (int j = 0; j < p; j++)
                         {
                             z[j] = zMatrix[j, 0] + Normal.StandardZ(prng.NextDouble()) * smoothStd;
+                            if (Math.Abs(z[j]) > zLimit)
+                                clipped = true;
                             z[j] = Math.Max(-zLimit, Math.Min(zLimit, z[j]));
                         }
+                        if (clipped)
+                            diag.IncrementPivotRejection();
 
                         // Map back: etaDraw = etaHat + LHat * z
                         var zCol = new Matrix(p, 1);
@@ -2546,6 +2575,7 @@ namespace RMC.BestFit.Analyses
                             theta, thetaHat, Bulletin17CDistribution.Parameters);
                         if (repaired)
                         {
+                            diag.IncrementBoundRepair();
                             Debug.WriteLine(
                                 $"Pivot bootstrap Phase 3, replicate {idx}: " +
                                 "repaired inverse-linked parameters to the model bounds.");
@@ -2576,7 +2606,7 @@ namespace RMC.BestFit.Analyses
                         results[idx] = new ParameterSet(acceptedTheta, double.NaN);
 
                     int current = Interlocked.Increment(ref phase3Iteration);
-                    if (current % Math.Max(1, B * 0.01) == 0)
+                    if (AnalysisProgress.ShouldReportLoopProgress(current, B))
                         progressReporter?.ReportProgress(98 + (int)(2.0 * current / B));
                 });
 
@@ -3046,22 +3076,21 @@ namespace RMC.BestFit.Analyses
             {
                 if (d == scaleIdx && mean[d] > 0)
                 {
-                    // Gamma quadrature for s (positive parameter)
-            // The scale parameter sigma uses Gamma quadrature.
-                    // to enforce positivity and capture the right-skewed sampling distribution.
+                    // The scale parameter sigma uses Gamma quadrature to enforce positivity and
+                    // capture the right-skewed sampling distribution.
                     //
                     // EMA uses Gauss-Laguerre quadrature for the positive variance dimension.
                     // For standard deviation sigma, a = sigmaHat^2 / Var(sigmaHat).
                     // The two generalized Gauss-Laguerre nodes are (a+1) +/- sqrt(a+1).
-                    // After centering (subtract Gamma mean = a) and standardizing (divide by va):
-                    //   z1 = (1 - v(a+1)) / va   (negative, further from mean)
-                    //   z2 = (1 + v(a+1)) / va   (positive, closer to mean for small a)
-                    // Weights:
-                    // The larger node receives weight (a+1+sqrt(a+1)) / (2(a+1)).
-                    // The smaller node receives weight (a+1-sqrt(a+1)) / (2(a+1)).
+                    // After centering (subtract Gamma mean = a) and standardizing (divide by sqrt(a)):
+                    //   z1 = (1 - sqrt(a+1)) / sqrt(a)   (negative, closer to the mean)
+                    //   z2 = (1 + sqrt(a+1)) / sqrt(a)   (positive, further from the mean)
+                    // Weights (they reproduce E[z] = 0, E[z^2] = 1, and E[z^3] = 2 / sqrt(a)):
+                    //   the smaller node z1 receives w1 = (a+1+sqrt(a+1)) / (2(a+1)),
+                    //   the larger node z2 receives w2 = (a+1-sqrt(a+1)) / (2(a+1)).
                     //
-                    // For small a (large s uncertainty), these are strongly asymmetric:
-                    //   a=4: z1=-0.618, z2=+1.618, w1=0.809, w2=0.191
+                    // For small a (large sigma uncertainty), these are strongly asymmetric:
+                    //   a=4: z1=-0.618, z2=+1.618, w1=0.724, w2=0.276
                     // For large a (small uncertainty), the standardized nodes approach +/-1.
                     //   a=100: z1=-0.905, z2=+1.105, w1=0.550, w2=0.450
                     double varSigma = Math.Max(S[d, d], 1e-30);
@@ -3174,10 +3203,9 @@ namespace RMC.BestFit.Analyses
             // The EMA V is applied as Z2 = V^T * Z (column-major), which is equivalent to
             // L * Z where L = V^T in our row-major convention.
             //
-            // Actually, for the tensor product grid, the key property is that the Cholesky
-            // Any valid factor satisfying S = L*L' produces the required quadrature covariance.
-            // standard Cholesky already handles correlations properly.
-            // The critical EMA difference is the Gamma quadrature nodes, not the Cholesky ordering.
+            // For the tensor-product grid any factor satisfying S = L*L' produces the required
+            // quadrature covariance, so the standard Cholesky factor is used. The EMA-specific
+            // element is the Gamma quadrature nodes, not the factor ordering.
             var chol2 = new CholeskyDecomposition(S);
             return chol2.L;
         }
@@ -3727,9 +3755,10 @@ namespace RMC.BestFit.Analyses
             bool isMvn = method == UncertaintyMethod.MultivariateNormal;
             int requested = diag.TotalReplicates;
             int retained = diag.RetainedReplicates;
-            int attempted = isMvn ? requested : diag.AttemptedReplicates;
+            // Bootstrap rates are per requested replicate: a replicate is substituted with the
+            // parent fit only after every retry on fresh realizations has failed.
             int discarded = isMvn ? Math.Max(0, requested - retained) : diag.FailedReplicates;
-            double discardRate = attempted > 0 ? (double)discarded / attempted : 0.0;
+            double discardRate = requested > 0 ? (double)discarded / requested : 0.0;
 
             ReportAppendSectionHeader(sb, isMvn ? "SAMPLING DIAGNOSTICS" : "BOOTSTRAP DIAGNOSTICS");
             sb.AppendLine($"  {(isMvn ? "Draws Requested:" : "Replicates Requested:").PadRight(labelWidth)}{requested:N0}");
@@ -3740,8 +3769,8 @@ namespace RMC.BestFit.Analyses
             }
             else
             {
-                sb.AppendLine($"  {"Candidates Attempted:".PadRight(labelWidth)}{attempted:N0}");
-                sb.AppendLine($"  {"Candidate Fits Discarded:".PadRight(labelWidth)}{discarded:N0} ({discardRate * 100:F1}%)");
+                sb.AppendLine($"  {"Realizations Attempted:".PadRight(labelWidth)}{diag.AttemptedRealizations:N0}");
+                sb.AppendLine($"  {"Substituted (parent fit):".PadRight(labelWidth)}{discarded:N0} ({discardRate * 100:F1}%)");
                 sb.AppendLine($"  {"Replicates Used:".PadRight(labelWidth)}{retained:N0}");
             }
 
@@ -3757,7 +3786,7 @@ namespace RMC.BestFit.Analyses
                                   diag.StatusMaximumFunctionEvaluationsCount + diag.StatusFailureCount + diag.StatusNoneCount;
                 if (statusTotal > 0)
                 {
-                    sb.AppendLine("  GMM Status Counts:");
+                    sb.AppendLine("  GMM Status Counts (per start candidate):");
                     sb.AppendLine($"    {"Success:".PadRight(labelWidth - 2)}{diag.StatusSuccessCount:N0}");
                     sb.AppendLine($"    {"Maximum Iterations:".PadRight(labelWidth - 2)}{diag.StatusMaximumIterationsCount:N0}");
                     sb.AppendLine($"    {"Maximum Evaluations:".PadRight(labelWidth - 2)}{diag.StatusMaximumFunctionEvaluationsCount:N0}");
@@ -3768,8 +3797,10 @@ namespace RMC.BestFit.Analyses
 
             if (diag.TransformFailures > 0)
                 sb.AppendLine($"  {"Transform Failures:".PadRight(labelWidth)}{diag.TransformFailures:N0}");
+            if (diag.BoundRepairs > 0)
+                sb.AppendLine($"  {"Bound Repairs:".PadRight(labelWidth)}{diag.BoundRepairs:N0} ({diag.BoundRepairRate * 100:F1}%)");
             if (diag.PivotRejections > 0)
-                sb.AppendLine($"  {"Pivot Rejections:".PadRight(labelWidth)}{diag.PivotRejections:N0} ({diag.PivotRejectionRate * 100:F1}%)");
+                sb.AppendLine($"  {"Pivot z-limit Clips:".PadRight(labelWidth)}{diag.PivotRejections:N0} ({diag.PivotRejectionRate * 100:F1}%)");
             if (diag.MahalanobisRejections > 0)
                 sb.AppendLine($"  {"Outlier Rejections:".PadRight(labelWidth)}{diag.MahalanobisRejections:N0} ({diag.MahalanobisRejectionRate * 100:F1}%)");
 
@@ -3792,6 +3823,13 @@ namespace RMC.BestFit.Analyses
                 sb.AppendLine($"  Note: Only {retained:N0} realizations were retained. Tail quantile resolution may be limited.");
             }
 
+            if (!isMvn && discarded > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"  Note: {discarded:N0} of {requested:N0} replicates ({discardRate * 100:F1}%) were substituted with the parent fit after every retry failed.");
+                sb.AppendLine("  Substituted replicates form a point mass at the parent estimate and narrow the reported limits.");
+            }
+
             if (discardRate > 0.30)
             {
                 sb.AppendLine();
@@ -3801,6 +3839,11 @@ namespace RMC.BestFit.Analyses
             {
                 sb.AppendLine();
                 sb.AppendLine("  WARNING: High discard rate (>10%). The fitted model may be near a parameter boundary or poorly identified.");
+            }
+
+            if (!isMvn && diag.BoundRepairs > 0)
+            {
+                sb.AppendLine($"  Note: {diag.BoundRepairs:N0} pivot draws ({diag.BoundRepairRate * 100:F1}%) were moved inside the parameter bounds before validation.");
             }
 
             if (!isMvn && diag.AverageRetries > 2.0)
