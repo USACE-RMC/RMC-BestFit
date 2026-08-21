@@ -92,6 +92,15 @@ arrays, model step $k$ maps to raw slot $k+d$ and the first $d$ conditioning slo
 
 The uncertainty result is posterior predictive: parameter uncertainty, innovation noise, nonlinear inverse transformation, and—where applicable—covariate extension are combined. It is not a confidence band for the conditional mean. Report the seed, posterior draw count, transform, training endpoint, and covariate scenario.
 
+For an integrated transformed model, a stable and nearly symmetric forecast distribution on the
+transformed scale can become strongly asymmetric after the inverse transform. Innovation variance
+also accumulates with forecast horizon when $d>0$. A rapidly rising original-scale upper bound is
+therefore not, by itself, evidence that raw observations entered the AR/MA recurrence. Diagnose the
+recurrence on the transformed-difference scale, compare its horizon variance with the ARMA impulse
+response, and only then apply the monotone inverse transform to the completed levels. Raw-scale
+intervals from `Transform.None` are not directly comparable with intervals from a fitted nonlinear
+transform because they represent different fitted models.
+
 ## Model Selection and Diagnostics
 
 Choose orders using scientific plausibility, ACF/PACF as exploratory tools, residual diagnostics, and genuinely held-out predictive performance. ACF/PACF patterns are asymptotic heuristics and are distorted by trend, seasonality, transformations, outliers, and short records. After fitting, examine:

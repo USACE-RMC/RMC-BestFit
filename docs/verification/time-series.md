@@ -483,6 +483,80 @@ sandbox and ran no test; the identical command passed with approved access. No s
 prior, sampler, MCMC setting, optimizer, likelihood definition, or convergence default changed.
 The complete Verification project was not run.
 
+### Transformed-scale forecast audit after TR-037 closure
+
+**Disposition.** A 21 August 2026 visual follow-up questioned whether transformed forecasts were
+feeding original-scale observations into prior AR/MA steps. The audit found no production scale
+mixing and made no model, analysis, UI, App, API, serialization, likelihood, transform, sampler,
+seed, or tolerance change. AR and MA read transformed training lags/residuals and inverse-transform
+their completed model paths once. ARIMA and ARIMAX read transformed differences, reconstruct
+transformed levels through the boundary rules above, and inverse-transform the completed level
+path once. The additive regression and verification coverage below now makes that scale contract
+explicit instead of relying on code inspection or a visually plausible plot.
+
+**Airline Passengers diagnostic.** The working example that produced the questioned plot was an
+ARIMAX(1,1,1) with no covariates, Yeo-Johnson exponent
+`0.0412155127218334`, `T=115`, `h=29`, intercept `0.017526237146370967`,
+AR coefficient `-0.22761321776070637`, MA coefficient `0.35925490065184296`, and innovation scale
+`0.12444102029549843`. The final raw training observation `491` transforms independently to
+`7.06221400682384`; its final observed transformed difference is `0.1556208364630951`. The
+independent conditional recurrence gives first-forecast difference `0.02702139291183551`, first
+forecast transformed level `7.089235399735676`, and first raw forecast `501.40125132635757`. At
+horizon 29 it gives transformed level `7.5782095317801845` and raw deterministic forecast
+`730.3461558653945`, exactly matching the stored curve.
+
+The ARMA impulse-response oracle gives transformed-level standard deviation
+`0.7401022009264098` at horizon 29. The monotone Yeo-Johnson inverse maps the fixed-parameter 90%
+transformed interval to approximately `[283.025305878621, 1816.5032375758447]` on the raw scale.
+Posterior parameter uncertainty widens the stored result to approximately
+`[275.367421455945, 1975.644338354631]`. This asymmetry is the expected combination of integrated
+innovation variance and nonlinear inverse transformation; it is not produced by a raw-scale lag.
+The committed reference example before the interactive transform change used `Transform.None`
+and ended at deterministic forecast `553.2532812569322` with interval
+`[256.0906398108524, 859.3306824489538]`. Those plots represent different fitted models and their
+raw-scale interval widths are not directly comparable. The modified example database remains
+unstaged and was not altered by this audit.
+
+**Regression and independent verification.** Core regression
+`TimeSeriesPredictionReintegrationTests.TransformedPredictions_UseOnlyModelScaleLagAndResidualStates`
+uses raw observations equal to exponentials of deliberately small model-scale values. Its AR(1),
+MA(1), ARIMA(1,1,1), and ARIMAX(1,1,1) hand recurrences fail immediately if any original-scale lag
+or residual enters prediction. The exact Verification method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle`.
+It independently implements the Yeo-Johnson transform/inverse, conditional ARMA(1,1) recurrence,
+first-difference reintegration, and accumulated ARMA impulse-response variance. The fixture uses
+transformed levels `[6,6.15,6.11,6.2,6.18,8]`, `lambda=0.04`, `T=5`, `h=5`, intercept `0.02`,
+`phi=-0.2`, `theta=0.35`, and `sigma=0.12`; the final value is an unused holdout sentinel. Exact
+deterministic paths use `1E-10` absolute tolerance. ARIMA and ARIMAX each use exactly 1,000 fixed
+seeds; transformed final-horizon mean and variance use four Monte Carlo standard errors with the
+established three-percent variance floor. Verification source SHA-256 is
+`D2B8CE7E71EF16A9AC110CD40FB9676BCB20B4C10F82E3C83A5B5CF6253CA887`.
+
+**Execution evidence and failure history.** The exact guarded command was:
+
+```powershell
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle'
+```
+
+The first executed oracle under `20260821-102617-...` failed 0/1 in 0.047 s because the newly
+written independent oracle repeated the earlier boundary defect: it used the final fitted
+transformed level instead of the final observed transformed level at horizon one. Production
+returned the correct `6.19033725`; the erroneous oracle expected `6.24080225`. Only the oracle's
+boundary predicate changed from `< T` to `<= T`; production and all acceptance rules remained
+unchanged. The failed TRX SHA-256 is
+`E6B6CE9D05218AC9CB37AC88A574AC5EC61B8279F979C3AA25B8070B8AD14BAB`.
+The corrected method passed 1/1 in 0.192 s under `20260821-102650-...`; its TRX SHA-256 is
+`639A15CDC7C52E5885116E3F69BD9ECEC355F2C80C6D7245C5B64168FE34BEE8`.
+No Bayesian analysis was invoked by this numerical method, so no MCMC setting was set or changed.
+The post-audit strict Debug solution build with `EnforceXmlDocumentation=true` passed all ten
+projects with zero warnings and zero errors in 19.50 s. Serial fast gates passed Core
+3,238/3,238 in 10.322 s, UI 578/578 in 1 min 29.859 s, App 444/444 in 3.862 s, and API 498/498
+in 2.041 s. The UI/App signature baselines and model API baseline are included in those suites and
+remain exact; no production signature changed. `git diff --check` passed. The documented
+`scripts/validate-code-xml-docs.ps1` remains absent, so the strict build was the XML-documentation
+fallback. The complete Verification project was not run.
+
 ## TR-038 — AR, MA, and ARIMA transformed generation
 
 **Disposition and behavior.** The confirmed generation defect is corrected. Previously, AR and
@@ -1039,14 +1113,14 @@ not run; every Phase 5 numerical and recovery result was an exact guarded one-me
 |---|---|---|---|
 | TR-035 Jeffreys component type | Complete | Three Core metadata/decomposition regressions pass | Analytical four-scale oracle passes 1/1 at `1E-12` |
 | TR-036 training-only transform fitting | Complete | Core holdout/state/clone plus UI XML/copy/undo and API mapping pass | R training-only profile oracle passes 1/1; transformed ARIMA recovery passes |
-| TR-037 reintegration index and prediction boundary | Complete after corrective audit | AR/MA boundary audits plus irregular ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, holdout-sentinel, and `d=0` golden regressions pass | Corrected hand recurrence, 1,000-realization variance oracle, and four prediction-affected MLE/Bayesian recoveries pass |
+| TR-037 reintegration index and prediction boundary | Complete after corrective audit | AR/MA boundary audits plus irregular ARIMA/ARIMAX `d=1`/`d=2`, explicit transformed lag/residual separation, component-map, length, horizon, holdout-sentinel, and `d=0` golden regressions pass | Corrected hand recurrence, boundary variance, transformed ARMA recurrence/variance methods using 1,000 realizations, and four prediction-affected MLE/Bayesian recoveries pass |
 | TR-038 AR/MA/ARIMA generation | Complete | Six transform/order/anchor/length and exact legacy-seed regressions pass | Two algebraic plus 1,000-step moment methods pass 1/1; failed 50,000-step overflow history retained |
 | TR-039 ARIMAX generation | Complete | Seven scale/order/date/anchor/extension and exact legacy-seed regressions pass | Algebraic plus 1,000-step moment method and date-indexed ARIMAX MLE/Bayesian recovery pass |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
 | TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle and both ARIMAX recovery cells pass |
 | TR-042 AIC/BIC kernel | Closed; refresh complete | Counting data-likelihood/MAP routing regression passes in Core 3,230/3,230 | Five-analysis data-only criterion and flat-prior parity oracle passes 1/1 with default point estimator |
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
-| Integrated recovery | Complete | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations; Bayesian cells assert unchanged defaults before and after sampling; corrected boundary regressions pass in Core 3,237/3,237 | All eight exact recovery cells pass historically; all four prediction-affected ARIMA/ARIMAX cells pass again against the restored boundary oracle, with independent conditional MLE/posterior-MAP oracles and truth retained as a central-95% coverage criterion |
+| Integrated recovery | Complete | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations; Bayesian cells assert unchanged defaults before and after sampling; corrected boundary and transformed-scale regressions pass in Core 3,238/3,238 | All eight exact recovery cells pass historically; all four prediction-affected ARIMA/ARIMAX cells pass again against the restored boundary oracle, with independent conditional MLE/posterior-MAP oracles and truth retained as a central-95% coverage criterion |
 
 The complete Verification project was not run during Phase 5. Every numerical and recovery result
 was executed as one exact fully qualified method through `scripts/run-verification-test.ps1`.

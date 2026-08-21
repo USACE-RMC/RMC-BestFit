@@ -424,12 +424,14 @@ baselines remain exact. The R artifact and generator were committed before C# ev
 | `TimeSeriesPredictionReintegrationTests.ArimaD2QuadraticPrediction_ReintegratesExactRecurrence` | Core Tests | Constant second differences reconstruct square-number levels and a two-slot conditioning prefix | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.ArimaxD1Prediction_UsesDateIndexedLevelCovariateAndReintegrates` | Core Tests | Exact-date level covariate drives first differences at raw slots `k+1` | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.LogTransformedD1Predictions_ReintegrateBeforeInverseTransform` | Core Tests | Exact recurrence on log scale followed by one inverse transform | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.TransformedPredictions_UseOnlyModelScaleLagAndResidualStates` | Core Tests | AR, MA, ARIMA(1,1,1), and ARIMAX(1,1,1) use only log-scale lag/residual/difference states before one inverse transform; raw/transformed scale separation is deliberately large | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.NoneD0FixedSeedPrediction_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change ARIMA/ARIMAX `Transform.None`, `d=0` values and every component vector | Exact double equality; passed |
 | `TimeSeriesAnalysisControlSourceTests.PredictionPlot_SplitsAtFinalTrainingIndex` | App Tests | Training and prediction credible-interval series share the final training index and prediction begins there | Exact source contract; passed |
 | `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Verification | Irregular ARIMA `d=2` and logarithmic ARIMAX `d=1` hand recurrences distinguish observed training states, the first forecast anchor, later recursion, and holdout exclusion | `1E-10`; guarded pass 1/1 |
 | `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary` | Verification | Exactly 1,000 fixed seeds; conditional training and horizon-one variance `1`, then random-walk forecast variances `2` and `3` | Four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
+| `Phase5TimeSeriesVerificationTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle` | Verification | Independent Yeo-Johnson plus conditional ARMA(1,1) recurrence; exactly 1,000 fixed seeds verify accumulated transformed-level horizon variance before inverse transformation | `1E-10` recurrence; four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
 
-The corrected package gates pass Core 3,237/3,237, UI 578/578, App 444/444, and API 498/498.
+The transformed-scale audit gates pass Core 3,238/3,238, UI 578/578, App 444/444, and API 498/498.
 The strict Debug solution build reports zero warnings/errors, and UI/App signature baselines remain
 exact. No external artifact is required for the embedded analytical recurrences; source hashes,
 the complete-path failure history, and exact command/TRX evidence are recorded in

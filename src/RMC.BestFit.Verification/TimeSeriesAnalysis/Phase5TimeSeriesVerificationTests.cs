@@ -436,6 +436,99 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
+    /// Verifies transformed ARIMA and ARIMAX forecasts recurse exclusively on transformed
+    /// differences, integrate transformed levels, and inverse-transform the completed path once.
+    /// </summary>
+    /// <remarks>
+    /// A hand-coded Yeo-Johnson and ARMA(1,1) oracle supplies the deterministic conditional path.
+    /// The raw fixture contains values whose scale is deliberately far from the transformed scale,
+    /// so a raw lag entering either recurrence cannot satisfy the 1E-10 absolute tolerance. The
+    /// stochastic check uses exactly 1,000 fixed seeds. At the final horizon, transformed forecast
+    /// mean and variance must match the analytical accumulated ARMA impulse-response moments within
+    /// four Monte Carlo standard errors, with the established three-percent variance floor.
+    /// </remarks>
+    [TestMethod]
+    public void TransformedArimaAndArimaxForecastsMatchModelScaleOracle()
+    {
+        const int realizationCount = 1000;
+        const int trainingSteps = 5;
+        const int forecastSteps = 5;
+        const double lambda = 0.04;
+        const double mu = 0.02;
+        const double phi = -0.2;
+        const double theta = 0.35;
+        const double sigma = 0.12;
+        const double tolerance = 1E-10;
+        DateTime startDate = new(2002, 3, 4);
+
+        double[] transformed = { 6.0, 6.15, 6.11, 6.20, 6.18, 8.0 };
+        double[] raw = transformed
+            .Select(value => IndependentYeoJohnsonInverse(value, lambda))
+            .ToArray();
+        double[] parameters = { mu, phi, theta, sigma };
+        double[] expectedTransformed = IndependentConditionalArmaD1Prediction(
+            raw,
+            trainingSteps,
+            forecastSteps,
+            lambda,
+            mu,
+            phi,
+            theta);
+
+        var arima = new ARIMA
+        {
+            POrder = 1,
+            DOrder = 1,
+            QOrder = 1,
+            IncludeIntercept = true,
+            TransformType = Transform.YeoJohnson,
+        };
+        arima.SetTransformParameters(lambda, double.NaN);
+        arima.TimeSeries = CreateDailySeries(raw, startDate);
+        arima.UseDefaultTrainingSteps = false;
+        arima.TrainingTimeSteps = trainingSteps;
+
+        var arimax = new ARIMAX
+        {
+            AROrderP = 1,
+            DiffOrderD = 1,
+            MAOrderQ = 1,
+            XOrderB = 0,
+            IncludeIntercept = true,
+            TransformType = Transform.YeoJohnson,
+        };
+        arimax.SetTransformParameters(lambda, double.NaN);
+        arimax.TimeSeries = CreateDailySeries(raw, startDate);
+        arimax.UseDefaultTrainingSteps = false;
+        arimax.TrainingTimeSteps = trainingSteps;
+
+        double[] arimaDeterministic = arima.Predict(parameters, forecastSteps, -1).Y
+            .Select(value => IndependentYeoJohnsonTransform(value, lambda))
+            .ToArray();
+        double[] arimaxDeterministic = arimax.Predict(parameters, forecastSteps, -1).Y
+            .Select(value => IndependentYeoJohnsonTransform(value, lambda))
+            .ToArray();
+        AssertArrayEqual(expectedTransformed, arimaDeterministic, tolerance, "ARIMA transformed recurrence");
+        AssertArrayEqual(expectedTransformed, arimaxDeterministic, tolerance, "ARIMAX transformed recurrence");
+
+        double[] arimaFinal = Enumerable.Range(0, realizationCount)
+            .Select(seed => IndependentYeoJohnsonTransform(
+                arima.Predict(parameters, forecastSteps, seed).Y[^1],
+                lambda))
+            .ToArray();
+        double[] arimaxFinal = Enumerable.Range(0, realizationCount)
+            .Select(seed => IndependentYeoJohnsonTransform(
+                arimax.Predict(parameters, forecastSteps, seed).Y[^1],
+                lambda))
+            .ToArray();
+        double expectedStandardDeviation = Math.Sqrt(
+            IndependentIntegratedArmaForecastVariance(forecastSteps, phi, theta, sigma));
+        double expectedMean = expectedTransformed[^1];
+        AssertIndependentGaussianMoments(arimaFinal, expectedMean, expectedStandardDeviation, "ARIMA transformed horizon five");
+        AssertIndependentGaussianMoments(arimaxFinal, expectedMean, expectedStandardDeviation, "ARIMAX transformed horizon five");
+    }
+
+    /// <summary>
     /// Verifies transformed AR and MA generators against fixed model-scale recurrences and
     /// independently evaluated inverse-transform and Monte Carlo moment oracles.
     /// </summary>
@@ -1125,6 +1218,95 @@ public class Phase5TimeSeriesVerificationTests
         return -0.5 * Math.Log(2 * Math.PI)
             - Math.Log(sigma)
             - residual * residual / (2 * sigma * sigma);
+    }
+
+    /// <summary>
+    /// Evaluates a conditional ARMA(1,1) forecast on first-differenced Yeo-Johnson values.
+    /// </summary>
+    /// <param name="raw">The raw observations, including any unused holdout sentinel.</param>
+    /// <param name="trainingSteps">The number of raw observations in the training window.</param>
+    /// <param name="forecastSteps">The forecast horizon.</param>
+    /// <param name="lambda">The fixed Yeo-Johnson exponent.</param>
+    /// <param name="mu">The differenced-scale intercept.</param>
+    /// <param name="phi">The AR(1) coefficient.</param>
+    /// <param name="theta">The MA(1) coefficient.</param>
+    /// <returns>The conditional fitted and forecast levels on the transformed scale.</returns>
+    private static double[] IndependentConditionalArmaD1Prediction(
+        double[] raw,
+        int trainingSteps,
+        int forecastSteps,
+        double lambda,
+        double mu,
+        double phi,
+        double theta)
+    {
+        double[] observedLevels = raw
+            .Take(trainingSteps)
+            .Select(value => IndependentYeoJohnsonTransform(value, lambda))
+            .ToArray();
+        double[] observedDifferences = Enumerable.Range(1, observedLevels.Length - 1)
+            .Select(index => observedLevels[index] - observedLevels[index - 1])
+            .ToArray();
+        int trainingModelSteps = trainingSteps - 1;
+        int modelSteps = trainingModelSteps + forecastSteps;
+        var predictedDifferences = new double[modelSteps];
+        var residuals = new double[modelSteps];
+
+        predictedDifferences[0] = observedDifferences[0];
+        for (int modelIndex = 1; modelIndex < modelSteps; modelIndex++)
+        {
+            double lag = modelIndex - 1 < trainingModelSteps
+                ? observedDifferences[modelIndex - 1]
+                : predictedDifferences[modelIndex - 1];
+            predictedDifferences[modelIndex] = mu
+                + phi * (lag - mu)
+                + theta * residuals[modelIndex - 1];
+            if (modelIndex < trainingModelSteps)
+            {
+                residuals[modelIndex] = observedDifferences[modelIndex]
+                    - predictedDifferences[modelIndex];
+            }
+        }
+
+        var levels = new double[trainingSteps + forecastSteps];
+        levels[0] = observedLevels[0];
+        for (int rawIndex = 1; rawIndex < levels.Length; rawIndex++)
+        {
+            double previousLevel = rawIndex <= trainingSteps
+                ? observedLevels[rawIndex - 1]
+                : levels[rawIndex - 1];
+            levels[rawIndex] = previousLevel + predictedDifferences[rawIndex - 1];
+        }
+
+        return levels;
+    }
+
+    /// <summary>
+    /// Calculates the transformed-level forecast variance for an integrated ARMA(1,1) process.
+    /// </summary>
+    /// <param name="horizon">The positive forecast horizon.</param>
+    /// <param name="phi">The AR(1) coefficient.</param>
+    /// <param name="theta">The MA(1) coefficient.</param>
+    /// <param name="sigma">The innovation standard deviation.</param>
+    /// <returns>The analytical variance of the transformed level at the requested horizon.</returns>
+    private static double IndependentIntegratedArmaForecastVariance(
+        int horizon,
+        double phi,
+        double theta,
+        double sigma)
+    {
+        double cumulativeImpulse = 0.0;
+        double sumSquares = 0.0;
+        for (int lag = 0; lag < horizon; lag++)
+        {
+            double impulse = lag == 0
+                ? 1.0
+                : (phi + theta) * Math.Pow(phi, lag - 1);
+            cumulativeImpulse += impulse;
+            sumSquares += cumulativeImpulse * cumulativeImpulse;
+        }
+
+        return sigma * sigma * sumSquares;
     }
 
     /// <summary>

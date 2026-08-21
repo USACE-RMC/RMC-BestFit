@@ -138,6 +138,76 @@ public class TimeSeriesPredictionReintegrationTests
     }
 
     /// <summary>
+    /// Verifies transformed AR, MA, ARIMA, and ARIMAX predictions use only model-scale lag
+    /// and residual states before applying a single inverse transform to the completed path.
+    /// </summary>
+    /// <remarks>
+    /// The raw observations are exponentials of deliberately small transformed values. Feeding
+    /// even one raw observation into an AR or MA recurrence therefore produces a large and
+    /// immediately detectable departure from the hand-evaluated transformed-space oracle.
+    /// </remarks>
+    [TestMethod]
+    public void TransformedPredictions_UseOnlyModelScaleLagAndResidualStates()
+    {
+        double[] transformed = { 1.0, 1.5, 1.6, 9.0 };
+        double[] raw = transformed.Select(Math.Exp).ToArray();
+
+        var ar = new AutoRegressive(CreateSeries(raw), order: 1, includeIntercept: false)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.Logarithmic,
+        };
+        ar.TrainingTimeSteps = 3;
+        AssertArrayEqual(
+            new[] { 1.0, 0.5, 0.75, 0.8, 0.4 }.Select(Math.Exp).ToArray(),
+            ar.Predict(new[] { 0.5, 0.25 }, 2, -1).Y,
+            "log AR model-scale lags");
+
+        var ma = new MovingAverage(CreateSeries(raw), order: 1, includeIntercept: false)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.Logarithmic,
+        };
+        ma.TrainingTimeSteps = 3;
+        AssertArrayEqual(
+            new[] { 0.0, 0.5, 0.5, 0.55, 0.0 }.Select(Math.Exp).ToArray(),
+            ma.Predict(new[] { 0.5, 0.25 }, 2, -1).Y,
+            "log MA model-scale residuals");
+
+        var arima = new ARIMA(CreateSeries(raw), 1, 1, 1, true)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.Logarithmic,
+        };
+        arima.TrainingTimeSteps = 3;
+        double[] expectedIntegrated = new[] { 1.0, 1.5, 1.775, 1.63125, 1.671875 }
+            .Select(Math.Exp)
+            .ToArray();
+        AssertArrayEqual(
+            expectedIntegrated,
+            arima.Predict(new[] { 0.05, 0.5, 0.25, 0.2 }, 2, -1).Y,
+            "log ARIMA model-scale differences");
+
+        var arimax = new ARIMAX
+        {
+            IncludeIntercept = true,
+            AROrderP = 1,
+            DiffOrderD = 1,
+            MAOrderQ = 1,
+            XOrderB = 0,
+            CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.Logarithmic,
+        };
+        arimax.TimeSeries = CreateSeries(raw);
+        arimax.TrainingTimeSteps = 3;
+        AssertArrayEqual(
+            expectedIntegrated,
+            arimax.Predict(new[] { 0.05, 0.5, 0.25, 0.2 }, 2, -1).Y,
+            "log ARIMAX model-scale differences");
+    }
+
+    /// <summary>
     /// Verifies first-difference predictions reconstruct a linear raw sequence for zero and
     /// positive forecast horizons and map model components to raw slots <c>k+1</c>.
     /// </summary>
