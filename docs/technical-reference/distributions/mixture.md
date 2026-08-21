@@ -76,21 +76,31 @@ $$
 
 BestFit retains its normalized 20-point Gauss-Legendre window. The atom is added separately and is not approximated as Lebesgue density.
 
-## API Parameter Vector and Simplex Prior
+## Public, Sampled, and Physical Parameter Vectors
 
 Numerics preserves its public contract: constructors, **Weights**, **GetParameters**, **NumberOfParameters**, every **SetParameters** overload, constraints, and MLE results use all $K$ physical weights. Caller-owned arrays are copied before assignment or normalization, including the legacy **ref** overload.
 
-BestFit preserves all public method signatures but uses $K-1$ free physical weights:
+BestFit preserves its public model, prior-configuration, EM, and project-model vector with all $K$ physical weight coordinates:
 
 $$
 \boldsymbol\phi=
+(w_1,\ldots,w_K,
+\boldsymbol\theta_1^{\mathsf T},\ldots,
+\boldsymbol\theta_K^{\mathsf T})^{\mathsf T}. \tag{8a}
+$$
+
+The Bayesian sampler is identified by omitting the last weight:
+
+$$
+\boldsymbol\eta=
 (w_1,\ldots,w_{K-1},
 \boldsymbol\theta_1^{\mathsf T},\ldots,
-\boldsymbol\theta_K^{\mathsf T})^{\mathsf T}, \tag{8}
+\boldsymbol\theta_K^{\mathsf T})^{\mathsf T},
+\qquad
+w_K=m-\sum_{k=1}^{K-1}w_k. \tag{8}
 $$
 
 $$
-w_K=m-\sum_{j=1}^{K-1}w_j,\qquad
 m=
 \begin{cases}
 1,&\text{ordinary},\\
@@ -98,21 +108,21 @@ m=
 \end{cases} \tag{9}
 $$
 
-A proposal is rejected if a tracked weight or the derived final weight is negative. One conversion routine creates a local Numerics $K$-weight array for likelihood evaluation, posterior reconstruction, point estimates, frequency results, and simulation. Retained posterior arrays are never normalized or mutated.
+Every sampler-target evaluation performs this affine expansion inside BestFit before invoking the established full-$K$ likelihood and prior methods. A proposal is feasible only when all sampled weights are finite and nonnegative and the derived $w_K$ is finite and nonnegative. An infeasible proposal has log target $-\infty$; BestFit does not clamp, renormalize, or mutate the proposal. Numerics receives only the expanded full-$K$ physical vector and retains its existing copy-and-normalize boundary.
 
-The default joint prior is flat on the feasible physical simplex:
-
-$$
-p(w_1,\ldots,w_{K-1})
-=\dfrac{\Gamma(K)}{m^{K-1}}
-\mathbb I\left(w_j\ge 0,\ \sum_{j=1}^{K-1}w_j\le m\right), \tag{10}
-$$
+All $K$ configured weight-prior factors remain active even though only $K-1$ weights are sampled:
 
 $$
-\log p=\log\Gamma(K)-(K-1)\log m. \tag{11}
+\log p(\boldsymbol\eta)
+=\sum_{k=1}^{K}\log g_k(w_k)
++\sum_j\log h_j(\theta_j)
++\ell_{\mathrm{Jeffreys}}
++\ell_{\mathrm{quantile}}. \tag{10}
 $$
 
-The scalar **Uniform(0,m)** terms supply $-(K-1)\log m$, and BestFit adds $\log\Gamma(K)$ once. No stick coordinates, Jacobian term, or Dirichlet sampling is used.
+The scalar factors $g_k$ form a joint prior kernel restricted to the simplex; they are not independent marginal distributions. The elimination map is affine, so no parameter-dependent Jacobian or additional normalization correction is introduced. `PriorLogLikelihood` and `PointwisePriorLogLikelihood` retain their full-$K$ public inputs, and the pointwise terms sum to the same scalar prior kernel.
+
+New mixture `MCMCResults` store $\boldsymbol\eta$ directly. Sampler diagnostics therefore report $w_1,\ldots,w_{K-1}$ and the component parameters, but no separate trace, R-hat, ESS, or sampler covariance entry for $w_K$. Prior plots for sampled weights show the corresponding configured scalar factor, not a simplex marginal. Physical result tables, distribution reconstruction, posterior prediction, information criteria, and frequency curves derive $w_K$ locally for each retained draw without modifying `MCMCResults`. Legacy full-$K$ results follow the identity path and require no migration.
 
 Component labels remain exchangeable under symmetric families and priors. Verification resolves labels by component location; applied analyses should use scientifically distinguishable components or interpret label-specific summaries cautiously [1](#ref-1).
 
@@ -120,7 +130,7 @@ Component labels remain exchangeable under symmetric families and priors. Verifi
 
 **ExpectationMaximization(...)** preserves the established approximate-MLE contract, iteration
 limit, tolerance, bounded Nelder-Mead component optimization, and convergence order. It does not
-include parameter, simplex, Jeffreys-scale, or quantile priors. On exact non-outlier data, BestFit
+include parameter, Jeffreys-scale, or quantile priors. On exact non-outlier data, BestFit
 delegates to Numerics, producing identical responsibilities, conditioning, simplex normalization,
 impossible-row behavior, iterations, and physical weights.
 
@@ -134,43 +144,38 @@ $$
 
 Component weights are rescaled to $m$. If any exact, uncertain, interval, or threshold row has zero or nonfinite total probability, EM throws **InvalidOperationException** with the row index and value.
 
-BestFit returns $K-1$ weights followed by component parameters. Its covariance uses the matching $K-1$ principal submatrix of the established physical-weight approximation, with the component Fisher block shifted accordingly. Parameter count and AIC/BIC dimension therefore use the identified dimension.
+BestFit's public EM method returns all $K$ weights followed by component parameters, preserving its original contract. Let $N_{\mathrm{eff}}$ be the sum of the final continuous-component responsibilities and let $\mathbf w=(w_1,\ldots,w_K)^{\mathsf T}$. The public weight-covariance block is
+
+$$
+\boldsymbol\Sigma_w
+=\frac{1}{N_{\mathrm{eff}}}
+\left[m\,\operatorname{diag}(\mathbf w)-\mathbf w\mathbf w^{\mathsf T}\right]. \tag{12a}
+$$
+
+It is symmetric, has negative off-diagonal entries, zero row sums, and rank at most $K-1$. The sampler receives the leading $(K-1)\times(K-1)$ block. The existing component covariance is retained and weight/component cross-covariances remain zero.
 
 ## Priors and Posterior
 
-BestFit adds scalar component priors to Equation (11). **UseJeffreysRuleForScale** adds $-\log s$ for each recognized scale. One enabled quantile prior contributes
+BestFit adds scalar component priors to Equation (10). **UseJeffreysRuleForScale** adds $-\log s$ for each recognized scale. One enabled quantile prior contributes
 
 $$
 \log p_Q\!\left[F_M^{-1}(1-\alpha_Q)\right]. \tag{13}
 $$
 
-**MixtureAnalysis** uses EM as a deterministic basin finder and then performs a bounded local
-Nelder-Mead refinement against the complete posterior kernel:
+**MixtureAnalysis** uses EM as a deterministic basin finder. Its full-$K$ center and covariance are reduced to the identified coordinates by omitting $w_K$:
 
 $$
-\widehat{\boldsymbol\phi}_{EM}
-=\operatorname*{arg\,max}_{\boldsymbol\phi}\ell_D(\boldsymbol\phi),
-\qquad
-\widehat{\boldsymbol\phi}_{MAP}
-=\operatorname*{arg\,max}_{\boldsymbol\phi}
-\left[\ell_D(\boldsymbol\phi)+\log p(\boldsymbol\phi)\right],
-\quad
-\boldsymbol\phi_0=\widehat{\boldsymbol\phi}_{EM}. \tag{14}
+\widehat{\boldsymbol\eta}_{EM}
+=(\widehat w_1,\ldots,\widehat w_{K-1},
+\widehat{\boldsymbol\theta}^{\mathsf T})^{\mathsf T}. \tag{14}
 $$
-
-The second objective is `MixtureModel.LogLikelihood`, so Equation (11), all scalar parameter
-priors, Jeffreys scale terms, and the enabled quantile prior in Equation (13) participate in the
-initialization mode. The bounded posterior Hessian supplies a local covariance; singular
-information may use the initialization-only regularized Moore-Penrose covariance without changing
-the public MAP covariance status.
 
 The full initial population is sampled with the configured sampler seed from a multivariate Normal
 using covariance multiplier 1.5. A proposal receives at most 20 replacement draws, is accepted only
-with finite full-posterior fitness, and the best population members seed the chains. MAP failure
-falls back to the EM center and covariance while retaining posterior scoring; failure of that EM
-population resets to randomized initialization. This changes no DEMCzs sampling default and does
-not use a Dirichlet initializer. Every retained posterior vector uses the common nonmutating
-$K-1$-to-$K$ reconstruction path.
+with finite full-posterior fitness after the residual weight has been derived, and the best population
+members seed the chains. Failure of that EM population resets to randomized initialization. There is
+no mixture-specific MAP refinement or numerical Hessian. This changes no DEMCzs sampling default,
+seed, covariance multiplier, or retry limit and does not use a Dirichlet initializer.
 
 ## Compile-Checked Configuration
 
@@ -201,16 +206,16 @@ private static MixtureAnalysis ConfigureLatentPopulationMixture(
 - Negligible weights or parameters on bounds indicate weak identification.
 - Mixture information criteria remain nonregular near boundaries or with unresolved label switching.
 
-No parameterization version, migration adapter, or persisted-posterior compatibility layer is provided for the former normalized $K$-weight workflow. Saved mixture posterior results require re-estimation.
+The public model and project configuration remain full $K$, while new posterior chains deliberately persist only the identified $K-1$ sampled weights. Existing full-$K$ posterior results open and process directly. No load-time migration or result rewriting occurs.
 
 ## Validation
 
-Fast tests cover $K-1$ counts and names, final-weight derivation, prior normalization, proposal immutability, covariance dimensions, exact-only atom derivation, analytical hurdle identities, simulation, invalid positive mass, negative exact values, mixed likelihoods, and impossible rows.
+Fast tests cover full-$K$ public counts and XML prior round trips; $K-1$ sampler dimensions, ordering, persistence, residual reconstruction, and infeasible rejection; enforcement of the derived weight's configured prior; scalar/pointwise prior identity; analytical EM covariance; sampled-coordinate diagnostics; physical parameter-set display without stored-array mutation; legacy full-$K$ results; frequency-curve processing; exact-only atom derivation; analytical hurdle identities; simulation; invalid positive mass; negative exact values; mixed likelihoods; and impossible rows.
 
 Six focused **RMC.BestFit.Verification** fixtures generate $n=1000$ observations with seed 12345
 through `MixtureModel.GenerateRandomValues`, jointly verifying the production generator and
 recovery paths. The three EM parity results remain current because public EM is unchanged. The
-three Bayesian results predate EM-seeded MAP initialization and are marked for focused rerun.
+three Bayesian results predate identified $K-1$ sampling and require separately authorized focused reruns.
 
 Three parity fixtures compare BestFit with Numerics using pre-fit tolerance $10^{-10}$, fitted parity tolerance $10^{-8}$, and recovery tolerance 0.1:
 
@@ -219,10 +224,7 @@ Three parity fixtures compare BestFit with Numerics using pre-fit tolerance $10^
 3. three-component Normal, weights 0.2/0.3/0.5.
 
 Three corresponding `MixtureAnalysis` fixtures retain their declared Bayesian recovery settings and
-acceptance gates, but require explicitly authorized reruns after the initializer change. A new
-`InformativePrior_EmSeededMapInitialization_UsesFullPosterior` method is compiled but not run. It
-checks the EM starting vector, informative-prior displacement, nondecreasing full posterior, local
-posterior covariance, `UserDefined` population construction, and exact full-posterior fitness.
+acceptance gates, but require explicitly authorized reruns after the parameterization change.
 
 See the [mixture verification report](../../verification/mixture.md).
 
@@ -230,12 +232,13 @@ See the [mixture verification report](../../verification/mixture.md).
 
 | Concern | Implementation |
 |---|---|
-| $K-1$ parameterization, likelihood, prior, EM | **Models/UnivariateDistribution/MixtureModel.cs** |
-| Bayesian initialization and reconstruction | **Analyses/Univariate/MixtureAnalysis.cs** |
+| Full-$K$ model, likelihood, prior, EM output, and project-model contract | **Models/UnivariateDistribution/MixtureModel.cs** |
+| Identified sampler initialization and physical reconstruction | **Analyses/Univariate/MixtureAnalysis.cs** |
+| Sampled-coordinate result storage and diagnostics | **Estimation/BayesianAnalysis.cs** and **Diagnostics/** |
+| Physical parameter-set display | **RMC.BestFit.App/GUI/Support/Controls/ParameterSetsControl.xaml.cs** |
 | Physical simplex and hurdle distribution | sibling **Numerics/Distributions/Univariate/Mixture.cs** |
 | Fast regressions | **RMC.BestFit.Tests/Univariate/MixturePhase4Tests.cs** |
 | Generation, recovery parity, and Bayesian recovery | **RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs** |
-| Informative-prior EM-seeded MAP initialization | **RMC.BestFit.Verification/Univariate/MixtureTests/MixturePriorAwareInitializationVerificationTests.cs** |
 
 ## References
 

@@ -1,5 +1,6 @@
 ﻿using Numerics.Distributions;
 using RMC.BestFit.Models;
+using System.Xml.Linq;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
@@ -115,9 +116,9 @@ public class MixtureModelTests
             DataFrame = CreateSampleDataFrame()
         };
         int componentCount = model.Mixture!.Distributions.Length;
-        int freeWeightCount = Math.Max(0, componentCount - 1);
+        int publicWeightCount = componentCount > 1 ? componentCount : 0;
         double[] physicalParameters = model.Mixture.GetParameters;
-        double[] parameterValues = physicalParameters.Take(freeWeightCount)
+        double[] parameterValues = physicalParameters.Take(publicWeightCount)
             .Concat(physicalParameters.Skip(componentCount))
             .ToArray();
 
@@ -452,10 +453,11 @@ public class MixtureModelTests
         };
         var model = new MixtureModel(df, types);
 
-        // K-1 gives one free weight plus two parameters per Normal component.
-        Assert.AreEqual(5, model.NumberOfParameters);
+        // The public contract retains both physical weights plus two parameters per Normal component.
+        Assert.AreEqual(6, model.NumberOfParameters);
         Assert.AreEqual("Weight (w₁)", model.Parameters[0].Name);
-        Assert.IsFalse(model.Parameters[1].Name.Contains("Weight", StringComparison.Ordinal));
+        Assert.AreEqual("Weight (w₂)", model.Parameters[1].Name);
+        Assert.IsFalse(model.Parameters[2].Name.Contains("Weight", StringComparison.Ordinal));
     }
 
     /// <summary>Verifies that set default parameters single component no weight parameters.</summary>
@@ -765,12 +767,9 @@ public class MixtureModelTests
 
         model.ExpectationMaximization(out double[] parameters, out double[,] covariance, out int iterations);
 
-        // The first physical weight is free and the final weight is derived.
-        double firstWeight = parameters[0];
-        double finalWeight = 1.0 - firstWeight;
-        Assert.IsTrue(firstWeight >= 0.0);
-        Assert.IsTrue(finalWeight >= 0.0);
-        Assert.AreEqual(1.0, firstWeight + finalWeight, 1E-12);
+        Assert.IsTrue(parameters[0] >= 0.0);
+        Assert.IsTrue(parameters[1] >= 0.0);
+        Assert.AreEqual(1.0, parameters[0] + parameters[1], 1E-12);
     }
 
     #endregion
@@ -899,6 +898,57 @@ public class MixtureModelTests
         var xElement = model.ToXElement();
 
         Assert.IsNotNull(xElement.Element("Distribution"));
+    }
+
+    /// <summary>Verifies mixture XML retains every physical component weight.</summary>
+    [TestMethod]
+    public void Test_ToXElement_PersistsFullKParameterVector()
+    {
+        var model = new MixtureModel(
+            CreateSampleDataFrame(),
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            });
+
+        XElement xElement = model.ToXElement();
+        List<XElement> parameters = xElement
+            .Element(nameof(MixtureModel.Parameters))!
+            .Elements(nameof(ModelParameter))
+            .ToList();
+
+        Assert.AreEqual(model.NumberOfParameters, parameters.Count);
+        Assert.AreEqual(6, parameters.Count);
+        StringAssert.Contains(parameters[0].ToString(), "Weight (w₁)");
+        StringAssert.Contains(parameters[1].ToString(), "Weight (w₂)");
+    }
+
+    /// <summary>Verifies distinct priors on every physical weight survive XML round trip.</summary>
+    [TestMethod]
+    public void Test_RoundTrip_PreservesAllPhysicalWeightPriors()
+    {
+        var dataFrame = CreateSampleDataFrame();
+        var original = new MixtureModel(
+            dataFrame,
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            });
+        original.Parameters[0].PriorDistribution = new Normal(0.25, 0.10);
+        original.Parameters[1].PriorDistribution = new Normal(0.75, 0.15);
+
+        var restored = new MixtureModel(dataFrame, original.ToXElement());
+
+        Assert.AreEqual(
+            original.Parameters[0].PriorDistribution.LogPDF(0.4),
+            restored.Parameters[0].PriorDistribution.LogPDF(0.4),
+            1E-12);
+        Assert.AreEqual(
+            original.Parameters[1].PriorDistribution.LogPDF(0.6),
+            restored.Parameters[1].PriorDistribution.LogPDF(0.6),
+            1E-12);
     }
 
     /// <summary>Verifies that round trip preserves all properties for .</summary>

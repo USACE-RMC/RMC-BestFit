@@ -188,17 +188,17 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 <a id="tr-006"></a>
 ## TR-006 — Mixture Weights Are Redundant and Mutate Candidate Arrays
 
-**Review disposition.** Confirmed defect; the direct physical $K-1$ correction was approved.
+**Review disposition.** Confirmed proposal-mutation and sampler-identifiability defect. The full-$K$ public model contract and identified $K-1$ posterior-storage contract are authoritative.
 
-**Implementation status.** Complete in reachable Numerics commit `3e69a93` and the BestFit Phase 4 mixture batch without changing any public weight-related method signature.
+**Implementation status.** Numerics retains its full-$K$ copy-and-normalize boundary. BestFit retains full $K$ for model configuration, configured priors, public likelihood methods, EM output, and project-model XML, while new mixture `MCMCResults` store the identified $K-1$ sampled coordinates.
 
-**Verification status.** Passed. Fast regressions, three exact Numerics/BestFit recovery-parity methods, and three Bayesian `MixtureAnalysis` generation-and-recovery methods pass. Every focused method was run separately through the guarded runner and produced one passing TRX.
+**Verification status.** The mixture-focused Core batch passes 132/132; UI passes 578/578, App 439/439, API 498/498, and Numerics' focused mixture class passes 21/21 on .NET 10. The three exact Numerics/BestFit likelihood-and-EM parity methods remain historical passing evidence. The three Bayesian `MixtureAnalysis` recovery methods require separately authorized focused reruns.
 
-**Evidence.** Numerics retains all $K$ physical weights in its public arrays and copies caller input before normalization or assignment. BestFit now tracks only $w_1,\ldots,w_{K-1}$, derives $w_K=m-\sum_{j=1}^{K-1}w_j$, rejects infeasible proposals, and uses one nonmutating reconstruction path. Its proper flat physical-simplex prior includes $\log\Gamma(K)-(K-1)\log m$. EM outputs, covariance, parameter names, and information-criterion dimension use $K-1$ weights.
+**Evidence.** For sampled coordinates $(w_1,\ldots,w_{K-1},\boldsymbol\theta)$, BestFit derives $w_K=m-\sum_{k<K}w_k$, rejects infeasible proposals, and evaluates the established full-$K$ posterior so every configured weight prior contributes. The responsibility covariance has negative off-diagonal terms and zero full-$K$ row sums. Diagnostics expose stored coordinates; physical consumers reconstruct full $K$ locally.
 
-**Impact.** The redundant radial direction and objective-side proposal mutation are removed. Existing saved mixture posterior results from the former normalized $K$-weight workflow require re-estimation; no migration or parameterization version is provided.
+**Impact.** Objective-side proposal mutation is removed without changing the public model API. New posterior chains are identified and avoid the redundant weight direction. Existing full-$K$ saved posterior results open and create frequency curves directly without migration.
 
-**Closeout.** The production BestFit generator supplies all six seeded samples. Exact parity retains the declared likelihood and recovery tolerances; Bayesian recovery retains deterministic DEMCzs settings and requires finite split R-hat below 1.1 and conservative ESS above 100 for every fitted coordinate. Saved results from the former parameterization still require re-estimation.
+**Closeout.** Exact parity retains the declared likelihood and recovery tolerances. Bayesian recovery retains deterministic DEMCzs settings and, when separately rerun, requires finite split R-hat below 1.1 and conservative ESS above 100 for every sampled coordinate. Saved full-$K$ results remain usable without re-estimation.
 
 <a id="tr-007"></a>
 ## TR-007 — Zero-Inflated Mixture Probability Functions

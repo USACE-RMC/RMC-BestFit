@@ -208,8 +208,8 @@ These formal methods verify worked-example point-estimate parity. They do not ve
 The original six methods generate the parent sample through
 `MixtureModel.GenerateRandomValues(1000, 12345)`. All six have prior guarded results. The public
 EM estimator is unchanged, so the three parity results remain current. The three Bayesian results
-predate EM-seeded MAP initialization and require focused reruns before they support the changed
-initialization path.
+predate identified $K-1$ sampling and require focused reruns before they support the changed
+parameterization path.
 
 | Test method | Oracle or recovery contract | Status |
 |---|---|---|
@@ -219,12 +219,11 @@ initialization path.
 | `MixtureRecoveryTests.NormalMixture2D_BayesianRecovery` | Seeded DEMCzs posterior-mode recovery with split R-hat and ESS acceptance | Ready - focused rerun; prior result 9.589 s |
 | `MixtureRecoveryTests.ZeroInflatedNormalMixture2D_BayesianRecovery` | Seeded positive-hurdle DEMCzs recovery, binomial atom bound, split R-hat, and ESS | Ready - focused rerun; prior result 21.346 s |
 | `MixtureRecoveryTests.NormalMixture3D_BayesianRecovery` | Seeded three-component DEMCzs posterior-mode recovery with label sorting, split R-hat, and ESS | Ready - focused rerun; prior result 12.761 s |
-| `MixturePriorAwareInitializationVerificationTests.InformativePrior_EmSeededMapInitialization_UsesFullPosterior` | EM start, informative-prior displacement, nondecreasing posterior, MAP covariance, and full-posterior population fitness | Ready - focused run |
 
 The parity methods retain pre-fit tolerance `1E-10`, cross-engine fitted tolerance `1E-8`, and
 absolute parent-recovery tolerance `0.1`. The Bayesian configurations, seeds, and acceptance gates
-remain unchanged. The new informative-prior method runs EM, local MAP refinement, covariance, and
-population construction without MCMC. Neither it nor the three affected Bayesian methods was run
+remain unchanged. The deterministic fast tests cover EM-centered identified population construction
+and enforcement of the derived weight's prior. The three affected Bayesian methods were not run
 during implementation, and the full Verification project was not run.
 
 ## Phase 4 point-process backcheck - 31 July 2026

@@ -1,13 +1,12 @@
 ﻿using Numerics.Distributions;
 using Numerics.Mathematics.Integration;
-using Numerics.Mathematics.SpecialFunctions;
 using RMC.BestFit.Models;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Fast regression tests for the corrected K-1 mixture parameterization and positive-hurdle likelihood.
+/// Fast regression tests for the full-K mixture contract and positive-hurdle likelihood.
 /// </summary>
 [TestClass]
 public class MixturePhase4Tests
@@ -41,10 +40,10 @@ public class MixturePhase4Tests
     }
 
     /// <summary>
-    /// Verifies a K-component model exposes exactly K-1 named weight parameters.
+    /// Verifies a K-component model retains all K named weight parameters publicly.
     /// </summary>
     [TestMethod]
-    public void SetDefaultParameters_UsesKMinusOnePhysicalWeights()
+    public void SetDefaultParameters_RetainsAllPhysicalWeights()
     {
         var model = new MixtureModel(
             CreateExactDataFrame(1.0, 2.0, 3.0, 4.0, 5.0),
@@ -55,18 +54,18 @@ public class MixturePhase4Tests
                 UnivariateDistributionType.Normal
             });
 
-        Assert.AreEqual(8, model.NumberOfParameters);
+        Assert.AreEqual(9, model.NumberOfParameters);
         CollectionAssert.AreEqual(
-            new[] { "Weight (w₁)", "Weight (w₂)" },
-            model.Parameters.Take(2).Select(parameter => parameter.Name).ToArray());
-        Assert.IsFalse(model.Parameters.Skip(2).Any(parameter => parameter.Name.Contains("Weight", StringComparison.Ordinal)));
+            new[] { "Weight (w₁)", "Weight (w₂)", "Weight (w₃)" },
+            model.Parameters.Take(3).Select(parameter => parameter.Name).ToArray());
+        Assert.IsFalse(model.Parameters.Skip(3).Any(parameter => parameter.Name.Contains("Weight", StringComparison.Ordinal)));
     }
 
     /// <summary>
-    /// Verifies the final physical weight is derived and public proposal arrays are never modified.
+    /// Verifies all physical weights are accepted and public proposal arrays are never modified.
     /// </summary>
     [TestMethod]
-    public void LikelihoodAndSetParameterValues_DeriveFinalWeightWithoutMutatingProposal()
+    public void LikelihoodAndSetParameterValues_UseFullWeightsWithoutMutatingProposal()
     {
         BestFitDataFrame dataFrame = CreateExactDataFrame(0.5, 1.0, 2.5, 3.0);
         var physical = new Mixture(
@@ -77,7 +76,7 @@ public class MixturePhase4Tests
             UseJeffreysRuleForScale = false,
             EnableQuantilePriors = false
         };
-        double[] proposal = { 0.3, 0.0, 1.0, 3.0, 1.0 };
+        double[] proposal = { 0.15, 0.35, 0.0, 1.0, 3.0, 1.0 };
         double[] snapshot = proposal.ToArray();
 
         double actual = model.DataLogLikelihood(proposal);
@@ -97,10 +96,10 @@ public class MixturePhase4Tests
     }
 
     /// <summary>
-    /// Verifies the flat simplex prior includes its normalization constant.
+    /// Verifies every full-K parameter prior contributes to the scalar and pointwise totals.
     /// </summary>
     [TestMethod]
-    public void PriorLogLikelihood_IncludesNormalizedFlatSimplexDensity()
+    public void PriorLogLikelihood_IncludesEveryFullKParameterPrior()
     {
         var model = new MixtureModel(
             CreateExactDataFrame(0.0, 1.0, 2.0, 3.0, 4.0),
@@ -118,7 +117,7 @@ public class MixturePhase4Tests
         double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
         double expected = model.Parameters
             .Select((parameter, index) => parameter.PriorDistribution.LogPDF(parameters[index]))
-            .Sum() + Gamma.LogGamma(3.0);
+            .Sum();
 
         double actual = model.PriorLogLikelihood(parameters);
         Assert.AreEqual(expected, actual, 1E-12);
@@ -129,10 +128,95 @@ public class MixturePhase4Tests
     }
 
     /// <summary>
-    /// Verifies EM returns the K-1 vector and covariance dimensions.
+    /// Verifies the K-1 sampler target derives the final weight and applies its configured prior factor.
     /// </summary>
     [TestMethod]
-    public void ExpectationMaximization_ReturnsKMinusOneVectorAndCovariance()
+    public void SamplingLogLikelihood_DerivesFinalWeightAndIncludesItsPrior()
+    {
+        var model = new MixtureModel(
+            CreateExactDataFrame(-0.5, 0.0, 0.5, 2.5, 3.0, 3.5),
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            })
+        {
+            UseJeffreysRuleForScale = false,
+            EnableQuantilePriors = false
+        };
+        double[] fullParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        fullParameters[0] = 0.35;
+        fullParameters[1] = 0.65;
+        double[] sampledParameters = fullParameters.Where((_, index) => index != 1).ToArray();
+
+        double baseline = model.SamplingLogLikelihood(sampledParameters);
+        Assert.AreEqual(model.LogLikelihood(fullParameters), baseline, 1E-12);
+
+        double oldDerivedPrior = model.Parameters[1].PriorDistribution.LogPDF(0.65);
+        model.Parameters[1].PriorDistribution = new Normal(0.8, 0.2);
+        double newDerivedPrior = model.Parameters[1].PriorDistribution.LogPDF(0.65);
+        double changed = model.SamplingLogLikelihood(sampledParameters);
+
+        Assert.AreEqual(newDerivedPrior - oldDerivedPrior, changed - baseline, 1E-10);
+        Assert.AreNotEqual(baseline, changed);
+    }
+
+    /// <summary>
+    /// Verifies proposals beyond the physical simplex are rejected rather than clamped or normalized.
+    /// </summary>
+    [TestMethod]
+    public void SamplingLogLikelihood_WithNegativeResidualWeight_ReturnsNegativeInfinity()
+    {
+        var model = new MixtureModel(
+            CreateExactDataFrame(0.0, 1.0, 2.0, 3.0),
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            });
+        double[] sampledParameters = model.Parameters.Select(parameter => parameter.Value)
+            .Where((_, index) => index != 1)
+            .ToArray();
+        sampledParameters[0] = 1.01;
+
+        Assert.AreEqual(double.NegativeInfinity, model.SamplingLogLikelihood(sampledParameters));
+    }
+
+    /// <summary>
+    /// Verifies zero-inflated K-1 results derive the final continuous weight from one minus the fixed atom.
+    /// </summary>
+    [TestMethod]
+    public void GetPhysicalParameters_ZeroInflatedThreeComponentResult_UsesContinuousMass()
+    {
+        var model = new MixtureModel(
+            CreateExactDataFrame(0.0, 1.0, 2.0, 3.0, 4.0),
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            },
+            isZeroInflated: true);
+        double[] sampledParameters = model.Parameters.Select(parameter => parameter.Value)
+            .Where((_, index) => index != 2)
+            .ToArray();
+        sampledParameters[0] = 0.2;
+        sampledParameters[1] = 0.3;
+
+        double[] physical = model.GetPhysicalParameters(sampledParameters);
+
+        Assert.AreEqual(0.2, physical[0], 0.0);
+        Assert.AreEqual(0.3, physical[1], 0.0);
+        Assert.AreEqual(0.3, physical[2], 1E-15);
+        Assert.AreEqual(1.0 - model.Mixture!.ZeroWeight, physical.Take(3).Sum(), 1E-15);
+        CollectionAssert.AreEqual(sampledParameters.Skip(2).ToArray(), physical.Skip(3).ToArray());
+    }
+
+    /// <summary>
+    /// Verifies EM returns the original full-K public vector and covariance dimensions.
+    /// </summary>
+    [TestMethod]
+    public void ExpectationMaximization_ReturnsFullKVectorAndCovariance()
     {
         var model = new MixtureModel(
             CreateExactDataFrame(0.0, 0.2, 0.5, 2.5, 2.8, 3.0),
@@ -144,10 +228,55 @@ public class MixturePhase4Tests
 
         model.ExpectationMaximization(out double[] parameters, out double[,] covariance, out _);
 
-        Assert.AreEqual(5, parameters.Length);
-        Assert.AreEqual(5, covariance.GetLength(0));
-        Assert.AreEqual(5, covariance.GetLength(1));
-        Assert.IsTrue(parameters[0] >= 0.0 && 1.0 - parameters[0] >= 0.0);
+        Assert.AreEqual(6, parameters.Length);
+        Assert.AreEqual(6, covariance.GetLength(0));
+        Assert.AreEqual(6, covariance.GetLength(1));
+        Assert.AreEqual(1.0, parameters[0] + parameters[1], 1E-12);
+        Assert.IsTrue(parameters[0] >= 0.0 && parameters[1] >= 0.0);
+
+        double expectedVariance = parameters[0] * parameters[1] / model.DataFrame.TotalRecordLength();
+        Assert.AreEqual(expectedVariance, covariance[0, 0], 1E-10);
+        Assert.AreEqual(expectedVariance, covariance[1, 1], 1E-10);
+        Assert.AreEqual(-expectedVariance, covariance[0, 1], 1E-10);
+        Assert.AreEqual(-expectedVariance, covariance[1, 0], 1E-10);
+        Assert.AreEqual(0.0, covariance[0, 0] + covariance[0, 1], 1E-12);
+        Assert.AreEqual(0.0, covariance[1, 0] + covariance[1, 1], 1E-12);
+    }
+
+    /// <summary>
+    /// Verifies the full-K EM covariance is the singular multinomial block induced by the identified coordinates.
+    /// </summary>
+    [TestMethod]
+    public void ExpectationMaximization_ThreeWeightsHaveNegativeCovarianceAndZeroRowSums()
+    {
+        var model = new MixtureModel(
+            CreateExactDataFrame(-5.2, -5.0, -4.8, -0.2, 0.0, 0.2, 4.8, 5.0, 5.2),
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            });
+
+        model.ExpectationMaximization(out double[] parameters, out double[,] covariance, out _);
+
+        for (int row = 0; row < 3; row++)
+        {
+            Assert.IsTrue(covariance[row, row] > 0.0);
+            double rowSum = 0.0;
+            for (int column = 0; column < 3; column++)
+            {
+                Assert.AreEqual(covariance[row, column], covariance[column, row], 1E-12);
+                if (row != column) Assert.IsTrue(covariance[row, column] < 0.0);
+                rowSum += covariance[row, column];
+            }
+            Assert.AreEqual(0.0, rowSum, 1E-12);
+        }
+
+        double leadingDeterminant = covariance[0, 0] * covariance[1, 1] -
+            covariance[0, 1] * covariance[1, 0];
+        Assert.IsTrue(leadingDeterminant > 0.0, "The identified K-1 principal block must be positive definite.");
+        Assert.AreEqual(1.0, parameters.Take(3).Sum(), 1E-12);
     }
 
     /// <summary>

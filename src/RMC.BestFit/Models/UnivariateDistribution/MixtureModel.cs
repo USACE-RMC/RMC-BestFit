@@ -7,7 +7,6 @@ using Numerics.Mathematics;
 using Numerics.Mathematics.Integration;
 using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
-using Numerics.Mathematics.SpecialFunctions;
 using RMC.BestFit.Estimation;
 
 namespace RMC.BestFit.Models
@@ -377,12 +376,35 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Expands BestFit's free-weight vector to Numerics' full physical-weight vector.
+        /// Gets the number of weight coordinates in the public BestFit parameter vector.
         /// </summary>
-        /// <param name="parameters">The BestFit parameter vector.</param>
+        /// <param name="mixture">The Numerics mixture.</param>
+        /// <returns>All component weights when there are multiple components; otherwise, zero.</returns>
+        /// <remarks>
+        /// The zero-weight single-component convention and the full K-weight multi-component
+        /// convention are retained for public API and project-file compatibility.
+        /// </remarks>
+        private static int GetPublicWeightCount(Mixture mixture)
+        {
+            return mixture.Distributions.Length > 1 ? mixture.Distributions.Length : 0;
+        }
+
+        /// <summary>
+        /// Gets the probability mass assigned to the continuous mixture components.
+        /// </summary>
+        /// <returns>One for an ordinary mixture or one minus the fixed zero weight.</returns>
+        private double GetComponentMass()
+        {
+            return IsZeroInflated ? 1.0 - Mixture!.ZeroWeight : 1.0;
+        }
+
+        /// <summary>
+        /// Expands the independent EM weight vector to Numerics' full physical-weight vector.
+        /// </summary>
+        /// <param name="parameters">The independent EM parameter vector.</param>
         /// <param name="physicalParameters">The full Numerics parameter vector when feasible.</param>
         /// <returns><see langword="true"/> when the proposal has the expected size and lies on the configured simplex.</returns>
-        private bool TryExpandPhysicalParameters(IList<double> parameters, out double[] physicalParameters)
+        private bool TryExpandIndependentParameters(IList<double> parameters, out double[] physicalParameters)
         {
             physicalParameters = Array.Empty<double>();
             if (Mixture is null || parameters is null) return false;
@@ -392,7 +414,7 @@ namespace RMC.BestFit.Models
             int distributionParameterCount = Mixture.Distributions!.Sum(distribution => distribution.NumberOfParameters);
             if (parameters.Count != freeWeightCount + distributionParameterCount) return false;
 
-            double componentMass = IsZeroInflated ? 1.0 - Mixture.ZeroWeight : 1.0;
+            double componentMass = GetComponentMass();
             if (!Tools.IsFinite(componentMass) || componentMass <= 0.0) return false;
 
             physicalParameters = new double[componentCount + distributionParameterCount];
@@ -417,7 +439,98 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Attempts to reconstruct a Numerics mixture from a BestFit parameter vector.
+        /// Expands a stored mixture result to the full public parameter vector.
+        /// </summary>
+        /// <param name="parameters">A K-1 sampled vector or a legacy full-K vector.</param>
+        /// <param name="physicalParameters">The full public parameter vector when the stored shape is recognized and feasible.</param>
+        /// <returns><see langword="true"/> when the vector is either a valid K-1 sampled shape or the established full-K shape.</returns>
+        /// <remarks>
+        /// This method is restricted to BestFit result consumption. Public model methods continue
+        /// to require the established full-K vector, and the caller-owned result is never mutated.
+        /// </remarks>
+        internal bool TryGetPhysicalParameters(IList<double> parameters, out double[] physicalParameters)
+        {
+            physicalParameters = Array.Empty<double>();
+            if (Mixture is null || parameters is null) return false;
+
+            if (parameters.Count == NumberOfParameters)
+            {
+                physicalParameters = parameters.ToArray();
+                return true;
+            }
+
+            if (!TryExpandIndependentParameters(parameters, out double[] numericsParameters))
+                return false;
+
+            physicalParameters = Mixture.Distributions.Length > 1
+                ? numericsParameters
+                : numericsParameters.Skip(1).ToArray();
+            return true;
+        }
+
+        /// <summary>
+        /// Expands a stored mixture result to the full public parameter vector.
+        /// </summary>
+        /// <param name="parameters">A K-1 sampled vector or a legacy full-K vector.</param>
+        /// <returns>The full public parameter vector.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="parameters"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the vector shape is unrecognized or its derived weight is infeasible.</exception>
+        internal double[] GetPhysicalParameters(IList<double> parameters)
+        {
+            ArgumentNullException.ThrowIfNull(parameters);
+            if (!TryGetPhysicalParameters(parameters, out double[] physicalParameters))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(parameters),
+                    "The stored mixture parameters do not match the K-1 sampled or full-K public parameterization.");
+            }
+
+            return physicalParameters;
+        }
+
+        /// <summary>
+        /// Evaluates the full mixture posterior from the identified K-1 sampling coordinates.
+        /// </summary>
+        /// <param name="parameters">The K-1 sampled weights followed by component parameters.</param>
+        /// <returns>The full posterior log likelihood, or negative infinity for an infeasible residual weight.</returns>
+        /// <remarks>
+        /// The derived final weight is inserted before the public full-K likelihood is called, so
+        /// every configured weight prior, including the prior on the derived weight, remains active.
+        /// </remarks>
+        internal double SamplingLogLikelihood(double[] parameters)
+        {
+            if (parameters is null || !TryExpandIndependentParameters(parameters, out double[] numericsParameters))
+                return double.NegativeInfinity;
+
+            double[] publicParameters = Mixture!.Distributions.Length > 1
+                ? numericsParameters
+                : numericsParameters.Skip(1).ToArray();
+            return LogLikelihood(publicParameters);
+        }
+
+        /// <summary>
+        /// Converts independent EM coordinates to the original full-K parameter vector.
+        /// </summary>
+        /// <param name="parameters">The independent EM parameter vector.</param>
+        /// <returns>The full-K public vector for a multi-component mixture.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the estimation vector is infeasible.</exception>
+        private double[] ToFullParameterVector(IList<double> parameters)
+        {
+            if (!TryExpandIndependentParameters(parameters, out double[] physicalParameters))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(parameters),
+                    "The mixture estimation parameters are outside the feasible physical simplex.");
+            }
+
+            if (Mixture!.Distributions.Length > 1)
+                return physicalParameters;
+
+            return physicalParameters.Skip(1).ToArray();
+        }
+
+        /// <summary>
+        /// Attempts to reconstruct a Numerics mixture from the public BestFit parameter vector.
         /// </summary>
         /// <param name="parameters">The BestFit parameter vector.</param>
         /// <param name="distribution">The reconstructed distribution when the proposal is valid.</param>
@@ -425,11 +538,17 @@ namespace RMC.BestFit.Models
         private bool TryCreateDistribution(IList<double> parameters, out Mixture? distribution)
         {
             distribution = null;
-            if (Mixture is null || !TryExpandPhysicalParameters(parameters, out double[] physicalParameters)) return false;
+            if (Mixture is null || parameters is null) return false;
+
+            int expectedParameterCount = GetPublicWeightCount(Mixture) +
+                Mixture.Distributions.Sum(component => component.NumberOfParameters);
+            if (parameters.Count != expectedParameterCount) return false;
+
             try
             {
                 var candidate = (Mixture)Mixture.Clone();
-                candidate.SetParameters(physicalParameters);
+                double[] parameterCopy = parameters.ToArray();
+                candidate.SetParameters(ref parameterCopy);
                 if (!candidate.ParametersValid) return false;
                 distribution = candidate;
                 return true;
@@ -441,14 +560,15 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Reconstructs a Numerics mixture from a BestFit parameter vector without mutating the caller.
+        /// Reconstructs a Numerics mixture from a stored or public BestFit parameter vector without mutating the caller.
         /// </summary>
-        /// <param name="parameters">The BestFit parameter vector.</param>
+        /// <param name="parameters">A K-1 stored result vector or full-K public vector.</param>
         /// <returns>A reconstructed Numerics mixture with all physical component weights.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the proposal is outside the feasible simplex or contains invalid component parameters.</exception>
         internal Mixture CreateDistribution(IList<double> parameters)
         {
-            if (!TryCreateDistribution(parameters, out Mixture? distribution))
+            if (!TryGetPhysicalParameters(parameters, out double[] physicalParameters) ||
+                !TryCreateDistribution(physicalParameters, out Mixture? distribution))
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(parameters),
@@ -616,10 +736,10 @@ namespace RMC.BestFit.Models
             }
 
             int componentCount = Mixture.Distributions.Length;
-            int freeWeightCount = GetFreeWeightCount(Mixture);
-            double componentMass = IsZeroInflated ? 1.0 - Mixture.ZeroWeight : 1.0;
+            int publicWeightCount = GetPublicWeightCount(Mixture);
+            double componentMass = GetComponentMass();
             double initialWeight = componentMass / componentCount;
-            for (int i = 0; i < freeWeightCount; i++)
+            for (int i = 0; i < publicWeightCount; i++)
             {
                 Parameters.Add(new ModelParameter
                 {
@@ -760,12 +880,40 @@ namespace RMC.BestFit.Models
         /// Performs Expectation–Maximization to obtain approximate MLE
         /// estimates and covariance matrix for the mixture model.
         /// </summary>
-        /// <param name="parameters">The estimated parameters with K-1 free weights followed by component parameters.</param>
-        /// <param name="covariance">The approximate covariance matrix in the K-1 free-weight parameterization.</param>
+        /// <param name="parameters">The estimated parameters with all K physical weights followed by component parameters.</param>
+        /// <param name="covariance">The approximate covariance matrix in the original public parameterization.</param>
         /// <param name="iterations">The number of EM iterations performed.</param>
         /// <param name="maxIterations">Maximum EM iterations (default 1000).</param>
         /// <param name="tolerance">Relative tolerance for convergence (default 1E-8).</param>
         public void ExpectationMaximization(out double[] parameters, out double[,] covariance, out int iterations, int maxIterations = 1000, double tolerance = 1E-8)
+        {
+            ExpectationMaximizationIndependent(
+                out double[] estimationParameters,
+                out double[,] estimationCovariance,
+                out iterations,
+                maxIterations,
+                tolerance);
+
+            if (estimationParameters.Length == 0)
+            {
+                parameters = Array.Empty<double>();
+                covariance = new double[0, 0];
+                return;
+            }
+
+            parameters = ToFullParameterVector(estimationParameters);
+            covariance = ToPublicCovariance(estimationCovariance, parameters);
+        }
+
+        /// <summary>
+        /// Performs EM in the independent K-1 coordinate system used by estimation only.
+        /// </summary>
+        /// <param name="parameters">The independent estimation parameters.</param>
+        /// <param name="covariance">The covariance in independent estimation coordinates.</param>
+        /// <param name="iterations">The number of EM iterations performed.</param>
+        /// <param name="maxIterations">Maximum EM iterations.</param>
+        /// <param name="tolerance">Relative convergence tolerance.</param>
+        private void ExpectationMaximizationIndependent(out double[] parameters, out double[,] covariance, out int iterations, int maxIterations = 1000, double tolerance = 1E-8)
         {
             parameters = Array.Empty<double>();
             covariance = new double[0, 0];
@@ -1067,20 +1215,31 @@ namespace RMC.BestFit.Models
             Matrix fisher = (hessian * -1.0).Inverse();
             covariance = new double[parameters.Length, parameters.Length];
 
-            // The free coordinates are the first K-1 physical weights, so the
-            // transformed covariance is the corresponding principal submatrix.
+            // The free coordinates are the first K-1 physical weights. The final
+            // E-step provides the effective continuous-component responsibility count.
+            EStep(mleParameters);
+            double effectiveResponsibilityCount = 0.0;
+            for (int rowIndex = 0; rowIndex < observationCount; rowIndex++)
+            {
+                for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                    effectiveResponsibilityCount += responsibilities[rowIndex, componentIndex];
+            }
+            if (!Tools.IsFinite(effectiveResponsibilityCount) || effectiveResponsibilityCount <= 0.0)
+            {
+                throw new InvalidOperationException(
+                    "Mixture EM cannot compute weight covariance because the effective responsibility count is not positive and finite.");
+            }
+
+            double componentMass = model.IsZeroInflated ? 1.0 - model.ZeroWeight : 1.0;
             for (int i = 0; i < freeWeightCount; i++)
             {
                 double weightI = mleWeights[i];
-                covariance[i, i] = weightI * (1.0 - weightI) / observationCount;
                 for (int j = 0; j < freeWeightCount; j++)
                 {
-                    if (i == j) continue;
                     double weightJ = mleWeights[j];
-                    double correlation = -1.0 / (componentCount - 1.0) + Tools.DoubleMachineEpsilon;
-                    double varianceI = weightI * (1.0 - weightI) / observationCount;
-                    double varianceJ = weightJ * (1.0 - weightJ) / observationCount;
-                    covariance[i, j] = correlation * Math.Sqrt(varianceI * varianceJ);
+                    covariance[i, j] = (i == j
+                        ? componentMass * weightI - weightI * weightI
+                        : -weightI * weightJ) / effectiveResponsibilityCount;
                 }
             }
             for (int i = 0; i < fisher.NumberOfRows; i++)
@@ -1090,6 +1249,85 @@ namespace RMC.BestFit.Models
                     covariance[i + freeWeightCount, j + freeWeightCount] = fisher[i, j];
                 }
             }
+        }
+
+        /// <summary>
+        /// Restores an estimation covariance matrix to the original full-K public coordinates.
+        /// </summary>
+        /// <param name="estimationCovariance">The covariance of the independent parameters.</param>
+        /// <param name="publicParameters">The full-K public parameter vector.</param>
+        /// <returns>The covariance of the public parameter vector.</returns>
+        /// <exception cref="ArgumentException">Thrown when the estimation covariance or public parameter dimensions are invalid.</exception>
+        /// <remarks>
+        /// The full-K weight block retains the established multinomial approximation used
+        /// before the K-1 regression. Component-parameter covariance is copied unchanged
+        /// from the private independent-coordinate EM calculation.
+        /// </remarks>
+        private double[,] ToPublicCovariance(
+            double[,] estimationCovariance,
+            IList<double> publicParameters)
+        {
+            if (Mixture is null) return new double[0, 0];
+
+            int componentCount = Mixture.Distributions.Length;
+            int freeWeightCount = GetFreeWeightCount(Mixture);
+            int publicWeightCount = GetPublicWeightCount(Mixture);
+            int distributionParameterCount = Mixture.Distributions.Sum(distribution => distribution.NumberOfParameters);
+            int estimationCount = freeWeightCount + distributionParameterCount;
+            int publicCount = publicWeightCount + distributionParameterCount;
+            if (estimationCovariance.GetLength(0) != estimationCount ||
+                estimationCovariance.GetLength(1) != estimationCount)
+            {
+                throw new ArgumentException(
+                    "The estimation covariance dimensions do not match the mixture parameterization.",
+                    nameof(estimationCovariance));
+            }
+            if (publicParameters.Count != publicCount)
+            {
+                throw new ArgumentException(
+                    "The public parameter vector dimensions do not match the mixture parameterization.",
+                    nameof(publicParameters));
+            }
+
+            if (componentCount == 1)
+                return (double[,])estimationCovariance.Clone();
+
+            var publicCovariance = new double[publicCount, publicCount];
+
+            // The public weights are w = J u + b, where u contains the first K-1
+            // weights and the final row of J is all -1. Propagate the identified
+            // covariance with J * Sigma_u * J' to recover the singular full-K block.
+            for (int row = 0; row < componentCount; row++)
+            {
+                for (int column = 0; column < componentCount; column++)
+                {
+                    double value = 0.0;
+                    for (int freeRow = 0; freeRow < freeWeightCount; freeRow++)
+                    {
+                        double rowJacobian = row < freeWeightCount
+                            ? (row == freeRow ? 1.0 : 0.0)
+                            : -1.0;
+                        for (int freeColumn = 0; freeColumn < freeWeightCount; freeColumn++)
+                        {
+                            double columnJacobian = column < freeWeightCount
+                                ? (column == freeColumn ? 1.0 : 0.0)
+                                : -1.0;
+                            value += rowJacobian * estimationCovariance[freeRow, freeColumn] * columnJacobian;
+                        }
+                    }
+                    publicCovariance[row, column] = value;
+                }
+            }
+
+            for (int i = 0; i < distributionParameterCount; i++)
+            {
+                for (int j = 0; j < distributionParameterCount; j++)
+                {
+                    publicCovariance[publicWeightCount + i, publicWeightCount + j] =
+                        estimationCovariance[freeWeightCount + i, freeWeightCount + j];
+                }
+            }
+            return publicCovariance;
         }
 
         /// <inheritdoc/>
@@ -1233,13 +1471,6 @@ namespace RMC.BestFit.Models
             }
 
             int componentCount = model!.Distributions.Length;
-            if (componentCount > 1)
-            {
-                // Uniform(0, m) terms contribute -(K-1)log(m); this completes
-                // the normalized flat density on the physical simplex.
-                logLikelihood += Gamma.LogGamma(componentCount);
-            }
-
             if (UseJeffreysRuleForScale)
             {
                 for (int i = 0; i < componentCount; i++)
@@ -1280,13 +1511,6 @@ namespace RMC.BestFit.Models
             }
 
             int componentCount = model!.Distributions.Length;
-            if (componentCount > 1)
-            {
-                result.Add(new PriorComponent(
-                    "Mixture simplex normalization",
-                    Gamma.LogGamma(componentCount),
-                    PriorComponentType.ParameterPrior));
-            }
             if (UseJeffreysRuleForScale)
             {
                 for (int i = 0; i < componentCount; i++)
@@ -1317,19 +1541,14 @@ namespace RMC.BestFit.Models
                 throw new ArgumentNullException(nameof(parameters));
             if (parameters.Count != NumberOfParameters)
                 throw new ArgumentException("The length of the parameter list is incorrect.", nameof(parameters));
-            if (!TryExpandPhysicalParameters(parameters, out double[] physicalParameters))
-                throw new ArgumentOutOfRangeException(nameof(parameters), "The mixture weights are outside the feasible physical simplex.");
-
-            var candidate = (Mixture)Mixture!.Clone();
-            candidate.SetParameters(physicalParameters);
-            if (!candidate.ParametersValid)
+            if (!TryCreateDistribution(parameters, out Mixture? candidate))
                 throw new ArgumentOutOfRangeException(nameof(parameters), "The mixture proposal contains invalid component parameters.");
 
             for (int i = 0; i < parameters.Count; i++)
             {
                 Parameters[i].Value = parameters[i];
             }
-            Mixture.SetParameters(physicalParameters);
+            Mixture!.SetParameters(candidate!.GetParameters);
         }
 
         /// <inheritdoc/>
@@ -1539,12 +1758,12 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            int expectedParameterCount = Math.Max(0, Mixture.Distributions!.Length - 1) +
+            int expectedParameterCount = GetPublicWeightCount(Mixture) +
                 Mixture.Distributions!.Sum(distribution => distribution.NumberOfParameters);
             if (Parameters.Count != expectedParameterCount)
             {
                 isValid = false;
-                messages.Add($"Error: Mixture parameter vector must contain K-1 free weights and component parameters ({expectedParameterCount} total).");
+                messages.Add($"Error: Mixture parameter vector must contain all K physical weights and component parameters ({expectedParameterCount} total).");
             }
 
 

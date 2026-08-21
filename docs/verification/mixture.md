@@ -6,32 +6,32 @@
 
 This report covers Phase 4 findings TR-006, TR-007, and TR-008:
 
-- identified $K-1$ BestFit weights with a full-$K$ Numerics physical-weight API;
+- the full-$K$ public model and identified $K-1$ BestFit sampler parameterization;
 - a coherent point mass at zero with positive-conditioned components; and
 - explicit EM failure for impossible rows.
 
-It also records the pending EM-seeded, prior-aware Bayesian-initialization supplement.
+It also records the deterministic contracts for EM-seeded Bayesian initialization.
 
-The correction intentionally provides no migration or parameterization version for posterior results saved under the former normalized $K$-weight workflow. Those mixture results require re-estimation.
+BestFit model configuration, configured priors, public likelihood methods, EM output, and model XML retain all $K$ weights. New mixture `MCMCResults` store the identified $K-1$ sampled weights. Existing full-$K$ posterior results open as-is without migration.
 
 ## Implemented Contracts
 
 ### TR-006 — weights and proposal purity
 
-Numerics still accepts and returns all $K$ physical weights, but copies every caller array before assignment or normalization. BestFit tracks $w_1,\ldots,w_{K-1}$ and derives
+Numerics accepts and returns all $K$ weights and continues to copy and normalize its caller vector:
 
 $$
-w_K=m-\sum_{j=1}^{K-1}w_j,
+\widetilde w_k=m\dfrac{w_k}{\sum_{j=1}^{K}w_j},
 \qquad m=1\ \text{or}\ 1-\pi_0.
 $$
 
-All likelihood, prior, posterior reconstruction, point-estimate, frequency-result, and simulation paths use one nonmutating conversion. The flat simplex prior has log density
+BestFit's public model and EM boundary is also full $K$. Its sampler target stores only $w_1,\ldots,w_{K-1}$ and derives
 
 $$
-\log\Gamma(K)-(K-1)\log m.
+w_K=m-\sum_{k=1}^{K-1}w_k.
 $$
 
-EM result and covariance dimensions, model parameter count, and AIC/BIC dimension use $K-1$ weights.
+Negative or nonfinite sampled or derived weights receive log target $-\infty$; no proposal is clamped, normalized, or mutated. The expanded full-$K$ vector is passed to the established likelihood and prior methods, so every configured weight prior remains active. New `MCMCResults` persist $K-1$ weights directly. Scientific post-processing reconstructs the physical full-$K$ vector locally, while parameter-indexed sampler diagnostics expose only stored coordinates. EM continues to return all $K$ weights.
 
 ### TR-007 — positive hurdle
 
@@ -41,24 +41,28 @@ Numerics now has no negative support when zero inflation is enabled, reports the
 
 Numerics and BestFit EM throw **InvalidOperationException** with row index and value when a required row probability is zero or nonfinite. Fast BestFit coverage includes exact, uncertain, interval, and threshold rows. Negative exact observations are rejected in positive-hurdle models.
 
-### EM-seeded prior-aware Bayesian initialization
+### EM-seeded identified Bayesian initialization
 
 `MixtureModel.ExpectationMaximization` remains the documented approximate-MLE estimator and
 retains Numerics parity. Parameter priors are deliberately not inserted into its responsibility
 equations or public covariance result.
 
-`MixtureAnalysis` now uses that EM estimate as the deterministic starting basin for a bounded
-Nelder-Mead refinement of `MixtureModel.LogLikelihood`, the full posterior kernel. The refinement
-therefore includes parameter priors, the normalized physical-simplex term, Jeffreys scale terms,
-and an enabled mixture-quantile prior. Its bounded posterior Hessian supplies the initialization
-covariance, including the existing initialization-only regularized Moore-Penrose fallback for
-singular information.
+`MixtureAnalysis` removes the derived $w_K$ coordinate from the EM center and uses the leading
+identified covariance block directly. The public EM weight covariance is responsibility-based:
+
+$$
+\boldsymbol\Sigma_w
+=N_{\mathrm{eff}}^{-1}
+\left[m\operatorname{diag}(\mathbf w)-\mathbf w\mathbf w^{\mathsf T}\right].
+$$
+
+It has the required negative off-diagonal entries and zero row sums. There is no mixture-specific
+MAP refinement, posterior Hessian, chain-copying step, or post-hoc result conversion.
 
 The sampler population uses covariance multiplier 1.5, the configured sampler seed, and at most
-20 replacement draws after an invalid proposal. Every candidate is scored by the full posterior,
-and the best finite candidates seed the chains. A failed MAP refinement, posterior covariance, or
-MAP population falls back to the original EM center and covariance while retaining full-posterior
-fitness. A failed EM population resets the sampler completely to randomized initialization. No
+20 replacement draws after an invalid proposal. Every candidate is expanded to full $K$ and scored
+by the complete posterior, including the derived weight's configured prior, and the best finite
+candidates seed the chains. A failed EM population resets the sampler completely to randomized initialization. No
 DEMCzs sampling, proposal, output, interval, estimator, or seed default changes.
 
 ## Automated Evidence
@@ -73,25 +77,28 @@ Reachable Numerics commit **3e69a93** contains the focused correction and tests;
 
 ### BestFit fast tests
 
-Fast coverage includes $K-1$ counts and names, final-weight derivation, prior normalization,
-proposal immutability, covariance dimensions, exact-only atom derivation, mixed likelihoods,
-negative exact values, invalid positive mass, impossible rows for every observation family,
-explicit MAP starting-value validation, deterministic posterior-population construction, stale
-state reset, full-posterior fitness, and best-member chain seeding.
+Fast coverage includes full-$K$ public counts and prior XML; $K-1$ sampler dimensions, names,
+prior evaluation, infeasible rejection, and posterior persistence; proposal immutability;
+responsibility-based covariance; sampled-coordinate diagnostics; legacy full-$K$ results; local
+physical expansion for parameter tables, diagnostics, and frequency curves; exact-only atom
+derivation; mixed likelihoods; negative exact values; invalid positive mass; impossible rows for
+every observation family; deterministic EM-population construction; stale-state reset;
+full-posterior fitness; and best-member chain seeding.
 
-The changed `MixtureAnalysisTests` and `MaximumAPosterioriTests` groups pass 36/36 and 11/11.
-The strict Debug solution build passes with zero warnings and errors, and Verification compiles
-without executing a method. After aligning the independent Composite finite oracle with the
-approved `XTransform.None` contract, the repository-wide fast gates pass Core 3,140/3,140,
-UI 571/571, and App 428/428. These fast results are not promoted into a Bayesian
-mixture-initialization passing claim.
+The mixture-focused Core batch passes 132/132, and the last complete Core binary gate passes
+3,195/3,195 including public-API compatibility. Strict Debug solution/XML compilation passes with
+zero warnings and errors when unrelated concurrent time-series test compilation is excluded; the
+standard build is currently blocked by namespace/type and `Transform` ambiguity errors in
+`ARIMAXAlignmentTests`. UI passes 578/578, App 439/439, and API 498/498. The focused Numerics mixture
+class passes 21/21 on .NET 10. Historical pre-parameterization Bayesian recovery pass counts are not
+promoted into a current passing claim.
 
 ## Focused Recovery Results
 
 The original six methods generate $n=1000$ observations with seed 12345 through the production
 `MixtureModel.GenerateRandomValues` method. Each was previously run separately through
 `scripts/run-verification-test.ps1`. The three likelihood/EM parity results remain current because
-the public EM algorithm is unchanged. The three Bayesian results predate the EM-seeded MAP change
+the public EM algorithm is unchanged. The three Bayesian results predate identified $K-1$ sampling
 and are retained only as historical evidence until explicitly authorized focused reruns occur.
 
 | Exact method | Verification contract | Guarded duration | Status |
@@ -102,19 +109,17 @@ and are retained only as historical evidence until explicitly authorized focused
 | `NormalMixture2D_BayesianRecovery` | Two-component `MixtureAnalysis` posterior recovery and diagnostics | 9.589 s prior run | Ready - focused rerun |
 | `ZeroInflatedNormalMixture2D_BayesianRecovery` | Positive-hurdle `MixtureAnalysis` recovery, atom check, and diagnostics | 21.346 s prior run | Ready - focused rerun |
 | `NormalMixture3D_BayesianRecovery` | Three-component `MixtureAnalysis` posterior recovery and diagnostics | 12.761 s prior run | Ready - focused rerun |
-| `MixturePriorAwareInitializationVerificationTests.InformativePrior_EmSeededMapInitialization_UsesFullPosterior` | EM starting basin, informative-prior displacement, full-posterior improvement/covariance, and deterministic `UserDefined` population fitness | Not run | Ready - focused run |
 
 The parity methods give Numerics and BestFit the same BestFit-generated sample, compare pre-fit data log likelihoods at $10^{-10}$, compare fitted engines at $10^{-8}$, location-sort component labels, and retain absolute recovery tolerance 0.1.
 
 The Bayesian recovery methods retain their declared DEMCzs configurations, seeds, recovery
 tolerances, R-hat threshold, ESS threshold, and positive-hurdle atom gate. None was changed to
-accommodate the new initializer. The new informative-prior method runs EM and MAP population
-construction only; it does not run MCMC or alter a sampler default.
+accommodate the identified sampler. No Verification method was run for this correction.
 
 ## Closeout State
 
-TR-006, TR-007, and TR-008 remain complete: the public EM MLE, physical parameterization,
-likelihoods, and Numerics parity contracts did not change. The EM-seeded MAP initializer compiles
-with fast structural evidence, but its new informative-prior method and the three affected Bayesian
-recovery methods remain `Ready - focused run`. No passing claim is made for the changed Bayesian
-initialization path, and the complete Verification project was not run.
+TR-007 and TR-008 remain complete because the positive-hurdle and impossible-row contracts did not
+change. TR-006 now distinguishes the full-$K$ public/physical boundary from identified $K-1$
+posterior storage. The three Bayesian recovery methods remain `Ready - focused rerun`; no passing
+claim is made for the changed Bayesian parameterization, and the complete Verification project was
+not run.

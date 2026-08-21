@@ -171,11 +171,13 @@ namespace RMC_BestFit
             {
                 // Relabel column headers (90% LowerCI -> 95% LowerCI) AND rebind the data
                 // table so the LowerCI/UpperCI cell values reflect the new alpha. Headers
-                // alone aren't enough — the cached ItemsSource holds stale percentiles.
+                // alone aren't enough â€” the cached ItemsSource holds stale percentiles.
                 LoadPercentileHeaders();
                 UpdatePlot();
             }
-            if (e.PropertyName == nameof(Analysis.Model) || e.PropertyName == nameof(Analysis.ParameterNames))
+            if (e.PropertyName == nameof(Analysis.Model) ||
+                e.PropertyName == nameof(Analysis.ParameterNames) ||
+                e.PropertyName == nameof(Analysis.Results))
             {
                 LoadParameterComboBox();
             }
@@ -188,10 +190,49 @@ namespace RMC_BestFit
         private void LoadParameterComboBox()
         {
             if (Analysis == null || Analysis.ParameterNames == null) return;
-            var parms = Analysis.ParameterNames.ToList();
+            var selectedParameter = ParameterComboBox.SelectedValue as string;
+            var parms = GetSampledParameterNames();
             ParameterComboBox.ItemsSource = null;
             ParameterComboBox.ItemsSource = parms;
-            ParameterComboBox.SelectedIndex = 0;
+            int selectedIndex = selectedParameter == null ? -1 : parms.IndexOf(selectedParameter);
+            ParameterComboBox.SelectedIndex = selectedIndex >= 0
+                ? selectedIndex
+                : parms.Count > 0 ? 0 : -1;
+        }
+
+        /// <summary>
+        /// Gets names aligned with the coordinates stored in the MCMC results.
+        /// </summary>
+        /// <returns>Sampled parameter names; the derived final mixture weight is omitted for new K-1 results.</returns>
+        private List<string> GetSampledParameterNames()
+        {
+            var names = Analysis.ParameterNames!.ToList();
+            if (Analysis.Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                Analysis.Results?.ParameterResults?.Length == names.Count - 1)
+            {
+                names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
+            }
+            return names;
+        }
+
+        /// <summary>
+        /// Maps a stored diagnostic index to its public model-parameter index.
+        /// </summary>
+        /// <param name="storedIndex">The stored diagnostic index.</param>
+        /// <returns>The corresponding public model-parameter index.</returns>
+        private int GetModelParameterIndex(int storedIndex)
+        {
+            if (Analysis.Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                Analysis.Results?.ParameterResults?.Length == Analysis.Model.Parameters.Count - 1)
+            {
+                int derivedWeightIndex = mixtureModel.Mixture.Distributions.Length - 1;
+                return storedIndex < derivedWeightIndex ? storedIndex : storedIndex + 1;
+            }
+            return storedIndex;
         }
 
         /// <summary>
@@ -291,7 +332,7 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Sets the plot title. Suppresses PropertyChanged so the change is not recorded
-        /// as an undoable action — the title tracks combo selection, not user intent.
+        /// as an undoable action â€” the title tracks combo selection, not user intent.
         /// </summary>
         private void SetPlotTitle(string title)
         {
@@ -312,7 +353,7 @@ namespace RMC_BestFit
 
             // Set plot title and axis title to reflect the selected parameter. Suppress
             // PropertyChanged so the PlotUndoManager does not record these as undoable
-            // actions — they track combo selection, not user intent.
+            // actions â€” they track combo selection, not user intent.
             string paramName = ParameterComboBox.SelectedValue as string ?? "";
             string densityLabel = SimpleView ? "Marginal Density" : "Marginal Posterior Density";
             SetPlotTitle(string.IsNullOrEmpty(paramName) ? densityLabel : $"{densityLabel} of {paramName}");
@@ -372,11 +413,24 @@ namespace RMC_BestFit
                 try
                 {
 
-                int index = Math.Max(0, ParameterComboBox.SelectedIndex);
+                int index = ParameterComboBox.SelectedIndex;
+                if (Analysis.Results.ParameterResults == null ||
+                    index < 0 ||
+                    index >= Analysis.Results.ParameterResults.Length)
+                {
+                    _plot.InvalidatePlot(true);
+                    return;
+                }
 
                 if (ShowPriorDistribution.IsChecked == true && Analysis.Model != null)
                 {
-                    var pdf = Analysis.Model.Parameters[index].PriorDistribution.CreatePDFGraph();
+                    int modelParameterIndex = GetModelParameterIndex(index);
+                    var pdf = Analysis.Model.Parameters[modelParameterIndex].PriorDistribution.CreatePDFGraph();
+                    priorSeries.Title = Analysis.Model is MixtureModel mixtureModel &&
+                        mixtureModel.Mixture is not null &&
+                        modelParameterIndex < mixtureModel.Mixture.Distributions.Length - 1
+                            ? "Configured Prior Factor"
+                            : "Prior Density";
                     var priorPoints = new List<Point3D>();
                     for (int i = 0; i < pdf.GetLength(0); i++)
                         priorPoints.Add(new Point3D(pdf[i, 0], 0, pdf[i, 1]));

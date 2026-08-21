@@ -194,6 +194,37 @@ public class MixtureAnalysisTests
             "WarmupIterations should be preserved.");
     }
 
+    /// <summary>
+    /// Verifies persisted full-K posterior vectors are restored and consumed without re-estimation.
+    /// </summary>
+    [TestMethod]
+    public async Task Constructor_WithLegacyFullKResults_OpensAndCreatesFrequencyCurvesAsIs()
+    {
+        var model = CreateTestMixtureModel();
+        double[] values = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        var output = Enumerable.Range(0, 6)
+            .Select(_ => new ParameterSet(values.ToArray(), model.LogLikelihood(values)))
+            .ToList();
+        var results = new MCMCResults(output[0], output, alpha: 0.10);
+        XElement analysisXml = new MixtureAnalysis(model).ToXElement();
+        analysisXml.SetAttributeValue("IsEstimated", true);
+
+        var restored = new MixtureAnalysis(model, analysisXml, results);
+        var distribution = (Mixture)restored.GetDistribution(0)!;
+
+        Assert.IsTrue(restored.IsEstimated);
+        Assert.AreEqual(model.NumberOfParameters, restored.BayesianAnalysis.Results!.Output[0].Values.Length);
+        Assert.AreEqual(1.0, distribution.Weights.Sum(), 1E-12);
+        CollectionAssert.AreEqual(model.Mixture!.Weights, distribution.Weights);
+
+        await restored.CreateFrequencyAnalysisResultsAsync();
+
+        Assert.IsNotNull(restored.AnalysisResults);
+        Assert.IsTrue(restored.AnalysisResults!.ModeCurve!.All(double.IsFinite));
+        Assert.IsTrue(restored.AnalysisResults.MeanCurve!.All(double.IsFinite));
+        Assert.IsTrue(restored.AnalysisResults.ConfidenceIntervals!.Cast<double>().All(double.IsFinite));
+    }
+
     #endregion
 
     #region Validation Tests
@@ -524,15 +555,146 @@ public class MixtureAnalysisTests
     #region Initialization Tests
 
     /// <summary>
-    /// Verifies posterior-approximation population construction is deterministic, resets stale
+    /// Verifies the sampler omits only the derived final weight from the full-K public model.
+    /// </summary>
+    [TestMethod]
+    public void SetUpSampler_UsesIdentifiedKMinusOneCoordinates()
+    {
+        var model = CreateTestMixtureModel();
+        var analysis = new MixtureAnalysis(model);
+
+        analysis.BayesianAnalysis.SetUpSampler();
+
+        Assert.AreEqual(6, model.NumberOfParameters);
+        Assert.AreEqual(model.NumberOfParameters - 1, analysis.BayesianAnalysis.Sampler!.NumberOfParameters);
+        Assert.AreSame(model, analysis.BayesianAnalysis.Model);
+    }
+
+    /// <summary>
+    /// Verifies the standard MCMC result path preserves K-1 sampled vectors across persistence.
+    /// </summary>
+    [TestMethod]
+    public void StandardMCMCResults_PreservesKMinusOneVectorsAcrossPersistence()
+    {
+        var model = CreateTestMixtureModel();
+        double[] center = model.Parameters.Select(parameter => parameter.Value)
+            .Where((_, index) => index != 1)
+            .ToArray();
+        var output = new List<ParameterSet>();
+        for (int drawIndex = 0; drawIndex < 100; drawIndex++)
+        {
+            double[] values = center.ToArray();
+            values[0] = 0.4 + 0.001 * drawIndex;
+            output.Add(new ParameterSet(values, model.SamplingLogLikelihood(values)));
+        }
+
+        var results = new MCMCResults(
+            output.OrderByDescending(parameterSet => parameterSet.Fitness).First(),
+            output,
+            alpha: 0.10);
+        MCMCResults roundTrip = MCMCResults.FromByteArray(MCMCResults.ToByteArray(results))!;
+
+        Assert.AreEqual(model.NumberOfParameters - 1, roundTrip.MAP.Values.Length);
+        Assert.AreEqual(model.NumberOfParameters - 1, roundTrip.PosteriorMean.Values.Length);
+        Assert.AreEqual(model.NumberOfParameters - 1, roundTrip.ParameterResults.Length);
+        Assert.IsTrue(roundTrip.Output.All(parameterSet => parameterSet.Values.Length == model.NumberOfParameters - 1));
+    }
+
+    /// <summary>
+    /// Verifies reports and covariance diagnostics use sampled names while prior configuration remains full K.
+    /// </summary>
+    [TestMethod]
+    public void SampledDiagnostics_OmitDerivedWeightAndRetainItsPriorConfiguration()
+    {
+        var model = CreateTestMixtureModel();
+        double[] center = model.Parameters.Select(parameter => parameter.Value)
+            .Where((_, index) => index != 1)
+            .ToArray();
+        var output = Enumerable.Range(0, 20)
+            .Select(drawIndex =>
+            {
+                double[] values = center.ToArray();
+                values[0] = 0.35 + drawIndex * 0.01;
+                values[1] += drawIndex * 0.001;
+                return new ParameterSet(values, model.SamplingLogLikelihood(values));
+            })
+            .ToList();
+        var results = new MCMCResults(
+            output.OrderByDescending(parameterSet => parameterSet.Fitness).First(),
+            output,
+            alpha: 0.10);
+        var analysis = new MixtureAnalysis(model);
+        analysis.BayesianAnalysis.SetCustomMCMCResults(results, skipInformationCriteria: false);
+
+        string report = analysis.BayesianAnalysis.GenerateReport();
+        int mapStart = report.IndexOf("POSTERIOR MODE (MAP)", StringComparison.Ordinal);
+        int summaryStart = report.IndexOf("PARAMETER SUMMARY STATISTICS", StringComparison.Ordinal);
+        int priorStart = report.IndexOf("PRIOR CONFIGURATION", StringComparison.Ordinal);
+        string mapSection = report.Substring(mapStart, summaryStart - mapStart);
+        string priorSection = report.Substring(priorStart);
+        double[,] covariance = analysis.BayesianAnalysis.GetPosteriorCovarianceMatrix()!;
+
+        StringAssert.Contains(mapSection, "Weight (w₁)");
+        Assert.IsFalse(mapSection.Contains("Weight (w₂)", StringComparison.Ordinal));
+        StringAssert.Contains(priorSection, "Weight (w₁)");
+        StringAssert.Contains(priorSection, "Weight (w₂)");
+        Assert.AreEqual(model.NumberOfParameters, analysis.BayesianAnalysis.ParameterNames!.Count);
+        Assert.AreEqual(model.NumberOfParameters, analysis.BayesianAnalysis.NumberOfEstimatedParameters);
+        Assert.AreEqual(model.NumberOfParameters - 1, covariance.GetLength(0));
+        Assert.AreEqual(model.NumberOfParameters - 1, covariance.GetLength(1));
+        Assert.IsTrue(double.IsFinite(analysis.BayesianAnalysis.DIC));
+        Assert.IsTrue(double.IsFinite(analysis.BayesianAnalysis.WAIC));
+        Assert.IsTrue(double.IsFinite(analysis.BayesianAnalysis.LOOIC));
+    }
+
+    /// <summary>
+    /// Verifies K-1 posterior draws create complete physical frequency curves without result conversion.
+    /// </summary>
+    [TestMethod]
+    public async Task CreateFrequencyAnalysisResultsAsync_WithKMinusOneResults_CreatesFiniteCurves()
+    {
+        var model = CreateTestMixtureModel();
+        double[] center = model.Parameters.Select(parameter => parameter.Value)
+            .Where((_, index) => index != 1)
+            .ToArray();
+        var output = new List<ParameterSet>();
+        for (int drawIndex = 0; drawIndex < 100; drawIndex++)
+        {
+            double[] values = center.ToArray();
+            values[0] = 0.4 + 0.001 * drawIndex;
+            output.Add(new ParameterSet(values, model.SamplingLogLikelihood(values)));
+        }
+
+        var results = new MCMCResults(
+            output.OrderByDescending(parameterSet => parameterSet.Fitness).First(),
+            output,
+            alpha: 0.10);
+        XElement analysisXml = new MixtureAnalysis(model).ToXElement();
+        analysisXml.SetAttributeValue("IsEstimated", true);
+        var restored = new MixtureAnalysis(model, analysisXml, results);
+
+        await restored.CreateFrequencyAnalysisResultsAsync();
+
+        Assert.IsNotNull(restored.AnalysisResults);
+        UncertaintyAnalysisResults analysisResults = restored.AnalysisResults!;
+        double[] modeCurve = analysisResults.ModeCurve!;
+        Assert.IsTrue(modeCurve.All(double.IsFinite));
+        Assert.IsTrue(analysisResults.MeanCurve!.All(double.IsFinite));
+        Assert.IsTrue(analysisResults.ConfidenceIntervals!.Cast<double>().All(double.IsFinite));
+        Assert.AreEqual(restored.ProbabilityOrdinates.Count, modeCurve.Length);
+    }
+
+    /// <summary>
+    /// Verifies EM-approximation population construction is deterministic, resets stale
     /// state, scores the full posterior, and seeds chains from the best population members.
     /// </summary>
     [TestMethod]
-    public void PopulateSamplerFromPosteriorApproximation_UsesSeedPosteriorAndBestStates()
+    public void PopulateSamplerFromEmApproximation_UsesSeedPosteriorAndBestStates()
     {
         var model = CreateTestMixtureModel();
-        double[] center = model.Parameters.Select(parameter => parameter.Value).ToArray();
-        model.Parameters[1].PriorDistribution = new Normal(center[1], 100d);
+        model.Parameters[2].PriorDistribution = new Normal(model.Parameters[2].Value, 100d);
+        double[] publicCenter = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        double[] center = publicCenter.Where((_, index) => index != 1).ToArray();
         var covariance = new double[center.Length, center.Length];
         for (int index = 0; index < center.Length; index++)
         {
@@ -552,13 +714,13 @@ public class MixtureAnalysisTests
         MCMCSampler secondSampler = secondAnalysis.BayesianAnalysis.Sampler!;
         secondSampler.InitialIterations = firstSampler.InitialIterations;
 
-        MixtureAnalysis.PopulateSamplerFromPosteriorApproximation(
+        MixtureAnalysis.PopulateSamplerFromEmApproximation(
             model,
             firstSampler,
             center,
             covariance,
             CancellationToken.None);
-        MixtureAnalysis.PopulateSamplerFromPosteriorApproximation(
+        MixtureAnalysis.PopulateSamplerFromEmApproximation(
             model,
             secondSampler,
             center,
@@ -573,8 +735,9 @@ public class MixtureAnalysisTests
             ParameterSet first = firstSampler.PopulationMatrix[populationIndex];
             ParameterSet second = secondSampler.PopulationMatrix[populationIndex];
             Assert.IsTrue(double.IsFinite(first.Fitness));
-            Assert.AreEqual(model.LogLikelihood(first.Values), first.Fitness, 1E-10);
-            Assert.AreNotEqual(model.DataLogLikelihood(first.Values), first.Fitness);
+            double[] physicalValues = model.GetPhysicalParameters(first.Values);
+            Assert.AreEqual(model.LogLikelihood(physicalValues), first.Fitness, 1E-10);
+            Assert.AreNotEqual(model.DataLogLikelihood(physicalValues), first.Fitness);
             CollectionAssert.AreEqual(
                 first.Values,
                 second.Values,
@@ -599,16 +762,18 @@ public class MixtureAnalysisTests
     /// Verifies mismatched approximation dimensions fail before a population is installed.
     /// </summary>
     [TestMethod]
-    public void PopulateSamplerFromPosteriorApproximation_WithMismatchedCovariance_Throws()
+    public void PopulateSamplerFromEmApproximation_WithMismatchedCovariance_Throws()
     {
         var model = CreateTestMixtureModel();
         var analysis = new MixtureAnalysis(model);
         analysis.BayesianAnalysis.SetUpSampler();
         MCMCSampler sampler = analysis.BayesianAnalysis.Sampler!;
-        double[] center = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        double[] center = model.Parameters.Select(parameter => parameter.Value)
+            .Where((_, index) => index != 1)
+            .ToArray();
 
         Assert.ThrowsException<ArgumentException>(() =>
-            MixtureAnalysis.PopulateSamplerFromPosteriorApproximation(
+            MixtureAnalysis.PopulateSamplerFromEmApproximation(
                 model,
                 sampler,
                 center,

@@ -263,7 +263,9 @@ namespace RMC_BestFit
                 requiresCacheRebuild = true;
                 _isDirty = true;
             }
-            if (e.PropertyName == nameof(Analysis.Model) || e.PropertyName == nameof(Analysis.ParameterNames))
+            if (e.PropertyName == nameof(Analysis.Model) ||
+                e.PropertyName == nameof(Analysis.ParameterNames) ||
+                e.PropertyName == nameof(Analysis.Results))
             {
                 _suppressUpdates = true;
                 try { LoadParameterComboBox(); } finally { _suppressUpdates = false; }
@@ -297,10 +299,31 @@ namespace RMC_BestFit
         private void LoadParameterComboBox()
         {
             if (Analysis == null || Analysis.ParameterNames == null) return;
-            var parms = Analysis.ParameterNames.ToList();
+            var selectedParameter = ParameterComboBox.SelectedValue as string;
+            var parms = GetSampledParameterNames();
             ParameterComboBox.ItemsSource = null;
             ParameterComboBox.ItemsSource = parms;
-            ParameterComboBox.SelectedIndex = 0;
+            int selectedIndex = selectedParameter == null ? -1 : parms.IndexOf(selectedParameter);
+            ParameterComboBox.SelectedIndex = selectedIndex >= 0
+                ? selectedIndex
+                : parms.Count > 0 ? 0 : -1;
+        }
+
+        /// <summary>
+        /// Gets names aligned with the coordinates stored in the MCMC results.
+        /// </summary>
+        /// <returns>Sampled parameter names; the derived final mixture weight is omitted for new K-1 results.</returns>
+        private List<string> GetSampledParameterNames()
+        {
+            var names = Analysis.ParameterNames!.ToList();
+            if (Analysis.Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                Analysis.Results?.ParameterResults?.Length == names.Count - 1)
+            {
+                names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
+            }
+            return names;
         }
 
         /// <summary>
@@ -571,7 +594,8 @@ namespace RMC_BestFit
                 _traceCache = null;
                 return;
             }
-            if (Analysis.NumberOfChains != Analysis.Results.MarkovChains.Count())
+            if (Analysis.Results.MarkovChains == null ||
+                Analysis.NumberOfChains != Analysis.Results.MarkovChains.Length)
             {
                 _traceCache = null;
                 return;
@@ -605,6 +629,11 @@ namespace RMC_BestFit
             for (int c = 0; c < chainCount; c++)
             {
                 var chain = Analysis.Results.MarkovChains[c];
+                if (chain == null || chain.Count < startE + count)
+                {
+                    _traceCache = null;
+                    return;
+                }
                 // Pre-allocate all parameter arrays for this chain.
                 var chainArrays = new DataPoint[paramCount][];
                 for (int p = 0; p < paramCount; p++)

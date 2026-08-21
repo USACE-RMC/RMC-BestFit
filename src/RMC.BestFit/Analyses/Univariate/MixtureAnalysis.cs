@@ -2,7 +2,6 @@
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
-using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
 using Numerics.Sampling;
 using Numerics.Sampling.MCMC;
@@ -27,9 +26,9 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// This analysis fits a <see cref="MixtureModel"/> using Bayesian MCMC methods. It uses
-    /// Expectation-Maximization to identify a reliable mixture basin, refines that estimate with
-    /// a bounded local MAP optimization, and initializes the sampler from an inflated local
-    /// posterior approximation before producing frequency-analysis uncertainty quantification.
+    /// Expectation-Maximization to identify a reliable mixture basin and initializes the sampler
+    /// from an inflated approximation in the identified K-1 weight coordinates before producing
+    /// frequency-analysis uncertainty quantification.
     /// </para>
     /// <para>
     /// The mixture distribution combines multiple component distributions with estimated
@@ -43,15 +42,15 @@ namespace RMC.BestFit.Analyses
     {
 
         /// <summary>
-        /// Fixed covariance multiplier used to overdisperse the local MAP approximation.
+        /// Fixed covariance multiplier used to overdisperse the local EM approximation.
         /// </summary>
         /// <remarks>
         /// This matches the competing-risk initialization policy.
         /// </remarks>
-        private const double MapCovarianceInflationFactor = 1.5d;
+        private const double InitializationCovarianceInflationFactor = 1.5d;
 
         /// <summary>
-        /// Maximum number of replacement draws attempted after an invalid MAP-population draw.
+        /// Maximum number of replacement draws attempted after an invalid EM-population draw.
         /// </summary>
         /// <remarks>
         /// This matches the competing-risk feasibility-retry policy.
@@ -420,10 +419,10 @@ namespace RMC.BestFit.Analyses
                     MixtureDistribution.ProcessQuantilePriors();
 
                     // Set up the default DEMCzs sampler, then replace only its initialization
-                    // population with an overdispersed local approximation at the posterior mode.
+                    // population with an overdispersed identified EM approximation.
                     BayesianAnalysis.SetUpSampler();
                     var sampler = BayesianAnalysis.Sampler!;
-                    await ConfigureEmSeededMapInitializationAsync(sampler, token);
+                    await ConfigureEmSeededInitializationAsync(sampler, token);
 
                     // Run Bayesian analysis
                     await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
@@ -472,18 +471,18 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Configures a mixture sampler with an EM-seeded, prior-aware MAP population.
+        /// Configures a mixture sampler with an identified, EM-seeded population.
         /// </summary>
         /// <param name="sampler">The already configured production MCMC sampler.</param>
         /// <param name="cancellationToken">Token used to cancel initialization before MCMC begins.</param>
         /// <returns>A task that completes when initialization succeeds or the sampler is reset to randomized initialization.</returns>
         /// <remarks>
-        /// The public EM method remains an approximate-MLE estimator. Its solution supplies a
-        /// deterministic basin for bounded Nelder-Mead refinement of the full posterior. If MAP
-        /// refinement or its covariance is unusable, the original EM approximation is retained
-        /// as the first fallback. All DEMCzs settings remain unchanged.
+        /// The public EM method remains an approximate-MLE estimator with full-K output. The
+        /// sampler drops the derived final-weight coordinate and uses the matching principal
+        /// covariance block. Population fitness still evaluates the complete posterior, including
+        /// the configured prior on the derived weight. All DEMCzs settings remain unchanged.
         /// </remarks>
-        private async Task ConfigureEmSeededMapInitializationAsync(
+        private async Task ConfigureEmSeededInitializationAsync(
             MCMCSampler sampler,
             CancellationToken cancellationToken)
         {
@@ -498,54 +497,17 @@ namespace RMC.BestFit.Analyses
                         out double[] emParameters,
                         out double[,] emCovariance,
                         out _);
-
-                    try
-                    {
-                        var map = new MaximumAPosteriori(
-                            MixtureDistribution,
-                            OptimizationMethod.NelderMead,
-                            emParameters);
-                        if (!map.Estimate())
-                        {
-                            throw new InvalidOperationException(
-                                $"Mixture MAP refinement failed with status {map.Status}.");
-                        }
-
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (!map.TryGetInitializationCovarianceMatrix(
-                            out Matrix mapCovariance,
-                            out string? covarianceDiagnostic))
-                        {
-                            throw new InvalidOperationException(
-                                covarianceDiagnostic ?? "The mixture MAP covariance is unavailable.");
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(covarianceDiagnostic))
-                            Debug.WriteLine(covarianceDiagnostic);
-
-                        PopulateSamplerFromPosteriorApproximation(
-                            MixtureDistribution,
-                            sampler,
-                            map.BestParameterSet.Values,
-                            mapCovariance.ToArray(),
-                            cancellationToken);
-                        return;
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(
-                            $"MixtureAnalysis MAP refinement failed, using EM initialization: {ex.Message}");
-                    }
-
-                    PopulateSamplerFromPosteriorApproximation(
+                    GetIdentifiedEmApproximation(
                         MixtureDistribution,
-                        sampler,
                         emParameters,
                         emCovariance,
+                        out double[] sampledParameters,
+                        out double[,] sampledCovariance);
+                    PopulateSamplerFromEmApproximation(
+                        MixtureDistribution,
+                        sampler,
+                        sampledParameters,
+                        sampledCovariance,
                         cancellationToken);
                 }
                 catch (OperationCanceledException)
@@ -556,9 +518,62 @@ namespace RMC.BestFit.Analyses
                 {
                     ResetSamplerToRandomizedInitialization(sampler);
                     Debug.WriteLine(
-                        $"MixtureAnalysis EM/MAP initialization failed, using random initialization: {ex.Message}");
+                        $"MixtureAnalysis EM initialization failed, using random initialization: {ex.Message}");
                 }
             }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Removes the derived final-weight coordinate from a public full-K EM approximation.
+        /// </summary>
+        /// <param name="model">The mixture model that defines the component count.</param>
+        /// <param name="publicParameters">The public full-K EM parameter vector.</param>
+        /// <param name="publicCovariance">The public full-K EM covariance matrix.</param>
+        /// <param name="sampledParameters">The identified K-1 sampler center.</param>
+        /// <param name="sampledCovariance">The identified K-1 sampler covariance.</param>
+        /// <exception cref="ArgumentException">Thrown when the public approximation dimensions are inconsistent.</exception>
+        private static void GetIdentifiedEmApproximation(
+            MixtureModel model,
+            double[] publicParameters,
+            double[,] publicCovariance,
+            out double[] sampledParameters,
+            out double[,] sampledCovariance)
+        {
+            int publicCount = model.NumberOfParameters;
+            if (publicParameters.Length != publicCount ||
+                publicCovariance.GetLength(0) != publicCount ||
+                publicCovariance.GetLength(1) != publicCount)
+            {
+                throw new ArgumentException(
+                    "The public EM center and covariance must match the mixture model dimensions.",
+                    nameof(publicCovariance));
+            }
+
+            int componentCount = model.Mixture?.Distributions.Length ?? 0;
+            if (componentCount <= 1)
+            {
+                sampledParameters = publicParameters.ToArray();
+                sampledCovariance = (double[,])publicCovariance.Clone();
+                return;
+            }
+
+            int derivedWeightIndex = componentCount - 1;
+            int sampledCount = publicCount - 1;
+            sampledParameters = new double[sampledCount];
+            sampledCovariance = new double[sampledCount, sampledCount];
+            int sampledRow = 0;
+            for (int publicRow = 0; publicRow < publicCount; publicRow++)
+            {
+                if (publicRow == derivedWeightIndex) continue;
+                sampledParameters[sampledRow] = publicParameters[publicRow];
+                int sampledColumn = 0;
+                for (int publicColumn = 0; publicColumn < publicCount; publicColumn++)
+                {
+                    if (publicColumn == derivedWeightIndex) continue;
+                    sampledCovariance[sampledRow, sampledColumn++] = publicCovariance[publicRow, publicColumn];
+                }
+                sampledRow++;
+            }
         }
 
         /// <summary>
@@ -578,22 +593,22 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Populates an MCMC sampler from an inflated multivariate Normal approximation.
+        /// Populates an MCMC sampler from an inflated identified EM approximation.
         /// </summary>
         /// <param name="model">The mixture model used to evaluate the full posterior.</param>
         /// <param name="sampler">The configured sampler that receives the population and chain states.</param>
-        /// <param name="centerParameters">The MAP or fallback EM parameter vector.</param>
-        /// <param name="covariance">The local MAP or fallback EM covariance.</param>
+        /// <param name="centerParameters">The K-1 EM parameter vector.</param>
+        /// <param name="covariance">The K-1 EM covariance.</param>
         /// <param name="cancellationToken">Token used to cancel population generation.</param>
         /// <exception cref="ArgumentNullException">Thrown when a required input is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the approximation dimensions do not match.</exception>
         /// <exception cref="InvalidOperationException">Thrown when a feasible initial population cannot be generated.</exception>
         /// <remarks>
-        /// Population fitness always uses <see cref="MixtureModel.LogLikelihood(double[])"/>, so
-        /// parameter, simplex, Jeffreys-scale, and quantile priors participate in ranking even
+        /// Population fitness expands each candidate before using <see cref="MixtureModel.LogLikelihood(double[])"/>, so
+        /// parameter, Jeffreys-scale, and quantile priors participate in ranking even
         /// when the likelihood-only EM approximation is used as a fallback center.
         /// </remarks>
-        internal static void PopulateSamplerFromPosteriorApproximation(
+        internal static void PopulateSamplerFromEmApproximation(
             MixtureModel model,
             MCMCSampler sampler,
             double[] centerParameters,
@@ -606,12 +621,12 @@ namespace RMC.BestFit.Analyses
             ArgumentNullException.ThrowIfNull(covariance);
 
             int parameterCount = centerParameters.Length;
-            if (parameterCount != model.NumberOfParameters ||
+            if (parameterCount != sampler.NumberOfParameters ||
                 covariance.GetLength(0) != parameterCount ||
                 covariance.GetLength(1) != parameterCount)
             {
                 throw new ArgumentException(
-                    "The center parameter and covariance dimensions must match the mixture model.",
+                    "The center parameter and covariance dimensions must match the identified sampler.",
                     nameof(covariance));
             }
 
@@ -624,7 +639,7 @@ namespace RMC.BestFit.Analyses
                 for (int column = 0; column < parameterCount; column++)
                 {
                     inflatedCovariance[row, column] =
-                        covariance[row, column] * MapCovarianceInflationFactor;
+                            covariance[row, column] * InitializationCovarianceInflationFactor;
                 }
             }
 
@@ -644,9 +659,10 @@ namespace RMC.BestFit.Analyses
                     cancellationToken.ThrowIfCancellationRequested();
                     try
                     {
-                        proposalParameters = proposal.InverseCDF(
-                            prng.NextDoubles(1, parameterCount).GetRow(0));
-                        logPosterior = model.LogLikelihood(proposalParameters);
+                        proposalParameters = populationIndex == 0 && attempt == 0
+                            ? centerParameters.ToArray()
+                            : proposal.InverseCDF(prng.NextDoubles(1, parameterCount).GetRow(0));
+                        logPosterior = model.SamplingLogLikelihood(proposalParameters);
                         isFeasible = Tools.IsFinite(logPosterior);
                     }
                     catch (Exception ex)
@@ -663,7 +679,7 @@ namespace RMC.BestFit.Analyses
                 if (!isFeasible || proposalParameters is null)
                 {
                     throw new InvalidOperationException(
-                        "Unable to generate a feasible mixture EM/MAP initialization.");
+                        "Unable to generate a feasible mixture EM initialization.");
                 }
 
                 var parameterSet = new ParameterSet(proposalParameters, logPosterior);
@@ -734,14 +750,18 @@ namespace RMC.BestFit.Analyses
             await Task.Run(() =>
             {
                 // Set the point estimator
+                double[] pointEstimateParameters;
                 if (BayesianAnalysis.PointEstimator == BayesianAnalysis.PointEstimateType.PosteriorMean)
                 {
-                    MixtureDistribution.SetParameterValues(BayesianAnalysis.Results.PosteriorMean.Values);
+                    pointEstimateParameters = MixtureDistribution.GetPhysicalParameters(
+                        BayesianAnalysis.Results.PosteriorMean.Values);
                 }
                 else
                 {
-                    MixtureDistribution.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
+                    pointEstimateParameters = MixtureDistribution.GetPhysicalParameters(
+                        BayesianAnalysis.Results.MAP.Values);
                 }
+                MixtureDistribution.SetParameterValues(pointEstimateParameters);
 
                 // Update mode curve
                 AnalysisResults!.ModeCurve = new double[ProbabilityOrdinates.Count];
@@ -749,8 +769,12 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ModeCurve[i] = MixtureDistribution.Mixture!.InverseCDF(1 - ProbabilityOrdinates[i]);
 
                 // Information criteria
-                var logL = MixtureDistribution.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
-                var k = MixtureDistribution.NumberOfParameters;
+                double[] mapParameters = MixtureDistribution.GetPhysicalParameters(
+                    BayesianAnalysis.Results.MAP.Values);
+                var logL = MixtureDistribution.DataLogLikelihood(mapParameters);
+                var k = MixtureDistribution.Mixture!.Distributions.Length > 1
+                    ? MixtureDistribution.NumberOfParameters - 1
+                    : MixtureDistribution.NumberOfParameters;
                 var n = MixtureDistribution.DataFrame.TotalRecordLength();
                 // AIC/BIC use the data likelihood at MAP and are comparable with MLE
                 // criteria only when all active priors are flat.
@@ -796,10 +820,12 @@ namespace RMC.BestFit.Analyses
 
             await Task.Run(() =>
             {
-                MixtureDistribution.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
+                double[] mapParameters = MixtureDistribution.GetPhysicalParameters(
+                    BayesianAnalysis.Results.MAP.Values);
+                MixtureDistribution.SetParameterValues(mapParameters);
 
                 // Get sampled distributions for each MCMC output
-                int B = BayesianAnalysis.OutputLength;
+                int B = BayesianAnalysis.Results.Output.Count;
                 var sampledDistributions = new UnivariateDistributionBase[B];
                 Parallel.For(0, B, AnalysisProgress.CreateParallelOptions(), idx =>
                 {

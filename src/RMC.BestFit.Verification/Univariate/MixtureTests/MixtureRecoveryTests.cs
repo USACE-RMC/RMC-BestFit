@@ -381,19 +381,24 @@ public class MixtureRecoveryTests
     }
 
     /// <summary>
-    /// Verifies split R-hat and conservative effective sample size for every mixture parameter.
+    /// Verifies split R-hat and conservative effective sample size for every sampled mixture parameter.
     /// </summary>
     /// <param name="model">The fitted mixture model.</param>
     /// <param name="analysis">The completed Bayesian analysis.</param>
     private static void AssertBayesianDiagnostics(MixtureModel model, MixtureAnalysis analysis)
     {
         var parameterResults = analysis.BayesianAnalysis.Results!.ParameterResults;
-        Assert.AreEqual(model.NumberOfParameters, parameterResults.Length, "MCMC diagnostic parameter count mismatch.");
+        int derivedWeightIndex = model.Mixture!.Distributions!.Length - 1;
+        int sampledParameterCount = model.NumberOfParameters - 1;
+        Assert.AreEqual(sampledParameterCount, parameterResults.Length, "MCMC sampled diagnostic parameter count mismatch.");
         for (int parameterIndex = 0; parameterIndex < parameterResults.Length; parameterIndex++)
         {
             double rhat = parameterResults[parameterIndex].SummaryStatistics.Rhat;
             double ess = parameterResults[parameterIndex].SummaryStatistics.ESS;
-            string parameterName = model.Parameters[parameterIndex].Name;
+            int modelParameterIndex = parameterIndex < derivedWeightIndex
+                ? parameterIndex
+                : parameterIndex + 1;
+            string parameterName = model.Parameters[modelParameterIndex].Name;
             Assert.IsTrue(
                 double.IsFinite(rhat) && rhat < 1.1,
                 $"{parameterName} has R-hat {rhat:G6}; expected a finite value below 1.1.");
@@ -442,7 +447,7 @@ public class MixtureRecoveryTests
     }
 
     /// <summary>
-    /// Creates a BestFit K-1 parameter vector from physical weights and component parameters.
+    /// Creates the stable full-K BestFit parameter vector from physical weights and component parameters.
     /// </summary>
     /// <param name="weights">The physical component weights.</param>
     /// <param name="distributions">The component distributions.</param>
@@ -452,7 +457,8 @@ public class MixtureRecoveryTests
         IReadOnlyList<Normal> distributions)
     {
         var parameters = new List<double>();
-        parameters.AddRange(weights.Take(Math.Max(0, weights.Length - 1)));
+        if (weights.Length > 1)
+            parameters.AddRange(weights);
         foreach (Normal distribution in distributions)
         {
             parameters.AddRange(distribution.GetParameters);
@@ -461,7 +467,7 @@ public class MixtureRecoveryTests
     }
 
     /// <summary>
-    /// Reconstructs all physical weights and component parameters from a BestFit K-1 vector.
+    /// Reconstructs all physical weights and component parameters from the full-K public vector.
     /// </summary>
     /// <param name="model">The fitted BestFit model.</param>
     /// <param name="parameters">The BestFit EM parameter vector.</param>
@@ -471,16 +477,16 @@ public class MixtureRecoveryTests
         double[] parameters)
     {
         int componentCount = model.Mixture!.Distributions.Length;
-        int freeWeightCount = Math.Max(0, componentCount - 1);
+        int publicWeightCount = componentCount > 1 ? componentCount : 0;
         double componentMass = model.IsZeroInflated ? 1.0 - model.Mixture.ZeroWeight : 1.0;
-        var weights = new double[componentCount];
-        for (int i = 0; i < freeWeightCount; i++) weights[i] = parameters[i];
-        weights[^1] = componentMass - weights.Take(freeWeightCount).Sum();
+        double[] weights = componentCount > 1
+            ? parameters.Take(componentCount).ToArray()
+            : new[] { componentMass };
 
         var result = (Mixture)model.Mixture.Clone();
         result.SetParameters(
             weights,
-            parameters.Skip(freeWeightCount).ToArray());
+            parameters.Skip(publicWeightCount).ToArray());
         return result;
     }
 

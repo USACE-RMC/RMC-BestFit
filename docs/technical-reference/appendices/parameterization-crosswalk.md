@@ -59,7 +59,7 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 |---|---|---|
 | Point process, one season | $(\mu,\sigma,\kappa)$ with Numerics $\kappa=-\xi_{\mathrm{Coles}}$; threshold and exposure are model properties, not fitted coordinates | Complete |
 | Point process, two seasons | $(k_1,k_2,\mu_1,\sigma_1,\kappa_1,\mu_2,\sigma_2,\kappa_2)$; $k_1,k_2$ are day-of-year change points | Complete |
-| Mixture, $K$ components | Numerics retains $K$ physical weights; BestFit fits $K-1$ physical weights followed by component parameter blocks and derives $w_K=m-\sum_{j=1}^{K-1}w_j$, with $m=1$ or $1-\pi_0$ | Complete; TR-006 verified |
+| Mixture, $K$ components | Numerics and BestFit's public model, configured priors, EM output, and project model use $(w_1,\ldots,w_K,\boldsymbol\theta)$. New BestFit `MCMCResults` store $(w_1,\ldots,w_{K-1},\boldsymbol\theta)$ and derive $w_K=m-\sum_{k<K}w_k$ before any physical model call. Sampler diagnostics are stored-coordinate only; physical tables and curves locally expand to full $K$. Legacy full-$K$ results use identity mapping. | Complete; TR-006 parameterization correction |
 | Competing risks | Concatenated component parameter blocks; minimum/maximum and dependence are model properties | Complete |
 | Composite analysis | No independent fitted vector; combines already fitted child parameter realizations and derived criterion weights | Complete |
 | Bulletin 17C | Parent natural parameters: two for Exponential/Gamma/Normal/Log-Normal and $(\mu,\sigma,\gamma)$ for P3/LP3; LP3 and Log-Normal moments are in base-10 log space | Complete |

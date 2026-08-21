@@ -224,6 +224,7 @@ namespace RMC.BestFit.Estimation
         private bool _isEstimated = false;
         private IModel? _model = null;
         private IReadOnlyList<string>? _parameterNames = null;
+        private MCMCResults? _results = null;
         private TimeSpan? _elapsedTime = null;
         private double[]? _pointwiseElpdLoo = null;
         /// <summary>
@@ -370,7 +371,16 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// The MCMC results for this analysis.
         /// </summary>
-        public MCMCResults? Results { get; private set; }
+        public MCMCResults? Results
+        {
+            get { return _results; }
+            private set
+            {
+                if (ReferenceEquals(_results, value)) return;
+                _results = value;
+                RaisePropertyChange(nameof(Results));
+            }
+        }
 
         /// <summary>
         /// The exception captured by the most recent <see cref="RunAsync"/> call,
@@ -1175,13 +1185,28 @@ namespace RMC.BestFit.Estimation
                 return;
             }
 
-            // Get the prior distributions
-            var priors = Model.Parameters.Select(x => (IUnivariateDistribution)x.PriorDistribution.Clone()).ToList();
+            // Mixture models retain all K weights at their public configuration boundary, but
+            // sample only the first K-1 weights. The omitted final-weight prior is evaluated
+            // after MixtureModel derives the residual inside the posterior target.
+            var sampledParameters = Model.Parameters.AsEnumerable();
+            LogLikelihood logLikelihood = Model.LogLikelihood;
+            if (Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1)
+            {
+                int derivedWeightIndex = mixtureModel.Mixture.Distributions.Length - 1;
+                sampledParameters = Model.Parameters.Where((_, index) => index != derivedWeightIndex);
+                logLikelihood = mixtureModel.SamplingLogLikelihood;
+            }
+
+            var priors = sampledParameters
+                .Select(parameter => (IUnivariateDistribution)parameter.PriorDistribution.Clone())
+                .ToList();
 
             // Set up the MCMC sampler
             if (Type == SamplerType.DEMCz)
             {
-                Sampler = new DEMCz(priors, x => Model.LogLikelihood(x))
+                Sampler = new DEMCz(priors, logLikelihood)
                 {
                     Jump = Jump,
                     JumpThreshold = JumpThreshold,
@@ -1190,7 +1215,7 @@ namespace RMC.BestFit.Estimation
             }
             else if (Type == SamplerType.DEMCzs)
             {
-                Sampler = new DEMCzs(priors, x => Model.LogLikelihood(x))
+                Sampler = new DEMCzs(priors, logLikelihood)
                 {
                     Jump = Jump,
                     JumpThreshold = JumpThreshold,
@@ -1200,7 +1225,7 @@ namespace RMC.BestFit.Estimation
             }
             else if (Type == SamplerType.ARWMH)
             {
-                Sampler = new ARWMH(priors, x => Model.LogLikelihood(x))
+                Sampler = new ARWMH(priors, logLikelihood)
                 {
                     Scale = Scale,
                     Beta = Beta
@@ -1208,7 +1233,7 @@ namespace RMC.BestFit.Estimation
             }
             else if (Type == SamplerType.NUTS)
             {
-                Sampler = new NUTS(priors, x => Model.LogLikelihood(x), maxTreeDepth: MaxTreeDepth);
+                Sampler = new NUTS(priors, logLikelihood, maxTreeDepth: MaxTreeDepth);
             }
             else
             {
@@ -1223,6 +1248,54 @@ namespace RMC.BestFit.Estimation
             Sampler.PRNGSeed = PRNGSeed;
             Sampler.InitialIterations = InitialIterations;
             Sampler.OutputLength = OutputLength;
+        }
+
+        /// <summary>
+        /// Converts a stored result vector to the parameter vector required by the public model.
+        /// </summary>
+        /// <param name="storedParameters">The stored MCMC parameter values.</param>
+        /// <returns>The full public model vector for a mixture, or the original vector for other models.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when a stored mixture vector has an unrecognized or infeasible shape.</exception>
+        private double[] GetModelParameterValues(double[] storedParameters)
+        {
+            if (Model is not MixtureModel mixtureModel)
+                return storedParameters;
+
+            if (!mixtureModel.TryGetPhysicalParameters(storedParameters, out double[] physicalParameters))
+            {
+                throw new InvalidOperationException(
+                    "The stored mixture result does not match the K-1 sampled or full-K public parameterization.");
+            }
+
+            return physicalParameters;
+        }
+
+        /// <summary>
+        /// Gets the public model-parameter indexes corresponding to stored MCMC coordinates.
+        /// </summary>
+        /// <returns>One public model index for each stored parameter result.</returns>
+        /// <remarks>
+        /// New mixture results omit the derived final weight. Legacy full-K mixture results and
+        /// every non-mixture result retain identity indexing.
+        /// </remarks>
+        private IReadOnlyList<int> GetStoredModelParameterIndexes()
+        {
+            if (Model is null || Results?.ParameterResults is null)
+                return Array.Empty<int>();
+
+            int storedCount = Results.ParameterResults.Length;
+            if (Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                storedCount == Model.NumberOfParameters - 1)
+            {
+                int derivedWeightIndex = mixtureModel.Mixture.Distributions.Length - 1;
+                return Enumerable.Range(0, Model.NumberOfParameters)
+                    .Where(index => index != derivedWeightIndex)
+                    .ToArray();
+            }
+
+            return Enumerable.Range(0, Math.Min(storedCount, Model.NumberOfParameters)).ToArray();
         }
 
         /// <summary>
@@ -1399,12 +1472,14 @@ namespace RMC.BestFit.Estimation
 
             Parallel.For(0, N, () => 0d, (j, loop, sum) =>
             {
-                sum += -2.0 * Model.DataLogLikelihood(Results.Output[j].Values);
+                double[] parameters = GetModelParameterValues(Results.Output[j].Values);
+                sum += -2.0 * Model.DataLogLikelihood(parameters);
                 return sum;
             }, z => Tools.ParallelAdd(ref dicHat, z));
 
             dicHat /= N;
-            double dicMu = -2.0 * Model.DataLogLikelihood(Results.PosteriorMean.Values);
+            double[] posteriorMean = GetModelParameterValues(Results.PosteriorMean.Values);
+            double dicMu = -2.0 * Model.DataLogLikelihood(posteriorMean);
             DIC = 2.0 * dicHat - dicMu;
         }
 
@@ -1449,7 +1524,8 @@ namespace RMC.BestFit.Estimation
                 return null;
 
             int drawCount = Results.Output.Count;
-            double[] firstPointwise = Model.PointwiseDataLogLikelihood(Results.Output[0].Values);
+            double[] firstParameters = GetModelParameterValues(Results.Output[0].Values);
+            double[] firstPointwise = Model.PointwiseDataLogLikelihood(firstParameters);
             int observationCount = firstPointwise.Length;
             var pointwiseLogLikelihood = new double[observationCount, drawCount];
 
@@ -1458,7 +1534,8 @@ namespace RMC.BestFit.Estimation
 
             Parallel.For(1, drawCount, drawIndex =>
             {
-                double[] values = Model.PointwiseDataLogLikelihood(Results.Output[drawIndex].Values);
+                double[] parameters = GetModelParameterValues(Results.Output[drawIndex].Values);
+                double[] values = Model.PointwiseDataLogLikelihood(parameters);
                 if (values.Length != observationCount)
                 {
                     throw new InvalidOperationException(
@@ -1904,7 +1981,7 @@ namespace RMC.BestFit.Estimation
             List<DataComponent>? dataComponents = null;
             try
             {
-                var firstParams = Results.Output[0].Values;
+                var firstParams = GetModelParameterValues(Results.Output[0].Values);
                 dataComponents = Model.PointwiseDataLogLikelihoodComponents(firstParams);
             }
             catch (Exception ex)
@@ -2014,7 +2091,7 @@ namespace RMC.BestFit.Estimation
         /// using <see cref="RunningCovarianceMatrix"/>.
         /// </summary>
         /// <returns>
-        /// A p x p sample covariance matrix where p is the number of model parameters,
+        /// A p x p sample covariance matrix where p is the number of stored sampler coordinates,
         /// or null if estimation has not been completed.
         /// </returns>
         /// <remarks>
@@ -2026,7 +2103,7 @@ namespace RMC.BestFit.Estimation
             if (!IsEstimated || Results == null || Results.Output == null || Results.Output.Count < 2 || Model == null)
                 return null;
 
-            int p = Model.NumberOfParameters;
+            int p = Results.Output[0].Values.Length;
             var rcm = new RunningCovarianceMatrix(p);
             foreach (var ps in Results.Output)
                 rcm.Push(ps.Values);
@@ -2039,7 +2116,7 @@ namespace RMC.BestFit.Estimation
         /// using <see cref="RunningCovarianceMatrix"/>.
         /// </summary>
         /// <returns>
-        /// A p x p sample correlation matrix where p is the number of model parameters,
+        /// A p x p sample correlation matrix where p is the number of stored sampler coordinates,
         /// or null if estimation has not been completed.
         /// </returns>
         /// <remarks>
@@ -2050,7 +2127,7 @@ namespace RMC.BestFit.Estimation
             if (!IsEstimated || Results == null || Results.Output == null || Results.Output.Count < 2 || Model == null)
                 return null;
 
-            int p = Model.NumberOfParameters;
+            int p = Results.Output[0].Values.Length;
             var rcm = new RunningCovarianceMatrix(p);
             foreach (var ps in Results.Output)
                 rcm.Push(ps.Values);
@@ -2080,7 +2157,8 @@ namespace RMC.BestFit.Estimation
                 return string.Empty;
 
             var sb = new StringBuilder();
-            int p = Model.NumberOfParameters;
+            IReadOnlyList<int> storedModelIndexes = GetStoredModelParameterIndexes();
+            int p = storedModelIndexes.Count;
 
             // Credible interval percentiles
             double ciWidth = CredibleIntervalWidth;
@@ -2181,8 +2259,9 @@ namespace RMC.BestFit.Estimation
                 {
                     double rhat = Results.ParameterResults[i].SummaryStatistics.Rhat;
                     double ess = Results.ParameterResults[i].SummaryStatistics.ESS;
-                    if (double.IsNaN(maxRhat) || rhat > maxRhat) { maxRhat = rhat; worstRhatParam = Model.Parameters[i].DisplayName; }
-                    if (double.IsNaN(minESS) || ess < minESS) { minESS = ess; worstESSParam = Model.Parameters[i].DisplayName; }
+                    int modelIndex = storedModelIndexes[i];
+                    if (double.IsNaN(maxRhat) || rhat > maxRhat) { maxRhat = rhat; worstRhatParam = Model.Parameters[modelIndex].DisplayName; }
+                    if (double.IsNaN(minESS) || ess < minESS) { minESS = ess; worstESSParam = Model.Parameters[modelIndex].DisplayName; }
                 }
             }
             int retainedDrawCount = GetRetainedDrawCount(Results, OutputLength);
@@ -2213,7 +2292,7 @@ namespace RMC.BestFit.Estimation
             sb.AppendLine($"  {new string('-', maxNameLen)}  {new string('-', 14)}");
             for (int i = 0; i < p; i++)
             {
-                string name = Model.Parameters[i].DisplayName.PadRight(maxNameLen);
+                string name = Model.Parameters[storedModelIndexes[i]].DisplayName.PadRight(maxNameLen);
                 sb.AppendLine($"  {name}  {Results.MAP.Values[i]:G6}");
             }
             sb.AppendLine();
@@ -2229,7 +2308,7 @@ namespace RMC.BestFit.Estimation
             for (int i = 0; i < p; i++)
             {
                 var stats = Results.ParameterResults![i].SummaryStatistics;
-                string name = Model.Parameters[i].DisplayName.PadRight(maxNameLen);
+                string name = Model.Parameters[storedModelIndexes[i]].DisplayName.PadRight(maxNameLen);
                 sb.AppendLine($"  {name}  {stats.Mean,10:G6}  {stats.StandardDeviation,10:G6}  {stats.LowerCI,10:G6}  {stats.Median,10:G6}  {stats.UpperCI,10:G6}  {stats.Rhat,7:F4}  {stats.ESS,7:F0}");
             }
             sb.AppendLine();
@@ -2241,13 +2320,13 @@ namespace RMC.BestFit.Estimation
                 if (covMatrix != null)
                 {
                     AppendReportSectionHeader(sb, "POSTERIOR COVARIANCE MATRIX");
-                    AppendReportMatrix(sb, covMatrix, p, maxNameLen, "G4");
+                    AppendReportMatrix(sb, covMatrix, storedModelIndexes, maxNameLen, "G4");
 
                     var corrMatrix = GetPosteriorCorrelationMatrix();
                     if (corrMatrix != null)
                     {
                         AppendReportSectionHeader(sb, "POSTERIOR CORRELATION MATRIX");
-                        AppendReportMatrix(sb, corrMatrix, p, maxNameLen, "F3");
+                        AppendReportMatrix(sb, corrMatrix, storedModelIndexes, maxNameLen, "F3");
                     }
                 }
             }
@@ -2269,7 +2348,7 @@ namespace RMC.BestFit.Estimation
             AppendReportSectionHeader(sb, "PRIOR CONFIGURATION");
             sb.AppendLine($"  {"Parameter".PadRight(maxNameLen)}  {"Prior",-24}  {"Bounds",-20}  Fixed");
             sb.AppendLine($"  {new string('-', maxNameLen)}  {new string('-', 24)}  {new string('-', 20)}  {new string('-', 5)}");
-            for (int i = 0; i < p; i++)
+            for (int i = 0; i < Model.Parameters.Count; i++)
             {
                 var param = Model.Parameters[i];
                 string name = param.DisplayName.PadRight(maxNameLen);
@@ -2312,24 +2391,30 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <param name="sb">The string builder.</param>
         /// <param name="matrix">The matrix to format.</param>
-        /// <param name="p">The number of parameters (matrix dimension).</param>
+        /// <param name="modelParameterIndexes">The public model indexes corresponding to the matrix coordinates.</param>
         /// <param name="maxNameLen">Maximum parameter name length for alignment.</param>
         /// <param name="format">Numeric format string (e.g., "G4" or "F3").</param>
-        private void AppendReportMatrix(StringBuilder sb, double[,] matrix, int p, int maxNameLen, string format)
+        private void AppendReportMatrix(
+            StringBuilder sb,
+            double[,] matrix,
+            IReadOnlyList<int> modelParameterIndexes,
+            int maxNameLen,
+            string format)
         {
             if (Model is null) return;
+            int p = modelParameterIndexes.Count;
             int colWidth = Math.Max(12, maxNameLen);
 
             // Column headers
             sb.Append("  " + new string(' ', maxNameLen));
             for (int j = 0; j < p; j++)
-                sb.Append($"  {Model.Parameters[j].DisplayName.PadLeft(colWidth)}");
+                sb.Append($"  {Model.Parameters[modelParameterIndexes[j]].DisplayName.PadLeft(colWidth)}");
             sb.AppendLine();
 
             // Rows
             for (int i = 0; i < p; i++)
             {
-                string rowName = Model.Parameters[i].DisplayName.PadRight(maxNameLen);
+                string rowName = Model.Parameters[modelParameterIndexes[i]].DisplayName.PadRight(maxNameLen);
                 sb.Append($"  {rowName}");
                 for (int j = 0; j < p; j++)
                     sb.Append($"  {matrix[i, j].ToString(format, CultureInfo.InvariantCulture).PadLeft(colWidth)}");

@@ -99,7 +99,11 @@ namespace RMC.BestFit.Diagnostics
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
             if (mapValues == null) throw new ArgumentNullException(nameof(mapValues));
-            if (mapValues.Length != model.Parameters.Count)
+            bool isIdentifiedMixtureVector = model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                mapValues.Length == model.Parameters.Count - 1;
+            if (mapValues.Length != model.Parameters.Count && !isIdentifiedMixtureVector)
                 throw new ArgumentException($"mapValues length ({mapValues.Length}) must match model parameter count ({model.Parameters.Count}).", nameof(mapValues));
 
             Observations = Array.Empty<ObservationLeverage>();
@@ -290,6 +294,76 @@ namespace RMC.BestFit.Diagnostics
         #region Private Methods
 
         /// <summary>
+        /// Converts diagnostic coordinates to the public model parameter vector.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="parameters">The diagnostic coordinates.</param>
+        /// <returns>The public model parameter vector.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when mixture coordinates are invalid.</exception>
+        private static double[] GetModelParameterValues(IModel model, double[] parameters)
+        {
+            if (model is not MixtureModel mixtureModel || parameters.Length == model.Parameters.Count)
+                return parameters;
+
+            if (!mixtureModel.TryGetPhysicalParameters(parameters, out double[] physicalParameters))
+            {
+                throw new InvalidOperationException(
+                    "The mixture diagnostic coordinates do not match the K-1 sampled parameterization.");
+            }
+
+            return physicalParameters;
+        }
+
+        /// <summary>
+        /// Evaluates the full posterior in the diagnostic coordinate system.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="parameters">The diagnostic coordinates.</param>
+        /// <returns>The full posterior log likelihood.</returns>
+        private static double EvaluateLogLikelihood(IModel model, double[] parameters)
+            => model.LogLikelihood(GetModelParameterValues(model, parameters));
+
+        /// <summary>
+        /// Evaluates the data likelihood in the diagnostic coordinate system.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="parameters">The diagnostic coordinates.</param>
+        /// <returns>The data log likelihood.</returns>
+        private static double EvaluateDataLogLikelihood(IModel model, double[] parameters)
+            => model.DataLogLikelihood(GetModelParameterValues(model, parameters));
+
+        /// <summary>
+        /// Evaluates pointwise data likelihoods in the diagnostic coordinate system.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="parameters">The diagnostic coordinates.</param>
+        /// <returns>One log likelihood per observation.</returns>
+        private static double[] EvaluatePointwiseDataLogLikelihood(IModel model, double[] parameters)
+            => model.PointwiseDataLogLikelihood(GetModelParameterValues(model, parameters));
+
+        /// <summary>
+        /// Evaluates pointwise data components in the diagnostic coordinate system.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="parameters">The diagnostic coordinates.</param>
+        /// <returns>The labeled data components.</returns>
+        private static List<DataComponent> EvaluatePointwiseDataLogLikelihoodComponents(
+            IModel model,
+            double[] parameters)
+            => model.PointwiseDataLogLikelihoodComponents(GetModelParameterValues(model, parameters));
+
+        /// <summary>
+        /// Evaluates pointwise prior components in the diagnostic coordinate system.
+        /// </summary>
+        /// <param name="model">The fitted model.</param>
+        /// <param name="parameters">The diagnostic coordinates.</param>
+        /// <returns>The labeled prior components, including every configured mixture-weight factor.</returns>
+        private static List<PriorComponent> EvaluatePointwisePriorLogLikelihood(
+            IModel model,
+            double[] parameters)
+            => model.PointwisePriorLogLikelihood(GetModelParameterValues(model, parameters));
+
+        /// <summary>
         /// Computes leverages from the model and MAP values using numerical Hessian via central differences.
         /// </summary>
         /// <param name="model">The model.</param>
@@ -301,7 +375,10 @@ namespace RMC.BestFit.Diagnostics
             try
             {
                 // Step 1: Compute posterior Hessian via central differences on Model.LogLikelihood
-                var hessian = ComputeNumericalHessian(model.LogLikelihood, mapValues, p);
+                var hessian = ComputeNumericalHessian(
+                    parameters => EvaluateLogLikelihood(model, parameters),
+                    mapValues,
+                    p);
 
                 // Step 2: Invert the negative Hessian (Fisher information at MAP)
                 Matrix negHessian = hessian * -1d;
@@ -380,7 +457,7 @@ namespace RMC.BestFit.Diagnostics
         /// </remarks>
         private void ComputeObservationLeverages(IModel model, double[] mapValues, int p, Matrix hessianInv)
         {
-            double[] basePointwiseLL = model.PointwiseDataLogLikelihood(mapValues);
+            double[] basePointwiseLL = EvaluatePointwiseDataLogLikelihood(model, mapValues);
             int n = basePointwiseLL.Length;
 
             // Compute per-observation Hessians in bulk via central differences.
@@ -399,9 +476,9 @@ namespace RMC.BestFit.Diagnostics
                 while (h <= NumericalDiff.MaxStep)
                 {
                     perturbedParams[j] = mapValues[j] + h;
-                    fwdVals[j] = model.PointwiseDataLogLikelihood(perturbedParams);
+                    fwdVals[j] = EvaluatePointwiseDataLogLikelihood(model, perturbedParams);
                     perturbedParams[j] = mapValues[j] - h;
-                    bwdVals[j] = model.PointwiseDataLogLikelihood(perturbedParams);
+                    bwdVals[j] = EvaluatePointwiseDataLogLikelihood(model, perturbedParams);
                     perturbedParams[j] = mapValues[j];
 
                     // Check for flat spot across all observations
@@ -423,9 +500,9 @@ namespace RMC.BestFit.Diagnostics
                 if (fwdVals[j] == null || bwdVals[j] == null)
                 {
                     perturbedParams[j] = mapValues[j] + step[j];
-                    fwdVals[j] = model.PointwiseDataLogLikelihood(perturbedParams);
+                    fwdVals[j] = EvaluatePointwiseDataLogLikelihood(model, perturbedParams);
                     perturbedParams[j] = mapValues[j] - step[j];
-                    bwdVals[j] = model.PointwiseDataLogLikelihood(perturbedParams);
+                    bwdVals[j] = EvaluatePointwiseDataLogLikelihood(model, perturbedParams);
                     perturbedParams[j] = mapValues[j];
                 }
             }
@@ -434,7 +511,7 @@ namespace RMC.BestFit.Diagnostics
             List<DataComponent>? dataComponents = null;
             try
             {
-                dataComponents = model.PointwiseDataLogLikelihoodComponents(mapValues);
+                dataComponents = EvaluatePointwiseDataLogLikelihoodComponents(model, mapValues);
             }
             catch (NotImplementedException) { /* Optional — not all models provide component metadata */ }
             catch (Exception ex)
@@ -501,7 +578,7 @@ namespace RMC.BestFit.Diagnostics
             List<PriorComponent> baseComponents;
             try
             {
-                baseComponents = model.PointwisePriorLogLikelihood(mapValues);
+                baseComponents = EvaluatePointwisePriorLogLikelihood(model, mapValues);
             }
             catch (Exception ex)
             {
@@ -531,7 +608,7 @@ namespace RMC.BestFit.Diagnostics
                     // Scalar function for score vector: f(θ) = PointwisePriorLogLikelihood(θ)[k].LogLikelihood
                     Func<double[], double> priorFunc = theta =>
                     {
-                        var comps = model.PointwisePriorLogLikelihood(theta);
+                        var comps = EvaluatePointwisePriorLogLikelihood(model, theta);
                         return capturedK < comps.Count ? comps[capturedK].LogLikelihood : 0.0;
                     };
 
@@ -541,8 +618,8 @@ namespace RMC.BestFit.Diagnostics
                     // information, making the linear trace approximation inaccurate.
                     Func<double[], double> llWithoutPrior = theta =>
                     {
-                        double dataLL = model.DataLogLikelihood(theta);
-                        var priorComps = model.PointwisePriorLogLikelihood(theta);
+                        double dataLL = EvaluateDataLogLikelihood(model, theta);
+                        var priorComps = EvaluatePointwisePriorLogLikelihood(model, theta);
                         double priorLL = 0;
                         for (int idx = 0; idx < priorComps.Count; idx++)
                             if (idx != capturedK) priorLL += priorComps[idx].LogLikelihood;

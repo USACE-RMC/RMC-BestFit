@@ -4,6 +4,7 @@ using RMC.BestFit.Api.DTOs;
 using RMC.BestFit.Api.Helpers;
 using RMC.BestFit.Api.Store;
 using RMC.BestFit.Estimation;
+using RMC.BestFit.Models;
 
 namespace RMC.BestFit.Api.Mappers
 {
@@ -225,7 +226,7 @@ namespace RMC.BestFit.Api.Mappers
             }
             // DisplayName, not Name: stationary models blank the short name and keep the
             // user-facing identifier (the same one priors are matched against) in DisplayName.
-            var parameterNames = parameters.Select(p => p.DisplayName).ToList();
+            var parameterNames = GetSampledParameterNames(bayesian, parameters);
 
             return new FrequencyResultsResponse
             {
@@ -441,6 +442,27 @@ namespace RMC.BestFit.Api.Mappers
                 });
             }
             return summaries;
+        }
+
+        /// <summary>
+        /// Gets names aligned with the coordinates stored in an MCMC result.
+        /// </summary>
+        /// <param name="bayesian">The Bayesian analysis that owns the results.</param>
+        /// <param name="parameters">The public model parameters.</param>
+        /// <returns>Sampled-coordinate names, omitting the derived final mixture weight for new K-1 results.</returns>
+        private static List<string> GetSampledParameterNames(
+            BayesianAnalysis bayesian,
+            IReadOnlyList<RMC.BestFit.Models.ModelParameter> parameters)
+        {
+            var names = parameters.Select(parameter => parameter.DisplayName).ToList();
+            if (bayesian.Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                bayesian.Results?.ParameterResults?.Length == names.Count - 1)
+            {
+                names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
+            }
+            return names;
         }
 
         /// <summary>
