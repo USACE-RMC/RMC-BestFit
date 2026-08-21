@@ -1751,7 +1751,10 @@ namespace RMC.BestFit.Models
             // Quantile Priors
             if (EnableQuantilePriors && UseSingleQuantile && _quantilePriorsTrue.Count == 1)
             {
-                logLH += _quantilePriorsTrue[0].Distribution.LogPDF(model.InverseCDF(1 - _quantilePriorsTrue[0].Alpha));
+                CompetingRisks? quantileModel = GetQuantilePriorDistribution(model, parameters);
+                if (quantileModel is null)
+                    return double.NegativeInfinity;
+                logLH += _quantilePriorsTrue[0].Distribution.LogPDF(quantileModel.InverseCDF(1 - _quantilePriorsTrue[0].Alpha));
             }
             else if (EnableQuantilePriors && !UseSingleQuantile &&
                 Distribution is not null && Distribution.Distributions.Count() == 1 &&
@@ -1828,8 +1831,13 @@ namespace RMC.BestFit.Models
             // Quantile Priors
             if (EnableQuantilePriors && UseSingleQuantile && _quantilePriorsTrue.Count == 1)
             {
-                double quantile = model.InverseCDF(1 - _quantilePriorsTrue[0].Alpha);
-                double ll = _quantilePriorsTrue[0].Distribution.LogPDF(quantile);
+                CompetingRisks? quantileModel = GetQuantilePriorDistribution(model, parameters);
+                double ll = double.NegativeInfinity;
+                if (quantileModel is not null)
+                {
+                    double quantile = quantileModel.InverseCDF(1 - _quantilePriorsTrue[0].Alpha);
+                    ll = _quantilePriorsTrue[0].Distribution.LogPDF(quantile);
+                }
                 result.Add(new PriorComponent($"Quantile Prior: p={_quantilePriorsTrue[0].Alpha:G4}", ll, PriorComponentType.QuantilePrior));
             }
             else if (EnableQuantilePriors && !UseSingleQuantile &&
@@ -1904,10 +1912,10 @@ namespace RMC.BestFit.Models
 
                 // Season 1 - use Gumbel limit when kappa is near zero
                 double xiHat1, alphaHat1;
-                if (Math.Abs(kappa1) < 1e-8)
+                if (Math.Abs(kappa1) < 1E-4)
                 {
-                    // Gumbel limit: xi_hat = xi - alpha * log(p), alpha_hat = alpha
-                    xiHat1 = xi1 - alpha1 * Math.Log(p1);
+                    // Gumbel limit of xi + (alpha / kappa) * (1 - p^-kappa): xi_hat = xi + alpha * log(p), alpha_hat = alpha
+                    xiHat1 = xi1 + alpha1 * Math.Log(p1);
                     alphaHat1 = alpha1;
                 }
                 else
@@ -1928,10 +1936,10 @@ namespace RMC.BestFit.Models
 
                 // Season 2 - use Gumbel limit when kappa is near zero
                 double xiHat2, alphaHat2;
-                if (Math.Abs(kappa2) < 1e-8)
+                if (Math.Abs(kappa2) < 1E-4)
                 {
-                    // Gumbel limit: xi_hat = xi - alpha * log(p), alpha_hat = alpha
-                    xiHat2 = xi2 - alpha2 * Math.Log(p2);
+                    // Gumbel limit of xi + (alpha / kappa) * (1 - p^-kappa): xi_hat = xi + alpha * log(p), alpha_hat = alpha
+                    xiHat2 = xi2 + alpha2 * Math.Log(p2);
                     alphaHat2 = alpha2;
                 }
                 else
@@ -1952,6 +1960,24 @@ namespace RMC.BestFit.Models
 
                 Distribution!.SetParameters(new double[] {xiHat1, alphaHat1, kappa1, xiHat2, alphaHat2, kappa2});
             }
+        }
+
+        /// <summary>
+        /// Gets the distribution on which quantile priors are evaluated.
+        /// </summary>
+        /// <param name="model">The competing-risks model holding the raw component parameters.</param>
+        /// <param name="parameters">The full parameter vector, including any seasonal change points.</param>
+        /// <returns>
+        /// The raw model when nonseasonal; the exposure-annualized distribution when seasonal, so
+        /// the prior constrains the same annual quantile that the likelihood and the fitted curve
+        /// report; or <c>null</c> when the seasonal change points are invalid.
+        /// </returns>
+        private CompetingRisks? GetQuantilePriorDistribution(CompetingRisks model, double[] parameters)
+        {
+            if (!IsSeasonal)
+                return model;
+
+            return TryGetEffectiveChangePoints(parameters, out _, out _) ? GetDistribution(parameters) : null;
         }
 
         /// <summary>
@@ -1994,9 +2020,10 @@ namespace RMC.BestFit.Models
 
                 // Season 1 - use Gumbel limit when kappa is near zero
                 double xiHat1, alphaHat1;
-                if (Math.Abs(kappa1) < 1e-8)
+                if (Math.Abs(kappa1) < 1E-4)
                 {
-                    xiHat1 = xi1 - alpha1 * Math.Log(p1);
+                    // Gumbel limit of xi + (alpha / kappa) * (1 - p^-kappa).
+                    xiHat1 = xi1 + alpha1 * Math.Log(p1);
                     alphaHat1 = alpha1;
                 }
                 else
@@ -2016,9 +2043,10 @@ namespace RMC.BestFit.Models
 
                 // Season 2 - use Gumbel limit when kappa is near zero
                 double xiHat2, alphaHat2;
-                if (Math.Abs(kappa2) < 1e-8)
+                if (Math.Abs(kappa2) < 1E-4)
                 {
-                    xiHat2 = xi2 - alpha2 * Math.Log(p2);
+                    // Gumbel limit of xi + (alpha / kappa) * (1 - p^-kappa).
+                    xiHat2 = xi2 + alpha2 * Math.Log(p2);
                     alphaHat2 = alpha2;
                 }
                 else
@@ -2071,6 +2099,7 @@ namespace RMC.BestFit.Models
                 QuantilePriors = quants,
             };
             result.SetAMSData();
+            result.CalculateLambda();
             result.ProcessQuantilePriors();
             return result;
         }
