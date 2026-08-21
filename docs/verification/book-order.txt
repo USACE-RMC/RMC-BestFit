@@ -11,4 +11,5 @@ competing-risks.md
 composite.md
 time-series.md
 rating-curve.md
+bivariate.md
 references.md

@@ -629,3 +629,18 @@ synthetic cases of `examples/6-rating-curve-analysis`.
 | `RatingCurveContinuityVerificationTests.ExponentsAtDefaultLowerBound_AddedControlIncrementsVanishAtActivation` | Verification | Added increments vanish as the offset shrinks when exponents sit at their lower bound | Failed - confirms TR-044 (constant increment `1.7534628349561987`) |
 | `RatingCurveTests.Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` | Fast core | An unmatched nonpositive discharge record does not invalidate a model with enough valid aligned pairs and is reported | Failed - confirms TR-045 (`Error: All discharge values must be positive`); kept in the working tree until the approved fix lands |
 | `RatingCurveExampleRecoveryTests` (6 methods) | Verification | Example replication recovery against the independent SciPy optimum and the true curve | Ready - acceptance rule pending approval; not run |
+
+## Phase 6 Batch 6.2 bivariate evidence consolidation - 21 August 2026
+
+`copula-estimation-oracle.json` (manifest row recorded before the runs) transcribes the twelve
+`BivariateDistributionMLETests` fixtures and records an independent SciPy optimum per fixture from
+closed-form copula densities that are self-checked against the numerical mixed partial of each
+distribution function. Each method below ran once through `scripts/run-verification-test.ps1`.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `CopulaEstimationOracleTests.{AliMikhailHaq,Clayton,Frank,Gumbel,Joe,Normal}_PseudoLikelihood_MatchesIndependentOptimum` | Verification | Production Brent MPL fit: log likelihood at the independent optimum within `1e-8`, dependence parameter within `1e-5` relative (`1e-6` floor), production maximum at least the independent optimum, historical R target within `1e-3` | Passed 6/6 |
+| `CopulaEstimationOracleTests.{AliMikhailHaq,Clayton,Frank,Gumbel,Joe,Normal}_InferenceFromMargins_MatchesIndependentOptimum` | Verification | Same contract with the Normal marginals set to the closed-form maximum-likelihood estimates | Passed 6/6 |
+| `AnalysisInformationCriteriaRoutingTests.BivariateCriteria_UseOneDataLikelihoodCallAtMap` | Fast core | Bivariate point-estimate results evaluate the copula data likelihood once at the stored MAP and route it to AIC/BIC (TR-047) | Passed |
+| `BivariateAnalysisParameterRecoveryTests` (7 copula families) | Verification | Default-setting Bayesian recovery, recorded in the 21 August default-settings table above | Passed 7/7 |
+| `CoincidentFrequencyAnalysisTests` (3 cells) | Verification | Closed-form sum-of-Normals response surface, recorded in the 21 August default-settings table above | Passed 3/3 |
