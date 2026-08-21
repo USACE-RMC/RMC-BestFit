@@ -66,16 +66,16 @@ The DIC/WAIC methods consume the committed [model-comparison oracle](../../verif
 
 | Test method | Test project | Oracle or failure contract | Status |
 |---|---|---|---|
-| `ProfileLikelihoodFindingTests.MLE_ProfileLikelihood_MatchesRTrueProfile` | Verification | R `bbmle` 1.0.25.1 plus closed-form nuisance reoptimization | Passed - exact focused method |
-| `ProfileLikelihoodFindingTests.MAP_ProfileLikelihood_WithFlatPriors_MatchesRTrueProfile` | Verification | R `bbmle` profile plus constant flat-prior shift | Passed - exact focused method |
-| `ProfileLikelihoodFindingTests.MAP_ProfileLikelihood_WithInformativePrior_ProfilesFullPosteriorKernel` | Verification | Closed-form informative-prior nuisance optimum | Passed - exact focused method |
+| `ProfileLikelihoodVerificationTests.MLE_ProfileLikelihood_MatchesRTrueProfile` | Verification | R `bbmle` 1.0.25.1 plus closed-form nuisance reoptimization | Passed - exact focused method |
+| `ProfileLikelihoodVerificationTests.MAP_ProfileLikelihood_WithFlatPriors_MatchesRTrueProfile` | Verification | R `bbmle` profile plus constant flat-prior shift | Passed - exact focused method |
+| `ProfileLikelihoodVerificationTests.MAP_ProfileLikelihood_WithInformativePrior_ProfilesFullPosteriorKernel` | Verification | Closed-form informative-prior nuisance optimum | Passed - exact focused method |
 | `CovarianceFailureStatusTests.MaximumLikelihood_SingularHessian_ReportsFailureAndThrows` | Fast unit | Singular Hessian explicit failure contract | Passed |
 | `CovarianceFailureStatusTests.MaximumAPosteriori_SingularHessian_ReportsFailureAndThrows` | Fast unit | Singular Hessian explicit failure contract | Passed |
 | `CovarianceFailureStatusTests.GeneralizedMethodOfMoments_MomentFailure_ReportsFailureAndThrows` | Fast unit | Forced exception through public `Try` and throwing getter | Passed |
 | `CovarianceFailureStatusTests.MaximumLikelihood_WellConditionedHessian_ReportsAvailable` | Fast unit | Unmodified finite positive-definite covariance | Passed |
 | `CovarianceFailureStatusTests.MaximumLikelihood_NonsymmetricCandidate_ReportsRegularized` | Fast unit | Visible positive-definite covariance repair | Passed |
 | `CovarianceFailureStatusTests.CovarianceComputationStatus_ValuesAreStable` | Fast unit | Stable public enum values | Passed |
-| `JointPriorSamplingFindingTests.SampleFromPriors_SoftJointPrior_CurrentlyDrawsIndependentMarginals` | Verification | Analytical independent marginals with a soft coupled prior term | Passed - exact focused method |
+| `JointPriorSamplingVerificationTests.SampleFromPriors_SoftJointPrior_CurrentlyDrawsIndependentMarginals` | Verification | Analytical independent marginals with a soft coupled prior term | Passed - exact focused method |
 
 The profile tests consume the committed [profile-likelihood oracle](../../verification/data/model-estimation/profile-likelihood-oracle.json); neither R nor Python is required at C# test runtime. The six TR-027 methods ran within the safe fast unit project. The four verification methods in this section were run individually through the exact-method script; the full Verification project was not executed.
 
@@ -83,10 +83,10 @@ The profile tests consume the committed [profile-likelihood oracle](../../verifi
 
 | Test method | Oracle or traced contract | Status |
 |---|---|---|
-| `GmmSpecificationFindingTests.HansenJ_MatchesRGmmSelectedWeightStatistic` | R `gmm::specTest` 1.9.1 and selected-weight objective identity | Passed - exact focused parameter/objective/J/p-value parity |
-| `GmmSpecificationFindingTests.OveridentifiedOneStep_MatchesRGmmFixedWeightOracle` | R `gmm` 1.9.1 fixed positive-definite weighting matrix | Passed - exact focused parameter/objective parity and `NaN` Hansen scope |
-| `GmmSpecificationFindingTests.OveridentifiedTwoStepSandwichCovariance_MatchesRGmmOracle` | R `gmm` 1.9.1 `vcov()` plus analytical centered IID sandwich | Passed - exact focused covariance parity |
-| `GmmSpecificationFindingTests.OveridentifiedFixedWeightSandwichCovariance_MatchesRGmmOracle` | R `gmm` 1.9.1 arbitrary-fixed-weight IID sandwich plus analytical reconstruction | Passed - exact focused covariance parity |
+| `GmmSpecificationVerificationTests.HansenJ_MatchesRGmmSelectedWeightStatistic` | R `gmm::specTest` 1.9.1 and selected-weight objective identity | Passed - exact focused parameter/objective/J/p-value parity |
+| `GmmSpecificationVerificationTests.OveridentifiedOneStep_MatchesRGmmFixedWeightOracle` | R `gmm` 1.9.1 fixed positive-definite weighting matrix | Passed - exact focused parameter/objective parity and `NaN` Hansen scope |
+| `GmmSpecificationVerificationTests.OveridentifiedTwoStepSandwichCovariance_MatchesRGmmOracle` | R `gmm` 1.9.1 `vcov()` plus analytical centered IID sandwich | Passed - exact focused covariance parity |
+| `GmmSpecificationVerificationTests.OveridentifiedFixedWeightSandwichCovariance_MatchesRGmmOracle` | R `gmm` 1.9.1 arbitrary-fixed-weight IID sandwich plus analytical reconstruction | Passed - exact focused covariance parity |
 | `GeneralizedMethodOfMomentsExpandedTests.LegacyInfluenceDiagnosticsOverloads_AreObsoleteCompatibilityApis` | Fast reflection contract for the obsolete compatibility overloads | Passed - fast core project |
 
 The first four methods consume the committed [GMM specification oracle](../../verification/data/model-estimation/gmm-specification-oracle.json), generated from the locked R environment. R is not required at C# runtime. Those four methods were run separately through `scripts/run-verification-test.ps1 -Test <fully-qualified-method-name>`; the compatibility contract runs in the fast core project. The full Verification project was not executed.
@@ -361,7 +361,7 @@ regressions that only matched App source files were removed because they did not
 | `TimeSeriesPriorMetadataTests.PointwisePriorMetadata_ClassifiesExactlyOneJeffreysScaleComponentWhenEnabled` | Core Tests | One scale component when enabled, none disabled, correct identity/type/density in AR, MA, ARIMA, and ARIMAX | Exact metadata; `1E-12` density; passed in Core 3,183/3,183 |
 | `TimeSeriesPriorMetadataTests.PointwisePriorMetadata_SumsToScalarPriorLikelihood` | Core Tests | Decomposed sum equals scalar prior | `1E-12`; passed |
 | `TimeSeriesPriorMetadataTests.ARIMAX_JeffreysScaleMetadata_IsTheReferenceForOtherModels` | Core Tests | Unchanged ARIMAX name, type, and value | Exact name/type; `1E-12` value; passed |
-| `Phase5TimeSeriesVerificationTests.JeffreysScaleMetadataMatchesIndependentPriorOracle` | Verification | Committed analytical $-\log(\sigma)$ oracle at four fixed scales | `1E-12`; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.JeffreysScaleMetadataMatchesIndependentPriorOracle` | Verification | Committed analytical $-\log(\sigma)$ oracle at four fixed scales | `1E-12`; guarded pass 1/1 |
 
 The Verification method is numerical; the three state/decomposition contracts remain in the
 fast project. No optimizer, sampler, recovery fixture, or production generator is invoked.
@@ -372,7 +372,7 @@ fast project. No optimizer, sampler, recovery fixture, or production generator i
 |---|---|---|---|
 | `TimeSeriesInvalidScaleTests.InvalidInnovationScale_ReturnsNegativeInfinityAcrossAllPaths` | Core Tests | Five invalid-scale rows across AR, MA, ARIMA, ARIMAX scalar/pointwise/component/prior paths; metadata and lengths retained | Exact negative infinity and metadata; 5 passing rows |
 | `TimeSeriesInvalidScaleTests.FinitePositiveInnovationScale_RetainsValidEvaluation` | Core Tests | Representative finite-positive control | Scalar/pointwise parity; passed |
-| `Phase5TimeSeriesVerificationTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle` | Verification | Independent Gaussian, uniform-normalization, and Jeffreys formulas plus invalid domain | `1E-12` valid; exact negative infinity invalid; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle` | Verification | Independent Gaussian, uniform-normalization, and Jeffreys formulas plus invalid domain | `1E-12` valid; exact negative infinity invalid; guarded pass 1/1 |
 
 The complete Core project passes 3,189/3,189. The Verification method is the only TR-040 method
 run from the Verification project.
@@ -384,8 +384,8 @@ run from the Verification project.
 | `TimeSeriesTransformStateTests.*` | Core Tests | Read-only/non-browsable getter; atomic rebuild; training-prefix holdout isolation; automatic/manual provenance; XML/clone; canonicalization; ignored `lambda2`; invalidation | Exact state and `1E-12`; passed in Core 3,201/3,201 |
 | `TimeSeriesModelSerializationCompatibilityTests.ManualTransformLambda_NewXml_RoundTripsAllModelTypes` | UI.Tests | New optional XML state across AR, MA, ARIMA, and ARIMAX while legacy/unknown-attribute fixtures remain valid | Exact state; passed in UI 578/578 |
 | `TimeSeriesAnalysisTests.ManualTransformLambda_CopyUndoAndRedoPreserveEffectiveState` | UI.Tests | Copy and undo/redo preserve effective manual state | Exact state; passed |
-| `Phase5TimeSeriesVerificationTests.TransformLambdaMatchesIndependentTrainingOnlyOracle` | Verification | R Box-Cox/Yeo-Johnson profile fit on six training values with mutated three-value holdouts | `1E-8` absolute or `1E-7` relative; guarded pass 1/1 |
-| `Phase5TimeSeriesVerificationTests.ManualTransformLambdaRebuildMatchesIndependentLikelihoodOracle` | Verification | R transform, Jacobian, residual, and conditional Gaussian likelihood recurrence | Same cross-language rule; deterministic identities `1E-12`; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.TransformLambdaMatchesIndependentTrainingOnlyOracle` | Verification | R Box-Cox/Yeo-Johnson profile fit on six training values with mutated three-value holdouts | `1E-8` absolute or `1E-7` relative; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.ManualTransformLambdaRebuildMatchesIndependentLikelihoodOracle` | Verification | R transform, Jacobian, residual, and conditional Gaussian likelihood recurrence | Same cross-language rule; deterministic identities `1E-12`; guarded pass 1/1 |
 
 API DTO/service regressions cover omitted/manual values, JSON names, all four families, and invalid
 requests. App passes 438/438 and API passes 498/498. UI/App signature baselines remain exact; the
@@ -403,7 +403,7 @@ committed before C# evaluation and retain their manifest SHA-256 hashes.
 | `ARIMAXAlignmentTests.CovariateTimestampMutation_AtomicallyRefreshesNumericalAlignment` | Core Tests | Direct timestamp edits refresh cached alignment before numerical evaluation | Exact negative infinity then finite restoration; passed |
 | `ARIMAXAlignmentTests.ConditionalOrderChanges_RebuildAlignedJacobian` | Core Tests | AR/MA order changes after data attachment rebuild the conditional Jacobian range | Exact parity with preconfigured-order controls; passed |
 | `ARIMAXAlignmentTests.DifferencedLikelihood_UsesDateIndexedLevelCovariateAndAlignedJacobian` | Core Tests | Level covariate at raw date `k+d`; scalar/pointwise/component parity | `1E-12`; passed |
-| `Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle` | Verification | Independent R transform, differencing, date join, ARMA recurrence, conditional Jacobian, and Gaussian likelihood for `d=0,1,2` | `1E-10`; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle` | Verification | Independent R transform, differencing, date join, ARMA recurrence, conditional Jacobian, and Gaussian likelihood for `d=0,1,2` | `1E-10`; guarded pass 1/1 |
 
 The complete final package gates pass Core 3,208/3,208, UI 578/578, App 440/440, and API
 498/498. The strict Debug solution build reports zero warnings/errors and UI/App signature
@@ -425,9 +425,9 @@ baselines remain exact. The R artifact and generator were committed before C# ev
 | `TimeSeriesPredictionReintegrationTests.LogTransformedD1Predictions_ReintegrateBeforeInverseTransform` | Core Tests | Exact recurrence on log scale followed by one inverse transform | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.TransformedPredictions_UseOnlyModelScaleLagAndResidualStates` | Core Tests | AR, MA, ARIMA(1,1,1), and ARIMAX(1,1,1) use only log-scale lag/residual/difference states before one inverse transform; raw/transformed scale separation is deliberately large | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.NoneD0FixedSeedPrediction_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change ARIMA/ARIMAX `Transform.None`, `d=0` values and every component vector | Exact double equality; passed |
-| `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Verification | Irregular ARIMA `d=2` and logarithmic ARIMAX `d=1` hand recurrences distinguish observed training states, the first forecast anchor, later recursion, and holdout exclusion | `1E-10`; guarded pass 1/1 |
-| `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary` | Verification | Exactly 1,000 fixed seeds; conditional training and horizon-one variance `1`, then random-walk forecast variances `2` and `3` | Four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
-| `Phase5TimeSeriesVerificationTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle` | Verification | Independent Yeo-Johnson plus conditional ARMA(1,1) recurrence; exactly 1,000 fixed seeds verify accumulated transformed-level horizon variance before inverse transformation | `1E-10` recurrence; four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Verification | Irregular ARIMA `d=2` and logarithmic ARIMAX `d=1` hand recurrences distinguish observed training states, the first forecast anchor, later recursion, and holdout exclusion | `1E-10`; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary` | Verification | Exactly 1,000 fixed seeds; conditional training and horizon-one variance `1`, then random-walk forecast variances `2` and `3` | Four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle` | Verification | Independent Yeo-Johnson plus conditional ARMA(1,1) recurrence; exactly 1,000 fixed seeds verify accumulated transformed-level horizon variance before inverse transformation | `1E-10` recurrence; four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
 
 The transformed-scale audit gates pass Core 3,238/3,238, UI 578/578, App 444/444, and API 498/498.
 The strict Debug solution build reports zero warnings/errors, and UI/App signature baselines remain
@@ -445,8 +445,8 @@ the complete-path failure history, and exact command/TRX evidence are recorded i
 | `TimeSeriesGenerationTransformTests.ArimaD2Generation_UsesObservedOrZeroTransformedAnchors` | Core Tests | Attached first two transformed levels versus zero-anchor polynomial | `1E-12`; passed |
 | `TimeSeriesGenerationTransformTests.ArimaGeneration_SampleSizeAtOrBelowD_ReturnsRequestedAnchors` | Core Tests | Requested observed/zero anchors only, exact length, no model-scale values | `1E-12`; passed |
 | `TimeSeriesGenerationTransformTests.NoneD0FixedSeedGeneration_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change AR, MA, and ARIMA `Transform.None`/`d=0` arrays | Exact double equality; passed |
-| `Phase5TimeSeriesVerificationTests.ArAndMaTransformedGeneratorsMatchIndependentOracle` | Verification | Independent exponential/Box-Cox algebra plus 1,000-step model-scale Gaussian moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
-| `Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle` | Verification | Independent Yeo-Johnson/integration algebra plus 1,000 generated steps/999 first-difference moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.ArAndMaTransformedGeneratorsMatchIndependentOracle` | Verification | Independent exponential/Box-Cox algebra plus 1,000-step model-scale Gaussian moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle` | Verification | Independent Yeo-Johnson/integration algebra plus 1,000 generated steps/999 first-difference moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
 
 The package gates pass Core 3,219/3,219, UI 578/578, App 440/440, and API 498/498; the strict
 Debug build has zero warnings/errors. The failed 50,000-step logarithmic overflow run and the
@@ -467,7 +467,7 @@ Verification run occurred.
 | `ARIMAXTests.Test_GenerateRandomValues_CovariateExtensionBlockBootstrap_ExtendsCovariates` | Core Tests | Existing block-bootstrap extension and output length | Passed |
 | `ARIMAXTests.Test_GenerateRandomValues_CovariateExtensionKNN_ExtendsCovariates` | Core Tests | Existing KNN extension and output length | Passed |
 | `ARIMAXTests.Test_GenerateRandomValues_ExplicitCovariates_OverridesExtensionSetting` | Core Tests | Existing explicit generation-covariate override | Passed |
-| `Phase5TimeSeriesVerificationTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle` | Verification | Fixed algebraic Yeo-Johnson recurrence plus 1,000 generated steps/999 innovation moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
+| `TimeSeriesIndependentOracleTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle` | Verification | Fixed algebraic Yeo-Johnson recurrence plus 1,000 generated steps/999 innovation moments | `1E-10` algebra; four-SE/3% moments; guarded pass 1/1 |
 
 The package gates pass Core 3,226/3,226, UI 578/578, App 440/440, and API 498/498. The final
 serial strict Debug build reports zero warnings/errors; UI/App signature baselines remain exact.
@@ -479,7 +479,7 @@ time-series report. No full Verification run occurred.
 | Method | Project | Oracle or contract | Tolerance/status |
 |---|---|---|---|
 | `AnalysisInformationCriteriaRoutingTests.TimeSeriesCriteria_UseOneDataLikelihoodCallAtMap` | Core Tests | Injected MAP and counting AR model prove one data-likelihood call, no prior/posterior call, and hand AIC/BIC routing | Exact call counts; `1E-10`; passed |
-| `Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior` | Verification | AR, MA, ARIMA, ARIMAX, and rating-curve data-only criteria (time-series likelihoods checked against an independent iid Gaussian evaluation) plus production MLE/MAP recovery of the analytical flat-prior Gaussian optimum | Criteria `1E-10`; estimator parameters `1E-3` |
+| `TimeSeriesIndependentOracleTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior` | Verification | AR, MA, ARIMA, ARIMAX, and rating-curve data-only criteria (time-series likelihoods checked against an independent iid Gaussian evaluation) plus production MLE/MAP recovery of the analytical flat-prior Gaussian optimum | Criteria `1E-10`; estimator parameters `1E-3` |
 
 The exact method uses 40 or fewer observations and one injected posterior row; it runs no
 optimizer, sampler, or simulation and remains below the 1,000-step cap. Package gates pass Core
@@ -495,10 +495,10 @@ is retained in the time-series report. No full Verification run occurred.
 | `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; unchanged production DEMCzs defaults asserted before/after; independently calculated central 95%, MAP 25%, R-hat/ESS, one-step recurrence | **Passed** - 1/1 in 24.611 s |
 | `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 110-step burn-in, 1,000 retained observations, seed 12345, unchanged 5% gate | **Passed** - 1/1 in 0.198 s |
 | `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and unchanged production-default Bayesian recovery contract | **Passed** - 1/1 in 24.097 s |
-| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; same-point likelihood and forecast level conditioned on the final observed training state | **Passed** - 1/1 against the direct conditional oracle |
-| `Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 30.642 s |
-| `Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R conditional ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, same-point likelihood; unchanged production Differential Evolution default | **Passed** - 1/1 in 0.516 s |
-| `Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 37.241 s |
+| `TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; same-point likelihood and forecast level conditioned on the final observed training state | **Passed** - 1/1 against the direct conditional oracle |
+| `TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 30.642 s |
+| `TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R conditional ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, same-point likelihood; unchanged production Differential Evolution default | **Passed** - 1/1 in 0.516 s |
+| `TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 37.241 s |
 
 The artifact was committed before C# recovery evaluation. The mistakenly changed AR/MA seeds,
 corrected-seed fixture without stationary burn-in, and artificially capped AR Bayesian run remain

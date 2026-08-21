@@ -601,7 +601,9 @@ public class B17CCoverageTests
     /// <item><description>Mean coverage across all ordinates is in [0.82, 0.97].</description></item>
     /// <item><description>No individual ordinate has coverage below 0.70.</description></item>
     /// </list>
-    /// The MVN approximation is first-order accurate, so these bounds are intentionally wide.
+    /// The MVN approximation is first-order accurate, so these bounds are intentionally wide
+    /// acceptance bands for method error rather than Monte Carlo bands: with B = 1,000
+    /// replicates the exact binomial 95% band around a nominal 0.90 coverage is [0.881, 0.919].
     /// </para>
     /// </remarks>
     private static void AssertCoverage(double[] coverage, double[] missAbove, double[] missBelow,
@@ -622,16 +624,16 @@ public class B17CCoverageTests
         Debug.WriteLine($"{"Mean",10} {"",12} {meanCoverage,10:F3} {meanBelow,8:F3} {meanAbove,8:F3}");
 
         // Assertions
-        //Assert.IsTrue(successCount >= 900,
-        // $"{testName}: Too many failures — {1000 - successCount}/1000 replicates failed.");
+        Assert.IsTrue(successCount >= 900,
+            $"{testName}: Too many failures — {1000 - successCount}/1000 replicates failed.");
 
-        // Assert.IsTrue(meanCoverage >= 0.82 && meanCoverage <= 0.97,
-        // $"{testName}: Mean coverage {meanCoverage:F3} outside [0.82, 0.97].");
+        Assert.IsTrue(meanCoverage >= 0.82 && meanCoverage <= 0.97,
+            $"{testName}: Mean coverage {meanCoverage:F3} outside [0.82, 0.97].");
 
         for (int j = 0; j < probabilities.Length; j++)
         {
-            // Assert.IsTrue(coverage[j] >= 0.70,
-            // $"{testName}: Coverage at p={probabilities[j]:F4} is {coverage[j]:F3} < 0.70.");
+            Assert.IsTrue(coverage[j] >= 0.70,
+                $"{testName}: Coverage at p={probabilities[j]:F4} is {coverage[j]:F3} < 0.70.");
         }
     }
 

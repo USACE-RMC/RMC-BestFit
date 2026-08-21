@@ -27,7 +27,7 @@ public partial class CompetingRiskRecoveryTests
     /// <summary>The absolute true-parameter data-likelihood parity tolerance.</summary>
     private const double LikelihoodTolerance = 1E-10;
 
-    /// <summary>The relative parameter tolerance used only for approved identifiable parameters.</summary>
+    /// <summary>The relative parameter tolerance used only for the gated identifiable parameters.</summary>
     private const double ParameterRelativeTolerance = 0.25d;
 
     /// <summary>The maximum split R-hat accepted for each Bayesian parameter.</summary>
@@ -38,7 +38,7 @@ public partial class CompetingRiskRecoveryTests
 
     /// <summary>
     /// Runs one fixture through the production maximum-likelihood estimator and verifies
-    /// its parent likelihood, optimizer outcome, combined CDF, and approved parameter gates.
+    /// its parent likelihood, optimizer outcome, combined CDF, and parameter gates.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
     private static void VerifyMaximumLikelihoodRecovery(RecoveryFixture fixture)
@@ -272,7 +272,7 @@ public partial class CompetingRiskRecoveryTests
     }
 
     /// <summary>
-    /// Applies only the approved hybrid component gates: contrasting two-Weibull shapes
+    /// Applies only the hybrid component gates: contrasting two-Weibull shapes
     /// and separated two-Normal means, both with label switching resolved.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
@@ -318,7 +318,7 @@ public partial class CompetingRiskRecoveryTests
     }
 
     /// <summary>
-    /// Verifies the approved identifiable Bayesian component parameters after ordering the
+    /// Verifies the gated identifiable Bayesian component parameters after ordering the
     /// exchangeable component pair within each retained draw.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
@@ -619,7 +619,7 @@ public partial class CompetingRiskRecoveryTests
     /// <param name="cdfTolerance">The maximum parent-versus-fitted CDF error.</param>
     /// <param name="dependency">The fixed dependency mode.</param>
     /// <param name="correlationMatrix">The optional fixed latent correlation matrix.</param>
-    /// <param name="parameterGate">The optional approved component-parameter gate.</param>
+    /// <param name="parameterGate">The optional component-parameter gate.</param>
     /// <returns>The immutable recovery fixture.</returns>
     private static RecoveryFixture CreateFixture(
         string label,
@@ -643,7 +643,7 @@ public partial class CompetingRiskRecoveryTests
     }
 
     /// <summary>
-    /// Identifies the limited component parameters approved for direct recovery checks.
+    /// Identifies the limited component parameters selected for direct recovery checks.
     /// </summary>
     private enum ParameterGate
     {
@@ -669,7 +669,7 @@ public partial class CompetingRiskRecoveryTests
         /// <param name="parent">The known generating distribution.</param>
         /// <param name="sampleSize">The synthetic sample size.</param>
         /// <param name="cdfTolerance">The maximum parent-versus-fitted CDF error.</param>
-        /// <param name="parameterGate">The optional approved component-parameter gate.</param>
+        /// <param name="parameterGate">The optional component-parameter gate.</param>
         public RecoveryFixture(
             string label,
             CompetingRisks parent,
@@ -696,7 +696,7 @@ public partial class CompetingRiskRecoveryTests
         /// <summary>Gets the maximum parent-versus-fitted CDF error.</summary>
         public double CdfTolerance { get; }
 
-        /// <summary>Gets the optional approved component-parameter gate.</summary>
+        /// <summary>Gets the optional component-parameter gate.</summary>
         public ParameterGate ParameterGate { get; }
     }
 }

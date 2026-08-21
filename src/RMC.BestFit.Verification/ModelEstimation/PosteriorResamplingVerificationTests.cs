@@ -16,7 +16,7 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// <remarks>
 /// The fixtures intentionally align retained posterior values by raw index. Independent
 /// product-posterior targets are calculated without calling the implementation's index
-/// helper, while the former raw-paired policy is retained as a negative control.
+/// helper, while the raw-paired policy is retained as a negative control.
 /// </remarks>
 [TestClass]
 public class PosteriorResamplingVerificationTests
@@ -266,7 +266,7 @@ public class PosteriorResamplingVerificationTests
     }
 
     /// <summary>
-    /// Calculates the former raw-index Composite result as a negative control.
+    /// Calculates the raw-index Composite result as a negative control.
     /// </summary>
     /// <param name="firstSupport">The first aligned posterior support.</param>
     /// <param name="secondSupport">The second aligned posterior support.</param>
@@ -431,7 +431,7 @@ public class PosteriorResamplingVerificationTests
     }
 
     /// <summary>
-    /// Calculates the former raw-index CFA posterior mean AEP as a negative control.
+    /// Calculates the raw-index CFA posterior mean AEP as a negative control.
     /// </summary>
     /// <param name="firstSupport">The aligned X posterior support.</param>
     /// <param name="secondSupport">The aligned Y posterior support.</param>

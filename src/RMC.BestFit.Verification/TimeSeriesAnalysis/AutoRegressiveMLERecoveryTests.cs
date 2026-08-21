@@ -30,16 +30,16 @@ public class AutoRegressiveMLERecoveryTests
     /// </para>
     /// <para>
     /// True parameters: μ = 10, φ₁ = 0.6, σ = 5.
-    /// The predeclared 5% large-sample tolerance is retained under the Phase 5 1,000-step ceiling.
+    /// The predeclared 5% large-sample tolerance is retained under the 1,000-step ceiling.
     /// </para>
     /// </remarks>
     [TestMethod]
     public void Test_EstimateParameters_AR1()
     {
-        JsonElement fixture = Phase5TimeSeriesRecoveryTests.LoadFixture("ar");
-        double[] truth = Phase5TimeSeriesRecoveryTests.GetArTruth(fixture);
+        JsonElement fixture = TimeSeriesIndependentRecoveryTests.LoadFixture("ar");
+        double[] truth = TimeSeriesIndependentRecoveryTests.GetArTruth(fixture);
         var model = new AutoRegressive(
-            Phase5TimeSeriesRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
+            TimeSeriesIndependentRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
             order: 1,
             includeIntercept: true)
         {
@@ -50,14 +50,14 @@ public class AutoRegressiveMLERecoveryTests
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "Model fitting failed.");
-        Phase5TimeSeriesRecoveryTests.AssertMleRecovery(
+        TimeSeriesIndependentRecoveryTests.AssertMleRecovery(
             "AR",
             model,
             truth,
             mle.BestParameterSet.Values,
             coefficientTolerance: 0.05,
             scaleTolerance: 0.05);
-        Phase5TimeSeriesRecoveryTests.AssertArPrediction(model, truth, fixture);
+        TimeSeriesIndependentRecoveryTests.AssertArPrediction(model, truth, fixture);
     }
 
     /// <summary>

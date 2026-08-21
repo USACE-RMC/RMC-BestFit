@@ -28,16 +28,16 @@ public class MovingAverageMLERecoveryTests
     /// </para>
     /// <para>
     /// True parameters: μ = 10, θ₁ = 0.6, σ = 5.
-    /// The predeclared 5% large-sample tolerance is retained under the Phase 5 1,000-step ceiling.
+    /// The predeclared 5% large-sample tolerance is retained under the 1,000-step ceiling.
     /// </para>
     /// </remarks>
     [TestMethod]
     public void Test_EstimateParameters_MA1()
     {
-        JsonElement fixture = Phase5TimeSeriesRecoveryTests.LoadFixture("ma");
-        double[] truth = Phase5TimeSeriesRecoveryTests.GetMaTruth(fixture);
+        JsonElement fixture = TimeSeriesIndependentRecoveryTests.LoadFixture("ma");
+        double[] truth = TimeSeriesIndependentRecoveryTests.GetMaTruth(fixture);
         var model = new MovingAverage(
-            Phase5TimeSeriesRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
+            TimeSeriesIndependentRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
             order: 1,
             includeIntercept: true)
         {
@@ -48,14 +48,14 @@ public class MovingAverageMLERecoveryTests
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "Model fitting failed.");
-        Phase5TimeSeriesRecoveryTests.AssertMleRecovery(
+        TimeSeriesIndependentRecoveryTests.AssertMleRecovery(
             "MA",
             model,
             truth,
             mle.BestParameterSet.Values,
             coefficientTolerance: 0.05,
             scaleTolerance: 0.05);
-        Phase5TimeSeriesRecoveryTests.AssertMaPrediction(model, truth, fixture);
+        TimeSeriesIndependentRecoveryTests.AssertMaPrediction(model, truth, fixture);
     }
 
     /// <summary>

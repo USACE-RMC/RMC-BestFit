@@ -12,10 +12,10 @@ using RatingCurveModel = RMC.BestFit.Models.RatingCurve;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Independent numerical verification methods for the Phase 5 time-series findings.
+/// Independent numerical verification methods for the time-series models.
 /// </summary>
 [TestClass]
-public class Phase5TimeSeriesVerificationTests
+public class TimeSeriesIndependentOracleTests
 {
     /// <summary>
     /// Verifies the four time-series Jeffreys scale components against the analytical
@@ -1185,7 +1185,7 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
-    /// Loads a committed Phase 5 analytical oracle.
+    /// Loads a committed analytical oracle.
     /// </summary>
     /// <param name="fileName">The oracle file name under the verification-data output folder.</param>
     /// <returns>The root JSON element.</returns>

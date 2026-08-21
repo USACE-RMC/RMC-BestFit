@@ -41,16 +41,6 @@ public class NonstationaryValidationTests
     /// </summary>
     private const int SampleSize = 1000;
 
-    /// <summary>
-    /// Number of MCMC iterations.
-    /// </summary>
-    private const int Iterations = 10000;
-
-    /// <summary>
-    /// Number of warmup iterations.
-    /// </summary>
-    private const int WarmupIterations = 5000;
-
     #region Trend on Mean Only
 
     /// <summary>
@@ -454,14 +444,11 @@ public class NonstationaryValidationTests
     #region Helper Methods
 
     /// <summary>
-    /// Configures the Bayesian analysis settings for consistent testing.
+    /// Configures the Bayesian analysis with the default MCMC settings and the posterior-mode point estimator.
     /// </summary>
     /// <param name="analysis">The univariate analysis to configure.</param>
     private static void ConfigureBayesianAnalysis(UnivariateAnalysis analysis)
     {
-        analysis.BayesianAnalysis.Iterations = Iterations;
-        analysis.BayesianAnalysis.WarmupIterations = WarmupIterations;
-        analysis.BayesianAnalysis.Type = RMC.BestFit.Estimation.BayesianAnalysis.SamplerType.DEMCzs;
         analysis.BayesianAnalysis.PointEstimator = RMC.BestFit.Estimation.BayesianAnalysis.PointEstimateType.PosteriorMode;
     }
 

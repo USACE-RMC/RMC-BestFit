@@ -33,10 +33,10 @@ public class ARAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_AR1()
     {
-        JsonElement fixture = Phase5TimeSeriesRecoveryTests.LoadFixture("ar");
-        double[] truth = Phase5TimeSeriesRecoveryTests.GetArTruth(fixture);
+        JsonElement fixture = TimeSeriesIndependentRecoveryTests.LoadFixture("ar");
+        double[] truth = TimeSeriesIndependentRecoveryTests.GetArTruth(fixture);
         var model = new AutoRegressive(
-            Phase5TimeSeriesRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
+            TimeSeriesIndependentRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
             order: 1,
             includeIntercept: true)
         {
@@ -45,19 +45,19 @@ public class ARAnalysisTests
         model.TrainingTimeSteps = 1000;
 
         var analysis = new ARAnalysis(model);
-        Phase5TimeSeriesRecoveryTests.AssertResolvedBayesianDefaults(
+        TimeSeriesIndependentRecoveryTests.AssertResolvedBayesianDefaults(
             "AR",
             analysis.BayesianAnalysis,
             model.NumberOfParameters);
         await analysis.RunAsync();
 
         Assert.IsTrue(analysis.IsEstimated, "Bayesian estimation failed.");
-        Phase5TimeSeriesRecoveryTests.AssertBayesianRecovery(
+        TimeSeriesIndependentRecoveryTests.AssertBayesianRecovery(
             "AR",
             model,
             analysis.BayesianAnalysis,
             truth);
-        Phase5TimeSeriesRecoveryTests.AssertArPrediction(model, truth, fixture);
+        TimeSeriesIndependentRecoveryTests.AssertArPrediction(model, truth, fixture);
     }
 
     /// <summary>

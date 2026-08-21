@@ -73,23 +73,15 @@ public class CoincidentFrequencyAnalysisTests
     }
 
     /// <summary>
-    /// Builds the bivariate analysis with a fast MCMC configuration appropriate for a
-    /// verification run. The settings are deliberately lighter than the parameter-recovery
-    /// suite — we don't need tight ρ̂ recovery, just enough posterior samples for a stable
-    /// mean curve and credible interval.
+    /// Builds the bivariate analysis with the default MCMC configuration (DEMCzs simulation
+    /// defaults, seed 12345, posterior-mean point estimator, 90% credible interval).
     /// </summary>
     private static BivariateAnalysis BuildAnalysis(BivariateDistribution dist)
     {
         var analysis = new BivariateAnalysis(dist);
-        analysis.BayesianAnalysis.Type = BayesianAnalysis.SamplerType.DEMCzs;
-        analysis.BayesianAnalysis.NumberOfChains = 3;
-        analysis.BayesianAnalysis.WarmupIterations = 1000;
-        analysis.BayesianAnalysis.Iterations = 2000;
-        analysis.BayesianAnalysis.ThinningInterval = 5;
         analysis.BayesianAnalysis.PRNGSeed = 12345;
         analysis.BayesianAnalysis.CredibleIntervalWidth = 0.90;
         analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMean;
-        analysis.BayesianAnalysis.UseSimulationDefaults = false;
         return analysis;
     }
 

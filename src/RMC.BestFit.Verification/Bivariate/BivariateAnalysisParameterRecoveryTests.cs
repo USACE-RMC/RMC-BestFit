@@ -67,23 +67,16 @@ public class BivariateAnalysisParameterRecoveryTests
     }
 
     /// <summary>
-    /// Builds a <see cref="BivariateAnalysis"/> with the MCMC configuration used by the
-    /// example project (DEMCzs, 3 chains, 1750 warmup, 3500 iterations, thinning 10,
-    /// seed 12345, posterior-mean point estimator, 90% credible interval).
+    /// Builds a <see cref="BivariateAnalysis"/> with the default MCMC configuration
+    /// (DEMCzs simulation defaults, seed 12345, posterior-mean point estimator, 90% credible interval).
     /// </summary>
     private static BivariateAnalysis BuildAnalysis(BivariateDistribution dist)
     {
         var analysis = new BivariateAnalysis(dist);
 
-        analysis.BayesianAnalysis.Type = BayesianAnalysis.SamplerType.DEMCzs;
-        analysis.BayesianAnalysis.NumberOfChains = 3;
-        analysis.BayesianAnalysis.WarmupIterations = 1750;
-        analysis.BayesianAnalysis.Iterations = 3500;
-        analysis.BayesianAnalysis.ThinningInterval = 10;
         analysis.BayesianAnalysis.PRNGSeed = 12345;
         analysis.BayesianAnalysis.CredibleIntervalWidth = 0.9;
         analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMean;
-        analysis.BayesianAnalysis.UseSimulationDefaults = false;
 
         return analysis;
     }

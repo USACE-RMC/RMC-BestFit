@@ -30,7 +30,7 @@ public class MAAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of MA(1) parameters against known true values from synthetic data.
-    /// Uses the independent 1,000-observation Phase 5 fixture and validates central-interval, MAP,
+    /// Uses the independent 1,000-observation fixture and validates central-interval, MAP,
     /// R-hat, ESS, finite-likelihood, and one-step-prediction recovery.
     /// </summary>
     /// <remarks>
@@ -44,10 +44,10 @@ public class MAAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_MA1()
     {
-        JsonElement fixture = Phase5TimeSeriesRecoveryTests.LoadFixture("ma");
-        double[] truth = Phase5TimeSeriesRecoveryTests.GetMaTruth(fixture);
+        JsonElement fixture = TimeSeriesIndependentRecoveryTests.LoadFixture("ma");
+        double[] truth = TimeSeriesIndependentRecoveryTests.GetMaTruth(fixture);
         var model = new MovingAverage(
-            Phase5TimeSeriesRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
+            TimeSeriesIndependentRecoveryTests.CreateSeries(fixture, "raw", TimeInterval.OneMonth),
             order: 1,
             includeIntercept: true)
         {
@@ -56,19 +56,19 @@ public class MAAnalysisTests
         model.TrainingTimeSteps = 1000;
 
         var analysis = new MAAnalysis(model);
-        Phase5TimeSeriesRecoveryTests.AssertResolvedBayesianDefaults(
+        TimeSeriesIndependentRecoveryTests.AssertResolvedBayesianDefaults(
             "MA",
             analysis.BayesianAnalysis,
             model.NumberOfParameters);
         await analysis.RunAsync();
 
         Assert.IsTrue(analysis.IsEstimated, "Bayesian estimation failed.");
-        Phase5TimeSeriesRecoveryTests.AssertBayesianRecovery(
+        TimeSeriesIndependentRecoveryTests.AssertBayesianRecovery(
             "MA",
             model,
             analysis.BayesianAnalysis,
             truth);
-        Phase5TimeSeriesRecoveryTests.AssertMaPrediction(model, truth, fixture);
+        TimeSeriesIndependentRecoveryTests.AssertMaPrediction(model, truth, fixture);
     }
 
     /// <summary>

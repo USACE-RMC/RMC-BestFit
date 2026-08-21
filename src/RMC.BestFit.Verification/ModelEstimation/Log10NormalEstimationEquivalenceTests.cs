@@ -76,7 +76,7 @@ public class Log10NormalEstimationEquivalenceTests
     /// </summary>
     /// <remarks>
     /// Nelder-Mead isolates the moment-definition comparison from the objective-gradient scaling
-    /// audited separately under TR-033. For a just-identified model, the weighting matrix cannot
+    /// audited separately. For a just-identified model, the weighting matrix cannot
     /// change a finite solution of the two moment equations.
     /// </remarks>
     [TestMethod]

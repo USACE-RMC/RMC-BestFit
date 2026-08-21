@@ -6,7 +6,7 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 /// Verifies the analytic zero-primary-shape limits of the Kappa Four distribution.
 /// </summary>
 /// <remarks>
-/// These tests isolate TR-001. They compare the Numerics implementation with the
+/// These tests isolate the zero-shape case. They compare the Numerics implementation with the
 /// derivative and inverse of its documented zero-shape CDF, without using the
 /// implementation's PDF or inverse CDF as an oracle.
 /// </remarks>

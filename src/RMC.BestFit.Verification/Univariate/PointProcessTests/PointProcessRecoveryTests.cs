@@ -534,7 +534,7 @@ public partial class PointProcessRecoveryTests
         };
     }
 
-    /// <summary>Creates a configured seasonal model with the approved changepoint supports.</summary>
+    /// <summary>Creates a configured seasonal model with the default changepoint supports.</summary>
     /// <param name="frame">The generated POT data.</param>
     /// <param name="observationYears">The known source exposure.</param>
     /// <returns>The configured seasonal model.</returns>

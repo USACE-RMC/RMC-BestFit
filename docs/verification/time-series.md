@@ -105,7 +105,7 @@ the independent `-log(sigma)` density, the unchanged ARIMAX reference metadata, 
 the pointwise sum with `PriorLogLikelihood` at valid defaults.
 
 **Numerical oracle.** The exact Verification method is
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.JeffreysScaleMetadataMatchesIndependentPriorOracle`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.JeffreysScaleMetadataMatchesIndependentPriorOracle`.
 It reads [phase5-jeffreys-prior-oracle.json](../../verification/data/time-series/phase5-jeffreys-prior-oracle.json),
 which independently tabulates $\log(1/\sigma)=-\log(\sigma)$ for AR at `sigma=0.125`, MA at
 `0.5`, ARIMA at `2`, and ARIMAX at `8`. The fixed acceptance rule is `1E-12` absolute. These use
@@ -121,7 +121,7 @@ command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.JeffreysScaleMetadataMatchesIndependentPriorOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.JeffreysScaleMetadataMatchesIndependentPriorOracle'
 ```
 
 The final artifact-backed run built with zero warnings/errors and passed 1/1 in 0.381 s. The TRX
@@ -158,7 +158,7 @@ path. Every final recovery cell will also require a finite likelihood at its rec
 set; no separate estimator run is justified for this numerical-domain guard.
 
 **Numerical oracle.** The exact Verification method is
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle`.
 It reads [phase5-invalid-scale-oracle.json](../../verification/data/time-series/phase5-invalid-scale-oracle.json).
 The raw response is `[1.25,-0.5,2,0.75,-1.5]`, with AR(1), MA(1), ARIMA(1,0,0), and
 ARIMAX(1,0,0,0), zero dynamic coefficients, no intercept, `Transform.None`, five training
@@ -176,7 +176,7 @@ commit `c7b08d4` plus the scoped TR-040 diff, the final guarded command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle'
 ```
 
 The artifact-backed method built with zero warnings/errors and passed 1/1 in 0.409 s; its TRX is
@@ -257,10 +257,10 @@ production/test diff, these guarded commands ran separately:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.TransformLambdaMatchesIndependentTrainingOnlyOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.TransformLambdaMatchesIndependentTrainingOnlyOracle'
 
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ManualTransformLambdaRebuildMatchesIndependentLikelihoodOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ManualTransformLambdaRebuildMatchesIndependentLikelihoodOracle'
 ```
 
 Both focused builds reported zero warnings/errors. The methods passed 1/1 in 0.523 s and 1/1 in
@@ -335,7 +335,7 @@ regression that only matched App source files was removed. UI/App signature and 
 regressions are part of their complete passing suites.
 
 **Independent R oracle.** The exact Verification method is
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle`.
 It reads [phase5-arimax-alignment-oracle.json](../../verification/data/time-series/phase5-arimax-alignment-oracle.json),
 which was generated and committed at `4e3f42c` before C# output was evaluated. Its independent R
 implementation applies Box-Cox transformation, successive first differences with later raw dates,
@@ -364,7 +364,7 @@ Package 5 production/test diff, the guarded command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle'
 ```
 
 The final focused build reported zero warnings/errors and the exact method passed 1/1 in 0.370 s.
@@ -441,7 +441,7 @@ documented App behaviour rather than a tested contract, because the source-text 
 only matched App source files was removed.
 
 **Independent oracle.** The exact Verification method is
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle`.
 The corrected hand oracle uses an irregular ARIMA(0,2,0) response `[1,4,10,999]`, `T=3`, `h=2`,
 intercept two, `Transform.None`, and `seed=-1`; the holdout sentinel is unused and the expected
 conditional path is `[1,4,9,18,28]`. Its logarithmic ARIMAX(0,1,0,0) case uses transformed raw
@@ -450,7 +450,7 @@ one, and `seed=-1`; the expected original-scale path is `exp([1,1.1,1.6,1.7,1.8]
 tolerance remains `1E-10`.
 
 The additional exact method
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary`
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary`
 uses exactly 1,000 fixed seeds for both ARIMA(0,1,0) and ARIMAX(0,1,0,0), unit innovation scale,
 raw response `[10,14,15,20,999]`, `T=4`, and `h=3`. The analytical variance is one at every
 conditional training point and at forecast horizon one, then two and three at horizons two and
@@ -472,9 +472,9 @@ were:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle'
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary'
 ```
 
 The hand method passed 1/1 in 0.436 s under `20260821-090812-...`; its TRX SHA-256 is
@@ -525,7 +525,7 @@ unstaged and was not altered by this audit.
 uses raw observations equal to exponentials of deliberately small model-scale values. Its AR(1),
 MA(1), ARIMA(1,1,1), and ARIMAX(1,1,1) hand recurrences fail immediately if any original-scale lag
 or residual enters prediction. The exact Verification method is
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle`.
 It independently implements the Yeo-Johnson transform/inverse, conditional ARMA(1,1) recurrence,
 first-difference reintegration, and accumulated ARMA impulse-response variance. The fixture uses
 transformed levels `[6,6.15,6.11,6.2,6.18,8]`, `lambda=0.04`, `T=5`, `h=5`, intercept `0.02`,
@@ -539,7 +539,7 @@ established three-percent variance floor. Verification source SHA-256 is
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle'
 ```
 
 The first executed oracle under `20260821-102617-...` failed 0/1 in 0.047 s because the newly
@@ -592,9 +592,9 @@ formulas are evaluated independently at `1E-12` except the bit-for-bit golden ar
 exact double equality.
 
 **Independent numerical oracles.** The exact methods are
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArAndMaTransformedGeneratorsMatchIndependentOracle`
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArAndMaTransformedGeneratorsMatchIndependentOracle`
 and
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle`.
 The first uses the pre-change model-scale AR(2) seed `13579` and MA(2) seed `13580` sequences and
 independently applies exponential and Box-Cox (`lambda=0.5`) inverse formulas. The second uses the
 pre-change ARMA(1,1) seed `13581` model-scale sequence as seven first differences, an observed
@@ -619,10 +619,10 @@ Package 7 diff, the final guarded commands were:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArAndMaTransformedGeneratorsMatchIndependentOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArAndMaTransformedGeneratorsMatchIndependentOracle'
 
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaDifferencedTransformedGeneratorMatchesIndependentOracle'
 ```
 
 With the approved 1,000-step fixtures, the methods passed 1/1 in 0.199 s and 1/1 in 0.204 s. Their
@@ -692,7 +692,7 @@ The existing `ARIMAXTests` block-bootstrap, KNN, and explicit-covariate override
 the same complete Core run, covering the unchanged extension policy and length behavior.
 
 **Independent numerical oracle.** The exact method is
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle`.
 Its algebraic cell uses the pre-change ARIMAX(1,1) model-scale seed-24682 sequence, an observed
 Yeo-Johnson transformed anchor of two, `lambda=0.6`, intercept `0.25`, level-covariate coefficient
 `1.1`, `phi=0.3`, `theta=-0.2`, `sigma=0.75`, and daily level covariates
@@ -717,7 +717,7 @@ Package 8 diff, the guarded command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle'
 ```
 
 The final exact method passed 1/1 in 0.444 s; its TRX is under
@@ -752,7 +752,7 @@ include their exact signature-baseline checks. The strict serial Debug solution 
 documented XML validation script remains absent, so this strict build is the active XML gate.
 
 **Independent numerical oracle.** The exact method is
-`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior`.
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior`.
 It injects a single stored MAP row into each concrete analysis and independently computes
 
 $$
@@ -785,7 +785,7 @@ Package 9 test/report diff, the guarded command was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior'
 ```
 
 The final exact method passed 1/1 in 0.329 s; its TRX is under
@@ -847,10 +847,10 @@ retained draws. After the prediction-oracle correction, the recovery-source SHA-
 | AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 with unchanged production DEMCzs defaults |
 | MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 at the unchanged 5% gate |
 | MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 with unchanged production DEMCzs defaults |
-| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and boundary-conditioned prediction oracle |
-| ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
-| ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 against the date-indexed conditional optimum using the unchanged production Differential Evolution default |
-| ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
+| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and boundary-conditioned prediction oracle |
+| ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
+| ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 against the date-indexed conditional optimum using the unchanged production Differential Evolution default |
+| ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
 
 **Recovery checkpoint.** The exact guarded AR MLE command was:
 
@@ -964,7 +964,7 @@ The only Verification command run for this package was:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters'
 ```
 
 From commit `55687f2`, it failed 0/1 after 0.066 s under `20260820-155040-...`; the TRX SHA-256 is
@@ -980,13 +980,13 @@ ARIMAX cells were still unrun. The full Verification project was not run.
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters'
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters'
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters'
 & .\scripts\run-verification-test.ps1 -Test `
-  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters'
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters'
 ```
 
 Commit `fc4bc30` corrected the test to compare R and C# likelihoods at the same parameter vector.

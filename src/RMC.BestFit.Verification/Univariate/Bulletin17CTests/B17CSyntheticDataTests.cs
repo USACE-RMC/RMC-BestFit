@@ -41,7 +41,7 @@ public class B17CSyntheticDataTests
     /// </para>
     /// </remarks>
     [TestMethod]
-    public void Exponential_RecoversTrueParameters()
+    public void Exponential_MatchesProductMomentParameters()
     {
         var (df, trueParameters) = SyntheticUnivariateData.GenerateExponentialData();
 
@@ -74,7 +74,7 @@ public class B17CSyntheticDataTests
     /// </para>
     /// </remarks>
     [TestMethod]
-    public void Gamma_RecoversTrueParameters()
+    public void Gamma_MatchesProductMomentParameters()
     {
         var (df, trueParameters) = SyntheticUnivariateData.GenerateGammaData();
 
@@ -105,7 +105,7 @@ public class B17CSyntheticDataTests
     /// </para>
     /// </remarks>
     [TestMethod]
-    public void Normal_RecoversTrueParameters()
+    public void Normal_MatchesProductMomentParameters()
     {
         var (df, trueParameters) = SyntheticUnivariateData.GenerateNormalData();
 
@@ -137,7 +137,7 @@ public class B17CSyntheticDataTests
     /// </para>
     /// </remarks>
     [TestMethod]
-    public void PearsonTypeIII_RecoversTrueParameters()
+    public void PearsonTypeIII_MatchesProductMomentParameters()
     {
         var (df, trueParameters) = SyntheticUnivariateData.GeneratePearsonTypeIIIData();
 
@@ -169,7 +169,7 @@ public class B17CSyntheticDataTests
     /// </para>
     /// </remarks>
     [TestMethod]
-    public void LogNormal_RecoversTrueParameters()
+    public void LogNormal_MatchesProductMomentParameters()
     {
         var (df, trueParameters) = SyntheticUnivariateData.GenerateLogNormalData();
 
@@ -203,7 +203,7 @@ public class B17CSyntheticDataTests
     /// </para>
     /// </remarks>
     [TestMethod]
-    public void LogPearsonTypeIII_RecoversTrueParameters()
+    public void LogPearsonTypeIII_MatchesProductMomentParameters()
     {
         var (df, trueParameters) = SyntheticUnivariateData.GenerateLogPearsonTypeIIIData();
 

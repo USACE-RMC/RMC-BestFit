@@ -7,7 +7,7 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Verification.ModelEstimation;
 
 /// <summary>
-/// Characterizes the documented TR-028 limitation for prior predictive parameter draws.
+/// Characterizes the documented limitation of independent prior-predictive parameter draws.
 /// </summary>
 /// <remarks>
 /// The fixture has uniform marginal parameter priors and a narrow soft coupling term
@@ -15,7 +15,7 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// and a mean squared separation near 2/3, which is incompatible with that joint term.
 /// </remarks>
 [TestClass]
-public sealed class JointPriorSamplingFindingTests
+public sealed class JointPriorSamplingVerificationTests
 {
     /// <summary>
     /// Confirms that prior sampling records but does not sample from a soft joint prior term.

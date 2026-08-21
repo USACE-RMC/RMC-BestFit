@@ -11,11 +11,11 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// </summary>
 /// <remarks>
 /// These tests verify fixed-weight one-step estimation and the efficient-weight
-/// Hansen J statistic after the approved TR-026/TR-034 corrections. R is not
+/// Hansen J statistic R is not
 /// required at test runtime.
 /// </remarks>
 [TestClass]
-public class GmmSpecificationFindingTests
+public class GmmSpecificationVerificationTests
 {
     /// <summary>
     /// Verifies the efficient two-step fit and Hansen J statistic against R <c>gmm</c>.

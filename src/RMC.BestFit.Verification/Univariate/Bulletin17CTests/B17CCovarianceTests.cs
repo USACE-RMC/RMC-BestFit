@@ -50,13 +50,16 @@ public class B17CCovarianceTests
     /// which create O(1/n) discrepancies vs. Numerics asymptotic formulas. For 3-parameter distributions,
     /// the entry Cov[0,2] is exactly zero from Numerics (exact cancellation in D^-1·S·D^-T) but nonzero
     /// from GMM because c3 enters the numerical Jacobian D[2,0]. Using the geometric mean of diagonal
-    /// entries as a floor provides a scale-appropriate tolerance for these near-zero entries.
+    /// entries as a floor provides a scale-appropriate tolerance for these near-zero entries. The
+    /// absolute floor applies only to off-diagonal entries; diagonal entries are held to the
+    /// relative tolerance alone.
     /// </remarks>
     private static double CovarianceTolerance(double[,] trueCovar, int i, int j, double relativeTolerance)
     {
         double entryMagnitude = Math.Abs(trueCovar[i, j]);
         double diagonalScale = Math.Sqrt(Math.Abs(trueCovar[i, i] * trueCovar[j, j]));
-        return relativeTolerance * Math.Max(entryMagnitude, diagonalScale) + 1E-6;
+        double absoluteFloor = i == j ? 0.0 : 1E-6;
+        return relativeTolerance * Math.Max(entryMagnitude, diagonalScale) + absoluteFloor;
     }
 
     /// <summary>

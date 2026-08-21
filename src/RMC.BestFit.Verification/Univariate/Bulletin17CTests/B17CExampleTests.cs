@@ -228,7 +228,11 @@ public class B17CExampleTests
     /// Example 4 with uncertain data instead of intervals.
     /// </summary>
     /// <remarks>
-    /// Replacing intervals with uniform distributions should give similar results.
+    /// Replacing the interval-censored historical floods with uniform uncertain observations
+    /// changes the likelihood contribution of those records, so only approximate agreement with
+    /// the published interval-based parameters is expected. The 10% relative tolerance is an
+    /// acceptance band for that approximation; it is not derived from a published uncertain-data
+    /// result.
     /// </remarks>
     [TestMethod]
     public void Test_Example4_UncertainData()
@@ -240,12 +244,12 @@ public class B17CExampleTests
         var gmm = new GeneralizedMethodOfMoments(model);
         gmm.Estimate();
 
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Example 4 (Arkansas River).");
+        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Example 4 with uncertain data (Arkansas River).");
 
         for (int i = 0; i < model.NumberOfParameters; i++)
         {
             Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], Math.Abs(trueParameters[i]) * 0.1,
-                $"Parameter[{i}] mismatch for Example 4 (Arkansas River).");
+                $"Parameter[{i}] mismatch for Example 4 with uncertain data (Arkansas River).");
         }
     }
 
@@ -253,7 +257,10 @@ public class B17CExampleTests
     /// Example 7 with uncertain data instead of intervals.
     /// </summary>
     /// <remarks>
-    /// Replacing intervals with uniform distributions should give similar results.
+    /// Replacing the interval-censored records with uniform uncertain observations changes their
+    /// likelihood contribution, so only approximate agreement with the published interval-based
+    /// parameters is expected. The 20% relative tolerance is an acceptance band for that
+    /// approximation; it is not derived from a published uncertain-data result.
     /// </remarks>
     [TestMethod]
     public void Test_Example7_UncertainData()
@@ -265,12 +272,12 @@ public class B17CExampleTests
         var gmm = new GeneralizedMethodOfMoments(model);
         gmm.Estimate();
 
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Example 4 (Arkansas River).");
+        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Example 7 with uncertain data.");
 
         for (int i = 0; i < model.NumberOfParameters; i++)
         {
             Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], Math.Abs(trueParameters[i]) * 0.2,
-                $"Parameter[{i}] mismatch for Example 4 (Arkansas River).");
+                $"Parameter[{i}] mismatch for Example 7 with uncertain data.");
         }
     }
 

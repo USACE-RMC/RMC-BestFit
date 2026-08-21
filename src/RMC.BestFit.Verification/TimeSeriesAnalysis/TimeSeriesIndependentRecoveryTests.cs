@@ -9,7 +9,7 @@ using NumericTimeSeries = Numerics.Data.TimeSeries;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Verifies Phase 5 time-series parameter recovery from independently generated R fixtures.
+/// Verifies time-series parameter recovery from independently generated R fixtures.
 /// </summary>
 /// <remarks>
 /// Every raw fixture contains exactly 1,000 observations retained after a 110-step stationary
@@ -17,7 +17,7 @@ namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 /// <see cref="BayesianAnalysis"/> defaults without test-side changes to the sampler or its settings.
 /// </remarks>
 [TestClass]
-public class Phase5TimeSeriesRecoveryTests
+public class TimeSeriesIndependentRecoveryTests
 {
     private const int MaximumVerificationSteps = 1000;
     private const int RecoveryBurnInSteps = 110;
@@ -112,7 +112,7 @@ public class Phase5TimeSeriesRecoveryTests
     }
 
     /// <summary>
-    /// Loads one named fixture from the committed Phase 5 recovery artifact.
+    /// Loads one named fixture from the committed recovery artifact.
     /// </summary>
     /// <param name="name">The lower-case fixture name.</param>
     /// <returns>A detached JSON fixture element.</returns>

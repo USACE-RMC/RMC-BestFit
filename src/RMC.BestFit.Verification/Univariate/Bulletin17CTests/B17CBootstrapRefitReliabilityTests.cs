@@ -270,9 +270,9 @@ public class B17CBootstrapRefitReliabilityTests
             $"{Environment.NewLine}{traceBuffer}");
         BootstrapDiagnostics diagnostics = analysis.BootstrapResults!;
         string diagnosticSummary =
-            $"attempted={diagnostics.AttemptedReplicates:N0}, " +
+            $"realizations={diagnostics.AttemptedRealizations:N0}, " +
             $"outer retries={diagnostics.TotalRetries:N0}, " +
-            $"Mahalanobis rejections={diagnostics.MahalanobisRejections:N0}, " +
+            $"substituted={diagnostics.FailedReplicates:N0}, " +
             $"optimizer fallbacks={diagnostics.OptimizerFallbacks:N0}, " +
             $"function evaluations={diagnostics.TotalFunctionEvaluations:N0}, " +
             $"GMM statuses=success:{diagnostics.StatusSuccessCount:N0}/" +
@@ -284,12 +284,15 @@ public class B17CBootstrapRefitReliabilityTests
         TestContext.WriteLine(
             $"Example {exampleNumber} {uncertaintyMethod}: {diagnosticSummary}.");
 
-        Assert.AreEqual(bootstrapReplicates, diagnostics.AttemptedReplicates,
+        Assert.AreEqual(bootstrapReplicates, diagnostics.AttemptedRealizations,
             $"Example {exampleNumber} {uncertaintyMethod} retried a realization; {diagnosticSummary}.");
         Assert.AreEqual(0, diagnostics.TotalRetries,
             $"Example {exampleNumber} {uncertaintyMethod} required an outer retry; {diagnosticSummary}.");
-        Assert.AreEqual(0, diagnostics.MahalanobisRejections,
-            $"Example {exampleNumber} {uncertaintyMethod} unexpectedly used the removed Mahalanobis guard; {diagnosticSummary}.");
+        int statusTotal = diagnostics.StatusSuccessCount + diagnostics.StatusMaximumIterationsCount +
+            diagnostics.StatusMaximumFunctionEvaluationsCount + diagnostics.StatusFailureCount +
+            diagnostics.StatusNoneCount;
+        Assert.IsTrue(statusTotal >= diagnostics.AttemptedRealizations,
+            $"Example {exampleNumber} {uncertaintyMethod} recorded fewer optimizer statuses than realizations; {diagnosticSummary}.");
         Assert.AreEqual(0, diagnostics.StatusFailureCount,
             $"Example {exampleNumber} {uncertaintyMethod} recorded a failed GMM candidate; {diagnosticSummary}.");
         Assert.AreEqual(0, diagnostics.StatusNoneCount,

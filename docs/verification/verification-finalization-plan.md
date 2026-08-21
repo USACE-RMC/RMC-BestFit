@@ -233,7 +233,7 @@ Current scoped external parity is complete. ArviZ would be redundant secondary W
 
 Closeout evidence reconciled 28 July 2026:
 
-- Production and regression anchors include `InformationCriterionOracleTests`, `PsisLooOracleVerificationTests`, `ProfileLikelihoodFindingTests`, `GmmSpecificationFindingTests`, `GmmInfluenceDiagnosticsVerificationTests`, `McmcNumericalVerificationTests`, and `CovarianceFailureStatusTests`.
+- Production and regression anchors include `InformationCriterionOracleTests`, `PsisLooOracleVerificationTests`, `ProfileLikelihoodVerificationTests`, `GmmSpecificationVerificationTests`, `GmmInfluenceDiagnosticsVerificationTests`, `McmcNumericalVerificationTests`, and `CovarianceFailureStatusTests`.
 - The seven Phase 2 artifacts in `verification/data/model-estimation/` retain exact manifest hash matches and cover estimator equivalence, model comparison, PSIS-LOO, MCMC diagnostics, GMM influence, profile likelihood, and GMM specification/covariance.
 - Primary BestFit commit anchors are `c1e343a`, `4f91691`, `6ffab67`, and `1a848ef`; Numerics anchors are `5c693a8`, `76f7dd0`, and `b3f14b0`.
 

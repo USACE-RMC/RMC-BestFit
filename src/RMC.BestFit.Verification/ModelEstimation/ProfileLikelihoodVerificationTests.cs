@@ -16,7 +16,7 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// also has an independent closed-form check. MAP is tested with both flat and informative priors.
 /// </remarks>
 [TestClass]
-public sealed class ProfileLikelihoodFindingTests
+public sealed class ProfileLikelihoodVerificationTests
 {
     /// <summary>
     /// Confirms that MLE reoptimizes nuisance parameters and matches the R true profile.
@@ -213,7 +213,7 @@ public sealed class ProfileLikelihoodFindingTests
             new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-            }) ?? throw new InvalidOperationException("Unable to deserialize the TR-023 oracle.");
+            }) ?? throw new InvalidOperationException("Unable to deserialize the profile-likelihood oracle.");
     }
 
     /// <summary>

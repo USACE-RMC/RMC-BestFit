@@ -314,7 +314,7 @@ public class MixtureRecoveryTests
     }
 
     /// <summary>
-    /// Configures the shared DEMCzs recovery analysis using the established verification pattern.
+    /// Configures the shared Bayesian recovery analysis with the default DEMCzs simulation settings.
     /// </summary>
     /// <param name="model">The mixture model to estimate.</param>
     /// <param name="seed">The deterministic sampler seed.</param>
@@ -322,15 +322,7 @@ public class MixtureRecoveryTests
     private static MixtureAnalysis ConfigureBayesianAnalysis(MixtureModel model, int seed)
     {
         var analysis = new MixtureAnalysis(model);
-        analysis.BayesianAnalysis.UseSimulationDefaults = false;
-        analysis.BayesianAnalysis.Type = BayesianAnalysis.SamplerType.DEMCzs;
-        analysis.BayesianAnalysis.NumberOfChains = 4;
-        analysis.BayesianAnalysis.WarmupIterations = 1500;
-        analysis.BayesianAnalysis.Iterations = 3000;
-        analysis.BayesianAnalysis.ThinningInterval = 5;
         analysis.BayesianAnalysis.PRNGSeed = seed;
-        analysis.BayesianAnalysis.InitialIterations = Math.Min(1000, Math.Max(100, model.NumberOfParameters * 100));
-        analysis.BayesianAnalysis.OutputLength = 5000;
         analysis.BayesianAnalysis.CredibleIntervalWidth = 0.9;
         analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMode;
         return analysis;

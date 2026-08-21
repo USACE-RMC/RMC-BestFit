@@ -27,10 +27,11 @@ namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 /// is set at the 90th percentile of the true distribution.
 /// </para>
 /// <para>
-/// Currently uses <see cref="UncertaintyMethod.MultivariateNormal"/> which is only first-order
-/// accurate. Coverage is expected to be below nominal, especially for small samples and extreme
-/// quantiles. Assertions verify only that the test pipeline runs successfully; diagnostic output
-/// is provided for comparison with the published Table 3 results.
+/// Uses <see cref="UncertaintyMethod.MultivariateNormal"/>, which is first-order accurate, so
+/// coverage is expected to be below nominal for small samples and extreme quantiles. The
+/// published Table 3 coverage values are not asserted: each scenario asserts only that at least
+/// 80% of its replicates complete, and writes the empirical coverage table to the debug output
+/// for comparison with the paper.
 /// </para>
 /// <para>
 /// <b>Reference:</b> Cohn, T.A., Lane, W.L., Stedinger, J.R. (2001). Confidence intervals for
@@ -203,12 +204,11 @@ public class B17CCohnEtAlCoverageTests
         double meanAbove = missAbove.Average();
         Debug.WriteLine($"{"Mean",10} {"",14} {meanCoverage,10:F3} {meanBelow,8:F3} {meanAbove,8:F3}");
 
-        // Assertions — MVN is first-order only, so we only assert pipeline success
+        // The published Table 3 coverage values are not asserted (see the class remarks);
+        // only the completion rate is a pass/fail criterion.
         Assert.IsTrue(successCount >= (int)(B * 0.8),
             $"γ={gamma}, Ns={nSys}, Nh={nHist}: Too many failures — " +
             $"{B - successCount}/{B} replicates failed.");
-
-        // TODO: Tighten assertions after LinkedMultivariateNormal and BiasCorrectedBootstrap are ported
     }
 
     #endregion
