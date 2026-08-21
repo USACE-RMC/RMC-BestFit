@@ -856,6 +856,12 @@ namespace RMC.BestFit.Estimation
         /// changed at least one matrix element.
         /// </param>
         /// <returns>The computed covariance matrix.</returns>
+        /// <remarks>
+        /// The moment covariance and weighting matrix evaluated here are local to the calculation.
+        /// Querying the covariance at an arbitrary parameter vector does not alter the estimator's
+        /// <see cref="S"/> or <see cref="W"/>, so the moment objective, gradient, and influence
+        /// functions continue to use the weighting selected by the completed fit.
+        /// </remarks>
         private Matrix ComputeCovariance(
             double[] parameters,
             bool sandwich,
@@ -866,9 +872,8 @@ namespace RMC.BestFit.Estimation
             Matrix rawMomentCovariance = MomentConditionFunction(parameters).S;
             Matrix positiveDefiniteS = MatrixRegularization.MakeSymmetricPositiveDefinite(rawMomentCovariance);
             wasRegularized |= MatricesDifferMaterially(rawMomentCovariance, positiveDefiniteS);
-            Matrix regularizedS = MatrixRegularization.Regularize(positiveDefiniteS);
-            wasRegularized |= MatricesDifferMaterially(positiveDefiniteS, regularizedS);
-            S = regularizedS;
+            Matrix momentCovariance = MatrixRegularization.Regularize(positiveDefiniteS);
+            wasRegularized |= MatricesDifferMaterially(positiveDefiniteS, momentCovariance);
 
             Matrix covarianceWeight;
             if (EstimationStrategy == GMMEstimationStrategy.OneStep)
@@ -878,8 +883,7 @@ namespace RMC.BestFit.Estimation
             }
             else
             {
-                covarianceWeight = S.Inverse();
-                W = covarianceWeight;
+                covarianceWeight = momentCovariance.Inverse();
             }
 
             Matrix jacobian = GetJacobian(parameters);
@@ -900,7 +904,7 @@ namespace RMC.BestFit.Estimation
                 return regularizedCovariance;
             }
 
-            Matrix meat = jacobianTranspose * covarianceWeight * S * covarianceWeight * jacobian;
+            Matrix meat = jacobianTranspose * covarianceWeight * momentCovariance * covarianceWeight * jacobian;
             if (PenaltyIsRandom)
                 meat += penaltyHessian;
 
@@ -2654,9 +2658,13 @@ namespace RMC.BestFit.Estimation
         /// or iterative fit. Default = false.
         /// </param>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the selected-weight moment objective is unavailable or non-finite.
+        /// Thrown when the covariance matrix cannot be computed at the estimate.
         /// </exception>
         /// <remarks>
+        /// <para>
+        /// For two-step and iterative fits, <see cref="S"/> and <see cref="W"/> are first refreshed
+        /// to the moment covariance and efficient weighting evaluated at the final estimate.
+        /// </para>
         /// <para>
         /// The statistic is <c>J = n * g(thetaHat)' W g(thetaHat)</c>, using the weighting
         /// matrix selected by the completed fit, and is compared with <c>chi-square(q-p)</c>.
@@ -2666,28 +2674,56 @@ namespace RMC.BestFit.Estimation
         /// the efficient-weight Hansen chi-square interpretation. Their J-statistic fields
         /// remain <see cref="double.NaN"/>.
         /// </para>
+        /// <para>
+        /// The statistic can only be recomputed from the selected-weight moment objective of a
+        /// completed <see cref="Estimate"/> call. An estimator restored from XML keeps the
+        /// restored <see cref="JStat"/> and <see cref="JStatPval"/> values.
+        /// </para>
         /// </remarks>
         public void PostProcess(bool useSandwich = true, bool computeJstat = false)
         {
+            if (EstimationStrategy != GMMEstimationStrategy.OneStep)
+                UpdateWeightingMatrixAtEstimate();
+
             // Compute covariance
             Sigma = GetCovariance(BestParameterSet.Values, useSandwich);
             if (!computeJstat)
                 return;
 
-            JStat = double.NaN;
-            JStatPval = double.NaN;
             if (DegreeOfFreedom <= 0 ||
                 EstimationStrategy == GMMEstimationStrategy.OneStep ||
                 PenaltyFunction != null)
+            {
+                JStat = double.NaN;
+                JStatPval = double.NaN;
                 return;
+            }
 
             if (!Tools.IsFinite(_selectedWeightMomentObjective) || _selectedWeightMomentObjective < 0d)
-                throw new InvalidOperationException(
-                    "Hansen's J statistic is unavailable because the selected-weight moment objective was not preserved by a completed estimate.");
+            {
+                Debug.WriteLine("Hansen's J statistic was not recomputed because the selected-weight moment objective of a completed estimate is unavailable.");
+                return;
+            }
 
             JStat = SampleSize * _selectedWeightMomentObjective;
             var chiSquared = new ChiSquared(DegreeOfFreedom);
             JStatPval = 1.0 - chiSquared.CDF(JStat);
+        }
+
+        /// <summary>
+        /// Refreshes <see cref="S"/> and <see cref="W"/> to the regularized moment covariance and
+        /// its inverse evaluated at the final estimate.
+        /// </summary>
+        /// <remarks>
+        /// The same symmetric positive-definite regularization that guards the covariance
+        /// calculation is applied before inversion.
+        /// </remarks>
+        private void UpdateWeightingMatrixAtEstimate()
+        {
+            Matrix rawMomentCovariance = MomentConditionFunction(BestParameterSet.Values).S;
+            Matrix positiveDefiniteS = MatrixRegularization.MakeSymmetricPositiveDefinite(rawMomentCovariance);
+            S = MatrixRegularization.Regularize(positiveDefiniteS);
+            W = S.Inverse();
         }
 
         #endregion
@@ -2894,6 +2930,16 @@ namespace RMC.BestFit.Estimation
             var jPvalAttr = xElement.Attribute(nameof(JStatPval));
             if (jPvalAttr != null && double.TryParse(jPvalAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double jPval))
                 JStatPval = jPval;
+
+            // Files written before the J-statistic scope rule stored 0 for fits that have no
+            // Hansen chi-square interpretation; apply the same scope rule as PostProcess.
+            if (DegreeOfFreedom <= 0 ||
+                EstimationStrategy == GMMEstimationStrategy.OneStep ||
+                PenaltyFunction != null)
+            {
+                JStat = double.NaN;
+                JStatPval = double.NaN;
+            }
 
             var statusAttr = xElement.Attribute(nameof(Status));
             if (statusAttr != null && Enum.TryParse(statusAttr.Value, out OptimizationStatus status))

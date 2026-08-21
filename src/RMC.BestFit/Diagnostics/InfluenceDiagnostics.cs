@@ -27,13 +27,16 @@ namespace RMC.BestFit.Diagnostics
     /// leave-one-out cross-validation. For Bayesian results with <c>S</c> retained draws,
     /// the reliability limit is <c>min(1 - 1 / log10(S), 0.7)</c>. A value at or above
     /// this limit signals that the PSIS approximation for that pointwise unit requires
-    /// investigation; a value at or above 1.0 lacks the usual finite-mean guarantee.
+    /// investigation; a value at or above 1.0 lacks the usual finite-mean guarantee. A Pareto k
+    /// that could not be estimated (<see cref="double.NaN"/> or positive infinity) is counted as
+    /// exceeding every limit, so it is never reported as reliable.
     /// </para>
     /// <para>
     /// Public constructors retain the historical fixed category thresholds for source and
     /// serialization compatibility. Diagnostics produced by <c>BayesianAnalysis</c> use the
     /// draw-count-specific limit.
-    /// </para>    /// <para>
+    /// </para>
+    /// <para>
     /// References:
     /// </para>
     /// <list type="bullet">
@@ -155,6 +158,11 @@ namespace RMC.BestFit.Diagnostics
         /// </summary>
         /// <param name="xElement">The XML element to deserialize.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="xElement"/> is null.</exception>
+        /// <remarks>
+        /// The summary statistics are recomputed from the deserialized observations rather than
+        /// read from the element, so a file whose observation list was pruned reports the
+        /// summaries of the observations it still contains.
+        /// </remarks>
         public InfluenceDiagnostics(XElement xElement)
         {
             if (xElement == null) throw new ArgumentNullException(nameof(xElement));
@@ -282,16 +290,24 @@ namespace RMC.BestFit.Diagnostics
             foreach (var obs in Observations)
             {
                 double k = obs.ParetoK;
-                if (!double.IsNaN(k))
+                if (double.IsNaN(k))
                 {
-                    sum += k;
-                    validCount++;
-                    if (k > max) max = k;
-                    if (k >= 0.5) count05++;
-                    if (k >= 0.7) count07++;
-                    if (k >= 1.0) count10++;
-                    if (k >= _diagnosticThreshold) countDiagnostic++;
+                    // A tail fit that produced no estimate is an unreliable pointwise unit:
+                    // it exceeds every limit but contributes nothing to the mean or maximum.
+                    count05++;
+                    count07++;
+                    count10++;
+                    countDiagnostic++;
+                    continue;
                 }
+
+                sum += k;
+                validCount++;
+                if (k > max) max = k;
+                if (k >= 0.5) count05++;
+                if (k >= 0.7) count07++;
+                if (k >= 1.0) count10++;
+                if (k >= _diagnosticThreshold) countDiagnostic++;
             }
 
             // Handle case where all Pareto k values are NaN
@@ -328,18 +344,37 @@ namespace RMC.BestFit.Diagnostics
         }
 
         /// <summary>
-        /// Gets observations with Pareto k above the specified threshold.
+        /// Gets observations with Pareto k at or above the instance's own reliability limit: the
+        /// draw-count-specific limit for diagnostics produced by <c>BayesianAnalysis</c>, otherwise 0.7.
+        /// </summary>
+        /// <returns>
+        /// Array of observations with Pareto k ≥ the reliability limit, including observations whose
+        /// Pareto k could not be estimated (<see cref="double.NaN"/>), ordered from the most to the
+        /// least influential.
+        /// </returns>
+        public ObservationInfluence[] GetProblematicObservations()
+        {
+            return GetProblematicObservations(
+                _usesSampleSizeDiagnosticThreshold ? _diagnosticThreshold : LegacyDiagnosticThreshold);
+        }
+
+        /// <summary>
+        /// Gets observations with Pareto k at or above the specified threshold.
         /// </summary>
         /// <param name="threshold">The Pareto k threshold. Default is 0.7.</param>
-        /// <returns>Array of observations with Pareto k ≥ threshold.</returns>
+        /// <returns>
+        /// Array of observations with Pareto k ≥ threshold, including observations whose Pareto k
+        /// could not be estimated (<see cref="double.NaN"/>), ordered from the most to the least
+        /// influential.
+        /// </returns>
         public ObservationInfluence[] GetProblematicObservations(double threshold = 0.7)
         {
             if (Observations == null || Observations.Length == 0)
                 return Array.Empty<ObservationInfluence>();
 
             return Observations
-                .Where(o => o.ParetoK >= threshold)
-                .OrderByDescending(o => o.ParetoK)
+                .Where(o => double.IsNaN(o.ParetoK) || o.ParetoK >= threshold)
+                .OrderByDescending(o => double.IsNaN(o.ParetoK) ? double.PositiveInfinity : o.ParetoK)
                 .ToArray();
         }
 

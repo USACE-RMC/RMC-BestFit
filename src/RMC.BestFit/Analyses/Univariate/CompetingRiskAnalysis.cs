@@ -691,7 +691,10 @@ namespace RMC.BestFit.Analyses
                 var probs = CompetingRisksDistribution.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
                 probs.AddRange(CompetingRisksDistribution.DataFrame.UncertainSeries.Select(x => x.PlottingPositionComplement));
                 probs.AddRange(CompetingRisksDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
-                var rmse = GoodnessOfFit.RMSE(values, probs, CompetingRisksDistribution.CompetingRisks!);
+                // RMSE is undefined when the residual degrees of freedom are not positive.
+                var rmse = values.Count > CompetingRisksDistribution.CompetingRisks!.NumberOfParameters
+                    ? GoodnessOfFit.RMSE(values, probs, CompetingRisksDistribution.CompetingRisks!)
+                    : double.NaN;
 
                 AnalysisResults.AIC = aic;
                 AnalysisResults.BIC = bic;

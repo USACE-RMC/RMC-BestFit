@@ -2674,7 +2674,10 @@ namespace RMC.BestFit.Analyses
                 values.AddRange(Bulletin17CDistribution.DataFrame.IntervalSeries.ValuesToList());
                 var pp = Bulletin17CDistribution.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
                 pp.AddRange(Bulletin17CDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
-                analysisResults.RMSE = GoodnessOfFit.RMSE(values, pp, Bulletin17CDistribution.Distribution);
+                // RMSE is undefined when the residual degrees of freedom are not positive.
+                analysisResults.RMSE = values.Count > Bulletin17CDistribution.Distribution.NumberOfParameters
+                    ? GoodnessOfFit.RMSE(values, pp, Bulletin17CDistribution.Distribution)
+                    : double.NaN;
 
                 // Effective record length
                 var thetaHat = gmm.BestParameterSet.Values;

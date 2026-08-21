@@ -2472,10 +2472,18 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Calculates the average number of events per index.
         /// </summary>
+        /// <remarks>
+        /// When the frame records a peaks-over-threshold observation span
+        /// (<see cref="PointProcessObservationYears"/>), the rate is events per observed year.
+        /// Otherwise the span of the retained event indices is used, which cannot account for
+        /// years without events at either end of the record.
+        /// </remarks>
         public void CalculateLambda()
         {
             double events = ExactSeries.Count;
-            double span = ExactSeries.IndexSpan();
+            double span = Tools.IsFinite(_pointProcessObservationYears) && _pointProcessObservationYears > 0.0
+                ? _pointProcessObservationYears
+                : ExactSeries.IndexSpan();
             if (events <= 0 || span <= 0)
             {
                 _lambda = 0;

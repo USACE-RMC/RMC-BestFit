@@ -551,6 +551,7 @@ TYPE class RMC.BestFit.Diagnostics.InfluenceDiagnostics
   CTOR RMC.BestFit.Diagnostics.InfluenceDiagnostics(System.Double[], System.Double[], System.Collections.Generic.List<RMC.BestFit.Models.DataComponent> optional)
   CTOR RMC.BestFit.Diagnostics.InfluenceDiagnostics(System.Xml.Linq.XElement)
   METHOD RMC.BestFit.Diagnostics.ObservationInfluence[] GetMostInfluentialObservations(System.Int32 optional)
+  METHOD RMC.BestFit.Diagnostics.ObservationInfluence[] GetProblematicObservations()
   METHOD RMC.BestFit.Diagnostics.ObservationInfluence[] GetProblematicObservations(System.Double optional)
   METHOD System.String GetReliabilitySummary()
   METHOD System.Xml.Linq.XElement ToXElement()

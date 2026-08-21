@@ -164,7 +164,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Verification status.** Passed. Fast mixed-count, precedence, warning, seasonal-date, annualized mixed-likelihood, state-refresh, and serialization regressions pass. Both guarded independent mixed-likelihood cells pass, including uncertain, interval, and threshold records under the seasonal annual-maximum distribution.
 
-**Evidence.** `CalculateLambda()` counts every exact POT record and excludes uncertain, interval, and threshold-count rows. Simulation uses that empirical rate, while the likelihood separately exposes the GEV-compatible fitted threshold intensity. POT extraction retains inclusive source-record years, including leading and trailing years with no selected peak. Manual POT data fall back to exact year/index span and receive an inference warning.
+**Evidence.** `CalculateLambda()` counts every exact POT record and excludes uncertain, interval, and threshold-count rows. Simulation uses that empirical rate, while the likelihood separately exposes the GEV-compatible fitted threshold intensity. POT extraction retains inclusive source-record years, including leading and trailing years with no selected peak. Manual POT data fall back to exact year/index span and receive an inference warning. `CalculateLambda()` uses the stored source exposure whenever the frame records one, so replacing the exact series of a POT frame keeps the rate per observed year; only frames without a recorded exposure fall back to the exact year/index span.
 
 **Resolved authority decisions.** Seasonal fitting now requires a valid date on every exact POT observation; nonseasonal manual records retain year/index-span exposure fallback. Seasonal uncertain, interval, and threshold records are annual/block-indexed. Their likelihood uses the annual maximum of the two independent exposure-adjusted seasonal processes through **CompetingRisks**. Exposure fractions weight process intensities and are not annual mixture probabilities.
 
@@ -241,7 +241,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Evidence.** For observed values \([0,0,0,0]\), modeled values \([1,2,3,4]\), and \(k=1\), the analytical value is \(\sqrt{30/3}=3.1622776601683795\). The baseline implementation returned \(2.160246899469287\) because it summed only the first three squared residuals. The same exact verification method passes after the correction and proves invariance to paired row permutation.
 
-**Impact.** `FittingAnalysis` and Bayesian univariate point-result RMSE are now independent of paired input ordering. Rankings and inverse-MSE model weights use the complete residual vector.
+**Impact.** `FittingAnalysis` and Bayesian univariate point-result RMSE are now independent of paired input ordering. Rankings and inverse-MSE model weights use the complete residual vector. `MixtureAnalysis`, `CompetingRiskAnalysis`, and `Bulletin17CAnalysis` report `NaN` RMSE instead of failing when the paired record count does not exceed the parameter count.
 
 **Follow-up.** Retain the hand-calculated, paired-permutation, and invalid-parameter-count regressions. Family-level fitting verification must continue to compare the resulting RMSE and rankings with independent distribution oracles.
 
@@ -256,7 +256,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Evidence.** Candidate exceptions are caught inside the parallel loop and recorded per `FittedDistribution`. If the outer loop is not canceled and raises no outer exception, `FittingAnalysis` sets `IsEstimated = true` without requiring any `FitSucceeded` result. On 24 July 2026, the isolated outlier smoke fixture reproduced exactly that state: `IsEstimated` was true and all 15 candidates had `FitSucceeded == false`.
 
-**Impact.** An all-failed screening run now reports failure, while a partial-success run remains successful and preserves every candidate result.
+**Impact.** An all-failed screening run now reports failure, while a partial-success run remains successful and preserves every candidate result. The all-failed run still reports completion to its progress reporter.
 
 **Follow-up.** Retain the zero-success and partial-success regressions as permanent state-semantic gates. Candidate counts remain directly available from `FittedDistributions` without adding API.
 
@@ -444,9 +444,9 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** `MaximumLikelihood.ProfileLikelihood()` and `ParameterConfidenceIntervals()` reoptimize all free nuisance parameters against the data likelihood. `MaximumAPosteriori.ProfileLikelihood()` and `ParameterConfidenceIntervals()` now perform the same nuisance reoptimization against the complete posterior kernel. Public signatures remain unchanged; bounded BFGS uses a deterministic bounded Nelder-Mead fallback.
+**Implementation status.** `MaximumLikelihood.ProfileLikelihood()` and `ParameterConfidenceIntervals()` reoptimize all free nuisance parameters against the data likelihood. `MaximumAPosteriori.ProfileLikelihood()` and `ParameterConfidenceIntervals()` now perform the same nuisance reoptimization against the complete posterior kernel. Public signatures remain unchanged; bounded BFGS uses a deterministic bounded Nelder-Mead fallback. Profile grids accept any finite nuisance optimum and report `NaN` for a grid point that has none, so a single failed point does not discard the curve; `ParameterConfidenceIntervals()` requires converged nuisance solves and throws when a bound evaluation has none.
 
-**Verification status.** Passed by three exact focused methods against a committed R `bbmle` oracle, its closed-form correlated-quadratic solution, and an analytical informative-prior posterior profile.
+**Verification status.** Passed by three exact focused methods against a committed R `bbmle` oracle, its closed-form correlated-quadratic solution, and an analytical informative-prior posterior profile. The grid-point contract is verified by `ProfileLikelihoodGridPointFailureTests` on a support-restricted quadratic model for MLE and flat-prior MAP.
 
 **Evidence.** For correlation $\rho=0.8$, nuisance reoptimization gives the 90% profile interval $[-1.6448536,1.6448536]$, whereas the former fixed-nuisance coordinate slice gives $[-0.9869122,0.9869122]$. MLE and flat-prior MAP match every R and analytical profile ordinate plus the nuisance-optimized interval. The informative-prior fixture confirms that MAP reoptimizes the nuisance parameter using the full posterior target rather than either a coordinate slice or a data-only profile.
 
@@ -459,9 +459,9 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Review disposition.** Confirmed defect; resolved.
 
-**Implementation status.** Fixed without public API changes and without a Numerics dependency change. The PSIS tail now uses cutoff excesses, the bounded fixed-grid generalized-Pareto fit and shrinkage used by `posterior::gpdfit` 1.7.0, monotone expected order statistics, and reference-compatible truncation. WAIC and PSIS share one transient pointwise likelihood matrix; only pointwise ELPD and Pareto-k summaries are retained for later influence reporting.
+**Implementation status.** Fixed without public API changes and without a Numerics dependency change. The PSIS tail now uses cutoff excesses, the bounded fixed-grid generalized-Pareto fit and shrinkage used by `posterior::gpdfit` 1.7.0, monotone expected order statistics, and reference-compatible truncation. WAIC and PSIS share one transient pointwise likelihood matrix; only pointwise ELPD and Pareto-k summaries are retained for later influence reporting. A degenerate tail (tied lower-quartile excesses or no positive excess) reports $k=+\infty$, and a Pareto $k$ that could not be estimated counts as exceeding every reliability limit, so influence diagnostics never report such units as reliable. With fewer than eleven retained draws the draw-count limit formula is not positive; the diagnostics then use the fixed 0.7 limit and the report states that the draw-count threshold is unavailable.
 
-**Verification status.** Passed by six exact focused methods against R `loo` 2.10.0 and `posterior` 1.7.0.
+**Verification status.** Passed by six exact focused methods against R `loo` 2.10.0 and `posterior` 1.7.0. Fast `PsisDegenerateTailDiagnosticTests` and `InfluenceDiagnosticsParetoKLimitTests` pin the degenerate-tail, unestimated-$k$, and small-draw-count contracts.
 
 **Evidence.** On the deterministic 40-draw fixture, BestFit matches R for LOOIC $13.4018968330430$, $p_{\mathrm{loo}}=0.342431868035246$, LOOIC standard error $1.95756902272540$, all five pointwise contributions, and Pareto $k=(0.0682,-0.0302,0.4116,0.3062,0.3209)$. Six bounded-through-degenerate tail fixtures match every smoothed log weight, Pareto $k$, and importance-sampling effective sample size; the degenerate tail returns $k=+\infty$. The 40-draw reliability limit is $0.375803649418215$, so the third observation is correctly flagged. Default WAIC plus PSIS performs exactly $S$ pointwise model evaluations, and a later influence request remains at $S$ by reusing cached $O(n)$ summaries.
 
@@ -493,7 +493,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Evidence.** The committed one-parameter, two-moment R oracle gives the two-step fit $\widehat\theta=1.93548454750500$, selected-weight objective $Q=1.00755078518454$, $J=nQ=10.0755078518454$, and $p=0.00150253202968641$. BestFit matches all four quantities within the declared tolerances.
 
-**Current behavior.** `PostProcess(computeJstat: true)` populates `JStat` and `JStatPval` for unpenalized overidentified `TwoStep` and `Iterative` fits. Generic fixed-weight `OneStep` and penalized fits leave both fields as `NaN`, because the efficient-weight Hansen chi-squared interpretation is not automatic in those cases.
+**Current behavior.** `PostProcess(computeJstat: true)` populates `JStat` and `JStatPval` for unpenalized overidentified `TwoStep` and `Iterative` fits. Generic fixed-weight `OneStep` and penalized fits leave both fields as `NaN`, because the efficient-weight Hansen chi-squared interpretation is not automatic in those cases. Covariance queries at any parameter vector compute into local matrices and leave `S`, `W`, and therefore `Q` unchanged; `PostProcess()` refreshes `S` and `W` at the estimate for two-step and iterative fits before computing the covariance. An estimator restored from XML keeps its restored `JStat` and `JStatPval` through `PostProcess()`, and a restored statistic outside the verified scope (one-step, penalized, or just-identified) reads as `NaN`. `GeneralizedMethodOfMomentsRestoredStateTests` pins these contracts on injected estimated states.
 
 **Correction.** The rank-deficient projected-residual-covariance calculation was removed. The statistic is now $n\mathbf g(\widehat{\boldsymbol\theta})^\mathsf T\mathbf W\mathbf g(\widehat{\boldsymbol\theta})$ with $\chi^2_{q-p}$ reference degrees of freedom in its verified scope. Public API and XML serialization member names are unchanged.
 
@@ -506,7 +506,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Verification status.** Passed by deterministic fast tests covering singular MLE/MAP Hessians, a forced GMM covariance exception, a well-conditioned covariance, a positive-definite repair, and stable enum values.
 
-**Evidence.** `TryGetCovarianceMatrix` for MLE/MAP and public `TryGetCovariance` for GMM return `false` with `Failed` status when covariance is unavailable. Their zero-valued out parameters are documented placeholders only. Existing throwing getters now raise `InvalidOperationException` instead of returning false zero uncertainty. MLE sandwich covariance has the same `Try` contract, and MLE/MAP influence paths obtain covariance through the validated throwing getter. A usable unmodified covariance reports `Available`; a repaired result reports `Regularized` and provides an adjustment diagnostic.
+**Evidence.** `TryGetCovarianceMatrix` for MLE/MAP and public `TryGetCovariance` for GMM return `false` with `Failed` status when covariance is unavailable. Their zero-valued out parameters are documented placeholders only. Existing throwing getters now raise `InvalidOperationException` instead of returning false zero uncertainty. MLE sandwich covariance has the same `Try` contract, and MLE/MAP influence paths obtain covariance through the validated throwing getter. A usable unmodified covariance reports `Available`; a repaired result reports `Regularized` and provides an adjustment diagnostic. Single-parameter models obtain their $1\times1$ covariance, standard errors, and influence through the same validated path, and the MLE Hessian uses the same bounded finite-difference steps as MAP; `MaximumLikelihoodCovarianceVerificationTests` checks the closed-form single-parameter variance and MLE/flat-prior-MAP covariance parity for interior and bound-adjacent optima.
 
 **Impact.** Numerical failure can no longer be silently presented as zero standard errors or zero influence. Callers can choose an explicit non-throwing branch or let covariance-dependent reporting fail fast.
 

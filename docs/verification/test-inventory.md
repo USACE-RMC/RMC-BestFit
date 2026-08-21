@@ -510,3 +510,15 @@ coverage criterion. The forced bounded-Nelder-Mead ARIMAX failure is retained; t
 the unchanged production Differential Evolution default and changes no optimizer implementation or
 default. All eight cells pass. No alternate seed, tolerance, sampler setting, or full Verification
 run was attempted. See the time-series report for hashes, exact commands, runtimes, and history.
+
+## Estimation and diagnostics corrections - 21 August 2026
+
+| Test | Project | Contract | Status |
+|---|---|---|---|
+| `Diagnostics/InfluenceDiagnosticsParetoKLimitTests.cs` | Fast core | An unestimated (NaN) Pareto k counts above every reliability limit and is never reliable; `GetProblematicObservations()` defaults to the instance limit and includes unestimated values | Passed |
+| `ModelEstimation/PsisDegenerateTailDiagnosticTests.cs` | Fast core | Degenerate PSIS tails (five-ratio tail, tied lower-quartile excesses) report `k = +inf` and unreliable diagnostics; fewer than eleven retained draws fall back to the fixed 0.7 limit without a negative serialized threshold; forty draws serialize the draw-count limit | Passed |
+| `DataFrame/DataFrameLambdaTests.cs` | Fast core | Replacing the exact series of a peaks-over-threshold frame keeps the rate per observed year | Passed |
+| `ModelEstimation/GeneralizedMethodOfMomentsRestoredStateTests.cs` | Fast core | Restored out-of-scope J statistics read as NaN; `PostProcess()` on a restored estimator computes covariance and keeps the restored statistic; covariance queries leave `S`, `W`, and `Q` unchanged; `PostProcess()` refreshes `S`/`W` at the estimate | Passed |
+| `DistributionFitting/FittingAnalysisProgressTests.cs` | Fast core | A fitting run in which no candidate fits reports completion to the progress reporter | Passed |
+| `ModelEstimation/ProfileLikelihoodGridPointFailureTests.cs` | Verification | Profile grid points without a finite nuisance optimum are NaN while the remaining points equal the unrestricted profile; `ParameterConfidenceIntervals()` still requires converged solves (MLE and flat-prior MAP) | Pending focused run |
+| `ModelEstimation/MaximumLikelihoodCovarianceVerificationTests.cs` | Verification | One-parameter MLE covariance equals the closed-form `sigma^2 / n`; MLE and flat-prior MAP report the same covariance for interior and bound-adjacent optima | Pending focused run |

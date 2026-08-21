@@ -265,7 +265,14 @@ namespace RMC.BestFit.Estimation
                         // Compute Hessian with adaptive step sizes (flat-spot detection)
                         try
                         {
-                            _hessian = NumericalDiff.ComputeHessian(Model.DataLogLikelihood, BestParameterSet.Values, NumberOfParameters);
+                            // Bounded steps keep the finite differences inside the parameter support,
+                            // matching the posterior Hessian used by MaximumAPosteriori.
+                            _hessian = NumericalDiff.ComputeHessian(
+                                Model.DataLogLikelihood,
+                                BestParameterSet.Values,
+                                NumberOfParameters,
+                                LowerBounds,
+                                UpperBounds);
                         }
                         catch (Exception ex)
                         {
@@ -304,9 +311,19 @@ namespace RMC.BestFit.Estimation
         /// Returns the profile likelihood for each model parameter.
         /// </summary>
         /// <param name="bins">The number of bins in each profile. Default = 100.</param>
-        /// <returns>A list of arrays where each array contains [parameter value, log-likelihood] pairs.</returns>
+        /// <returns>
+        /// A list of arrays where each array contains [parameter value, log-likelihood] pairs. A grid
+        /// point whose nuisance-parameter optimization produces no finite optimum is reported with a
+        /// <see cref="double.NaN"/> log-likelihood so the remainder of the profile is preserved.
+        /// </returns>
         /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when bins is less than 2.</exception>
+        /// <remarks>
+        /// Each grid point reoptimizes every free nuisance parameter, starting from the neighbouring
+        /// solution. A finite nuisance optimum is accepted even when the optimizer does not report
+        /// success, because bound-adjacent and flat grid points routinely end on an iteration or
+        /// tolerance limit. <see cref="ParameterConfidenceIntervals"/> requires converged solves.
+        /// </remarks>
         public List<double[,]> ProfileLikelihood(int bins = 100)
         {
             if (!IsEstimated)
@@ -327,41 +344,71 @@ namespace RMC.BestFit.Estimation
                     .OrderBy(index => Math.Abs(sequence[index].Midpoint - BestParameterSet.Values[parameterIndex]))
                     .First();
 
-                var centerResult = MaximizeProfileDataLogLikelihood(
+                var centerResult = TryMaximizeProfileGridPoint(
                     parameterIndex,
                     sequence[centerIndex].Midpoint,
                     BestParameterSet.Values);
                 profile[centerIndex, 0] = sequence[centerIndex].Midpoint;
-                profile[centerIndex, 1] = centerResult.LogLikelihood;
+                profile[centerIndex, 1] = centerResult?.LogLikelihood ?? double.NaN;
+                double[] centerStart = centerResult?.Parameters ?? BestParameterSet.Values.ToArray();
 
-                double[] lowerStart = centerResult.Parameters;
+                double[] lowerStart = centerStart;
                 for (int gridIndex = centerIndex - 1; gridIndex >= 0; gridIndex--)
                 {
-                    var result = MaximizeProfileDataLogLikelihood(
+                    var result = TryMaximizeProfileGridPoint(
                         parameterIndex,
                         sequence[gridIndex].Midpoint,
                         lowerStart);
                     profile[gridIndex, 0] = sequence[gridIndex].Midpoint;
-                    profile[gridIndex, 1] = result.LogLikelihood;
-                    lowerStart = result.Parameters;
+                    profile[gridIndex, 1] = result?.LogLikelihood ?? double.NaN;
+                    if (result.HasValue)
+                        lowerStart = result.Value.Parameters;
                 }
 
-                double[] upperStart = centerResult.Parameters;
+                double[] upperStart = centerStart;
                 for (int gridIndex = centerIndex + 1; gridIndex < bins; gridIndex++)
                 {
-                    var result = MaximizeProfileDataLogLikelihood(
+                    var result = TryMaximizeProfileGridPoint(
                         parameterIndex,
                         sequence[gridIndex].Midpoint,
                         upperStart);
                     profile[gridIndex, 0] = sequence[gridIndex].Midpoint;
-                    profile[gridIndex, 1] = result.LogLikelihood;
-                    upperStart = result.Parameters;
+                    profile[gridIndex, 1] = result?.LogLikelihood ?? double.NaN;
+                    if (result.HasValue)
+                        upperStart = result.Value.Parameters;
                 }
 
                 profiles.Add(profile);
             }
 
             return profiles;
+        }
+
+        /// <summary>
+        /// Maximizes the profiled data log-likelihood at one grid point, accepting any finite nuisance optimum.
+        /// </summary>
+        /// <param name="parameterIndex">Index of the parameter held fixed.</param>
+        /// <param name="fixedValue">Value assigned to the parameter of interest.</param>
+        /// <param name="startingParameters">Full parameter vector used to initialize nuisance optimization.</param>
+        /// <returns>The profile result, or null when no finite nuisance optimum exists at the grid point.</returns>
+        private (double LogLikelihood, double[] Parameters)? TryMaximizeProfileGridPoint(
+            int parameterIndex,
+            double fixedValue,
+            IReadOnlyList<double> startingParameters)
+        {
+            try
+            {
+                return MaximizeProfileDataLogLikelihood(
+                    parameterIndex,
+                    fixedValue,
+                    startingParameters,
+                    requireConvergence: false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Debug.WriteLine($"Profile likelihood grid point {fixedValue} for parameter {parameterIndex} has no finite nuisance optimum: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -447,9 +494,14 @@ namespace RMC.BestFit.Estimation
         /// <param name="parameterIndex">Index of the parameter held fixed.</param>
         /// <param name="fixedValue">Value assigned to the parameter of interest.</param>
         /// <param name="startingParameters">Full parameter vector used to initialize nuisance optimization.</param>
+        /// <param name="requireConvergence">
+        /// When true, only an optimizer that reports <see cref="OptimizationStatus.Success"/> is
+        /// accepted. When false, the best finite optimum found by either optimizer is returned if
+        /// neither converges.
+        /// </param>
         /// <returns>The profiled data log-likelihood and the optimized full parameter vector.</returns>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when both bounded BFGS and bounded Nelder-Mead fail to produce a finite nuisance optimum.
+        /// Thrown when both bounded BFGS and bounded Nelder-Mead fail to produce an acceptable nuisance optimum.
         /// </exception>
         /// <remarks>
         /// BFGS supplies the efficient primary solve. Nelder-Mead is a deterministic fallback for
@@ -458,7 +510,8 @@ namespace RMC.BestFit.Estimation
         private (double LogLikelihood, double[] Parameters) MaximizeProfileDataLogLikelihood(
             int parameterIndex,
             double fixedValue,
-            IReadOnlyList<double> startingParameters)
+            IReadOnlyList<double> startingParameters,
+            bool requireConvergence = true)
         {
             var fullStart = startingParameters.ToArray();
             fullStart[parameterIndex] = fixedValue;
@@ -481,6 +534,8 @@ namespace RMC.BestFit.Estimation
                 return Model.DataLogLikelihood(fullParameters);
             }
 
+            (double LogLikelihood, double[] Parameters)? fallback = null;
+
             try
             {
                 var bfgs = new BFGS(
@@ -502,7 +557,10 @@ namespace RMC.BestFit.Estimation
                     Objective,
                     out var bfgsResult))
                 {
-                    return bfgsResult;
+                    if (bfgs.Status == OptimizationStatus.Success)
+                        return bfgsResult;
+                    if (!requireConvergence)
+                        fallback = bfgsResult;
                 }
             }
             catch (Exception ex)
@@ -532,13 +590,20 @@ namespace RMC.BestFit.Estimation
                     Objective,
                     out var nelderMeadResult))
                 {
-                    return nelderMeadResult;
+                    if (nelderMead.Status == OptimizationStatus.Success)
+                        return nelderMeadResult;
+                    if (!requireConvergence &&
+                        (!fallback.HasValue || nelderMeadResult.LogLikelihood > fallback.Value.LogLikelihood))
+                        fallback = nelderMeadResult;
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Profile-likelihood Nelder-Mead nuisance optimization failed: {ex.Message}");
             }
+
+            if (fallback.HasValue)
+                return fallback.Value;
 
             throw new InvalidOperationException(
                 $"Unable to profile parameter {parameterIndex}: nuisance-parameter optimization failed.");
@@ -552,7 +617,10 @@ namespace RMC.BestFit.Estimation
         /// <param name="fullStart">Full parameter vector containing fixed values.</param>
         /// <param name="objective">Reduced data log-likelihood objective.</param>
         /// <param name="result">The completed profile result when successful.</param>
-        /// <returns><see langword="true"/> when the optimizer supplied finite values and likelihood.</returns>
+        /// <returns>
+        /// <see langword="true"/> when the optimizer supplied finite values and likelihood. Whether
+        /// the optimizer converged is judged by the caller from its status.
+        /// </returns>
         private static bool TryCreateProfileResult(
             Optimizer optimizer,
             IReadOnlyList<int> nuisanceIndices,
@@ -562,8 +630,7 @@ namespace RMC.BestFit.Estimation
         {
             result = default;
             double[] nuisanceValues = optimizer.BestParameterSet.Values;
-            if (optimizer.Status != OptimizationStatus.Success ||
-                nuisanceValues == null ||
+            if (nuisanceValues == null ||
                 nuisanceValues.Length != nuisanceIndices.Count ||
                 nuisanceValues.Any(value => !double.IsFinite(value)))
             {
@@ -586,7 +653,7 @@ namespace RMC.BestFit.Estimation
         /// Returns the parameter covariance matrix computed from the inverse of the Fisher Information Matrix (negative Hessian).
         /// </summary>
         /// <returns>The parameter covariance matrix.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters, the model has not been estimated, or the Hessian is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public Matrix GetCovarianceMatrix()
         {
             if (!TryGetCovarianceMatrix(out Matrix covariance))
@@ -613,8 +680,6 @@ namespace RMC.BestFit.Estimation
         public bool TryGetCovarianceMatrix(out Matrix covariance)
         {
             covariance = new Matrix(NumberOfParameters, NumberOfParameters);
-            if (NumberOfParameters < 2)
-                return SetCovarianceFailure("Cannot compute the covariance matrix with fewer than two parameters.");
             if (!IsEstimated)
                 return SetCovarianceFailure("The model has not been estimated.");
             if (_hessian == null)
@@ -774,7 +839,7 @@ namespace RMC.BestFit.Estimation
         /// Returns the standard errors of the parameter estimates from the diagonal of the covariance matrix.
         /// </summary>
         /// <returns>An array of standard errors for each parameter.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters or the model has not been estimated.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public double[] GetStandardErrors()
         {
             var covariance = GetCovarianceMatrix();
@@ -792,7 +857,7 @@ namespace RMC.BestFit.Estimation
         /// Returns the correlation matrix from the covariance matrix.
         /// </summary>
         /// <returns>The parameter correlation matrix.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters or the model has not been estimated.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public Matrix GetCorrelationMatrix()
         {
             var covariance = GetCovarianceMatrix();
@@ -832,7 +897,7 @@ namespace RMC.BestFit.Estimation
         /// for Heteroskedasticity. Econometrica, 48(4), 817-838.
         /// </para>
         /// </remarks>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters, the model has not been estimated, or the Hessian is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public Matrix GetSandwichCovarianceMatrix()
         {
             if (!TryGetSandwichCovarianceMatrix(out Matrix covariance))
@@ -858,8 +923,6 @@ namespace RMC.BestFit.Estimation
         public bool TryGetSandwichCovarianceMatrix(out Matrix covariance)
         {
             covariance = new Matrix(NumberOfParameters, NumberOfParameters);
-            if (NumberOfParameters < 2)
-                return SetCovarianceFailure("Cannot compute the sandwich covariance matrix with fewer than two parameters.");
             if (!IsEstimated)
                 return SetCovarianceFailure("The model has not been estimated.");
             if (_hessian == null)
@@ -891,7 +954,7 @@ namespace RMC.BestFit.Estimation
         /// <remarks>
         /// These standard errors are consistent even under model misspecification or heteroskedasticity.
         /// </remarks>
-        /// <exception cref="InvalidOperationException">Thrown when there are fewer than two parameters or the model has not been estimated.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has not been estimated or the Hessian is null.</exception>
         public double[] GetRobustStandardErrors()
         {
             var sandwich = GetSandwichCovarianceMatrix();

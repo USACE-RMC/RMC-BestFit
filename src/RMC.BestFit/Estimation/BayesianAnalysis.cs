@@ -1807,8 +1807,11 @@ namespace RMC.BestFit.Estimation
             double referenceExcess = orderedExcesses[quarterIndex];
             double maximumExcess = orderedExcesses[sampleCount - 1];
 
+            // A degenerate tail (tied lower quartile or no positive excess) has no usable GPD
+            // fit. Report the shape as infinite, the same outcome R loo assigns when the fit is
+            // not finite, so the observation is counted as unreliable rather than skipped.
             if (!(referenceExcess > orderedExcesses[0]) || !(maximumExcess > 0.0))
-                return (double.NaN, double.NaN);
+                return (double.PositiveInfinity, double.NaN);
 
             const double prior = 3.0;
             var theta = new double[gridCount];
@@ -1991,6 +1994,13 @@ namespace RMC.BestFit.Estimation
             }
 
             double diagnosticThreshold = ComputeParetoDiagnosticThreshold(Results.Output.Count);
+            if (double.IsNaN(diagnosticThreshold))
+            {
+                // Too few retained draws for the draw-count-specific limit; fall back to the
+                // fixed 0.7 reliability limit.
+                return new InfluenceDiagnostics(ParetoK, elpdLoo, dataComponents);
+            }
+
             return new InfluenceDiagnostics(ParetoK, elpdLoo, dataComponents, diagnosticThreshold);
         }
 
@@ -2078,14 +2088,22 @@ namespace RMC.BestFit.Estimation
         /// Computes the sample-size-dependent Pareto-k reliability threshold used by R <c>loo</c>.
         /// </summary>
         /// <param name="drawCount">Number of retained posterior draws.</param>
-        /// <returns>The diagnostic threshold, capped at 0.7.</returns>
+        /// <returns>
+        /// The diagnostic threshold <c>min(1 - 1 / log10(S), 0.7)</c>, or <see cref="double.NaN"/>
+        /// when fewer than eleven draws are retained and the formula has no positive value.
+        /// </returns>
         private static double ComputeParetoDiagnosticThreshold(int drawCount)
         {
-            if (drawCount <= 1)
-                return double.NegativeInfinity;
+            if (drawCount <= MinimumDrawsForParetoDiagnosticThreshold - 1)
+                return double.NaN;
 
             return Math.Min(1.0 - 1.0 / Math.Log10(drawCount), 0.7);
         }
+
+        /// <summary>
+        /// The smallest retained draw count for which the draw-count-specific Pareto-k threshold is positive.
+        /// </summary>
+        private const int MinimumDrawsForParetoDiagnosticThreshold = 11;
         /// <summary>
         /// Computes the posterior covariance matrix from the MCMC output samples
         /// using <see cref="RunningCovarianceMatrix"/>.
@@ -2339,8 +2357,15 @@ namespace RMC.BestFit.Estimation
             if (ParetoK != null && ParetoK.Length > 0)
             {
                 double threshold = ComputeParetoDiagnosticThreshold(Results.Output.Count);
-                int unreliableCount = ParetoK.Count(k => k >= threshold);
-                sb.AppendLine($"  Pareto k:    {unreliableCount}/{ParetoK.Length} observations with k >= {threshold:F3}");
+                if (double.IsNaN(threshold))
+                {
+                    sb.AppendLine($"  Pareto k:    draw-count threshold unavailable (fewer than {MinimumDrawsForParetoDiagnosticThreshold} retained draws)");
+                }
+                else
+                {
+                    int unreliableCount = ParetoK.Count(k => double.IsNaN(k) || k >= threshold);
+                    sb.AppendLine($"  Pareto k:    {unreliableCount}/{ParetoK.Length} observations with k >= {threshold:F3}");
+                }
             }
             sb.AppendLine();
 

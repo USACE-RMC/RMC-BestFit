@@ -240,13 +240,10 @@ namespace RMC.BestFit.Api.Tests.Services
             Assert.AreEqual(InputDataMethod.PeaksOverThreshold, resource.Method);
             Assert.AreEqual(3, dataFrame.ExactSeries.Count);
 
-            // The model's collection-reset handler recomputes lambda as events / IndexSpan of the
-            // peak years (1991-1993 → 3 events / 3 years = 1.0), overwriting the record-span value
-            // (3 / 4 = 0.75) that CreatePeaksOverThresholdSeries itself computes. The API matches
-            // the model (and desktop) behavior; clients needing the record-span rate pass an
-            // explicit lambda. If this assertion starts failing at 0.75, the model-layer ordering
-            // changed and this test should be updated to the new canonical value.
-            Assert.AreEqual(1.0, dataFrame.Lambda, 1e-9);
+            // Lambda is events per observed year of the source record (3 peaks over the four
+            // inclusive record years 1990-1993 = 0.75), not events per span of the retained peak
+            // years (1991-1993 = 1.0). Clients needing a different rate pass an explicit lambda.
+            Assert.AreEqual(0.75, dataFrame.Lambda, 1e-9);
             Assert.AreEqual(400d, resource.Threshold);
         }
 

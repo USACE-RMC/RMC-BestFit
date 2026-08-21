@@ -416,10 +416,10 @@ namespace RMC.BestFit.Analyses
                 {
                     IsEstimated = _fittedDistributions.Any(fitted => fitted.FitSucceeded);
                     if (IsEstimated)
-                    {
                         AnalysisProgress.ReportProcessingResults(progressReporter);
-                        AnalysisProgress.ReportComplete(progressReporter);
-                    }
+
+                    // The run finished even when no candidate fit succeeded; close out the progress.
+                    AnalysisProgress.ReportComplete(progressReporter);
                 }
                 else
                 {
