@@ -129,13 +129,46 @@ because their same-point likelihood check is written against the discharge-space
 `RatingCurveMLERecoveryTests` (9 methods) and `RatingCurveBayesianRecoveryTests` (10 methods) remain
 supplementary self-generated recovery evidence.
 
+## Proposed corrections (awaiting approval)
+
+No production file changes until Haden Smith approves each item below.
+
+**TR-043.** In `src/RMC.BestFit/Models/RatingCurve/RatingCurve.cs`, subtract the base-10
+change-of-variables term `log(Q_i ln 10)` for every aligned pair in `DataLogLikelihood`,
+`PointwiseDataLogLikelihood`, and `PointwiseDataLogLikelihoodComponents`, caching the terms together
+with the aligned-observation cache (the pattern of the time-series `_logJacobianTerms`). The term is
+parameter-free, so MLE, MAP, and the posterior are unchanged; AIC, BIC, DIC, WAIC, and LOOIC shift by
+the constant `-sum log(Q_i ln 10)`, comparisons among rating-curve models of the same data are
+unchanged, and persisted results differ on reprocess (release note, no migration). Document the
+observation measure as discharge-space in the XML remarks and the technical reference (RC.5 becomes the
+implemented equation). Fast regressions: a hand-computed three-pair likelihood, the parameter-free
+difference identity, and the pointwise/component sum identities. No signature or serialization change.
+
+**TR-044.** In `SetDefaultParameters`, give every exponent a strictly positive default lower bound and
+prior support minimum through one named constant; candidate values `0.1`, `0.5`, and `1.0` (continuity
+holds for any positive exponent; section controls have `beta` near 1.5-2.5 and channel controls near
+1.6-2.0, so `0.5` excludes near-discontinuous models while leaving room for unusual controls - the value
+is Haden Smith's decision because it changes a default prior). Legacy projects restore their stored
+bounds verbatim (`ModelParameter` XML), remain loadable, and receive a non-blocking validation warning
+when any exponent lower bound is not positive; the likelihood itself is not changed. Fast regressions:
+new default bounds, legacy-bound warning, and the updated `DefaultFlatPriors_BetaBounds_*` contract.
+Technical reference: the Addition-Mode paragraph, the priors list, and the parameterization crosswalk.
+
+**TR-045.** In `Validate()`, restrict the nonpositive-discharge error to the date-aligned pairs, computed
+from a fresh alignment (the existing fast test edits a discharge value in place after construction, so
+the check must not read a stale cache), and report separately, as a non-blocking warning with counts,
+the discharge records that are not aligned with a stage date or are nonpositive. Fast regressions: the
+committed red contract plus a count-reporting contract; the existing aligned-nonpositive contract stays.
+Confirm that the UI validation adapter renders the warning as non-blocking.
+
+**Replication acceptance rule.** As listed above; the six cells run only after approval and after the
+TR-043 correction (their same-point likelihood check is written against the discharge-space contract).
+
 ## Next steps
 
-1. Approve the TR-043 correction (change-of-variables term in the scalar, pointwise, and component
-   likelihoods), the TR-044 exponent lower bound and legacy-bound handling, the TR-045 aligned-pair
-   validation with reporting, and the replication acceptance rule.
-2. Implement the approved corrections with fast regressions, rerun the exact cells above and the six
-   replication cells one at a time, and record the outcomes here, in the test inventory, the manifest,
-   the register, and the technical reference.
+1. Approve or amend the four items above.
+2. Implement the approved corrections with fast regressions, run the four unit-test projects, rerun
+   the exact cells above and the six replication cells one at a time, and record the outcomes here, in
+   the test inventory, the manifest, the register, and the technical reference.
 
 [Verification index](README.md) | [Technical treatment](../technical-reference/analysis/rating-curve.md) | [Scientific findings](../technical-reference/review-findings.md#tr-043)
