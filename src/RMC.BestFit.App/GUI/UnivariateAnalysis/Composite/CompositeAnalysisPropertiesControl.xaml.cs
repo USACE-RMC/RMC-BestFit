@@ -120,7 +120,7 @@ namespace RMC_BestFit
         /// </summary>
         /// <remarks>
         /// Holds any sibling that implements <see cref="IUnivariate"/> EXCEPT another
-        /// <see cref="CompositeAnalysis"/> � composite-of-composite is rejected at the
+        /// <see cref="CompositeAnalysis"/> — composite-of-composite is rejected at the
         /// model layer (would risk circular references) so it is filtered out here so
         /// the user cannot pick it from the data grid in the first place. Currently
         /// this includes <see cref="UnivariateAnalysis"/> and <see cref="B17CAnalysis"/>;
@@ -380,7 +380,7 @@ namespace RMC_BestFit
                 return;
             }
 
-            // Analyses collection replaced (e.g., during undo) � refresh data grid
+            // Analyses collection replaced (e.g., during undo) — refresh data grid
             if (e.PropertyName == nameof(Element.Analyses))
             {
                 SetDataGridStyle();
@@ -390,7 +390,7 @@ namespace RMC_BestFit
                 UpdateInputDataValidationBorder();
                 SelectCurrentInputDataItem(_inputDataInnerComboBox);
             }
-            // BayesianAnalysis replaced � push to sub-controls
+            // BayesianAnalysis replaced — push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 // Composite doesn't have direct BA sub-controls but notify for consistency

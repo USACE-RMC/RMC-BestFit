@@ -1367,7 +1367,7 @@ namespace RMC.BestFit.UI
                 }
                 else
                 {
-                    // Row not found by Name in the parent collection table � usually a deleted row
+                    // Row not found by Name in the parent collection table — usually a deleted row
                     // or a mismatch between disk state and the live ElementList. Surface the
                     // condition rather than silently leaving the element with constructor defaults.
                     System.Diagnostics.Debug.WriteLine($"TimeSeriesElement.Open: no row matched NameOnDisk='{NameOnDisk}' in '{ParentCollection.Name}'; element loaded with constructor defaults.");
@@ -1565,7 +1565,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Delete()
         {
-            // Early-return on missing Name BEFORE bridge teardown � otherwise an element
+            // Early-return on missing Name BEFORE bridge teardown — otherwise an element
             // constructed with a null/empty name (rare but possible during partial init)
             // would have its bridges torn down without writing to disk, leaving a
             // half-deleted state. Mirrors InputData.Delete's order.

@@ -30,7 +30,7 @@ namespace RMC.BestFit.UI
     /// <summary>
     /// UI wrapper for the model-layer <see cref="ModelAnalyses.CompositeAnalysis"/>. Combines
     /// multiple already-fitted univariate analyses into a composite frequency curve via competing
-    /// risks, mixture aggregation, or model averaging â€” runs no MCMC chain of its own and
+    /// risks, mixture aggregation, or model averaging — runs no MCMC chain of its own and
     /// propagates uncertainty by sampling the components' posteriors.
     /// </summary>
     /// <remarks>
@@ -43,7 +43,7 @@ namespace RMC.BestFit.UI
     /// (<c>UnivariateAnalysis</c>, <c>B17CAnalysis</c>, <c>MixtureAnalysis</c>, <c>PointProcessAnalysis</c>,
     /// <c>BivariateAnalysis</c>, <c>TimeSeriesAnalysis</c>, <c>RatingCurveAnalysis</c>), <see cref="CompositeAnalysis"/>
     /// intentionally does not own a <see cref="BayesianController"/> and has no 7-plot Bayesian diagnostic suite.
-    /// A composite is a weighted average over already-fitted univariate analyses â€” it runs no MCMC chain of its own,
+    /// A composite is a weighted average over already-fitted univariate analyses — it runs no MCMC chain of its own,
     /// so there is no Markov chain trace, autocorrelation, or other chain diagnostic to display. Only a single
     /// <c>FrequencyPlot</c> is exposed. The <see cref="BayesianAnalysis"/> property copies in <see cref="Copy"/>
     /// propagate the uncertainty-presentation settings and the posterior-resampling seed,
@@ -93,7 +93,7 @@ namespace RMC.BestFit.UI
 
                 // ProbabilityOrdinates, "no analyses defined", weight range, weight sum > 1, and
                 // child-analysis-invalid messages are surfaced by the model-layer Validate()
-                // routed through _validationAdapter â€” defining duplicates here would produce
+                // routed through _validationAdapter — defining duplicates here would produce
                 // two messages per error.
                 _messages = new List<BasicMessageItem>()
                 {   _descriptionMsg,
@@ -109,7 +109,7 @@ namespace RMC.BestFit.UI
                 _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "CUDA");
 
                 SetIsValid();
-                // Not a v1 feature â€” no legacy migration path, so no openedFromV1 flag.
+                // Not a v1 feature — no legacy migration path, so no openedFromV1 flag.
                 SetIsDirty(false);
             }
             finally
@@ -278,7 +278,7 @@ namespace RMC.BestFit.UI
         // Is valid properties
         /// <summary>True when <see cref="Name"/> passes <see cref="ElementBase.ValidateName"/> checks.</summary>
         private bool _nameValid = false;
-        /// <summary>True when <see cref="InputData"/> is unset or itself <see cref="IElement.IsValid"/>. InputData is optional for composites â€” defaults to true.</summary>
+        /// <summary>True when <see cref="InputData"/> is unset or itself <see cref="IElement.IsValid"/>. InputData is optional for composites — defaults to true.</summary>
         private bool _inputDataValid = true;
         /// <summary>True when <see cref="ProbabilityOrdinates"/> are non-empty, strictly increasing, and within [0,1].</summary>
         private bool _ordinatesValid = true;
@@ -321,7 +321,7 @@ namespace RMC.BestFit.UI
         /// from the <c>BayesianOutputControl</c> combos (<c>CredibleIntervalWidth</c>,
         /// <c>OutputLength</c>, <c>PointEstimator</c>, and <c>PRNGSeed</c>). Composite does not run its own MCMC,
         /// so the broader simulation/advanced bridges in <see cref="BayesianController"/> do
-        /// not apply â€” only this scoped settings bridge is needed.
+        /// not apply — only this scoped settings bridge is needed.
         /// </summary>
         private UndoableStateBridge _bayesianSettingsBridge;
 
@@ -775,7 +775,7 @@ namespace RMC.BestFit.UI
         /// <param name="e">The event data.</param>
         private void ProbabilityOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            // Validate ordinates locally only for the IsValid flag â€” diagnostic messages are
+            // Validate ordinates locally only for the IsValid flag — diagnostic messages are
             // surfaced by the model-layer ProbabilityOrdinates.Validate() routed through
             // _validationAdapter inside SetIsValid().
             _ordinatesValid = true;
@@ -835,7 +835,7 @@ namespace RMC.BestFit.UI
                     }
                     else if (wua.UnivariateAnalysis.BayesianAnalysis.IsEstimated == false)
                     {
-                        // Estimation issue only â€” does not affect _analysesConfigValid
+                        // Estimation issue only — does not affect _analysesConfigValid
                         _analysesValid = false;
                     }
                     if (CompositeDistributionType == ModelAnalyses.CompositeType.Mixture && (wua.Weight <= 0 || wua.Weight >= 1))
@@ -1035,7 +1035,7 @@ namespace RMC.BestFit.UI
                     correlationMatrixXml = dtView.GetCell(nameof(CorrelationMatrix), rowIndex)?.ToString();
                 // Plot Properties
                 DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);             
-                // Get probability ordinates (save to local â€” inner analysis gets reconstructed below)
+                // Get probability ordinates (save to local — inner analysis gets reconstructed below)
                 string probOrdinatesStr = null;
                 if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
                     probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
@@ -1124,7 +1124,7 @@ namespace RMC.BestFit.UI
                     }
                     catch (Exception ex)
                     {
-                        // Could not deserialize results â€” will need re-estimation
+                        // Could not deserialize results — will need re-estimation
                         System.Diagnostics.Debug.WriteLine($"CompositeAnalysis.Open: could not deserialize AnalysisResults for '{Name}': {ex.Message}");
                     }
                 }
@@ -1134,7 +1134,7 @@ namespace RMC.BestFit.UI
             if (wasOpen == false) sqlite.Close();
             SetupBridges();
 
-            // Validate probability ordinates â€” ProbabilityOrdinates_CollectionChanged didn't fire
+            // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
             // during Open because SubscribeInnerAnalysis hadn't been called when the ordinates were loaded.
             // Diagnostic messages are surfaced by the model-layer Validate() routed through
             // _validationAdapter inside SetIsValid(); we only set the local flag here.
@@ -1244,7 +1244,7 @@ namespace RMC.BestFit.UI
             XElement correlationElement = _innerAnalysis?.ToXElement().Element(nameof(CorrelationMatrix));
             dtView.EditCell(rowIndex, nameof(CorrelationMatrix),
                 correlationElement?.ToString(SaveOptions.DisableFormatting) ?? string.Empty);
-            // Persist AnalysisResults via XElement round-trip â€” only summary curves + scalar
+            // Persist AnalysisResults via XElement round-trip — only summary curves + scalar
             // fit metrics; per-realisation matrices are never stored (Numerics's
             // UncertaintyAnalysisResults.ToXElement explicitly excludes parameter sets).
             dtView.EditCell(rowIndex, nameof(AnalysisResults),
@@ -1295,7 +1295,7 @@ namespace RMC.BestFit.UI
                 element.CorrelationMatrix = CorrelationMatrix;
                 element.IsMaximum = IsMaximum;
 
-                // Copy Bayesian analysis settings (uncertainty-presentation only â€” CompositeAnalysis runs no MCMC chain itself)
+                // Copy Bayesian analysis settings (uncertainty-presentation only — CompositeAnalysis runs no MCMC chain itself)
                 element._innerAnalysis.BayesianAnalysis.CredibleIntervalWidth = BayesianAnalysis.CredibleIntervalWidth;
                 element._innerAnalysis.BayesianAnalysis.OutputLength = BayesianAnalysis.OutputLength;
                 element._innerAnalysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimator;
@@ -1313,7 +1313,7 @@ namespace RMC.BestFit.UI
                         ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter),
                         ProbabilityOrdinates.DefaultDelimiter);
 
-                // Copy plot settings (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_frequencyPlot != null) PlotSerializer.FromXElement(element._frequencyPlot, PlotSerializer.ToXElement(_frequencyPlot));
 
                 // Clear results
@@ -1349,7 +1349,7 @@ namespace RMC.BestFit.UI
         public override void Delete()
         {
             if (Name == null) return;
-            // Unhook upstream Deleted subscriptions directly (do not route through setters â€”
+            // Unhook upstream Deleted subscriptions directly (do not route through setters —
             // those would re-add messages and re-flip IsDirty=true, breaking messenger cleanup
             // and triggering a spurious save prompt on tab close).
             if (_inputData != null) _inputData.Deleted -= OnInputDataDeleted;
@@ -1699,7 +1699,7 @@ namespace RMC.BestFit.UI
 
         /// <inheritdoc/>
         /// <remarks>
-        /// Composite analyses do not own raw paired data â€” their posterior is averaged across
+        /// Composite analyses do not own raw paired data — their posterior is averaged across
         /// component <see cref="UnivariateAnalysis"/> fits. Returning <c>null</c> excludes them
         /// from the bivariate marginal picker.
         /// </remarks>
@@ -1718,7 +1718,7 @@ namespace RMC.BestFit.UI
         /// snapshot baseline.
         /// </summary>
         /// <param name="propertyName">Display name of the property that triggered the change
-        /// (e.g. <c>"Analyses"</c>) â€” appears in the undo stack.</param>
+        /// (e.g. <c>"Analyses"</c>) — appears in the undo stack.</param>
         /// <remarks>
         /// Composite uses a different name for its undo pair (<c>RecordAnalyses*</c> rather than
         /// <c>RecordModel*</c>) because the composite's "model" is the weighted set of components
@@ -1879,7 +1879,7 @@ namespace RMC.BestFit.UI
                     this);
             }
 
-            // BayesianAnalysis output settings bridge â€” records user edits to CI width,
+            // BayesianAnalysis output settings bridge — records user edits to CI width,
             // output length, point estimator, and posterior-resampling seed as undo entries. The BayesianAnalysis
             // setters themselves only RaisePropertyChange (no undo recording); this bridge
             // captures the change externally via INotifyPropertyChanged.
@@ -1900,7 +1900,7 @@ namespace RMC.BestFit.UI
                     onActionRecorded: () => SetIsDirty(true));
             }
 
-            // Analyses undo â€” capture baseline snapshot
+            // Analyses undo — capture baseline snapshot
             _analysesSnapshot = AnalysesToXElement();
 
             // Plot undo manager for the frequency plot

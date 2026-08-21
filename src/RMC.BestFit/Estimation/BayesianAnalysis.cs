@@ -142,7 +142,7 @@ namespace RMC.BestFit.Estimation
                 // PointEstimator XML attribute did not exist. Defaulting to
                 // PosteriorMode here keeps loaded legacy results faithful to what
                 // those projects actually contain. New analyses (constructor at
-                // line ~217) default to PosteriorMean � the asymmetry is intentional.
+                // line ~217) default to PosteriorMean — the asymmetry is intentional.
                 _pointEstimator = PointEstimateType.PosteriorMode;
             }
             var isEstimatedAttr = xElement.Attribute(nameof(IsEstimated));
@@ -838,7 +838,7 @@ namespace RMC.BestFit.Estimation
 
                     // Alpha = 1 - CIWidth only affects the LowerCI/UpperCI percentiles in
                     // ParameterResults[i].SummaryStatistics. The MCMC chain itself is
-                    // independent of alpha � preserve Results and recompute summaries in place.
+                    // independent of alpha — preserve Results and recompute summaries in place.
                     if (IsEstimated && Results != null)
                     {
                         Results.RecomputeParameterResults(1.0 - value);
@@ -1367,7 +1367,7 @@ namespace RMC.BestFit.Estimation
 
                 // Post-await: now back on the dispatcher (or whichever SynchronizationContext
                 // was captured at await). Property setters here fire PropertyChanged on the
-                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results � assign Results
+                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results — assign Results
                 // first so they see the new chains, and they internally use Parallel.For which
                 // dispatches its own worker threads (no dispatcher block on the math itself).
                 ElapsedTime = capturedElapsed;
@@ -1388,7 +1388,7 @@ namespace RMC.BestFit.Estimation
             }
             catch (OperationCanceledException)
             {
-                // Cancellation is normal � re-throw so wrapper analyses' OperationCanceledException
+                // Cancellation is normal — re-throw so wrapper analyses' OperationCanceledException
                 // handlers see it as a cancel rather than a generic failure. Without this branch
                 // the catch (Exception) below would swallow OCE into LastError and the user would
                 // see "TaskCanceledException" reported as a run failure.
@@ -1420,7 +1420,7 @@ namespace RMC.BestFit.Estimation
         /// Cancels the Bayesian analysis if it is currently running.
         /// </summary>
         /// <remarks>
-        /// One-shot per <c>RunAsync(SafeProgressReporter?, bool)</c> invocation �
+        /// One-shot per <c>RunAsync(SafeProgressReporter?, bool)</c> invocation —
         /// after the run completes (success, fault, or cancellation) the underlying
         /// <see cref="System.Threading.CancellationTokenSource"/> is disposed in the
         /// finally block of <c>RunAsync</c>. Subsequent calls to <c>CancelSimulation</c>
@@ -3035,7 +3035,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// The <see cref="Model"/> reference is shared by design (consistent with
-        /// the rest of the project � the model is the single source of truth and
+        /// the rest of the project — the model is the single source of truth and
         /// is not deep-copied). <see cref="Results"/> (the <c>MCMCResults</c>
         /// containing posterior samples) is also shared by reference. Callers who
         /// intend to re-fit the clone should call <c>ClearResults()</c> on it

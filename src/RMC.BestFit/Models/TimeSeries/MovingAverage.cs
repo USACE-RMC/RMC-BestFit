@@ -512,7 +512,7 @@ namespace RMC.BestFit.Models
         /// Sets the transformation parameters manually.
         /// </summary>
         /// <param name="lambda1">The primary transformation parameter (λ for Box-Cox/Yeo-Johnson).</param>
-        /// <param name="lambda2">Compatibility placeholder retained for existing callers; the value is intentionally ignored.</param>
+        /// <param name="lambda2">Ignored; the transform uses a single parameter.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="lambda1"/> is not finite.</exception>
         /// <remarks>
         /// For Box-Cox and Yeo-Johnson, the supplied exponent becomes manual state and remains fixed

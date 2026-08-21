@@ -777,7 +777,7 @@ namespace RMC.BestFit.Models
         /// The histogram rule is an empirical initialization aid, not an estimator. It counts
         /// exact dated POT events by month, rotates the bins to the configured block-year start,
         /// and locates broad valleys between two separated seasonal peaks. Ambiguous histograms
-        /// retain the approved broad supports <c>K₁ ∈ [1,251)</c> and
+        /// retain the broad default supports <c>K₁ ∈ [1,251)</c> and
         /// <c>K₂ ∈ [200,367)</c>.
         /// </remarks>
         private (double Value, double Lower, double Upper)[] GetDefaultChangePointParameters()
@@ -994,8 +994,8 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="valleyMonth">The zero-based valley-month index in block-year order.</param>
         /// <param name="monthStarts">Canonical one-based block-month boundaries.</param>
-        /// <param name="baseLower">Inclusive approved lower support.</param>
-        /// <param name="baseUpperExclusive">Exclusive approved upper support.</param>
+        /// <param name="baseLower">Inclusive lower support of the default window.</param>
+        /// <param name="baseUpperExclusive">Exclusive upper support of the default window.</param>
         /// <param name="result">The resulting latent value and floating-point bounds.</param>
         /// <returns><c>true</c> when the detected valley and its intersected window are valid.</returns>
         private static bool TryCreateChangePointDefault(

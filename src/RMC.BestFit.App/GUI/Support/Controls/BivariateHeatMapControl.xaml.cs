@@ -76,8 +76,8 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Gets or sets a value indicating whether the control should use simplified (non-Bayesian)
-        /// terminology. When true, the plot title omits "Posterior" (e.g. "Joint Density of � and s"
-        /// instead of "Joint Posterior Density of � and s"). Set to true for B17C bootstrap/GMM
+        /// terminology. When true, the plot title omits "Posterior" (e.g. "Joint Density of μ and σ"
+        /// instead of "Joint Posterior Density of μ and σ"). Set to true for B17C bootstrap/GMM
         /// contexts where the parameter samples are not posterior draws.
         /// </summary>
         public bool SimpleView { get; set; } = false;
@@ -287,7 +287,7 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Sets the plot title. Suppresses PropertyChanged so the change is not recorded
-        /// as an undoable action � the title tracks combo selection, not user intent.
+        /// as an undoable action — the title tracks combo selection, not user intent.
         /// </summary>
         private void SetPlotTitle(string title)
         {
@@ -308,7 +308,7 @@ namespace RMC_BestFit
 
             // Set plot title and axis titles to reflect the selected parameter pair. Suppress
             // PropertyChanged so the PlotUndoManager does not record these as undoable actions
-            // � they track combo selections, not user intent.
+            // — they track combo selections, not user intent.
             string xParamName = XParameterComboBox.SelectedValue as string ?? "";
             string yParamName = YParameterComboBox.SelectedValue as string ?? "";
             string densityLabel = SimpleView ? "Joint Density" : "Joint Posterior Density";
@@ -434,7 +434,7 @@ namespace RMC_BestFit
                 for (int i = 1; i < zBins; i++)
                     zVals[i] = Math.Round(zVals[i - 1] + dz, 5);
 
-                // Exception: series count varies per parameter pair selection � runtime-variable
+                // Exception: series count varies per parameter pair selection — runtime-variable
                 // inline creation is intentional per the series-preservation guidance.
                 _plot.Series.Add(new HeatMapSeries()
                 {

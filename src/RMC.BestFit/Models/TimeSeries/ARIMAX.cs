@@ -977,7 +977,7 @@ namespace RMC.BestFit.Models
         /// Sets the transformation parameters manually.
         /// </summary>
         /// <param name="lambda1">The primary transformation parameter (λ for Box-Cox/Yeo-Johnson).</param>
-        /// <param name="lambda2">Compatibility placeholder retained for existing callers; the value is intentionally ignored.</param>
+        /// <param name="lambda2">Ignored; the transform uses a single parameter.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="lambda1"/> is not finite.</exception>
         /// <remarks>
         /// For Box-Cox and Yeo-Johnson, the supplied exponent becomes manual state and remains fixed
@@ -2781,8 +2781,8 @@ namespace RMC.BestFit.Models
                 double deterministic = mean[t] + ar + ma;
                 series[t] = deterministic + noise[t];
 
-                // Retain the established subtraction path so Transform.None/d=0 fixed-seed
-                // roundoff and downstream MA terms remain bit-for-bit compatible.
+                // The residual is the generated value minus its deterministic part, so the MA terms of
+                // later steps use exactly the innovation realized in the series (bit-identical for Transform.None, d = 0).
                 epsilon[t] = series[t] - deterministic;
             }
 

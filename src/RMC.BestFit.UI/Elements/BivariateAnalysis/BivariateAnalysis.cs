@@ -794,7 +794,7 @@ namespace RMC.BestFit.UI
         /// re-process derived results in the background if the analysis is estimated and
         /// the new ordinate grid is valid; clear <see cref="RMC.BestFit.Analyses.BivariateAnalysis.AnalysisResults"/>
         /// only if estimated but the grid is invalid; no-op otherwise. Preserves the
-        /// underlying MCMC fit either way â€” never calls <see cref="ClearResults"/>
+        /// underlying MCMC fit either way — never calls <see cref="ClearResults"/>
         /// (which would invalidate the fit).
         /// </remarks>
         private void XYOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -932,7 +932,7 @@ namespace RMC.BestFit.UI
         /// <param name="sqlite">The SQLite database manager instance.</param>
         private void CreateTable(SQLiteManager sqlite)
         {
-            // Parent collection table â€” Name + Type discriminator only.
+            // Parent collection table — Name + Type discriminator only.
             if (!sqlite.TableNames.Contains(ParentCollection.Name))
             {
                 var dataTable = new DataTable(ParentCollection.Name);
@@ -948,7 +948,7 @@ namespace RMC.BestFit.UI
                 dt.ApplyEdits();
             }
 
-            // Per-subtype table â€” full element data.
+            // Per-subtype table — full element data.
             if (!sqlite.TableNames.Contains(CollectionName))
             {
                 var dataTable = new DataTable(CollectionName);
@@ -1007,7 +1007,7 @@ namespace RMC.BestFit.UI
 
                 // Modern path: per-subtype CollectionName table holds the data. Legacy fallback:
                 // pre-migration projects wrote element data directly into the parent collection
-                // table â€” read from there and mark the element dirty so the next save migrates
+                // table — read from there and mark the element dirty so the next save migrates
                 // the project to the two-table layout.
                 DataTableView dtView = null;
                 int rowIndex = -1;
@@ -1019,7 +1019,7 @@ namespace RMC.BestFit.UI
                 }
                 if (rowIndex == -1 && sqlite.TableNames.Contains(ParentCollection.Name))
                 {
-                    // Legacy single-table layout â€” only fall back if the parent table actually
+                    // Legacy single-table layout — only fall back if the parent table actually
                     // contains element-data columns (presence of MarginalX is a good sentinel).
                     var legacyDt = sqlite.GetTableManager(ParentCollection.Name);
                     if (legacyDt.ColumnNames.Contains(nameof(MarginalX)))
@@ -1061,7 +1061,7 @@ namespace RMC.BestFit.UI
         /// <summary>
         /// Reads element data from a SQLite row into backing fields and the inner analysis.
         /// Works against either the per-subtype <see cref="CollectionName"/> table (modern
-        /// layout) or the parent collection table (legacy single-table layout) â€” every read
+        /// layout) or the parent collection table (legacy single-table layout) — every read
         /// is column-name-based and the column set is identical between the two.
         /// </summary>
         /// <param name="dtView">The table view (modern or legacy).</param>
@@ -1093,7 +1093,7 @@ namespace RMC.BestFit.UI
                 _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(
                     dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
 
-            // Get marginal X â€” use backing field to avoid SetIsValid(), ClearResults(),
+            // Get marginal X — use backing field to avoid SetIsValid(), ClearResults(),
             // and premature inner-analysis sync (the inner analysis is reconstructed below).
             if (dtView.ColumnNames.Contains(nameof(MarginalX)))
             {
@@ -1124,7 +1124,7 @@ namespace RMC.BestFit.UI
                 }
             }
 
-            // Get marginal Y â€” same backing-field pattern as MarginalX above.
+            // Get marginal Y — same backing-field pattern as MarginalX above.
             if (dtView.ColumnNames.Contains(nameof(MarginalY)))
             {
                 var marginalYName = dtView.GetCell(nameof(MarginalY), rowIndex).ToString();
@@ -1277,7 +1277,7 @@ namespace RMC.BestFit.UI
             // Create the parent collection table and the per-subtype data table if needed.
             CreateTable(sqlite);
 
-            // Parent collection row â€” Name + Type discriminator only.
+            // Parent collection row — Name + Type discriminator only.
             var dtView = sqlite.GetTableManager(ParentCollection.Name);
             int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);  // B-013: key by Name for parent-table consistency
             if (rowIndex < 0 || rowIndex >= dtView.NumberOfRows)
@@ -1385,11 +1385,11 @@ namespace RMC.BestFit.UI
                 // Copy ordinates
                 element.XYOrdinates = XYOrdinates == null ? null : XYOrdinates.Clone();
 
-                // Copy plot settings (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_copulaPlot != null) PlotSerializer.FromXElement(element._copulaPlot, PlotSerializer.ToXElement(_copulaPlot));
                 _bayesianController.CopyTo(element._bayesianController);
 
-                // Reset the cloned element to a clean post-construction state â€” no inherited
+                // Reset the cloned element to a clean post-construction state — no inherited
                 // fitted parameters or chain references. Matches the canonical FittingAnalysis.Copy template.
                 element.ClearResults();
             }
@@ -1428,7 +1428,7 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscriptions directly (do not route through the
-            // MarginalX / MarginalY setters â€” those would re-add marginal null messages and
+            // MarginalX / MarginalY setters — those would re-add marginal null messages and
             // re-flip IsDirty=true).
             if (_marginalX != null) _marginalX.Deleted -= OnMarginalXDeleted;
             if (_marginalY != null) _marginalY.Deleted -= OnMarginalYDeleted;
@@ -1538,7 +1538,7 @@ namespace RMC.BestFit.UI
         /// <see cref="BivariateDistribution"/> XElement and the rolling snapshot baseline.
         /// </summary>
         /// <param name="propertyName">Display name of the property that triggered the change
-        /// (e.g. <c>"BivariateDistribution"</c>) â€” appears in the undo stack.</param>
+        /// (e.g. <c>"BivariateDistribution"</c>) — appears in the undo stack.</param>
         /// <remarks>
         /// No-ops when undo is disabled, when the action is already an undo replay, when there
         /// is no baseline yet, or when the model XElement is unchanged. Updates the rolling
@@ -1702,10 +1702,10 @@ namespace RMC.BestFit.UI
             if (_innerAnalysis?.XYOrdinates != null)
                 _innerAnalysis.XYOrdinates.CollectionChanged += XYOrdinates_CollectionChanged;
 
-            // Model undo â€” capture baseline snapshot
+            // Model undo — capture baseline snapshot
             _modelSnapshot = _innerAnalysis?.BivariateDistribution?.ToXElement();
 
-            // XYOrdinates undo â€” capture baseline snapshot for delta-based row-edit undo
+            // XYOrdinates undo — capture baseline snapshot for delta-based row-edit undo
             _xyOrdinatesSnapshot = _innerAnalysis?.XYOrdinates?.SaveToXElement();
 
             // Plot undo managers for element-level plots

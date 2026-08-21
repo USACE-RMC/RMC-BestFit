@@ -503,7 +503,7 @@ namespace RMC.BestFit.UI
                 {
                     // A manual edit overrides the 80% default rule. Flip the flag BEFORE assigning
                     // so subsequent model-internal reset paths (TimeSeries setter, CollectionChanged,
-                    // SetDefaultTrainingSteps) no longer clobber the user's value with floor(0.8Â·N).
+                    // SetDefaultTrainingSteps) no longer clobber the user's value with floor(0.8·N).
                     // Matches the canonical pattern in the verification tests:
                     // UseDefaultTrainingSteps = false THEN TrainingTimeSteps = N.
                     if (_innerAnalysis.ARIMAX.UseDefaultTrainingSteps)

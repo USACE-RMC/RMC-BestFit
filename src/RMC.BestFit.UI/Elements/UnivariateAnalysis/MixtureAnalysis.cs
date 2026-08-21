@@ -95,7 +95,7 @@ namespace RMC.BestFit.UI
                 _inputDataInValidMsg = new BasicMessageItem(MessageType.Error, "The selected input data is invalid.", this, ParentCollection.Name, Name, nameof(InputData), "MDA-ERR-006");
 
                 // ProbabilityOrdinates validation messages are surfaced by the model-layer
-                // ProbabilityOrdinates.Validate() routed through _validationAdapter â€” defining
+                // ProbabilityOrdinates.Validate() routed through _validationAdapter — defining
                 // duplicates here would produce two messages per error.
                 _messages = new List<BasicMessageItem>()
                 {   _descriptionMsg,
@@ -113,7 +113,7 @@ namespace RMC.BestFit.UI
 
                 _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "MDA");
                 SetIsValid();
-                // Not a v1 feature â€” no legacy migration path, so no openedFromV1 flag.
+                // Not a v1 feature — no legacy migration path, so no openedFromV1 flag.
                 SetIsDirty(false);
             }
             finally
@@ -558,7 +558,7 @@ namespace RMC.BestFit.UI
         private void ProbabilityOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // Check probability ordinates
-            // Validate ordinates locally only for the IsValid flag â€” diagnostic messages are
+            // Validate ordinates locally only for the IsValid flag — diagnostic messages are
             // surfaced by the model-layer ProbabilityOrdinates.Validate() routed through
             // _validationAdapter inside SetIsValid().
             _ordinatesValid = true;
@@ -833,7 +833,7 @@ namespace RMC.BestFit.UI
                 DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
                 _bayesianController.Deserialize(dtView, rowIndex);
 
-                // Get probability ordinates (save to local â€” inner analysis gets reconstructed below)
+                // Get probability ordinates (save to local — inner analysis gets reconstructed below)
                 string probOrdinatesStr = null;
                 if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
                     probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
@@ -921,7 +921,7 @@ namespace RMC.BestFit.UI
             if (wasOpen == false) sqlite.Close();
             SetupBridges();
 
-            // Validate probability ordinates â€” ProbabilityOrdinates_CollectionChanged didn't fire
+            // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
             // during Open because SubscribeInnerAnalysis hadn't been called when the ordinates were loaded.
             // Diagnostic messages are surfaced by the model-layer Validate() routed through
             // _validationAdapter inside SetIsValid(); we only set the local flag here.
@@ -1111,7 +1111,7 @@ namespace RMC.BestFit.UI
                         ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter),
                         ProbabilityOrdinates.DefaultDelimiter);
 
-                // Copy plot settings (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_frequencyPlot != null) PlotSerializer.FromXElement(element._frequencyPlot, PlotSerializer.ToXElement(_frequencyPlot));
                 _bayesianController.CopyTo(element._bayesianController);
 
@@ -1150,7 +1150,7 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscription directly (do not route through the
-            // InputData setter â€” that would re-add _inputDataNullMsg and re-flip IsDirty=true).
+            // InputData setter — that would re-add _inputDataNullMsg and re-flip IsDirty=true).
             if (_inputData != null) _inputData.Deleted -= OnInputDataDeleted;
             DisposeBridges();
             _bayesianController?.Dispose();
@@ -1201,7 +1201,7 @@ namespace RMC.BestFit.UI
             if (_ordinatesValid == false) valid = false;
 
             // Delegate model validation to inner analysis.
-            // Skip model validation when InputData is invalid â€” the UI layer already reports that
+            // Skip model validation when InputData is invalid — the UI layer already reports that
             // via _inputDataNullMsg / _inputDataInValidMsg, and the model's "DataFrame is null"
             // message would be a confusing developer-facing duplicate.
             bool modelValid = _inputDataValid
@@ -1504,7 +1504,7 @@ namespace RMC.BestFit.UI
                     this);
             }
 
-            // Model undo â€” capture baseline snapshot for XElement comparison
+            // Model undo — capture baseline snapshot for XElement comparison
             _modelSnapshot = _innerAnalysis?.MixtureDistribution?.ToXElement();
 
             // Plot undo managers for element-level plots

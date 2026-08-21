@@ -420,12 +420,12 @@ namespace RMC_BestFit
                 UpdateTrainingSteps();
                 UpdateStepSplitDisplay();
             }
-            // Model object replaced (e.g., during undo) � push to sub-controls
+            // Model object replaced (e.g., during undo) — push to sub-controls
             if (e.PropertyName == nameof(Element.ARIMAX))
             {
                 ParameterPriorsControl.Model = Element.ARIMAX;
             }
-            // BayesianAnalysis replaced � push to sub-controls
+            // BayesianAnalysis replaced — push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;

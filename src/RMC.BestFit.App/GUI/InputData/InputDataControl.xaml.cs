@@ -229,7 +229,7 @@ namespace RMC_BestFit
         /// </summary>
         private bool _suppressUIUpdate;
 
-        // Dirty flags for lazy plot/stats/tests updates � only the visible tab is updated immediately;
+        // Dirty flags for lazy plot/stats/tests updates — only the visible tab is updated immediately;
         // hidden tabs are updated on demand when the user switches to them.
         /// <summary>Dirty flag indicating the chronology plot needs to be redrawn.</summary>
         private bool _chronologyPlotDirty;
@@ -490,7 +490,7 @@ namespace RMC_BestFit
         /// This replaces the old UndoManager.StateChanged approach. When undo/redo replays a collection
         /// action, the bridge modifies the model series which fires CollectionChanged. The bridge's own
         /// handler skips re-recording (IsExecutingAction check), but this UI handler still receives the
-        /// event and updates the RowItems accordingly � matching the ProbabilityOrdinatesControl pattern.
+        /// event and updates the RowItems accordingly — matching the ProbabilityOrdinatesControl pattern.
         /// </remarks>
         /// <param name="element">The InputData element whose series to subscribe to.</param>
         private void SubscribeSeriesCollectionChanged(InputData element)
@@ -530,7 +530,7 @@ namespace RMC_BestFit
             if (e.Action == NotifyCollectionChangedAction.Replace)
             {
                 // Suppress PropertyChanged handlers during SetOrdinate to prevent redundant
-                // ValidateTable calls (SetOrdinate fires 5� NotifyPropertyChanged).
+                // ValidateTable calls (SetOrdinate fires 5× NotifyPropertyChanged).
                 _suppressUIUpdate = true;
                 try
                 {
@@ -554,7 +554,7 @@ namespace RMC_BestFit
             }
             else if (e.Action == NotifyCollectionChangedAction.Reset)
             {
-                // Full rebuild � undo of paste/add/delete
+                // Full rebuild — undo of paste/add/delete
                 MarkAllDirty();
                 BindExactDataGrid();
                 // Disable undo during plot updates so Series.Clear/Add don't record as undo entries

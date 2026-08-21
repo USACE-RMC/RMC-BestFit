@@ -60,7 +60,7 @@ namespace RMC.BestFit.UI
                 _creationDate = DateTime.Now;
                 _lastModified = DateTime.Now;
 
-                // Add messages � RegisterMessage tracks each one in _messages so the Name setter
+                // Add messages — RegisterMessage tracks each one in _messages so the Name setter
                 // can bulk-update SourceName and we don't risk drift between the per-field
                 // declarations and the master list.
                 _messages = new List<BasicMessageItem>();
@@ -1674,7 +1674,7 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscription directly (do not route through the
-            // TimeSeriesElement setter � that would re-trigger validation messages and
+            // TimeSeriesElement setter — that would re-trigger validation messages and
             // re-flip IsDirty=true).
             if (_timeSeriesElement != null) _timeSeriesElement.Deleted -= OnTimeSeriesElementDeleted;
             DisposeBridges();
@@ -1716,7 +1716,7 @@ namespace RMC.BestFit.UI
                 ExactDataMethod == ExactDataEntryType.USGSPeakStage) && _siteNumberValid == false)
                 valid = false;
 
-            // Check Data Frame � minimum count is UI-only, series validation delegated to model via adapter.
+            // Check Data Frame — minimum count is UI-only, series validation delegated to model via adapter.
             // The DataFrame setter accepts null (during deserialization mid-flight); treat that as
             // invalid rather than throwing NRE from every property edit that calls SetIsValid.
             _messenger.Remove(_dataFrameMsg);
@@ -2793,13 +2793,13 @@ namespace RMC.BestFit.UI
         /// <para>
         /// Cell-level edits are handled by the A2 clone-and-replace pattern: RowItem setters
         /// clone the Data object, modify the clone, and replace it in the series via the indexer.
-        /// This fires CollectionChanged(Replace) which the bridge records � no per-item
+        /// This fires CollectionChanged(Replace) which the bridge records — no per-item
         /// UndoableStateBridge is needed.
         /// </para>
         /// <para>
         /// Each collection bridge has a BulkRestoreWrapper that suppresses intermediate
         /// CollectionChanged events during undo/redo replay of Reset actions. This prevents
-        /// O(n�) CalculatePlottingPositions calls when the bridge's Clear+AddAll loop replays.
+        /// O(n²) CalculatePlottingPositions calls when the bridge's Clear+AddAll loop replays.
         /// </para>
         /// </remarks>
         private void SetupBridges()
@@ -2853,7 +2853,7 @@ namespace RMC.BestFit.UI
             );
             _thresholdSeriesBridge.BulkRestoreWrapper = CreateBulkRestoreWrapper(_dataFrame.ThresholdSeries);
 
-            // Create plot undo managers � each monitors its plot's axes, series, and annotations
+            // Create plot undo managers — each monitors its plot's axes, series, and annotations
             // for collection changes and auto-rebuilds bridges as needed.
             Func<IUndoManager> getUndo = () => IsUndoEnabled ? UndoManager : null;
             Action onRecorded = () => SetIsDirty(true);

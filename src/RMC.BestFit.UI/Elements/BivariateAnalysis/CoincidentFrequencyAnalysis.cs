@@ -35,7 +35,7 @@ namespace RMC.BestFit.UI
     /// </para>
     /// <para>
     /// <b>No <see cref="BayesianController"/>:</b> Like <see cref="CompositeAnalysis"/>,
-    /// this analysis runs no MCMC chain of its own â€” it consumes posterior samples from
+    /// this analysis runs no MCMC chain of its own — it consumes posterior samples from
     /// the upstream <see cref="BivariateAnalysis"/> (and its underlying marginal
     /// <see cref="UnivariateAnalysis"/> chains). Only a single Frequency plot is
     /// exposed. There is no 7-plot Bayesian diagnostic suite.
@@ -122,9 +122,9 @@ namespace RMC.BestFit.UI
                 // Defer the empty-description message until after Open() so a freshly-opened
                 // element doesn't show the message during construction only to have Open()
                 // immediately remove it. New elements (openFromFile == false) still need it
-                // surfaced â€” branch below adds it once after Open() decides the description value.
+                // surfaced — branch below adds it once after Open() decides the description value.
                 // _bivariateNullMsg is added by the terminal SetIsValid() call below
-                // via ValidateBivariateAnalysis() â€” no eager add needed here.
+                // via ValidateBivariateAnalysis() — no eager add needed here.
 
                 if (openFromFile)
                 {
@@ -151,7 +151,7 @@ namespace RMC.BestFit.UI
                 ValidateOrdinates();
                 ValidateBayesianOptions();
                 SetIsValid();
-                // Not a v1 feature â€” no legacy migration path, so no openedFromV1 flag.
+                // Not a v1 feature — no legacy migration path, so no openedFromV1 flag.
                 SetIsDirty(false);
             }
             finally
@@ -347,7 +347,7 @@ namespace RMC.BestFit.UI
 
         // Undo bridges for the X / Y ordinate collections. Mirror the canonical pattern from
         // UnivariateAnalysis / CompositeAnalysis where ProbabilityOrdinates is wrapped by a
-        // single UndoableCollectionBridge â€” Add / Remove / Replace / Reset are captured
+        // single UndoableCollectionBridge — Add / Remove / Replace / Reset are captured
         // automatically. Created in SetupBridges, disposed in DisposeBridges.
         /// <summary>Undo bridge for <see cref="XValues"/>.</summary>
         private UndoableCollectionBridge<double> _xValuesBridge;
@@ -361,7 +361,7 @@ namespace RMC.BestFit.UI
         /// from the <c>BayesianOutputControl</c> combos (<c>CredibleIntervalWidth</c>,
         /// <c>OutputLength</c>, <c>PointEstimator</c>, and <c>PRNGSeed</c>). CFA does not run its own MCMC chain,
         /// so the broader simulation/advanced bridges in <see cref="BayesianController"/> do
-        /// not apply â€” only this scoped settings bridge is needed. Mirrors the canonical
+        /// not apply — only this scoped settings bridge is needed. Mirrors the canonical
         /// pattern used by <see cref="CompositeAnalysis"/>.
         /// </summary>
         private UndoableStateBridge _bayesianSettingsBridge;
@@ -372,7 +372,7 @@ namespace RMC.BestFit.UI
 
         /// <summary>
         /// Gets or sets the input data used as an observed-data overlay on the Frequency Plot.
-        /// Optional â€” null indicates no overlay.
+        /// Optional — null indicates no overlay.
         /// </summary>
         [Category("General")]
         [DisplayName("Input Data")]
@@ -400,7 +400,7 @@ namespace RMC.BestFit.UI
                     _inputData.Deleted += OnInputDataDeleted;
                 }
 
-                // Optional overlay â€” invalidity surfaces a message but does not block estimation.
+                // Optional overlay — invalidity surfaces a message but does not block estimation.
                 _inputDataValid = true;
                 _messenger.Remove(_inputDataInValidMsg);
                 if (_inputData != null && _inputData.IsValid == false)
@@ -492,7 +492,7 @@ namespace RMC.BestFit.UI
         [Browsable(true)]
         public double[,] BivariateResponse
         {
-            // Null-safe getter â€” _innerAnalysis is nulled on Delete(); a stale binding can still
+            // Null-safe getter — _innerAnalysis is nulled on Delete(); a stale binding can still
             // hit this accessor before WPF tears down the view. Return an empty surface as a
             // benign placeholder rather than throwing NRE.
             get { return _innerAnalysis?.BivariateResponse ?? new double[0, 0]; }
@@ -520,7 +520,7 @@ namespace RMC.BestFit.UI
         [Browsable(true)]
         public int NumberOfBins
         {
-            // Null-safe getter â€” _innerAnalysis is nulled on Delete(); 50 is the documented default
+            // Null-safe getter — _innerAnalysis is nulled on Delete(); 50 is the documented default
             // (see ModelAnalyses.CoincidentFrequencyAnalysis.NumberOfBins).
             get { return _innerAnalysis?.NumberOfBins ?? 50; }
             set
@@ -596,12 +596,12 @@ namespace RMC.BestFit.UI
 
         /// <summary>
         /// Creates the parent collection table (Name + Type discriminator) and the per-subtype
-        /// table for this element type. Idempotent â€” safe to call repeatedly. Mirrors the
+        /// table for this element type. Idempotent — safe to call repeatedly. Mirrors the
         /// CompositeAnalysis pattern.
         /// </summary>
         private void CreateTable(SQLiteManager sqlite)
         {
-            // Parent collection table â€” Name + Type discriminator only.
+            // Parent collection table — Name + Type discriminator only.
             if (!sqlite.TableNames.Contains(ParentCollection.Name))
             {
                 var dataTable = new DataTable(ParentCollection.Name);
@@ -617,7 +617,7 @@ namespace RMC.BestFit.UI
                 dt.ApplyEdits();
             }
 
-            // Per-subtype table â€” full element data.
+            // Per-subtype table — full element data.
             if (!sqlite.TableNames.Contains(CollectionName))
             {
                 var dataTable = new DataTable(CollectionName);
@@ -831,7 +831,7 @@ namespace RMC.BestFit.UI
 
                 // BayesianAnalysis presentation settings and posterior-resampling seed. Parse the
                 // XElement attributes directly rather than rebuilding a
-                // throwaway BayesianAnalysis(XElement) instance â€” the heavy constructor pulls in
+                // throwaway BayesianAnalysis(XElement) instance — the heavy constructor pulls in
                 // priors / sampler config / etc. and throws on partial or legacy XML, even though
                 // CFA only consumes these result-construction fields.
                 if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
@@ -867,7 +867,7 @@ namespace RMC.BestFit.UI
                 // Plot settings
                 DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
 
-                // ZOutputValues â€” restore the Z bin grid alongside AnalysisResults so consumers
+                // ZOutputValues — restore the Z bin grid alongside AnalysisResults so consumers
                 // can render the saved frequency curve without re-running.
                 if (dtView.ColumnNames.Contains(nameof(ZOutputValues)))
                 {
@@ -883,7 +883,7 @@ namespace RMC.BestFit.UI
                     }
                 }
 
-                // AnalysisResults â€” XElement round-trip via UncertaintyAnalysisResults.FromXElement.
+                // AnalysisResults — XElement round-trip via UncertaintyAnalysisResults.FromXElement.
                 // Only the summary curves (ModeCurve, MeanCurve, ConfidenceIntervals) + scalar fit
                 // metrics are persisted; per-realisation matrices are never stored.
                 // Use RestoreAnalysisResults (not SetAnalysisResults) so IsEstimated also flips back
@@ -1053,12 +1053,12 @@ namespace RMC.BestFit.UI
                 element._innerAnalysis.BayesianAnalysis.PointEstimator = _innerAnalysis.BayesianAnalysis.PointEstimator;
                 element._innerAnalysis.BayesianAnalysis.PRNGSeed = _innerAnalysis.BayesianAnalysis.PRNGSeed;
 
-                // Upstream link â€” copy the reference; both elements share the same upstream
+                // Upstream link — copy the reference; both elements share the same upstream
                 // BivariateAnalysis, matching how Composite copies InputData.
                 element.BivariateAnalysis = BivariateAnalysis;
                 element.InputData = InputData;
 
-                // Ordinates â€” replace the contents of the destination's collections.
+                // Ordinates — replace the contents of the destination's collections.
                 element._xValues.CollectionChanged -= element.XValues_CollectionChanged;
                 element._yValues.CollectionChanged -= element.YValues_CollectionChanged;
                 element._xValues.Clear();
@@ -1080,7 +1080,7 @@ namespace RMC.BestFit.UI
                     element._innerAnalysis.BivariateResponse = z;
                 }
 
-                // Plot settings (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Plot settings (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_frequencyPlot != null)
                     PlotSerializer.FromXElement(element._frequencyPlot, PlotSerializer.ToXElement(_frequencyPlot));
 
@@ -1277,7 +1277,7 @@ namespace RMC.BestFit.UI
             // produced. _bivariateNotEstimatedMsg (added by ValidateBivariateAnalysis when the
             // upstream BA is null / unestimated / invalid) and the model-layer Validate() messages
             // are surfaced to the user; IsValid going false short-circuits here. No duplicate
-            // 'CFA-ERR-010' message â€” _bivariateNotEstimatedMsg already explains the cause.
+            // 'CFA-ERR-010' message — _bivariateNotEstimatedMsg already explains the cause.
             if (!IsValid) return;
 
             _messenger.Add(new BasicMessageItem(MessageType.Event,
@@ -1294,7 +1294,7 @@ namespace RMC.BestFit.UI
                 // Pull the marginal MCMC chains from the upstream univariate analyses so the
                 // inner algorithm can vary all three chains across realisations. If a marginal
                 // is a CompositeAnalysis (or any non-UnivariateAnalysis IUnivariate), the chain
-                // will be null â€” emit a warning so the user understands uncertainty bands then
+                // will be null — emit a warning so the user understands uncertainty bands then
                 // come from the copula chain only, not the marginal posterior.
                 SyncMarginalChainsToInnerAnalysis();
                 WarnIfMarginalChainMissing(_bivariateAnalysis?.MarginalX, "X", _innerAnalysis.MarginalXChain);
@@ -1336,7 +1336,7 @@ namespace RMC.BestFit.UI
         /// Emits a warning message when the upstream marginal is non-null but does not expose
         /// posterior MCMC samples (e.g., a <c>CompositeAnalysis</c>, which weights pre-fitted
         /// univariates and runs no chain of its own). Without the marginal chain, CFA's
-        /// uncertainty bands are driven only by the copula chain â€” partial uncertainty
+        /// uncertainty bands are driven only by the copula chain — partial uncertainty
         /// propagation that the user must understand explicitly.
         /// </summary>
         /// <param name="marginal">The marginal exposed by the upstream <see cref="BivariateAnalysis"/>.</param>
@@ -1348,7 +1348,7 @@ namespace RMC.BestFit.UI
             {
                 _messenger.Add(new BasicMessageItem(MessageType.Warning,
                     $"Upstream marginal {axisLabel} ('{(marginal as IElement)?.Name ?? marginal.GetType().Name}') does not provide posterior MCMC samples. " +
-                    "CFA uncertainty bands will reflect only the copula chain â€” partial uncertainty propagation.",
+                    "CFA uncertainty bands will reflect only the copula chain — partial uncertainty propagation.",
                     this, ParentCollection.Name, Name, nameof(BivariateAnalysis), $"CFA-WRN-MARGINAL-{axisLabel}"));
             }
         }
@@ -1438,7 +1438,7 @@ namespace RMC.BestFit.UI
         /// Forwards property changes from the inner analysis to WPF bindings. Specific properties
         /// trigger validation refresh; all others (including BayesianAnalysis sub-properties such
         /// as <c>CredibleIntervalWidth</c>, <c>OutputLength</c>, and <c>PointEstimator</c>) are
-        /// propagated by name so consumers can react to granular changes â€” e.g., the App control's
+        /// propagated by name so consumers can react to granular changes — e.g., the App control's
         /// <c>Element_PropertyChanged</c> updates frequency-curve column headers when the credible
         /// interval changes. Mirrors the canonical UnivariateAnalysis pattern.
         /// </summary>
@@ -1463,7 +1463,7 @@ namespace RMC.BestFit.UI
                 SetIsValid();
             }
 
-            // Forward all property names â€” including BayesianAnalysis sub-property changes â€”
+            // Forward all property names — including BayesianAnalysis sub-property changes —
             // so granular bindings refresh and the App's Element_PropertyChanged sees the
             // original property name (not just "BayesianAnalysis").
             RaisePropertyChange(e.PropertyName);
@@ -1583,7 +1583,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         private void YValues_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            // See XValues_CollectionChanged for design notes â€” auto-resize runs on both
+            // See XValues_CollectionChanged for design notes — auto-resize runs on both
             // forward edits and undo replay; not undoable.
             if (e.Action == NotifyCollectionChangedAction.Add ||
                 e.Action == NotifyCollectionChangedAction.Remove ||
@@ -1604,7 +1604,7 @@ namespace RMC.BestFit.UI
         /// Resizes <see cref="ModelAnalyses.CoincidentFrequencyAnalysis.BivariateResponse"/> to match
         /// the current X / Y ordinate counts. Overlap is preserved; new cells default to 0. Mirrors
         /// TotalRisk's <c>UpdateProbabilityMatrix()</c>. The auto-resize is intentionally NOT
-        /// recorded as an undoable action â€” undoing the X/Y ordinate add/remove (via the bridges)
+        /// recorded as an undoable action — undoing the X/Y ordinate add/remove (via the bridges)
         /// triggers this method again on the replay path and re-derives the response shape from
         /// the restored ordinate counts. Only direct cell edits to <see cref="BivariateResponse"/>
         /// (via the public setter, which calls <see cref="RecordBivariateResponseUndo"/>) are
@@ -1764,7 +1764,7 @@ namespace RMC.BestFit.UI
         /// Callers (property setters, <see cref="BivariateAnalysis_PropertyChanged"/>, <see cref="Open()"/>)
         /// invoke <see cref="ValidateBivariateAnalysis"/> directly when needed; this method only
         /// reads the flags and computes the aggregate. <see cref="InputData"/> validity is
-        /// non-blocking (overlay-only) â€” invalid InputData surfaces a message but does not block
+        /// non-blocking (overlay-only) — invalid InputData surfaces a message but does not block
         /// estimation.
         /// </summary>
         private void SetIsValid()
@@ -1881,7 +1881,7 @@ namespace RMC.BestFit.UI
         /// Sets up undo bridges for the X / Y ordinate collections, the frequency plot, and the
         /// rolling snapshot for the 2D <see cref="BivariateResponse"/>. Mirrors the canonical
         /// SetupBridges pattern from <see cref="UnivariateAnalysis"/> / <see cref="CompositeAnalysis"/>
-        /// â€” both wrap their <c>ProbabilityOrdinates</c> in an <see cref="UndoableCollectionBridge{T}"/>;
+        /// — both wrap their <c>ProbabilityOrdinates</c> in an <see cref="UndoableCollectionBridge{T}"/>;
         /// here we wrap <see cref="XValues"/> and <see cref="YValues"/> the same way. The 2D response
         /// array stays on a snapshot-based recorder (<see cref="RecordBivariateResponseUndo"/>) since
         /// the framework has no array-bridge equivalent. Disposes any existing bridges first.
@@ -1894,11 +1894,11 @@ namespace RMC.BestFit.UI
 
             Func<IUndoManager> getUndo = () => IsUndoEnabled ? UndoManager : null;
 
-            // Bridges for X / Y ordinate collections â€” match UnivariateAnalysis / CompositeAnalysis.
+            // Bridges for X / Y ordinate collections — match UnivariateAnalysis / CompositeAnalysis.
             _xValuesBridge = new UndoableCollectionBridge<double>(_xValues, getUndo, nameof(XValues), this);
             _yValuesBridge = new UndoableCollectionBridge<double>(_yValues, getUndo, nameof(YValues), this);
 
-            // BayesianAnalysis output settings bridge â€” records user edits to CI width,
+            // BayesianAnalysis output settings bridge — records user edits to CI width,
             // output length, point estimator, and posterior-resampling seed as undo entries. The BayesianAnalysis
             // setters themselves only RaisePropertyChange (no undo recording); this bridge
             // captures the change externally via INotifyPropertyChanged.
@@ -1919,7 +1919,7 @@ namespace RMC.BestFit.UI
                     onActionRecorded: () => SetIsDirty(true));
             }
 
-            // BivariateResponse keeps a rolling XElement snapshot baseline â€” there is no
+            // BivariateResponse keeps a rolling XElement snapshot baseline — there is no
             // UndoableArrayBridge<T> equivalent for double[,] in the framework.
             _bivariateResponseSnapshot = SerializeBivariateResponse(_innerAnalysis?.BivariateResponse);
 

@@ -881,7 +881,7 @@ namespace RMC.BestFit.Estimation
         /// <returns>The robust covariance matrix using the sandwich estimator.</returns>
         /// <remarks>
         /// <para>
-        /// The sandwich estimator is: Var(?^) = H?� J H?�
+        /// The sandwich estimator is: Var(θ̂) = H⁻¹ J H⁻¹
         /// </para>
         /// <para>
         /// Where H is the negative Hessian (Fisher Information Matrix) and J is the "meat" matrix:
@@ -969,7 +969,7 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
-        /// Computes the "meat" matrix J = S? g? g?? for the sandwich estimator.
+        /// Computes the "meat" matrix J = Σᵢ gᵢ gᵢᵀ for the sandwich estimator.
         /// </summary>
         /// <param name="parameters">The parameter values at which to evaluate gradients.</param>
         /// <returns>The meat matrix.</returns>
@@ -982,7 +982,7 @@ namespace RMC.BestFit.Estimation
             // Compute numerical gradients for each observation
             double[][] gradients = ComputePointwiseGradients(parameters, n);
 
-            // Compute J = S? g? g??
+            // Compute J = Σᵢ gᵢ gᵢᵀ
             var meat = new Matrix(NumberOfParameters, NumberOfParameters);
 
             for (int i = 0; i < n; i++)
@@ -1009,8 +1009,8 @@ namespace RMC.BestFit.Estimation
         /// <returns>A jagged array where gradients[i][j] is ?log f(y?|?)/???.</returns>
         /// <remarks>
         /// <para>
-        /// Uses the central difference formula: ?f/??? � [f(?+h?e?) - f(?-h?e?)] / (2h?),
-        /// where h? = max(|??| � 1e-4, 1e-3). The 1e-3 minimum step size is critical for
+        /// Uses the central difference formula: ∂f/∂θⱼ ≈ [f(θ+hⱼeⱼ) - f(θ-hⱼeⱼ)] / (2hⱼ),
+        /// where hⱼ = max(|θⱼ| × 1e-4, 1e-3). The 1e-3 minimum step size is critical for
         /// distributions that use Normal approximations near zero (e.g., LP3 switches to Normal
         /// when |?| &lt; 1e-4).
         /// </para>
@@ -1030,11 +1030,11 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Computes influence[i,j] = (H?� g?)? / SE?, where:
+        /// Computes influence[i,j] = (H⁻¹ gᵢ)ⱼ / SEⱼ, where:
         /// </para>
         /// <list type="bullet">
         /// <item><description>g? is the score vector (gradient of log f(y?|?)) for observation i</description></item>
-        /// <item><description>H?� is the inverse Fisher information matrix (-Hessian)?�, using data-only Hessian</description></item>
+        /// <item><description>H⁻¹ is the inverse Fisher information matrix (-Hessian)⁻¹, using data-only Hessian</description></item>
         /// <item><description>SE? is the standard error of parameter j</description></item>
         /// </list>
         /// <para>
@@ -1056,7 +1056,7 @@ namespace RMC.BestFit.Estimation
 
             // Use the validated covariance path so numerical failure is explicit.
             Matrix fisherInv = GetCovarianceMatrix();
-            // Compute influence: I_ij = (H?� g?)_j / SE_j
+            // Compute influence: I_ij = (H⁻¹ gᵢ)_j / SE_j
             var influence = new double[n, NumberOfParameters];
             var se = Enumerable.Range(0, NumberOfParameters)
                 .Select(index => Math.Sqrt(fisherInv[index, index]))
@@ -1064,7 +1064,7 @@ namespace RMC.BestFit.Estimation
 
             for (int i = 0; i < n; i++)
             {
-                // Compute H?� g?
+                // Compute H⁻¹ gᵢ
                 for (int j = 0; j < NumberOfParameters; j++)
                 {
                     double inflJ = 0;
@@ -1089,11 +1089,11 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Computes D_i = g?? H?� g? / p, where:
+        /// Computes D_i = gᵢᵀ H⁻¹ gᵢ / p, where:
         /// </para>
         /// <list type="bullet">
         /// <item><description>g? is the score vector (gradient of log f(y?|?)) for observation i</description></item>
-        /// <item><description>H?� is the inverse Fisher information matrix (-Hessian)?�, using data-only Hessian</description></item>
+        /// <item><description>H⁻¹ is the inverse Fisher information matrix (-Hessian)⁻¹, using data-only Hessian</description></item>
         /// <item><description>p is the number of parameters</description></item>
         /// </list>
         /// <para>
@@ -1124,7 +1124,7 @@ namespace RMC.BestFit.Estimation
 
             for (int i = 0; i < n; i++)
             {
-                // Compute g?? H?� g?
+                // Compute gᵢᵀ H⁻¹ gᵢ
                 double quadForm = 0;
                 for (int j = 0; j < NumberOfParameters; j++)
                 {

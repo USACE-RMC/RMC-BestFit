@@ -338,7 +338,7 @@ namespace RMC_BestFit
                 SetTableColumnHeaders();
             }
             // TrainingTimeSteps / ForecastingTimeSteps changes are owned by the analysis
-            // layer (Phase 6 whitelist + Phase 3b reprocess pattern). The AnalysisResults
+            // layer (reprocess pattern). The AnalysisResults
             // PropertyChanged branch above refreshes plots and tables when the rebuild
             // completes — no separate App-side trigger needed. Note: TrainingTimeSteps
             // changes the fit and follows the ClearResults path (no wait cursor); only

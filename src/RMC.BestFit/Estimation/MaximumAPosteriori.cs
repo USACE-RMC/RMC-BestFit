@@ -1046,8 +1046,8 @@ namespace RMC.BestFit.Estimation
         /// <returns>A jagged array where gradients[i][j] is ?log f(y?|?)/???.</returns>
         /// <remarks>
         /// <para>
-        /// Uses the central difference formula: ?f/??? � [f(?+h?e?) - f(?-h?e?)] / (2h?),
-        /// where h? = max(|??| � 1e-4, 1e-3). Same step size strategy as
+        /// Uses the central difference formula: ∂f/∂θⱼ ≈ [f(θ+hⱼeⱼ) - f(θ-hⱼeⱼ)] / (2hⱼ),
+        /// where hⱼ = max(|θⱼ| × 1e-4, 1e-3). Same step size strategy as
         /// <see cref="MaximumLikelihood.GetCooksDistance"/> and
         /// <see cref="LeverageDiagnostics.ComputeNumericalHessianPublic"/>.
         /// </para>
@@ -1086,7 +1086,7 @@ namespace RMC.BestFit.Estimation
 
             // Use the validated covariance path so numerical failure is explicit.
             Matrix fisherInv = GetCovarianceMatrix();
-            // Compute influence: I_ij = (H?� g?)_j / SE_j
+            // Compute influence: I_ij = (H⁻¹ gᵢ)_j / SE_j
             var influence = new double[n, NumberOfParameters];
             var se = Enumerable.Range(0, NumberOfParameters)
                 .Select(index => Math.Sqrt(fisherInv[index, index]))
@@ -1117,7 +1117,7 @@ namespace RMC.BestFit.Estimation
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Cook's D_i = g?? H?� g? / p where H is the full posterior Hessian (data + prior)
+        /// Cook's D_i = gᵢᵀ H⁻¹ gᵢ / p where H is the full posterior Hessian (data + prior)
         /// and p is the number of parameters.
         /// </para>
         /// <para>
@@ -1145,7 +1145,7 @@ namespace RMC.BestFit.Estimation
 
             for (int i = 0; i < n; i++)
             {
-                // Compute g?? H?� g?
+                // Compute gᵢᵀ H⁻¹ gᵢ
                 double quadForm = 0;
                 for (int j = 0; j < NumberOfParameters; j++)
                 {

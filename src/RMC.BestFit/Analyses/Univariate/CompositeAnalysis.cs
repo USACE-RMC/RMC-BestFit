@@ -249,7 +249,7 @@ namespace RMC.BestFit.Analyses
         /// child) plus the outer caller's single <see cref="ClearResults"/>. Each
         /// <see cref="ClearResults"/> raises <c>AnalysisResults</c> PropertyChanged,
         /// which the App's <c>UpdateFrequencyPlot</c> handler treats as a full plot
-        /// rebuild � producing visible flicker and a wait-cursor flash for every child.
+        /// rebuild — producing visible flicker and a wait-cursor flash for every child.
         /// This guard collapses the cascade to a single ClearResults at the outer
         /// caller's site.
         /// </summary>
@@ -472,9 +472,9 @@ namespace RMC.BestFit.Analyses
             // AnalysisResults = null with IsEstimated still true), then MCMC, then assigns
             // a fresh AnalysisResults, then finally flips IsEstimated to true (see
             // UnivariateAnalysis.RunAsync line 510). The "AnalysisResults"-only branch fires
-            // EstimateModelWeights at every step of that sequence � but at the moment a new
+            // EstimateModelWeights at every step of that sequence — but at the moment a new
             // AnalysisResults is set, IsEstimated is still false, so the child is filtered out
-            // by EstimateModelWeights' "valid sub-analyses" check (CompositeAnalysis.cs:561)
+            // by EstimateModelWeights' valid-sub-analyses check
             // and ends up with weight=0. The IsEstimated handler below catches the final
             // transition so the weights resync to the now-fully-fit child without the user
             // having to toggle ModelAverageMethod manually.
@@ -487,7 +487,7 @@ namespace RMC.BestFit.Analyses
             }
             else if (e.PropertyName == nameof(WeightedUnivariateAnalysis.Weight))
             {
-                // Skip the per-Weight ClearResults when EstimateModelWeights is the writer �
+                // Skip the per-Weight ClearResults when EstimateModelWeights is the writer —
                 // the cascading rebuild fires N AnalysisResults PropertyChanged events in
                 // the App, producing flicker and a wait-cursor flash per child. The caller
                 // (e.g. ModelAverageMethod setter) invokes ClearResults once at the end.
@@ -803,7 +803,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -822,9 +822,9 @@ namespace RMC.BestFit.Analyses
                     // PropertyChanged fires inside CreateFrequencyAnalysisResultsAsync, the
                     // App control's gates (Element.IsEstimated == true && AnalysisResults != null)
                     // see the analysis as estimated and draw the curves. Without this, the batch
-                    // path � which calls inner.RunAsync directly without the UI wrapper's
-                    // post-await RaisePropertyChange � leaves the plot/grids empty. Mirrors the
-                    // B17C pattern (Bulletin17CAnalysis.cs:558).
+                    // path — which calls inner.RunAsync directly without the UI wrapper's
+                    // post-await RaisePropertyChange — leaves the plot/grids empty. Mirrors the
+                    // B17C pattern in Bulletin17CAnalysis.
                     _isEstimated = true;
                     await CreateFrequencyAnalysisResultsAsync(progressReporter);
                     RaisePropertyChange(nameof(IsEstimated));
@@ -924,9 +924,9 @@ namespace RMC.BestFit.Analyses
                         // regardless of how fast individual iterations are. The
                         // OperationCanceledException it raises pops as a "first-chance
                         // exception" in the Visual Studio debugger when CLR exceptions
-                        // are enabled in Debug ? Windows ? Exception Settings, but the
-                        // outer catch in RunAsync (CompositeAnalysis.cs:714) handles it
-                        // correctly � the user sees a clean cancel in Release mode and
+                        // are enabled in the debugger's exception settings, but the
+                        // outer catch in RunAsync handles it
+                        // correctly — the user sees a clean cancel in Release mode and
                         // when running outside the debugger. (Silent-return + phase-
                         // boundary check is theoretically equivalent but only catches
                         // the cancel between Parallel.For dispatches, which can be

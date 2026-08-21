@@ -541,7 +541,6 @@ namespace RMC_BestFit
                     // thousands of MCMC samples per chain; a per-mouse-move O(n) nearest-point
                     // scan across 20 chains saturates the UI thread. IsHitTestEnabled=false short-
                     // circuits before GetNearestPoint is ever called, eliminating the cost.
-                    // (wpf-framework OxyPlot Phase 1 item 1.1.)
                     IsHitTestEnabled = false,
                     TrackerFormatString = trackerFormat,
                     // Activates wpf-framework's fused extract-decimate-transform fast path in
