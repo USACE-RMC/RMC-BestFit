@@ -12,4 +12,5 @@ composite.md
 time-series.md
 rating-curve.md
 bivariate.md
+spatial-extremes.md
 references.md

@@ -84,8 +84,8 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Confirmed defect | Fix plan pending approval | Failed - fast contract `Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` rejects a valid model | [Report](../verification/rating-curve.md#tr-045---aligned-pair-validation) | 2026-08-21 |
 | [TR-046](#tr-046) | Manual transform state rebuild | High | Confirmed defect; corrected | Complete | Passed - fast persistence and independent likelihood oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
-| [TR-048](#tr-048) | Spatial missing-site marginalization | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-049](#tr-049) | Spatial likelihood decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-048](#tr-048) | Spatial missing-site marginalization | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; scalar and pointwise cells reproduce the zero-placeholder value against the R `mvtnorm` observed-subset oracle | [Report](../verification/spatial-extremes.md#confirmation-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
+| [TR-049](#tr-049) | Spatial likelihood decomposition | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; the data likelihood carries the Gaussian-process density and the scalar/pointwise identities fail, while the posterior kernel matches the oracle | [Report](../verification/spatial-extremes.md#confirmation-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
 | [TR-050](#tr-050) | Spatial cross-validation result retention | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-051](#tr-051) | Spatial held-out-site leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-052](#tr-052) | Spatial held-out covariates | High | Unreviewed; failure mode restated | Not started | Planned | This register | 2026-08-21 |
@@ -93,7 +93,7 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - scoped correction complete | Corrected with caveats | Passed - source audit | [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-07-25 |
 | [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-057](#tr-057) | Spatial Godambe decomposition | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-057](#tr-057) | Spatial Godambe decomposition | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; the scalar-likelihood score for the error scale is -31.38 while the pointwise score is 0 | [Report](../verification/spatial-extremes.md#confirmation-runs-21-august-2026) | 2026-08-21 |
 | [TR-058](#tr-058) | Regional posterior interval construction | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-059](#tr-059) | Spatial site-weight interpretation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-060](#tr-060) | Spatial distance units | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -940,11 +940,11 @@ retain source and binary compatibility.
 <a id="tr-048"></a>
 ## TR-048 — Spatial Copula Does Not Marginalize Missing Sites
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started.
+**Implementation status.** Not started; the observed-subset copula evaluation awaits approval in Phase 6 Batch 6.3.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Failed - confirms the defect. Against the R `mvtnorm` oracle on a five-site network with four partially observed rows, `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix` returns the zero-placeholder full-dimensional value `-238.53821556069616` instead of the marginalized `-238.89272936973`, and the pointwise cell reproduces the placeholder row values; the complete-row and marginal-only convention cells pass. See the [spatial verification chapter](../verification/spatial-extremes.md#confirmation-runs-21-august-2026).
 
 **Evidence.** In both scalar and pointwise `SpatialGEV` likelihoods, a missing site is assigned latent Gaussian score `z[j] = 0.0`, after which the full-dimensional Gaussian-copula density is evaluated. The correct observed-data likelihood uses the correlation submatrix for the sites observed in that row.
 
@@ -955,11 +955,11 @@ retain source and binary compatibility.
 <a id="tr-049"></a>
 ## TR-049 — Spatial Likelihood Decomposition Is Internally Inconsistent
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started.
+**Implementation status.** Not started; the prior-side classification of the Gaussian-process densities awaits approval in Phase 6 Batch 6.3.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Failed - confirms the defect. For the oracle's location-error model the data log likelihood equals the observation terms plus the process density (`-160.607` = `-169.072 + 8.464`), the pointwise data sum omits the process density, and the prior/pointwise-prior identity fails; the posterior-kernel invariance cell passes, so the correction changes only the decomposition. See the [spatial verification chapter](../verification/spatial-extremes.md#confirmation-runs-21-august-2026).
 
 **Evidence.** `SpatialGEV.DataLogLikelihood` includes Gaussian-process spatial-error densities. `PointwiseDataLogLikelihoodComponents` omits them, while `PointwisePriorLogLikelihood` emits them even though the inherited scalar `PriorLogLikelihood` does not. Source remarks acknowledge that the scalar/pointwise sum identities are broken and that WAIC/LOO omit the spatial-error process.
 
@@ -1075,11 +1075,11 @@ retain source and binary compatibility.
 <a id="tr-057"></a>
 ## TR-057 — Godambe Covariance Mixes Incompatible Likelihood Decompositions
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started.
+**Implementation status.** Not started; the consistent estimating equations and the explicit singular-Hessian failure await approval in Phase 6 Batch 6.3.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Failed - confirms the defect. `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseGradientsAgree` finds a scalar-likelihood score of `-31.375` for the error scale where the pointwise score is `0`, so the sensitivity and variability matrices derive from different estimating equations. See the [spatial verification chapter](../verification/spatial-extremes.md#confirmation-runs-21-august-2026).
 
 **Evidence.** `ComputeGodambeCovariance` forms its Hessian from scalar `SpatialGEV.DataLogLikelihood`, which includes spatial-error Gaussian-process densities, but forms its score outer products from `PointwiseDataLogLikelihood`, which omits those densities. If the Hessian is singular, the method returns the variability matrix `J` itself as though it were a covariance matrix.
 

@@ -644,3 +644,22 @@ distribution function. Each method below ran once through `scripts/run-verificat
 | `AnalysisInformationCriteriaRoutingTests.BivariateCriteria_UseOneDataLikelihoodCallAtMap` | Fast core | Bivariate point-estimate results evaluate the copula data likelihood once at the stored MAP and route it to AIC/BIC (TR-047) | Passed |
 | `BivariateAnalysisParameterRecoveryTests` (7 copula families) | Verification | Default-setting Bayesian recovery, recorded in the 21 August default-settings table above | Passed 7/7 |
 | `CoincidentFrequencyAnalysisTests` (3 cells) | Verification | Closed-form sum-of-Normals response surface, recorded in the 21 August default-settings table above | Passed 3/3 |
+
+## Phase 6 Batch 6.3 spatial likelihood confirmation - 21 August 2026
+
+`spatial-copula-likelihood-oracle.json` (manifest row recorded before the runs) defines with R
+`mvtnorm` the observed-site marginalized Gaussian-copula likelihood of a five-site model with
+patterned missing sites, the complete-row likelihood, and a location-error model whose observation
+terms and Gaussian-process density are recorded separately. Each method ran once through
+`scripts/run-verification-test.ps1` on current source.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix` | Verification | Scalar likelihood equals the observed-subset oracle (`1e-8`) | Failed - confirms TR-048 (returns the zero-placeholder value) |
+| `SpatialGEVLikelihoodOracleTests.MissingSites_PointwiseRows_MatchObservedSubsetOracle` | Verification | Pointwise rows equal the observed-subset rows (`1e-10`) | Failed - confirms TR-048 |
+| `SpatialGEVLikelihoodOracleTests.CompleteRows_CopulaLikelihood_MatchesIndependentOracle` | Verification | Complete-row copula likelihood equals the oracle | Passed |
+| `SpatialGEVLikelihoodOracleTests.MarginalOnly_WithoutCopula_MatchesIndependentOracle` | Verification | Marginal-only likelihood equals the Hosking GEV oracle | Passed |
+| `SpatialGEVLikelihoodOracleTests.LocationErrorModel_PosteriorKernel_IsInvariantToTheDecomposition` | Verification | Posterior kernel equals observation terms + process density + parameter priors | Passed |
+| `SpatialGEVLikelihoodOracleTests.LocationErrorModel_DataLogLikelihood_ExcludesProcessDensity` | Verification | Data likelihood holds observation terms only | Failed - confirms TR-049 |
+| `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseDecompositionsAgree` | Verification | Data equals pointwise sum; prior equals pointwise prior sum | Failed - confirms TR-049 |
+| `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseGradientsAgree` | Verification | Scalar and pointwise gradients agree (`1e-4`) | Failed - confirms TR-057 |

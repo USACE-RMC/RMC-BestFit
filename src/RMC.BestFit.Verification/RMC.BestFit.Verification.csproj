@@ -54,6 +54,7 @@
     <None Include="..\..\verification\data\rating-curve\rating-curve-example-fixtures.json" Link="VerificationData\rating-curve-example-fixtures.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\rating-curve\rating-curve-likelihood-oracle.json" Link="VerificationData\rating-curve-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\bivariate\copula-estimation-oracle.json" Link="VerificationData\copula-estimation-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\spatial-extremes\spatial-copula-likelihood-oracle.json" Link="VerificationData\spatial-copula-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
