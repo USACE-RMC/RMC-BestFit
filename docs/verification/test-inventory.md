@@ -415,17 +415,26 @@ baselines remain exact. The R artifact and generator were committed before C# ev
 
 | Method | Project | Oracle or contract | Tolerance/status |
 |---|---|---|---|
+| `TimeSeriesPredictionReintegrationTests.AutoRegressivePrediction_ConditionsOnTrainingAndRecursesAfterBoundary` | Core Tests | AR lags use observed training values through the first forecast, then generated values | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.MovingAveragePrediction_ConditionsOnTrainingAndRecursesAfterBoundary` | Core Tests | MA residuals remain observation-conditioned through training and expire after the boundary | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.ArimaD1Prediction_ConditionsOnTrainingAndForecastBoundary` | Core Tests | Irregular `d=1` path uses preceding observed levels inside training and at horizon one | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.ArimaD2Prediction_ConditionsOnObservedDifferenceStatesAtBoundary` | Core Tests | Irregular `d=2` path uses observed level/first-difference states, then advances generated states | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.ArimaxD1Prediction_ConditionsOnTrainingAndForecastBoundary` | Core Tests | Conditional boundary reconstruction with an exact-date level covariate and holdout sentinel | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.LogArimaD1Prediction_ConditionsOnTransformedTrainingBoundary` | Core Tests | Conditional reconstruction on log scale before one inverse transform | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.ArimaD1LinearPrediction_ReintegratesExactLengthAndComponents` | Core Tests | `d=1`, zero/positive horizon, raw length and component `k+d` map | `1E-12`; two passing rows |
 | `TimeSeriesPredictionReintegrationTests.ArimaD2QuadraticPrediction_ReintegratesExactRecurrence` | Core Tests | Constant second differences reconstruct square-number levels and a two-slot conditioning prefix | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.ArimaxD1Prediction_UsesDateIndexedLevelCovariateAndReintegrates` | Core Tests | Exact-date level covariate drives first differences at raw slots `k+1` | `1E-12`; passed |
-| `TimeSeriesPredictionReintegrationTests.LogTransformedD1Predictions_ReintegrateBeforeInverseTransform` | Core Tests | ARIMA and ARIMAX integrate on log scale and inverse-transform the complete path once | `1E-12`; passed |
+| `TimeSeriesPredictionReintegrationTests.LogTransformedD1Predictions_ReintegrateBeforeInverseTransform` | Core Tests | Exact recurrence on log scale followed by one inverse transform | `1E-12`; passed |
 | `TimeSeriesPredictionReintegrationTests.NoneD0FixedSeedPrediction_RetainsGoldenArraysBitForBit` | Core Tests | Pre-change ARIMA/ARIMAX `Transform.None`, `d=0` values and every component vector | Exact double equality; passed |
-| `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Verification | Hand ARIMA(0,2,0) square recurrence and logarithmic ARIMAX(0,1,0,0) level-covariate recurrence | `1E-10`; guarded pass 1/1 |
+| `TimeSeriesAnalysisControlSourceTests.PredictionPlot_SplitsAtFinalTrainingIndex` | App Tests | Training and prediction credible-interval series share the final training index and prediction begins there | Exact source contract; passed |
+| `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Verification | Irregular ARIMA `d=2` and logarithmic ARIMAX `d=1` hand recurrences distinguish observed training states, the first forecast anchor, later recursion, and holdout exclusion | `1E-10`; guarded pass 1/1 |
+| `Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary` | Verification | Exactly 1,000 fixed seeds; conditional training and horizon-one variance `1`, then random-walk forecast variances `2` and `3` | Four Monte Carlo standard errors with 3% variance floor; guarded pass 1/1 |
 
-The complete package gates pass Core 3,213/3,213, UI 578/578, App 440/440, and API 498/498.
+The corrected package gates pass Core 3,237/3,237, UI 578/578, App 444/444, and API 498/498.
 The strict Debug solution build reports zero warnings/errors, and UI/App signature baselines remain
-exact. No external artifact is required for the embedded analytical recurrence; the verification
-source hash and exact command/TRX evidence are recorded in [Time-Series Verification](time-series.md).
+exact. No external artifact is required for the embedded analytical recurrences; source hashes,
+the complete-path failure history, and exact command/TRX evidence are recorded in
+[Time-Series Verification](time-series.md).
 
 ## TR-038 AR/MA/ARIMA transformed generation
 
@@ -487,7 +496,7 @@ is retained in the time-series report. No full Verification run occurred.
 | `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; unchanged production DEMCzs defaults asserted before/after; independently calculated central 95%, MAP 25%, R-hat/ESS, one-step recurrence | **Passed** - 1/1 in 24.611 s |
 | `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 110-step burn-in, 1,000 retained observations, seed 12345, unchanged 5% gate | **Passed** - 1/1 in 0.198 s |
 | `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and unchanged production-default Bayesian recovery contract | **Passed** - 1/1 in 24.097 s |
-| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; same-point likelihood and complete-path prediction | **Passed** - 1/1 against the direct conditional oracle |
+| `Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; same-point likelihood and forecast level conditioned on the final observed training state | **Passed** - 1/1 against the direct conditional oracle |
 | `Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 30.642 s |
 | `Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R conditional ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, same-point likelihood; unchanged production Differential Evolution default | **Passed** - 1/1 in 0.516 s |
 | `Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 37.241 s |

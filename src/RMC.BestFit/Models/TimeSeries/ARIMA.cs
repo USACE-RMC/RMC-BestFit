@@ -1066,10 +1066,15 @@ namespace RMC.BestFit.Models
                 }
             }
 
-            // Model step k maps to raw slot k+d. Exactly T-d+h model-scale differences are
-            // reconstructed from the first d observed transformed levels, yielding T+h levels.
+            // Model step k maps to raw slot k+d. Fitted levels condition on the observed state
+            // at raw slot k+d-1; the first forecast starts from the final training state and
+            // later forecasts recurse from generated states.
             double[] y = DOrder > 0
-                ? IntegratePredictedDifferences(modelY, _trainingTimeSeries, DOrder)
+                ? TimeSeriesPredictionIntegrator.ReconstructConditionalLevels(
+                    modelY,
+                    _trainingTimeSeries,
+                    TrainingTimeSteps,
+                    DOrder)
                 : modelY;
 
             // Step B — Inverse transform back to the original scale. Posterior-median point
@@ -1086,48 +1091,6 @@ namespace RMC.BestFit.Models
             }
 
             return (y, interceptPart, arPart, maPart);
-        }
-
-        /// <summary>
-        /// Reconstructs transformed levels from highest-order predicted differences and the first
-        /// observed transformed anchors.
-        /// </summary>
-        /// <param name="differences">Predicted values on the <paramref name="order"/>-difference scale.</param>
-        /// <param name="transformedLevels">Observed transformed levels supplying the first <paramref name="order"/> anchors.</param>
-        /// <param name="order">The differencing order.</param>
-        /// <returns>The reconstructed transformed levels.</returns>
-        /// <exception cref="InvalidOperationException">Fewer than <paramref name="order"/> observed transformed anchors are available.</exception>
-        private static double[] IntegratePredictedDifferences(double[] differences, TimeSeries transformedLevels, int order)
-        {
-            if (transformedLevels == null || transformedLevels.Count < order)
-                throw new InvalidOperationException($"At least {order} transformed observations are required to reverse differencing.");
-
-            var initialValues = new double[order];
-            var workingAnchors = new double[order];
-            for (int i = 0; i < order; i++)
-                workingAnchors[i] = transformedLevels[i].Value;
-            initialValues[0] = workingAnchors[0];
-
-            int anchorCount = order;
-            for (int level = 1; level < order; level++)
-            {
-                for (int i = 0; i < anchorCount - 1; i++)
-                    workingAnchors[i] = workingAnchors[i + 1] - workingAnchors[i];
-                anchorCount--;
-                initialValues[level] = workingAnchors[0];
-            }
-
-            double[] current = (double[])differences.Clone();
-            for (int level = order - 1; level >= 0; level--)
-            {
-                var integrated = new double[current.Length + 1];
-                integrated[0] = initialValues[level];
-                for (int i = 0; i < current.Length; i++)
-                    integrated[i + 1] = integrated[i] + current[i];
-                current = integrated;
-            }
-
-            return current;
         }
 
         /// <summary>

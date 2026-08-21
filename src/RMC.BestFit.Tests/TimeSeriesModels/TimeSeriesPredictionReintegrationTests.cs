@@ -6,13 +6,136 @@ using NumericTimeSeries = Numerics.Data.TimeSeries;
 namespace RMC.BestFit.Tests.TimeSeriesModels;
 
 /// <summary>
-/// Regression tests for ARIMA and ARIMAX prediction reintegration and component alignment.
+/// Regression tests for time-series prediction conditioning, reintegration, and component alignment.
 /// </summary>
 [TestClass]
 public class TimeSeriesPredictionReintegrationTests
 {
     private const double Tolerance = 1E-12;
     private static readonly DateTime s_startDate = new(2002, 3, 4);
+
+    /// <summary>
+    /// Verifies AR predictions use observed training lags through the boundary and generated
+    /// values only after forecasting has begun.
+    /// </summary>
+    [TestMethod]
+    public void AutoRegressivePrediction_ConditionsOnTrainingAndRecursesAfterBoundary()
+    {
+        double[] raw = { 10, 14, 15, 999 };
+        var model = new AutoRegressive(CreateSeries(raw), order: 1, includeIntercept: false)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.None,
+        };
+        model.TrainingTimeSteps = 3;
+
+        var result = model.Predict(new[] { 0.5, 1.0 }, 2, -1);
+
+        AssertArrayEqual(new[] { 10.0, 5.0, 7.0, 7.5, 3.75 }, result.Y, "AR conditional prediction");
+        AssertArrayEqual(new[] { 0.0, 5.0, 7.0, 7.5, 3.75 }, result.ARPart, "AR component");
+    }
+
+    /// <summary>
+    /// Verifies MA predictions use observed training residuals through the boundary and let
+    /// residual memory expire only after forecasting has begun.
+    /// </summary>
+    [TestMethod]
+    public void MovingAveragePrediction_ConditionsOnTrainingAndRecursesAfterBoundary()
+    {
+        double[] raw = { 2, 4, 3, 999 };
+        var model = new MovingAverage(CreateSeries(raw), order: 1, includeIntercept: true)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.None,
+        };
+        model.TrainingTimeSteps = 3;
+
+        var result = model.Predict(new[] { 1.0, 0.5, 1.0 }, 2, -1);
+
+        AssertArrayEqual(new[] { 1.0, 1.5, 2.25, 1.375, 1.0 }, result.Y, "MA conditional prediction");
+        AssertArrayEqual(new[] { 0.0, 0.5, 1.25, 0.375, 0.0 }, result.MAPart, "MA component");
+    }
+
+    /// <summary>
+    /// Verifies first-difference fitted values are conditioned on the preceding observed level,
+    /// the first forecast starts from the final training level, and later forecasts recurse.
+    /// </summary>
+    [TestMethod]
+    public void ArimaD1Prediction_ConditionsOnTrainingAndForecastBoundary()
+    {
+        double[] raw = { 10, 14, 15, 999 };
+        var model = new ARIMA(CreateSeries(raw), 0, 1, 0, true)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.None,
+        };
+        model.TrainingTimeSteps = 3;
+
+        var result = model.Predict(new[] { 2.0, 1.0 }, 2, -1);
+
+        AssertArrayEqual(new[] { 10.0, 12.0, 16.0, 17.0, 19.0 }, result.Y, "ARIMA d=1 conditional levels");
+        AssertComponentAlignment(result.InterceptPart, 1, 2.0, result.Y.Length, "ARIMA d=1 intercept");
+    }
+
+    /// <summary>
+    /// Verifies second-difference fitted values use the observed level and first-difference
+    /// states, then advance both states recursively after the training boundary.
+    /// </summary>
+    [TestMethod]
+    public void ArimaD2Prediction_ConditionsOnObservedDifferenceStatesAtBoundary()
+    {
+        double[] raw = { 1, 4, 10, 999 };
+        var model = new ARIMA(CreateSeries(raw), 0, 2, 0, true)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.None,
+        };
+        model.TrainingTimeSteps = 3;
+
+        var result = model.Predict(new[] { 2.0, 1.0 }, 2, -1);
+
+        AssertArrayEqual(new[] { 1.0, 4.0, 9.0, 18.0, 28.0 }, result.Y, "ARIMA d=2 conditional levels");
+        AssertComponentAlignment(result.InterceptPart, 2, 2.0, result.Y.Length, "ARIMA d=2 intercept");
+    }
+
+    /// <summary>
+    /// Verifies ARIMAX first-difference predictions use the date-aligned level covariate while
+    /// conditioning level reconstruction at the training/forecast boundary.
+    /// </summary>
+    [TestMethod]
+    public void ArimaxD1Prediction_ConditionsOnTrainingAndForecastBoundary()
+    {
+        double[] raw = { 10, 14, 15, 999 };
+        double[] covariate = { 0, 1, 1, 1, 1 };
+        ARIMAX model = CreateArimax(raw, covariate, 1, ModelTransform.None, trainingSteps: 3);
+
+        var result = model.Predict(new[] { 2.0, 1.0 }, 2, -1);
+
+        AssertArrayEqual(new[] { 10.0, 12.0, 16.0, 17.0, 19.0 }, result.Y, "ARIMAX d=1 conditional levels");
+        AssertArrayEqual(new[] { 0.0, 2.0, 2.0, 2.0, 2.0 }, result.CovariatePart, "ARIMAX covariate component");
+    }
+
+    /// <summary>
+    /// Verifies logarithmic first-difference reconstruction conditions on observed transformed
+    /// levels and applies the inverse transform only after boundary-aware reconstruction.
+    /// </summary>
+    [TestMethod]
+    public void LogArimaD1Prediction_ConditionsOnTransformedTrainingBoundary()
+    {
+        double[] transformed = { 1.0, 1.5, 1.6, 9.0 };
+        double[] raw = transformed.Select(Math.Exp).ToArray();
+        var model = new ARIMA(CreateSeries(raw), 0, 1, 0, true)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = ModelTransform.Logarithmic,
+        };
+        model.TrainingTimeSteps = 3;
+
+        var result = model.Predict(new[] { 0.1, 0.25 }, 2, -1);
+        double[] expected = new[] { 1.0, 1.1, 1.6, 1.7, 1.8 }.Select(Math.Exp).ToArray();
+
+        AssertArrayEqual(expected, result.Y, "log ARIMA d=1 conditional levels");
+    }
 
     /// <summary>
     /// Verifies first-difference predictions reconstruct a linear raw sequence for zero and

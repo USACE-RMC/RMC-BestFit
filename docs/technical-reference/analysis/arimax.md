@@ -97,10 +97,12 @@ These mechanisms represent empirical continuation scenarios, not a probabilistic
 ## Forecasting and Simulation
 
 `Predict` calculates exactly $T-d+h$ model-scale values and uses the same exact-date level-
-covariate map as the likelihood. Model step $k$ maps to raw slot $k+d$; inverse differencing begins
-with the first $d$ observed transformed levels, reconstructs exactly $T+h$ transformed levels, and
-then inverse-transforms once. Component arrays retain raw length, with zero conditioning values in
-slots $0,ldots,d-1$. This closes [TR-037](../review-findings.md#tr-037). `ARIMAXAnalysis`
+covariate map as the likelihood. Model step $k$ maps to raw slot $k+d$. Fitted training levels use
+the observed lower-order state at the preceding raw index; the first forecast uses the final
+observed training states, and later forecasts recurse from generated states. Exactly $T+h$
+transformed levels are reconstructed and then inverse-transformed once. Component arrays retain
+raw length, with zero conditioning values in slots $0,\ldots,d-1$. This closes
+[TR-037](../review-findings.md#tr-037). `ARIMAXAnalysis`
 combines posterior parameter and innovation draws, and its bands include whichever covariate
 extension is invoked, so clearly state that scenario.
 
@@ -178,8 +180,9 @@ Implementation: `Models/TimeSeries/ARIMAX.cs`; orchestration:
 `Analyses/TimeSeries/ARIMAXAnalysis.cs`. Fast tests cover configuration, serialization, prediction
 shapes, covariate extension, transformations, exact-date alignment, holdout isolation, and
 likelihood decomposition. The independent R alignment oracle verifies `d=0,1,2` at `1E-10`.
-Fast linear/logarithmic recurrence and fixed-seed tests plus the focused analytical oracle verify
-prediction reintegration at `1E-10`. Generation scale identities remain assigned to TR-039.
+Fast irregular conditional, logarithmic, and fixed-seed tests plus the focused analytical and
+exactly 1,000-realization variance oracles verify the prediction boundary. Generation scale
+identities remain assigned to TR-039.
 
 ## References
 

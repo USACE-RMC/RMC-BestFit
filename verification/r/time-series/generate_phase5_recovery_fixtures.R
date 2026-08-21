@@ -75,23 +75,6 @@ generate_arima_fixture <- function() {
   transformed_levels <- c(log(initial_raw), log(initial_raw) + cumsum(differences))
   next_difference <- phi * tail(differences, 1L) + theta * tail(innovations, 1L)
 
-  # Predict() returns one complete fitted/forecast path reintegrated from the first
-  # transformed anchor. Inside training it uses observed AR lags and conditional
-  # residuals; the forecast step then propagates the final observed lag/residual.
-  predicted_differences <- numeric(retained_model_steps + 1L)
-  conditional_residuals <- numeric(retained_model_steps + 1L)
-  predicted_differences[[1L]] <- differences[[1L]]
-  for (position in 2:retained_model_steps) {
-    predicted_differences[[position]] <- phi * differences[[position - 1L]] +
-      theta * conditional_residuals[[position - 1L]]
-    conditional_residuals[[position]] <- differences[[position]] -
-      predicted_differences[[position]]
-  }
-  predicted_differences[[retained_model_steps + 1L]] <-
-    phi * tail(differences, 1L) + theta * conditional_residuals[[retained_model_steps]]
-  stopifnot(abs(tail(predicted_differences, 1L) - next_difference) <= recurrence_tolerance)
-  prediction_complete_path <- exp(log(initial_raw) + sum(predicted_differences))
-
   list(
     dates = format(dates, "%Y-%m-%d"),
     raw = unname(exp(transformed_levels)),
@@ -114,8 +97,7 @@ generate_arima_fixture <- function() {
     theta = theta,
     sigma = sigma,
     next_difference_zero_innovation = unname(next_difference),
-    next_raw_zero_innovation = unname(exp(tail(transformed_levels, 1L) + next_difference)),
-    prediction_complete_path_zero_innovation = unname(prediction_complete_path)
+    next_raw_zero_innovation = unname(exp(tail(transformed_levels, 1L) + next_difference))
   )
 }
 
@@ -245,19 +227,6 @@ generate_arimax_fixture <- function() {
   next_mean <- intercept + beta * next_covariate
   next_difference <- next_mean + phi * (tail(differences, 1L) - tail(means, 1L))
 
-  # Match the approved complete-path Predict() contract independently. The first
-  # model-scale difference conditions the AR buffer; all later training means use
-  # observed lagged differences, and the final entry is the forecast difference.
-  predicted_differences <- numeric(retained_model_steps + 1L)
-  predicted_differences[[1L]] <- differences[[1L]]
-  for (position in 2:retained_model_steps) {
-    predicted_differences[[position]] <- means[[position]] +
-      phi * (differences[[position - 1L]] - means[[position - 1L]])
-  }
-  predicted_differences[[retained_model_steps + 1L]] <- next_difference
-  stopifnot(abs(tail(predicted_differences, 1L) - next_difference) <= recurrence_tolerance)
-  prediction_complete_path <- initial_raw + sum(predicted_differences)
-
   list(
     dates = format(dates, "%Y-%m-%d"),
     raw = unname(raw),
@@ -284,8 +253,7 @@ generate_arimax_fixture <- function() {
     sigma = sigma,
     next_covariate = unname(next_covariate),
     next_difference_zero_innovation = unname(next_difference),
-    next_raw_zero_innovation = unname(tail(raw, 1L) + next_difference),
-    prediction_complete_path_zero_innovation = unname(prediction_complete_path)
+    next_raw_zero_innovation = unname(tail(raw, 1L) + next_difference)
   )
 }
 
@@ -329,7 +297,7 @@ validate_fixture_contract <- function(ar, ma, arima, arimax) {
     exp(c(log(arima$initial_raw), log(arima$initial_raw) + cumsum(arima$differences))),
     "ARIMA integration"
   )
-  stopifnot(is.finite(arima$prediction_complete_path_zero_innovation))
+  stopifnot(is.finite(arima$next_raw_zero_innovation))
 
   arimax_means <- arimax$intercept + arimax$beta * arimax$covariate[2:retained_sample_size]
   arimax_expected <- arimax_means + arimax$phi *
@@ -342,7 +310,7 @@ validate_fixture_contract <- function(ar, ma, arima, arimax) {
     c(arimax$initial_raw, arimax$initial_raw + cumsum(arimax$differences)),
     "ARIMAX integration"
   )
-  stopifnot(is.finite(arimax$prediction_complete_path_zero_innovation))
+  stopifnot(is.finite(arimax$next_raw_zero_innovation))
 }
 
 ar_fixture <- generate_ar_fixture()

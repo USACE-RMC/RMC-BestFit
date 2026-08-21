@@ -666,25 +666,34 @@ seed, likelihood definition, or convergence default changed.
 
 **Review disposition.** Confirmed defect; corrected.
 
-**Implementation status.** Complete. Both predictors calculate exactly $T-d+h$ model-scale
-differences, map model step $k$ to raw slot $k+d$, rebuild $T+h$ transformed levels from the first
-$d$ observed transformed anchors, and inverse-transform once. Existing tuple signatures and raw
+**Implementation status.** Complete after corrective audit. Both predictors calculate exactly
+$T-d+h$ model-scale differences and map model step $k$ to raw slot $k+d$. Fitted levels use the
+observed lower-order state at the preceding raw index throughout training; the first forecast uses
+the final observed training states, and only later forecasts recurse from generated states. The
+inverse transform is applied once after reconstruction. Existing tuple signatures and raw
 component lengths are unchanged; the first $d$ component slots are zero.
 
-**Verification status.** Passed. Fast tests cover `d=1`, `d=2`, zero/positive horizons,
-transformed and untransformed paths, exact-date ARIMAX level covariates, component mapping, and
-bit-for-bit `Transform.None`/`d=0` fixed-seed values. The exact guarded analytical recurrence
-method passes 1/1 at `1E-10`.
+**Verification status.** Passed. Fast tests cover unchanged AR/MA boundaries plus irregular
+ARIMA/ARIMAX `d=1`, `d=2`, zero/positive horizons, transformed and untransformed paths, holdout
+sentinels, exact-date level covariates, component mapping, and bit-for-bit `Transform.None`/`d=0`
+fixed-seed values. The corrected guarded analytical recurrence passes at `1E-10`; an additional
+exactly 1,000-realization oracle verifies that differenced uncertainty remains conditional in
+training and begins recursive accumulation only after the forecast boundary. All four affected
+ARIMA/ARIMAX MLE/Bayesian recovery cells pass against the restored R boundary oracle.
 
 **Evidence.** For first differences, `Difference` stores `d[0]=x[1]-x[0]`. `Predict()` allocates `TrainingTimeSteps + forecastSteps` differenced entries, then overwrites `integrated[0]` with `x[0]` and evaluates `integrated[i]=anchor[i-1]+integrated[i]`. Thus `d[0]` is discarded and output index 1 uses `d[1]`; the differenced vector is also `d` entries too long for an output of the requested undifferenced length. ARIMA and ARIMAX share this integration pattern.
 
-**Impact.** Corrected: fitted and forecast values retain every predicted difference at its raw
-response index, and output/component lengths now match the established UI/App contract.
+**Impact.** Corrected: fitted values no longer accumulate innovations from the start of the
+record, uncertainty no longer fans out through the training period, and forecasting begins from
+the final observed training state. Every predicted difference remains at its raw response index,
+and output/component lengths match the established UI/App contract.
 
-**Correction.** The approved raw/differenced map and integration anchors are implemented without
-changing a public UI/App signature, persisted meaning, seed policy, sampler, prior, tolerance,
-likelihood, optimizer, or convergence default. Generation remains separately governed by TR-038
-and TR-039; final ARIMA/ARIMAX recovery adds one-step predictive checks in Package 10. See
+**Correction.** The approved raw/differenced map and conditional training/forecast boundary are
+implemented without changing a public UI/App signature, persisted meaning, seed policy, sampler,
+prior, tolerance, likelihood, optimizer, or convergence default. Generation remains separately
+governed by TR-038 and TR-039 and continues to use complete-path initialization anchors. The
+verification report explicitly records that commit `3d79c31` introduced complete-path prediction
+and commit `1c0cecd` then incorrectly changed the independent oracle to match it. See
 [time-series verification](../verification/time-series.md#tr-037--arima-and-arimax-prediction-reintegration).
 
 <a id="tr-038"></a>

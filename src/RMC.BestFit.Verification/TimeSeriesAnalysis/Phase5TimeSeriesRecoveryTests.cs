@@ -741,7 +741,7 @@ public class Phase5TimeSeriesRecoveryTests
     }
 
     /// <summary>
-    /// Asserts the deterministic ARIMA forecast difference and complete reintegrated path.
+    /// Asserts the deterministic ARIMA forecast difference and boundary-conditioned raw forecast.
     /// </summary>
     /// <param name="model">The ARIMA model.</param>
     /// <param name="truth">The generating parameters.</param>
@@ -760,12 +760,11 @@ public class Phase5TimeSeriesRecoveryTests
         AssertPrediction(
             fixture,
             prediction.Y[^1],
-            "ARIMA complete path",
-            "prediction_complete_path_zero_innovation");
+            "ARIMA boundary-conditioned forecast");
     }
 
     /// <summary>
-    /// Asserts the deterministic ARIMAX forecast difference and complete reintegrated path.
+    /// Asserts the deterministic ARIMAX forecast difference and boundary-conditioned raw forecast.
     /// </summary>
     /// <param name="model">The ARIMAX model.</param>
     /// <param name="truth">The generating parameters.</param>
@@ -793,8 +792,7 @@ public class Phase5TimeSeriesRecoveryTests
         AssertPrediction(
             fixture,
             prediction.Y[^1],
-            "ARIMAX complete path",
-            "prediction_complete_path_zero_innovation");
+            "ARIMAX boundary-conditioned forecast");
     }
 
     /// <summary>

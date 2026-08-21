@@ -321,26 +321,29 @@ Compatibility checkpoint (20 August 2026): Package 1 captures 853 UI and 1,657 A
 
 Recovery checkpoint (20 August 2026): all eight approved cells pass against committed independent R
 fixtures containing 1,000 retained observations after 110 discarded stationary initialization
-steps. The ARIMA and ARIMAX oracles directly implement BestFit's conditional recurrences and compare
-likelihoods exactly at common parameter vectors. R `stats::arima(method="ML")` state-space/Kalman
+steps. The ARIMA and ARIMAX oracles directly implement BestFit's conditional recurrences, compare
+likelihoods exactly at common parameter vectors, and condition the next raw prediction on the final
+observed training state. R `stats::arima(method="ML")` state-space/Kalman
 fits remain diagnostic rather than exact parameter targets. Fitted MLE values are compared with
 independent conditional-likelihood optima and profiles; Bayesian recovery uses
 `analysis.Results.MAP.Values` and independent posterior MAP values under the exact production
 default priors. Every Bayesian method asserts the resolved `BayesianAnalysis` defaults before and
 after sampling and assigns no MCMC setting. ARIMAX MLE uses the unchanged production Differential
 Evolution default instead of forcing a test-only bounded Nelder-Mead path. The initial seed,
-burn-in, capped-MCMC, mismatched-vector likelihood, prediction-reanchoring, truth-versus-MAP, and
+burn-in, capped-MCMC, mismatched-vector likelihood, prediction-conditioning/oracle, truth-versus-MAP, and
 forced-Nelder-Mead failures remain documented with their artifacts. No seed search, tolerance,
 likelihood, prior, sampler, production optimizer default, convergence default, or production
 algorithm changed.
 
-Final repository gate (20 August 2026): strict Debug compilation with
-`EnforceXmlDocumentation=true` passes with zero warnings/errors. Serial fast gates pass Core
-3,231/3,231, UI 578/578, App 443/443, and API 498/498. UI/App signature baselines match exactly; the
+Final repository gate, refreshed after the prediction correction on 21 August 2026: strict Debug
+compilation with `EnforceXmlDocumentation=true` passes with zero warnings/errors. Serial fast gates
+pass Core 3,237/3,237, UI 578/578, App 444/444, and API 498/498. UI/App signature baselines match exactly; the
 Core baseline differs from the pre-Phase-5 baseline only by the approved read-only
 `TransformLambda` getter on AR, MA, ARIMA, and ARIMAX. Legacy, new, and unknown-optional-attribute
-serialization regressions pass. Artifact hashes are recorded in the report and manifest. The full
-Verification project was not run.
+serialization regressions pass. The corrected hand recurrence, exactly 1,000-realization boundary
+variance oracle, and four prediction-affected ARIMA/ARIMAX recovery cells pass through separate
+exact guarded invocations. Artifact hashes and the full failure history are recorded in the report
+and manifest. The full Verification project was not run.
 
 Findings and required direction:
 
@@ -349,10 +352,13 @@ Findings and required direction:
   freeze it for the full response, persist fitted/manual provenance, and pass holdout-isolation
   regressions plus the independently implemented R profile-likelihood oracle.
 - TR-037: complete. ARIMA and ARIMAX predict exactly `T-d+h` model-scale differences, rebuild
-  `T+h` transformed levels from the first `d` observed transformed anchors, inverse-transform
-  once, and map component `k` to raw slot `k+d`. Hand `d=1`/`d=2`, transformed, component,
-  horizon, and exact `d=0` fixed-seed regressions pass, as does the analytical recurrence oracle
-  at `1E-10`.
+  `T+h` transformed levels conditionally: observed lower-order states are used throughout training
+  and for the first forecast, and only later forecasts recurse from generated states. They
+  inverse-transform once and map component `k` to raw slot `k+d`. AR/MA boundary audits,
+  irregular `d=1`/`d=2`, transformed, component, horizon, holdout-sentinel, and exact `d=0`
+  fixed-seed regressions pass, as do the analytical recurrence oracle at `1E-10` and the exactly
+  1,000-realization boundary-variance oracle. The report explicitly records that commits `3d79c31`
+  and `1c0cecd` first introduced and then incorrectly encoded complete-path prediction behavior.
 - TR-038: complete. AR/MA recursions remain entirely on transformed model scale until one final
   inverse transform. ARIMA generates exactly `max(0,sampleSize-d)` differences, integrates from
   observed or zero transformed anchors, inverse-transforms once, and returns exactly `sampleSize`.

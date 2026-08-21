@@ -40,7 +40,7 @@ are excluded. The existing Core baseline remains independent and unchanged.
 | Assembly | Baseline | Lines | SHA-256 | Fast result |
 |---|---|---:|---|---|
 | `RMC.BestFit.UI.dll` | `RMC.BestFit.UI.Tests/CoreInfrastructure/PublicApiBaseline.txt` | 853 | `05628C483CB18629DADA80085F3C3DBC37BE648C1F61D0AA24B94BB57C291BAE` | Final gate passed as part of UI 578/578 |
-| `RMC-BestFit.dll` | `RMC.BestFit.App.Tests/CoreInfrastructure/PublicApiBaseline.txt` | 1,657 | `241EBBA9760D14D355C48F4D869256FD3DF832CADE37345612299CCEF9832091` | Final gate passed as part of App 443/443 |
+| `RMC-BestFit.dll` | `RMC.BestFit.App.Tests/CoreInfrastructure/PublicApiBaseline.txt` | 1,657 | `241EBBA9760D14D355C48F4D869256FD3DF832CADE37345612299CCEF9832091` | Final gate passed as part of App 444/444 |
 
 The following deterministic compatibility contracts also pass:
 
@@ -380,67 +380,108 @@ not run.
 
 ## TR-037 — ARIMA and ARIMAX prediction reintegration
 
-**Disposition and behavior.** The confirmed off-by-one defect is corrected. Previously, both
-prediction paths allocated `T+h` entries on the differenced scale, overwrote the first entry with
-an integration anchor, and consequently discarded the first stored difference while shifting the
-remaining recurrence. For `d>0`, they now calculate exactly `T-d+h` transformed-difference
-values. Model step `k` maps to raw slot `k+d`; inverse differencing begins with the first `d`
-observed transformed levels and reconstructs exactly `T+h` transformed levels; the inverse
-transform is applied once after reconstruction. For `d=0`, the original recursion, draw order,
-and fixed-seed values are retained bit for bit.
+**Disposition and behavior.** The original off-by-one defect is corrected, and a serious
+post-correction conditioning regression introduced during Phase 5 has also been corrected.
+ARIMA and ARIMAX calculate exactly `T-d+h` transformed-difference values and map model step `k`
+to raw slot `k+d`. The Phase 5 implementation initially reintegrated every fitted difference from
+the first transformed observation. That converted conditional one-step fitted values into a
+single simulated path: training innovations accumulated from the start of the record, training
+intervals widened with time, and forecasting began from a synthetic accumulated level rather than
+the final observed training state.
+
+Prediction now uses observed lower-order states throughout the training window and at the first
+forecast boundary. For `d=1`, transformed fitted and forecast levels obey
+`zHat[r] = zObserved[r-1] + wHat[r]` for `1 <= r < T`,
+`zHat[T] = zObserved[T-1] + wHat[T]`, and
+`zHat[r] = zHat[r-1] + wHat[r]` only for `r > T`. For `d>1`, the same rule is applied at every
+lower difference order: observed level/difference states at raw index `r-1` condition training
+and the first forecast, then generated states advance later forecast horizons. The inverse
+response transform is applied once after reconstruction. For `d=0`, the original recursion, draw
+order, and fixed-seed values remain bit for bit.
 
 Every existing prediction tuple signature and component name remains unchanged. Component arrays
 have raw output length `T+h`; slots `0...d-1` are zero conditioning entries, and model component
 `k` is stored at raw slot `k+d`. ARIMAX prediction uses the Package 5 exact-date level-covariate
-map for both observed and regularly extended response dates. No generation path changes in this
-package; TR-038 and TR-039 remain open.
+map for both observed and regularly extended response dates. The separate
+`GenerateRandomValues` simulation contracts in TR-038 and TR-039 remain unchanged: generation is
+a complete simulated path from observed/zero initialization anchors, whereas `Predict` is
+conditional on observations through the training boundary.
 
 **Compatibility.** No UI/App public or protected signature, XAML binding, property name, enum,
-or serialization meaning changed. The UI and App signature-baseline tests pass in their complete
-suites. Core passes 3,213/3,213, UI 578/578, App 440/440, and API 498/498. The strict Debug
-solution build with `EnforceXmlDocumentation=true` passes all ten projects with zero warnings or
-errors in 9.56 s. The documented XML-validation script remains absent from this checkout.
+or serialization meaning changed. On 21 August 2026, the complete serial gates passed Core
+3,237/3,237, UI 578/578, App 444/444, and API 498/498. The UI and App signature-baseline tests are
+included in those passing suites. The strict Debug solution build with
+`EnforceXmlDocumentation=true` passed all ten projects with zero warnings and zero errors in
+21.06 s. The documented XML-validation script remains absent from this checkout.
 
-**Fast regressions.** `TimeSeriesPredictionReintegrationTests` covers ARIMA `d=1` linear
-reconstruction with zero and positive forecast horizons, ARIMA `d=2` quadratic reconstruction,
-ARIMAX `d=1` exact-date level covariates, logarithmic ARIMA/ARIMAX integration before inverse
-transformation, raw output/component lengths, and the zero conditioning prefix. Its fixed-seed
-control pins every established `Transform.None`, `d=0` output and component value bit for bit for
-both models. The older `ARIMAX_Predict_Differenced_TrainingCIBoundedBySigma` regression was
-removed because it required re-anchoring every in-sample prediction to the preceding observation,
-which directly contradicted the approved complete-path reintegration contract. The replacement
-tests evaluate exact recurrence identities without Monte Carlo thresholds.
+**Fast regressions.** `TimeSeriesPredictionReintegrationTests` retains the linear/quadratic,
+transform, component-index, horizon, output-length, and exact `d=0` fixed-seed contracts. It now
+also contains deliberately irregular training paths that distinguish conditional prediction from
+complete-path simulation:
+
+- `AutoRegressivePrediction_ConditionsOnTrainingAndRecursesAfterBoundary` and
+  `MovingAveragePrediction_ConditionsOnTrainingAndRecursesAfterBoundary` confirm the unchanged
+  AR/MA observation-to-forecast boundary behavior;
+- `ArimaD1Prediction_ConditionsOnTrainingAndForecastBoundary` and
+  `ArimaD2Prediction_ConditionsOnObservedDifferenceStatesAtBoundary` distinguish observed
+  training states, the first forecast anchor, and later recursive forecasts;
+- `ArimaxD1Prediction_ConditionsOnTrainingAndForecastBoundary` combines the corrected boundary
+  with the exact-date level-covariate map; and
+- `LogArimaD1Prediction_ConditionsOnTransformedTrainingBoundary` proves conditioning occurs on
+  transformed levels before the single inverse transform.
+
+Before the production correction, the complete Core run failed exactly the four new ARIMA/ARIMAX
+boundary cases while the AR and MA audit cases passed. After the correction, Core passed
+3,237/3,237. App regression
+`TimeSeriesAnalysisControlSourceTests.PredictionPlot_SplitsAtFinalTrainingIndex` confirms the blue
+training and red prediction intervals share raw index `TrainingTimeSteps-1`, so the display begins
+prediction at the established training boundary.
 
 **Independent oracle.** The exact Verification method is
 `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle`.
-The embedded analytical oracle uses ARIMA(0,2,0) with intercept two, raw training levels
-`[1,4,9,16,25,36]`, `T=6`, `h=2`, `Transform.None`, and no innovations (`seed=-1`); the first
-two levels and constant second differences produce `[1,4,9,16,25,36,49,64]`. Its ARIMAX case
-uses ARIMAX(0,1,0,0), no intercept, eight exact-date level-covariate values
-`[999,1,1,1,1,1,1,1]`, coefficient one, raw training levels `exp(1)...exp(6)`, `T=6`, `h=2`,
-`Transform.Logarithmic`, and no innovations. The resulting model-scale first differences are one
-and the raw oracle is `exp(1)...exp(8)`. The fixed absolute tolerance is `1E-10`; no external
-package, stochastic sample, or external artifact is applicable. The verification source SHA-256
-is `FEB8326A8F70EA56463F8515E16E162F8301583B2BAE65A3C656946D6814B577`.
+The corrected hand oracle uses an irregular ARIMA(0,2,0) response `[1,4,10,999]`, `T=3`, `h=2`,
+intercept two, `Transform.None`, and `seed=-1`; the holdout sentinel is unused and the expected
+conditional path is `[1,4,9,18,28]`. Its logarithmic ARIMAX(0,1,0,0) case uses transformed raw
+levels `[1,1.5,1.6,9]`, `T=3`, `h=2`, exact-date covariates `[999,0.1,0.1,0.1,0.1]`, coefficient
+one, and `seed=-1`; the expected original-scale path is `exp([1,1.1,1.6,1.7,1.8])`. The absolute
+tolerance remains `1E-10`.
 
-**Execution evidence and history.** On 20 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4
-built against the configured local Numerics project. From commit `02f766b` plus the scoped
-Package 6 production/test/report diff, the guarded command was:
+The additional exact method
+`RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary`
+uses exactly 1,000 fixed seeds for both ARIMA(0,1,0) and ARIMAX(0,1,0,0), unit innovation scale,
+raw response `[10,14,15,20,999]`, `T=4`, and `h=3`. The analytical variance is one at every
+conditional training point and at forecast horizon one, then two and three at horizons two and
+three. Means and variances use the predeclared four-Monte-Carlo-standard-error bounds and the
+existing three-percent variance floor. The verification source SHA-256 is
+`073A416A9617A9A274409E74D14554CBED27A6BCDA0C222BDF1B49888955B2CC`.
+
+**Execution evidence and history.** The 20 August history remains material. Commit `3d79c31`
+corrected the difference-vector length but incorrectly reconstructed the prediction as a complete
+path from the first anchor. The perfect linear, quadratic, and exponential fixtures could not
+distinguish that path from conditional fitted values. When recovery later exposed the mismatch,
+commit `1c0cecd` changed the independent R fixture and C# assertion to the same incorrect
+complete-path result instead of correcting production. That oracle change was unauthorized and
+has been removed; the failed recovery evidence is retained below in the recovery history.
+
+On 21 August 2026, .NET SDK 10.0.303 and MSTest.Sdk 3.6.4 built against the configured local
+Numerics project from commit `65045e0` plus the scoped prediction correction. The guarded commands
+were:
 
 ```powershell
 & .\scripts\run-verification-test.ps1 -Test `
   'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle'
+& .\scripts\run-verification-test.ps1 -Test `
+  'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesVerificationTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary'
 ```
 
-The exact method passed 1/1 in 0.393 s. Its TRX is under
-`TestResults/VerificationFocused/20260820-114723-...`. The first guarded attempt could not read
-the installed NuGet configuration inside the filesystem sandbox and ran no test; the identical
-exact command then passed with approved SDK access. Initial test compilation exposed an ambiguous
-test-only `Transform` import and an integer-to-double method-group mismatch, both corrected before
-execution. The first complete Core run then exposed the obsolete in-sample re-anchoring contract
-described above; after replacing that contradictory contract with exact approved recurrences, the
-final Core run passed. No seed, tolerance, prior, sampler, optimizer, likelihood definition, or
-convergence default changed. The complete Verification project was not run.
+The hand method passed 1/1 in 0.436 s under `20260821-090812-...`; its TRX SHA-256 is
+`AC14DB6C7747FC475E0B0F0EC2444FD54F324185DAAEAEEFBD146E673FA02025`.
+The 1,000-realization method passed 1/1 in 0.230 s under `20260821-090212-...`; its TRX SHA-256 is
+`22004CE9CC70AD9F5EF63F0CA0834CA15D30F62F55AE27330BED0F9CACE14E9A`.
+The first guarded attempt could not read the installed NuGet configuration inside the filesystem
+sandbox and ran no test; the identical command passed with approved access. No seed, tolerance,
+prior, sampler, MCMC setting, optimizer, likelihood definition, or convergence default changed.
+The complete Verification project was not run.
 
 ## TR-038 — AR, MA, and ARIMA transformed generation
 
@@ -714,8 +755,8 @@ ARIMA cells these are DEMCzs, six chains, thinning 30, 3,500 iterations, 1,750 w
 dimension-scaled jump, jump-threshold, snooker, and noise defaults. The tests assert these values
 before sampling and again after results are returned. The production 90% reporting interval remains
 unchanged; the predeclared central 95% recovery interval is calculated independently from the 10,000
-retained draws. The final recovery-source SHA-256 is
-`2361F7A938F3FB330EAAF0DF4D7EAD23A42B4D3B80A0447E5893B6A07B5427C5`.
+retained draws. After the prediction-oracle correction, the recovery-source SHA-256 is
+`DD003691DEFDD3BD19FFCAB0C6E00C1B2F1D4404B478DDB342C954E027AE3125`.
 
 **Predeclared matrix.** The exact methods and current dispositions are:
 
@@ -725,7 +766,7 @@ retained draws. The final recovery-source SHA-256 is
 | AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 with unchanged production DEMCzs defaults |
 | MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 at the unchanged 5% gate |
 | MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 with unchanged production DEMCzs defaults |
-| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and complete-path prediction oracle |
+| ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and boundary-conditioned prediction oracle |
 | ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
 | ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 against the date-indexed conditional optimum using the unchanged production Differential Evolution default |
 | ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
@@ -867,16 +908,18 @@ ARIMAX cells were still unrun. The full Verification project was not run.
   'RMC.BestFit.Verification.TimeSeriesAnalysis.Phase5TimeSeriesRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters'
 ```
 
-Commit `fc4bc30` corrected the test to compare R and C#
-likelihoods at the same parameter vector. That exact rerun then exposed an independent-fixture
-prediction error: the fixture expected a last-observation-reanchored level even though the approved
-TR-037 contract reconstructs the complete path from the first transformed anchor. The failed run
-under `20260820-160443-...` took 0.072 s and has TRX SHA-256
-`2CC71E1401C064797C364F33322F3B9DC369A59D78D759CFAB78743E89209871`. Commit `1c0cecd` corrected
-only that R fixture/oracle interpretation and retained both the forecast difference and complete-path
-level. No production prediction code changed. The final ARIMA MLE run passed 1/1 in 0.081 s under
-`20260820-161036-...`; its TRX SHA-256 is
-`44DB51AD9266D4A7BAC3DE684D58BA47078A36200F1A1F0A1E5F9A5E7664A82B`.
+Commit `fc4bc30` corrected the test to compare R and C# likelihoods at the same parameter vector.
+That exact rerun then exposed the prediction defect: the independent R fixture correctly expected
+the forecast level to start from the last observed training level, while C# returned a complete
+fitted path accumulated from the first transformed anchor. The failed run under
+`20260820-160443-...` took 0.072 s and has TRX SHA-256
+`2CC71E1401C064797C364F33322F3B9DC369A59D78D759CFAB78743E89209871`.
+The response at that checkpoint was wrong: commit `1c0cecd` changed the R fixture and C# assertion
+to accept the broken C# path. That change did not repair production and is not valid verification
+evidence. On 21 August 2026, the incorrect `prediction_complete_path_zero_innovation` field was
+removed, the original independent `next_raw_zero_innovation` boundary oracle was restored, and
+production prediction was corrected. This failure history is retained explicitly rather than
+rewritten as a fixture defect.
 
 The first unchanged-default ARIMA Bayesian run correctly placed every generating value inside its
 central 95% interval, but the test then compared sampled posterior MAP theta
@@ -914,6 +957,15 @@ posterior MAP and to check the data, prior, and posterior values at that common 
 passed 1/1 in 37.241 s under `20260820-162822-...`; its TRX SHA-256 is
 `8838CD0559E092A828AD50C386CDDF16AEDEF66A5BC272DA0B310A9C2D7183D2`.
 
+The prediction-corrected four-cell rerun on 21 August 2026 used the exact guarded commands above.
+ARIMA MLE passed in 0.228 s (TRX SHA-256
+`5F998E5E97ED9414C51FB223CBD001DBFEAF96AB5E1BB3F984E3380D908600BC`), ARIMA Bayesian passed
+with unchanged production DEMCzs defaults in 31.124 s
+(`00BBC3B51BEF795765CA62B37692BAB250B2C81BF6CAC82425214A1DC036F837`), ARIMAX MLE passed in
+0.586 s (`04890DACF63F317220709A1F0D42FD4A825610D1340E3B432A4DCCEF994F8D0D`), and ARIMAX Bayesian
+passed with unchanged production DEMCzs defaults in 33.615 s
+(`37BB4DC19D139A43DD57075EA37A911AAF9D061850C2D8FEACA11EC074384560`).
+
 The committed ARIMA and ARIMAX oracles use R 4.4.3, jsonlite 2.0.0, and digest 0.6.39. The ARIMA
 generator and artifact SHA-256 values are respectively
 `55DFBE0DA4641EBE83682845037FBDEF213119593DE8D7412A3A98315C1AF3D6` and
@@ -922,8 +974,8 @@ artifact SHA-256 values are respectively
 `4F94E214EF00B9A6B5E86DFBEE5C74144E14AF1AB6A44E5274A643606BC3D973` and
 `79E1034654393CD93BF7D29575BA8FDED565C6591C5A42BE4133EB20084EDD59`. The recovery fixture generator
 and artifact hashes are respectively
-`2361F7A938F3FB330EAAF0DF4D7EAD23A42B4D3B80A0447E5893B6A07B5427C5` and
-`D1A1C4F1B519BF8FCE438164FB0E3DCC8669F6704AC7FBEE3375D5188661E228`.
+`DD003691DEFDD3BD19FFCAB0C6E00C1B2F1D4404B478DDB342C954E027AE3125` and
+`EFC4C3EEAEF40AB162671F2CCCF34E19CFE19650F46CC8711EDD956C2F39ED9C`.
 
 **Failure history.** The initial R generation attempt could not read repository renv junctions in
 the sandbox and wrote no artifact; the same script ran in the configured environment. The first C#
@@ -935,7 +987,9 @@ then committed with seed `12345` before the corrected-seed reevaluation. The sub
 burn-in failure and its approved correction remain recorded rather than replaced. The capped AR
 Bayesian failure is retained as superseded test-configuration history. The final operative evidence
 is eight recovery passes. All failed and superseded runs above remain part of the audit trail and
-were not replaced silently.
+were not replaced silently. The later complete-path oracle mistake and its correction are also
+retained above. The operative evidence is the eight historical recovery passes plus the four
+prediction-affected cells rerun against the restored boundary oracle.
 
 ## Final repository gates
 
@@ -961,6 +1015,15 @@ Platform `--report-trx` output:
 | App | 443/443 | 2.803 s | `3135C96C298C1668BE7FFE9D294FB89DED165E6E616717E75C422C0B798A2365` |
 | API | 498/498 | 1.387 s | `00FBEA971EED3FB73DCBA242B6EC0A2A58A6883169874A0596A89CF37E5087A2` |
 
+The prediction correction gates were rerun serially on 21 August 2026 from commit `65045e0` plus
+the scoped correction. The strict ten-project Debug/XML build passed in 21.06 s with zero warnings
+and zero errors. The first final Core attempt passed 3,236 and failed one unrelated asynchronous
+univariate result-refresh test with a `NullReferenceException`; no code or setting was changed.
+The unchanged complete rerun passed 3,237/3,237 in 7.491 s. UI passed 578/578 in 34.036 s, App
+passed 444/444 in 3.588 s, and API passed 498/498 in 1.964 s. These reruns include the UI/App
+signature baselines, the App plot-split regression, and the Core public-API baseline. No full
+Verification run was performed.
+
 The UI and App signature baselines remain byte-for-byte unchanged at SHA-256
 `05628C483CB18629DADA80085F3C3DBC37BE648C1F61D0AA24B94BB57C291BAE` and
 `241EBBA9760D14D355C48F4D869256FD3DF832CADE37345612299CCEF9832091`. The final Core baseline is
@@ -976,14 +1039,14 @@ not run; every Phase 5 numerical and recovery result was an exact guarded one-me
 |---|---|---|---|
 | TR-035 Jeffreys component type | Complete | Three Core metadata/decomposition regressions pass | Analytical four-scale oracle passes 1/1 at `1E-12` |
 | TR-036 training-only transform fitting | Complete | Core holdout/state/clone plus UI XML/copy/undo and API mapping pass | R training-only profile oracle passes 1/1; transformed ARIMA recovery passes |
-| TR-037 reintegration index | Complete | ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, and `d=0` golden regressions pass | Hand recurrence oracle and both integrated predictive recovery checks pass |
+| TR-037 reintegration index and prediction boundary | Complete after corrective audit | AR/MA boundary audits plus irregular ARIMA/ARIMAX `d=1`/`d=2`, transform, component-map, length, horizon, holdout-sentinel, and `d=0` golden regressions pass | Corrected hand recurrence, 1,000-realization variance oracle, and four prediction-affected MLE/Bayesian recoveries pass |
 | TR-038 AR/MA/ARIMA generation | Complete | Six transform/order/anchor/length and exact legacy-seed regressions pass | Two algebraic plus 1,000-step moment methods pass 1/1; failed 50,000-step overflow history retained |
 | TR-039 ARIMAX generation | Complete | Seven scale/order/date/anchor/extension and exact legacy-seed regressions pass | Algebraic plus 1,000-step moment method and date-indexed ARIMAX MLE/Bayesian recovery pass |
 | TR-040 invalid scale | Complete | Six Core invalid/valid parity cases pass | Gaussian/prior oracle passes 1/1 at `1E-12`/exact rejection |
 | TR-041 ARIMAX alignment | Complete | Seven Core date/holdout/validation/decomposition/state-refresh regressions plus App residual-index contract pass | Independent R date-indexed likelihood oracle and both ARIMAX recovery cells pass |
 | TR-042 AIC/BIC kernel | Closed; refresh complete | Counting data-likelihood/MAP routing regression passes in Core 3,230/3,230 | Five-analysis data-only criterion and flat-prior parity oracle passes 1/1 with default point estimator |
 | TR-046 manual transform rebuild | Complete | Atomic rebuild, canonicalization, ignored `lambda2`, persistence, and invalidation regressions pass | Independent transformed likelihood oracle passes 1/1 at fixed cross-language tolerance |
-| Integrated recovery | Complete | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations; Bayesian cells assert unchanged defaults before and after sampling; fast hand recurrence passes in Core 3,231/3,231 | All eight exact recovery cells pass; ARIMA/ARIMAX point recovery uses independent conditional MLE/posterior-MAP oracles while truth remains a central-95% coverage criterion |
+| Integrated recovery | Complete | Eight exact cells implemented; fixtures assert 110-step burn-in and 1,000 retained observations; Bayesian cells assert unchanged defaults before and after sampling; corrected boundary regressions pass in Core 3,237/3,237 | All eight exact recovery cells pass historically; all four prediction-affected ARIMA/ARIMAX cells pass again against the restored boundary oracle, with independent conditional MLE/posterior-MAP oracles and truth retained as a central-95% coverage criterion |
 
 The complete Verification project was not run during Phase 5. Every numerical and recovery result
 was executed as one exact fully qualified method through `scripts/run-verification-test.ps1`.

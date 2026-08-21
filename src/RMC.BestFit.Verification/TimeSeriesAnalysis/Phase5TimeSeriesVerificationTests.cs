@@ -318,14 +318,16 @@ public class Phase5TimeSeriesVerificationTests
     }
 
     /// <summary>
-    /// Verifies ARIMA and ARIMAX prediction reintegration against hand-evaluated first- and
-    /// second-difference recurrences, including inverse transformation and component alignment.
+    /// Verifies ARIMA and ARIMAX prediction reconstruction against hand-evaluated first- and
+    /// second-difference recurrences, including the training boundary, inverse transformation,
+    /// and component alignment.
     /// </summary>
     /// <remarks>
-    /// For the ARIMA case, the fixed second difference is two and the first two transformed
-    /// levels are one and four, giving the exact square-number sequence. For the ARIMAX case,
-    /// a unit level covariate supplies every first difference on the logarithmic scale, giving
-    /// <c>exp(1), ..., exp(8)</c>. The absolute acceptance tolerance is fixed at 1E-10.
+    /// The fixtures intentionally depart from their fitted recurrences inside training. Each
+    /// fitted level therefore has to use the preceding observed state, the first forecast has to
+    /// use the final observed training state, and only later forecasts may recurse from predicted
+    /// states. A holdout sentinel proves the reconstruction cannot start from or consume the
+    /// holdout response. The absolute acceptance tolerance is fixed at 1E-10.
     /// </remarks>
     [TestMethod]
     public void ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle()
@@ -333,23 +335,24 @@ public class Phase5TimeSeriesVerificationTests
         const double tolerance = 1E-10;
         DateTime startDate = new(2002, 3, 4);
 
-        double[] quadratic = { 1, 4, 9, 16, 25, 36 };
-        var arima = new ARIMA(CreateDailySeries(quadratic, startDate), 0, 2, 0, true)
+        double[] irregular = { 1, 4, 10, 999 };
+        var arima = new ARIMA(CreateDailySeries(irregular, startDate), 0, 2, 0, true)
         {
             UseDefaultTrainingSteps = false,
             TransformType = Transform.None,
         };
-        arima.TrainingTimeSteps = quadratic.Length;
+        arima.TrainingTimeSteps = 3;
         var arimaPrediction = arima.Predict(new[] { 2.0, 1.0 }, 2, -1);
-        double[] expectedSquares = { 1, 4, 9, 16, 25, 36, 49, 64 };
-        AssertArrayEqual(expectedSquares, arimaPrediction.Y, tolerance, "ARIMA d=2 levels");
+        double[] expectedArima = { 1, 4, 9, 18, 28 };
+        AssertArrayEqual(expectedArima, arimaPrediction.Y, tolerance, "ARIMA d=2 conditional levels");
         AssertArrayEqual(
-            new[] { 0.0, 0.0, 2, 2, 2, 2, 2, 2 },
+            new[] { 0.0, 0.0, 2, 2, 2 },
             arimaPrediction.InterceptPart,
             tolerance,
             "ARIMA d=2 component map");
 
-        double[] logarithmic = Enumerable.Range(1, 6).Select(value => Math.Exp(value)).ToArray();
+        double[] transformed = { 1.0, 1.5, 1.6, 9.0 };
+        double[] logarithmic = transformed.Select(Math.Exp).ToArray();
         var arimax = new ARIMAX
         {
             IncludeIntercept = false,
@@ -362,22 +365,74 @@ public class Phase5TimeSeriesVerificationTests
             TransformType = Transform.Logarithmic,
         };
         arimax.TimeSeries = CreateDailySeries(logarithmic, startDate);
-        arimax.TrainingTimeSteps = logarithmic.Length;
+        arimax.TrainingTimeSteps = 3;
         arimax.SetCovariates(new List<Numerics.Data.TimeSeries>
         {
-            CreateDailySeries(new[] { 999.0, 1, 1, 1, 1, 1, 1, 1 }, startDate),
+            CreateDailySeries(new[] { 999.0, 0.1, 0.1, 0.1, 0.1 }, startDate),
         });
 
         var arimaxPrediction = arimax.Predict(new[] { 1.0, 0.25 }, 2, -1);
-        double[] expectedLogarithmic = Enumerable.Range(1, 8)
-            .Select(value => Math.Exp(value))
+        double[] expectedLogarithmic = new[] { 1.0, 1.1, 1.6, 1.7, 1.8 }
+            .Select(Math.Exp)
             .ToArray();
-        AssertArrayEqual(expectedLogarithmic, arimaxPrediction.Y, tolerance, "ARIMAX log d=1 levels");
+        AssertArrayEqual(expectedLogarithmic, arimaxPrediction.Y, tolerance, "ARIMAX log d=1 conditional levels");
         AssertArrayEqual(
-            new[] { 0.0, 1, 1, 1, 1, 1, 1, 1 },
+            new[] { 0.0, 0.1, 0.1, 0.1, 0.1 },
             arimaxPrediction.CovariatePart,
             tolerance,
             "ARIMAX d=1 component map");
+    }
+
+    /// <summary>
+    /// Verifies differenced prediction uncertainty is conditional inside training and begins
+    /// recursive accumulation only after the training/forecast boundary.
+    /// </summary>
+    /// <remarks>
+    /// For an ARIMA(0,1,0) process with unit innovation scale, every conditional training value
+    /// and the first forecast have variance one. Forecast horizons two and three have variances
+    /// two and three because only forecast innovations accumulate. The same analytical oracle is
+    /// applied to ARIMA and ARIMAX with exactly 1,000 fixed seeds. Mean and variance acceptance
+    /// bounds are four Monte Carlo standard errors, with the existing three-percent variance
+    /// floor.
+    /// </remarks>
+    [TestMethod]
+    public void ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary()
+    {
+        const int realizationCount = 1000;
+        const int trainingSteps = 4;
+        const int forecastSteps = 3;
+        DateTime startDate = new(2002, 3, 4);
+        double[] raw = { 10, 14, 15, 20, 999 };
+
+        var arima = new ARIMA(CreateDailySeries(raw, startDate), 0, 1, 0, false)
+        {
+            UseDefaultTrainingSteps = false,
+            TransformType = Transform.None,
+        };
+        arima.TrainingTimeSteps = trainingSteps;
+
+        var arimax = new ARIMAX
+        {
+            IncludeIntercept = false,
+            AROrderP = 0,
+            DiffOrderD = 1,
+            MAOrderQ = 0,
+            XOrderB = 0,
+            UseDefaultTrainingSteps = false,
+            TransformType = Transform.None,
+        };
+        arimax.TimeSeries = CreateDailySeries(raw, startDate);
+        arimax.TrainingTimeSteps = trainingSteps;
+
+        double[][] arimaSamples = Enumerable.Range(0, realizationCount)
+            .Select(seed => arima.Predict(new[] { 1.0 }, forecastSteps, seed).Y)
+            .ToArray();
+        double[][] arimaxSamples = Enumerable.Range(0, realizationCount)
+            .Select(seed => arimax.Predict(new[] { 1.0 }, forecastSteps, seed).Y)
+            .ToArray();
+
+        AssertConditionalPredictionMoments(arimaSamples, raw, trainingSteps, "ARIMA");
+        AssertConditionalPredictionMoments(arimaxSamples, raw, trainingSteps, "ARIMAX");
     }
 
     /// <summary>
@@ -1148,6 +1203,42 @@ public class Phase5TimeSeriesVerificationTests
 
         Assert.AreEqual(expectedMean, sampleMean, meanBound, $"{context} mean");
         Assert.AreEqual(expectedVariance, sampleVariance, varianceBound, $"{context} variance");
+    }
+
+    /// <summary>
+    /// Compares conditional fitted and forecast samples with the analytical random-walk moments.
+    /// </summary>
+    /// <param name="samples">The prediction realizations indexed by realization and raw step.</param>
+    /// <param name="raw">The observed raw response, including an unused holdout sentinel.</param>
+    /// <param name="trainingSteps">The raw training boundary.</param>
+    /// <param name="context">The model label.</param>
+    private static void AssertConditionalPredictionMoments(
+        double[][] samples,
+        double[] raw,
+        int trainingSteps,
+        string context)
+    {
+        foreach (double[] sample in samples)
+            Assert.AreEqual(raw[0], sample[0], 0.0, $"{context} conditioning anchor");
+
+        for (int rawIndex = 1; rawIndex < trainingSteps; rawIndex++)
+        {
+            AssertIndependentGaussianMoments(
+                samples.Select(sample => sample[rawIndex]).ToArray(),
+                raw[rawIndex - 1],
+                1.0,
+                $"{context} training index {rawIndex}");
+        }
+
+        for (int horizon = 1; horizon <= 3; horizon++)
+        {
+            int rawIndex = trainingSteps + horizon - 1;
+            AssertIndependentGaussianMoments(
+                samples.Select(sample => sample[rawIndex]).ToArray(),
+                raw[trainingSteps - 1],
+                Math.Sqrt(horizon),
+                $"{context} forecast horizon {horizon}");
+        }
     }
 
     /// <summary>

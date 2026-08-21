@@ -63,15 +63,18 @@ The setter's second argument, `lambda2`, remains accepted but is intentionally i
 compatibility; it is not a shift or offset parameter. See [TR-036](../review-findings.md#tr-036)
 and [TR-046](../review-findings.md#tr-046).
 
-Prediction and simulation follow the inverse statistical order. ARIMA/ARIMAX first construct all
-intercept, trend, seasonality, exact-date level-covariate, AR, MA, and innovation contributions on
-the transformed/highest-difference model scale. For $d>0$, the completed vector is integrated from
-the first $d$ observed transformed levels when data are attached or zero transformed anchors
-otherwise. The inverse response transform is applied once, after the complete transformed level
-path exists. Thus preprocessing is raw response $\rightarrow$ transform $\rightarrow$ difference,
-while simulation is model recurrence $\rightarrow$ integration $\rightarrow$ inverse transform.
-For component arrays, model step $k$ maps to raw slot $k+d$ and the first $d$ conditioning slots
-are zero. See [TR-037](../review-findings.md#tr-037),
+Prediction and simulation share the inverse statistical order but have different conditioning
+contracts. ARIMA/ARIMAX first construct intercept, trend, seasonality, exact-date level-covariate,
+AR, MA, and innovation contributions on the transformed/highest-difference model scale. For
+prediction with $d>0$, every fitted training level uses the observed lower-order state at the
+preceding raw index; the first forecast uses the final observed training states, and later
+forecasts recurse from generated states. For generation, the complete path is integrated from the
+first $d$ observed transformed levels when data are attached or zero transformed anchors otherwise.
+The inverse response transform is applied once after reconstruction in either path. Thus
+preprocessing is raw response $\rightarrow$ transform $\rightarrow$ difference, while simulation
+is model recurrence $\rightarrow$ integration $\rightarrow$ inverse transform. For component
+arrays, model step $k$ maps to raw slot $k+d$ and the first $d$ conditioning slots are zero. See
+[TR-037](../review-findings.md#tr-037),
 [TR-038](../review-findings.md#tr-038), and [TR-039](../review-findings.md#tr-039).
 
 ## Analysis Lifecycle
@@ -114,8 +117,8 @@ UI/App/API, or persistence contract.
 | AR/MA, no fitted transform | Available subject to conditional-likelihood assumptions | Available subject to diagnostic checks |
 | AR/MA with fitted transform | Available with training-only frozen lambda | Back-transform is median-like; transform uncertainty omitted |
 | ARIMA/ARIMAX with $d=0$, no transform | Available | Available, subject to ARIMAX covariate scenario |
-| ARIMA with $d>0$ | Conditional likelihood can be inspected | Prediction and simulation available with verified reintegration and explicit observed/zero anchors |
-| ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Prediction and simulation available with verified reintegration/date alignment and explicit observed/zero anchors |
+| ARIMA with $d>0$ | Conditional likelihood can be inspected | Prediction conditions on observed training states; simulation uses explicit observed/zero initialization anchors |
+| ARIMAX with $d>0$ | Available with exact-date level covariates and conditional Jacobian alignment | Prediction conditions on observed training states with exact-date covariates; simulation uses explicit observed/zero initialization anchors |
 | ARIMA transformed/differenced simulation | — | Available; full model-scale recursion, integration, then one inverse transform |
 | ARIMAX transformed/differenced simulation | — | Available; all components on model scale, exact-date level covariates, integration, then one inverse transform |
 

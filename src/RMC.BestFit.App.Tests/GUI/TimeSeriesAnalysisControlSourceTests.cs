@@ -67,6 +67,20 @@ namespace RMC.BestFit.App.Tests.GUI
         }
 
         /// <summary>
+        /// Verifies credible intervals split at the final training index and share that boundary
+        /// between training and prediction series.
+        /// </summary>
+        [TestMethod]
+        public void PredictionPlot_SplitsAtFinalTrainingIndex()
+        {
+            string source = ReadAppSource(Path.Combine("GUI", "TimeSeriesAnalysis", "TimeSeriesAnalysisControl.xaml.cs"));
+
+            StringAssert.Contains(source, "Element.ARIMAX.TrainingTimeSteps - 1");
+            StringAssert.Contains(source, "var trainingCi = ciPoints.GetRange(0, splitIdx + 1);");
+            StringAssert.Contains(source, "ciPoints.GetRange(splitIdx, ciPoints.Count - splitIdx)");
+        }
+
+        /// <summary>
         /// Reads an App source file using a byte-preserving single-byte decoding.
         /// </summary>
         /// <param name="relativePath">The source path relative to the App project root.</param>

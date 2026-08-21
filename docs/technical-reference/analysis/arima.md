@@ -68,10 +68,13 @@ The prior is the product of configured marginal priors and, by default, $1/\sigm
 ## Forecasting and Current Restriction
 
 `Predict` calculates exactly $T-d+h$ values on the transformed, $d$-difference scale. Model step
-$k$ maps to raw response slot $k+d$. Inverse differencing begins with the first $d$ observed
-transformed levels and successively reconstructs exactly $T+h$ transformed levels; only then is
-$g^{-1}$ applied once. Process uncertainty therefore accumulates through the integration
-recurrence, and posterior uncertainty requires repeating the recursion for joint parameter draws.
+$k$ maps to raw response slot $k+d$. Inside training, inverse differencing uses the observed
+lower-order state at the preceding raw index, so each fitted value is a conditional one-step
+prediction. The first forecast uses the final observed training level and difference states; only
+later horizons recurse from generated states. Exactly $T+h$ transformed levels are reconstructed,
+then $g^{-1}$ is applied once. Process uncertainty is conditional rather than cumulative inside
+training and accumulates through the integration recurrence only after forecasting begins.
+Posterior uncertainty requires repeating the recurrence for joint parameter draws.
 The component vectors retain raw length $T+h$: their first $d$ conditioning entries are zero and
 component step $k$ is stored at raw slot $k+d$. This behavior closes
 [TR-037](../review-findings.md#tr-037); `Transform.None` with $d=0$ retains its pre-correction
@@ -129,11 +132,12 @@ This block demonstrates the verified prediction and generation order for $d=1$.
 The model assumes regular spacing, fixed coefficients, Gaussian homoscedastic innovations, a fully observed response, and a differencing order chosen without mining the validation set. Diagnose residual serial dependence, conditional variance, structural breaks, root proximity, and forecast calibration. Polynomial drift after repeated integration is an extrapolation assumption, not a physical law.
 
 Implementation: `Models/TimeSeries/ARIMA.cs`; orchestration:
-`Analyses/TimeSeries/ARIMAAnalysis.cs`. Fast tests verify `d=1` linear and `d=2` quadratic
-reintegration, transformed prediction, output/component alignment, and exact $d=0$ fixed-seed
-compatibility. Generation tests additionally verify transformed recurrence, observed/zero anchors,
-`sampleSize<=d`, and exact legacy sequences. Focused prediction and generator methods pass their
-algebraic and 1,000-step moment rules; integrated parameter recovery remains in the Phase 5 matrix.
+`Analyses/TimeSeries/ARIMAAnalysis.cs`. Fast tests verify irregular conditional `d=1`/`d=2`
+training and forecast boundaries, transformed prediction, output/component alignment, and exact
+$d=0$ fixed-seed compatibility. Generation tests separately verify complete transformed
+recurrences, observed/zero initialization anchors, `sampleSize<=d`, and exact legacy sequences.
+Focused prediction and generator methods pass their algebraic and exactly 1,000-realization moment
+rules; integrated parameter recovery remains in the Phase 5 matrix.
 
 ## References
 
