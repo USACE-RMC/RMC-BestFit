@@ -10,4 +10,5 @@ mixture.md
 competing-risks.md
 composite.md
 time-series.md
+rating-curve.md
 references.md

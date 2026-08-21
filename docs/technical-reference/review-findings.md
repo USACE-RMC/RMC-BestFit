@@ -79,9 +79,9 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
 | [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Confirmed defect; corrected | Complete | Passed - date/index regressions and independent R oracle | [Report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment) | 2026-08-20 |
 | [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Complete | Passed - counting regression and five-analysis oracle refreshed | [Report](../verification/time-series.md#tr-042--information-criteria-use-data-likelihood-at-map) | 2026-08-20 |
-| [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; three exact guarded cells differ from the discharge-space oracle by exactly the change-of-variables sum | [Report](../verification/rating-curve.md#tr-043---discharge-space-likelihood) / [Artifact](../../verification/data/rating-curve/rating-curve-likelihood-oracle.json) | 2026-08-21 |
+| [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Confirmed defect | Fix plan and exponent bound pending approval | Failed - confirms defect; default exponent lower bound 0 admits a discontinuous model (four exact cells); analytical increment cells pass | [Report](../verification/rating-curve.md#tr-044---continuity-at-activation-stages) | 2026-08-21 |
+| [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Confirmed defect | Fix plan pending approval | Failed - fast contract `Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` rejects a valid model | [Report](../verification/rating-curve.md#tr-045---aligned-pair-validation) | 2026-08-21 |
 | [TR-046](#tr-046) | Manual transform state rebuild | High | Confirmed defect; corrected | Complete | Passed - fast persistence and independent likelihood oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-048](#tr-048) | Spatial missing-site marginalization | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -856,11 +856,11 @@ optimum, accepting the optimum and MAP/MLE parity at `1E-3`.
 <a id="tr-043"></a>
 ## TR-043 — Rating-Curve Likelihood Omits the Log10 Change-of-Variables Term
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started.
+**Implementation status.** Not started; the fix plan (change-of-variables term in the scalar, pointwise, and component likelihoods) awaits approval in Phase 6 Batch 6.1.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Failed - confirms the defect. The three exact guarded cells `RatingCurveLikelihoodOracleTests.{One,Two,Three}Segment_DataLogLikelihood_IsDischargeSpaceDensity` differ from the committed SciPy discharge-space oracle by exactly the change-of-variables sums `2043.2563714262035`, `2315.8103643545292`, and `2354.0657454049206`, and equal the log-space oracle; see the [rating-curve verification chapter](../verification/rating-curve.md#tr-043---discharge-space-likelihood).
 
 **Evidence.** The rating curve assumes `Z=log10(Q)` is Normal and sums `Normal.LogPDF(log10(q)-log10(qhat))`. As a density for observed discharge `Q`, the likelihood also requires `-log(q ln 10)` per observation. The code omits this Jacobian while transformed time-series likelihoods include their corresponding Jacobians.
 
@@ -871,11 +871,11 @@ optimum, accepting the optimum and MAP/MLE parity at `1E-3`.
 <a id="tr-044"></a>
 ## TR-044 — Rating-Curve Continuity Claim Fails at the Allowed Zero Exponent
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started.
+**Implementation status.** Not started; the strictly positive exponent lower bound and the handling of legacy stored bounds await approval in Phase 6 Batch 6.1.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Failed - confirms the defect. `RatingCurveContinuityVerificationTests` shows the default exponent lower bound 0 in every configuration and a constant added-control increment `1.7534628349561987` at offsets `1e-6` and `1e-12` when the exponent sits at that bound; the analytical two-sided increment and zero-exponent jump cells pass. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-044---continuity-at-activation-stages).
 
 **Evidence.** Each added control contributes zero at `h=h_k` because activation requires `h>h_k`. Its exponent prior and bound allow `beta_k=0`; immediately above the breakpoint, `(h-h_k)^0=1`, so discharge jumps by `alpha_k` rather than approaching zero.
 
@@ -886,11 +886,11 @@ optimum, accepting the optimum and MAP/MLE parity at `1E-3`.
 <a id="tr-045"></a>
 ## TR-045 — Rating-Curve Validation Rejects Unused Discharge Records
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started.
+**Implementation status.** Not started; the aligned-pair validation with separate reporting of ignored records awaits approval in Phase 6 Batch 6.1.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Failed - confirms the defect. The fast contract `RatingCurveTests.Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` (twenty valid aligned pairs plus one nonpositive discharge on a date without a stage) is rejected with `Error: All discharge values must be positive`. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-045---aligned-pair-validation).
 
 **Evidence.** The likelihood uses only the date-inner-joined stage/discharge pairs, but `Validate()` rejects the model if any value in the entire discharge series is nonpositive, including dates with no matching stage that never enter the likelihood.
 

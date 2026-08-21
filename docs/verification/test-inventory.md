@@ -609,3 +609,23 @@ rerun), TR-089 (`ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22`,
 `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111`, pre-existing failures), and TR-090 (the
 intermittent `UnivariateAnalysisPositivePathReprocessTests` race) point back to the 21 August sections
 of this inventory and to `docs/PROGRESS.md`.
+
+## Phase 6 Batch 6.1 rating-curve confirmation - 21 August 2026
+
+Test-first confirmation of the rating-curve findings before any production change. Each Verification
+method ran once through `scripts/run-verification-test.ps1`; the fast contract ran through
+`dotnet test` with a method filter. The committed artifacts `rating-curve-example-fixtures.json` and
+`rating-curve-likelihood-oracle.json` (manifest rows added before these runs) replicate the three
+synthetic cases of `examples/6-rating-curve-analysis`.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `RatingCurveLikelihoodOracleTests.OneSegment_DataLogLikelihood_IsDischargeSpaceDensity` | Verification | Scalar, pointwise, and component data log likelihood equal the SciPy discharge-space density (`1e-8` sums, `1e-10` terms) | Failed - confirms TR-043; difference `2043.2563714262035` equals the change-of-variables sum |
+| `RatingCurveLikelihoodOracleTests.TwoSegment_DataLogLikelihood_IsDischargeSpaceDensity` | Verification | Same | Failed - confirms TR-043; difference `2315.8103643545292` |
+| `RatingCurveLikelihoodOracleTests.ThreeSegment_DataLogLikelihood_IsDischargeSpaceDensity` | Verification | Same | Failed - confirms TR-043; difference `2354.0657454049206` |
+| `RatingCurveContinuityVerificationTests.AddedControl_TwoSidedIncrementAtActivation_MatchesAnalyticalPowerLaw` | Verification | Analytical two-sided increment at the second activation stage, relative `1e-10` | Passed (second run, after evaluating the formula on the model's floating-point stage values) |
+| `RatingCurveContinuityVerificationTests.ZeroExponent_AddedControlJumpsByItsCoefficientAtActivation` | Verification | Zero exponent jumps by `10^a2` | Passed |
+| `RatingCurveContinuityVerificationTests.DefaultExponentLowerBounds_AreStrictlyPositive_{One,Two,Three}Segment` | Verification | Default exponent bounds and prior supports exclude zero | Failed - confirms TR-044 (lower bound 0) |
+| `RatingCurveContinuityVerificationTests.ExponentsAtDefaultLowerBound_AddedControlIncrementsVanishAtActivation` | Verification | Added increments vanish as the offset shrinks when exponents sit at their lower bound | Failed - confirms TR-044 (constant increment `1.7534628349561987`) |
+| `RatingCurveTests.Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` | Fast core | An unmatched nonpositive discharge record does not invalidate a model with enough valid aligned pairs and is reported | Failed - confirms TR-045 (`Error: All discharge values must be positive`); kept in the working tree until the approved fix lands |
+| `RatingCurveExampleRecoveryTests` (6 methods) | Verification | Example replication recovery against the independent SciPy optimum and the true curve | Ready - acceptance rule pending approval; not run |
