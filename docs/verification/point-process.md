@@ -14,7 +14,7 @@ For seasonal mixed data, exposure fractions weight the two point-process intensi
 
 ### Production process
 
-The fixed-size and duration-based generators use the configured empirical `Lambda` as the Poisson rate. Hosking GEV parameters are converted to Hosking GPA parameters through the Madsen relationship. Seasonal assignment uses the floored changepoint exposure weights; assigned dates fall inside the corresponding block-day support. The weights belong to the seasonal processes. Annual frequency output instead takes the maximum of their two exposure-adjusted seasonal maxima. No GEV prior, sampler setting, tolerance, or seed contract was changed.
+The fixed-size and duration-based generators use the configured empirical `Lambda` as the Poisson rate of a nonseasonal process and the exposure-weighted sum of the fitted seasonal threshold intensities, `w_1 Lambda_1 + w_2 Lambda_2`, for a seasonal process. Hosking GEV parameters are converted to Hosking GPA parameters through the Madsen relationship, using the empirical rate for a nonseasonal component and each season's fitted intensity for a seasonal component. Seasonal assignment uses the exposure-weighted intensities `w_j Lambda_j`; assigned dates fall inside the corresponding block-day support. The weights belong to the seasonal processes. Annual frequency output instead takes the maximum of their two exposure-adjusted seasonal maxima. No GEV prior, sampler setting, tolerance, or seed contract was changed.
 
 ### Automatic changepoint priors
 

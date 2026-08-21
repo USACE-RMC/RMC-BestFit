@@ -106,6 +106,50 @@ public partial class PointProcessRecoveryTests
     }
 
     /// <summary>
+    /// Verifies recovery of both seasonal processes and changepoints when the seasons have
+    /// unequal threshold intensities (season one three times season two).
+    /// </summary>
+    /// <returns>A task representing the asynchronous Bayesian analysis.</returns>
+    [TestMethod]
+    public async Task Test_SeasonalProductionGenerator_WithUnequalIntensities_RecoversParentAndBothChangePoints()
+    {
+        const int sampleSize = 1000;
+        const double intensityOne = 12.0;
+        const double intensityTwo = 4.0;
+        PointProcessModel parent = CreateSeasonalParentModel(intensityOne, intensityTwo);
+        TimeSeries generatedSample = parent.GeneratePOTTimeSeries(sampleSize, 42101);
+        double observationYears = sampleSize / parent.FittedThresholdIntensity;
+        DataFrame frame = CreateSeasonalRecoveryFrame(generatedSample, observationYears);
+        PointProcessModel model = CreateSeasonalModel(frame, observationYears);
+        PointProcessAnalysis analysis = ConfigureAnalysis(model);
+        Exception? analysisError = null;
+        analysis.AnalysisCompleted += (_, args) => analysisError = args.Error;
+
+        var validation = analysis.Validate();
+        Assert.IsTrue(validation.IsValid, string.Join(Environment.NewLine, validation.ValidationMessages));
+
+        await analysis.RunAsync();
+
+        Assert.AreEqual(sampleSize, generatedSample.Count, "The production generator did not return the requested seasonal POT sample size.");
+        Assert.IsTrue(
+            analysis.IsEstimated,
+            $"Unequal-intensity seasonal point-process recovery did not complete. {analysisError ?? analysis.BayesianAnalysis.LastError}");
+        var results = analysis.BayesianAnalysis.Results!;
+        double[] posteriorMean = results.PosteriorMean.Values;
+        var output = results.Output;
+        AssertFlooredChangePointRecovery(output.Select(sample => sample.Values[0]), TrueK1, "K1");
+        AssertFlooredChangePointRecovery(output.Select(sample => sample.Values[1]), TrueK2, "K2");
+
+        double[] parentParameters = parent.Parameters.Select(parameter => parameter.Value).ToArray();
+        Assert.AreEqual(parentParameters[2], posteriorMean[2], 12.0, "Season-one location was not recovered.");
+        Assert.AreEqual(parentParameters[3], posteriorMean[3], 8.0, "Season-one scale was not recovered.");
+        Assert.AreEqual(parentParameters[4], posteriorMean[4], 0.12, "Season-one Kappa was not recovered.");
+        Assert.AreEqual(parentParameters[5], posteriorMean[5], 12.0, "Season-two location was not recovered.");
+        Assert.AreEqual(parentParameters[6], posteriorMean[6], 8.0, "Season-two scale was not recovered.");
+        Assert.AreEqual(parentParameters[7], posteriorMean[7], 0.12, "Season-two Kappa was not recovered.");
+    }
+
+    /// <summary>
     /// Verifies the nonseasonal production simulator's Poisson rate and analytical conditional tail.
     /// </summary>
     [TestMethod]
@@ -176,6 +220,52 @@ public partial class PointProcessRecoveryTests
         double weightTwo = (TrueK2 - TrueK1) / 366.0;
         AssertPoissonMonteCarloCount(countOne, replicates * durationYears * weightOne * SeasonalLambda, "season one");
         AssertPoissonMonteCarloCount(countTwo, replicates * durationYears * weightTwo * SeasonalLambda, "season two");
+        AssertBinomialTail(tailOne, countOne, GpaConditionalSurvival(SeasonalGpaScaleOne, ColesShapeOne, tailPointOne - Threshold), "season one");
+        AssertBinomialTail(tailTwo, countTwo, GpaConditionalSurvival(SeasonalGpaScaleTwo, ColesShapeTwo, tailPointTwo - Threshold), "season two");
+    }
+
+    /// <summary>
+    /// Verifies seasonal counts follow each season's own exposure-weighted threshold intensity and
+    /// seasonal marks follow each season's own conditional tail when the intensities differ.
+    /// </summary>
+    [TestMethod]
+    public void Test_SeasonalSimulation_WithUnequalIntensities_MatchesSeasonRatesAssignmentsAndConditionalTails()
+    {
+        const int replicates = 500;
+        const double durationYears = 20.0;
+        const double tailPointOne = 120.0;
+        const double tailPointTwo = 165.0;
+        const double intensityOne = 12.0;
+        const double intensityTwo = 4.0;
+        PointProcessModel model = CreateSeasonalParentModel(intensityOne, intensityTwo);
+
+        int countOne = 0;
+        int countTwo = 0;
+        int tailOne = 0;
+        int tailTwo = 0;
+        for (int replicate = 0; replicate < replicates; replicate++)
+        {
+            TimeSeries sample = model.GeneratePOTTimeSeries(new DateTime(2000, 1, 1), durationYears, 45100 + replicate);
+            foreach (SeriesOrdinate<DateTime, double> point in sample)
+            {
+                int day = point.Index.DayOfYear;
+                if (IsSeasonOne(day))
+                {
+                    countOne++;
+                    if (point.Value > tailPointOne) tailOne++;
+                }
+                else
+                {
+                    countTwo++;
+                    if (point.Value > tailPointTwo) tailTwo++;
+                }
+            }
+        }
+
+        double weightOne = (TrueK1 + 366.0 - TrueK2) / 366.0;
+        double weightTwo = (TrueK2 - TrueK1) / 366.0;
+        AssertPoissonMonteCarloCount(countOne, replicates * durationYears * weightOne * intensityOne, "season one");
+        AssertPoissonMonteCarloCount(countTwo, replicates * durationYears * weightTwo * intensityTwo, "season two");
         AssertBinomialTail(tailOne, countOne, GpaConditionalSurvival(SeasonalGpaScaleOne, ColesShapeOne, tailPointOne - Threshold), "season one");
         AssertBinomialTail(tailTwo, countTwo, GpaConditionalSurvival(SeasonalGpaScaleTwo, ColesShapeTwo, tailPointTwo - Threshold), "season two");
     }
@@ -375,10 +465,22 @@ public partial class PointProcessRecoveryTests
 
     /// <summary>Creates a seasonal parent from two GPAs and the common annual Poisson rate.</summary>
     /// <returns>A configured parent seasonal point-process model.</returns>
-    private static PointProcessModel CreateSeasonalParentModel()
+    private static PointProcessModel CreateSeasonalParentModel() =>
+        CreateSeasonalParentModel(SeasonalLambda, SeasonalLambda);
+
+    /// <summary>
+    /// Creates a seasonal parent from two GPAs and per-season annual threshold intensities.
+    /// </summary>
+    /// <param name="intensityOne">The annual threshold intensity of the wrapped first season.</param>
+    /// <param name="intensityTwo">The annual threshold intensity of the second season.</param>
+    /// <returns>A configured parent seasonal point-process model whose empirical rate equals its fitted annual rate.</returns>
+    private static PointProcessModel CreateSeasonalParentModel(double intensityOne, double intensityTwo)
     {
         const int eventCount = 80;
-        double observationYears = eventCount / SeasonalLambda;
+        double weightOne = (TrueK1 + 366.0 - TrueK2) / 366.0;
+        double weightTwo = (TrueK2 - TrueK1) / 366.0;
+        double annualRate = weightOne * intensityOne + weightTwo * intensityTwo;
+        double observationYears = eventCount / annualRate;
         DateTime start = new DateTime(2000, 1, 1);
         var events = new List<ExactData>(eventCount);
         for (int i = 0; i < eventCount; i++)
@@ -395,11 +497,11 @@ public partial class PointProcessRecoveryTests
         double kappaOne = -ColesShapeOne;
         double kappaTwo = -ColesShapeTwo;
         double locationOne = Threshold + SeasonalGpaScaleOne / kappaOne *
-            (1.0 - Math.Pow(SeasonalLambda, -kappaOne));
-        double scaleOne = SeasonalGpaScaleOne * Math.Pow(SeasonalLambda, -kappaOne);
+            (1.0 - Math.Pow(intensityOne, -kappaOne));
+        double scaleOne = SeasonalGpaScaleOne * Math.Pow(intensityOne, -kappaOne);
         double locationTwo = Threshold + SeasonalGpaScaleTwo / kappaTwo *
-            (1.0 - Math.Pow(SeasonalLambda, -kappaTwo));
-        double scaleTwo = SeasonalGpaScaleTwo * Math.Pow(SeasonalLambda, -kappaTwo);
+            (1.0 - Math.Pow(intensityTwo, -kappaTwo));
+        double scaleTwo = SeasonalGpaScaleTwo * Math.Pow(intensityTwo, -kappaTwo);
         parent.SetParameterValues(new[]
         {
             TrueK1 + 0.5,
@@ -411,7 +513,8 @@ public partial class PointProcessRecoveryTests
             scaleTwo,
             kappaTwo
         });
-        Assert.AreEqual(SeasonalLambda, parent.Lambda, 1E-12, "The seasonal parent arrival rate was not configured correctly.");
+        Assert.AreEqual(annualRate, parent.Lambda, 1E-12, "The seasonal parent arrival rate was not configured correctly.");
+        Assert.AreEqual(annualRate, parent.FittedThresholdIntensity, 1E-9, "The seasonal parent fitted annual rate was not configured correctly.");
         return parent;
     }
 

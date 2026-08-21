@@ -175,7 +175,7 @@ The initial audit suspected that finite \((\kappa,h)\) pairs needed additional r
 
 **Review disposition.** Confirmed defect.
 
-**Implementation status.** The approved production process is implemented. Both simulation surfaces use empirical `Lambda` for Poisson counts, Madsen conversion from Hosking GEV to Hosking GPA for marks, floored changepoints, analytical exposure weights, and the shared elapsed block-day convention. GEV priors, exact-event point-process likelihood equations, sampler settings, tolerances, and seed behavior remain unchanged.
+**Implementation status.** The approved production process is implemented. Both simulation surfaces use empirical `Lambda` for nonseasonal Poisson counts and Madsen marks, the fitted seasonal threshold intensities `Lambda_j(u)` for seasonal counts, season assignment (`w_j Lambda_j`) and Madsen marks, floored changepoints, analytical exposure weights, and the shared elapsed block-day convention. GEV priors, exact-event point-process likelihood equations, sampler settings, tolerances, and seed behavior remain unchanged.
 
 **Verification status.** Complete in the approved scope. All ten guarded current-source cells pass. Recovery fixtures use 1,000 observations and the untouched `BayesianAnalysis` defaults. Calendar-year uniform recovery, October-water-year block-origin parity, nonseasonal production recovery, and seasonal production recovery pass; the robust defaults eliminate the former seasonal second-Kappa miss. The initial water-year failure was a verification-coordinate error: the fixture changed `K1/K2` from `170/350` to `80/260` rather than keeping the parent block-day parameters fixed while changing only the block origin.
 

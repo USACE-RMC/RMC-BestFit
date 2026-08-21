@@ -275,7 +275,8 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <remarks>
         /// In seasonal mode this is the exposure-weighted sum of the two fitted seasonal
-        /// intensities. Simulation uses the separately documented empirical <see cref="Lambda"/>.
+        /// intensities, which is also the annual rate of the seasonal simulators. Nonseasonal
+        /// simulation uses the separately documented empirical <see cref="Lambda"/>.
         /// </remarks>
         public double FittedThresholdIntensity
         {
@@ -2336,11 +2337,14 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         /// <remarks>
         /// <para>
-        /// Generates a fixed-size POT magnitude sample from the empirical arrival rate
-        /// <see cref="Lambda"/> and Madsen-equivalent generalized Pareto distributions. Yearly
-        /// event counts are drawn from a Numerics Poisson distribution until the requested number
-        /// of exceedances has been accumulated. In seasonal mode, exposure weights derived from
-        /// the floored changepoints select the seasonal GPA for each event.
+        /// Generates a fixed-size POT magnitude sample from the Poisson-GPA process implied by the
+        /// configured parameters. A nonseasonal process uses the empirical arrival rate
+        /// <see cref="Lambda"/>; a seasonal process uses the fitted threshold intensity of each
+        /// season, so its annual rate is the exposure-weighted sum of the two intensities and each
+        /// event is assigned to a season in proportion to that season's exposure-weighted
+        /// intensity. Yearly event counts are drawn from a Numerics Poisson distribution until the
+        /// requested number of exceedances has been accumulated, and each event is marked from the
+        /// Madsen-equivalent generalized Pareto distribution of its season.
         /// </para>
         /// </remarks>
         public double[] GenerateRandomValues(int sampleSize, int seed = -1)
@@ -2374,7 +2378,7 @@ namespace RMC.BestFit.Models
         /// </remarks>
         private double[] GenerateNonSeasonalRandomValues(int sampleSize, int seed)
         {
-            GeneralizedPareto gpa = CreatePoissonGpaComponents(out _, out _, out _)[0];
+            GeneralizedPareto gpa = CreatePoissonGpaComponents(out _, out _, out _, out _)[0];
             var poisson = new Poisson(Lambda);
             var rng = seed > 0
                 ? new Numerics.Sampling.MersenneTwister(seed)
@@ -2446,9 +2450,11 @@ namespace RMC.BestFit.Models
         /// <para>
         /// <b>Water year vs. calendar year:</b> generated and observed events use the same
         /// elapsed-day calculation from the configured block start. The total event count has mean
-        /// <c>durationYears * Lambda</c>. Seasonal membership is assigned by Poisson thinning with
-        /// the changepoint exposure weights, and generated dates are restricted to the matching
-        /// season.
+        /// <c>durationYears * Lambda</c> for a nonseasonal process and
+        /// <c>durationYears * (w_1 Lambda_1 + w_2 Lambda_2)</c> for a seasonal process, where each
+        /// <c>Lambda_j</c> is the fitted threshold intensity of season <c>j</c>. Seasonal
+        /// membership is assigned by Poisson thinning with the exposure-weighted intensities, and
+        /// generated dates are restricted to the matching season.
         /// </para>
         /// </remarks>
         /// <param name="startDate">First date in the synthetic record.</param>
@@ -2468,7 +2474,8 @@ namespace RMC.BestFit.Models
             GeneralizedPareto[] components = CreatePoissonGpaComponents(
                 out int k1,
                 out int k2,
-                out double seasonOneWeight);
+                out double seasonOneSelectionProbability,
+                out double annualEventRate);
 
             double totalDays = durationYears * 365.25;
             if (!Tools.IsFinite(totalDays) || totalDays <= 0.0)
@@ -2477,11 +2484,11 @@ namespace RMC.BestFit.Models
             DateTime endDate = startDate.AddDays(totalDays);
             var rng = seed > 0 ? new Numerics.Sampling.MersenneTwister(seed) : new Numerics.Sampling.MersenneTwister();
 
-            int totalCount = SamplePoisson(durationYears * Lambda, rng);
+            int totalCount = SamplePoisson(durationYears * annualEventRate, rng);
             var events = new List<(DateTime date, double magnitude)>(totalCount);
             for (int i = 0; i < totalCount; i++)
             {
-                int componentIndex = IsSeasonal && rng.NextDouble() >= seasonOneWeight ? 1 : 0;
+                int componentIndex = IsSeasonal && rng.NextDouble() >= seasonOneSelectionProbability ? 1 : 0;
                 DateTime eventDate = SampleEventDate(startDate, endDate, componentIndex, k1, k2, rng);
                 double magnitude = components[componentIndex].InverseCDF(rng.NextDouble());
                 events.Add((eventDate, magnitude));
@@ -2677,18 +2684,21 @@ namespace RMC.BestFit.Models
         /// Thrown when the configured point process cannot be converted to valid GPA components.
         /// </exception>
         /// <remarks>
-        /// The seasonal categorical draw uses only the two exposure weights. The total annual
-        /// event count remains <c>Poisson(Lambda)</c>. Successive leap-containing dummy blocks
-        /// retain the annual batches while making all 366 modeled block days representable as
-        /// <see cref="DateTime"/> values.
+        /// The annual event count is <c>Poisson(Lambda)</c> for a nonseasonal process and
+        /// <c>Poisson(w_1 Lambda_1 + w_2 Lambda_2)</c> for a seasonal process, where each
+        /// <c>Lambda_j</c> is the fitted threshold intensity of season <c>j</c>; the seasonal
+        /// categorical draw uses the rate-weighted season probability. Successive leap-containing
+        /// dummy blocks retain the annual batches while making all 366 modeled block days
+        /// representable as <see cref="DateTime"/> values.
         /// </remarks>
         private List<(DateTime date, double magnitude)> GenerateFixedPoissonGpaEvents(int sampleSize, int seed)
         {
             GeneralizedPareto[] components = CreatePoissonGpaComponents(
                 out int k1,
                 out int k2,
-                out double seasonOneWeight);
-            var poisson = new Poisson(Lambda);
+                out double seasonOneSelectionProbability,
+                out double annualEventRate);
+            var poisson = new Poisson(annualEventRate);
             var rng = seed > 0
                 ? new Numerics.Sampling.MersenneTwister(seed)
                 : new Numerics.Sampling.MersenneTwister();
@@ -2712,7 +2722,7 @@ namespace RMC.BestFit.Models
                 int eventsToRetain = Math.Min(yearlyEventCount, sampleSize - events.Count);
                 for (int i = 0; i < eventsToRetain; i++)
                 {
-                    int componentIndex = IsSeasonal && rng.NextDouble() >= seasonOneWeight ? 1 : 0;
+                    int componentIndex = IsSeasonal && rng.NextDouble() >= seasonOneSelectionProbability ? 1 : 0;
                     int day;
                     if (!IsSeasonal)
                     {
@@ -2744,25 +2754,36 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Converts the configured raw Hosking GEV parameters to seasonal Hosking GPAs.
+        /// Converts the configured raw Hosking GEV parameters to Poisson-GPA simulation components.
         /// </summary>
         /// <param name="k1">The floored first changepoint, or zero when nonseasonal.</param>
         /// <param name="k2">The floored second changepoint, or zero when nonseasonal.</param>
-        /// <param name="seasonOneWeight">The wrapped-season exposure weight.</param>
+        /// <param name="seasonOneSelectionProbability">
+        /// The probability that a simulated event belongs to the wrapped first season; one when nonseasonal.
+        /// </param>
+        /// <param name="annualEventRate">The annual Poisson exceedance rate of the simulated process.</param>
         /// <returns>One nonseasonal GPA or two seasonal GPA components.</returns>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the empirical rate, parameters, or converted GPA components are invalid.
+        /// Thrown when the empirical rate, threshold intensities, parameters, or converted GPA
+        /// components are invalid.
         /// </exception>
         /// <remarks>
         /// Madsen conversion under the Numerics/Hosking sign convention is
-        /// <c>Alpha_GPA = Alpha_GEV * Lambda^Kappa</c>,
-        /// <c>Xi_GPA = Threshold</c>, and <c>Kappa_GPA = Kappa_GEV</c>. Seasonal exposure is
-        /// handled by the categorical process assignment and is not applied to this conversion.
+        /// <c>Alpha_GPA = Alpha_GEV * Lambda^Kappa</c>, <c>Xi_GPA = Threshold</c>, and
+        /// <c>Kappa_GPA = Kappa_GEV</c>, where <c>Lambda</c> is the annual exceedance rate of the
+        /// process described by the component. The nonseasonal process uses the empirical rate
+        /// <see cref="Lambda"/>. Each seasonal component uses its fitted threshold intensity
+        /// <c>Lambda_j(u)</c>, the rate it would produce over a full year, so the simulated
+        /// season-<c>j</c> annual maximum matches the exposure-annualized seasonal distribution
+        /// <c>G_j^{w_j}</c> of the likelihood: the annual rate is
+        /// <c>w_1 Lambda_1 + w_2 Lambda_2</c> and each event belongs to season one with probability
+        /// <c>w_1 Lambda_1 / (w_1 Lambda_1 + w_2 Lambda_2)</c>.
         /// </remarks>
         private GeneralizedPareto[] CreatePoissonGpaComponents(
             out int k1,
             out int k2,
-            out double seasonOneWeight)
+            out double seasonOneSelectionProbability,
+            out double annualEventRate)
         {
             if (!Tools.IsFinite(Lambda) || Lambda <= 0.0)
                 throw new InvalidOperationException("The empirical point-process arrival rate must be positive and finite.");
@@ -2773,20 +2794,26 @@ namespace RMC.BestFit.Models
 
             k1 = 0;
             k2 = 0;
-            seasonOneWeight = 1.0;
+            seasonOneSelectionProbability = 1.0;
+            annualEventRate = Lambda;
             int componentCount = IsSeasonal ? 2 : 1;
             int expectedParameterCount = IsSeasonal ? 8 : 3;
             if (Parameters.Count != expectedParameterCount || Distribution.Distributions.Count != componentCount)
                 throw new InvalidOperationException("The point-process component count does not match its parameter vector.");
+
+            double seasonOneWeight = 1.0;
+            double seasonTwoWeight = 0.0;
             if (IsSeasonal)
             {
                 double[] values = Parameters.Select(parameter => parameter.Value).ToArray();
                 if (!TryGetEffectiveChangePoints(values, out k1, out k2))
                     throw new InvalidOperationException("Floored seasonal changepoints must satisfy 1 <= K1 < K2 <= 366.");
                 seasonOneWeight = (k1 + 366.0 - k2) / 366.0;
+                seasonTwoWeight = (k2 - k1) / 366.0;
             }
 
-            var components = new GeneralizedPareto[componentCount];
+            var gevs = new GeneralizedExtremeValue[componentCount];
+            var componentRates = new double[componentCount];
             for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
             {
                 int parameterIndex = IsSeasonal ? 2 + 3 * componentIndex : 3 * componentIndex;
@@ -2799,8 +2826,36 @@ namespace RMC.BestFit.Models
                     Parameters[parameterIndex + 2].Value);
                 if (!gev.ParametersValid)
                     throw new InvalidOperationException("The fitted generalized extreme-value parameters are invalid.");
+                gevs[componentIndex] = gev;
 
-                double gpaScale = gev.Alpha * Math.Pow(Lambda, gev.Kappa);
+                if (IsSeasonal)
+                {
+                    double intensity = CalculateThresholdIntensity(gev, Threshold);
+                    if (!Tools.IsFinite(intensity) || intensity <= 0.0)
+                        throw new InvalidOperationException("Each fitted seasonal threshold intensity must be positive and finite.");
+                    componentRates[componentIndex] = intensity;
+                }
+                else
+                {
+                    componentRates[componentIndex] = Lambda;
+                }
+            }
+
+            if (IsSeasonal)
+            {
+                double seasonOneRate = seasonOneWeight * componentRates[0];
+                double seasonTwoRate = seasonTwoWeight * componentRates[1];
+                annualEventRate = seasonOneRate + seasonTwoRate;
+                if (!Tools.IsFinite(annualEventRate) || annualEventRate <= 0.0)
+                    throw new InvalidOperationException("The fitted seasonal annual exceedance rate must be positive and finite.");
+                seasonOneSelectionProbability = seasonOneRate / annualEventRate;
+            }
+
+            var components = new GeneralizedPareto[componentCount];
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                GeneralizedExtremeValue gev = gevs[componentIndex];
+                double gpaScale = gev.Alpha * Math.Pow(componentRates[componentIndex], gev.Kappa);
                 var gpa = new GeneralizedPareto(Threshold, gpaScale, gev.Kappa);
                 if (!gpa.ParametersValid)
                     throw new InvalidOperationException("The Madsen-converted generalized Pareto parameters are invalid.");

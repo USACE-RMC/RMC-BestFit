@@ -92,7 +92,7 @@ $$
 \kappa_{GPA}=\kappa_{GEV}. \tag{7a}
 $$
 
-Both simulation APIs use the empirical **Lambda** as the annual Poisson mean. Seasonal events are assigned using only the changepoint exposure weights, then marked from the corresponding converted GPA.
+Both simulation APIs use the empirical **Lambda** as the annual Poisson mean of a nonseasonal process. A seasonal process uses the fitted threshold intensity \(\Lambda_j(u)\) of each season, the rate season \(j\) would produce over a full year: the Madsen conversion of component \(j\) uses \(\Lambda_j(u)\), the annual Poisson mean is \(w_1\Lambda_1(u)+w_2\Lambda_2(u)\) (**FittedThresholdIntensity**), and each event is assigned to season one with probability \(w_1\Lambda_1(u)/(w_1\Lambda_1(u)+w_2\Lambda_2(u))\), then marked from the corresponding converted GPA. The simulated season-\(j\) annual maximum therefore follows the exposure-annualized seasonal distribution \(G_j^{w_j}\) used by the likelihood.
 
 ## Seasonal Likelihood
 
@@ -199,15 +199,15 @@ Exposure precedence is explicit model **TotalYears**, then **DataFrame.PointProc
 
 ## Simulation APIs
 
-**GenerateRandomValues(sampleSize, seed)** draws annual counts from `Poisson(Lambda)` until exactly `sampleSize` exceedances have been retained. It returns only magnitudes because its established return type is `double[]`. In seasonal mode, each event is assigned from the exposure weights \(w_1,w_2\), then marked from the assigned Madsen-converted GPA.
+**GenerateRandomValues(sampleSize, seed)** draws annual counts from `Poisson(Lambda)` for a nonseasonal process, or from `Poisson(w_1 Lambda_1 + w_2 Lambda_2)` with the fitted seasonal intensities, until exactly `sampleSize` exceedances have been retained. It returns only magnitudes because its established return type is `double[]`. In seasonal mode, each event is assigned to a season in proportion to \(w_j\Lambda_j(u)\), then marked from the assigned Madsen-converted GPA.
 
 **GeneratePOTTimeSeries(sampleSize, seed)** uses the same annual Poisson batches, seasonal assignments, and GPA marks, and adds dummy dates in leap-containing blocks beginning in 2000. The block start follows the configured calendar-, water-, or custom-year setting.
 
 **GeneratePOTTimeSeries(startDate, durationYears, seed)**:
 
-1. converts each raw Hosking GEV component to its Hosking GPA using equation (7a) and the empirical **Lambda**;
-2. draws one total count from `Poisson(durationYears * Lambda)`;
-3. assigns each seasonal event using the analytical exposure weights;
+1. converts each raw Hosking GEV component to its Hosking GPA using equation (7a) with the empirical **Lambda** (nonseasonal) or the component's fitted threshold intensity \(\Lambda_j(u)\) (seasonal);
+2. draws one total count from `Poisson(durationYears * Lambda)` (nonseasonal) or `Poisson(durationYears * (w_1 Lambda_1 + w_2 Lambda_2))` (seasonal);
+3. assigns each seasonal event in proportion to the exposure-weighted intensities \(w_j\Lambda_j(u)\);
 4. samples a date uniformly from the requested span subject to the same block-day season predicate used by the likelihood; and
 5. samples the mark from the assigned GPA and sorts the date-magnitude pairs.
 

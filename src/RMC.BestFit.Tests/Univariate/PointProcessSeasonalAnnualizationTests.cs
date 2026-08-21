@@ -148,6 +148,107 @@ public class PointProcessSeasonalAnnualizationTests
     }
 
     /// <summary>
+    /// Verifies the seasonal simulators follow the fitted per-season threshold intensities: the
+    /// annual rate is the exposure-weighted sum of the two intensities, events are assigned to a
+    /// season in proportion to its exposure-weighted intensity, and each season's marks follow the
+    /// generalized Pareto distribution implied by that season's own intensity.
+    /// </summary>
+    [TestMethod]
+    public void SeasonalSimulation_FollowsFittedSeasonalIntensities()
+    {
+        const double intensityOne = 6.0;
+        const double intensityTwo = 2.0;
+        const double gpaScaleOne = 200.0;
+        const double gpaKappaOne = 0.1;
+        const double gpaScaleTwo = 300.0;
+        const double gpaKappaTwo = -0.2;
+        const double durationYears = 1500.0;
+        PointProcessModel model = CreateSeasonalModel();
+        model.SetParameterValues(new[]
+        {
+            ChangePointOne + 0.5,
+            ChangePointTwo + 0.5,
+            GevLocation(gpaScaleOne, gpaKappaOne, intensityOne),
+            GevScale(gpaScaleOne, gpaKappaOne, intensityOne),
+            gpaKappaOne,
+            GevLocation(gpaScaleTwo, gpaKappaTwo, intensityTwo),
+            GevScale(gpaScaleTwo, gpaKappaTwo, intensityTwo),
+            gpaKappaTwo,
+        });
+        double exposureOne = (ChangePointOne + 366.0 - ChangePointTwo) / 366.0;
+        double exposureTwo = (ChangePointTwo - ChangePointOne) / 366.0;
+        double annualRate = exposureOne * intensityOne + exposureTwo * intensityTwo;
+
+        Assert.AreEqual(annualRate, model.FittedThresholdIntensity, 1E-9, "fitted annual rate");
+        Assert.IsTrue(Math.Abs(model.Lambda - annualRate) > 1.0, "the fixture separates the empirical rate from the fitted rate");
+
+        var sample = model.GeneratePOTTimeSeries(new DateTime(2000, 1, 1), durationYears, 90210);
+        var seasonOneExcess = new List<double>();
+        var seasonTwoExcess = new List<double>();
+        foreach (var point in sample)
+        {
+            int day = point.Index.DayOfYear;
+            if (day < ChangePointOne || day >= ChangePointTwo)
+                seasonOneExcess.Add(point.Value - Threshold);
+            else
+                seasonTwoExcess.Add(point.Value - Threshold);
+        }
+
+        AssertPoissonCount(seasonOneExcess.Count, durationYears * exposureOne * intensityOne, "season one count");
+        AssertPoissonCount(seasonTwoExcess.Count, durationYears * exposureTwo * intensityTwo, "season two count");
+        AssertMeanExcess(seasonOneExcess, gpaScaleOne, gpaKappaOne, "season one marks");
+        AssertMeanExcess(seasonTwoExcess, gpaScaleTwo, gpaKappaTwo, "season two marks");
+    }
+
+    /// <summary>
+    /// Asserts a simulated Poisson count lies within five standard errors of its expectation.
+    /// </summary>
+    /// <param name="count">The simulated count.</param>
+    /// <param name="expected">The expected count.</param>
+    /// <param name="context">The assertion context.</param>
+    private static void AssertPoissonCount(int count, double expected, string context)
+    {
+        Assert.AreEqual(expected, count, 5.0 * Math.Sqrt(expected), $"{context}: expected {expected:F1}, simulated {count}");
+    }
+
+    /// <summary>
+    /// Asserts simulated excesses have the generalized Pareto mean of their season within five
+    /// standard errors.
+    /// </summary>
+    /// <param name="excesses">The simulated excesses over the threshold.</param>
+    /// <param name="scale">The Hosking generalized Pareto scale.</param>
+    /// <param name="kappa">The Hosking generalized Pareto shape.</param>
+    /// <param name="context">The assertion context.</param>
+    private static void AssertMeanExcess(List<double> excesses, double scale, double kappa, string context)
+    {
+        double mean = scale / (1.0 + kappa);
+        double standardDeviation = scale / ((1.0 + kappa) * Math.Sqrt(1.0 + 2.0 * kappa));
+        double standardError = standardDeviation / Math.Sqrt(excesses.Count);
+        Assert.AreEqual(mean, excesses.Average(), 5.0 * standardError, $"{context}: mean excess");
+    }
+
+    /// <summary>
+    /// Computes the Hosking GEV location whose threshold intensity and conditional excess law
+    /// equal a generalized Pareto process with the given scale, shape and annual intensity.
+    /// </summary>
+    /// <param name="gpaScale">The generalized Pareto scale at the threshold.</param>
+    /// <param name="kappa">The Hosking shape.</param>
+    /// <param name="intensity">The annual threshold intensity.</param>
+    /// <returns>The GEV location.</returns>
+    private static double GevLocation(double gpaScale, double kappa, double intensity) =>
+        Threshold + gpaScale / kappa * (1.0 - Math.Pow(intensity, -kappa));
+
+    /// <summary>
+    /// Computes the Hosking GEV scale paired with <see cref="GevLocation"/>.
+    /// </summary>
+    /// <param name="gpaScale">The generalized Pareto scale at the threshold.</param>
+    /// <param name="kappa">The Hosking shape.</param>
+    /// <param name="intensity">The annual threshold intensity.</param>
+    /// <returns>The GEV scale.</returns>
+    private static double GevScale(double gpaScale, double kappa, double intensity) =>
+        gpaScale * Math.Pow(intensity, -kappa);
+
+    /// <summary>
     /// Creates a seasonal point-process model with explicit threshold and observation span.
     /// </summary>
     /// <returns>The configured model with eight default parameters.</returns>
