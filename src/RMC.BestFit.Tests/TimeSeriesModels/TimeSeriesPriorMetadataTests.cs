@@ -63,10 +63,10 @@ public class TimeSeriesPriorMetadataTests
     }
 
     /// <summary>
-    /// Pins ARIMAX as the established reference implementation for Jeffreys scale metadata.
+    /// Pins the ARIMAX Jeffreys scale metadata that the other time-series models must match.
     /// </summary>
     [TestMethod]
-    public void ARIMAX_JeffreysScaleMetadata_RemainsEstablishedReference()
+    public void ARIMAX_JeffreysScaleMetadata_IsTheReferenceForOtherModels()
     {
         var model = new ARIMAX { UseJeffreysRuleForScale = true };
         double[] parameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
@@ -78,7 +78,7 @@ public class TimeSeriesPriorMetadataTests
     }
 
     /// <summary>
-    /// Creates one default instance of each Phase 5 time-series model.
+    /// Creates one default instance of each time-series model.
     /// </summary>
     /// <returns>The four models covered by the Jeffreys metadata contract.</returns>
     private static ModelBase[] CreateModels()

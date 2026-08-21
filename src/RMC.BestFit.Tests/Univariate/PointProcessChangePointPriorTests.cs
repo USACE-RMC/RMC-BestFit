@@ -67,7 +67,7 @@ public class PointProcessChangePointPriorTests
     }
 
     /// <summary>
-    /// Verifies that a flat histogram retains both approved broad supports.
+    /// Verifies that a flat histogram retains both broad default supports.
     /// </summary>
     [TestMethod]
     public void Test_HistogramFallback_FlatHistogramUsesBroadSupports()
@@ -76,7 +76,7 @@ public class PointProcessChangePointPriorTests
     }
 
     /// <summary>
-    /// Verifies that a single seasonal peak retains both approved broad supports.
+    /// Verifies that a single seasonal peak retains both broad default supports.
     /// </summary>
     [TestMethod]
     public void Test_HistogramFallback_UnimodalHistogramUsesBroadSupports()
@@ -85,7 +85,7 @@ public class PointProcessChangePointPriorTests
     }
 
     /// <summary>
-    /// Verifies that equally strong competing peak pairs retain both approved broad supports.
+    /// Verifies that equally strong competing peak pairs retain both broad default supports.
     /// </summary>
     [TestMethod]
     public void Test_HistogramFallback_TiedPeakPairsUseBroadSupports()
@@ -94,7 +94,7 @@ public class PointProcessChangePointPriorTests
     }
 
     /// <summary>
-    /// Verifies that fewer than ten exact dated events retain both approved broad supports.
+    /// Verifies that fewer than ten exact dated events retain both broad default supports.
     /// </summary>
     [TestMethod]
     public void Test_HistogramFallback_InsufficientDatedEventsUseBroadSupports()
@@ -103,7 +103,7 @@ public class PointProcessChangePointPriorTests
     }
 
     /// <summary>
-    /// Verifies that manually entered index-only events retain both approved broad supports.
+    /// Verifies that manually entered index-only events retain both broad default supports.
     /// </summary>
     [TestMethod]
     public void Test_HistogramFallback_UndatedEventsUseBroadSupports()
@@ -267,7 +267,7 @@ public class PointProcessChangePointPriorTests
     }
 
     /// <summary>
-    /// Asserts that a histogram retains the approved broad changepoint supports.
+    /// Asserts that a histogram retains the broad default changepoint supports.
     /// </summary>
     /// <param name="monthlyCounts">The occurrence counts used to create the data.</param>
     /// <param name="dated">Whether records have usable occurrence dates.</param>

@@ -128,7 +128,7 @@ public class ARIMAXAlignmentTests
 
     /// <summary>
     /// Verifies changing either conditional AR/MA order after data attachment rebuilds the
-    /// aligned transformation Jacobian rather than retaining the former conditioning range.
+    /// aligned transformation Jacobian for the new conditioning range.
     /// </summary>
     [TestMethod]
     public void ConditionalOrderChanges_RebuildAlignedJacobian()

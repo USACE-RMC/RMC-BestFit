@@ -92,7 +92,7 @@ public class TimeSeriesInvalidScaleTests
     }
 
     /// <summary>
-    /// Creates one common-data instance of every Phase 5 time-series model.
+    /// Creates one common-data instance of every time-series model.
     /// </summary>
     /// <returns>The four configured time-series models.</returns>
     private static ModelBase[] CreateModels()

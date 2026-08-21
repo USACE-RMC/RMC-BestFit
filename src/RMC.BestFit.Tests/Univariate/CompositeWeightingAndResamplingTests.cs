@@ -12,14 +12,14 @@ using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Fast programmatic regression tests for Phase 4 composite-analysis corrections.
+/// Fast programmatic regression tests for composite-analysis weighting, resampling, and results.
 /// </summary>
 /// <remarks>
 /// Covers criterion filtering, exact-zero RMSE weights, correlation-matrix validation,
 /// serialization, ownership, and independent posterior result construction.
 /// </remarks>
 [TestClass]
-public class CompositePhase4Tests
+public class CompositeWeightingAndResamplingTests
 {
     /// <summary>
     /// Creates an estimated Normal child with deterministic posterior and comparison results.

@@ -18,7 +18,7 @@ namespace RMC.BestFit.Tests.DistributionFitting;
 /// </list>
 /// <para>
 /// Constructor validation, property round-trips, XML serialization (without estimation),
-/// and Phase 1 behavior: probability ordinate changes must NOT clear the MLE fit.
+/// and the ordinate contract: probability ordinate changes must NOT clear the MLE fit.
 /// Computational/MLE tests (RunAsync, parity against published results) live in
 /// <c>RMC.BestFit.Verification/DistributionFitting/FittingAnalysisTests.cs</c>.
 /// </para>
@@ -50,7 +50,7 @@ public class FittingAnalysisTests
     }
 
     /// <summary>
-    /// Creates a small inline BestFitDataFrame used by the legacy Phase 1 tests below.
+    /// Creates a small inline BestFitDataFrame used by the probability-ordinate tests below.
     /// </summary>
     private static BestFitDataFrame CreateSmallTestDataFrame()
     {
@@ -299,7 +299,7 @@ public class FittingAnalysisTests
 
     #endregion
 
-    #region Phase 1: ProbabilityOrdinates Behavior Without Estimation
+    #region ProbabilityOrdinates Behavior Without Estimation
 
     /// <summary>
     /// Tests that changing ProbabilityOrdinates on a fresh (not-estimated) FittingAnalysis is a no-op.
@@ -322,7 +322,7 @@ public class FittingAnalysisTests
     /// <summary>
     /// Tests that FittedDistributions collection (initialized to default, unfitted distributions)
     /// is reference-equal before and after a ProbabilityOrdinates change — confirming ordinates
-    /// do not trigger ClearResults() in the model layer (Phase 1 fix).
+    /// do not trigger ClearResults() in the model layer.
     /// </summary>
     [TestMethod]
     public void ProbabilityOrdinatesChange_DoesNotReplaceFittedDistributionsList()

@@ -7,7 +7,7 @@ using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Phase 2 unit tests for the <c>BayesianAnalysis.CredibleIntervalWidth</c>
+/// Unit tests for the <c>BayesianAnalysis.CredibleIntervalWidth</c>
 /// setter. Verifies that changing the CI width on an analysis does not wipe the
 /// MCMC fit and produces only the expected PropertyChanged signals. These are
 /// programmatic event-wiring tests — no MCMC chain is run. Chain-running parity
@@ -18,8 +18,8 @@ namespace RMC.BestFit.Tests.ModelEstimation;
 /// The contract: alpha = 1 - CIWidth only affects the LowerCI/UpperCI percentiles
 /// stored on each <c>ParameterResults[i].SummaryStatistics</c>. The chain itself
 /// (MarkovChains, AcceptanceRates, MeanLogLikelihood, Output) is invariant under
-/// alpha. Before Phase 2 the setter called <c>ClearResults()</c>, forcing the
-/// user to rerun chains just to widen CI bands. After Phase 2 it preserves
+/// alpha. The setter does not call <c>ClearResults()</c>, which would force the
+/// user to rerun chains just to widen CI bands; instead it preserves
 /// <c>Results</c> and reprocesses ParameterResults summary statistics in place
 /// via <c>MCMCResults.RecomputeParameterResults</c>.
 /// </para>

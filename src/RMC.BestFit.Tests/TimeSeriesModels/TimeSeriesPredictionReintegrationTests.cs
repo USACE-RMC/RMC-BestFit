@@ -299,7 +299,7 @@ public class TimeSeriesPredictionReintegrationTests
     }
 
     /// <summary>
-    /// Pins the pre-change <c>d=0</c>, untransformed fixed-seed arrays bit for bit for both
+    /// Pins the <c>d=0</c>, untransformed fixed-seed arrays bit for bit for both
     /// prediction implementations and every existing component tuple member.
     /// </summary>
     [TestMethod]
@@ -419,7 +419,7 @@ public class TimeSeriesPredictionReintegrationTests
     /// <summary>
     /// Compares fixed-seed golden arrays exactly.
     /// </summary>
-    /// <param name="expected">The captured pre-change values.</param>
+    /// <param name="expected">The pinned values.</param>
     /// <param name="actual">The current values.</param>
     /// <param name="context">The assertion context.</param>
     private static void AssertExact(double[] expected, double[] actual, string context)

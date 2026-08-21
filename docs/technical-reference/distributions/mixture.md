@@ -237,7 +237,7 @@ See the [mixture verification report](../../verification/mixture.md).
 | Sampled-coordinate result storage and diagnostics | **Estimation/BayesianAnalysis.cs** and **Diagnostics/** |
 | Physical parameter-set display | **RMC.BestFit.App/GUI/Support/Controls/ParameterSetsControl.xaml.cs** |
 | Physical simplex and hurdle distribution | sibling **Numerics/Distributions/Univariate/Mixture.cs** |
-| Fast regressions | **RMC.BestFit.Tests/Univariate/MixturePhase4Tests.cs** |
+| Fast regressions | **RMC.BestFit.Tests/Univariate/MixtureLikelihoodContractTests.cs** |
 | Generation, recovery parity, and Bayesian recovery | **RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs** |
 
 ## References

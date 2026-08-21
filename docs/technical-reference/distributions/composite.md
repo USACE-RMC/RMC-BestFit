@@ -235,7 +235,7 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 | Min/max construction | pinned **Numerics/Distributions/Univariate/CompetingRisks.cs** |
 | Uncertainty aggregation | pinned **Numerics/Distributions/Univariate/Uncertainty Analysis/BootstrapAnalysis.cs** |
 | Posterior index generation | **Analyses/Support/PosteriorIndexResampler.cs** |
-| Fast contract evidence | **RMC.BestFit.Tests/Analyses/PosteriorIndexResamplerTests.cs**, **RMC.BestFit.Tests/Univariate/CompositePhase4Tests.cs**, and Composite UI tests |
+| Fast contract evidence | **RMC.BestFit.Tests/Analyses/PosteriorIndexResamplerTests.cs**, **RMC.BestFit.Tests/Univariate/CompositeWeightingAndResamplingTests.cs**, and Composite UI tests |
 | Independent numerical oracle | **RMC.BestFit.Verification/ModelEstimation/PosteriorResamplingVerificationTests.cs** |
 | Report and three-child recovery supplement | **RMC.BestFit.Verification/Univariate/CompositeTests/CompositeRecoveryTests.cs** and helper partial |
 

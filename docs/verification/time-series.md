@@ -98,7 +98,7 @@ signature baselines intact. Core passes 3,183/3,183. The strict Debug solution b
 
 - `PointwisePriorMetadata_ClassifiesExactlyOneJeffreysScaleComponentWhenEnabled`;
 - `PointwisePriorMetadata_SumsToScalarPriorLikelihood`; and
-- `ARIMAX_JeffreysScaleMetadata_RemainsEstablishedReference`.
+- `ARIMAX_JeffreysScaleMetadata_IsTheReferenceForOtherModels`.
 
 They assert exactly one Jeffreys component when enabled and none when disabled, the `σ` identity,
 the independent `-log(sigma)` density, the unchanged ARIMAX reference metadata, and equality of

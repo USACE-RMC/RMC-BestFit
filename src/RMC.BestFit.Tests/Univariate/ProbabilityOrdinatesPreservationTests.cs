@@ -9,7 +9,7 @@ using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Phase 1 backfill tests for the Bayesian univariate analyses. Verifies the contract
+/// Tests for the Bayesian univariate analyses' ordinate handling. Verifies the contract
 /// established by the ProbabilityOrdinates reprocess pattern: an ordinate change must
 /// not cascade into <c>BayesianAnalysis.ClearResults</c> side-effects on the
 /// inner MCMC fit. These are programmatic event-wiring tests — no MCMC chain is run.
@@ -21,10 +21,9 @@ namespace RMC.BestFit.Tests.Univariate;
 /// (not-estimated) analysis fires <c>ProbabilityOrdinates</c> PropertyChanged and
 /// nothing else. The clear-side-effect signals — <c>AnalysisResults</c>,
 /// <c>IsEstimated</c>, and <c>BayesianAnalysis.Results</c> PropertyChanged — must
-/// remain silent. Before Phase 1 these would all fire because the model-layer
-/// PropertyChanged handler called <c>ClearResults()</c> as a fall-through. After
-/// Phase 1's whitelist conversion (and the existing handler at
-/// <c>UnivariateAnalysis.ProbabilityOrdinates_CollectionChanged</c>) they no longer do.
+/// remain silent: the model-layer PropertyChanged handler is a whitelist (with the
+/// handler at <c>UnivariateAnalysis.ProbabilityOrdinates_CollectionChanged</c>), so an
+/// ordinate change does not fall through to <c>ClearResults()</c>.
 /// </para>
 /// </remarks>
 [TestClass]

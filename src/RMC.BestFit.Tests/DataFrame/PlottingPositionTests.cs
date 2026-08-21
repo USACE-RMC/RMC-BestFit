@@ -412,7 +412,7 @@ public class PlottingPositionTests
     /// and assigns only open-interval plotting positions.
     /// </summary>
     /// <remarks>
-    /// The arranged counts intentionally reproduce the former K=43/K=6 condition that
+    /// The arranged counts intentionally reproduce the K=43/K=6 condition that
     /// made the prior recurrence calculate Q=1 at the 743-cfs level. Two observations
     /// fall below their own perception thresholds and are classified as censored only
     /// for plotting; they remain exact observations with their original values.

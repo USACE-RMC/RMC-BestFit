@@ -248,7 +248,7 @@ public class CoincidentFrequencyAnalysisTests
 
     // CredibleIntervalWidth_OutOfRange_IsIgnored test removed: CFA's own setter
     // range-clamp was retired when CredibleIntervalWidth moved into the owned
-    // BayesianAnalysis (Phase 2.5a). BayesianAnalysis does not range-clamp the value;
+    // BayesianAnalysis. BayesianAnalysis does not range-clamp the value;
     // out-of-range values would surface via Validate() if needed.
 
     #endregion

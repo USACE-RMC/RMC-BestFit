@@ -161,7 +161,7 @@ public class TimeSeriesArimaxGenerationTests
     }
 
     /// <summary>
-    /// Verifies the pre-change Transform.None/d=0 fixed-seed sequence is preserved bit-for-bit.
+    /// Pins the Transform.None/d=0 fixed-seed sequence bit for bit.
     /// </summary>
     [TestMethod]
     public void ArimaxNoneD0FixedSeedGeneration_RetainsGoldenArrayBitForBit()

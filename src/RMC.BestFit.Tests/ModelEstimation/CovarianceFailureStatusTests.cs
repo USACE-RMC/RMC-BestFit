@@ -8,7 +8,7 @@ using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 namespace RMC.BestFit.Tests.ModelEstimation;
 
 /// <summary>
-/// Verifies the TR-027 covariance status and failure contracts without running an estimator.
+/// Verifies the covariance status and failure contracts without running an estimator.
 /// </summary>
 /// <remarks>
 /// Reflection is limited to arranging deterministic post-estimation Hessians. Public covariance

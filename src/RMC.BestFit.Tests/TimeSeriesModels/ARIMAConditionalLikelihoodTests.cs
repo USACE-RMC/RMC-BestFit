@@ -10,7 +10,7 @@ namespace RMC.BestFit.Tests.TimeSeriesModels;
 /// <remarks>
 /// This fast regression uses an inline deterministic fixture and does not invoke an optimizer or
 /// sampler. It fixes the conditioning, moving-average sign, logarithmic Jacobian, and likelihood
-/// indexing used by the Phase 5 recovery oracle.
+/// indexing used by the time-series recovery oracle.
 /// </remarks>
 [TestClass]
 public class ARIMAConditionalLikelihoodTests

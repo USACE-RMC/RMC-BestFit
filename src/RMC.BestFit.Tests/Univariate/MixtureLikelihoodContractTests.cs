@@ -9,7 +9,7 @@ namespace RMC.BestFit.Tests.Univariate;
 /// Fast regression tests for the full-K mixture contract and positive-hurdle likelihood.
 /// </summary>
 [TestClass]
-public class MixturePhase4Tests
+public class MixtureLikelihoodContractTests
 {
     /// <summary>
     /// Creates an exact-data frame from supplied values.

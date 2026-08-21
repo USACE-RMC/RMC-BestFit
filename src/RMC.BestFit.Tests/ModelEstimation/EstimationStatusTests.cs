@@ -247,7 +247,7 @@ public class EstimationStatusTests
     #region Bulletin17CAnalysis deserialize regression
 
     /// <summary>
-    /// Regression for the bug introduced by Phase 1's ordinate reprocess: opening a saved B17C
+    /// Regression for the ordinate-reprocess path: opening a saved B17C
     /// project and editing a probability ordinate would NRE at line 646 of Bulletin17CAnalysis
     /// because <c>_gmm.Optimizer</c> is null after RestoreFromXElement. The fix replaces all six
     /// <c>.Optimizer.Status</c> references with the persistent <c>.Status</c> property.
@@ -280,7 +280,7 @@ public class EstimationStatusTests
         Assert.IsNull(restored.GMM!.Optimizer, "Optimizer is transient and not restored.");
 
         // Act — toggling ordinates triggers the model-layer ProbabilityOrdinates_CollectionChanged,
-        // which (via Phase 1) calls CreateFrequencyAnalysisResultsAsync. That method's first guard
+        // which calls CreateFrequencyAnalysisResultsAsync. That method's first guard
         // dereferences _gmm.Status — must NOT throw.
         restored.ProbabilityOrdinates.Add(0.5);
 

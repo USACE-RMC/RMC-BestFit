@@ -138,7 +138,7 @@ public class TimeSeriesGenerationTransformTests
     }
 
     /// <summary>
-    /// Pins every pre-change untransformed, undifferenced fixed-seed sequence bit for bit.
+    /// Pins every untransformed, undifferenced fixed-seed sequence bit for bit.
     /// </summary>
     [TestMethod]
     public void NoneD0FixedSeedGeneration_RetainsGoldenArraysBitForBit()
@@ -220,7 +220,7 @@ public class TimeSeriesGenerationTransformTests
     /// <summary>
     /// Compares fixed-seed golden arrays exactly.
     /// </summary>
-    /// <param name="expected">The pre-change values.</param>
+    /// <param name="expected">The pinned values.</param>
     /// <param name="actual">The current values.</param>
     /// <param name="context">The assertion context.</param>
     private static void AssertExact(double[] expected, double[] actual, string context)

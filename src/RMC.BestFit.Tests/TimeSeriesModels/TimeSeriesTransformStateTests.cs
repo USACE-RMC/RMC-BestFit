@@ -28,7 +28,7 @@ public class TimeSeriesTransformStateTests
     };
 
     /// <summary>
-    /// Verifies the approved getter is read-only and hidden from property-grid discovery.
+    /// Verifies the getter is read-only and hidden from property-grid discovery.
     /// </summary>
     [TestMethod]
     public void TransformLambda_IsReadOnlyAndNotBrowsable()
