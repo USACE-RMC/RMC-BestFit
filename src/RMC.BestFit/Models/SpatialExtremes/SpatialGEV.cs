@@ -475,16 +475,24 @@ namespace RMC.BestFit.Models.SpatialExtremes
             _parameters.AddRange(shapeParams);
 
             // Add spatial error parameters if enabled
+            // The latent-error bound is three times the spread of the site statistics in the space in
+            // which the error acts: log space under a log link, raw units under an identity link.
             if (UseLocationErrors && LocationErrors != null)
             {
-                double maxLocError = Math.Ceiling((Statistics.Maximum(locList.ToArray()) - avgLoc) * 3);
+                double locSpread = UseLogLinkForLocation
+                    ? LogSpaceSpread(locList)
+                    : Statistics.Maximum(locList.ToArray()) - avgLoc;
+                double maxLocError = Math.Ceiling(locSpread * 3);
                 LocationErrors.SetDefaultParameters(Math.Max(maxLocError, 1.0));
                 _parameters.AddRange(LocationErrors.Parameters);
             }
 
             if (UseScaleErrors && ScaleErrors != null)
             {
-                double maxSclError = Math.Ceiling((Statistics.Maximum(sclList.ToArray()) - avgScl) * 3);
+                double sclSpread = UseLogLinkForScale
+                    ? LogSpaceSpread(sclList)
+                    : Statistics.Maximum(sclList.ToArray()) - avgScl;
+                double maxSclError = Math.Ceiling(sclSpread * 3);
                 ScaleErrors.SetDefaultParameters(Math.Max(maxSclError, 1.0));
                 _parameters.AddRange(ScaleErrors.Parameters);
             }
@@ -594,6 +602,44 @@ namespace RMC.BestFit.Models.SpatialExtremes
                 kappa += ShapeErrors.GetError(siteIndex);
 
             return new double[] { xi, alpha, kappa };
+        }
+
+        /// <summary>
+        /// Computes the spread of positive site statistics in log space: the maximum of their logarithms
+        /// minus the mean of their logarithms; zero when fewer than one positive value exists.
+        /// </summary>
+        /// <param name="values">The site statistics (sample means or standard deviations).</param>
+        /// <returns>The log-space spread, never negative.</returns>
+        private static double LogSpaceSpread(List<double> values)
+        {
+            var logs = new List<double>();
+            foreach (double value in values)
+            {
+                if (value > 0 && Tools.IsFinite(value))
+                    logs.Add(Math.Log(value));
+            }
+            if (logs.Count == 0)
+                return 0.0;
+            double mean = logs.Average();
+            double max = logs.Max();
+            return Math.Max(max - mean, 0.0);
+        }
+
+        /// <summary>
+        /// Determines whether a site's GEV parameter vector [ξ, α, κ] is finite with a positive scale.
+        /// </summary>
+        /// <param name="gevParams">The site parameters.</param>
+        /// <returns><c>true</c> when the vector can be evaluated; otherwise <c>false</c>.</returns>
+        /// <remarks>
+        /// A non-finite parameter (for example an overflowing <c>exp(trend + latent error)</c>) makes the
+        /// proposal impossible: the likelihood reports negative infinity instead of throwing from the GEV
+        /// parameter validation inside the sampler.
+        /// </remarks>
+        private static bool IsValidSiteParameterSet(double[] gevParams)
+        {
+            return Tools.IsFinite(gevParams[0])
+                && Tools.IsFinite(gevParams[1]) && gevParams[1] > 0
+                && Tools.IsFinite(gevParams[2]);
         }
 
         /// <summary>
@@ -748,7 +794,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
                         {
                             var gevParams = GetGEVParametersLocal(j, localLocation, localScale, localShape,
                                 localLocErrors, localSclErrors, localShpErrors);
-                            if (gevParams[1] <= 0) // Scale must be positive
+                            if (!IsValidSiteParameterSet(gevParams)) // Finite parameters with positive scale
                                 return double.NegativeInfinity;
 
                             localGEV.SetParameters(gevParams);
@@ -788,7 +834,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
                         {
                             var gevParams = GetGEVParametersLocal(j, localLocation, localScale, localShape,
                                 localLocErrors, localSclErrors, localShpErrors);
-                            if (gevParams[1] <= 0) // Scale must be positive
+                            if (!IsValidSiteParameterSet(gevParams)) // Finite parameters with positive scale
                                 return double.NegativeInfinity;
 
                             localGEV.SetParameters(gevParams);
@@ -1065,7 +1111,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
                         if (!double.IsNaN(AtSiteData[i, j]))
                         {
                             var gevParams = gevParamsCache[j];
-                            if (gevParams[1] <= 0) // Scale must be positive
+                            if (!IsValidSiteParameterSet(gevParams)) // Finite parameters with positive scale
                             {
                                 valid = false;
                                 break;
@@ -1124,7 +1170,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
                         if (!double.IsNaN(AtSiteData[i, j]))
                         {
                             var gevParams = gevParamsCache[j];
-                            if (gevParams[1] <= 0) // Scale must be positive
+                            if (!IsValidSiteParameterSet(gevParams)) // Finite parameters with positive scale
                             {
                                 valid = false;
                                 break;
@@ -1313,7 +1359,48 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// </remarks>
         public override IModel Clone()
         {
-            var clone = new SpatialGEV(AtSiteData, Coordinates,
+            return CloneWithData(AtSiteData);
+        }
+
+        /// <summary>
+        /// Creates a bootstrap replicate model: this network (coordinates, covariates, copula, error models,
+        /// flags, weights, and parameter settings) with its observation rows replaced by the supplied rows.
+        /// </summary>
+        /// <param name="rowIndices">The source row of each replicate row (rows may repeat).</param>
+        /// <returns>The replicate model with the same parameter structure as this model.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="rowIndices"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="rowIndices"/> is empty or holds an index outside the observation range.</exception>
+        /// <remarks>
+        /// Rows are resampled whole, so every site keeps the same years and the intersite dependence of the
+        /// resampled rows is preserved; used by the spatial analysis's block bootstrap.
+        /// </remarks>
+        internal SpatialGEV CreateResampledModel(int[] rowIndices)
+        {
+            if (rowIndices == null)
+                throw new ArgumentNullException(nameof(rowIndices));
+            if (rowIndices.Length == 0)
+                throw new ArgumentException("At least one row is required.", nameof(rowIndices));
+            var data = new double[rowIndices.Length, Sites];
+            for (int i = 0; i < rowIndices.Length; i++)
+            {
+                int source = rowIndices[i];
+                if (source < 0 || source >= Observations)
+                    throw new ArgumentException($"Row index {source} is outside the observation range.", nameof(rowIndices));
+                for (int j = 0; j < Sites; j++)
+                    data[i, j] = AtSiteData[source, j];
+            }
+            return CloneWithData(data);
+        }
+
+        /// <summary>
+        /// Builds a copy of this model over the supplied data matrix (the same sites, components, flags,
+        /// weights, and parameter settings).
+        /// </summary>
+        /// <param name="data">The at-site data [observations × sites] of the copy.</param>
+        /// <returns>The copy.</returns>
+        private SpatialGEV CloneWithData(double[,] data)
+        {
+            var clone = new SpatialGEV(data, Coordinates,
                 (GeneralLinearFunction)Location.Clone(),
                 (GeneralLinearFunction)Scale.Clone(),
                 (GeneralLinearFunction)Shape.Clone())
@@ -2005,19 +2092,17 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// <inheritdoc/>
         /// <remarks>
         /// <para>
-        /// Generates random samples from the spatial GEV model. Samples are generated
-        /// independently for each site using the site-specific GEV parameters
-        /// (location, scale, shape) computed from the spatial regression.
+        /// Generates random samples from the spatial GEV model with the site-specific GEV parameters
+        /// (location, scale, shape) computed from the spatial regression and the latent errors.
         /// </para>
         /// <para>
-        /// The returned array contains values for all sites, with samples grouped
-        /// by site (site 1 samples, then site 2 samples, etc.). The total length
-        /// is sampleSize * Sites.
-        /// </para>
-        /// <para>
-        /// Note: Spatial correlation between sites is not included in this simple
-        /// generation scheme. For correlated simulations, use the copula-based
-        /// simulation methods.
+        /// The returned array contains values for all sites, with samples grouped by site (site 1
+        /// samples, then site 2 samples, etc.); the total length is sampleSize * Sites. When copula
+        /// dependence is enabled, sample <c>i</c> of every site belongs to the same simulated event:
+        /// one standard-normal vector per sample is multiplied by the Cholesky factor of the fitted copula
+        /// correlation matrix, mapped through Φ, and passed through each site's inverse GEV distribution
+        /// function, so the simulated rows reproduce the fitted intersite dependence. Without copula
+        /// dependence the sites are simulated independently (unchanged behavior).
         /// </para>
         /// </remarks>
         public double[] GenerateRandomValues(int sampleSize, int seed = -1)
@@ -2032,6 +2117,9 @@ namespace RMC.BestFit.Models.SpatialExtremes
             var rng = seed > 0 ? new Numerics.Sampling.MersenneTwister(seed) : new Numerics.Sampling.MersenneTwister();
             var paramValues = Parameters.Select(p => p.Value).ToArray();
             SetParameterValues(paramValues);
+
+            if (UseCopulaDependence && SpatialDependence != null)
+                return GenerateDependentRandomValues(sampleSize, rng);
 
             // Generate samples for each site
             var result = new double[sampleSize * Sites];
@@ -2050,6 +2138,50 @@ namespace RMC.BestFit.Models.SpatialExtremes
                 for (int i = 0; i < sampleSize; i++)
                 {
                     result[resultIndex++] = gev.InverseCDF(rng.NextDouble());
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Simulates spatially dependent rows through the Gaussian copula: correlated standard-normal
+        /// vectors from the Cholesky factor of the fitted correlation matrix, mapped through Φ and each
+        /// site's inverse GEV distribution function.
+        /// </summary>
+        /// <param name="sampleSize">The number of simulated rows.</param>
+        /// <param name="rng">The seeded generator.</param>
+        /// <returns>The values grouped by site; sample <c>i</c> of every site is one simulated row.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the fitted correlation matrix is unavailable or not positive definite.</exception>
+        private double[] GenerateDependentRandomValues(int sampleSize, Numerics.Sampling.MersenneTwister rng)
+        {
+            double[,]? correlation = SpatialDependence.GetCorrelationMatrix();
+            if (correlation == null)
+                throw new InvalidOperationException("The copula parameters must be set before simulating dependent values.");
+            var cholesky = new Numerics.Mathematics.LinearAlgebra.CholeskyDecomposition(new Numerics.Mathematics.LinearAlgebra.Matrix(correlation));
+            if (!cholesky.IsPositiveDefinite)
+                throw new InvalidOperationException("The fitted copula correlation matrix is not positive definite; dependent simulation is unavailable.");
+            var L = cholesky.L;
+
+            var distributions = new Numerics.Distributions.GeneralizedExtremeValue[Sites];
+            for (int s = 0; s < Sites; s++)
+            {
+                var gevParams = GetGEVParameters(s);
+                distributions[s] = new Numerics.Distributions.GeneralizedExtremeValue(gevParams[0], gevParams[1], gevParams[2]);
+            }
+
+            var result = new double[sampleSize * Sites];
+            var z = new double[Sites];
+            for (int i = 0; i < sampleSize; i++)
+            {
+                for (int s = 0; s < Sites; s++)
+                    z[s] = Normal.StandardZ(rng.NextDouble());
+                for (int s = 0; s < Sites; s++)
+                {
+                    double w = 0.0;
+                    for (int k = 0; k <= s; k++)
+                        w += L[s, k] * z[k];
+                    result[s * sampleSize + i] = distributions[s].InverseCDF(Normal.StandardCDF(w));
                 }
             }
 

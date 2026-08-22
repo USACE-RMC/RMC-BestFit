@@ -618,4 +618,37 @@ public class GaussianCopulaTests
     }
 
     #endregion
+
+    #region Correlation Matrix Accessor Tests
+
+    /// <summary>
+    /// Verifies that the correlation matrix accessor is null before the parameters are set and afterwards
+    /// returns an independent copy of the fitted correlation matrix.
+    /// </summary>
+    [TestMethod]
+    public void GetCorrelationMatrix_ReturnsCopyOfTheFittedMatrix()
+    {
+        double[,] coordinates = CreateRiverCoordinates();
+        var copula = new GaussianCopula(coordinates, CorrelationFunctionType.Exponential);
+        Assert.IsNull(copula.GetCorrelationMatrix(), "No matrix before the parameters are set.");
+
+        copula.SetParameterValues(new List<double> { 25.0 });
+        double[,]? matrix = copula.GetCorrelationMatrix();
+
+        Assert.IsNotNull(matrix);
+        Assert.AreEqual(5, matrix!.GetLength(0));
+        for (int i = 0; i < 5; i++)
+        {
+            Assert.AreEqual(1.0, matrix[i, i], 0.0);
+            for (int j = 0; j < 5; j++)
+            {
+                double h = Numerics.Tools.Distance(coordinates[i, 0], coordinates[i, 1], coordinates[j, 0], coordinates[j, 1]);
+                Assert.AreEqual(i == j ? 1.0 : Math.Exp(-h / 25.0), matrix[i, j], 1e-12, $"Entry ({i + 1}, {j + 1}).");
+            }
+        }
+        matrix[0, 1] = 99.0;
+        Assert.AreNotEqual(99.0, copula.GetCorrelationMatrix()![0, 1], "The accessor returns a copy.");
+    }
+
+    #endregion
 }

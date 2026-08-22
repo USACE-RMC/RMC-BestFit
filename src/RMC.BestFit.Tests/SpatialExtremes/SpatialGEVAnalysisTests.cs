@@ -2,6 +2,7 @@ using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
+using Numerics.Sampling;
 using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
@@ -1356,6 +1357,269 @@ public class SpatialGEVAnalysisTests
         StringAssert.Contains(exception.Message, "FitFailed");
         Assert.IsNull(analysis.CrossValidationResults, "An empty validation is never reported as a result.");
         Assert.IsFalse(analysis.IsEstimated, "The analysis itself is untouched.");
+    }
+
+    #endregion
+
+    #region Prediction, Regional Posterior, Dispatch, and Bootstrap Contracts
+
+    /// <summary>
+    /// Builds an analysis that reports itself estimated with an injected draw set (restore path plus
+    /// injected results), so the posterior post-processing can run without a sampler.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="draws">The injected parameter draws.</param>
+    /// <returns>The estimated analysis.</returns>
+    private static SpatialGEVAnalysis CreateEstimatedAnalysis(SpatialGEV model, IReadOnlyList<double[]> draws)
+    {
+        var sets = draws.Select(values => new ParameterSet(values, model.LogLikelihood(values))).ToList();
+        ParameterSet best = sets.OrderByDescending(s => s.Fitness).First();
+        var results = new MCMCResults(new ParameterSet(best.Values, best.Fitness), sets, alpha: 0.1);
+
+        var seed = new SpatialGEVAnalysis(model);
+        seed.ProbabilityOrdinates = new ProbabilityOrdinates(new List<double> { 0.5, 0.1, 0.02 });
+        XElement xml = seed.ToXElement();
+        xml.SetAttributeValue("IsEstimated", true);
+        var analysis = new SpatialGEVAnalysis(model, xml);
+        analysis.BayesianAnalysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+        Assert.IsTrue(analysis.IsEstimated);
+        return analysis;
+    }
+
+    /// <summary>
+    /// Builds six parameter draws around the model defaults by perturbing the first three parameters.
+    /// </summary>
+    /// <param name="model">The model.</param>
+    /// <param name="locationIndex">The index of the first perturbed parameter.</param>
+    /// <returns>The draws.</returns>
+    private static List<double[]> CreateDraws(SpatialGEV model, int locationIndex)
+    {
+        var defaults = model.Parameters.Select(p => p.Value).ToArray();
+        double[][] offsets =
+        {
+            new[] { 0.00, 0.00, 0.00 },
+            new[] { 0.02, -0.01, 0.03 },
+            new[] { -0.01, 0.02, -0.02 },
+            new[] { 0.03, 0.01, 0.01 },
+            new[] { -0.02, -0.02, 0.02 },
+            new[] { 0.01, 0.03, -0.03 },
+        };
+        var draws = new List<double[]>();
+        foreach (double[] offset in offsets)
+        {
+            var values = (double[])defaults.Clone();
+            for (int k = 0; k < 3; k++)
+                values[locationIndex + k] += offset[k];
+            draws.Add(values);
+        }
+        return draws;
+    }
+
+    /// <summary>
+    /// Rebuilds the site and regional results from the injected posterior through the production
+    /// reprocessor (the same method the ordinate change invokes) and returns the regional results.
+    /// </summary>
+    /// <param name="analysis">The analysis.</param>
+    /// <returns>The regional results.</returns>
+    private static async Task<UncertaintyAnalysisResults> ReprocessAndWaitAsync(SpatialGEVAnalysis analysis)
+    {
+        await analysis.RebuildPosteriorResultsAsync();
+        Assert.IsNotNull(analysis.AnalysisResults, "The rebuild must publish regional results.");
+        return analysis.AnalysisResults!;
+    }
+
+    /// <summary>
+    /// Verifies TR-054 deterministically: with the conditional residual disabled, the ungauged-site
+    /// location equals the mean over the injected draws of the model-level conditional Gaussian-process
+    /// prediction; with the residual enabled the prediction is reproducible for the seed.
+    /// </summary>
+    [TestMethod]
+    public void PredictAtUngaugedLocation_UsesConditionalGaussianProcessPerDraw()
+    {
+        var data = CreateTestAtSiteData();
+        var coords = CreateTestCoordinates();
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        model.LocationErrors = new SpatialRegressionErrors(coords, CorrelationFunctionType.Exponential);
+        model.UseLocationErrors = true;
+        model.SetDefaultParameters();
+        List<double[]> draws = CreateDraws(model, 0);
+        double[] errors = { 0.05, -0.04, 0.02, 0.01, -0.03 };
+        foreach (double[] draw in draws)
+        {
+            draw[3] = 0.25;
+            draw[4] = 20.0;
+            for (int j = 0; j < 5; j++)
+                draw[5 + j] = errors[j] + 0.01 * draws.IndexOf(draw);
+        }
+        SpatialGEVAnalysis analysis = CreateEstimatedAnalysis(model, draws);
+        double[] target = { 12.0, 7.0 };
+        double[] probabilities = { 0.5, 0.1, 0.01 };
+
+        double expected = 0.0;
+        foreach (double[] draw in draws)
+        {
+            var clone = (SpatialGEV)model.Clone();
+            clone.SetParameterValues(draw);
+            expected += clone.PredictAtUngauged(target, null).GEVParams[0];
+        }
+        expected /= draws.Count;
+
+        analysis.SampleConditionalResidual = false;
+        SpatialGEVSiteResults deterministic = analysis.PredictAtUngaugedLocation(target, null, probabilities);
+        analysis.SampleConditionalResidual = true;
+        SpatialGEVSiteResults sampledA = analysis.PredictAtUngaugedLocation(target, null, probabilities);
+        SpatialGEVSiteResults sampledB = analysis.PredictAtUngaugedLocation(target, null, probabilities);
+
+        Assert.AreEqual(expected, deterministic.LocationMean, 1e-9 * expected, "Conditional mean per draw (TR-054).");
+        Assert.AreEqual(sampledA.LocationMean, sampledB.LocationMean, 0.0, "Seeded residuals are reproducible.");
+        Assert.AreNotEqual(deterministic.LocationMean, sampledA.LocationMean, "The residual draws change the prediction.");
+        Assert.IsTrue(sampledA.LocationUpper - sampledA.LocationLower >= deterministic.LocationUpper - deterministic.LocationLower,
+            "Sampling the conditional residual widens (or keeps) the predictive interval.");
+    }
+
+    /// <summary>
+    /// Verifies TR-058 deterministically: with injected draws the regional bounds are the equal-tailed
+    /// quantiles of the per-draw regional mean quantile and the mean curve is its mean.
+    /// </summary>
+    [TestMethod]
+    public async Task RegionalCurve_FromInjectedDraws_IsPosteriorOfTheRegionalMean()
+    {
+        var data = CreateTestAtSiteData();
+        var coords = CreateTestCoordinates();
+        var covariates = new double[5, 2];
+        for (int j = 0; j < 5; j++)
+        {
+            covariates[j, 0] = coords[j, 0];
+            covariates[j, 1] = coords[j, 1];
+        }
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location", covariates), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        model.Parameters[1].Value = 0.004;
+        model.Parameters[2].Value = -0.003;
+        model.SetParameterValues(model.Parameters.Select(p => p.Value).ToArray());
+        List<double[]> draws = CreateDraws(model, 0);
+        SpatialGEVAnalysis analysis = CreateEstimatedAnalysis(model, draws);
+        double alpha = 1 - analysis.BayesianAnalysis.CredibleIntervalWidth;
+
+        UncertaintyAnalysisResults regional = await ReprocessAndWaitAsync(analysis);
+
+        double[] probabilities = { 0.5, 0.1, 0.02 };
+        for (int p = 0; p < probabilities.Length; p++)
+        {
+            var values = new double[draws.Count];
+            for (int d = 0; d < draws.Count; d++)
+            {
+                var clone = (SpatialGEV)model.Clone();
+                clone.SetParameterValues(draws[d]);
+                double sum = 0.0;
+                for (int j = 0; j < 5; j++)
+                    sum += clone.InverseCDF(1 - probabilities[p], j);
+                values[d] = sum / 5;
+            }
+            double mean = values.Average();
+            Array.Sort(values);
+            Assert.AreEqual(mean, regional.MeanCurve![p], 1e-9 * mean, $"Mean curve at p = {probabilities[p]}.");
+            Assert.AreEqual(Numerics.Data.Statistics.Statistics.Percentile(values, alpha / 2d, true), regional.ConfidenceIntervals![p, 1], 1e-9 * mean, $"Lower bound at p = {probabilities[p]} (TR-058).");
+            Assert.AreEqual(Numerics.Data.Statistics.Statistics.Percentile(values, 1 - alpha / 2d, true), regional.ConfidenceIntervals[p, 2], 1e-9 * mean, $"Upper bound at p = {probabilities[p]} (TR-058).");
+        }
+        Assert.IsTrue(analysis.SiteResults!.All(s => s.UncertaintyMethod == SpatialGEVUncertaintyMethod.BayesianPosterior));
+    }
+
+    /// <summary>
+    /// Verifies the TR-062 dispatch for the inflated and Godambe methods without a sampler: the applied
+    /// method is recorded on the analysis and every site, the inflated bounds widen by sqrt(VIF), and the
+    /// Godambe path rebuilds the site results from Gaussian draws around the MAP.
+    /// </summary>
+    [TestMethod]
+    public async Task ApplyUncertaintyMethod_RecordsTheAppliedMethod()
+    {
+        SpatialGEV model = CreateTestSpatialGEV();
+        List<double[]> draws = CreateDraws(model, 0);
+        SpatialGEVAnalysis analysis = CreateEstimatedAnalysis(model, draws);
+        UncertaintyAnalysisResults posterior = await ReprocessAndWaitAsync(analysis);
+        double posteriorWidth = posterior.ConfidenceIntervals![1, 2] - posterior.ConfidenceIntervals[1, 1];
+        double siteWidth = analysis.SiteResults![0].QuantileUpper[1] - analysis.SiteResults[0].QuantileLower[1];
+
+        analysis.UncertaintyMethod = SpatialGEVUncertaintyMethod.BayesianInflated;
+        await analysis.ApplyUncertaintyMethodAsync(null);
+
+        double sqrtVif = Math.Sqrt(analysis.VarianceInflationFactor);
+        Assert.AreEqual(SpatialGEVUncertaintyMethod.BayesianInflated, analysis.AppliedUncertaintyMethod);
+        Assert.IsTrue(analysis.SiteResults.All(s => s.UncertaintyMethod == SpatialGEVUncertaintyMethod.BayesianInflated));
+        Assert.AreEqual(siteWidth * sqrtVif, analysis.SiteResults[0].QuantileUpper[1] - analysis.SiteResults[0].QuantileLower[1], 1e-9 * siteWidth, "Site interval widened by sqrt(VIF).");
+        Assert.AreEqual(posteriorWidth * sqrtVif, analysis.AnalysisResults!.ConfidenceIntervals![1, 2] - analysis.AnalysisResults.ConfidenceIntervals[1, 1], 1e-9 * posteriorWidth, "Regional interval widened by sqrt(VIF).");
+
+        analysis.UncertaintyMethod = SpatialGEVUncertaintyMethod.GodambeSandwich;
+        await analysis.ApplyUncertaintyMethodAsync(null);
+
+        Assert.AreEqual(SpatialGEVUncertaintyMethod.GodambeSandwich, analysis.AppliedUncertaintyMethod);
+        Assert.AreEqual(CovarianceComputationStatus.Available, analysis.GodambeCovarianceStatus);
+        Assert.IsTrue(analysis.SiteResults.All(s => s.UncertaintyMethod == SpatialGEVUncertaintyMethod.GodambeSandwich));
+        foreach (var site in analysis.SiteResults)
+        {
+            Assert.IsTrue(double.IsFinite(site.LocationLower) && site.LocationLower <= site.LocationMean && site.LocationMean <= site.LocationUpper, "Finite ordered Godambe bounds.");
+            Assert.IsTrue(site.QuantileLower.Zip(site.QuantileUpper, (l, u) => l <= u).All(x => x));
+        }
+        Assert.IsTrue(double.IsFinite(analysis.AnalysisResults.ConfidenceIntervals[1, 1]));
+    }
+
+    /// <summary>
+    /// Verifies the temporal block-bootstrap row draw: the record length is preserved, every block is
+    /// contiguous with wrap-around, indices stay in range, and the draw is reproducible for a seed.
+    /// </summary>
+    [TestMethod]
+    public void BuildBlockBootstrapRows_DrawsContiguousWrappingBlocks()
+    {
+        int[] rows = SpatialGEVAnalysis.BuildBlockBootstrapRows(30, 4, new MersenneTwister(12345));
+        int[] again = SpatialGEVAnalysis.BuildBlockBootstrapRows(30, 4, new MersenneTwister(12345));
+
+        Assert.AreEqual(30, rows.Length);
+        CollectionAssert.AreEqual(rows, again, "Seeded draw is reproducible.");
+        Assert.IsTrue(rows.All(r => r >= 0 && r < 30));
+        for (int i = 0; i < rows.Length; i += 4)
+        {
+            for (int k = 1; k < 4 && i + k < rows.Length; k++)
+                Assert.AreEqual((rows[i] + k) % 30, rows[i + k], $"Block starting at position {i} is contiguous with wrap-around.");
+        }
+        int[] single = SpatialGEVAnalysis.BuildBlockBootstrapRows(10, 1, new MersenneTwister(1));
+        Assert.AreEqual(10, single.Length);
+    }
+
+    /// <summary>
+    /// Verifies the bootstrap settings validation and the serialization of the uncertainty settings.
+    /// </summary>
+    [TestMethod]
+    public void UncertaintySettings_ValidateAndRoundTrip()
+    {
+        var analysis = new SpatialGEVAnalysis(CreateTestSpatialGEV());
+        Assert.IsNull(analysis.AppliedUncertaintyMethod);
+        Assert.IsNull(analysis.BootstrapResults);
+        Assert.IsTrue(analysis.SampleConditionalResidual);
+        Assert.AreEqual(200, analysis.BootstrapReplicates);
+        Assert.AreEqual(0, analysis.BootstrapBlockSize);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => analysis.BootstrapReplicates = 0);
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => analysis.BootstrapBlockSize = -1);
+
+        analysis.UncertaintyMethod = SpatialGEVUncertaintyMethod.SpatialBootstrap;
+        analysis.SampleConditionalResidual = false;
+        analysis.BootstrapReplicates = 50;
+        analysis.BootstrapBlockSize = 3;
+        XElement xml = analysis.ToXElement();
+        var restored = new SpatialGEVAnalysis(CreateTestSpatialGEV(), xml);
+
+        Assert.AreEqual(SpatialGEVUncertaintyMethod.SpatialBootstrap, restored.UncertaintyMethod);
+        Assert.IsFalse(restored.SampleConditionalResidual);
+        Assert.AreEqual(50, restored.BootstrapReplicates);
+        Assert.AreEqual(3, restored.BootstrapBlockSize);
+
+        XElement legacy = new SpatialGEVAnalysis(CreateTestSpatialGEV()).ToXElement();
+        legacy.Attribute(nameof(SpatialGEVAnalysis.UncertaintyMethod))!.Remove();
+        legacy.Attribute(nameof(SpatialGEVAnalysis.SampleConditionalResidual))!.Remove();
+        legacy.Attribute(nameof(SpatialGEVAnalysis.BootstrapReplicates))!.Remove();
+        legacy.Attribute(nameof(SpatialGEVAnalysis.BootstrapBlockSize))!.Remove();
+        var legacyRestored = new SpatialGEVAnalysis(CreateTestSpatialGEV(), legacy);
+        Assert.AreEqual(SpatialGEVUncertaintyMethod.BayesianPosterior, legacyRestored.UncertaintyMethod, "Legacy projects read the defaults.");
+        Assert.IsTrue(legacyRestored.SampleConditionalResidual);
+        Assert.AreEqual(200, legacyRestored.BootstrapReplicates);
     }
 
     #endregion

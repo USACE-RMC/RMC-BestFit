@@ -723,3 +723,22 @@ and every method below ran once through `scripts/run-verification-test.ps1`.
 | `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` | Verification | Fold 1 equals the reduced regression model evaluated at the held-out covariate row (`1e-6` relative) | Passed (113.0 s) |
 | `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_SiteWithoutObservations_IsReportedNotScored` | Verification | Unscored fold with NaN metrics; aggregates over the three successful folds | Passed (54.3 s) |
 | Batch 6.3 spot checks (two oracle cells, the criteria cell, two recovery cells) | Verification | Unchanged after the cross-validation change | Passed 5/5 |
+
+## Phase 6 Batch 6.5 spatial prediction, uncertainty, simulation, and dispatch - 22 August 2026
+
+After the approved TR-054, TR-056, TR-058, TR-061, TR-062, TR-092, and TR-093 corrections the fast core project
+passes 3,323/3,323 with zero build warnings, the other three unit projects pass (UI 579, App 438, API 498),
+and every method below ran once through `scripts/run-verification-test.ps1`.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `SpatialGEVTests.SetDefaultParameters_LatentErrorBounds_FollowTheLinkSpace`, `DataLogLikelihood_NonFiniteSiteParameters_IsNegativeInfinity` | Fast core | TR-093 bound rule in both link spaces; TR-092 negative-infinite likelihood for an overflowing latent error | Passed |
+| `SpatialGEVTests.GenerateRandomValues_WithCopula_ReproducesTheFittedDependence`, `..._WithoutCopula_SimulatesIndependentSites`, `..._WithoutCopula_MatchesTheHistoricalSiteMajorAlgorithm`, `..._WithCopula_IsReproducibleAndKeepsTheMarginals`; `GaussianCopulaTests.GetCorrelationMatrix_ReturnsCopyOfTheFittedMatrix` | Fast core | TR-061 dependence (±0.05 at 4,000 rows), unchanged independent algorithm, reproducibility, marginal support, correlation accessor | Passed |
+| `SpatialGEVTests.CreateResampledModel_ReplacesRowsAndKeepsTheNetwork`; `SpatialGEVAnalysisTests.BuildBlockBootstrapRows_DrawsContiguousWrappingBlocks` | Fast core | TR-056 replicate model and block draw | Passed |
+| `SpatialGEVAnalysisTests.PredictAtUngaugedLocation_UsesConditionalGaussianProcessPerDraw`, `RegionalCurve_FromInjectedDraws_IsPosteriorOfTheRegionalMean`, `ApplyUncertaintyMethod_RecordsTheAppliedMethod`, `UncertaintySettings_ValidateAndRoundTrip`; `SpatialGEVResultsTests.SiteResultsAndBootstrapResults_DefaultsAndRoundTrip` | Fast core | TR-054 conditional mean per draw and seeded residual; TR-058 regional arithmetic; TR-062 inflated/Godambe dispatch and serialization; DTO defaults | Passed |
+| `SpatialGEVKrigingOracleTests.KrigingPrediction_MatchesConditionalGaussianProcessOracle` | Verification | R conditional-GP oracle, 15 cases (`1e-10`) | Passed (3.9 s) |
+| `SpatialGEVPredictionVerificationTests.UngaugedPrediction_UsesConditionalGaussianProcessPerDraw` | Verification | Deterministic option equals the posterior mean of the model-level kriging prediction (`1e-9`); residual option reproducible and at least as wide | Passed (111.9 s) |
+| `SpatialGEVPredictionVerificationTests.RegionalCurve_IsPosteriorOfTheRegionalMeanQuantile` | Verification | Regional mean curve and bounds equal the per-draw regional posterior (`1e-9`) | Passed (41.5 s) |
+| `SpatialGEVSimulationVerificationTests.GenerateRandomValues_WithCopula_ReproducesTheFittedIntersiteDependence` | Verification | Seeded 20,000 rows: correlations within ±0.02, quantiles within 3% | Passed (3.2 s) |
+| `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_BayesianInflated_WidensThePosteriorIntervals`, `RunAsync_GodambeSandwich_BuildsResultsFromGaussianDraws`, `RunAsync_SpatialBootstrap_FitsResampledReplicatesAndReportsAccounting` | Verification | Dispatch, applied method, sqrt-VIF widening, MAP-centred Gaussian-draw intervals, bootstrap accounting | Passed 3/3 (63.0 s, 49.0 s, 74.4 s) |
+| Regression set (15 cells: oracle, criteria, cross-validation, recovery) | Verification | Batch 6.3/6.4 contracts unchanged | Passed 15/15 |

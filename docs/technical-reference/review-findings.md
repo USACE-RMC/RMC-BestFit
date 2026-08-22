@@ -25,8 +25,8 @@ boundary solution despite same-point R/C# likelihood parity. No production optim
 prior, sampler, seed, tolerance, convergence rule, or Bayesian default changed. Earlier failures
 remain documented in full, and the complete Verification project was not run.
 
-Phase 6 opening and register completion (21 August 2026): the register now runs through TR-091 (TR-091 was
-found and fixed during Batch 6.3). TR-084
+Phase 6 opening and register completion (21 August 2026): the register now runs through TR-093 (TR-091 was
+found and fixed during Batch 6.3; TR-092 and TR-093 were found and fixed during Batch 6.5). TR-084
 through TR-090 record the Verification results and one fast-suite race that the 21 August reruns left
 without dispositions; they are open decision items worked after Phase 6 and do not block it. TR-078 and
 TR-081 are closed with 21 August evidence (the twelve `B17CPenalityTests` methods were rerun one at a
@@ -91,15 +91,15 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-051](#tr-051) | Spatial held-out-site leakage | High | Confirmed defect - fixed | Fixed (22 August 2026): `SpatialGEV.CreateReducedModel` builds each fold's training model without the held-out site | Passed - fold 1 of a copula network equals an independently reduced model fitted with the same defaults and seed (`1e-6` relative); fast reduced-model contracts | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
 | [TR-052](#tr-052) | Spatial held-out covariates | High | Confirmed defect - fixed | Fixed (22 August 2026): folds predict with the held-out site's covariate rows; `PredictWithCovariates` throws for a covariate trend without covariates | Passed - fold 1 of a location-regression network equals the reduced model evaluated at the held-out row; fast throw contracts | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
 | [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Confirmed defect - fixed | Fixed (22 August 2026): `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, `TotalFolds`; NaN metrics; aggregates over successful folds; throws when none succeed | Passed - guarded no-observation fold cell and the fast two-site no-fold policy contract | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
-| [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Confirmed defect - fixed | Fixed (22 August 2026): conditional Gaussian-process prediction per draw with a seeded conditional residual (`SampleConditionalResidual`, default true) | Passed - R conditional-GP oracle (15 cases, `1e-10`) for the predictor; guarded cell: deterministic option equals the posterior mean of the model-level kriging prediction (`1e-9`), residual option reproducible and at least as wide; fast contract | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-conditional-gp-oracle.json) | 2026-08-22 |
 | [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - closed | Corrected; row/year unit verified after TR-048/TR-049 | Passed - guarded criteria cell (AIC/BIC at the sampled MAP with nonempty row/year blocks; WAIC/PSIS-LOO from row/year terms) and fast helper contracts | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-08-21 |
-| [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Confirmed defect - fixed | Fixed (22 August 2026): temporal block bootstrap on resampled replicate models with MAP refits, NaN failures, 50% success floor, `SpatialGEVBootstrapResults` | Passed - guarded twenty-replicate cell (accounting, finite ordered bounds, seed sensitivity); fast resampled-model and block-draw contracts | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 | [TR-057](#tr-057) | Spatial Godambe decomposition | High | Confirmed defect - fixed | Fixed (21 August 2026): both sandwich factors from the row/year estimating equations; explicit failure status | Passed - scalar and summed-pointwise gradients agree (`1e-4`); fast singular-Hessian failure, well-conditioned, validation, and reset contracts | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
-| [TR-058](#tr-058) | Regional posterior interval construction | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-058](#tr-058) | Regional posterior interval construction | High | Confirmed defect - fixed | Fixed (22 August 2026): regional bounds are posterior quantiles of the per-draw regional mean quantile | Passed - guarded heterogeneous-network cell (`1e-9` relative) and fast injected-draw contract; endpoint averages failed the contract before the fix | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 | [TR-059](#tr-059) | Spatial site-weight interpretation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-060](#tr-060) | Spatial distance units | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-061](#tr-061) | Spatial dependent simulation | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-062](#tr-062) | Spatial uncertainty-method dispatch | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-061](#tr-061) | Spatial dependent simulation | High | Confirmed defect - fixed | Fixed (22 August 2026): Cholesky-correlated normals through Φ and the site inverse GEV CDFs when the copula is enabled; independent path unchanged | Passed - seeded 20,000-row cell (all intersite normal-score correlations within ±0.02, marginal quantiles within 3%) and fast contracts (dependence, historical independent algorithm, reproducibility) | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-062](#tr-062) | Spatial uncertainty-method dispatch | High | Confirmed defect - fixed | Fixed (22 August 2026): `RunAsync` dispatches the selected method (posterior, sqrt-VIF inflation, Gaussian draws from the Godambe covariance, temporal block bootstrap) and records `AppliedUncertaintyMethod` on the analysis and every site result | Passed - three guarded dispatch cells and the fast injected-result dispatch contract | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 | [TR-063](#tr-063) | Whole-series replacement leaves plotting positions stale | Medium | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-063---whole-series-replacement-refresh) / [Artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json) | 2026-07-24 |
 | [TR-064](#tr-064) | DE/BFGS optimizer tolerance parity | Medium | Rejected non-defect | N/A | Passed - SciPy parity | [Report](../verification/distribution-fitting.md#tr-064---distribution-fitting-optimizer-tolerance) / [Artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json) | 2026-07-25 |
 | [TR-065](#tr-065) | GMM influence Hessian scale depends on penalty presence | High | Confirmed defect | Fixed | Passed - R `gmm` parity | [Report](../verification/model-estimation.md#gmm-calibration-against-r) / [Artifact](../../verification/data/model-estimation/gmm-influence-oracle.json) | 2026-07-25 |
@@ -129,6 +129,8 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-089](#tr-089) | ARIMA/ARIMAX MAP recovery cells fail | Medium | Open - pre-existing, needs classification | Not started | Failed - 3 cells on the pre-review control worktree | [Progress](../PROGRESS.md) | 2026-08-21 |
 | [TR-090](#tr-090) | Intermittent fast-suite reprocess race | Low | Open - reported | Not started | Observed once; not reproduced on demand | [Progress](../PROGRESS.md) | 2026-08-21 |
 | [TR-091](#tr-091) | Spatial clone drops copula/error parameter blocks | High | Confirmed defect - fixed | Fixed (21 August 2026): the clone rebuilds its parameter list from the cloned components and copies values, bounds, and priors | Passed - three fast clone contracts (failed before the fix: 3 parameters instead of 4 and 17); the guarded row/year criteria cell and the copula recovery cell complete after the fix | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
+| [TR-092](#tr-092) | Spatial likelihood throws on non-finite site parameters | High | Confirmed defect - fixed | Fixed (22 August 2026): non-finite site GEV parameters return negative-infinite likelihood in both paths | Passed - fast contract (overflowing latent error); the location-error network now samples under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-093](#tr-093) | Latent-error default bounds ignore the log link | High | Confirmed defect - fixed | Fixed (22 August 2026): link-space spread × 3, floor 1.0, for log-link location and scale errors | Passed - fast bound-rule contract; the TR-054 guarded cell runs under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -1032,17 +1034,17 @@ retain source and binary compatibility.
 <a id="tr-054"></a>
 ## TR-054 — Analysis-Level Ungauged Prediction Uses IDW and Omits Conditional Spatial Variance
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval (conditional residual sampled by default).
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. For every retained draw the shared prediction helper applies that draw's latent-error model through the model-level simple-kriging predictor (`SpatialRegressionErrors.GetKrigingPrediction`: conditional mean `k*ᵀK⁻¹ε`, variance `σ² − k*ᵀK⁻¹k*`) and adds a residual from N(0, variance) with standard-normal scores generated from `BayesianAnalysis.PRNGSeed` before the parallel loop; the additive `SpatialGEVAnalysis.SampleConditionalResidual` (default `true`) switches to the conditional mean. `PredictAtUngaugedLocation` and the cross-validation folds use the same helper; the inverse-distance interpolation is gone.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. The new R oracle `spatial-conditional-gp-oracle.json` (`SpatialGEVKrigingOracleTests`, 15 cases, `1e-10`) verifies the predictor; the guarded cell `SpatialGEVPredictionVerificationTests.UngaugedPrediction_UsesConditionalGaussianProcessPerDraw` (111.9 s) finds the deterministic option equal to the posterior mean of the model-level kriging prediction over the retained draws (`1e-9` relative) and the residual option reproducible for the seed and at least as wide; `SpatialGEVAnalysisTests.PredictAtUngaugedLocation_UsesConditionalGaussianProcessPerDraw` pins the same contract with injected draws. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
 
 **Evidence.** `SpatialGEV.PredictAtUngauged` uses simple kriging and returns kriging variances. `SpatialGEVAnalysis.PredictAtUngaugedLocation`, which provides posterior summaries, instead interpolates each latent error with inverse-distance weights proportional to `1/d` and never samples or propagates the conditional spatial-error variance.
 
 **Impact.** The main posterior prediction API disagrees with the model-level predictor and produces intervals that omit an important source of ungauged-site uncertainty.
 
-**Follow-up.** Use the model's conditional Gaussian-process predictor for each posterior draw and sample the conditional residual, with an explicit option if deterministic conditional means are desired.
+**Follow-up.** None beyond the regression set; the IDW fallback remains only inside the model-level predictor when the error covariance cannot be factorized after jitter.
 
 <a id="tr-055"></a>
 ## TR-055 — Spatial AIC and BIC Required a Defensible Likelihood and Sample Unit
@@ -1062,17 +1064,17 @@ retain source and binary compatibility.
 <a id="tr-056"></a>
 ## TR-056 — Spatial Bootstrap Does Not Fit the Resampled Data
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval (temporal block bootstrap, MAP refit, 50% minimum).
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. `RunSpatialBootstrapAsync` resamples rows (years) with replacement in contiguous blocks of `blockSize` rows (default the cube root of the row count, rounded up; wrap-around at the end of the record) while keeping every site, builds each replicate with `SpatialGEV.CreateResampledModel` (same network, settings, and priors), refits it by `MaximumAPosteriori` warm-started at the full-model MAP, marks failed or non-finite replicates NaN, requires at least half of the replicates to succeed (otherwise `InvalidOperationException`), records the accounting in the additive `SpatialGEVBootstrapResults` (`BootstrapResults`), and replaces the site and regional bounds with percentile intervals over the successful replicates; the resampling is seeded with the analysis seed. The unused site-block clustering was removed.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_SpatialBootstrap_FitsResampledReplicatesAndReportsAccounting` (74.4 s; twenty replicates on the four-site copula network) checks the applied method, the replicate counts and block size, finite ordered site and regional bounds, and that a different seed changes the replicates; the fast contracts `SpatialGEVTests.CreateResampledModel_ReplacesRowsAndKeepsTheNetwork` and `SpatialGEVAnalysisTests.BuildBlockBootstrapRows_DrawsContiguousWrappingBlocks` pin the replicate model and the block draw. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
 
 **Evidence.** `RunSpatialBootstrapAsync` constructs a `bootData` matrix from resampled site blocks, but then creates `bootModel` by cloning `SpatialGEV`; the clone retains the original `AtSiteData`, and `bootData` is never passed to any model. Consequently each replicate refits the original data with a short stochastic MCMC run. If a run returns `IsEstimated == false` without throwing, its zero-initialized result entries are also treated as valid bootstrap values.
 
 **Impact.** The reported "spatial bootstrap" intervals are not bootstrap intervals and can be dominated by MCMC variability or artificial zeros.
 
-**Follow-up.** Construct each replicate model from the resampled data, coordinates, and matching covariate rows; represent failed replicates as `NaN`, enforce a minimum success rate, and verify on a deterministic small network.
+**Follow-up.** A coverage study of the bootstrap intervals is not part of this batch; the replicate estimator is the production MAP (Differential Evolution), so two hundred replicates cost two hundred refits.
 
 <a id="tr-057"></a>
 ## TR-057 — Godambe Covariance Mixes Incompatible Likelihood Decompositions
@@ -1092,17 +1094,17 @@ retain source and binary compatibility.
 <a id="tr-058"></a>
 ## TR-058 — Regional Spatial Bounds Average Sitewise Endpoints
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. The site-result builder accumulates, for every draw and probability, the regional mean of the site quantiles; the regional curve reports the posterior mean of that per-draw statistic (the mean curve, identical to the regional mean of the site posterior means) and its equal-tailed posterior quantiles as the bounds, while the mode curve remains the regional mean of the point-estimate site curves. Endpoint averages are not retained; the regional growth curve keeps its site-average definition.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. `SpatialGEVPredictionVerificationTests.RegionalCurve_IsPosteriorOfTheRegionalMeanQuantile` (41.5 s; five-site location-regression network) recomputes the per-draw regional quantiles from `Results.Output` and matches the mean curve and both bounds (`1e-9` relative); before the fix the lower bound at p = 1e-6 was 66,486 where the posterior quantile was 66,526. `SpatialGEVAnalysisTests.RegionalCurve_FromInjectedDraws_IsPosteriorOfTheRegionalMean` pins the arithmetic with injected draws. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
 
 **Evidence.** `CreateUncertaintyAnalysisResultsAsync` computes the regional curve by averaging each site's posterior mean, lower endpoint, and upper endpoint separately. It does not compute the regional mean quantile for each joint posterior draw and then take quantiles of that derived sample.
 
 **Impact.** The displayed lower and upper regional curves are descriptive averages of marginal interval endpoints, not a credible interval for the regional-average quantile; cross-site posterior dependence is discarded.
 
-**Follow-up.** Compute the regional statistic within each posterior draw and summarize its empirical posterior distribution. If endpoint averages remain useful, label them explicitly as descriptive envelopes.
+**Follow-up.** None beyond the regression set.
 
 <a id="tr-059"></a>
 ## TR-059 — Spatial Site Weights Are Not an Effective-Sample-Size or Pairwise Composite Likelihood
@@ -1137,32 +1139,32 @@ retain source and binary compatibility.
 <a id="tr-061"></a>
 ## TR-061 — Spatial Simulation Ignores Enabled Dependence
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. When copula dependence is enabled, `SpatialGEV.GenerateRandomValues` draws one standard-normal vector per sample, multiplies it by the Cholesky factor of the fitted copula correlation matrix (exposed through the additive `GaussianCopula.GetCorrelationMatrix()`), maps through Φ, and applies each site's inverse GEV distribution function; the output stays grouped by site with sample `i` of every site belonging to one simulated event, and a non-positive-definite correlation matrix throws. Without the copula the historical site-major independent algorithm runs unchanged.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. `SpatialGEVSimulationVerificationTests.GenerateRandomValues_WithCopula_ReproducesTheFittedIntersiteDependence` (3.2 s; seeded 20,000 rows at five sites) finds every intersite normal-score correlation within ±0.02 of the fitted matrix and the site quantiles within 3% of the GEV quantiles; the fast contracts cover the dependence (±0.05 at 4,000 rows), the independent path's equality with the historical algorithm, reproducibility, and marginal support. Before the fix the normal-score correlation of two nearby sites was −0.02 against the fitted 0.57. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
 
 **Evidence.** `SpatialGEV.GenerateRandomValues` samples each site's GEV independently and groups the result by site. It does not consult `UseCopulaDependence` or `SpatialDependence`. Its remarks refer users to “copula-based simulation methods,” but no correlated simulation method exists in the spatial model namespace.
 
 **Impact.** Simulations from a fitted dependent model do not reproduce intersite dependence and are unsuitable for regional risk aggregation, simultaneous-event probabilities, or posterior predictive checks of spatial structure.
 
-**Follow-up.** Generate correlated standard-normal vectors from the fitted correlation matrix, transform them through \(\Phi\), and apply each site's inverse GEV CDF. Define output ordering clearly and add seeded tests for marginal and cross-site behavior.
+**Follow-up.** None beyond the regression set.
 
 <a id="tr-062"></a>
 ## TR-062 — Spatial Uncertainty-Method Selection Does Not Control Result Construction
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval (Gaussian parameter draws for the Godambe path).
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. After the MCMC fit `RunAsync` dispatches on `UncertaintyMethod`: `BayesianPosterior` leaves the posterior results; `BayesianInflated` widens the site and regional intervals by the square root of the variance inflation factor; `GodambeSandwich` computes the Godambe covariance at the MAP (TR-057), draws `OutputLength` seeded Gaussian parameter vectors N(MAP, Σ) truncated to the parameter bounds, and propagates them through the same site-result machinery as the posterior (a failed or non-positive-definite covariance makes the run fail explicitly); `SpatialBootstrap` runs the temporal block bootstrap with the additive `BootstrapReplicates` (200) and `BootstrapBlockSize` (0 = automatic) settings. The method applied is recorded in the additive `AppliedUncertaintyMethod` and in `SpatialGEVSiteResults.UncertaintyMethod`; `UncertaintyMethod`, `SampleConditionalResidual`, `BootstrapReplicates`, and `BootstrapBlockSize` are serialized as optional attributes.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. The guarded cells `RunAsync_BayesianInflated_WidensThePosteriorIntervals` (63.0 s), `RunAsync_GodambeSandwich_BuildsResultsFromGaussianDraws` (49.0 s), and `RunAsync_SpatialBootstrap_FitsResampledReplicatesAndReportsAccounting` (74.4 s) check the applied method, the interval structure, the sqrt-VIF widening, the MAP-centred Gaussian-draw intervals on the homogeneous network and the explicit failure on the copula network whose sensitivity matrix is singular at its MAP, and the bootstrap accounting; `SpatialGEVAnalysisTests.ApplyUncertaintyMethod_RecordsTheAppliedMethod` and `UncertaintySettings_ValidateAndRoundTrip` pin the dispatch and the serialization without a sampler. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
 
 **Evidence.** `SpatialGEVAnalysis.UncertaintyMethod` exposes `BayesianPosterior`, `BayesianInflated`, `GodambeSandwich`, and `SpatialBootstrap`, but no production branch reads the property after assignment. `RunAsync` always constructs Bayesian posterior site summaries. Variance inflation, Godambe covariance, and bootstrap require independent method calls and do not replace the normal result-construction path automatically.
 
 **Impact.** Selecting an advertised uncertainty method can leave outputs unchanged, so callers may report a method that was not applied.
 
-**Follow-up.** Either dispatch the selected method through `RunAsync` with method-specific validation and result metadata, or replace the enum property with explicit operations whose outputs cannot be confused with the Bayesian results.
+**Follow-up.** None beyond the regression set; the Godambe and bootstrap paths remain frequentist diagnostics documented as such.
 
 <a id="tr-063"></a>
 ## TR-063 - Whole-Series Replacement Leaves Plotting Positions Stale
@@ -1528,6 +1530,36 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 **Impact.** Before the fix no copula or latent-error spatial Bayesian analysis produced site results; complete-data models without dependence or latent errors were unaffected because their clone structure matched and the sampled values overwrote the reset intercepts. The fix is behavioral only (structure and copied values); sampled posteriors are unchanged.
 
 **Follow-up.** Keep the three clone contracts in the fast gate; TR-056 (bootstrap) and TR-062 (dispatch) in Batch 6.5 rely on the exact clone.
+
+<a id="tr-092"></a>
+## TR-092 - Spatial Likelihood Threw on Non-Finite Site Parameters
+
+**Review disposition.** Confirmed defect (22 August 2026), found by the Batch 6.5 confirmation runs; fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. `SpatialGEV`'s scalar and pointwise likelihoods treat a non-finite site location, scale, or shape (for example an overflowing `exp(trend + latent error)`) as an impossible proposal and return negative infinity for the likelihood or the affected row instead of calling the GEV parameter validation, which threw `ArgumentOutOfRangeException` inside the sampler and failed the whole run.
+
+**Verification status.** Passed. `SpatialGEVTests.DataLogLikelihood_NonFiniteSiteParameters_IsNegativeInfinity` (fast) and the TR-054 guarded cell, whose location-error network failed to sample before the fix with "The location parameter ξ (Xi) must be a number". See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
+
+**Evidence.** The likelihood paths guarded only `α <= 0`; a NaN or infinite parameter passed through to `GeneralizedExtremeValue.SetParameters`.
+
+**Impact.** Proposals that overflow are rejected instead of aborting the MCMC run; finite proposals are unchanged.
+
+**Follow-up.** None.
+
+<a id="tr-093"></a>
+## TR-093 - Latent-Error Default Bounds Ignored the Log Link
+
+**Review disposition.** Confirmed defect (22 August 2026), found by the Batch 6.5 confirmation runs; fixed the same day after Haden Smith's approval (link-space spread × 3, floor 1.0).
+
+**Implementation status.** Fixed. `SpatialGEV.SetDefaultParameters` sizes the latent location and scale error bounds from three times the spread of the site statistics in the space in which the error acts: the log-space spread of the site means (or standard deviations) under a log link, the raw spread under an identity link, ceiling, floor 1.0; the shape-error rule is unchanged.
+
+**Verification status.** Passed. `SpatialGEVTests.SetDefaultParameters_LatentErrorBounds_FollowTheLinkSpace` (fast) pins both rules; the TR-054 guarded cell and the location-error model now sample under the production defaults. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
+
+**Evidence.** The bounds were computed from raw site means (thousands) while the error added in log space, so default proposals overflowed `exp(trend + ε)` and, with TR-092, failed every default-configured latent-error run (including `ConfigureForProperCoverage`).
+
+**Impact.** Default latent-error models are usable; configured bounds in saved projects are restored verbatim.
+
+**Follow-up.** None.
 
 ## Resolution Rule
 

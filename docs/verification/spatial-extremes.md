@@ -1,4 +1,4 @@
-<!-- verification-status: phase-6-spatial-cross-validation-complete -->
+<!-- verification-status: phase-6-spatial-prediction-uncertainty-complete -->
 
 # Spatial Extremes Verification
 
@@ -23,7 +23,9 @@ the findings are TR-048 through TR-062 in the [review register](../technical-ref
 | Nine existing spatial recovery cells | Passed after the corrections | Complete-data MLE (2) and Bayesian (7) recovery cells pass under production defaults (the copula cell only after the TR-091 clone fix) |
 | TR-091 spatial clone structure (found by these runs) | Corrected (approved and implemented 21 August 2026) | `SpatialGEV.Clone()` dropped the copula/error parameter blocks and reset the trend intercepts, so every copula or latent-error Bayesian run failed in post-processing; the clone now rebuilds its list from the cloned components and copies values, bounds, and priors; three fast contracts and the two blocked cells pass |
 | TR-050 through TR-053 leave-one-site-out cross-validation | Corrected (approved and implemented 22 August 2026) | Reduced training model per fold (`SpatialGEV.CreateReducedModel`), fold analyses with the main settings and seed, held-out covariate rows, explicit fold accounting; three guarded cells and the fast contracts pass; see [Batch 6.4](#batch-64-leave-one-site-out-cross-validation-22-august-2026) |
-| TR-054, TR-056, TR-058 through TR-062 | Planned (Batches 6.5-6.6) | - |
+| TR-054, TR-056, TR-058, TR-061, TR-062 prediction, bootstrap, regional bounds, simulation, dispatch | Corrected (approved and implemented 22 August 2026) | Conditional Gaussian-process prediction per draw, temporal block bootstrap with MAP refits, per-draw regional posterior, Cholesky-dependent simulation, method dispatch with recorded applied method; R conditional-GP oracle, seven guarded cells, and fast contracts pass; see [Batch 6.5](#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) |
+| TR-092, TR-093 (found by the Batch 6.5 runs) | Corrected (approved and implemented 22 August 2026) | Non-finite site parameters return negative-infinite likelihood; latent-error default bounds follow the link space |
+| TR-059, TR-060 | Planned (Batch 6.6) | - |
 
 Production changes (approved 21 August 2026): `Models/SpatialExtremes/CopulaModels/GaussianCopula.cs`,
 `Models/SpatialExtremes/SpatialGEV.cs`, and `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs`; see
@@ -60,6 +62,15 @@ row 9 is fully missing. The artifact `verification/data/spatial-extremes/spatial
 | 7 | 1, 2, 4, 5 | `-21.970089` | `-22.078893` |
 | 8 | 1, 5 | `-9.952734` | `-9.716876` |
 | 9 | none | `0` | `0` |
+
+The second artifact, `verification/data/spatial-extremes/spatial-conditional-gp-oracle.json` (SHA-256
+`9a6233dd32c1473a36076183ae33c9e6e1c1584fa644138d9aad90c1cc8259fc`; generator
+`generate_spatial_conditional_gp_oracle.R`, SHA-256 `ec1738d3337f0553ed78af3bc5736a66cda004716098a387591ddfd4f4986215`;
+R 4.4.3, no sampling), records the conditional (simple-kriging) mean `k*'K^-1 eps` and variance
+`sigma^2 - k*'K^-1 k*` of the latent-error process at five target locations for three (scale, range,
+errors) parameter sets on the same five-site network, computed with dense `solve`; it is the oracle of
+`SpatialRegressionErrors.GetKrigingPrediction`, the predictor the analysis-level ungauged prediction uses
+since Batch 6.5 (tolerance `1e-10`).
 
 ## Confirmation runs (21 August 2026)
 
@@ -230,11 +241,68 @@ failed folds are visible with NaN metrics instead of zero errors, and the ungaug
 a missing covariate vector for covariate trends. The per-fold prediction still interpolates latent errors by
 inverse distance (TR-054, Batch 6.5).
 
+## Batch 6.5 prediction, uncertainty, simulation, and dispatch (22 August 2026)
+
+Confirmation on the Batch 6.4 source (guarded runner and fast contracts): the regional-bounds cell on a
+five-site location-regression network found the lower bound at p = 1e-6 equal to 66,486 where the posterior
+5% quantile of the per-draw regional mean is 66,526 (TR-058); the dependence contract found a normal-score
+correlation of −0.02 between two sites whose copula correlation is 0.57 (TR-061); the ungauged-prediction
+cell could not run because a default-configured latent-error model threw inside the sampler ("The location
+parameter ξ (Xi) must be a number"), which exposed TR-092 (the likelihood threw instead of rejecting a
+non-finite proposal) and TR-093 (latent-error default bounds in raw units under the log link); the
+bootstrap data wiring and the undispatched uncertainty method were confirmed by source audit. The new R
+oracle `spatial-conditional-gp-oracle.json` (`generate_spatial_conditional_gp_oracle.R`; manifest row
+recorded before the run) verified the model-level simple-kriging predictor to `1e-10` in 15 cases before any
+production change.
+
+Haden Smith approved the fix plans one at a time: TR-092 (negative-infinite likelihood for non-finite site
+parameters), TR-093 (link-space spread × 3, floor 1.0), TR-054 (kriging per draw plus a seeded conditional
+residual, `SampleConditionalResidual` default true), TR-058 (per-draw regional posterior, endpoint averages
+removed), TR-061 (Cholesky-dependent simulation), TR-056 (temporal block bootstrap keeping all sites, MAP
+refit per replicate, NaN failures, 50% success floor, accounting DTO), and TR-062 (dispatch in `RunAsync`
+with Gaussian parameter draws N(MAP, Σ) for the Godambe path, sqrt-VIF inflation, bootstrap settings, and the
+applied method recorded). The implementation is additive to the public API (`GaussianCopula.GetCorrelationMatrix`,
+`SpatialGEVAnalysis.SampleConditionalResidual`, `BootstrapReplicates`, `BootstrapBlockSize`,
+`AppliedUncertaintyMethod`, `BootstrapResults`, `SpatialGEVBootstrapResults`,
+`SpatialGEVSiteResults.UncertaintyMethod`; recorded in the baseline) with optional serialization attributes
+(legacy projects read the defaults).
+
+Fast contracts added: `SpatialGEVTests.SetDefaultParameters_LatentErrorBounds_FollowTheLinkSpace`,
+`DataLogLikelihood_NonFiniteSiteParameters_IsNegativeInfinity`, `CreateResampledModel_ReplacesRowsAndKeepsTheNetwork`,
+`GenerateRandomValues_WithoutCopula_MatchesTheHistoricalSiteMajorAlgorithm`,
+`GenerateRandomValues_WithCopula_IsReproducibleAndKeepsTheMarginals`, `GenerateRandomValues_WithCopula_ReproducesTheFittedDependence`,
+`GenerateRandomValues_WithoutCopula_SimulatesIndependentSites`; `GaussianCopulaTests.GetCorrelationMatrix_ReturnsCopyOfTheFittedMatrix`;
+`SpatialGEVAnalysisTests.PredictAtUngaugedLocation_UsesConditionalGaussianProcessPerDraw`,
+`RegionalCurve_FromInjectedDraws_IsPosteriorOfTheRegionalMean`, `ApplyUncertaintyMethod_RecordsTheAppliedMethod`,
+`BuildBlockBootstrapRows_DrawsContiguousWrappingBlocks`, `UncertaintySettings_ValidateAndRoundTrip`;
+`SpatialGEVResultsTests.SiteResultsAndBootstrapResults_DefaultsAndRoundTrip`. Fast gates Core 3,323, UI 579,
+App 438, API 498, 0 failures; strict XML-documentation builds clean.
+
+Guarded acceptance runs (one method per invocation, production defaults):
+
+| Exact method | Contract | Outcome |
+|---|---|---|
+| `SpatialGEVKrigingOracleTests.KrigingPrediction_MatchesConditionalGaussianProcessOracle` | `SpatialRegressionErrors.GetKrigingPrediction` reproduces the R conditional mean and variance in 15 cases (`1e-10`); zero variance at a site | Passed (3.9 s) |
+| `SpatialGEVPredictionVerificationTests.UngaugedPrediction_UsesConditionalGaussianProcessPerDraw` | Five-site copula + location-error network: the deterministic prediction equals the posterior mean of the model-level kriging prediction over the retained draws (`1e-9`); the residual option is reproducible and at least as wide | Passed (111.9 s) |
+| `SpatialGEVPredictionVerificationTests.RegionalCurve_IsPosteriorOfTheRegionalMeanQuantile` | Five-site location-regression network: regional mean curve and bounds equal the posterior mean and quantiles of the per-draw regional mean quantile (`1e-9`) | Passed (41.5 s) |
+| `SpatialGEVSimulationVerificationTests.GenerateRandomValues_WithCopula_ReproducesTheFittedIntersiteDependence` | Seeded 20,000 rows: every intersite normal-score correlation within ±0.02 of the fitted matrix; site quantiles within 3% of the GEV quantiles | Passed (3.2 s) |
+| `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_BayesianInflated_WidensThePosteriorIntervals` | Applied method recorded; site and regional intervals widened by sqrt(VIF) relative to the posterior run with the same seed | Passed (63.0 s) |
+| `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_GodambeSandwich_BuildsResultsFromGaussianDraws` | Copula network: the sensitivity matrix is singular at the sampled MAP, so the run fails explicitly (`GodambeCovarianceStatus = Failed`, no method recorded); homogeneous network: covariance available, applied method recorded, finite ordered bounds, MAP quantile inside the Gaussian-draw interval, mode curve at the MAP | Passed (49.0 s) |
+| `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_SpatialBootstrap_FitsResampledReplicatesAndReportsAccounting` | Twenty replicates: accounting, automatic block size, finite ordered bounds, seed sensitivity | Passed (74.4 s) |
+| Regression set (15 cells): the eight `mvtnorm` oracle cells, the criteria cell, the three cross-validation cells, and three recovery cells | Batch 6.3 and 6.4 contracts unchanged after the prediction change (the cross-validation folds now predict with kriging plus residual, and the independent reduced models follow the same production path) | Passed 15/15 (3-118 s) |
+
+Behavior changes for users: ungauged-site predictions use the conditional Gaussian process with a seeded
+residual (set `SampleConditionalResidual = false` for the conditional mean); regional credible bounds are
+posterior quantiles of the regional mean quantile; copula simulations are spatially dependent; the bootstrap
+fits resampled data and reports its accounting; the selected uncertainty method is applied and recorded;
+default latent-error bounds under the log link are a few log units instead of the raw spread.
+
 ## Next steps
 
-1. Open Batch 6.5 (prediction, uncertainty, simulation, and dispatch: TR-054, TR-058, TR-061, TR-056,
-   TR-062) with its own test-first confirmation, then Batch 6.6.
-2. Keep the eight oracle cells, the criteria cell, the three cross-validation cells, and the nine recovery
-   cells as the regression set for every later spatial change.
+1. Open Batch 6.6 (TR-059 heuristic-weight rename with an obsolete alias; TR-060 additive distance metric)
+   with its own confirmation contracts, then the Phase 6 exit deliverables.
+2. Keep the eight oracle cells, the criteria cell, the three cross-validation cells, the kriging oracle
+   cell, the prediction/regional/simulation cells, the three dispatch cells, and the nine recovery cells as
+   the regression set for every later spatial change.
 
 [Verification index](README.md) | [Technical treatment](../technical-reference/spatial/spatial-extremes.md) | [Scientific findings](../technical-reference/review-findings.md#tr-048)

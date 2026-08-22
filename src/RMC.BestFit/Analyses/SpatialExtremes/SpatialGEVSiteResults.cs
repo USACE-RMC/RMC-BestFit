@@ -34,6 +34,12 @@ namespace RMC.BestFit.Analyses
         public int SiteIndex { get; set; }
 
         /// <summary>
+        /// Gets or sets the uncertainty method that produced the interval bounds of this result
+        /// (the method the analysis actually applied; see <c>SpatialGEVAnalysis.AppliedUncertaintyMethod</c>).
+        /// </summary>
+        public SpatialGEVUncertaintyMethod UncertaintyMethod { get; set; } = SpatialGEVUncertaintyMethod.BayesianPosterior;
+
+        /// <summary>
         /// Gets or sets the site coordinates [X, Y].
         /// </summary>
         public double[] Coordinate { get; set; } = Array.Empty<double>();

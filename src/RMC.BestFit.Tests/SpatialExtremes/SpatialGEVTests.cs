@@ -2446,4 +2446,221 @@ public class SpatialGEVTests
     }
 
     #endregion
+
+    #region Dependent Simulation Tests
+
+    /// <summary>
+    /// Computes the Pearson correlation of the normal scores of two sites' simulated values.
+    /// </summary>
+    /// <param name="model">The model with its parameters applied.</param>
+    /// <param name="samples">The simulated values grouped by site.</param>
+    /// <param name="sampleSize">The number of samples per site.</param>
+    /// <param name="siteA">The first site.</param>
+    /// <param name="siteB">The second site.</param>
+    /// <returns>The correlation of Φ⁻¹(F_A(x)) and Φ⁻¹(F_B(x)).</returns>
+    private static double NormalScoreCorrelation(SpatialGEV model, double[] samples, int sampleSize, int siteA, int siteB)
+    {
+        var a = new double[sampleSize];
+        var b = new double[sampleSize];
+        for (int i = 0; i < sampleSize; i++)
+        {
+            a[i] = Normal.StandardZ(model.CDF(samples[siteA * sampleSize + i], siteA));
+            b[i] = Normal.StandardZ(model.CDF(samples[siteB * sampleSize + i], siteB));
+        }
+        return Numerics.Data.Statistics.Correlation.Pearson(a, b);
+    }
+
+    /// <summary>
+    /// With copula dependence enabled, simulated values reproduce the fitted intersite dependence: the
+    /// normal-score correlation of two nearby sites approaches the copula correlation (TR-061).
+    /// </summary>
+    [TestMethod]
+    public void GenerateRandomValues_WithCopula_ReproducesTheFittedDependence()
+    {
+        var model = CreateModelWithCopula();
+        var values = model.Parameters.Select(p => p.Value).ToArray();
+        values[0] = 20.0;
+        model.SetParameterValues(values);
+        int sampleSize = 4000;
+        double distance = Numerics.Tools.Distance(model.Coordinates[0, 0], model.Coordinates[0, 1], model.Coordinates[1, 0], model.Coordinates[1, 1]);
+        double expected = Math.Exp(-distance / 20.0);
+
+        double[] samples = model.GenerateRandomValues(sampleSize, seed: 12345);
+        double actual = NormalScoreCorrelation(model, samples, sampleSize, 0, 1);
+
+        Assert.AreEqual(sampleSize * model.Sites, samples.Length);
+        Assert.AreEqual(expected, actual, 0.05, $"Normal-score correlation of sites 1 and 2: {actual:F3} versus the copula correlation {expected:F3} (TR-061).");
+    }
+
+    /// <summary>
+    /// Without copula dependence the simulated sites are independent: the normal-score correlation of
+    /// two sites is near zero.
+    /// </summary>
+    [TestMethod]
+    public void GenerateRandomValues_WithoutCopula_SimulatesIndependentSites()
+    {
+        var model = CreateTestModel();
+        int sampleSize = 4000;
+
+        double[] samples = model.GenerateRandomValues(sampleSize, seed: 12345);
+        double actual = NormalScoreCorrelation(model, samples, sampleSize, 0, 1);
+
+        Assert.AreEqual(0.0, actual, 0.05, $"Independent simulation: correlation {actual:F3}.");
+    }
+
+    #endregion
+
+    #region Latent-Error Bounds, Non-Finite Guards, Resampled Models, and Simulation Contracts
+
+    /// <summary>
+    /// Verifies the TR-093 rule: under the log link the latent location-error bound is three times the
+    /// log-space spread of the site means (ceiling, floor 1.0), and under the identity link it is three
+    /// times the raw spread (ceiling, floor 1.0).
+    /// </summary>
+    [TestMethod]
+    public void SetDefaultParameters_LatentErrorBounds_FollowTheLinkSpace()
+    {
+        var model = CreateTestModel();
+        model.LocationErrors = new SpatialRegressionErrors(model.Coordinates, CorrelationFunctionType.Exponential);
+        model.UseLocationErrors = true;
+        model.SetDefaultParameters();
+
+        var siteMeans = new List<double>();
+        double weightedSum = 0.0;
+        int count = 0;
+        for (int j = 0; j < model.Sites; j++)
+        {
+            double sum = 0.0;
+            for (int i = 0; i < model.Observations; i++)
+                sum += model.AtSiteData[i, j];
+            double mean = sum / model.Observations;
+            siteMeans.Add(mean);
+            weightedSum += mean * model.Observations;
+            count += model.Observations;
+        }
+        double logSpread = siteMeans.Select(v => Math.Log(v)).Max() - siteMeans.Select(v => Math.Log(v)).Average();
+        double expectedLog = Math.Max(Math.Ceiling(logSpread * 3), 1.0);
+
+        Assert.IsTrue(model.UseLogLinkForLocation);
+        Assert.AreEqual(expectedLog, model.LocationErrors.Parameters[0].UpperBound, 1e-12, "Log-link error scale bound from the log-space spread.");
+        Assert.AreEqual(-expectedLog, model.LocationErrors.ErrorParameters[0].LowerBound, 1e-12, "Latent-error lower bound.");
+        Assert.AreEqual(expectedLog, model.LocationErrors.ErrorParameters[0].UpperBound, 1e-12, "Latent-error upper bound.");
+        Assert.IsTrue(expectedLog < 10.0, $"A log-space bound is a few log units ({expectedLog}), not the raw spread of the means.");
+
+        model.UseLogLinkForLocation = false;
+        model.SetDefaultParameters();
+        double avg = weightedSum / count;
+        double expectedRaw = Math.Max(Math.Ceiling((siteMeans.Max() - avg) * 3), 1.0);
+        Assert.AreEqual(expectedRaw, model.LocationErrors.Parameters[0].UpperBound, 1e-12, "Identity-link error scale bound from the raw spread.");
+    }
+
+    /// <summary>
+    /// Verifies the TR-092 guard: a latent error that overflows the log-link location makes the proposal
+    /// impossible (negative-infinite likelihood in the scalar and pointwise paths) instead of throwing.
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_NonFiniteSiteParameters_IsNegativeInfinity()
+    {
+        var model = CreateModelWithSpatialErrors();
+        var values = model.Parameters.Select(p => p.Value).ToArray();
+        values[3] = 0.3;
+        values[4] = 30.0;
+        values[5 + 2] = 1e4; // ε₃: exp(trend + 1e4) overflows
+
+        double scalar = model.DataLogLikelihood(values);
+        double[] pointwise = model.PointwiseDataLogLikelihood(values);
+        double kernel = model.LogLikelihood(values);
+
+        Assert.IsTrue(double.IsNegativeInfinity(scalar), $"Scalar likelihood {scalar}.");
+        Assert.IsTrue(pointwise.All(double.IsNegativeInfinity), "Every row holds the overflowing site.");
+        Assert.IsTrue(double.IsNegativeInfinity(kernel), $"Kernel {kernel}.");
+    }
+
+    /// <summary>
+    /// Verifies that the resampled replicate model keeps the network and the parameter structure while its
+    /// rows come from the supplied source rows.
+    /// </summary>
+    [TestMethod]
+    public void CreateResampledModel_ReplacesRowsAndKeepsTheNetwork()
+    {
+        var original = CreateModelWithCopula();
+        var values = original.Parameters.Select(p => p.Value).ToArray();
+        values[0] = 20.0;
+        original.SetParameterValues(values);
+        int[] rows = { 3, 3, 0, 29, 10, 10, 10 };
+
+        SpatialGEV replicate = original.CreateResampledModel(rows);
+
+        Assert.AreEqual(7, replicate.Observations);
+        Assert.AreEqual(original.Sites, replicate.Sites);
+        Assert.AreEqual(original.NumberOfParameters, replicate.NumberOfParameters);
+        CollectionAssert.AreEqual(values, replicate.Parameters.Select(p => p.Value).ToArray());
+        for (int i = 0; i < rows.Length; i++)
+        {
+            for (int j = 0; j < original.Sites; j++)
+                Assert.AreEqual(original.AtSiteData[rows[i], j], replicate.AtSiteData[i, j], 0.0, $"Row {i + 1}, site {j + 1}.");
+        }
+        Assert.IsTrue(replicate.UseCopulaDependence && replicate.SpatialDependence.Sites == original.Sites);
+        Assert.IsTrue(double.IsFinite(replicate.DataLogLikelihood(values)));
+        Assert.ThrowsException<ArgumentException>(() => original.CreateResampledModel(new[] { 0, 30 }), "Row index outside the record.");
+        Assert.ThrowsException<ArgumentException>(() => original.CreateResampledModel(Array.Empty<int>()), "At least one row.");
+        Assert.ThrowsException<ArgumentNullException>(() => original.CreateResampledModel(null!));
+    }
+
+    /// <summary>
+    /// Verifies that the independent simulation path is unchanged: the values equal the site-major inverse
+    /// GEV transformation of the seeded uniform stream, the algorithm that has always been used.
+    /// </summary>
+    [TestMethod]
+    public void GenerateRandomValues_WithoutCopula_MatchesTheHistoricalSiteMajorAlgorithm()
+    {
+        var model = CreateTestModel();
+        int sampleSize = 25;
+        int seed = 2468;
+
+        double[] samples = model.GenerateRandomValues(sampleSize, seed);
+
+        var rng = new Numerics.Sampling.MersenneTwister(seed);
+        int index = 0;
+        for (int s = 0; s < model.Sites; s++)
+        {
+            var gevParams = model.GetGEVParameters(s);
+            var gev = new GeneralizedExtremeValue(gevParams[0], gevParams[1], gevParams[2]);
+            for (int i = 0; i < sampleSize; i++)
+                Assert.AreEqual(gev.InverseCDF(rng.NextDouble()), samples[index++], 0.0, $"Site {s + 1}, sample {i + 1}.");
+        }
+    }
+
+    /// <summary>
+    /// Verifies that the dependent simulation is reproducible for a seed, keeps the GEV marginal of each
+    /// site (the simulated values are the site inverse CDF of uniforms), and throws when the copula
+    /// parameters have not been set.
+    /// </summary>
+    [TestMethod]
+    public void GenerateRandomValues_WithCopula_IsReproducibleAndKeepsTheMarginals()
+    {
+        var model = CreateModelWithCopula();
+        var values = model.Parameters.Select(p => p.Value).ToArray();
+        values[0] = 20.0;
+        model.SetParameterValues(values);
+
+        double[] first = model.GenerateRandomValues(300, seed: 777);
+        double[] second = model.GenerateRandomValues(300, seed: 777);
+        double[] other = model.GenerateRandomValues(300, seed: 778);
+
+        CollectionAssert.AreEqual(first, second, "Same seed, same simulation.");
+        Assert.IsTrue(first.Zip(other, (a, b) => a != b).Any(), "A different seed changes the simulation.");
+        for (int s = 0; s < model.Sites; s++)
+        {
+            var gevParams = model.GetGEVParameters(s);
+            var gev = new GeneralizedExtremeValue(gevParams[0], gevParams[1], gevParams[2]);
+            for (int i = 0; i < 300; i++)
+            {
+                double u = gev.CDF(first[s * 300 + i]);
+                Assert.IsTrue(u > 0 && u < 1, "Each value lies inside the site's GEV support.");
+            }
+        }
+    }
+
+    #endregion
 }

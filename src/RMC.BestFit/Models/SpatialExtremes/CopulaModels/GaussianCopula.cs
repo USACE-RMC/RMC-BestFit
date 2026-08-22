@@ -343,6 +343,20 @@ namespace RMC.BestFit.Models.SpatialExtremes
         }
 
         /// <summary>
+        /// Gets a copy of the correlation matrix built by the most recent <see cref="SetParameterValues"/>
+        /// call, or <c>null</c> before the parameters have been set.
+        /// </summary>
+        /// <returns>The Sites × Sites correlation matrix, or <c>null</c>.</returns>
+        /// <remarks>
+        /// Used by <c>SpatialGEV.GenerateRandomValues</c> to simulate spatially dependent rows through the
+        /// Cholesky factor of the fitted correlation.
+        /// </remarks>
+        public double[,]? GetCorrelationMatrix()
+        {
+            return _correlationMatrix == null ? null : (double[,])_correlationMatrix.Clone();
+        }
+
+        /// <summary>
         /// Returns a deep copy of the Gaussian copula.
         /// </summary>
         public GaussianCopula Clone()

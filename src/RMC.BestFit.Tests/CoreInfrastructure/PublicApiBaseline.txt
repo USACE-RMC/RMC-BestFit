@@ -454,15 +454,30 @@ TYPE class RMC.BestFit.Analyses.SpatialGEVAnalysis
   METHOD System.Xml.Linq.XElement ToXElement()
   PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {get;set;}
   PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {get;}
+  PROPERTY RMC.BestFit.Analyses.SpatialGEVBootstrapResults BootstrapResults {get;}
   PROPERTY RMC.BestFit.Analyses.SpatialGEVCrossValidationResults CrossValidationResults {get;}
   PROPERTY RMC.BestFit.Analyses.SpatialGEVSiteResults[] SiteResults {get;}
   PROPERTY RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod UncertaintyMethod {get;set;}
   PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
   PROPERTY RMC.BestFit.Estimation.CovarianceComputationStatus GodambeCovarianceStatus {get;}
   PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialGEV SpatialGEV {get;}
+  PROPERTY System.Boolean SampleConditionalResidual {get;set;}
   PROPERTY System.Double VarianceInflationFactor {get;}
   PROPERTY System.Double[,] GodambeCovariance {get;}
+  PROPERTY System.Int32 BootstrapBlockSize {get;set;}
+  PROPERTY System.Int32 BootstrapReplicates {get;set;}
+  PROPERTY System.Nullable<RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod> AppliedUncertaintyMethod {get;}
   PROPERTY System.String GodambeCovarianceDiagnostic {get;}
+TYPE class RMC.BestFit.Analyses.SpatialGEVBootstrapResults
+  BASE System.Object
+  CTOR RMC.BestFit.Analyses.SpatialGEVBootstrapResults()
+  PROPERTY System.Double MinimumSuccessFraction {get;set;}
+  PROPERTY System.Int32 BlockSize {get;set;}
+  PROPERTY System.Int32 FailedReplicates {get;}
+  PROPERTY System.Int32 RequestedReplicates {get;set;}
+  PROPERTY System.Int32 Seed {get;set;}
+  PROPERTY System.Int32 SuccessfulReplicates {get;set;}
+  PROPERTY System.String Scheme {get;set;}
 TYPE enum RMC.BestFit.Analyses.SpatialGEVCrossValidationFoldStatus
   BASE System.Enum
   INTERFACE System.IComparable
@@ -491,6 +506,7 @@ TYPE class RMC.BestFit.Analyses.SpatialGEVCrossValidationResults
 TYPE class RMC.BestFit.Analyses.SpatialGEVSiteResults
   BASE System.Object
   CTOR RMC.BestFit.Analyses.SpatialGEVSiteResults()
+  PROPERTY RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod UncertaintyMethod {get;set;}
   PROPERTY System.Double LocationLower {get;set;}
   PROPERTY System.Double LocationMean {get;set;}
   PROPERTY System.Double LocationUpper {get;set;}
@@ -1935,6 +1951,7 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.GaussianCopula
   METHOD System.Double LogPDF(System.Collections.Generic.IList<System.Double>)
   METHOD System.Double LogPDF(System.Collections.Generic.IList<System.Double>, System.Collections.Generic.IReadOnlyList<System.Int32>)
   METHOD System.Double PDF(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Double[,] GetCorrelationMatrix()
   METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
   PROPERTY RMC.BestFit.Models.SpatialExtremes.ICorrelationModel CorrelationFunction {get;}
   PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}

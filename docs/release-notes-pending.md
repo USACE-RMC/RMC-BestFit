@@ -72,7 +72,22 @@ development.
   folds, aggregates over successful folds, and an `InvalidOperationException` when no fold
   succeeds; `GeneralLinearFunction.PredictWithCovariates(null or empty)` throws for a trend that
   has covariates (intercept-only trends still accept null), so `PredictAtUngaugedLocation` and
-  `SpatialGEV.PredictAtUngauged` require covariate values for covariate models.
+  `SpatialGEV.PredictAtUngauged` require covariate values for covariate models; ungauged-site
+  predictions apply the conditional Gaussian process of every posterior draw with a seeded conditional
+  residual (`SampleConditionalResidual`, default true; false gives the conditional mean) instead of
+  inverse-distance interpolation; regional credible bounds are posterior quantiles of the per-draw
+  regional mean quantile instead of averages of site interval endpoints; `GenerateRandomValues`
+  simulates spatially dependent rows through the fitted copula (independent sites without it);
+  `RunSpatialBootstrapAsync` runs a temporal block bootstrap (rows resampled in blocks, all sites kept,
+  MAP refit per replicate, NaN failures, at least half of the replicates required, `BootstrapResults`
+  accounting; `blockSize` now counts rows); `RunAsync` applies the selected `UncertaintyMethod`
+  (posterior, sqrt-VIF inflation, Gaussian parameter draws from the Godambe covariance at the MAP, or
+  the bootstrap with `BootstrapReplicates`/`BootstrapBlockSize`) and records `AppliedUncertaintyMethod`
+  and `SpatialGEVSiteResults.UncertaintyMethod`; `UncertaintyMethod`, `SampleConditionalResidual`,
+  `BootstrapReplicates`, and `BootstrapBlockSize` are serialized as optional attributes; a non-finite
+  site GEV parameter gives negative-infinite likelihood instead of throwing inside the sampler; default
+  latent-error bounds under a log link use the log-space spread (floor 1.0 log unit), so
+  `ConfigureForProperCoverage` models sample under the defaults.
 
 ## RMC.Numerics (since 2.1.4)
 

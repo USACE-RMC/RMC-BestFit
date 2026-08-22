@@ -774,4 +774,37 @@ public class SpatialGEVResultsTests
     }
 
     #endregion
+
+    #region Uncertainty Method and Bootstrap Results Tests
+
+    /// <summary>
+    /// Tests the default applied method of a site result and the bootstrap accounting DTO.
+    /// </summary>
+    [TestMethod]
+    public void SiteResultsAndBootstrapResults_DefaultsAndRoundTrip()
+    {
+        var site = new SpatialGEVSiteResults();
+        Assert.AreEqual(SpatialGEVUncertaintyMethod.BayesianPosterior, site.UncertaintyMethod, "Posterior by default.");
+        site.UncertaintyMethod = SpatialGEVUncertaintyMethod.SpatialBootstrap;
+        Assert.AreEqual(SpatialGEVUncertaintyMethod.SpatialBootstrap, site.UncertaintyMethod);
+
+        var bootstrap = new SpatialGEVBootstrapResults();
+        Assert.AreEqual(0, bootstrap.RequestedReplicates);
+        Assert.AreEqual(0, bootstrap.SuccessfulReplicates);
+        Assert.AreEqual(0, bootstrap.FailedReplicates);
+        Assert.AreEqual(string.Empty, bootstrap.Scheme);
+
+        bootstrap.RequestedReplicates = 20;
+        bootstrap.SuccessfulReplicates = 17;
+        bootstrap.BlockSize = 4;
+        bootstrap.Seed = 12345;
+        bootstrap.MinimumSuccessFraction = 0.5;
+        bootstrap.Scheme = "temporal block bootstrap";
+        Assert.AreEqual(3, bootstrap.FailedReplicates, "Failed = requested - successful.");
+        Assert.AreEqual(4, bootstrap.BlockSize);
+        Assert.AreEqual(12345, bootstrap.Seed);
+        Assert.AreEqual(0.5, bootstrap.MinimumSuccessFraction, 0.0);
+    }
+
+    #endregion
 }
