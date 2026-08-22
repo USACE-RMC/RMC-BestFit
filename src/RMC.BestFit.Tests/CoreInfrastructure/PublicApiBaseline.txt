@@ -458,9 +458,11 @@ TYPE class RMC.BestFit.Analyses.SpatialGEVAnalysis
   PROPERTY RMC.BestFit.Analyses.SpatialGEVSiteResults[] SiteResults {get;}
   PROPERTY RMC.BestFit.Analyses.SpatialGEVUncertaintyMethod UncertaintyMethod {get;set;}
   PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {get;}
+  PROPERTY RMC.BestFit.Estimation.CovarianceComputationStatus GodambeCovarianceStatus {get;}
   PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialGEV SpatialGEV {get;}
   PROPERTY System.Double VarianceInflationFactor {get;}
   PROPERTY System.Double[,] GodambeCovariance {get;}
+  PROPERTY System.String GodambeCovarianceDiagnostic {get;}
 TYPE class RMC.BestFit.Analyses.SpatialGEVCrossValidationResults
   BASE System.Object
   CTOR RMC.BestFit.Analyses.SpatialGEVCrossValidationResults()
@@ -1916,6 +1918,7 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.GaussianCopula
   CTOR RMC.BestFit.Models.SpatialExtremes.GaussianCopula(System.Double[,], RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType)
   METHOD RMC.BestFit.Models.SpatialExtremes.GaussianCopula Clone()
   METHOD System.Double LogPDF(System.Collections.Generic.IList<System.Double>)
+  METHOD System.Double LogPDF(System.Collections.Generic.IList<System.Double>, System.Collections.Generic.IReadOnlyList<System.Int32>)
   METHOD System.Double PDF(System.Collections.Generic.IList<System.Double>)
   METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
   PROPERTY RMC.BestFit.Models.SpatialExtremes.ICorrelationModel CorrelationFunction {get;}
@@ -1958,6 +1961,7 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialGEV
   METHOD System.Double DataLogLikelihood(System.Double[])
   METHOD System.Double InverseCDF(System.Double, System.Int32)
   METHOD System.Double PDF(System.Double, System.Int32)
+  METHOD System.Double PriorLogLikelihood(System.Double[])
   METHOD System.Double[,] ComputeIntersiteCorrelation()
   METHOD System.Double[] GenerateRandomValues(System.Int32, System.Int32 optional)
   METHOD System.Double[] GetGEVParameters(System.Int32)

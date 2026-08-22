@@ -50,6 +50,20 @@ development.
   discharge and reports unmatched stage/discharge records as a warning with counts.
 - Mixture: MCMC samples the identified `K-1` weight coordinates; AIC/BIC count `K-1` weights;
   legacy full-`K` posteriors still open.
+- Spatial GEV: rows with missing sites are marginalized through the observed-site Gaussian-copula
+  submatrix (`GaussianCopula.LogPDF(z, observedSites)`; a zero placeholder score is no longer
+  substituted), so posteriors of copula models fitted to networks with missing data change; the
+  Gaussian-process densities of the latent location/scale/shape errors moved from `DataLogLikelihood`
+  to a `PriorLogLikelihood` override (posterior kernel, sampler, MAP, and posterior unchanged;
+  AIC/BIC/DIC/WAIC/LOOIC of latent-error models now exclude the process densities; the
+  scalar/pointwise identities hold); `ComputeGodambeCovariance` derives both sandwich factors from
+  the row/year estimating equations, returns `null` with `GodambeCovarianceStatus = Failed` and a
+  `GodambeCovarianceDiagnostic` instead of the variability matrix when the sensitivity matrix is
+  singular or a value is not finite, validates the parameter count, and is reset by `ClearResults`;
+  spatial AIC/BIC keep the nonempty row/year unit (`SpatialGEVAnalysis.ComputeInformationCriteria`);
+  `SpatialGEV.Clone()` now carries the copula and latent-error parameter blocks and the source
+  values, bounds, and priors (previously the clone held only the trend blocks with reset
+  intercepts, so copula and latent-error Bayesian analyses failed while building site results).
 
 ## RMC.Numerics (since 2.1.4)
 

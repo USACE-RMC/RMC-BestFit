@@ -949,6 +949,75 @@ public class SpatialGEVTests
         Assert.IsNotNull(clone.SpatialDependence);
     }
 
+    /// <summary>
+    /// Verifies that the clone of a copula model has the source's parameter structure (the copula block
+    /// included) and accepts the source's parameter vector.
+    /// </summary>
+    [TestMethod]
+    public void Clone_WithCopula_PreservesParameterStructure()
+    {
+        var original = CreateModelWithCopula();
+        var values = original.Parameters.Select(p => p.Value).ToArray();
+
+        var clone = (SpatialGEV)original.Clone();
+
+        Assert.AreEqual(original.NumberOfParameters, clone.NumberOfParameters, "The clone must carry the copula parameter block.");
+        clone.SetParameterValues(values);
+        CollectionAssert.AreEqual(values, clone.Parameters.Select(p => p.Value).ToArray());
+        Assert.AreEqual(original.DataLogLikelihood(values), clone.DataLogLikelihood(values), 1e-10);
+    }
+
+    /// <summary>
+    /// Verifies that the clone of a latent-error model has the source's parameter structure (the error
+    /// blocks included) and accepts the source's parameter vector.
+    /// </summary>
+    [TestMethod]
+    public void Clone_WithSpatialErrors_PreservesParameterStructure()
+    {
+        var original = CreateModelWithSpatialErrors();
+        var values = original.Parameters.Select(p => p.Value).ToArray();
+
+        var clone = (SpatialGEV)original.Clone();
+
+        Assert.AreEqual(original.NumberOfParameters, clone.NumberOfParameters, "The clone must carry the error parameter blocks.");
+        clone.SetParameterValues(values);
+        CollectionAssert.AreEqual(values, clone.Parameters.Select(p => p.Value).ToArray());
+        Assert.AreEqual(original.LogLikelihood(values), clone.LogLikelihood(values), 1e-10);
+    }
+
+    /// <summary>
+    /// Verifies that the clone keeps the source's parameter values, bounds, and priors (including the
+    /// trend intercepts that the constructor would otherwise reset to data-derived defaults) without a
+    /// further <c>SetParameterValues</c> call.
+    /// </summary>
+    [TestMethod]
+    public void Clone_PreservesParameterValuesBoundsAndPriors()
+    {
+        var original = CreateModelWithCopula();
+        original.Parameters[0].Value = 17.5;
+        original.Parameters[1].Value = original.Parameters[1].Value + 0.25;
+        original.Parameters[1].LowerBound = original.Parameters[1].Value - 2.0;
+        original.Parameters[1].UpperBound = original.Parameters[1].Value + 2.0;
+        original.Parameters[1].PriorDistribution = new Normal(original.Parameters[1].Value, 0.5);
+        original.SetParameterValues(original.Parameters.Select(p => p.Value).ToArray());
+
+        var clone = (SpatialGEV)original.Clone();
+
+        for (int i = 0; i < original.NumberOfParameters; i++)
+        {
+            Assert.AreEqual(original.Parameters[i].Value, clone.Parameters[i].Value, 0.0, $"Value of parameter {i + 1}.");
+            Assert.AreEqual(original.Parameters[i].LowerBound, clone.Parameters[i].LowerBound, 0.0, $"Lower bound of parameter {i + 1}.");
+            Assert.AreEqual(original.Parameters[i].UpperBound, clone.Parameters[i].UpperBound, 0.0, $"Upper bound of parameter {i + 1}.");
+            Assert.AreNotSame(original.Parameters[i], clone.Parameters[i], "Parameter objects are independent.");
+        }
+        Assert.IsInstanceOfType(clone.Parameters[1].PriorDistribution, typeof(Normal), "The customized prior is cloned.");
+        Assert.AreNotSame(original.Parameters[1].PriorDistribution, clone.Parameters[1].PriorDistribution);
+        var values = original.Parameters.Select(p => p.Value).ToArray();
+        Assert.AreEqual(original.LogLikelihood(values), clone.LogLikelihood(values), 1e-10, "Identical kernel on the clone.");
+        clone.Parameters[0].Value = 99.0;
+        Assert.AreEqual(17.5, original.Parameters[0].Value, 0.0, "Editing the clone leaves the source untouched.");
+    }
+
     /// <summary>Verifies that clone preserves errors for with spatial errors.</summary>
     [TestMethod]
     public void Clone_WithSpatialErrors_PreservesErrors()
@@ -1984,6 +2053,233 @@ public class SpatialGEVTests
         Assert.AreEqual(10, model.Sites);
         Assert.AreEqual(100, model.Observations);
         Assert.IsTrue(double.IsFinite(likelihood));
+    }
+
+    #endregion
+
+    #region Observed-Subset Copula and Prior Decomposition Tests
+
+    /// <summary>
+    /// Creates a copula model whose data matrix has a row with one missing site and a row with two
+    /// missing sites, with an explicit copula range.
+    /// </summary>
+    /// <param name="parameters">Receives the parameter vector applied to the model.</param>
+    /// <returns>The configured model.</returns>
+    private static SpatialGEV CreateCopulaModelWithMissingSites(out double[] parameters)
+    {
+        var data = CreateTestAtSiteData();
+        data[3, 1] = double.NaN;
+        data[7, 0] = double.NaN;
+        data[7, 4] = double.NaN;
+        var coords = CreateTestCoordinates();
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        model.SpatialDependence = new GaussianCopula(coords, CorrelationFunctionType.Exponential);
+        model.UseCopulaDependence = true;
+        model.SetDefaultParameters();
+        parameters = model.Parameters.Select(p => p.Value).ToArray();
+        parameters[0] = 20.0;
+        model.SetParameterValues(parameters);
+        return model;
+    }
+
+    /// <summary>
+    /// Computes the expected row/year log likelihood of a copula model by hand: the observed-site GEV log
+    /// densities plus the observed-subset copula density when at least two sites are observed.
+    /// </summary>
+    /// <param name="model">The model with its parameter values applied.</param>
+    /// <param name="row">The row index.</param>
+    /// <param name="placeholderValue">Receives the value obtained with a zero latent score substituted for every missing site and the full-dimensional copula density (the behavior corrected by TR-048).</param>
+    /// <returns>The expected row log likelihood.</returns>
+    private static double ExpectedRowLogLikelihood(SpatialGEV model, int row, out double placeholderValue)
+    {
+        var observed = new List<int>();
+        var z = new double[model.Sites];
+        double marginals = 0.0;
+        for (int j = 0; j < model.Sites; j++)
+        {
+            double value = model.AtSiteData[row, j];
+            if (double.IsNaN(value))
+                continue;
+            var gev = new GeneralizedExtremeValue();
+            gev.SetParameters(model.GetGEVParameters(j));
+            marginals += gev.LogPDF(value);
+            z[j] = Normal.StandardZ(gev.CDF(value));
+            observed.Add(j);
+        }
+
+        placeholderValue = observed.Count > 0 ? marginals + model.SpatialDependence.LogPDF(z) : 0.0;
+        return observed.Count >= 2 ? marginals + model.SpatialDependence.LogPDF(z, observed) : marginals;
+    }
+
+    /// <summary>
+    /// Verifies that rows with missing sites contribute their observed-site marginals plus the copula density
+    /// over the observed-site correlation submatrix, in the scalar and the pointwise likelihood, and that the
+    /// zero-placeholder full-dimensional value is no longer produced (TR-048).
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_WithCopulaAndMissingSites_UsesObservedSiteCopulaSubmatrix()
+    {
+        SpatialGEV model = CreateCopulaModelWithMissingSites(out double[] parameters);
+
+        double[] pointwise = model.PointwiseDataLogLikelihood(parameters);
+        double expectedTotal = 0.0;
+        for (int i = 0; i < model.Observations; i++)
+        {
+            double expected = ExpectedRowLogLikelihood(model, i, out double placeholder);
+            Assert.AreEqual(expected, pointwise[i], 1e-10, $"Row {i + 1}.");
+            if (i == 3 || i == 7)
+                Assert.AreNotEqual(placeholder, pointwise[i], 1e-6, $"Row {i + 1} must not use the zero-placeholder full-dimensional density.");
+            expectedTotal += expected;
+        }
+
+        Assert.AreEqual(expectedTotal, model.DataLogLikelihood(parameters), 1e-8, "Scalar likelihood.");
+        Assert.AreEqual(pointwise.Sum(), model.DataLogLikelihood(parameters), 1e-8, "Pointwise sum identity.");
+    }
+
+    /// <summary>
+    /// Verifies that a row with a single observed site contributes its marginal log density only (TR-048).
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_WithCopula_SingleObservedSiteRow_HasNoDependenceTerm()
+    {
+        var data = CreateTestAtSiteData();
+        for (int j = 0; j < 5; j++)
+        {
+            if (j != 2)
+                data[5, j] = double.NaN;
+        }
+        var coords = CreateTestCoordinates();
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        model.SpatialDependence = new GaussianCopula(coords, CorrelationFunctionType.Exponential);
+        model.UseCopulaDependence = true;
+        model.SetDefaultParameters();
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+        parameters[0] = 20.0;
+        model.SetParameterValues(parameters);
+
+        var gev = new GeneralizedExtremeValue();
+        gev.SetParameters(model.GetGEVParameters(2));
+        double expected = gev.LogPDF(data[5, 2]);
+
+        double[] pointwise = model.PointwiseDataLogLikelihood(parameters);
+        Assert.AreEqual(expected, pointwise[5], 1e-12, "A single observed site has no copula term.");
+        Assert.AreEqual(pointwise.Sum(), model.DataLogLikelihood(parameters), 1e-8, "Pointwise sum identity.");
+    }
+
+    /// <summary>
+    /// Verifies that a fully missing row contributes zero and that removing it leaves the likelihood
+    /// unchanged (TR-048).
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_WithCopula_FullyMissingRow_ContributesNothing()
+    {
+        var full = CreateTestAtSiteData();
+        var withMissingRow = (double[,])full.Clone();
+        for (int j = 0; j < 5; j++)
+            withMissingRow[9, j] = double.NaN;
+        var reduced = new double[29, 5];
+        for (int i = 0, r = 0; i < 30; i++)
+        {
+            if (i == 9)
+                continue;
+            for (int j = 0; j < 5; j++)
+                reduced[r, j] = full[i, j];
+            r++;
+        }
+        var coords = CreateTestCoordinates();
+
+        var modelWithRow = new SpatialGEV(withMissingRow, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        modelWithRow.SpatialDependence = new GaussianCopula(coords, CorrelationFunctionType.Exponential);
+        modelWithRow.UseCopulaDependence = true;
+        modelWithRow.SetDefaultParameters();
+        var modelWithoutRow = new SpatialGEV(reduced, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        modelWithoutRow.SpatialDependence = new GaussianCopula(coords, CorrelationFunctionType.Exponential);
+        modelWithoutRow.UseCopulaDependence = true;
+        modelWithoutRow.SetDefaultParameters();
+
+        var parameters = modelWithRow.Parameters.Select(p => p.Value).ToArray();
+        parameters[0] = 20.0;
+
+        double[] pointwise = modelWithRow.PointwiseDataLogLikelihood(parameters);
+        Assert.AreEqual(30, pointwise.Length, "One pointwise term per row/year.");
+        Assert.AreEqual(0.0, pointwise[9], 0.0, "A fully missing row contributes zero.");
+        Assert.AreEqual(modelWithoutRow.DataLogLikelihood(parameters), modelWithRow.DataLogLikelihood(parameters), 1e-10, "Removing the empty row leaves the likelihood unchanged.");
+    }
+
+    /// <summary>
+    /// Verifies the hierarchical decomposition with latent spatial errors: the prior log likelihood is the
+    /// sum of the parameter priors and the Gaussian-process densities, the data log likelihood holds the
+    /// observation terms only, and the scalar/pointwise identities and the posterior kernel identity hold
+    /// (TR-049).
+    /// </summary>
+    [TestMethod]
+    public void PriorLogLikelihood_WithSpatialErrors_HoldsGaussianProcessDensities()
+    {
+        var model = CreateModelWithSpatialErrors();
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+
+        // Parameter layout: [location, scale, shape] then the location-error block [σ, range, ε₁..ε₅]
+        // and the scale-error block [σ, range, ε₁..ε₅].
+        int locationBlock = 3;
+        int scaleBlock = locationBlock + model.LocationErrors.NumberOfParameters;
+        Assert.AreEqual(7, model.LocationErrors.NumberOfParameters);
+        parameters[locationBlock] = 0.30;
+        parameters[locationBlock + 1] = 30.0;
+        double[] locationErrors = { 0.05, -0.04, 0.02, 0.01, -0.03 };
+        double[] scaleErrors = { -0.02, 0.03, 0.01, -0.01, 0.02 };
+        for (int j = 0; j < 5; j++)
+        {
+            parameters[locationBlock + 2 + j] = locationErrors[j];
+            parameters[scaleBlock + 2 + j] = scaleErrors[j];
+        }
+        parameters[scaleBlock] = 0.20;
+        parameters[scaleBlock + 1] = 15.0;
+        model.SetParameterValues(parameters);
+
+        double parameterPriors = 0.0;
+        for (int i = 0; i < parameters.Length; i++)
+            parameterPriors += model.Parameters[i].PriorDistribution.LogPDF(parameters[i]);
+        double processDensity = model.LocationErrors.LogPDF() + model.ScaleErrors.LogPDF();
+        Assert.IsTrue(double.IsFinite(processDensity) && processDensity != 0.0, "The latent errors carry a nontrivial process density.");
+
+        double marginals = 0.0;
+        for (int j = 0; j < model.Sites; j++)
+        {
+            var gev = new GeneralizedExtremeValue();
+            gev.SetParameters(model.GetGEVParameters(j));
+            for (int i = 0; i < model.Observations; i++)
+                marginals += gev.LogPDF(model.AtSiteData[i, j]);
+        }
+
+        double data = model.DataLogLikelihood(parameters);
+        double prior = model.PriorLogLikelihood(parameters);
+        var components = model.PointwisePriorLogLikelihood(parameters);
+
+        Assert.AreEqual(marginals, data, 1e-8, "The data log likelihood holds the observation terms only.");
+        Assert.AreEqual(model.PointwiseDataLogLikelihood(parameters).Sum(), data, 1e-8, "Data equals the pointwise sum.");
+        Assert.AreEqual(parameterPriors + processDensity, prior, 1e-10, "The prior holds the parameter priors and the process densities.");
+        Assert.AreEqual(prior, components.Sum(c => c.LogLikelihood), 1e-10, "The prior equals the pointwise prior component sum.");
+        Assert.AreEqual(2, components.Count(c => c.Type == PriorComponentType.SpatialError), "One spatial-error component per enabled process.");
+        Assert.AreEqual(data + prior, model.LogLikelihood(parameters), 1e-8, "The posterior kernel is data plus prior.");
+    }
+
+    /// <summary>
+    /// Verifies that the prior evaluation is pure: evaluating another parameter vector leaves the model's
+    /// parameter values (including the latent error parameters) untouched (TR-049).
+    /// </summary>
+    [TestMethod]
+    public void PriorLogLikelihood_WithSpatialErrors_DoesNotMutateModelState()
+    {
+        var model = CreateModelWithSpatialErrors();
+        var current = model.Parameters.Select(p => p.Value).ToArray();
+        var other = (double[])current.Clone();
+        for (int i = 0; i < other.Length; i++)
+            other[i] += 0.01 * (i + 1);
+
+        double prior = model.PriorLogLikelihood(other);
+
+        Assert.IsFalse(double.IsNaN(prior));
+        CollectionAssert.AreEqual(current, model.Parameters.Select(p => p.Value).ToArray(), "The model state must not change.");
     }
 
     #endregion

@@ -27,7 +27,7 @@ The [API traceability matrix](../api-traceability.md) enumerates every exported 
 | AR/MA/ARIMA/ARIMAX | [Time-series overview](../analysis/time-series.md) and four model chapters | conditional Gaussian likelihood, transforms, recursion, covariate ordering | `autoregressive-workflow`, `moving-average-workflow`, `arima-workflow`, `arimax-workflow` | Fast tests and verification sources; TR-035 through TR-046 |
 | Bivariate copulas | [Bivariate chapter](../analysis/bivariate.md) | Sklar model, copula densities, pseudo-likelihood/IFM | `bivariate-workflow` | Pair and copula tests; TR-047 |
 | Coincident frequency | [Coincident-frequency chapter](../analysis/coincident-frequency.md) | response inversion and copula-space bin integration | `coincident-frequency-workflow` | Numerical integration tests |
-| Spatial extremes | [Spatial GEV chapter](../spatial/spatial-extremes.md) | GEV hierarchy, Gaussian copula, GP errors, full kernel, kriging | `spatial-gev-workflow` | Fast spatial tests and source audit; TR-048 through TR-062 |
+| Spatial extremes | [Spatial GEV chapter](../spatial/spatial-extremes.md) | GEV hierarchy, Gaussian copula with observed-subset marginalization, GP errors as prior structure, full kernel, kriging | `spatial-gev-workflow` | Fast spatial tests, the `mvtnorm` likelihood oracle and criteria cell, and source audit; TR-048/049/055/057 closed, TR-050 through TR-054, TR-056, TR-058 through TR-062 open |
 
 ## Release Questions
 

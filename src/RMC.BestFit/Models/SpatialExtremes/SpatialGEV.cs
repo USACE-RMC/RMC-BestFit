@@ -631,11 +631,12 @@ namespace RMC.BestFit.Models.SpatialExtremes
         }
 
         /// <summary>
-        /// Computes log-likelihood using only local copies of models.
+        /// Computes the observation log likelihood (weighted observed-site GEV log densities plus the
+        /// observed-site copula log density per row/year) using only local copies of models.
         /// This method is thread-safe for parallel MCMC chains.
         /// </summary>
         /// <param name="parameters">The parameter values.</param>
-        /// <returns>The log-likelihood value.</returns>
+        /// <returns>The observation log likelihood; the latent-error process densities are not included.</returns>
         private double ComputeLogLikelihoodInternal(double[] parameters)
         {
             // Snapshot SiteWeights once per LL evaluation. RunCrossValidationAsync
@@ -731,17 +732,20 @@ namespace RMC.BestFit.Models.SpatialExtremes
             // Data likelihood with optional copula dependence
             if (UseCopulaDependence && localCopula != null)
             {
-                // Likelihood with copula: L = ∏_i [∏_j f_j(y_ij)] * c(u_i1, ..., u_in)
+                // Likelihood with copula: L = ∏_i [∏_{j∈O_i} f_j(y_ij)] * c_{R(O_i)}(u_i), where O_i is the
+                // set of sites observed in row i. Unobserved sites are marginalized through the
+                // observed-site correlation submatrix; a row with fewer than two observed sites has no
+                // dependence term.
+                var observedSites = new List<int>(Sites);
                 for (int i = 0; i < Observations; i++)
                 {
                     var z = new double[Sites];
-                    bool hasData = false;
+                    observedSites.Clear();
 
                     for (int j = 0; j < Sites; j++)
                     {
                         if (!double.IsNaN(AtSiteData[i, j]))
                         {
-                            hasData = true;
                             var gevParams = GetGEVParametersLocal(j, localLocation, localScale, localShape,
                                 localLocErrors, localSclErrors, localShpErrors);
                             if (gevParams[1] <= 0) // Scale must be positive
@@ -759,17 +763,14 @@ namespace RMC.BestFit.Models.SpatialExtremes
                             // Transform to standard normal for copula
                             double u = localGEV.CDF(AtSiteData[i, j]);
                             z[j] = Normal.StandardZ(u);
-                        }
-                        else
-                        {
-                            z[j] = 0.0; // Placeholder for missing data
+                            observedSites.Add(j);
                         }
                     }
 
-                    // Add copula contribution if we have data
-                    if (hasData)
+                    // Add the observed-site copula contribution
+                    if (observedSites.Count >= 2)
                     {
-                        double copLogLH = localCopula.LogPDF(z);
+                        double copLogLH = localCopula.LogPDF(z, observedSites);
                         if (double.IsInfinity(copLogLH) || double.IsNaN(copLogLH))
                             return double.NegativeInfinity;
                         logLH += copLogLH;
@@ -802,67 +803,28 @@ namespace RMC.BestFit.Models.SpatialExtremes
                 }
             }
 
-            // Add spatial error contributions (Gaussian process priors)
-            if (UseLocationErrors && localLocErrors != null)
-            {
-                double locErrLogLH = localLocErrors.LogPDF();
-                if (double.IsInfinity(locErrLogLH) || double.IsNaN(locErrLogLH))
-                    return double.NegativeInfinity;
-                logLH += locErrLogLH;
-            }
-
-            if (UseScaleErrors && localSclErrors != null)
-            {
-                double sclErrLogLH = localSclErrors.LogPDF();
-                if (double.IsInfinity(sclErrLogLH) || double.IsNaN(sclErrLogLH))
-                    return double.NegativeInfinity;
-                logLH += sclErrLogLH;
-            }
-
-            if (UseShapeErrors && localShpErrors != null)
-            {
-                double shpErrLogLH = localShpErrors.LogPDF();
-                if (double.IsInfinity(shpErrLogLH) || double.IsNaN(shpErrLogLH))
-                    return double.NegativeInfinity;
-                logLH += shpErrLogLH;
-            }
-
+            // The Gaussian-process densities of the latent spatial errors are prior structure
+            // (Level 2 of the hierarchy) and are evaluated by PriorLogLikelihood.
             return logLH;
         }
 
         /// <inheritdoc/>
         /// <remarks>
         /// <para>
-        /// This method is thread-safe for use with parallel MCMC chains.
-        /// All computation uses local copies of trend models and the GEV distribution.
-        /// Returns only the data likelihood (not parameter priors). The base class
-        /// <see cref="ModelBase.LogLikelihood"/> combines this with parameter priors.
+        /// This method is thread-safe for use with parallel MCMC chains. All computation uses local
+        /// copies of the trend models, the copula, the error models, and the GEV distribution.
         /// </para>
         /// <para>
-        /// <b>Spatial-error decomposition (non-canonical):</b> This method intentionally INCLUDES
-        /// the Gaussian-process spatial-error log densities (location / scale / shape errors) in
-        /// the returned data likelihood — historically they have been treated as "data" so that
-        /// the marginal site likelihood plus spatial dependence is a single integrable quantity.
-        /// As a consequence:
-        /// <list type="bullet">
-        /// <item><description><see cref="PointwiseDataLogLikelihoodComponents"/> does NOT add the spatial-error
-        /// contributions (it is per-site, not per-process), so its <c>Sum()</c> does NOT match
-        /// <see cref="DataLogLikelihood"/>.</description></item>
-        /// <item><description><see cref="PointwisePriorLogLikelihood"/> DOES emit the spatial-error contributions as
-        /// <c>PriorComponentType.SpatialError</c>, so its <c>Sum()</c> does NOT match <see cref="ModelBase.PriorLogLikelihood"/>
-        /// (which only sums parameter priors).</description></item>
-        /// <item><description>WAIC and LOO-CV (computed from <see cref="PointwiseDataLogLikelihoodComponents"/>) therefore
-        /// EXCLUDE the spatial-error term — they reflect the marginal site-by-site predictive
-        /// performance only, not the joint spatial process.</description></item>
-        /// <item><description>A consumer that adds <c>DataLogLikelihood + PointwisePriorLogLikelihood.Sum()</c> would
-        /// double-count the spatial-error term. Always compute the joint via the inherited
-        /// <see cref="ModelBase.LogLikelihood"/> instead.</description></item>
-        /// </list>
-        /// This asymmetry is a known design tradeoff. Future work may move the spatial errors
-        /// fully into <see cref="PointwiseDataLogLikelihoodComponents"/> so WAIC / LOO-CV reflect
-        /// the joint process, OR fully into a <c>PriorLogLikelihood</c> override so the four
-        /// methods compose by the canonical <c>LogLikelihood == DataLogLikelihood + PriorLogLikelihood</c>
-        /// identity. Either choice changes the semantics of model comparison.
+        /// The value is the observation log likelihood only: for every row/year, the weighted GEV log
+        /// densities of the observed sites plus, when copula dependence is enabled, the Gaussian-copula
+        /// log density over the observed-site correlation submatrix (unobserved sites are marginalized;
+        /// a row with fewer than two observed sites has no dependence term). The Gaussian-process
+        /// densities of the latent location, scale, and shape errors are prior structure and belong to
+        /// <see cref="PriorLogLikelihood"/>, so the canonical identities hold:
+        /// <c>LogLikelihood == DataLogLikelihood + PriorLogLikelihood</c>;
+        /// <c>DataLogLikelihood == PointwiseDataLogLikelihood.Sum()</c> with one term per row/year, the
+        /// predictive unit of WAIC and PSIS-LOO; and
+        /// <c>PriorLogLikelihood == PointwisePriorLogLikelihood.Sum()</c> for finite components.
         /// </para>
         /// </remarks>
         public override double DataLogLikelihood(double[] parameters)
@@ -873,6 +835,107 @@ namespace RMC.BestFit.Models.SpatialExtremes
 
             // Delegate to thread-safe internal method
             return ComputeLogLikelihoodInternal(parameters);
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// <para>
+        /// The prior of the hierarchical model is the product of the independent parameter priors
+        /// (Level 3) and the zero-mean Gaussian-process densities of the enabled latent location, scale,
+        /// and shape error vectors (Level 2, ε_a ~ MVN(0, σ_a² R_a)). The process densities are prior
+        /// structure on the latent errors rather than observation terms, so they are evaluated here and
+        /// excluded from <see cref="DataLogLikelihood"/>; the posterior kernel
+        /// <see cref="ModelBase.LogLikelihood"/> is the same under either placement.
+        /// </para>
+        /// <para>
+        /// This method is thread-safe for use with parallel MCMC chains: each error model is cloned and
+        /// the supplied parameter values are applied to the clone.
+        /// </para>
+        /// </remarks>
+        public override double PriorLogLikelihood(double[] parameters)
+        {
+            if (parameters == null || parameters.Length != NumberOfParameters)
+                return double.NegativeInfinity;
+
+            double parameterPriors = base.PriorLogLikelihood(parameters);
+            if (!Tools.IsFinite(parameterPriors))
+                return double.NegativeInfinity;
+
+            double processLogDensity = ComputeSpatialErrorLogDensity(parameters);
+            if (!Tools.IsFinite(processLogDensity))
+                return double.NegativeInfinity;
+
+            return parameterPriors + processLogDensity;
+        }
+
+        /// <summary>
+        /// Evaluates the Gaussian-process log densities of the enabled latent spatial-error vectors at
+        /// the supplied parameter values.
+        /// </summary>
+        /// <param name="parameters">The full parameter vector in the model's flat order.</param>
+        /// <returns>
+        /// The sum of the process log densities; zero when no error model is enabled;
+        /// <see cref="double.NegativeInfinity"/> when any density is not finite.
+        /// </returns>
+        /// <remarks>
+        /// Each enabled error model is cloned and its parameter block [σ, correlation parameters,
+        /// ε_1, ..., ε_S] is applied to the clone, so the shared model state is never mutated and the
+        /// evaluation is thread-safe.
+        /// </remarks>
+        private double ComputeSpatialErrorLogDensity(double[] parameters)
+        {
+            bool anyErrors = (UseLocationErrors && LocationErrors != null)
+                || (UseScaleErrors && ScaleErrors != null)
+                || (UseShapeErrors && ShapeErrors != null);
+            if (!anyErrors)
+                return 0.0;
+
+            // Skip the copula and trend blocks; the error blocks follow in location, scale, shape order.
+            int index = 0;
+            if (UseCopulaDependence && SpatialDependence != null)
+                index += SpatialDependence.NumberOfParameters;
+            index += Location.NumberOfParameters + Scale.NumberOfParameters + Shape.NumberOfParameters;
+
+            double total = 0.0;
+            if (UseLocationErrors && LocationErrors != null)
+            {
+                total += EvaluateErrorModelLogDensity(LocationErrors, parameters, ref index);
+                if (!Tools.IsFinite(total))
+                    return double.NegativeInfinity;
+            }
+
+            if (UseScaleErrors && ScaleErrors != null)
+            {
+                total += EvaluateErrorModelLogDensity(ScaleErrors, parameters, ref index);
+                if (!Tools.IsFinite(total))
+                    return double.NegativeInfinity;
+            }
+
+            if (UseShapeErrors && ShapeErrors != null)
+            {
+                total += EvaluateErrorModelLogDensity(ShapeErrors, parameters, ref index);
+                if (!Tools.IsFinite(total))
+                    return double.NegativeInfinity;
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// Evaluates the Gaussian-process log density of one latent error model on a local clone.
+        /// </summary>
+        /// <param name="errors">The error model.</param>
+        /// <param name="parameters">The full parameter vector.</param>
+        /// <param name="index">The position of the model's first parameter; advanced past its block.</param>
+        /// <returns>The log density of the latent errors under MVN(0, σ² R).</returns>
+        private static double EvaluateErrorModelLogDensity(SpatialRegressionErrors errors, double[] parameters, ref int index)
+        {
+            var local = errors.Clone();
+            var values = new List<double>(local.NumberOfParameters);
+            for (int i = 0; i < local.NumberOfParameters; i++)
+                values.Add(parameters[index++]);
+            local.SetParameterValues(values);
+            return local.LogPDF();
         }
 
         /// <inheritdoc/>
@@ -987,19 +1050,20 @@ namespace RMC.BestFit.Models.SpatialExtremes
 
             if (UseCopulaDependence && localCopula != null)
             {
-                // Likelihood with copula: each observation includes marginal PDFs and copula contribution
+                // Likelihood with copula: each row/year includes its observed-site marginal log densities
+                // and the Gaussian-copula log density over the observed-site correlation submatrix.
+                var observedSites = new List<int>(Sites);
                 for (int i = 0; i < Observations; i++)
                 {
                     double obsLogLH = 0.0;
                     var z = new double[Sites];
-                    bool hasData = false;
                     bool valid = true;
+                    observedSites.Clear();
 
                     for (int j = 0; j < Sites; j++)
                     {
                         if (!double.IsNaN(AtSiteData[i, j]))
                         {
-                            hasData = true;
                             var gevParams = gevParamsCache[j];
                             if (gevParams[1] <= 0) // Scale must be positive
                             {
@@ -1022,10 +1086,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
                             // Transform to standard normal for copula
                             double u = localGEV.CDF(AtSiteData[i, j]);
                             z[j] = Normal.StandardZ(u);
-                        }
-                        else
-                        {
-                            z[j] = 0.0; // Placeholder for missing data
+                            observedSites.Add(j);
                         }
                     }
 
@@ -1035,10 +1096,10 @@ namespace RMC.BestFit.Models.SpatialExtremes
                         continue;
                     }
 
-                    // Add copula contribution if we have data
-                    if (hasData)
+                    // Add the observed-site copula contribution
+                    if (observedSites.Count >= 2)
                     {
-                        double copLogLH = localCopula.LogPDF(z);
+                        double copLogLH = localCopula.LogPDF(z, observedSites);
                         if (double.IsInfinity(copLogLH) || double.IsNaN(copLogLH))
                         {
                             result[i] = double.NegativeInfinity;
@@ -1121,16 +1182,11 @@ namespace RMC.BestFit.Models.SpatialExtremes
 
         /// <inheritdoc/>
         /// <remarks>
-        /// <b>Sum-equality contract is INTENTIONALLY broken for SpatialGEV.</b> This method
-        /// emits per-parameter prior components AND <c>PriorComponentType.SpatialError</c>
-        /// components for the location / scale / shape Gaussian-process spatial errors. The
-        /// spatial-error contributions are also included in <see cref="DataLogLikelihood"/>
-        /// (see its remarks), so <c>this.Sum() != ModelBase.PriorLogLikelihood</c> — the
-        /// canonical pointwise-vs-scalar identity is deliberately violated to surface the
-        /// per-error-process contribution to the prior diagnostics panel. Adding
-        /// <see cref="DataLogLikelihood"/> + this method's <c>Sum()</c> would double-count the
-        /// spatial-error term; use the inherited <see cref="ModelBase.LogLikelihood"/> for any
-        /// joint computation.
+        /// Emits one <c>PriorComponentType.ParameterPrior</c> component per parameter and one
+        /// <c>PriorComponentType.SpatialError</c> component per enabled latent error process (the
+        /// Gaussian-process log density of the location, scale, or shape errors). The components sum to
+        /// <see cref="PriorLogLikelihood"/> whenever every process density is finite; a non-finite
+        /// process density is omitted from the list while the scalar prior is negative infinity.
         /// </remarks>
         public override List<PriorComponent> PointwisePriorLogLikelihood(double[] parameters)
         {
@@ -1246,6 +1302,15 @@ namespace RMC.BestFit.Models.SpatialExtremes
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// The clone reproduces the source exactly. The cloned components (trend models, copula, and
+        /// error models) carry their own parameter objects; the flat parameter list is rebuilt from
+        /// those components in the canonical order after the components and flags are attached; and
+        /// every parameter's value, bounds, and prior are copied from the source. The constructor's
+        /// <see cref="SetDefaultParameters"/> runs before the components are attached, so without the
+        /// rebuild a clone of a copula or latent-error model would lack those parameter blocks and its
+        /// trend intercepts would hold data-derived defaults instead of the source values.
+        /// </remarks>
         public override IModel Clone()
         {
             var clone = new SpatialGEV(AtSiteData, Coordinates,
@@ -1271,14 +1336,56 @@ namespace RMC.BestFit.Models.SpatialExtremes
             if (ShapeErrors != null)
                 clone.ShapeErrors = ShapeErrors.Clone();
 
-            // Preserve the source's current parameter values. Calling
-            // SetDefaultParameters here would (a) overwrite the source's values
-            // with data-derived defaults, breaking Clone() semantics, and
-            // (b) re-run a per-site MLE GEV fit on every clone — prohibitively
-            // slow inside the MCMC inner loop where every iteration clones.
-            // The trend-model Clone() calls above already deep-copied the
-            // ModelParameter list (including .Value); no further work needed.
+            // Rebuild the flat list from the cloned components (the constructor built it before the
+            // copula and error components were attached) and copy the source parameters so the clone
+            // keeps the source values, bounds, and priors rather than the data-derived defaults that
+            // the constructor assigned to the cloned trend intercepts.
+            clone.RebuildParameterList();
+            if (clone.Parameters.Count == Parameters.Count)
+            {
+                for (int i = 0; i < Parameters.Count; i++)
+                {
+                    clone.Parameters[i].Value = Parameters[i].Value;
+                    clone.Parameters[i].LowerBound = Parameters[i].LowerBound;
+                    clone.Parameters[i].UpperBound = Parameters[i].UpperBound;
+                    if (Parameters[i].PriorDistribution is not null)
+                        clone.Parameters[i].PriorDistribution = Parameters[i].PriorDistribution.Clone();
+                }
+            }
+
             return clone;
+        }
+
+        /// <summary>
+        /// Rebuilds the flat parameter list from the attached components in the canonical order
+        /// (copula, location, scale, shape, location errors, scale errors, shape errors) without
+        /// changing any parameter value, bound, or prior, and re-attaches the change handlers.
+        /// </summary>
+        /// <remarks>
+        /// Used by <see cref="Clone"/>; unlike <see cref="SetDefaultParameters"/> it neither derives
+        /// starting values from the data nor replaces the error-model parameter objects.
+        /// </remarks>
+        private void RebuildParameterList()
+        {
+            for (int i = 0; i < _parameters.Count; i++)
+                _parameters[i].PropertyChanged -= Parameter_PropertyChanged;
+
+            var parameters = new List<ModelParameter>();
+            if (UseCopulaDependence && SpatialDependence != null)
+                parameters.AddRange(SpatialDependence.Parameters);
+            parameters.AddRange(Location.Parameters);
+            parameters.AddRange(Scale.Parameters);
+            parameters.AddRange(Shape.Parameters);
+            if (UseLocationErrors && LocationErrors != null)
+                parameters.AddRange(LocationErrors.Parameters);
+            if (UseScaleErrors && ScaleErrors != null)
+                parameters.AddRange(ScaleErrors.Parameters);
+            if (UseShapeErrors && ShapeErrors != null)
+                parameters.AddRange(ShapeErrors.Parameters);
+
+            _parameters = parameters;
+            for (int i = 0; i < _parameters.Count; i++)
+                _parameters[i].PropertyChanged += Parameter_PropertyChanged;
         }
 
         /// <inheritdoc/>

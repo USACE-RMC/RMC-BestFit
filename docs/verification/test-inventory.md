@@ -684,3 +684,24 @@ amendments and the first-run failures are recorded in the chapter.
 | `RatingCurveExampleRecoveryTests.Bayesian_{One,Two,Three}Segment_RecoversExampleCurve` | Verification | Production defaults; R-hat < 1.1, ESS > 100; sampled MAP versus the optimum (5%/10%); MAP-curve parity 2%; 10% truth band; in-band fraction reported (36/36, 36/36, 34/36) | Passed 3/3 (37.4 s, 71.5 s, 122.9 s) |
 | `RatingCurveMLERecoveryTests` (10 methods, now 1,000 observations) | Verification | Self-generated truth recovery, unchanged tolerances | Passed 10/10 (3.4-4.0 s) |
 | `RatingCurveBayesianRecoveryTests` (10 methods, now 1,000 observations) | Verification | Self-generated truth recovery under production defaults, unchanged tolerances | Passed 10/10 (34-148 s) |
+
+## Phase 6 Batch 6.3 spatial likelihood corrections - 21 August 2026
+
+After the approved TR-048/TR-049/TR-057 corrections (observed-subset copula marginalization; Gaussian-process
+densities in `PriorLogLikelihood`; consistent Godambe estimating equations with explicit failure) and the
+TR-055 closure, the fast core project passes 3,299/3,299 with zero build warnings, the other three unit
+projects pass (UI 579, App 438, API 498), and every method below ran once through
+`scripts/run-verification-test.ps1`.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `GaussianCopulaTests.LogPDF_ObservedSubset_AllSitesObserved_EqualsFullEvaluation`, `..._FewerThanTwoSites_IsZero`, `..._EqualsCopulaBuiltOnObservedSites`, `..._TracksParameterChanges`, `..._InvalidArguments_Throw` | Fast core | Complete-row parity, no dependence term below two sites, equality with the copula built on the observed sites, cache invalidation, argument validation | Passed |
+| `SpatialGEVTests.DataLogLikelihood_WithCopulaAndMissingSites_UsesObservedSiteCopulaSubmatrix`, `..._SingleObservedSiteRow_HasNoDependenceTerm`, `..._FullyMissingRow_ContributesNothing` | Fast core | Hand-computed observed-subset rows in both likelihood paths; placeholder value rejected; empty row contributes zero | Passed |
+| `SpatialGEVTests.PriorLogLikelihood_WithSpatialErrors_HoldsGaussianProcessDensities`, `..._DoesNotMutateModelState` | Fast core | Prior equals parameter priors plus process densities; data equals the marginal sum; the three identities; pure evaluation | Passed |
+| `SpatialGEVAnalysisTests.ComputeInformationCriteria_UsesNonEmptyRowYearBlocks`, `PredictiveCriteria_FromInjectedDraws_UseRowYearPointwiseTerms` | Fast core | BIC sample unit is the nonempty row/year count; WAIC from injected draws equals the row/year recomputation | Passed |
+| `SpatialGEVAnalysisTests.ComputeGodambeCovariance_SingularHessian_ReportsFailureWithoutSubstitute`, `..._WellConditioned_ReportsAvailableCovariance`, `..._WrongParameterCount_Throws` | Fast core | Null plus `Failed` status on a singular sensitivity matrix; finite symmetric positive-variance covariance with `Available`; reset by `ClearResults`; parameter validation | Passed |
+| `SpatialGEVTests.Clone_WithCopula_PreservesParameterStructure`, `Clone_WithSpatialErrors_PreservesParameterStructure`, `Clone_PreservesParameterValuesBoundsAndPriors` | Fast core | TR-091: the clone carries the copula and error parameter blocks and the source values, bounds, and priors (failed before the Clone correction: 3 parameters instead of 4 and 17) | Passed |
+| `SpatialGEVLikelihoodOracleTests` (8 methods) | Verification | Observed-subset marginalization, conventions, kernel invariance, data/prior decomposition, and gradient agreement against the R `mvtnorm` oracle | Passed 8/8 (up to 3.6 s) |
+| `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks` | Verification | MCMC with production defaults on the oracle's missing-site model; AIC/BIC at the sampled MAP with eleven nonempty row/year blocks; WAIC/PSIS-LOO from the row/year terms | Passed (18.2 s) |
+| `SpatialGEVMLERecoveryTests` (2 methods) | Verification | Complete-data MLE recovery, unchanged tolerances | Passed 2/2 (4.1-4.4 s) |
+| `SpatialGEVBayesianRecoveryTests` (7 methods) | Verification | Complete-data Bayesian recovery under production defaults, unchanged tolerances | Passed 7/7 (42-115 s) |

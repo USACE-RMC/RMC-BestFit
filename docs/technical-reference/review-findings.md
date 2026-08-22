@@ -25,7 +25,8 @@ boundary solution despite same-point R/C# likelihood parity. No production optim
 prior, sampler, seed, tolerance, convergence rule, or Bayesian default changed. Earlier failures
 remain documented in full, and the complete Verification project was not run.
 
-Phase 6 opening and register completion (21 August 2026): the register now runs through TR-090. TR-084
+Phase 6 opening and register completion (21 August 2026): the register now runs through TR-091 (TR-091 was
+found and fixed during Batch 6.3). TR-084
 through TR-090 record the Verification results and one fast-suite race that the 21 August reruns left
 without dispositions; they are open decision items worked after Phase 6 and do not block it. TR-078 and
 TR-081 are closed with 21 August evidence (the twelve `B17CPenalityTests` methods were rerun one at a
@@ -84,16 +85,16 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Confirmed defect; corrected | Fixed - aligned-pair positivity error plus a non-blocking unmatched-record warning with counts | Passed - fast aligned-pair, unmatched-record, and count-reporting contracts | [Report](../verification/rating-curve.md#tr-045---aligned-pair-validation) | 2026-08-21 |
 | [TR-046](#tr-046) | Manual transform state rebuild | High | Confirmed defect; corrected | Complete | Passed - fast persistence and independent likelihood oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
-| [TR-048](#tr-048) | Spatial missing-site marginalization | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; scalar and pointwise cells reproduce the zero-placeholder value against the R `mvtnorm` observed-subset oracle | [Report](../verification/spatial-extremes.md#confirmation-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
-| [TR-049](#tr-049) | Spatial likelihood decomposition | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; the data likelihood carries the Gaussian-process density and the scalar/pointwise identities fail, while the posterior kernel matches the oracle | [Report](../verification/spatial-extremes.md#confirmation-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
+| [TR-048](#tr-048) | Spatial missing-site marginalization | High | Confirmed defect - fixed | Fixed (21 August 2026): observed-subset copula evaluation used by both likelihood paths | Passed - the two missing-site cells match the R `mvtnorm` observed-subset oracle after the correction; complete-row and marginal-only cells unchanged | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
+| [TR-049](#tr-049) | Spatial likelihood decomposition | High | Confirmed defect - fixed | Fixed (21 August 2026): Gaussian-process densities moved to a `PriorLogLikelihood` override; kernel unchanged | Passed - data excludes the process density, the scalar/pointwise identities hold, and the posterior kernel matches the oracle | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
 | [TR-050](#tr-050) | Spatial cross-validation result retention | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-051](#tr-051) | Spatial held-out-site leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-052](#tr-052) | Spatial held-out covariates | High | Unreviewed; failure mode restated | Not started | Planned | This register | 2026-08-21 |
 | [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - scoped correction complete | Corrected with caveats | Passed - source audit | [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-07-25 |
+| [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - closed | Corrected; row/year unit verified after TR-048/TR-049 | Passed - guarded criteria cell (AIC/BIC at the sampled MAP with nonempty row/year blocks; WAIC/PSIS-LOO from row/year terms) and fast helper contracts | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-08-21 |
 | [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-057](#tr-057) | Spatial Godambe decomposition | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; the scalar-likelihood score for the error scale is -31.38 while the pointwise score is 0 | [Report](../verification/spatial-extremes.md#confirmation-runs-21-august-2026) | 2026-08-21 |
+| [TR-057](#tr-057) | Spatial Godambe decomposition | High | Confirmed defect - fixed | Fixed (21 August 2026): both sandwich factors from the row/year estimating equations; explicit failure status | Passed - scalar and summed-pointwise gradients agree (`1e-4`); fast singular-Hessian failure, well-conditioned, validation, and reset contracts | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
 | [TR-058](#tr-058) | Regional posterior interval construction | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-059](#tr-059) | Spatial site-weight interpretation | Methodological | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-060](#tr-060) | Spatial distance units | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -127,6 +128,7 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-088](#tr-088) | Bulletin 17C coverage assertions re-enabled but not rerun | Low | Open - rerun pending | Assertions re-enabled | Pending - exact-method reruns on request | [Test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
 | [TR-089](#tr-089) | ARIMA/ARIMAX MAP recovery cells fail | Medium | Open - pre-existing, needs classification | Not started | Failed - 3 cells on the pre-review control worktree | [Progress](../PROGRESS.md) | 2026-08-21 |
 | [TR-090](#tr-090) | Intermittent fast-suite reprocess race | Low | Open - reported | Not started | Observed once; not reproduced on demand | [Progress](../PROGRESS.md) | 2026-08-21 |
+| [TR-091](#tr-091) | Spatial clone drops copula/error parameter blocks | High | Confirmed defect - fixed | Fixed (21 August 2026): the clone rebuilds its parameter list from the cloned components and copies values, bounds, and priors | Passed - three fast clone contracts (failed before the fix: 3 parameters instead of 4 and 17); the guarded row/year criteria cell and the copula recovery cell complete after the fix | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -940,32 +942,32 @@ retain source and binary compatibility.
 <a id="tr-048"></a>
 ## TR-048 — Spatial Copula Does Not Marginalize Missing Sites
 
-**Review disposition.** Confirmed defect (21 August 2026).
+**Review disposition.** Confirmed defect (21 August 2026); fixed the same day after Haden Smith's approval.
 
-**Implementation status.** Not started; the observed-subset copula evaluation awaits approval in Phase 6 Batch 6.3.
+**Implementation status.** Fixed. `GaussianCopula.LogPDF(IList<double> z, IReadOnlyList<int> observedSites)` (additive) evaluates `log phi_{R_O}(z_O) - sum_{j in O} log phi(z_j)` over the observed-site correlation submatrix, returns zero for fewer than two observed sites and the full-dimensional value for a complete row, and caches the factorization of each observed-site pattern until the correlation parameters change; `SpatialGEV.ComputeLogLikelihoodInternal` and `PointwiseDataLogLikelihood` pass the observed-site index list instead of a zero placeholder score. Complete rows are bitwise unchanged.
 
-**Verification status.** Failed - confirms the defect. Against the R `mvtnorm` oracle on a five-site network with four partially observed rows, `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix` returns the zero-placeholder full-dimensional value `-238.53821556069616` instead of the marginalized `-238.89272936973`, and the pointwise cell reproduces the placeholder row values; the complete-row and marginal-only convention cells pass. See the [spatial verification chapter](../verification/spatial-extremes.md#confirmation-runs-21-august-2026).
+**Verification status.** Passed. After the correction `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix` and `MissingSites_PointwiseRows_MatchObservedSubsetOracle` match the R `mvtnorm` observed-subset oracle (`1e-8` total, `1e-10` per row), the complete-row and marginal-only cells are unchanged, and the nine complete-data spatial recovery cells pass unchanged; fast contracts cover complete-row parity, single-site rows, fully missing rows, equality with the copula built on the observed sites, cache invalidation, and argument validation. Before the correction the scalar cell returned the zero-placeholder value `-238.53821556069616` against the marginalized `-238.89272936973`. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
 
-**Evidence.** In both scalar and pointwise `SpatialGEV` likelihoods, a missing site is assigned latent Gaussian score `z[j] = 0.0`, after which the full-dimensional Gaussian-copula density is evaluated. The correct observed-data likelihood uses the correlation submatrix for the sites observed in that row.
+**Evidence.** In both scalar and pointwise `SpatialGEV` likelihoods, a missing site was assigned latent Gaussian score `z[j] = 0.0`, after which the full-dimensional Gaussian-copula density was evaluated. The observed-data likelihood uses the correlation submatrix of the sites observed in that row, which is exact because the Gaussian copula family is closed under marginalization.
 
-**Impact.** Missing observations are treated as if their latent normal score were exactly zero, altering the likelihood for every observed site correlated with them and potentially biasing dependence and GEV regression estimates.
+**Impact.** Missing observations were treated as if their latent normal score were exactly zero, altering the likelihood for every observed site correlated with them; posteriors of copula models fitted to networks with missing data change with the correction (release note), while complete-data fits are unchanged.
 
-**Follow-up.** Evaluate each missingness pattern with its observed-site correlation submatrix, cache factorizations by pattern, and add complete-data and patterned-missingness parity tests.
+**Follow-up.** Keep the two missing-site oracle cells and the fast parity contracts as the regression set; TR-051 (leave-one-site-out reduced model) builds on the observed-subset evaluation in Batch 6.4.
 
 <a id="tr-049"></a>
 ## TR-049 — Spatial Likelihood Decomposition Is Internally Inconsistent
 
-**Review disposition.** Confirmed defect (21 August 2026).
+**Review disposition.** Confirmed defect (21 August 2026); fixed the same day after Haden Smith's approval.
 
-**Implementation status.** Not started; the prior-side classification of the Gaussian-process densities awaits approval in Phase 6 Batch 6.3.
+**Implementation status.** Fixed. `SpatialGEV.PriorLogLikelihood` (additive override) returns the parameter priors plus the Gaussian-process log densities of the enabled location, scale, and shape error vectors, evaluated on local clones of the error models; `DataLogLikelihood` no longer adds the process densities, so it is the observation log likelihood (weighted observed-site marginals plus the observed-subset copula term, one pointwise term per row/year). The posterior kernel `LogLikelihood` is identical for every model; the "non-canonical decomposition" remarks were deleted and replaced by the three identities.
 
-**Verification status.** Failed - confirms the defect. For the oracle's location-error model the data log likelihood equals the observation terms plus the process density (`-160.607` = `-169.072 + 8.464`), the pointwise data sum omits the process density, and the prior/pointwise-prior identity fails; the posterior-kernel invariance cell passes, so the correction changes only the decomposition. See the [spatial verification chapter](../verification/spatial-extremes.md#confirmation-runs-21-august-2026).
+**Verification status.** Passed. `SpatialGEVLikelihoodOracleTests.LocationErrorModel_DataLogLikelihood_ExcludesProcessDensity`, `LocationErrorModel_ScalarAndPointwiseDecompositionsAgree`, and `LocationErrorModel_PosteriorKernel_IsInvariantToTheDecomposition` pass (the kernel cell passed before and after the change), and fast contracts pin the prior as parameter priors plus process densities, the data likelihood as the marginal sum, the pointwise-prior sum identity, and the purity of the evaluation. Before the correction the data log likelihood equaled `-169.072 + 8.464 = -160.607` for the oracle's location-error model. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
 
-**Evidence.** `SpatialGEV.DataLogLikelihood` includes Gaussian-process spatial-error densities. `PointwiseDataLogLikelihoodComponents` omits them, while `PointwisePriorLogLikelihood` emits them even though the inherited scalar `PriorLogLikelihood` does not. Source remarks acknowledge that the scalar/pointwise sum identities are broken and that WAIC/LOO omit the spatial-error process.
+**Evidence.** `SpatialGEV.DataLogLikelihood` included the Gaussian-process spatial-error densities while `PointwiseDataLogLikelihood` omitted them and `PointwisePriorLogLikelihood` emitted them without a matching scalar prior, so the scalar/pointwise identities failed and WAIC/LOO did not score the fitted kernel's observation unit consistently with the scalar criteria.
 
-**Impact.** Pointwise diagnostics do not describe the same posterior kernel used for fitting; consumers can also double-count spatial errors by combining scalar data likelihood with pointwise prior components.
+**Impact.** The sampler, MAP, and posterior are unchanged by the correction; AIC, BIC, DIC, WAIC, and LOOIC of models with latent spatial errors change because they now exclude the process densities (release note), and consumers can no longer double-count the process densities by combining the scalar data likelihood with the pointwise prior components.
 
-**Follow-up.** Choose and enforce one coherent hierarchical decomposition, define the predictive unit for spatial model comparison, and test all scalar/pointwise sum identities.
+**Follow-up.** The predictive unit for spatial model comparison is the row/year (TR-055). Keep the four location-error cells and the fast identity contracts as the regression set.
 
 <a id="tr-050"></a>
 ## TR-050 — Spatial Leave-One-Site-Out Results Are Cleared Before Return
@@ -1045,17 +1047,17 @@ retain source and binary compatibility.
 <a id="tr-055"></a>
 ## TR-055 — Spatial AIC and BIC Required a Defensible Likelihood and Sample Unit
 
-**Review disposition.** Confirmed defect; the scoped correction is complete with remaining methodological limitations.
+**Review disposition.** Confirmed defect; closed on 21 August 2026 after the TR-048 and TR-049 corrections.
 
-**Implementation status.** Corrected as far as the current spatial likelihood contract permits, without public API or serialization changes. The analysis now evaluates `SpatialGEV.DataLogLikelihood` at MAP and uses the number of nonempty row/year blocks for BIC instead of `Sites * Observations`.
+**Implementation status.** Closed. `SpatialGEVAnalysis.ComputeInformationCriteria` (internal, used by the result builder) computes AIC and BIC from the observation log likelihood `SpatialGEV.DataLogLikelihood` at the MAP, which after TR-049 excludes the latent-error process densities and after TR-048 marginalizes missing sites, with one nonempty row/year block per BIC observation instead of `Sites * Observations`; WAIC and PSIS-LOO consume `SpatialGEV.PointwiseDataLogLikelihood`, one term per row/year. No public API or serialization change.
 
-**Verification status.** Passed by source audit for the likelihood call and sample-count implementation. The remaining scientific limitations are explicitly documented in the [spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction).
+**Verification status.** Passed. The guarded cell `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks` runs MCMC with the production defaults on the oracle's five-site missing-site model (twelve rows, one fully missing) and checks AIC and BIC against the observation log likelihood at the sampled MAP with the eleven nonempty row/year blocks (`1e-8`; site cells and the fully missing row are rejected as units), WAIC and `WAIC_pD` against the row/year recomputation over the retained draws (`1e-9` relative), one Pareto k per row/year, and a finite LOOIC; the fast contracts `SpatialGEVAnalysisTests.ComputeInformationCriteria_UsesNonEmptyRowYearBlocks` and `PredictiveCriteria_FromInjectedDraws_UseRowYearPointwiseTerms` pin the helper and the injected-draw WAIC. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
 
-**Evidence.** Independent parameter-prior densities and fully missing rows no longer affect the criterion calculation, and contemporaneously dependent site cells are no longer counted as independent BIC replicates. However, `SpatialGEV.DataLogLikelihood` currently contains Gaussian-process spatial-error densities; the copula does not correctly marginalize missing sites; and weighted/dependent spatial likelihoods do not automatically meet ordinary AIC/BIC regularity conditions.
+**Evidence.** Independent parameter-prior densities, latent-error process densities, and fully missing rows do not affect the criteria; contemporaneously dependent site cells are not counted as independent BIC replicates; missing sites are marginalized.
 
-**Impact.** The corrected fields are materially better defined but remain qualified diagnostics, especially with nonconstant priors or latent spatial errors. They must not be presented as generally conventional AIC/BIC for hierarchical spatial comparison.
+**Impact.** The spatial AIC/BIC are now the conventional criteria of the observation likelihood at the row/year unit, still qualified because the MAP is not an MLE under nonconstant priors and weighted or dependent spatial likelihoods do not automatically satisfy ordinary AIC/BIC regularity conditions; WAIC and PSIS-LOO at the row/year unit are the preferred comparison tools, as the [spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) states.
 
-**Follow-up.** Resolve TR-048 and TR-049, then verify posterior predictive comparison at the row/year unit. Prefer WAIC or verified PSIS-LOO once the scalar and pointwise spatial likelihoods describe the same fitted target.
+**Follow-up.** None beyond keeping the criteria cell and the fast contracts in the regression set.
 
 <a id="tr-056"></a>
 ## TR-056 — Spatial Bootstrap Does Not Fit the Resampled Data
@@ -1075,17 +1077,17 @@ retain source and binary compatibility.
 <a id="tr-057"></a>
 ## TR-057 — Godambe Covariance Mixes Incompatible Likelihood Decompositions
 
-**Review disposition.** Confirmed defect (21 August 2026).
+**Review disposition.** Confirmed defect (21 August 2026); fixed the same day after Haden Smith's approval.
 
-**Implementation status.** Not started; the consistent estimating equations and the explicit singular-Hessian failure await approval in Phase 6 Batch 6.3.
+**Implementation status.** Fixed. With TR-049 the observation log likelihood is the sum of the row/year pointwise terms, so `ComputeGodambeCovariance` derives the sensitivity matrix (central-difference Hessian of `SpatialGEV.DataLogLikelihood`) and the variability matrix (outer products of the row/year scores from `SpatialGEV.PointwiseDataLogLikelihood`, each parameter's perturbations evaluated once and shared by every row) from the same estimating equations. A non-finite evaluation, a singular sensitivity matrix, or a non-finite or non-positive-variance sandwich returns `null`, clears `GodambeCovariance`, and reports `CovarianceComputationStatus.Failed` through the additive `GodambeCovarianceStatus` and `GodambeCovarianceDiagnostic` properties (TR-027 pattern); the variability matrix is never returned as a substitute; the method validates the parameter count and `ClearResults` resets the state.
 
-**Verification status.** Failed - confirms the defect. `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseGradientsAgree` finds a scalar-likelihood score of `-31.375` for the error scale where the pointwise score is `0`, so the sensitivity and variability matrices derive from different estimating equations. See the [spatial verification chapter](../verification/spatial-extremes.md#confirmation-runs-21-august-2026).
+**Verification status.** Passed. `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseGradientsAgree` finds the scalar and summed-pointwise gradients equal for every parameter (`1e-4`), and the fast contracts `SpatialGEVAnalysisTests.ComputeGodambeCovariance_SingularHessian_ReportsFailureWithoutSubstitute` (a regression coefficient on an identically zero covariate column), `ComputeGodambeCovariance_WellConditioned_ReportsAvailableCovariance` (finite, symmetric, positive variances; reset by `ClearResults`), and `ComputeGodambeCovariance_WrongParameterCount_Throws` pass. Before the correction the scalar score for the error scale was `-31.375` where the pointwise score was `0`. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
 
-**Evidence.** `ComputeGodambeCovariance` forms its Hessian from scalar `SpatialGEV.DataLogLikelihood`, which includes spatial-error Gaussian-process densities, but forms its score outer products from `PointwiseDataLogLikelihood`, which omits those densities. If the Hessian is singular, the method returns the variability matrix `J` itself as though it were a covariance matrix.
+**Evidence.** `ComputeGodambeCovariance` formed its Hessian from the scalar `SpatialGEV.DataLogLikelihood`, which included spatial-error Gaussian-process densities, but its score outer products from `PointwiseDataLogLikelihood`, which omitted them; a singular Hessian returned the variability matrix `J` as though it were a covariance matrix.
 
-**Impact.** The sandwich factors do not derive from the same estimating equations, and the singular fallback has no Godambe-covariance interpretation.
+**Impact.** The sandwich factors now derive from the same estimating equations and numerical failure is explicit; the Godambe path remains a frequentist diagnostic that `SpatialGEVUncertaintyMethod` does not yet dispatch (TR-062, Batch 6.5).
 
-**Follow-up.** Define clusterwise estimating equations whose sum equals the scalar objective, use the matching sensitivity and variability matrices, and report numerical failure instead of substituting `J`.
+**Follow-up.** A numerical oracle for the sandwich itself (R `sandwich`-style hand computation on a copula-free network) is scheduled with the TR-062 dispatch work in Batch 6.5.
 
 <a id="tr-058"></a>
 ## TR-058 — Regional Spatial Bounds Average Sitewise Endpoints
@@ -1511,6 +1513,21 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 **Impact.** A flaky fast test can mask or mimic a regression in the reprocess path.
 
 **Follow-up.** Worked after Phase 6: make the test deterministic by awaiting the reprocess completion signal, or fix the race if the production path is at fault.
+
+<a id="tr-091"></a>
+## TR-091 - Spatial Clone Dropped the Copula and Latent-Error Parameter Blocks
+
+**Review disposition.** Confirmed defect (21 August 2026), found by the Batch 6.3 acceptance runs; fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. `SpatialGEV.Clone()` constructed the clone with the base constructor, which calls `SetDefaultParameters` before the copula and error components and their flags are attached, so the clone's flat parameter list held only the trend blocks (3 parameters instead of 4 for a copula model and instead of 17 for a model with location and scale errors) and the constructor reset the cloned trend intercepts to data-derived defaults. The clone now rebuilds its flat list from the cloned components in the canonical order (`RebuildParameterList`) and copies every source parameter's value, bounds, and prior, so it reproduces the source exactly; no numerical method changed.
+
+**Verification status.** Passed. `SpatialGEVTests.Clone_WithCopula_PreservesParameterStructure`, `Clone_WithSpatialErrors_PreservesParameterStructure`, and `Clone_PreservesParameterValuesBoundsAndPriors` (fast) failed before the fix and pass after it; after the fix the guarded `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks` (18.2 s) and `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversRangeParameter` (93.7 s) complete and pass. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
+
+**Evidence.** `SpatialGEVAnalysis.CreateSiteResultsAsync`, `PredictAtUngaugedLocation`, and `GetSiteQuantiles` clone the model for every retained draw and call `SetParameterValues` with the sampled vector; for a copula or latent-error model the clone threw `Expected 3 parameters but got 4`, the post-processing failed, and the analysis reported `IsEstimated == false` although the sampler had completed (the failure mode of the two acceptance cells before the fix). `RunSpatialBootstrapAsync` would have sampled a clone without the copula or error blocks.
+
+**Impact.** Before the fix no copula or latent-error spatial Bayesian analysis produced site results; complete-data models without dependence or latent errors were unaffected because their clone structure matched and the sampled values overwrote the reset intercepts. The fix is behavioral only (structure and copied values); sampled posteriors are unchanged.
+
+**Follow-up.** Keep the three clone contracts in the fast gate; TR-056 (bootstrap) and TR-062 (dispatch) in Batch 6.5 rely on the exact clone.
 
 ## Resolution Rule
 

@@ -18,20 +18,17 @@ Use the model when:
 - coordinates share a projected linear unit; and
 - the network is small enough for repeated dense covariance factorizations.
 
-The complete-data Bayesian model, site-specific posterior parameter summaries, and site-specific posterior quantiles are implemented. Several ancillary paths are not suitable for decision use until their registered production findings are resolved:
+The Bayesian model with complete or partially observed rows, site-specific posterior parameter summaries, site-specific posterior quantiles, and the row/year information criteria are implemented; the missing-site copula marginalization, the data/prior decomposition, the row/year criteria, and the Godambe estimating equations were corrected in Phase 6 Batch 6.3 ([TR-048](../review-findings.md#tr-048), [TR-049](../review-findings.md#tr-049), [TR-055](../review-findings.md#tr-055), [TR-057](../review-findings.md#tr-057)). Several ancillary paths are not suitable for decision use until their registered production findings are resolved:
 
-- copula likelihood with missing site values: [TR-048](../review-findings.md#tr-048);
-- likelihood decomposition and pointwise criteria: [TR-049](../review-findings.md#tr-049);
 - leave-one-site-out cross-validation: [TR-050](../review-findings.md#tr-050) through [TR-053](../review-findings.md#tr-053);
 - posterior ungauged-site intervals: [TR-054](../review-findings.md#tr-054);
-- AIC/BIC: [TR-055](../review-findings.md#tr-055);
-- spatial bootstrap and Godambe covariance: [TR-056](../review-findings.md#tr-056) and [TR-057](../review-findings.md#tr-057);
+- spatial bootstrap and the dispatch of the Godambe path: [TR-056](../review-findings.md#tr-056) and [TR-062](../review-findings.md#tr-062);
 - regional credible bounds: [TR-058](../review-findings.md#tr-058);
 - weighted-likelihood interpretation: [TR-059](../review-findings.md#tr-059);
 - longitude/latitude coordinates: [TR-060](../review-findings.md#tr-060); and
 - spatially dependent simulation: [TR-061](../review-findings.md#tr-061).
 
-Composite pairwise likelihood is a future enhancement. The current code always uses either independent marginal contributions or one full \(S\)-dimensional Gaussian-copula contribution per observation row.
+Composite pairwise likelihood is a future enhancement. The current code always uses either independent marginal contributions or one Gaussian-copula contribution per observation row over the sites observed in that row.
 
 ## Notation and Units
 
@@ -215,31 +212,38 @@ The copula requires meaningful row alignment. If site records refer to different
 
 ### Missing observations
 
-Without copula dependence, `double.NaN` values are skipped and the available marginal contributions remain. With copula dependence, the code currently substitutes \(z=0\) for a missing site but still evaluates the full \(S\)-dimensional density. That is not the required marginal copula density over the observed subset. Until [TR-048](../review-findings.md#tr-048) is fixed, use the copula only with complete rows; do not treat placeholder behavior as missing-data integration.
+Without copula dependence, `double.NaN` values are skipped and the available marginal contributions remain. With copula dependence, a row whose observed-site set is \(O_i\) contributes the Gaussian-copula density of the observed coordinates with the correlation submatrix \(\mathbf R_{C,O_i}\), that is, (18) restricted to \(O_i\); the unobserved coordinates are integrated out exactly because the Gaussian copula family is closed under marginalization (the copula interprets a missing site as missing at random given the observed sites). A row with a single observed site has no dependence term and a fully missing row contributes nothing. The implementation is `GaussianCopula.LogPDF(z, observedSites)`, which caches the Cholesky factorization of each missingness pattern until the correlation parameters change ([TR-048](../review-findings.md#tr-048), corrected 21 August 2026).
 
 ## Full Implemented Kernel
 
-For complete data and enabled copula dependence, the observation contribution is
+With enabled copula dependence, the contribution of row \(i\) with observed-site set \(O_i\) is
 
 $$
 L_i(\Theta)=
-c_{\mathbf R_C}(\mathbf u_i)
-\prod_{j=1}^{S} f_j(y_{ij})^{w_j}. \tag{19}
+c_{\mathbf R_{C,O_i}}(\mathbf u_{i,O_i})
+\prod_{j\in O_i} f_j(y_{ij})^{w_j}, \tag{19}
 $$
 
-Without the copula, remove \(c_{\mathbf R_C}\). With equal weights, \(w_j=1\). The scalar `DataLogLikelihood` is
+with \(c_{\mathbf R_{C,O_i}}\equiv 1\) when \(|O_i|<2\). Without the copula, remove \(c\). With equal weights, \(w_j=1\). The scalar `DataLogLikelihood` is the observation log likelihood
 
 $$
 \ell_D(\Theta)=
 \sum_{i=1}^{n}\left[
-\log c_{\mathbf R_C}(\mathbf u_i)
-+\sum_{j=1}^{S}w_j\log f_j(y_{ij})
-\right]
-+\sum_{a\in\mathcal E}
-\log\phi_S(\boldsymbol\epsilon_a;\mathbf0,\sigma_a^2\mathbf R_a), \tag{20}
+\log c_{\mathbf R_{C,O_i}}(\mathbf u_{i,O_i})
++\sum_{j\in O_i}w_j\log f_j(y_{ij})
+\right], \tag{20}
 $$
 
-where \(\mathcal E\) is the set of enabled spatial-error fields. The last terms are process-model densities, although the implementation includes them in `DataLogLikelihood`.
+and the prior log density evaluated by `PriorLogLikelihood` is
+
+$$
+\ell_P(\Theta)=
+\sum_{r=1}^{d_\Theta}\log p_r(\Theta_r)
++\sum_{a\in\mathcal E}
+\log\phi_S(\boldsymbol\epsilon_a;\mathbf0,\sigma_a^2\mathbf R_a), \tag{20a}
+$$
+
+where \(\mathcal E\) is the set of enabled spatial-error fields. The Gaussian-process terms are prior structure on the latent errors (Level 2 of the hierarchy), so they live in `PriorLogLikelihood` and not in `DataLogLikelihood` ([TR-049](../review-findings.md#tr-049), corrected 21 August 2026); the posterior kernel `LogLikelihood` is \(\ell_D+\ell_P\).
 
 The flat parameter order is:
 
@@ -268,19 +272,18 @@ $$
 \epsilon_{a,j}\sim{\rm Uniform}(-M_a,M_a), \tag{22}
 $$
 
-and also multiplies by the joint Gaussian density in (11). The Uniform latent-error priors therefore act as truncation constraints in addition to the Gaussian process. The posterior kernel is
+and also multiplies by the joint Gaussian density in (11), which enters \(\ell_P\) in (20a). The Uniform latent-error priors therefore act as truncation constraints in addition to the Gaussian process. The posterior kernel is
 
 $$
 \pi(\Theta\mid\mathbf Y)\propto
-\exp[\ell_D(\Theta)]
-\prod_{r=1}^{d_\Theta}p_r(\Theta_r). \tag{23}
+\exp[\ell_D(\Theta)+\ell_P(\Theta)]. \tag{23}
 $$
 
 Because the range bound 500 is fixed rather than derived from the network, coordinate units and extent can place substantial prior mass in an irrelevant region or exclude plausible ranges. Review and, where supported by the API, revise every bound before MCMC.
 
 ### Pointwise likelihood
 
-`PointwiseDataLogLikelihood` returns one value per observation row, including its available weighted marginals and copula contribution. It omits the Gaussian-process error densities that appear in (20). `PointwisePriorLogLikelihood` reports those process densities as prior diagnostic components even though scalar `PriorLogLikelihood` contains only the independent parameter priors. Consequently the normal sum identities are broken, and WAIC/PSIS-LOO do not score the same kernel that was fitted. See [TR-049](../review-findings.md#tr-049).
+`PointwiseDataLogLikelihood` returns one value per row/year: the row's weighted observed-site marginals plus its observed-subset copula term, so the values sum to `DataLogLikelihood` in (20). `PointwisePriorLogLikelihood` reports each parameter prior and each enabled error process as components that sum to `PriorLogLikelihood` in (20a). WAIC and PSIS-LOO therefore score the row/year predictive unit of the fitted kernel, and the identities `LogLikelihood == DataLogLikelihood + PriorLogLikelihood`, `DataLogLikelihood == sum of pointwise rows`, and `PriorLogLikelihood == sum of pointwise prior components` hold (fast contracts and the `mvtnorm` cells; [TR-049](../review-findings.md#tr-049)).
 
 ## Estimation and Output Construction
 
@@ -292,9 +295,9 @@ Because the range bound 500 is fixed rather than derived from the network, coord
 
 Changing probability ordinates or credible-interval width reprocesses saved posterior draws; it does not rerun MCMC. Changing model structure or parameters clears the fit.
 
-The regional aggregate currently averages sitewise posterior means and interval endpoints. Its endpoints are not posterior quantiles of a regional statistic; see [TR-058](../review-findings.md#tr-058). Spatial AIC/BIC now use `SpatialGEV.DataLogLikelihood` at the stored MAP and exclude independent parameter-prior densities. BIC treats each nonempty row/year as one multivariate observation block rather than counting site cells, so fully missing rows are excluded and contemporaneously dependent sites are not counted as independent replicates. These remain qualified diagnostics rather than generally conventional criteria: the MAP is not an MLE when priors are nonconstant, `DataLogLikelihood` currently includes Gaussian-process spatial-error densities, missing sites are not correctly marginalized by the copula, and weighted/dependent spatial likelihoods do not automatically satisfy ordinary AIC/BIC regularity assumptions. Prefer posterior predictive comparison after the spatial pointwise likelihood and PSIS findings are resolved; see [TR-048](../review-findings.md#tr-048), [TR-049](../review-findings.md#tr-049), and [TR-055](../review-findings.md#tr-055).
+The regional aggregate currently averages sitewise posterior means and interval endpoints. Its endpoints are not posterior quantiles of a regional statistic; see [TR-058](../review-findings.md#tr-058). Spatial AIC/BIC use the observation log likelihood `SpatialGEV.DataLogLikelihood` in (20) at the stored MAP (parameter priors and latent-error process densities excluded, missing sites marginalized), and BIC treats each nonempty row/year as one multivariate observation block rather than counting site cells (`SpatialGEVAnalysis.ComputeInformationCriteria`), so fully missing rows are excluded and contemporaneously dependent sites are not counted as independent replicates. They remain qualified diagnostics: the MAP is not an MLE when priors are nonconstant, and weighted or dependent spatial likelihoods do not automatically satisfy ordinary AIC/BIC regularity assumptions. WAIC and PSIS-LOO at the row/year unit are the preferred comparison tools; see [TR-055](../review-findings.md#tr-055).
 
-`SpatialGEVUncertaintyMethod` exposes `BayesianPosterior`, `BayesianInflated`, `GodambeSandwich`, and `SpatialBootstrap`, but setting the property does not dispatch a corresponding result-building path. The latter methods require separate calls, and the Godambe/bootstrap paths have open correctness findings. Treat Bayesian posterior site summaries as the currently supported output and see [TR-062](../review-findings.md#tr-062).
+`SpatialGEVUncertaintyMethod` exposes `BayesianPosterior`, `BayesianInflated`, `GodambeSandwich`, and `SpatialBootstrap`, but setting the property does not dispatch a corresponding result-building path. The latter methods require separate calls; `ComputeGodambeCovariance` derives both sandwich factors from the row/year estimating equations and reports failure through `GodambeCovarianceStatus` instead of substituting the variability matrix ([TR-057](../review-findings.md#tr-057)), while the bootstrap path has open correctness findings. Treat Bayesian posterior site summaries as the currently supported output and see [TR-062](../review-findings.md#tr-062).
 
 ## Ungauged Prediction
 
@@ -411,10 +414,10 @@ Before estimation, inspect every `model.Parameters` entry, set scientifically ju
 - **Covariate design.** Collinearity, incompatible scaling, or more regression terms than the network can support produces weak identification and prior sensitivity.
 - **Shape complexity.** Site-specific shape errors add \(S\) latent tail parameters plus covariance hyperparameters. Rare-quantile inference can become prior-dominated.
 - **Stationarity.** There is no time trend in the spatial model. Changes in climate, regulation, land use, or measurement practice violate a stationary block-maxima interpretation unless encoded outside this class.
-- **Missingness.** Copula fitting currently requires complete rows for a defensible likelihood.
+- **Missingness.** Rows with missing sites are marginalized exactly under the Gaussian copula, which treats a missing site as missing at random given the observed sites; informative missingness is outside the model.
 - **Extrapolation.** Predictions outside observed coordinate or covariate support are not validated by an in-sample fit.
 - **Simulation.** `GenerateRandomValues` draws sites independently even when copula dependence is enabled; see [TR-061](../review-findings.md#tr-061).
-- **Computational scaling.** Full covariance factorization is cubic in site count for each changed spatial-parameter vector.
+- **Computational scaling.** Full covariance factorization is cubic in site count for each changed spatial-parameter vector, plus one factorization per distinct missingness pattern.
 
 For life-safety applications, report posterior sensitivity to correlation family, covariate set, shape structure, priors, influential years, network definition, and coordinate system. Do not publish a regional return level without stating whether it is a site value, arithmetic site average, normalized growth factor, simultaneous-event quantity, or an areal aggregate.
 
@@ -430,7 +433,7 @@ Implementation symbols:
 - `Models/TrendFunctions/GeneralLinearFunction.cs`; and
 - `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs` plus its result DTOs.
 
-The formulas and parameter bounds in this chapter were checked against RMC.Numerics 2.1.4 commit `828664650c9327b309ee8332e707ccca73588e93` and the current BestFit source. Fast unit tests cover correlation values and validation, cached multivariate-normal behavior, Gaussian-copula density behavior, spatial-error parameter round trips and prediction helpers, `SpatialGEV` construction/likelihood components, result DTOs, serialization, and analysis lifecycle. Long-running spatial recovery and verification sources were inspected but were not executed during this documentation pass. No unpublished numerical validation claim is made here.
+The formulas and parameter bounds in this chapter were checked against RMC.Numerics 2.1.4 commit `828664650c9327b309ee8332e707ccca73588e93` and the current BestFit source. Fast unit tests cover correlation values and validation, cached multivariate-normal behavior, Gaussian-copula density behavior including the observed-subset evaluation, spatial-error parameter round trips and prediction helpers, `SpatialGEV` construction/likelihood components and the data/prior identities, the row/year criteria helper, the Godambe status contract, result DTOs, serialization, and analysis lifecycle. Phase 6 Batch 6.3 (21 August 2026) verified the likelihood against the R `mvtnorm` observed-subset and location-error oracle (eight exact cells), the criteria against a guarded MCMC run, and reran the nine spatial recovery cells; see the [spatial verification chapter](../../verification/spatial-extremes.md). The cross-validation, prediction, bootstrap, and simulation paths have not been numerically verified.
 
 ## References
 

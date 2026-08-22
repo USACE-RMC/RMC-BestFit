@@ -22,7 +22,7 @@ This matrix distinguishes fast-gate evidence, exact guarded verification results
 | AR, MA, ARIMA, ARIMAX | Constructor, likelihood, recursion, transform, and compiled-workflow tests | Parameter recovery and forecasting verification sources | TR-042 criteria defect closed; TR-035 through TR-041 and TR-046 remain open |
 | Bivariate copulas | Pair matching, likelihood, simulation shape, and compiled workflow | Copula recovery/integration sources and pinned Numerics tests | TR-047 criteria defect closed; broader recovery evidence remains planned |
 | Coincident frequency | Dimension, monotonicity, integration, independent copula/X/Y indices, fallback, cache identity/invalidation, and seed lifecycle | Exact guarded closed-form independent Normal-sum oracle with reversed-chain variant | TR-014 complete downstream; `BivariateAnalysis` remains copula-only conditional on fixed marginals |
-| Spatial GEV | Correlation, cached MVN, error model, result DTO, and compiled workflow tests | Spatial recovery/cross-validation sources | TR-055 prior-density correction closed; remaining TR-048 through TR-062 limitations stay open |
+| Spatial GEV | Correlation, cached MVN, error model, observed-subset copula, data/prior identity, row/year criteria, Godambe-status, result DTO, and compiled workflow tests | R `mvtnorm` missing-site and location-error likelihood oracle (8 cells), guarded row/year criteria cell, 9 recovery cells | TR-048, TR-049, TR-055, and TR-057 closed (Batch 6.3, 21 August 2026); TR-050 through TR-054, TR-056, and TR-058 through TR-062 open |
 | Documentation | Namespace, local-link, citation-anchor, exported-API, and exact-snippet gates | PDF render and visual inspection | Required release gate |
 
 ## Evidence Labels

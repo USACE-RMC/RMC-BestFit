@@ -1,5 +1,8 @@
 using Numerics.Data;
+using Numerics.Data.Statistics;
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -1081,6 +1084,178 @@ public class SpatialGEVAnalysisTests
 
         Assert.IsTrue(cancelled);
         Assert.IsFalse(succeeded);
+    }
+
+    #endregion
+
+    #region Information Criteria and Godambe Covariance Tests
+
+    /// <summary>
+    /// Verifies that the spatial AIC/BIC helper uses the observation log likelihood and counts one nonempty
+    /// row/year block per BIC observation, excluding fully missing rows and not counting site cells (TR-055).
+    /// </summary>
+    [TestMethod]
+    public void ComputeInformationCriteria_UsesNonEmptyRowYearBlocks()
+    {
+        var data = CreateTestAtSiteData();
+        for (int j = 0; j < 5; j++)
+            data[4, j] = double.NaN;
+        data[10, 2] = double.NaN;
+        var coords = CreateTestCoordinates();
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+        double logLikelihood = model.DataLogLikelihood(parameters);
+
+        var (aic, bic, blocks) = SpatialGEVAnalysis.ComputeInformationCriteria(model, parameters);
+
+        Assert.AreEqual(29, blocks, "Thirty rows less the fully missing row.");
+        Assert.AreEqual(GoodnessOfFit.AIC(model.NumberOfParameters, logLikelihood), aic, 1e-12);
+        Assert.AreEqual(GoodnessOfFit.BIC(29, model.NumberOfParameters, logLikelihood), bic, 1e-12);
+        Assert.AreNotEqual(GoodnessOfFit.BIC(30 * 5 - 6, model.NumberOfParameters, logLikelihood), bic, 1e-9, "Site cells are not the BIC sample unit.");
+    }
+
+    /// <summary>
+    /// Verifies that WAIC and PSIS-LOO consume the row/year pointwise terms: with injected posterior draws the
+    /// criteria equal hand computations from the per-row log-likelihood matrix (TR-055).
+    /// </summary>
+    [TestMethod]
+    public void PredictiveCriteria_FromInjectedDraws_UseRowYearPointwiseTerms()
+    {
+        SpatialGEV model = CreateTestSpatialGEV();
+        var analysis = new SpatialGEVAnalysis(model);
+        var defaults = model.Parameters.Select(p => p.Value).ToArray();
+        double[][] offsets =
+        {
+            new[] { 0.00, 0.00, 0.00 },
+            new[] { 0.02, -0.01, 0.03 },
+            new[] { -0.01, 0.02, -0.02 },
+            new[] { 0.03, 0.01, 0.01 },
+            new[] { -0.02, -0.02, 0.02 },
+            new[] { 0.01, 0.03, -0.03 },
+        };
+        var draws = new List<ParameterSet>();
+        foreach (double[] offset in offsets)
+        {
+            var values = (double[])defaults.Clone();
+            for (int k = 0; k < 3; k++)
+                values[k] += offset[k];
+            draws.Add(new ParameterSet(values, model.LogLikelihood(values)));
+        }
+        ParameterSet best = draws.OrderByDescending(d => d.Fitness).First();
+
+        analysis.BayesianAnalysis.SetCustomMCMCResults(new MCMCResults(new ParameterSet(best.Values, best.Fitness), draws, alpha: 0.1));
+
+        int rows = model.Observations;
+        int drawCount = draws.Count;
+        var matrix = new double[rows, drawCount];
+        for (int d = 0; d < drawCount; d++)
+        {
+            double[] pointwise = model.PointwiseDataLogLikelihood(draws[d].Values);
+            Assert.AreEqual(rows, pointwise.Length, "One pointwise term per row/year.");
+            for (int r = 0; r < rows; r++)
+                matrix[r, d] = pointwise[r];
+        }
+
+        double lppd = 0.0;
+        double pWaic = 0.0;
+        for (int r = 0; r < rows; r++)
+        {
+            double max = double.NegativeInfinity;
+            for (int d = 0; d < drawCount; d++)
+                max = Math.Max(max, matrix[r, d]);
+            double sumExp = 0.0;
+            double mean = 0.0;
+            for (int d = 0; d < drawCount; d++)
+            {
+                sumExp += Math.Exp(matrix[r, d] - max);
+                mean += matrix[r, d];
+            }
+            mean /= drawCount;
+            double variance = 0.0;
+            for (int d = 0; d < drawCount; d++)
+                variance += (matrix[r, d] - mean) * (matrix[r, d] - mean);
+            variance /= drawCount - 1;
+            lppd += max + Math.Log(sumExp) - Math.Log(drawCount);
+            pWaic += variance;
+        }
+
+        Assert.AreEqual(-2.0 * lppd + 2.0 * pWaic, analysis.BayesianAnalysis.WAIC, 1e-8, "WAIC from the row/year matrix.");
+        Assert.AreEqual(pWaic, analysis.BayesianAnalysis.WAIC_pD, 1e-8, "WAIC effective parameters from the row/year matrix.");
+        Assert.IsNotNull(analysis.BayesianAnalysis.ParetoK);
+        Assert.AreEqual(rows, analysis.BayesianAnalysis.ParetoK!.Length, "One Pareto k per row/year.");
+        Assert.IsFalse(double.IsNaN(analysis.BayesianAnalysis.LOOIC), "PSIS-LOO is computed from the same matrix.");
+    }
+
+    /// <summary>
+    /// Verifies that a singular sensitivity matrix (a regression coefficient on an identically zero covariate
+    /// column) is reported as a failure with a null covariance and no substitute matrix (TR-057).
+    /// </summary>
+    [TestMethod]
+    public void ComputeGodambeCovariance_SingularHessian_ReportsFailureWithoutSubstitute()
+    {
+        var data = CreateTestAtSiteData();
+        var coords = CreateTestCoordinates();
+        var zeroCovariate = new double[5, 1];
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location", zeroCovariate), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        var analysis = new SpatialGEVAnalysis(model);
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+        Assert.AreEqual(4, parameters.Length, "Intercepts plus the zero-covariate coefficient.");
+
+        double[,]? covariance = analysis.ComputeGodambeCovariance(parameters);
+
+        Assert.IsNull(covariance, "No substitute matrix is returned.");
+        Assert.IsNull(analysis.GodambeCovariance);
+        Assert.AreEqual(CovarianceComputationStatus.Failed, analysis.GodambeCovarianceStatus);
+        StringAssert.Contains(analysis.GodambeCovarianceDiagnostic, "singular");
+    }
+
+    /// <summary>
+    /// Verifies that a well-conditioned intercept-only model yields an available, finite, symmetric sandwich
+    /// covariance with positive variances, and that <c>ClearResults</c> resets the Godambe state (TR-057).
+    /// </summary>
+    [TestMethod]
+    public void ComputeGodambeCovariance_WellConditioned_ReportsAvailableCovariance()
+    {
+        SpatialGEV model = CreateTestSpatialGEV();
+        var analysis = new SpatialGEVAnalysis(model);
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+
+        double[,]? covariance = analysis.ComputeGodambeCovariance(parameters);
+
+        Assert.IsNotNull(covariance);
+        Assert.AreSame(covariance, analysis.GodambeCovariance);
+        Assert.AreEqual(CovarianceComputationStatus.Available, analysis.GodambeCovarianceStatus);
+        Assert.IsNull(analysis.GodambeCovarianceDiagnostic);
+        int n = parameters.Length;
+        Assert.AreEqual(n, covariance!.GetLength(0));
+        Assert.AreEqual(n, covariance.GetLength(1));
+        for (int i = 0; i < n; i++)
+        {
+            Assert.IsTrue(covariance[i, i] > 0 && double.IsFinite(covariance[i, i]), $"Variance {i + 1}.");
+            for (int j = 0; j < n; j++)
+            {
+                Assert.IsTrue(double.IsFinite(covariance[i, j]), $"Entry ({i + 1}, {j + 1}).");
+                Assert.AreEqual(covariance[i, j], covariance[j, i], 1e-10 * Math.Max(1.0, Math.Abs(covariance[i, j])), "Symmetry.");
+            }
+        }
+
+        analysis.ClearResults();
+
+        Assert.IsNull(analysis.GodambeCovariance);
+        Assert.AreEqual(CovarianceComputationStatus.NotComputed, analysis.GodambeCovarianceStatus);
+        Assert.IsNull(analysis.GodambeCovarianceDiagnostic);
+    }
+
+    /// <summary>
+    /// Verifies that a parameter vector of the wrong length is rejected.
+    /// </summary>
+    [TestMethod]
+    public void ComputeGodambeCovariance_WrongParameterCount_Throws()
+    {
+        var analysis = new SpatialGEVAnalysis(CreateTestSpatialGEV());
+
+        Assert.ThrowsException<ArgumentException>(() => analysis.ComputeGodambeCovariance(new[] { 1.0 }));
+        Assert.AreEqual(CovarianceComputationStatus.NotComputed, analysis.GodambeCovarianceStatus);
     }
 
     #endregion

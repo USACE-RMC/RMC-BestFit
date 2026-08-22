@@ -507,4 +507,115 @@ public class GaussianCopulaTests
     }
 
     #endregion
+
+    #region Observed-Subset Evaluation Tests
+
+    /// <summary>
+    /// Verifies that the observed-subset evaluation of a complete row takes the full-dimensional path
+    /// and equals <c>LogPDF(z)</c> exactly.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_AllSitesObserved_EqualsFullEvaluation()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        copula.SetParameterValues(new List<double> { 25.0 });
+        var z = new double[] { 0.4, -1.1, 0.7, 1.9, -0.3 };
+
+        double full = copula.LogPDF(z);
+        double subset = copula.LogPDF(z, new[] { 0, 1, 2, 3, 4 });
+
+        Assert.IsTrue(double.IsFinite(full));
+        Assert.AreEqual(full, subset, 0.0, "A complete row must reproduce the full-dimensional density exactly.");
+    }
+
+    /// <summary>
+    /// Verifies that a row with fewer than two observed sites has no dependence term: the marginal
+    /// copula density of a single coordinate is one.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_FewerThanTwoSites_IsZero()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        copula.SetParameterValues(new List<double> { 25.0 });
+        var z = new double[] { 0.4, -1.1, 0.7, 1.9, -0.3 };
+
+        Assert.AreEqual(0.0, copula.LogPDF(z, new[] { 2 }), 0.0, "One observed site.");
+        Assert.AreEqual(0.0, copula.LogPDF(z, Array.Empty<int>()), 0.0, "No observed site.");
+    }
+
+    /// <summary>
+    /// Verifies that marginalizing the unobserved sites equals the Gaussian copula built on the observed
+    /// sites alone: the correlation depends only on inter-site distances, so both constructions share
+    /// the observed-site correlation submatrix. Entries of <c>z</c> at unobserved sites are ignored.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_EqualsCopulaBuiltOnObservedSites()
+    {
+        double[,] coordinates = CreateRiverCoordinates();
+        var full = new GaussianCopula(coordinates, CorrelationFunctionType.Exponential);
+        full.SetParameterValues(new List<double> { 25.0 });
+        int[] observed = { 0, 2, 4 };
+        var observedCoordinates = new double[,]
+        {
+            { coordinates[0, 0], coordinates[0, 1] },
+            { coordinates[2, 0], coordinates[2, 1] },
+            { coordinates[4, 0], coordinates[4, 1] }
+        };
+        var reduced = new GaussianCopula(observedCoordinates, CorrelationFunctionType.Exponential);
+        reduced.SetParameterValues(new List<double> { 25.0 });
+
+        var z = new double[] { 0.4, double.NaN, 0.7, double.NaN, -0.3 };
+        double expected = reduced.LogPDF(new[] { 0.4, 0.7, -0.3 });
+        double actual = full.LogPDF(z, observed);
+
+        Assert.IsTrue(double.IsFinite(expected));
+        Assert.AreNotEqual(0.0, expected, "The three observed sites carry a dependence term.");
+        Assert.AreEqual(expected, actual, 1e-12, "Observed-subset evaluation versus the copula built on the observed sites.");
+    }
+
+    /// <summary>
+    /// Verifies that the per-pattern factorization cache is reused for repeated rows and invalidated when
+    /// the correlation parameters change.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_TracksParameterChanges()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        int[] observed = { 1, 2, 3 };
+        var z = new double[] { 0.2, 0.9, -0.4, 1.3, 0.0 };
+
+        copula.SetParameterValues(new List<double> { 10.0 });
+        double first = copula.LogPDF(z, observed);
+        double firstAgain = copula.LogPDF(z, observed);
+        copula.SetParameterValues(new List<double> { 60.0 });
+        double second = copula.LogPDF(z, observed);
+
+        var fresh = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        fresh.SetParameterValues(new List<double> { 60.0 });
+
+        Assert.AreEqual(first, firstAgain, 0.0, "Repeated evaluation of the same pattern.");
+        Assert.AreNotEqual(first, second, "A new range changes the observed-subset density.");
+        Assert.AreEqual(fresh.LogPDF(z, observed), second, 0.0, "The cache must not serve the old factorization.");
+    }
+
+    /// <summary>
+    /// Verifies the argument validation of the observed-subset evaluation.
+    /// </summary>
+    [TestMethod]
+    public void LogPDF_ObservedSubset_InvalidArguments_Throw()
+    {
+        var copula = new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential);
+        copula.SetParameterValues(new List<double> { 25.0 });
+        var z = new double[5];
+
+        Assert.ThrowsException<ArgumentNullException>(() => copula.LogPDF(null!, new[] { 0, 1 }));
+        Assert.ThrowsException<ArgumentNullException>(() => copula.LogPDF(z, null!));
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(new double[4], new[] { 0, 1 }), "z must have one entry per site.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 0, 5 }), "Index outside the site range.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 2, 1 }), "Indices must increase.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 1, 1 }), "Duplicate index.");
+        Assert.ThrowsException<ArgumentException>(() => copula.LogPDF(z, new[] { 0, 1, 2, 3, 4, 4 }), "More indices than sites.");
+    }
+
+    #endregion
 }

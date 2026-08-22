@@ -306,9 +306,27 @@ namespace RMC.BestFit.Analyses
         public SpatialGEVUncertaintyMethod UncertaintyMethod { get; set; } = SpatialGEVUncertaintyMethod.BayesianPosterior;
 
         /// <summary>
-        /// Gets the Godambe (sandwich) covariance matrix after calling <see cref="ComputeGodambeCovariance"/>.
+        /// Gets the Godambe (sandwich) covariance matrix after calling <see cref="ComputeGodambeCovariance"/>,
+        /// or <c>null</c> before the first computation, after <see cref="ClearResults"/>, or when the most
+        /// recent computation failed (see <see cref="GodambeCovarianceStatus"/>).
         /// </summary>
         public double[,]? GodambeCovariance { get; private set; }
+
+        /// <summary>
+        /// Gets the outcome of the most recent <see cref="ComputeGodambeCovariance"/> call:
+        /// <see cref="CovarianceComputationStatus.NotComputed"/> before any call or after
+        /// <see cref="ClearResults"/>, <see cref="CovarianceComputationStatus.Available"/> when
+        /// <see cref="GodambeCovariance"/> holds a finite matrix with positive variances, and
+        /// <see cref="CovarianceComputationStatus.Failed"/> when the computation failed and
+        /// <see cref="GodambeCovariance"/> is <c>null</c>.
+        /// </summary>
+        public CovarianceComputationStatus GodambeCovarianceStatus { get; private set; } = CovarianceComputationStatus.NotComputed;
+
+        /// <summary>
+        /// Gets the diagnostic text of the most recent failed <see cref="ComputeGodambeCovariance"/>
+        /// call, or <c>null</c> when the computation succeeded or has not been attempted.
+        /// </summary>
+        public string? GodambeCovarianceDiagnostic { get; private set; }
 
         /// <summary>
         /// Gets the variance inflation factor computed from intersite correlation.
@@ -402,6 +420,9 @@ namespace RMC.BestFit.Analyses
             AnalysisResults = null;
             SiteResults = null;
             CrossValidationResults = null;
+            GodambeCovariance = null;
+            GodambeCovarianceStatus = CovarianceComputationStatus.NotComputed;
+            GodambeCovarianceDiagnostic = null;
             RaisePropertyChange(nameof(AnalysisResults));
             RaisePropertyChange(nameof(SiteResults));
             RaisePropertyChange(nameof(CrossValidationResults));
@@ -409,7 +430,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> and <see cref="SiteResults"/> only � the outputs
+        /// Clears <see cref="AnalysisResults"/> and <see cref="SiteResults"/> only — the outputs
         /// whose quantile arrays are keyed on <see cref="ProbabilityOrdinates"/>. Leaves the
         /// Bayesian MCMC output and <c>IsEstimated</c> intact so the fit can be reused
         /// once valid ordinates are restored.
@@ -443,7 +464,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// SpatialGEV's reprocess chains two awaits (per-site results then aggregated
-        /// uncertainty) � wraps them in an async lambda passed to the shared
+        /// uncertainty) — wraps them in an async lambda passed to the shared
         /// <see cref="AnalysisBase.ReprocessIfEstimated"/> helper for consistent
         /// fire-and-forget exception logging.
         /// </remarks>
@@ -489,7 +510,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -514,7 +535,7 @@ namespace RMC.BestFit.Analyses
                         await CreateUncertaintyAnalysisResultsAsync();
                     }
 
-                    // Conditional set � BayesianAnalysis.IsEstimated is false on soft-failure paths
+                    // Conditional set — BayesianAnalysis.IsEstimated is false on soft-failure paths
                     // (sampler returns without setting IsEstimated). Setting unconditionally would
                     // silently report success even when the chain failed.
                     IsEstimated = BayesianAnalysis.IsEstimated;
@@ -699,20 +720,52 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ConfidenceIntervals[p, 2] = sumUpper / SpatialGEV.Sites;
                 }
 
-                // AIC/BIC use the data likelihood at MAP. Each row is one
-                // multivariate observation block for BIC, excluding fully missing rows.
-                double mapLogLH = SpatialGEV.DataLogLikelihood(BayesianAnalysis.Results.MAP.Values);
-                int effectiveSampleSize = Enumerable.Range(0, SpatialGEV.Observations)
-                    .Count(observation => Enumerable.Range(0, SpatialGEV.Sites)
-                        .Any(site => !double.IsNaN(SpatialGEV.AtSiteData[observation, site])));
-                AnalysisResults.AIC = GoodnessOfFit.AIC(SpatialGEV.NumberOfParameters, mapLogLH);
-                AnalysisResults.BIC = effectiveSampleSize > 0
-                    ? GoodnessOfFit.BIC(effectiveSampleSize, SpatialGEV.NumberOfParameters, mapLogLH)
-                    : double.NaN;
+                // AIC/BIC use the observation log likelihood at MAP with one nonempty row/year
+                // block per BIC observation (see ComputeInformationCriteria).
+                var (aic, bic, _) = ComputeInformationCriteria(SpatialGEV, BayesianAnalysis.Results.MAP.Values);
+                AnalysisResults.AIC = aic;
+                AnalysisResults.BIC = bic;
                 AnalysisResults.DIC = BayesianAnalysis.DIC;
             });
 
             RaisePropertyChange(nameof(AnalysisResults));
+        }
+
+        /// <summary>
+        /// Computes the AIC and BIC of the spatial model from the observation log likelihood at the
+        /// supplied parameter vector, counting one nonempty row/year block per BIC observation.
+        /// </summary>
+        /// <param name="model">The spatial GEV model.</param>
+        /// <param name="parameters">The parameter vector (the MAP estimate in production).</param>
+        /// <returns>The AIC, the BIC (NaN when no row has data), and the number of nonempty row/year blocks.</returns>
+        /// <remarks>
+        /// Each row/year is one multivariate observation whose sites are contemporaneously dependent, so
+        /// the BIC sample size is the number of rows with at least one observed site rather than the
+        /// number of site cells; fully missing rows contribute nothing to the likelihood and are not
+        /// counted. The observation log likelihood excludes the latent-error process densities, which are
+        /// prior structure.
+        /// </remarks>
+        internal static (double AIC, double BIC, int ObservationBlocks) ComputeInformationCriteria(SpatialGEV model, double[] parameters)
+        {
+            double logLikelihood = model.DataLogLikelihood(parameters);
+            int observationBlocks = 0;
+            for (int observation = 0; observation < model.Observations; observation++)
+            {
+                for (int site = 0; site < model.Sites; site++)
+                {
+                    if (!double.IsNaN(model.AtSiteData[observation, site]))
+                    {
+                        observationBlocks++;
+                        break;
+                    }
+                }
+            }
+
+            double aic = GoodnessOfFit.AIC(model.NumberOfParameters, logLikelihood);
+            double bic = observationBlocks > 0
+                ? GoodnessOfFit.BIC(observationBlocks, model.NumberOfParameters, logLikelihood)
+                : double.NaN;
+            return (aic, bic, observationBlocks);
         }
 
         /// <summary>
@@ -1146,18 +1199,36 @@ namespace RMC.BestFit.Analyses
         /// Computes the Godambe (sandwich) covariance matrix for robust standard errors.
         /// </summary>
         /// <param name="parameters">The MLE or MAP parameter values. If null, uses the current MAP estimate.</param>
-        /// <returns>The Godambe covariance matrix [nParams � nParams].</returns>
+        /// <returns>
+        /// The Godambe covariance matrix [nParams × nParams], or <c>null</c> when the computation fails;
+        /// <see cref="GodambeCovarianceStatus"/> and <see cref="GodambeCovarianceDiagnostic"/> describe
+        /// the outcome.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when <paramref name="parameters"/> is null
+        /// and no MAP estimate is available.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="parameters"/> does not hold one
+        /// value per model parameter.</exception>
         /// <remarks>
         /// <para>
         /// The Godambe sandwich estimator provides robust standard errors that account for
         /// model misspecification and correlation in the data:
         /// </para>
         /// <para>
-        /// Var(?^) = H(?)?� J(?) H(?)?�
+        /// Var(θ̂) = H(θ)⁻¹ J(θ) H(θ)⁻¹
         /// </para>
         /// <para>
-        /// where H is the Hessian (sensitivity matrix) and J is the variability matrix computed
-        /// from the outer product of the score vectors.
+        /// where H is the sensitivity matrix (the central-difference Hessian of the observation log
+        /// likelihood <see cref="SpatialGEV.DataLogLikelihood"/>) and J is the variability matrix (the
+        /// sum of outer products of the row/year score vectors obtained from
+        /// <see cref="SpatialGEV.PointwiseDataLogLikelihood"/>). The scalar log likelihood is the sum of
+        /// the row/year terms, so both matrices derive from the same estimating equations; the latent
+        /// error process densities, which are prior structure, enter neither matrix.
+        /// </para>
+        /// <para>
+        /// A non-finite likelihood evaluation, a singular sensitivity matrix, or a non-finite or
+        /// non-positive-variance result is a failure: the method returns <c>null</c>, clears
+        /// <see cref="GodambeCovariance"/>, and reports <see cref="CovarianceComputationStatus.Failed"/>
+        /// with a diagnostic. No substitute matrix is returned.
         /// </para>
         /// <para>
         ///     <b>References:</b>
@@ -1167,7 +1238,7 @@ namespace RMC.BestFit.Analyses
         ///       Statistica Sinica, 21, 5-42.
         /// </para>
         /// </remarks>
-        public double[,] ComputeGodambeCovariance(double[]? parameters = null)
+        public double[,]? ComputeGodambeCovariance(double[]? parameters = null)
         {
             if (parameters == null)
             {
@@ -1176,33 +1247,34 @@ namespace RMC.BestFit.Analyses
                 parameters = BayesianAnalysis.Results.MAP.Values;
             }
 
+            if (parameters.Length != SpatialGEV.NumberOfParameters)
+            {
+                throw new ArgumentException(
+                    $"Expected {SpatialGEV.NumberOfParameters} parameter values but got {parameters.Length}.",
+                    nameof(parameters));
+            }
+
             int nParams = parameters.Length;
             double eps = 1e-5;
 
-            // Compute Hessian H (second derivative of log-likelihood)
+            // Sensitivity matrix H: central-difference Hessian of the observation log likelihood.
             var H = new double[nParams, nParams];
             double f0 = SpatialGEV.DataLogLikelihood(parameters);
+            if (!Tools.IsFinite(f0))
+                return FailGodambeCovariance("The observation log likelihood is not finite at the evaluation point.");
 
             for (int i = 0; i < nParams; i++)
             {
                 for (int j = i; j < nParams; j++)
                 {
-                    // Central difference approximation
-                    var pPlusI = (double[])parameters.Clone();
-                    var pPlusJ = (double[])parameters.Clone();
-                    var pMinusI = (double[])parameters.Clone();
-                    var pMinusJ = (double[])parameters.Clone();
-                    var pPlusIJ = (double[])parameters.Clone();
-                    var pMinusIJ = (double[])parameters.Clone();
-                    var pPlusIMinusJ = (double[])parameters.Clone();
-                    var pMinusIPlusJ = (double[])parameters.Clone();
-
                     double hi = Math.Abs(parameters[i]) * eps + eps;
                     double hj = Math.Abs(parameters[j]) * eps + eps;
 
                     if (i == j)
                     {
-                        // Diagonal: d�L/d??�
+                        // Diagonal: d²L/dθᵢ²
+                        var pPlusI = (double[])parameters.Clone();
+                        var pMinusI = (double[])parameters.Clone();
                         pPlusI[i] += hi;
                         pMinusI[i] -= hi;
                         double fPlusI = SpatialGEV.DataLogLikelihood(pPlusI);
@@ -1211,7 +1283,11 @@ namespace RMC.BestFit.Analyses
                     }
                     else
                     {
-                        // Off-diagonal: d�L/d??d??
+                        // Off-diagonal: d²L/dθᵢdθⱼ
+                        var pPlusIJ = (double[])parameters.Clone();
+                        var pMinusIJ = (double[])parameters.Clone();
+                        var pPlusIMinusJ = (double[])parameters.Clone();
+                        var pMinusIPlusJ = (double[])parameters.Clone();
                         pPlusIJ[i] += hi;
                         pPlusIJ[j] += hj;
                         pMinusIJ[i] -= hi;
@@ -1229,56 +1305,93 @@ namespace RMC.BestFit.Analyses
                         H[i, j] = (fPlusIJ - fPlusIMinusJ - fMinusIPlusJ + fMinusIJ) / (4 * hi * hj);
                         H[j, i] = H[i, j];
                     }
-                }
-            }
 
-            // Compute J (variability matrix) from outer product of score vectors
-            // J = S? s? s?? where s? is the score for observation i
-            var J = new double[nParams, nParams];
-            var pointwiseLL = SpatialGEV.PointwiseDataLogLikelihood(parameters);
-
-            for (int obs = 0; obs < pointwiseLL.Length; obs++)
-            {
-                // Compute score vector for this observation
-                var score = new double[nParams];
-                for (int k = 0; k < nParams; k++)
-                {
-                    var pPlus = (double[])parameters.Clone();
-                    var pMinus = (double[])parameters.Clone();
-                    double h = Math.Abs(parameters[k]) * eps + eps;
-                    pPlus[k] += h;
-                    pMinus[k] -= h;
-
-                    var llPlus = SpatialGEV.PointwiseDataLogLikelihood(pPlus);
-                    var llMinus = SpatialGEV.PointwiseDataLogLikelihood(pMinus);
-
-                    score[k] = (llPlus[obs] - llMinus[obs]) / (2 * h);
-                }
-
-                // Add outer product to J
-                for (int i = 0; i < nParams; i++)
-                {
-                    for (int j = 0; j < nParams; j++)
+                    if (!Tools.IsFinite(H[i, j]))
                     {
-                        J[i, j] += score[i] * score[j];
+                        return FailGodambeCovariance(
+                            $"The Hessian entry ({i + 1}, {j + 1}) of the observation log likelihood is not finite.");
                     }
                 }
             }
 
-            // Invert H
+            // Variability matrix J: sum over row/year blocks of the outer products of the score vectors,
+            // each score obtained by central differences of the pointwise (row/year) log likelihood.
+            int observationCount = SpatialGEV.Observations;
+            var scores = new double[observationCount, nParams];
+            for (int k = 0; k < nParams; k++)
+            {
+                var pPlus = (double[])parameters.Clone();
+                var pMinus = (double[])parameters.Clone();
+                double h = Math.Abs(parameters[k]) * eps + eps;
+                pPlus[k] += h;
+                pMinus[k] -= h;
+
+                var llPlus = SpatialGEV.PointwiseDataLogLikelihood(pPlus);
+                var llMinus = SpatialGEV.PointwiseDataLogLikelihood(pMinus);
+
+                for (int obs = 0; obs < observationCount; obs++)
+                {
+                    scores[obs, k] = (llPlus[obs] - llMinus[obs]) / (2 * h);
+                    if (!Tools.IsFinite(scores[obs, k]))
+                    {
+                        return FailGodambeCovariance(
+                            $"The score of row {obs + 1} with respect to parameter {k + 1} is not finite.");
+                    }
+                }
+            }
+
+            var J = new double[nParams, nParams];
+            for (int obs = 0; obs < observationCount; obs++)
+            {
+                for (int i = 0; i < nParams; i++)
+                {
+                    for (int j = 0; j < nParams; j++)
+                    {
+                        J[i, j] += scores[obs, i] * scores[obs, j];
+                    }
+                }
+            }
+
+            // Invert H; a singular sensitivity matrix leaves the sandwich undefined.
             var HInv = InvertMatrix(H);
             if (HInv == null)
             {
-                // Return J if H is singular
-                GodambeCovariance = J;
-                return J;
+                return FailGodambeCovariance(
+                    "The sensitivity matrix (Hessian of the observation log likelihood) is singular; the sandwich covariance is undefined.");
             }
 
-            // Compute sandwich: H?� J H?�
-            var temp = MultiplyMatrices(HInv, J);
-            GodambeCovariance = MultiplyMatrices(temp, HInv);
+            // Compute sandwich: H⁻¹ J H⁻¹
+            var covariance = MultiplyMatrices(MultiplyMatrices(HInv, J), HInv);
+            for (int i = 0; i < nParams; i++)
+            {
+                for (int j = 0; j < nParams; j++)
+                {
+                    if (!Tools.IsFinite(covariance[i, j]))
+                        return FailGodambeCovariance($"The sandwich covariance entry ({i + 1}, {j + 1}) is not finite.");
+                }
 
-            return GodambeCovariance;
+                if (covariance[i, i] <= 0)
+                    return FailGodambeCovariance($"The sandwich covariance has a non-positive variance for parameter {i + 1}.");
+            }
+
+            GodambeCovariance = covariance;
+            GodambeCovarianceStatus = CovarianceComputationStatus.Available;
+            GodambeCovarianceDiagnostic = null;
+            return covariance;
+        }
+
+        /// <summary>
+        /// Records a failed Godambe covariance computation and returns <c>null</c>.
+        /// </summary>
+        /// <param name="diagnostic">The reason the computation failed.</param>
+        /// <returns><c>null</c>, so callers can return the result directly.</returns>
+        private double[,]? FailGodambeCovariance(string diagnostic)
+        {
+            GodambeCovariance = null;
+            GodambeCovarianceStatus = CovarianceComputationStatus.Failed;
+            GodambeCovarianceDiagnostic = diagnostic;
+            System.Diagnostics.Debug.WriteLine($"SpatialGEVAnalysis.ComputeGodambeCovariance: {diagnostic}");
+            return null;
         }
 
         /// <summary>
@@ -1290,10 +1403,10 @@ namespace RMC.BestFit.Analyses
         /// is underestimated by a factor approximately equal to the variance inflation factor:
         /// </para>
         /// <para>
-        /// VIF = 1 + (n_sites - 1) * ?�
+        /// VIF = 1 + (n_sites - 1) * ρ̄
         /// </para>
         /// <para>
-        /// where ?� is the average intersite correlation. This method computes the VIF and
+        /// where ρ̄ is the average intersite correlation. This method computes the VIF and
         /// adjusts the site results accordingly.
         /// </para>
         /// <para>

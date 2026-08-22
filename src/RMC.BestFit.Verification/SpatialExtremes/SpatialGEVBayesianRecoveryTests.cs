@@ -108,7 +108,7 @@ public class SpatialGEVBayesianRecoveryTests
         await analysis.RunAsync();
 
         // Assert
-        Assert.IsTrue(analysis.IsEstimated, "Bayesian estimation with copula should converge.");
+        Assert.IsTrue(analysis.IsEstimated, $"Bayesian estimation with copula should converge. Last sampler error: {analysis.BayesianAnalysis.LastError}");
 
         // Find range parameter index (it's the copula correlation function parameter)
         var map = analysis.BayesianAnalysis.Results!.MAP.Values;
