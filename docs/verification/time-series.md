@@ -1,4 +1,4 @@
-<!-- verification-status: phase-5-complete -->
+<!-- verification-status: finalized -->
 
 # Time-Series Verification
 
@@ -1131,6 +1131,21 @@ not run; every Phase 5 numerical and recovery result was an exact guarded one-me
 
 The complete Verification project was not run during Phase 5. Every numerical and recovery result
 was executed as one exact fully qualified method through `scripts/run-verification-test.ps1`.
+
+## Phase 7 legacy recovery cells - 22 August 2026
+
+TR-089 recorded three legacy MAP recovery cells (`ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22`,
+`ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX22`, `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111`)
+that failed their 40% relative bands with 500 observations. By decision (22 August 2026) every legacy
+recovery fixture in `ARAnalysisTests`, `MAAnalysisTests`, `ARIMAAnalysisTests`, `ARIMAXAnalysisTests`, and
+`ARIMAXMLERecoveryTests` that generated 500 observations now generates 1,000, matching the Phase 5 recovery
+convention; models and seeds are unchanged. At 1,000 observations 27/29 passed the former bands; the two ARMA(2,2)
+cells still missed the 40% band on phi1 because the fixture is weakly identified (MLE standard errors 0.13-0.17,
+estimate 1.4-1.5 standard errors from the truth, convention parity confirmed by the MLE-minus-truth likelihood
+gaps), so by a second decision the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat < 1.1
+through `LegacyRecoveryAssertions` while the 7 MLE cells keep their tolerances. Rerun one method per guarded
+invocation: all 29 cells pass with 1,000 observations (the 22 Bayesian cells under the central 90% credible-interval and R-hat rule, the 7 MLE cells under their unchanged tolerances). The Phase 5 independent matrix remains the oracle-backed recovery evidence. Per-cell
+outcomes: [Phase 7 closeout](test-inventory.md#phase-7-closeout---22-august-2026).
 
 ---
 

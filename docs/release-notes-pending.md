@@ -32,7 +32,11 @@ development.
   single-parameter covariance is available; `InfluenceDiagnostics.GetProblematicObservations()`
   gains a parameterless overload that uses the instance limit; all-failed distribution fitting
   reports completion; Mixture, CompetingRisk, and B17C report NaN RMSE when residual degrees of
-  freedom are not positive.
+  freedom are not positive; the GMM moment covariance that feeds the sandwich covariance, the
+  post-estimate weighting matrix, Hansen J, and the influence diagnostics is conditioned only by
+  the symmetric positive-definite floor (the former 50-times-median eigenvalue cap rewrote the
+  moment covariance of real-space three-parameter families and distorted every covariance entry;
+  point estimates were never affected).
 - Bulletin 17C: bootstrap diagnostics are per requested replicate with a separate realization
   count; the report states the substituted-replicate count and fraction and the point-mass
   consequence; a converged-within-tolerance refit must improve on its start; pivot bound repairs
@@ -40,7 +44,14 @@ development.
   scale; `BootstrapDiagnostics` gains `AttemptedRealizations`, `BoundRepairs`,
   `BoundRepairRate`, and `IncrementBoundRepair()`; `ComputeCohnStyleConfidenceIntervals()`
   throws `NotSupportedException` outside its LP3/exact-data scope; AIC/BIC use the data
-  likelihood.
+  likelihood; bootstrap realizations re-centre additive measurement-error distributions by the
+  ratio of the simulated flood to the original mean for log-space fitted families
+  (Log-Pearson Type III, Log-Normal, Ln-Normal) and for error distributions with strictly
+  positive support, so a MOVE.3-style relative error keeps its relative spread and never crosses
+  zero (real-space fits with unbounded errors keep the additive shift); when the censored-data
+  (ROS) initial-moment estimate is unavailable, `Bulletin17CDistribution` keeps the
+  constraint-based initial values and records a validation warning instead of reporting zero
+  parameters, and an outright initialization failure is reported as a validation error.
 - Rating curve: the data log likelihood is the discharge-space density (the log10-space Gaussian
   term plus the base-10 change-of-variables term per aligned pair) in the scalar, pointwise, and
   component paths, so AIC/BIC/DIC/WAIC/LOOIC shift by the data constant `-sum log(Q ln 10)` and

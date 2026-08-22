@@ -872,8 +872,12 @@ namespace RMC.BestFit.Estimation
             Matrix rawMomentCovariance = MomentConditionFunction(parameters).S;
             Matrix positiveDefiniteS = MatrixRegularization.MakeSymmetricPositiveDefinite(rawMomentCovariance);
             wasRegularized |= MatricesDifferMaterially(rawMomentCovariance, positiveDefiniteS);
-            Matrix momentCovariance = MatrixRegularization.Regularize(positiveDefiniteS);
-            wasRegularized |= MatricesDifferMaterially(positiveDefiniteS, momentCovariance);
+            // Only the symmetric positive-definite floor conditions the moment covariance. The
+            // eigenvalue cap that was applied here until 22 August 2026 (TR-085) rewrote S whenever
+            // its eigenvalues spanned more than fifty times their median, which is the normal state
+            // of real-space three-parameter families (the eigenvalues scale like sigma^2, sigma^4,
+            // and sigma^6), and every sandwich entry inherited the distortion.
+            Matrix momentCovariance = positiveDefiniteS;
 
             Matrix covarianceWeight;
             if (EstimationStrategy == GMMEstimationStrategy.OneStep)
@@ -2715,14 +2719,15 @@ namespace RMC.BestFit.Estimation
         /// its inverse evaluated at the final estimate.
         /// </summary>
         /// <remarks>
-        /// The same symmetric positive-definite regularization that guards the covariance
-        /// calculation is applied before inversion.
+        /// The same symmetric positive-definite floor that guards the covariance calculation is
+        /// applied before inversion; no eigenvalue cap is applied (TR-085), so the stored
+        /// <see cref="S"/> equals the model's moment covariance whenever that matrix is already
+        /// positive definite.
         /// </remarks>
         private void UpdateWeightingMatrixAtEstimate()
         {
             Matrix rawMomentCovariance = MomentConditionFunction(BestParameterSet.Values).S;
-            Matrix positiveDefiniteS = MatrixRegularization.MakeSymmetricPositiveDefinite(rawMomentCovariance);
-            S = MatrixRegularization.Regularize(positiveDefiniteS);
+            S = MatrixRegularization.MakeSymmetricPositiveDefinite(rawMomentCovariance);
             W = S.Inverse();
         }
 

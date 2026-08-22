@@ -2,7 +2,7 @@
 
 Every committed oracle file must be listed before a C# verification test consumes it.
 
-Integrity recheck (3 August 2026): independently recomputed SHA-256 values for the original 16 artifacts exactly match this manifest (nine Phase 1 distribution-fitting artifacts and seven Phase 2 model-estimation artifacts). Phase 5 analytical time-series artifacts were added and hash-checked on 20 August 2026. Phase 6 rating-curve artifacts were added and hash-checked on 21 August 2026 before any C# result was observed. No Phase 3/Bulletin 17C artifact is present.
+Integrity recheck (3 August 2026): independently recomputed SHA-256 values for the original 16 artifacts exactly match this manifest (nine Phase 1 distribution-fitting artifacts and seven Phase 2 model-estimation artifacts). Phase 5 analytical time-series artifacts were added and hash-checked on 20 August 2026. Phase 6 rating-curve artifacts were added and hash-checked on 21 August 2026 before any C# result was observed. Closeout recheck (22 August 2026): the SHA-256 of every one of the 29 listed artifacts was recomputed independently and matches this manifest. No Phase 3/Bulletin 17C artifact is present.
 
 | Family | File | Oracle | Version | Generator | Seed | Tolerance | SHA-256 | Status |
 |---|---|---|---|---|---|---|---|---|

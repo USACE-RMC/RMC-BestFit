@@ -2842,9 +2842,13 @@ namespace RMC.BestFit.Models
         ///         distribution via <c>InverseCDF(U)</c>. This simulates a new annual peak occurring
         ///         under the same flood-generating process.</description></item>
         ///     <item><description><b>Uncertain data:</b> Draw a "true" flood magnitude from the fitted
-        ///         distribution, then shift the measurement error distribution to center on that value
-        ///         while preserving the original error spread. This simulates observing a new flood
-        ///         with the same measurement quality.</description></item>
+        ///         distribution, then shift the measurement error distribution to center on that value.
+        ///         For log-space fitted families (Log-Pearson Type III, Log-Normal, Ln-Normal) and for
+        ///         measurement-error distributions with strictly positive support, additive families are
+        ///         rescaled by the ratio of the simulated magnitude to the original mean so that the
+        ///         relative error (and the positive support) is preserved; otherwise the original
+        ///         absolute spread is preserved by an additive shift (TR-086). This simulates observing
+        ///         a new flood with the same measurement quality.</description></item>
         ///     <item><description><b>Interval data:</b> Draw a value unconditionally from the fitted
         ///         distribution and re-classify against the original interval bounds. If the simulated
         ///         value falls below the lower bound, the observation becomes left-censored; if above
@@ -2900,11 +2904,15 @@ namespace RMC.BestFit.Models
 
             // ── Uncertain data ──────────────────────────────────────────────────
             // Draw a "true" flood magnitude, then shift the measurement error
-            // distribution to center on that value (preserving error spread).
+            // distribution to center on that value. Log-space fitted families keep
+            // the relative error (ratio shift) so the support stays positive; other
+            // fits keep the absolute error spread unless the error distribution
+            // itself has strictly positive support (TR-086).
+            bool logSpaceFit = distribution is LogPearsonTypeIII || distribution is LogNormal || distribution is LnNormal;
             foreach (UncertainData data in UncertainSeries)
             {
                 var simulatedValue = distribution.InverseCDF(prng.NextDouble());
-                var shiftedDist = ShiftDistribution(data.Distribution, simulatedValue);
+                var shiftedDist = ShiftDistribution(data.Distribution, simulatedValue, logSpaceFit);
                 dataframe.UncertainSeries.Add(new UncertainData(data.Index, shiftedDist));
             }
 
@@ -3011,16 +3019,32 @@ namespace RMC.BestFit.Models
 
         /// <summary>
         /// Creates a new distribution of the same type, shifted so that its center is at the specified value,
-        /// while preserving the original measurement error spread.
+        /// while preserving the original measurement error spread (absolute or relative).
         /// </summary>
         /// <param name="original">The original measurement error distribution.</param>
         /// <param name="newCenter">The new center value (simulated "true" flood magnitude).</param>
+        /// <param name="preferRelativeShift">
+        /// When <see langword="true"/> (log-space fitted families), additive-error families are rescaled
+        /// by <c>newCenter / original.Mean</c> instead of being shifted by <c>newCenter - original.Mean</c>,
+        /// so the relative error is preserved and the support stays positive. The relative shift is also
+        /// used whenever the original error distribution has strictly positive support. Either form is
+        /// used only when both the original mean and <paramref name="newCenter"/> are positive.
+        /// </param>
         /// <returns>A new distribution shifted to center on <paramref name="newCenter"/>.</returns>
         /// <remarks>
         /// <para>
         ///     For additive-error families (Normal, Uniform, Triangular, etc.), the distribution
-        ///     is shifted by <c>newCenter - original.Mean</c>. For multiplicative-error families
-        ///     (LogNormal, Gamma), a ratio-based shift preserves the coefficient of variation.
+        ///     is shifted by <c>newCenter - original.Mean</c> (absolute spread preserved) or, when the
+        ///     relative form applies, rescaled by <c>newCenter / original.Mean</c> (coefficient of
+        ///     variation preserved). For multiplicative-error families (LogNormal, Gamma), a ratio-based
+        ///     shift always preserves the coefficient of variation.
+        /// </para>
+        /// <para>
+        ///     Before 22 August 2026 (TR-086) every additive family was shifted additively. For
+        ///     log-space fits a wide relative error (for example a MOVE.3 flow estimate with a
+        ///     Triangular(0.5q, q, 1.75q) error) shifted onto a small simulated flood crossed zero,
+        ///     the log-space moment conditions became NaN, and the bootstrap refit fell back to the
+        ///     derivative-free optimizer on most realizations.
         /// </para>
         /// <para>
         ///     Supported distributions: Normal, StudentT, TruncatedNormal, LogNormal, LnNormal,
@@ -3028,7 +3052,7 @@ namespace RMC.BestFit.Models
         ///     fall back to a clone of the original.
         /// </para>
         /// </remarks>
-        private static UnivariateDistributionBase ShiftDistribution(UnivariateDistributionBase original, double newCenter)
+        private static UnivariateDistributionBase ShiftDistribution(UnivariateDistributionBase original, double newCenter, bool preferRelativeShift = false)
         {
             double originalMean = original.Mean;
             double shift = newCenter - originalMean;
@@ -3037,16 +3061,25 @@ namespace RMC.BestFit.Models
             if (double.IsNaN(shift) || double.IsInfinity(shift))
                 return (UnivariateDistributionBase)original.Clone();
 
+            // Relative (ratio) shift: requested by the caller for log-space fits, or implied by an
+            // error distribution whose support is strictly positive; both centers must be positive.
+            bool relative = (preferRelativeShift || original.Minimum > 0.0) && originalMean > 0.0 && newCenter > 0.0;
+            double relativeRatio = relative ? newCenter / originalMean : 1.0;
+
             switch (original)
             {
                 case Normal n:
-                    return new Normal(n.Mu + shift, n.Sigma);
+                    return relative ? new Normal(n.Mu * relativeRatio, n.Sigma * relativeRatio) : new Normal(n.Mu + shift, n.Sigma);
 
                 case TruncatedNormal tn:
-                    return new TruncatedNormal(tn.Mu + shift, tn.Sigma, tn.Min + shift, tn.Max + shift);
+                    return relative
+                        ? new TruncatedNormal(tn.Mu * relativeRatio, tn.Sigma * relativeRatio, tn.Min * relativeRatio, tn.Max * relativeRatio)
+                        : new TruncatedNormal(tn.Mu + shift, tn.Sigma, tn.Min + shift, tn.Max + shift);
 
                 case StudentT st:
-                    return new StudentT(st.Mu + shift, st.Sigma, st.DegreesOfFreedom);
+                    return relative
+                        ? new StudentT(st.Mu * relativeRatio, st.Sigma * relativeRatio, st.DegreesOfFreedom)
+                        : new StudentT(st.Mu + shift, st.Sigma, st.DegreesOfFreedom);
 
                 case LogNormal ln:
                 {
@@ -3057,7 +3090,9 @@ namespace RMC.BestFit.Models
                 }
 
                 case LnNormal lnn:
-                    return new LnNormal(lnn.Mean + shift, lnn.StandardDeviation);
+                    return relative
+                        ? new LnNormal(lnn.Mean * relativeRatio, lnn.StandardDeviation * relativeRatio)
+                        : new LnNormal(lnn.Mean + shift, lnn.StandardDeviation);
 
                 case GammaDistribution g:
                 {
@@ -3068,16 +3103,22 @@ namespace RMC.BestFit.Models
                 }
 
                 case Uniform u:
-                    return new Uniform(u.Min + shift, u.Max + shift);
+                    return relative ? new Uniform(u.Min * relativeRatio, u.Max * relativeRatio) : new Uniform(u.Min + shift, u.Max + shift);
 
                 case Triangular t:
-                    return new Triangular(t.Min + shift, t.MostLikely + shift, t.Max + shift);
+                    return relative
+                        ? new Triangular(t.Min * relativeRatio, t.MostLikely * relativeRatio, t.Max * relativeRatio)
+                        : new Triangular(t.Min + shift, t.MostLikely + shift, t.Max + shift);
 
                 case Pert p:
-                    return new Pert(p.Min + shift, p.MostLikely + shift, p.Max + shift);
+                    return relative
+                        ? new Pert(p.Min * relativeRatio, p.MostLikely * relativeRatio, p.Max * relativeRatio)
+                        : new Pert(p.Min + shift, p.MostLikely + shift, p.Max + shift);
 
                 case GeneralizedBeta gb:
-                    return new GeneralizedBeta(gb.Alpha, gb.Beta, gb.Min + shift, gb.Max + shift);
+                    return relative
+                        ? new GeneralizedBeta(gb.Alpha, gb.Beta, gb.Min * relativeRatio, gb.Max * relativeRatio)
+                        : new GeneralizedBeta(gb.Alpha, gb.Beta, gb.Min + shift, gb.Max + shift);
 
                 default:
                     // Unrecognized distribution type — clone as-is

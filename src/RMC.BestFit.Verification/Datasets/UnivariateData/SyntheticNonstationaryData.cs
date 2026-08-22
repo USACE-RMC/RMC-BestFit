@@ -1,4 +1,5 @@
 using Numerics.Distributions;
+using Numerics.Sampling;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.TrendFunctions.Support;
 
@@ -7,8 +8,35 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
     /// <summary>
     /// A collection of methods to generate synthetic nonstationary univariate datasets for testing.
     /// </summary>
+    /// <remarks>
+    /// Every generator evaluates the configured trend models at each observation's own time index
+    /// (0 through n - 1, the index convention of an <see cref="ExactSeries"/> built from a value list
+    /// and therefore the <c>StartIndex = 0</c> convention the fitted model uses) and draws that
+    /// observation from the distribution at that index. Before 22 August 2026 (TR-084) the generators
+    /// drew every observation from the distribution evaluated at index 0, so the fixtures carried no trend.
+    /// </remarks>
     public static class SyntheticNonstationaryData
     {
+        /// <summary>
+        /// Draws one observation per time index from the nonstationary model, evaluating the trend
+        /// models at indices 0 through <paramref name="n"/> - 1.
+        /// </summary>
+        /// <param name="model">The configured nonstationary model with its true parameter values set.</param>
+        /// <param name="n">The number of observations.</param>
+        /// <param name="prngSeed">The pseudo random number generator seed.</param>
+        /// <returns>The generated values in time order.</returns>
+        private static double[] GenerateTrendValues(UnivariateDistribution model, int n, int prngSeed)
+        {
+            var prng = new MersenneTwister(prngSeed);
+            var values = new double[n];
+            for (int t = 0; t < n; t++)
+            {
+                model.SetDistributionParameterValues(t);
+                values[t] = model.Distribution.InverseCDF(prng.NextDouble());
+            }
+            return values;
+        }
+
 
         /// <summary>
         /// Generates synthetic nonstationary data from a normal distribution with a constant trend on the mean parameter.
@@ -24,8 +52,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Constant);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -45,8 +72,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Cubic);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -60,14 +86,15 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
         /// <returns></returns>
         public static (DataFrame DataFrame, double[] TrueParameters) GenerateExponentialTrendData(int n = 1000, int prngSeed = 12345)
         {
-            var trueParameters = new double[] { 50.0, 0.2, 15.0 };
+            // The rate must lie inside the model's default prior bounds for the exponential rate,
+            // +/- 5/(n - 1) = +/- 0.005 for 1,000 observations; 0.2 overflowed over 1,000 steps (TR-084).
+            var trueParameters = new double[] { 50.0, 0.002, 15.0 };
             var model = new UnivariateDistribution();
             model.DistributionType = UnivariateDistributionType.Normal;
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Exponential);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -87,8 +114,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Linear);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -102,14 +128,15 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
         /// <returns></returns>
         public static (DataFrame DataFrame, double[] TrueParameters) GenerateLogisticTrendData(int n = 1000, int prngSeed = 12345)
         {
-            var trueParameters = new double[] { 100.0, 0.05, 15.0 };
+            // The rate must lie inside the model's default prior bounds for the logistic rate,
+            // +/- 5/(n - 1) = +/- 0.005 for 1,000 observations (TR-084).
+            var trueParameters = new double[] { 100.0, 0.004, 15.0 };
             var model = new UnivariateDistribution();
             model.DistributionType = UnivariateDistributionType.Normal;
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Logistic);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -129,8 +156,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Power);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -150,8 +176,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Quadratic);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -171,8 +196,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.Sinusoidal);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -193,8 +217,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(0, TrendModelType.StepFunction);
             model.SetParameterValues(trueParameters);
-            model.Distribution.GenerateRandomValues(n, prngSeed);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -218,7 +241,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(1, TrendModelType.Linear); // Linear trend on sigma (parameter index 1)
             model.SetParameterValues(trueParameters);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -240,7 +263,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(1, TrendModelType.Quadratic); // Quadratic trend on sigma
             model.SetParameterValues(trueParameters);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -262,7 +285,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.IsNonstationary = true;
             model.SetTrendModel(1, TrendModelType.Exponential); // Exponential trend on sigma
             model.SetParameterValues(trueParameters);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -290,7 +313,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.SetTrendModel(0, TrendModelType.Linear); // Linear trend on mean
             model.SetTrendModel(1, TrendModelType.Linear); // Linear trend on sigma
             model.SetParameterValues(trueParameters);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -313,7 +336,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.SetTrendModel(0, TrendModelType.Quadratic); // Quadratic trend on mean
             model.SetTrendModel(1, TrendModelType.Linear);    // Linear trend on sigma
             model.SetParameterValues(trueParameters);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -336,7 +359,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.SetTrendModel(0, TrendModelType.Linear);      // Linear trend on mean
             model.SetTrendModel(1, TrendModelType.Exponential); // Exponential trend on sigma
             model.SetParameterValues(trueParameters);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
@@ -359,7 +382,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             model.SetTrendModel(0, TrendModelType.StepFunction); // Step function on mean
             model.SetTrendModel(1, TrendModelType.StepFunction); // Step function on sigma
             model.SetParameterValues(trueParameters);
-            var values = model.Distribution.GenerateRandomValues(n, prngSeed);
+            var values = GenerateTrendValues(model, n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);

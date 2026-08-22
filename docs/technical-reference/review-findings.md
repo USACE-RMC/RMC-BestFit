@@ -28,7 +28,9 @@ remain documented in full, and the complete Verification project was not run.
 Phase 6 opening and register completion (21 August 2026): the register now runs through TR-093 (TR-091 was
 found and fixed during Batch 6.3; TR-092 and TR-093 were found and fixed during Batch 6.5). TR-084
 through TR-090 record the Verification results and one fast-suite race that the 21 August reruns left
-without dispositions; they are open decision items worked after Phase 6 and do not block it. TR-078 and
+without dispositions; they were diagnosed and disposed in Phase 7 on 22 August 2026 (fixture defects in
+TR-084 and TR-087, production defects in TR-085, TR-086, and TR-087, a test race in TR-090, and decisions
+for TR-088 and TR-089; see their sections). TR-078 and
 TR-081 are closed with 21 August evidence (the twelve `B17CPenalityTests` methods were rerun one at a
 time through the guarded runner, 12/12). The TR-052 failure mode is restated: a null covariate vector
 yields an intercept-only prediction rather than an exception. Phase 6 (rating curve, bivariate, and
@@ -121,13 +123,13 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-081](#tr-081) | Log-scale penalty centers perturbed on the log scale | Low | Confirmed latent defect | Fixed | Passed - 12/12 `B17CPenalityTests` exact guarded reruns | [Test inventory](../verification/test-inventory.md#phase-6-prelude---21-august-2026) | 2026-08-21 |
 | [TR-082](#tr-082) | Strict distribution XML parsers verified against 2.1.4 payloads | Medium | Compatibility risk | Verified | Passed - fifteen literal 2.1.4 payloads and embedding elements | [Report](../verification/test-inventory.md) | 2026-08-21 |
 | [TR-083](#tr-083) | Example project SQLite sidecars were tracked | Low | Repository hygiene | Fixed | N/A | [Report](../verification/test-inventory.md) | 2026-08-21 |
-| [TR-084](#tr-084) | Nonstationary recovery tolerances under default MCMC settings | Medium | Open - decision pending | No change proposed | Failed - 15/16 cells under production defaults | [Test inventory](../verification/test-inventory.md#default-mcmc-settings-in-verification-recovery-tests---21-august-2026) | 2026-08-21 |
-| [TR-085](#tr-085) | Pearson Type III covariance diagonal mismatch | Medium | Open - pre-existing, needs diagnosis | Not started | Failed - 2 cells, identical at `7a0a797` | [Test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026) | 2026-08-21 |
-| [TR-086](#tr-086) | Move3-style uncertain-data bootstrap fallback rate | Medium | Open - pre-existing, needs diagnosis | Not started | Failed - 88.5% fallback versus the 1% limit | [Test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026) | 2026-08-21 |
-| [TR-087](#tr-087) | Censored-coverage bootstrap cells fail to estimate | Medium | Open - pre-existing, needs diagnosis | Not started | Failed - 2 cells, identical at `7a0a797` | [Test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026) | 2026-08-21 |
-| [TR-088](#tr-088) | Bulletin 17C coverage assertions re-enabled but not rerun | Low | Open - rerun pending | Assertions re-enabled | Pending - exact-method reruns on request | [Test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
-| [TR-089](#tr-089) | ARIMA/ARIMAX MAP recovery cells fail | Medium | Open - pre-existing, needs classification | Not started | Failed - 3 cells on the pre-review control worktree | [Progress](../PROGRESS.md) | 2026-08-21 |
-| [TR-090](#tr-090) | Intermittent fast-suite reprocess race | Low | Open - reported | Not started | Observed once; not reproduced on demand | [Progress](../PROGRESS.md) | 2026-08-21 |
+| [TR-084](#tr-084) | Nonstationary recovery fixtures carried no trend | Medium | Confirmed fixture defect; fixed (Verification only); acceptance re-specified | Fixture generates each observation from the trend at its own index; Exponential/Logistic truths inside the default rate bounds; gross-error gate (4 posterior SD, R-hat, ESS) | Passed - 16/16 cells under production defaults | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-085](#tr-085) | Pearson Type III covariance diagonal mismatch | Medium | Confirmed defect; fixed | Eigenvalue cap removed from the GMM covariance and post-estimate weighting conditioning | Passed - 13/13 covariance cells; 47/47 GMM regression cells | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-086](#tr-086) | Move3-style uncertain-data bootstrap fallback rate | Medium | Confirmed defect; fixed | Relative re-centring of measurement-error distributions for log-space fits and positive error supports | Passed - uncertain-data cells 2/2, reliability grid 14/14 | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-087](#tr-087) | Censored-coverage bootstrap cells fail to estimate | Medium | Confirmed fixture defect plus production robustness defect; both fixed | Fixture computes plotting positions; initial-parameter fallback with validation warning | Passed - four fast regressions; coverage cells not rerun (on request only) | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-088](#tr-088) | Bulletin 17C coverage assertions re-enabled but not rerun | Low | Closed - reruns on request only (decision 22 August 2026) | Assertions re-enabled | Not rerun in the closeout by decision | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-089](#tr-089) | ARIMA/ARIMAX MAP recovery cells fail | Medium | Legacy fixtures moved to 1,000 observations; Bayesian cells assert credible-interval coverage (decisions 22 August 2026) | 29 legacy fixtures use 1,000 observations; the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat | Passed - 29/29 legacy cells | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-090](#tr-090) | Intermittent fast-suite reprocess race | Low | Test race; fixed (fast test only) | Test waits for the published reprocess instead of racing a second direct call | Passed - fast core project | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
 | [TR-091](#tr-091) | Spatial clone drops copula/error parameter blocks | High | Confirmed defect - fixed | Fixed (21 August 2026): the clone rebuilds its parameter list from the cloned components and copies values, bounds, and priors | Passed - three fast clone contracts (failed before the fix: 3 parameters instead of 4 and 17); the guarded row/year criteria cell and the copula recovery cell complete after the fix | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
 | [TR-092](#tr-092) | Spatial likelihood throws on non-finite site parameters | High | Confirmed defect - fixed | Fixed (22 August 2026): non-finite site GEV parameters return negative-infinite likelihood in both paths | Passed - fast contract (overflowing latent error); the location-error network now samples under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 | [TR-093](#tr-093) | Latent-error default bounds ignore the log link | High | Confirmed defect - fixed | Fixed (22 August 2026): link-space spread × 3, floor 1.0, for log-link location and scale errors | Passed - fast bound-rule contract; the TR-054 guarded cell runs under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
@@ -1426,95 +1428,95 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 **Impact.** No stale SQLite sidecar can ship with an example project.
 
 <a id="tr-084"></a>
-## TR-084 - Nonstationary Recovery Tolerances Under Default MCMC Settings
+## TR-084 - Nonstationary Recovery Fixtures Carried No Trend
 
-**Review disposition.** Open; decision pending (tolerance re-pin under the defaults, coverage-style acceptance, fixture diagnosis, or accepted limitation).
+**Review disposition.** Confirmed fixture defect (Verification project); the estimator is not implicated. Decisions 22 August 2026 (Haden Smith), in sequence: fix the fixture and rerun under the unchanged 1% rule; move the two infeasible truths inside the default rate bounds and adopt central 90% interval coverage with a 5% mode band; after the realization diagnosis adopt the gross-error gate (posterior mode within four posterior standard deviations of the truth, R-hat < 1.1, ESS > 100) with seed 12345 kept.
 
-**Implementation status.** No production change is proposed. The 21 August 2026 change removed the test-only MCMC overrides from `NonstationaryValidationTests` so that every Verification recovery method uses the production `BayesianAnalysis` defaults.
+**Implementation status.** Fixed in `SyntheticNonstationaryData` (Verification only). The generators built a nonstationary model without a data frame, set the true parameters (which set the base distribution to the trend evaluated at `ParameterTimeIndex = 0`), and then called the iid inverse-CDF generator, so every "trend" fixture was a constant-mean sample (Linear {80, 0.5, 15}: first-100 mean 83.2, last-100 mean 80.5, OLS slope -0.0009; Power {100, 0.2, 15}: iid N(0, 15) because 100 x 0^0.2 = 0). Each generator now draws observation `t` from the distribution with the trend models evaluated at index `t` (0 through n - 1, the `StartIndex = 0` convention the fitted model uses) with a seeded `MersenneTwister`; the Exponential truth became {50, 0.002, 15} and the Logistic truth {100, 0.004, 15} because the former rates (0.2 and 0.05) lie outside the model's default rate prior bounds (+/- 5/(n - 1) = +/- 0.005) and 50 e^(0.2 t) overflows over 1,000 steps; the production `BayesianAnalysis` defaults are unchanged. The acceptance rule is the gross-error gate above; the stale "10,000/5,000 iterations" remarks were corrected.
 
-**Verification status.** Failed 15/16 under production defaults. `ConstantTrend` passes; the remaining cells miss their 1% relative tolerances, which were calibrated for the former 10,000/5,000-iteration overrides, by 1-4%, and the `LinearTrend` slope (-0.001 versus 0.5) and `PowerTrend` (3.4 versus 100) cells miss outright. No tolerance was re-pinned; see the [test inventory](../verification/test-inventory.md#default-mcmc-settings-in-verification-recovery-tests---21-august-2026).
+**Verification status.** Passed. Under the unchanged 1% rule 2/16 passed (Constant, Linear): twelve cells missed an intercept or scale by 1-4% (one to three posterior standard deviations at 1,000 observations), Exponential failed to estimate (overflow) and Logistic pinned its rate at the bound (alpha 190). Under the interval-coverage rule 9/16 passed while Quadratic, Cubic, Logistic, StepFunction, SigmaQuadratic, MuQuadraticSigmaLinear, and MuLinearSigmaExponential missed on an intercept or level parameter because the single seed-12345 noise realization (first 100 residuals averaging +3.2) shifts every intercept by about two posterior standard deviations: the MLE gives alpha 103.13 on the quadratic fixture, the default MCMC agrees (mean 103.18, sd 1.41, R-hat 1.000, ESS 9,600), an independent OLS gives z = 2.23, and seeds 1-5 give |z| < 0.7, so generation is unbiased (residual mean 0.24 +/- 0.47) and the check is a one-shot coin shared across cells. Under the gross-error gate all 16 cells pass the gross-error gate (posterior mode within four posterior standard deviations of the truth, R-hat < 1.1, ESS > 100) under the production defaults; every method ran once through the guarded runner per rule (see the [test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026)). The former 15/16 failures were the intercepts of constant-mean samples fitted with trend models; no slope was ever testable.
 
-**Impact.** The nonstationary trend recovery claims have no current passing evidence under the production defaults; the two outright misses need diagnosis before any tolerance decision.
+**Impact.** The nonstationary trend recovery claims now rest on fixtures that carry the declared trends.
 
-**Follow-up.** Worked after Phase 6: diagnose the linear/power misses, then decide between re-pinned tolerances under the defaults, coverage-style acceptance, or an accepted documented limitation. Any tolerance change requires explicit approval.
+**Follow-up.** None.
 
 <a id="tr-085"></a>
 ## TR-085 - Pearson Type III Covariance Diagonal Mismatch
 
-**Review disposition.** Open; pre-existing, needs diagnosis of the analytical oracle versus the implementation.
+**Review disposition.** Confirmed defect in the GMM covariance conditioning; the Numerics oracle is correct. Decision 22 August 2026 (Haden Smith): remove the eigenvalue cap from both post-estimate uses.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed in `GeneralizedMethodOfMoments` (`ComputeCovariance` and `UpdateWeightingMatrixAtEstimate`). The moment covariance was passed through Numerics `MatrixRegularization.Regularize`, which caps eigenvalues at fifty times their median; for real-space Pearson Type III the eigenvalues scale like sigma^2, sigma^4, and sigma^6 (226, 6.2e5, 2.7e9 at n = 25), so the cap rewrote S (S00 561 to 906) and every sandwich entry inherited the distortion. Only the symmetric positive-definite floor remains; the estimation loop (`GetS`) never applied the cap, so point estimates are unaffected, and two-parameter families and log-space LP3 fits never triggered it. The `Regularized` covariance status is still reported when the floor binds.
 
-**Verification status.** Failed. `B17CCovarianceTests.PearsonTypeIII_Covariance_N25` and `_N100` report diagonal entries 36.2 versus 22.4 and 3.04 versus 3.92; the failures are identical at the pre-review commit `7a0a797`, and every other covariance cell passes with the off-diagonal absolute floor. See the [test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026).
+**Verification status.** Passed. An independent influence-function derivation reproduces all three oracle diagonals exactly; with the raw S the production sandwich reproduces them (22.428701, 11.297873; skew diagonal 0.2463 versus 0.2436 inside the documented Bessel tolerance). After the fix `B17CCovarianceTests` passes 13/13 (the two Pearson III cells included) and the GMM specification, gradient, influence, recovery, penalty, and example cells pass 34/34; fast regression `GeneralizedMethodOfMomentsCovarianceScaleTests` pins the closed-form mean and scale variances at 1e-3 relative on the spread-eigenvalue fixture.
 
-**Impact.** Either the Pearson III asymptotic covariance oracle or the implementation is wrong for these two cells; the Bulletin 17C Pearson III covariance claim is unverified until resolved.
+**Impact.** Bulletin 17C and GMM covariance intervals for real-space three-parameter families were distorted by a scale-dependent cap; they now equal the exactly identified sandwich.
 
-**Follow-up.** Worked after Phase 6: derive the expected diagonal independently before changing either side.
+**Follow-up.** None.
 
 <a id="tr-086"></a>
 ## TR-086 - Move3-Style Uncertain-Data Bootstrap Fallback Rate
 
-**Review disposition.** Open; pre-existing, needs diagnosis.
+**Review disposition.** Confirmed defect in the bootstrap re-centring of measurement-error distributions. Decision 22 August 2026 (Haden Smith): relative (ratio) shift for positive-support families in log-space fits.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed in `DataFrame.BootstrapDataFrame` / `ShiftDistribution`. Additive families (Normal, StudentT, TruncatedNormal, LnNormal, Uniform, Triangular, Pert, GeneralizedBeta) were always shifted by `simulatedValue - originalMean`; for the LP3 fit the wide MOVE.3 row Triangular(0.5q, q, 1.75q) shifted onto a small simulated flood acquired a negative lower bound, the log10 moment conditions became NaN, BFGS failed, and the Nelder-Mead fallback limped until a fresh realization kept the support positive (cross-tab on 60 frames: 19 negative supports, exactly those 19 NaN objectives; three candidate fallbacks per bad realization reproduce 177/200). The shift is now multiplicative by `simulatedValue / originalMean` when the fitted family is log-space (Log-Pearson Type III, Log-Normal, Ln-Normal) or the error distribution has strictly positive support, preserving the relative error and the positive support; real-space fits with unbounded errors keep the additive shift bitwise.
 
-**Verification status.** Failed. `UncertainDataBootstrapVerificationTests.LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable` reports an optimizer fallback rate of 88.5% against the 1% limit (68.3% at `7a0a797` with the realization denominator); the other uncertain-data bootstrap cells pass. See the [test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026).
+**Verification status.** Passed. `UncertainDataBootstrapVerificationTests` 2/2 (NormalBootstrap_UncertainObservationsRemainStable Passed, LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable Passed) and `B17CBootstrapRefitReliabilityTests` 14/14 after the fix; fast regression `DataFrameBootstrapShiftTests` pins the positive support and preserved relative spread under an LP3 sampling distribution, the bitwise additive shift for unbounded real-space errors, and the relative shift for positive-support errors.
 
-**Impact.** The Move3-style uncertain-data bootstrap does not meet its declared reliability contract.
+**Impact.** The uncertain-data bootstrap no longer generates impossible (negative) flow realizations for log-space fits.
 
-**Follow-up.** Worked after Phase 6: determine whether the fixture specification or the refit path is at fault before any contract or code change.
+**Follow-up.** None.
 
 <a id="tr-087"></a>
 ## TR-087 - Censored-Coverage Bootstrap Cells Fail to Estimate
 
-**Review disposition.** Open; pre-existing, needs diagnosis.
+**Review disposition.** Confirmed fixture defect plus a production robustness defect. Decision 22 August 2026 (Haden Smith): fix the fixture and fall back to the constraint-based initial values in production; coverage cells rerun only on request.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. Fixture: `CreateCensoredDataFrame` added its data with collection notifications suppressed, so plotting positions stayed at their defaults (every complement 1.0); it now calls `CalculatePlottingPositions()`. Production: `Bulletin17CDistribution.SetDefaultParameters` swallowed the ROS failure ("X value must be a valid number" for low outliers, "Y values must be strictly increasing" for thresholds) and left zero parameters, so `RunAsync` threw an index error; the censored-data initial estimate is now isolated in `GetInitialValuesForCensoredData`, which keeps the constraint-based initial values and records a validation warning when the ROS estimate throws or is non-finite, `SetInitialParameters` shares it, an outright initialization failure keeps the parameter shells and records a validation error, and `Validate()` reports both.
 
-**Verification status.** Failed. `B17CCensoredCoverageTests.LP3_LowOutliers_N50_Bootstrap` and `LP3_HistoricalThreshold_N50_Bootstrap` report 996/1000 and 1000/1000 coverage replicates that fail to estimate within seconds; identical at `7a0a797`. See the [test inventory](../verification/test-inventory.md#focused-reruns-after-the-corrections---21-august-2026).
+**Verification status.** Passed (fast). Four fast regressions (`Bulletin17CInitialParameterFallbackTests`) pin the three finite in-bounds parameters and the warning for pre-flagged low outliers and for thresholds without plotting positions, the censored initial estimate without a warning once plotting positions exist, and the cleared warning after `SetDefaultParameters`. With plotting positions the censored frames run (LinkedMVN 0.2 s, bootstrap 9.1 s per replicate, 0 fallbacks, 0 failures); the coverage cells themselves (about 2.5 hours each for the bootstrap designs) were not rerun, by decision.
 
-**Impact.** Bootstrap coverage for censored Log-Pearson Type III samples is unverified for these two designs.
+**Impact.** Programmatic and API callers that construct a Bulletin 17C model on a censored frame without plotting positions get a usable model and a warning instead of an unusable zero-parameter model.
 
-**Follow-up.** Worked after Phase 6: diagnose the censored bootstrap estimation failure.
+**Follow-up.** The `B17CCensoredCoverageTests` cells remain exact-method reruns on request.
 
 <a id="tr-088"></a>
 ## TR-088 - Bulletin 17C Coverage Assertions Re-enabled but Not Rerun
 
-**Review disposition.** Open; rerun pending.
+**Review disposition.** Closed by decision (22 August 2026, Haden Smith): the coverage cells are not rerun in the closeout.
 
-**Implementation status.** Assertions re-enabled on 21 August 2026 (completion at least 90%, mean coverage in [0.82, 0.97], per-ordinate coverage at least 0.70; binomial 95% band at B = 1,000 stated for reference).
+**Implementation status.** Assertions re-enabled on 21 August 2026 (completion at least 90%, mean coverage in [0.82, 0.97], per-ordinate coverage at least 0.70; binomial 95% band at B = 1,000 stated for reference). The TR-085 cap removal changes the GMM covariance of real-space three-parameter cells, so the Pearson III coverage cells should be run after it when they are requested.
 
-**Verification status.** Pending. The `B17CCoverageTests` cells were not rerun in the 21 August round; see the [test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026).
+**Verification status.** Not rerun. `B17CCoverageTests` has eighteen cells (seventeen multivariate-normal cells of seconds to minutes each and one bias-corrected-bootstrap cell of several hours); they remain exact-method reruns on request.
 
-**Impact.** The re-enabled coverage assertions have no recorded outcome.
+**Impact.** The re-enabled coverage assertions have no recorded outcome; the claim stays unverified until a requested run.
 
 **Follow-up.** Exact-method reruns on request; record outcomes.
 
 <a id="tr-089"></a>
 ## TR-089 - ARIMA and ARIMAX MAP Recovery Cells Fail
 
-**Review disposition.** Open; pre-existing, needs classification (redundant with the Phase 5 independent recovery matrix, or a diagnosable failure).
+**Review disposition.** Decisions 22 August 2026 (Haden Smith): make all legacy time-series recovery tests use 1,000 observations and rerun at the existing tolerances; then replace the arbitrary 25-40% posterior-mode bands of the 22 legacy Bayesian cells with central 90% credible-interval coverage and R-hat < 1.1 (the 7 MLE cells and the R-parity cells keep their tolerances).
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed in the Verification project only. The 29 legacy recovery fixtures in `ARAnalysisTests`, `MAAnalysisTests`, `ARIMAAnalysisTests`, `ARIMAXAnalysisTests`, and `ARIMAXMLERecoveryTests` that generated 500 observations now generate 1,000 (the Phase 5 independent matrix convention); models and seeds are unchanged. The 22 Bayesian cells call the new `LegacyRecoveryAssertions.AssertCredibleIntervalRecovery` (every generating value inside the production central 90% credible interval, R-hat < 1.1); the 7 MLE cells keep their tolerances.
 
-**Verification status.** Failed. `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22`, `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX22`, and `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111` fail identically on the pre-review control worktree; they predate the Phase 5 independent recovery matrix, which passes, and are not recorded in the test inventory. See [progress](../PROGRESS.md).
+**Verification status.** Passed. With 1,000 observations and the former bands 27/29 passed; `ARIMA22` and `ARIMAX22` (the same data and model) still missed the 40% band on phi1 (MAP 0.287 versus 0.5) because ARMA(2,2) with phi = (0.5, -0.3), theta = (0.3, -0.2) is weakly identified at 1,000 observations: the generator and the model share one convention (data-likelihood gap MLE minus truth 0.8-3.8 across the ARMA fixtures), the MLE standard errors are 0.16 (phi1), 0.17 (theta1), 0.13 (theta2), the estimate sits 1.4-1.5 standard errors from the truth, and at 5,000 observations the MLE is within 0.05 of every coefficient. Under the credible-interval rule all 29 cells pass with 1,000 observations (the 22 Bayesian cells under the central 90% credible-interval and R-hat rule, the 7 MLE cells under their unchanged tolerances); the three cells that failed at 500 observations are `Test_EstimateParameters_ARIMA22` Passed, `Test_EstimateParameters_ARIMAX22` Passed, `Test_EstimateParameters_ARIMA111` Passed. Every method ran once through the guarded runner per rule under the production defaults.
 
-**Impact.** Three legacy time-series MAP recovery cells contradict their own acceptance rules while the independent Phase 5 oracles pass for the same model classes.
+**Impact.** The legacy recovery cells are consistent with the 1,000-observation recovery convention; the Phase 5 independent matrix remains the oracle-backed evidence for ARIMA(1,1,1) and ARIMAX.
 
-**Follow-up.** Worked after Phase 6: either retire the cells as superseded by the Phase 5 matrix or diagnose them; no tolerance change without approval.
+**Follow-up.** None.
 
 <a id="tr-090"></a>
 ## TR-090 - Intermittent Fast-Suite Reprocess Race
 
-**Review disposition.** Open; reported, not fixed.
+**Review disposition.** Confirmed test race; the production path behaves as designed. Decision 22 August 2026 (Haden Smith): test-only deterministic wait.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed in `UnivariateAnalysisPositivePathReprocessTests`. After `CredibleIntervalWidth = 0.95` the model fires a fire-and-forget `CreateFrequencyAnalysisResultsAsync`; the test awaited its own second call concurrently, and both start by nulling `AnalysisResults`, so the background copy could null the property between the awaited call and the assertion. The test now waits (15 s timeout) until `AnalysisResults` is non-null and is a new instance relative to the 90% results.
 
-**Verification status.** Observed once. `UnivariateAnalysisPositivePathReprocessTests.CredibleIntervalWidthChange_EstimatedAnalysis_PreservesResultsReference` failed intermittently in the fast suite (fire-and-forget reprocess versus awaited reprocess) and passed on rerun; see [progress](../PROGRESS.md).
+**Verification status.** Passed in the fast core project (3,337 tests).
 
-**Impact.** A flaky fast test can mask or mimic a regression in the reprocess path.
+**Impact.** The fast gate no longer carries a timing-dependent assertion.
 
-**Follow-up.** Worked after Phase 6: make the test deterministic by awaiting the reprocess completion signal, or fix the race if the production path is at fault.
+**Follow-up.** None.
 
 <a id="tr-091"></a>
 ## TR-091 - Spatial Clone Dropped the Copula and Latent-Error Parameter Blocks

@@ -37,7 +37,7 @@ public class ARIMAXAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of ARIMAX(1,1) parameters against known true values from synthetic data.
-    /// Uses a 500-observation time series and validates that the posterior mode recovers the generating
+    /// Uses a 1,000-observation time series and validates that the central 90% credible interval recovers the generating
     /// parameters within 25% tolerance, accounting for Monte Carlo variability.
     /// </summary>
     /// <remarks>
@@ -49,7 +49,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMAX11()
     {
-        var data = SyntheticTimeSeriesData.GetARIMAX11Data(10, 0.6, 0.3, 5, 500);
+        var data = SyntheticTimeSeriesData.GetARIMAX11Data(10, 0.6, 0.3, 5, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -64,10 +64,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -79,7 +77,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMAX21()
     {
-        var data = SyntheticTimeSeriesData.GetARIMAX21Data(10, 0.5, -0.3, 0.3, 5, 500);
+        var data = SyntheticTimeSeriesData.GetARIMAX21Data(10, 0.5, -0.3, 0.3, 5, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -94,10 +92,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -109,7 +105,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMAX12()
     {
-        var data = SyntheticTimeSeriesData.GetARIMAX12Data(10, 0.5, 0.3, 0.5, 5, 500);
+        var data = SyntheticTimeSeriesData.GetARIMAX12Data(10, 0.5, 0.3, 0.5, 5, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -124,10 +120,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -140,7 +134,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMAX22()
     {
-        var data = SyntheticTimeSeriesData.GetARIMAX22Data(10, 0.5, -0.3, 0.3, -0.2, 5, 500);
+        var data = SyntheticTimeSeriesData.GetARIMAX22Data(10, 0.5, -0.3, 0.3, -0.2, 5, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -155,10 +149,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.40), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -170,7 +162,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMAX_FitsAR1()
     {
-        var data = SyntheticTimeSeriesData.GetARIMAX_AR1Data(10, 0.6, 5, 500);
+        var data = SyntheticTimeSeriesData.GetARIMAX_AR1Data(10, 0.6, 5, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -185,10 +177,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -200,7 +190,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMAX_FitsMA1()
     {
-        var data = SyntheticTimeSeriesData.GetARIMAX_MA1Data(10, 0.5, 5, 500);
+        var data = SyntheticTimeSeriesData.GetARIMAX_MA1Data(10, 0.5, 5, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -215,10 +205,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -230,7 +218,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMA110()
     {
-        var data = SyntheticTimeSeriesData.GetARIMA110Data(0.5, 0.6, 2.0, 500);
+        var data = SyntheticTimeSeriesData.GetARIMA110Data(0.5, 0.6, 2.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -246,10 +234,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "ARIMA(1,1,0) Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.30), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -261,7 +247,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMA011()
     {
-        var data = SyntheticTimeSeriesData.GetARIMA011Data(0.3, 0.5, 2.0, 500);
+        var data = SyntheticTimeSeriesData.GetARIMA011Data(0.3, 0.5, 2.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -277,10 +263,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "ARIMA(0,1,1) Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.30), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -292,7 +276,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_ARIMA111()
     {
-        var data = SyntheticTimeSeriesData.GetARIMA111Data(0.3, 0.6, 0.4, 2.0, 500);
+        var data = SyntheticTimeSeriesData.GetARIMA111Data(0.3, 0.6, 0.4, 2.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -308,10 +292,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "ARIMA(1,1,1) Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.40), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -323,7 +305,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_LinearTrend_Only()
     {
-        var data = SyntheticTimeSeriesData.GetLinearTrendData(100.0, 0.5, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetLinearTrendData(100.0, 0.5, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -339,10 +321,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Linear trend Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -354,7 +334,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_AR1_LinearTrend()
     {
-        var data = SyntheticTimeSeriesData.GetAR1LinearTrendData(100.0, 0.5, 0.6, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetAR1LinearTrendData(100.0, 0.5, 0.6, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -370,10 +350,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "AR(1) with linear trend Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -385,7 +363,7 @@ public class ARIMAXAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_AR1_Seasonal()
     {
-        var data = SyntheticTimeSeriesData.GetAR1SeasonalData(100.0, 20.0, 10.0, 0.5, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetAR1SeasonalData(100.0, 20.0, 10.0, 0.5, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -401,10 +379,8 @@ public class ARIMAXAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "AR(1) with seasonality Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     #endregion

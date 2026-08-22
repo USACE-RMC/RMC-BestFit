@@ -95,7 +95,7 @@ The links and their tuning constants are implementation-specific variance-stabil
 
 For each replicate $b$ the code:
 
-1. simulates a data frame from the fitted parent while retaining the source observation-information structure through `DataFrame.BootstrapDataFrame`;
+1. simulates a data frame from the fitted parent while retaining the source observation-information structure through `DataFrame.BootstrapDataFrame`; an uncertain observation's measurement-error distribution is re-centred on its simulated flood by the ratio of the simulated flood to the original mean when the fitted family is log-space (Log-Pearson Type III, Log-Normal, Ln-Normal) or the error distribution has strictly positive support, which preserves a relative (MOVE.3-style) error and keeps the support positive, and by an additive shift otherwise, which preserves the absolute error spread;
 2. clones the Bulletin 17C model with that data frame so bounds, links, and penalty configuration are preserved, then randomizes enabled penalty targets once;
 3. constructs bounded-midpoint, ROS, distribution-default, and parent-fit starting candidates;
 4. ranks finite distinct candidates by the identity-weight penalized GMM objective;

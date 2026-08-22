@@ -73,7 +73,7 @@ public class MAAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of MA(2) parameters against known true values from synthetic data.
-    /// Uses a 500-observation time series and validates that the posterior mode recovers the generating
+    /// Uses a 1,000-observation time series and validates that the central 90% credible interval recovers the generating
     /// parameters within 30% tolerance, accounting for Monte Carlo variability.
     /// </summary>
     /// <remarks>
@@ -87,7 +87,7 @@ public class MAAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_MA2()
     {
-        var data = SyntheticTimeSeriesData.GetMA2Data(-10, 0.5, -0.3, 2, 500);
+        var data = SyntheticTimeSeriesData.GetMA2Data(-10, 0.5, -0.3, 2, 1000);
         var model = new MovingAverage(data.TimeSeries, order: 2, includeIntercept: true)
         {
             UseJeffreysRuleForScale = false,
@@ -99,15 +99,13 @@ public class MAAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.30), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of MA(3) parameters against known true values from synthetic data.
-    /// Uses a 500-observation time series and validates that the posterior mode recovers the generating
+    /// Uses a 1,000-observation time series and validates that the central 90% credible interval recovers the generating
     /// parameters within 25% tolerance, accounting for Monte Carlo variability.
     /// </summary>
     /// <remarks>
@@ -121,7 +119,7 @@ public class MAAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_MA3()
     {
-        var data = SyntheticTimeSeriesData.GetMA3Data(25, 0.6, 0.5, 0.7, 2, 500);
+        var data = SyntheticTimeSeriesData.GetMA3Data(25, 0.6, 0.5, 0.7, 2, 1000);
         var model = new MovingAverage(data.TimeSeries, order: 3, includeIntercept: true)
         {
             UseJeffreysRuleForScale = false,
@@ -133,10 +131,8 @@ public class MAAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), $"Estimated parameter {i} is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     #endregion

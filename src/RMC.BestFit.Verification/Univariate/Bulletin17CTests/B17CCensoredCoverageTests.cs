@@ -637,6 +637,11 @@ public class B17CCensoredCoverageTests
         if (df.ThresholdSeries.Count > 0)
             df.ProcessThresholdSeries();
 
+        // The suppressed collection notifications above bypass the automatic plotting-position
+        // recalculation, and the Bulletin 17C initial-parameter step needs finite plotting
+        // positions for censored frames (TR-087).
+        df.CalculatePlottingPositions();
+
         return df;
     }
 

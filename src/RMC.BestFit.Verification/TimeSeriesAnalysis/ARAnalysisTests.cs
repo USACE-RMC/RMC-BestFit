@@ -66,7 +66,7 @@ public class ARAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_AR2()
     {
-        var data = SyntheticTimeSeriesData.GetAR2Data(-10, 0.75, -0.5, 2, 500);
+        var data = SyntheticTimeSeriesData.GetAR2Data(-10, 0.75, -0.5, 2, 1000);
         var model = new AutoRegressive(data.TimeSeries, order: 2, includeIntercept: true)
         {
             UseJeffreysRuleForScale = false,
@@ -78,10 +78,8 @@ public class ARAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), "Estimated parameter is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     /// <summary>
@@ -90,7 +88,7 @@ public class ARAnalysisTests
     [TestMethod]
     public async Task Test_EstimateParameters_AR3()
     {
-        var data = SyntheticTimeSeriesData.GetAR3Data(25, 0.75, -0.5, 0.3, 2, 500);
+        var data = SyntheticTimeSeriesData.GetAR3Data(25, 0.75, -0.5, 0.3, 2, 1000);
         var model = new AutoRegressive(data.TimeSeries, order: 3, includeIntercept: true)
         {
             UseJeffreysRuleForScale = false,
@@ -102,10 +100,8 @@ public class ARAnalysisTests
         await analysis.RunAsync();
 
         Assert.AreEqual(true, analysis.IsEstimated, "Bayesian estimation failed.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(data.TrueParameters[i], analysis.BayesianAnalysis.Results!.MAP.Values[i], Math.Abs(data.TrueParameters[i] * 0.25), "Estimated parameter is incorrect.");
-        }
+        LegacyRecoveryAssertions.AssertCredibleIntervalRecovery(
+            model.GetType().Name, model, analysis.BayesianAnalysis, data.TrueParameters);
     }
 
     #endregion

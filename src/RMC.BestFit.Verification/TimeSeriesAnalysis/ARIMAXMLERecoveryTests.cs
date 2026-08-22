@@ -349,7 +349,7 @@ public class ARIMAXMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_LinearTrend_Only()
     {
-        var data = SyntheticTimeSeriesData.GetLinearTrendData(100.0, 0.5, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetLinearTrendData(100.0, 0.5, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -378,7 +378,7 @@ public class ARIMAXMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_QuadraticTrend_Only()
     {
-        var data = SyntheticTimeSeriesData.GetQuadraticTrendData(100.0, 0.5, 0.001, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetQuadraticTrendData(100.0, 0.5, 0.001, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -407,7 +407,7 @@ public class ARIMAXMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_CubicTrend_Only()
     {
-        var data = SyntheticTimeSeriesData.GetCubicTrendData(100.0, 0.3, 0.001, 0.000001, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetCubicTrendData(100.0, 0.3, 0.001, 0.000001, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -440,7 +440,7 @@ public class ARIMAXMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_AR1_LinearTrend()
     {
-        var data = SyntheticTimeSeriesData.GetAR1LinearTrendData(100.0, 0.5, 0.6, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetAR1LinearTrendData(100.0, 0.5, 0.6, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -469,7 +469,7 @@ public class ARIMAXMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_AR1_QuadraticTrend()
     {
-        var data = SyntheticTimeSeriesData.GetAR1QuadraticTrendData(100.0, 0.5, 0.001, 0.5, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetAR1QuadraticTrendData(100.0, 0.5, 0.001, 0.5, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -498,7 +498,7 @@ public class ARIMAXMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_AR1_CubicTrend()
     {
-        var data = SyntheticTimeSeriesData.GetAR1CubicTrendData(100.0, 0.3, 0.001, 0.000001, 0.4, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetAR1CubicTrendData(100.0, 0.3, 0.001, 0.000001, 0.4, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,
@@ -527,7 +527,7 @@ public class ARIMAXMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_MA1_LinearTrend()
     {
-        var data = SyntheticTimeSeriesData.GetMA1LinearTrendData(100.0, 0.5, 0.5, 5.0, 500);
+        var data = SyntheticTimeSeriesData.GetMA1LinearTrendData(100.0, 0.5, 0.5, 5.0, 1000);
         var model = new ARIMAX(data.TimeSeries)
         {
             IncludeIntercept = true,

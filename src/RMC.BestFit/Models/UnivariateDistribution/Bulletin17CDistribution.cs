@@ -294,6 +294,18 @@ namespace RMC.BestFit.Models
         private LinkController _linkController = new LinkController();
 
         /// <summary>
+        /// Warning recorded when the censored-data (ROS) initial-moment estimate was unavailable and the
+        /// default initial values fell back to the exact-observation constraints (TR-087).
+        /// </summary>
+        private string? _initialParameterWarning;
+
+        /// <summary>
+        /// Error recorded when the default parameter construction failed entirely and only parameter
+        /// name shells could be built (TR-087).
+        /// </summary>
+        private string? _initialParameterError;
+
+        /// <summary>
         /// Gets or sets the link controller for parameter transformations.
         /// </summary>
         /// <remarks>
@@ -598,6 +610,62 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Returns the initial parameter values for censored or threshold data from the nonparametric
+        /// (ROS) moments, or the supplied constraint-based initial values when that estimate is
+        /// unavailable or non-finite.
+        /// </summary>
+        /// <param name="constraintInitials">The initial values from the distribution's parameter constraints.</param>
+        /// <returns>The initial values to use.</returns>
+        /// <remarks>
+        /// The ROS estimate needs finite plotting positions; when it throws (for example because the
+        /// data frame was populated with collection notifications suppressed and plotting positions
+        /// were never computed) or returns non-finite moments, the constraint-based initial values are
+        /// kept and a validation warning is recorded instead of leaving the model without parameters
+        /// (TR-087). A <c>null</c> ROS result (too few observations) keeps the constraint-based values
+        /// silently, as before.
+        /// </remarks>
+        private double[] GetInitialValuesForCensoredData(double[] constraintInitials)
+        {
+            _initialParameterWarning = null;
+            if (DataFrame.NumberOfLowOutliers == 0 && DataFrame.ThresholdSeries.Count == 0)
+                return constraintInitials;
+
+            // Use ROS (Regression on Order Statistics) to impute low-outlier values, which avoids
+            // the severe moment distortion caused by log-transforming near-zero or zero flows.
+            bool useLog10 = DistributionType == UnivariateDistributionType.LogNormal ||
+                            DistributionType == UnivariateDistributionType.LogPearsonTypeIII;
+            try
+            {
+                var npMoments = DataFrame.GetNonparametricMomentsROS(useLog10);
+                if (npMoments == null)
+                    return constraintInitials;
+
+                bool allFinite = true;
+                for (int i = 0; i < Distribution.NumberOfParameters; i++)
+                {
+                    if (!Tools.IsFinite(npMoments[i]))
+                    {
+                        allFinite = false;
+                        break;
+                    }
+                }
+                if (allFinite)
+                    return ((IMomentEstimation)Distribution).ParametersFromMoments(npMoments);
+
+                _initialParameterWarning = "Warning: The censored-data (ROS) initial-moment estimate was non-finite; " +
+                    "the initial parameter values are based on the exact observations only.";
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Bulletin17CDistribution: censored-data initial moments unavailable: {ex.Message}");
+                _initialParameterWarning = "Warning: The censored-data (ROS) initial-moment estimate failed (" + ex.Message +
+                    "); the initial parameter values are based on the exact observations only. Compute plotting " +
+                    "positions before constructing the model to enable the censored-data initial estimate.";
+            }
+            return constraintInitials;
+        }
+
+        /// <summary>
         /// Sets initial parameter values based on the input data and distribution constraints.
         /// </summary>
         public void SetInitialParameters()
@@ -614,32 +682,9 @@ namespace RMC.BestFit.Models
                 var lowers = tuple.Item2;
                 var uppers = tuple.Item3;
 
-                // Override initials with nonparametric moment estimates when censored/uncertain data exists.
-                // Use ROS (Regression on Order Statistics) to impute low-outlier values, which avoids
-                // the severe moment distortion caused by log-transforming near-zero or zero flows.
-                if (DataFrame.NumberOfLowOutliers > 0 || DataFrame.ThresholdSeries.Count > 0)
-                {
-                    bool useLog10 = DistributionType == UnivariateDistributionType.LogNormal ||
-                                    DistributionType == UnivariateDistributionType.LogPearsonTypeIII;
-                    var npMoments = DataFrame.GetNonparametricMomentsROS(useLog10);
-
-                    if (npMoments != null)
-                    {
-                        bool allFinite = true;
-                        for (int i = 0; i < Distribution.NumberOfParameters; i++)
-                        {
-                            if (!Tools.IsFinite(npMoments[i]))
-                            {
-                                allFinite = false;
-                                break;
-                            }
-                        }
-                        if (allFinite)
-                        {
-                            initials = ((IMomentEstimation)Distribution).ParametersFromMoments(npMoments);
-                        }
-                    }
-                }
+                // Override initials with nonparametric (ROS) moment estimates when censored or threshold
+                // data exist; the constraint-based values are kept when that estimate is unavailable.
+                initials = GetInitialValuesForCensoredData(initials);
 
                 // Clamp initials to bounds
                 for (int i = 0; i < Distribution.NumberOfParameters; i++)
@@ -935,6 +980,8 @@ namespace RMC.BestFit.Models
 
             _parameters = new List<ModelParameter>();
             _parameterPenalties = new List<ParameterPenalty>();
+            _initialParameterWarning = null;
+            _initialParameterError = null;
 
             if (Distribution is null || DataFrame is null || !DataFrame.Validate().IsValid || DataFrame.ExactSeries is null || DataFrame.ExactSeries.Count == 0)
             {
@@ -975,33 +1022,9 @@ namespace RMC.BestFit.Models
                 var lowers = tuple.Item2;
                 var uppers = tuple.Item3;
 
-                // Override initials with nonparametric moment estimates when censored/uncertain data exists.
-                // Use ROS (Regression on Order Statistics) to impute low-outlier values, which avoids
-                // the severe moment distortion caused by log-transforming near-zero or zero flows.
-                if (DataFrame.NumberOfLowOutliers > 0 || DataFrame.ThresholdSeries.Count > 0)
-                {
-                    bool useLog10 = DistributionType == UnivariateDistributionType.LogNormal ||
-                                    DistributionType == UnivariateDistributionType.LogPearsonTypeIII;
-
-                    var npMoments = DataFrame.GetNonparametricMomentsROS(useLog10);
-
-                    if (npMoments != null)
-                    {
-                        bool allFinite = true;
-                        for (int i = 0; i < Distribution.NumberOfParameters; i++)
-                        {
-                            if (!Tools.IsFinite(npMoments[i]))
-                            {
-                                allFinite = false;
-                                break;
-                            }
-                        }
-                        if (allFinite)
-                        {
-                            initials = ((IMomentEstimation)Distribution).ParametersFromMoments(npMoments);
-                        }
-                    }
-                }
+                // Override initials with nonparametric (ROS) moment estimates when censored or threshold
+                // data exist; the constraint-based values are kept when that estimate is unavailable.
+                initials = GetInitialValuesForCensoredData(initials);
 
                 // Clamp initials to bounds
                 for (int i = 0; i < Distribution.NumberOfParameters; i++)
@@ -1037,11 +1060,26 @@ namespace RMC.BestFit.Models
             }
             catch (Exception ex)
             {
-                // If parameter initialization fails, leave parameters empty.
+                // Parameter initialization failed outright: keep parameter name shells so the model
+                // never reports zero parameters, and surface the failure through Validate() (TR-087).
                 System.Diagnostics.Debug.WriteLine(
                     $"Bulletin17CDistribution.SetDefaultParameters failed: {ex.Message}");
+                _initialParameterError = "Error: The default parameter values could not be computed from the input data (" +
+                    ex.Message + ").";
                 _parameters = new List<ModelParameter>();
                 _parameterPenalties = new List<ParameterPenalty>();
+                if (Distribution is not null)
+                {
+                    var parametersToString = Distribution.ParametersToString;
+                    for (int i = 0; i < Distribution.NumberOfParameters; i++)
+                    {
+                        _parameters.Add(new ModelParameter() { Name = parametersToString[i, 0] });
+                        _parameters.Last().PropertyChanged += Parameter_PropertyChanged;
+                        var penalty = new ParameterPenalty() { Name = _parameters.Last().DisplayName };
+                        penalty.PropertyChanged += ParameterPenalty_PropertyChanged;
+                        _parameterPenalties.Add(penalty);
+                    }
+                }
             }
 
             RaisePropertyChange(nameof(SetDefaultParameters));
@@ -2740,6 +2778,7 @@ namespace RMC.BestFit.Models
         ///     <item><description>Parameters: each <see cref="ModelParameter"/> is validated (bounds, value, prior).</description></item>
         ///     <item><description>Parameter penalties: each enabled <see cref="ParameterPenalty"/> is validated.</description></item>
         ///     <item><description>Quantile penalties: each enabled <see cref="QuantilePenalty"/> is validated, and cross-validated for AEP ordering.</description></item>
+        ///     <item><description>Initial parameters: an error when the default parameter values could not be computed, a warning when the censored-data (ROS) initial estimate fell back to the exact-observation constraints (TR-087).</description></item>
         ///     </list>
         /// </para>
         /// </remarks>
@@ -2778,6 +2817,17 @@ namespace RMC.BestFit.Models
                 messages.Add($"Error: Distribution type '{Distribution.Type}' is not supported by the Bulletin 17C model. " +
                     "Supported types: Exponential, Gamma, Log-Normal, Log-Pearson Type III, Normal, Pearson Type III.");
             }
+
+            // Initial-parameter diagnostics recorded by SetDefaultParameters (TR-087): an error means
+            // the default values could not be computed at all; a warning means the censored-data
+            // initial estimate fell back to the exact-observation constraints.
+            if (!string.IsNullOrEmpty(_initialParameterError))
+            {
+                isValid = false;
+                messages.Add(_initialParameterError);
+            }
+            if (!string.IsNullOrEmpty(_initialParameterWarning))
+                messages.Add(_initialParameterWarning);
 
             // Validate retained ME quantile bounds directly. This guard uses 1E-8 to avoid
             // InverseCDF(0/1) infinities and matches the B17C ME moment integration window.

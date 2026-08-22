@@ -21,8 +21,8 @@ public class UncertainDataBootstrapVerificationTests
     /// <summary>
     /// Verifies a Normal B17C fit remains finite and centered when narrow and wide uncertain observations are present.
     /// </summary>
-    [TestMethod]
     [TestCategory("LongRunning")]
+    [TestMethod]
     public async Task NormalBootstrap_UncertainObservationsRemainStable()
     {
         var dataFrame = new RMC.BestFit.Models.DataFrame
@@ -38,8 +38,8 @@ public class UncertainDataBootstrapVerificationTests
     /// <summary>
     /// Verifies an LP3 B17C fit remains finite and centered for MOVE.3-style narrow and wide flow estimates.
     /// </summary>
-    [TestMethod]
     [TestCategory("LongRunning")]
+    [TestMethod]
     public async Task LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable()
     {
         var dataFrame = new RMC.BestFit.Models.DataFrame

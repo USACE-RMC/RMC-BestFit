@@ -1,3 +1,4 @@
+<!-- verification-status: finalized -->
 # Verification Test Inventory
 
 ## Ownership rule
@@ -756,3 +757,101 @@ App 438, API 498), and every method below ran once through `scripts/run-verifica
 | `SpatialGEVDistanceOracleTests.GeodesicMetric_MatchesHaversineOracle` | Verification | R haversine oracle: distances `1e-9` km, correlation and kriging `1e-10` | Passed (3.9 s) |
 | `SpatialGEVDistanceOracleTests.CartesianMetric_IsPlanarEuclidean` | Verification | Default metric equals the planar Euclidean distances | Passed (3.5 s) |
 | Regression set (9 cells) | Verification | Batches 6.3-6.5 contracts unchanged | Passed 9/9 |
+
+## Phase 7 closeout - 22 August 2026
+
+TR-084 through TR-090 were diagnosed with a scratch console against the built assemblies, disposed one
+decision at a time (Haden Smith, 22 August 2026), implemented, and rerun one method per guarded invocation.
+Production changes: GMM covariance conditioning without the eigenvalue cap (TR-085), relative re-centring of
+bootstrap measurement-error distributions for log-space fits and positive supports (TR-086), and the Bulletin 17C
+initial-parameter fallback with validation messages (TR-087). Fixture and test changes: trend-carrying
+nonstationary generators with in-bounds rates and the gross-error acceptance gate (TR-084), plotting positions in
+the censored coverage frames (TR-087), 1,000-observation legacy time-series fixtures with credible-interval
+acceptance for the Bayesian cells (TR-089), and a deterministic reprocess wait (TR-090). The per-cell table keeps
+the last run of each cell; the earlier runs under the superseded rules are summarized in the register. Fast gates after the changes:
+Core 3,337, UI 579, App 438, API 498, 0 failures; strict Debug XML builds 0 warnings/errors; the restored
+`scripts/validate-code-xml-docs.ps1` gate passes. Every Verification method below ran through
+`scripts/run-verification-test.ps1` (wall-clock per guarded invocation).
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `GeneralizedMethodOfMomentsCovarianceScaleTests` (2) | Fast core | Exactly identified sandwich equals the closed-form mean and scale variances on the spread-eigenvalue Pearson III fixture (TR-085) | Passed |
+| `DataFrameBootstrapShiftTests` (3) | Fast core | Positive support and preserved relative spread under an LP3 sampling distribution; bitwise additive shift for unbounded real-space errors; relative shift for positive-support errors (TR-086) | Passed |
+| `Bulletin17CInitialParameterFallbackTests` (4) | Fast core | Constraint-based initial values plus validation warning without plotting positions; censored initial estimate without warning once plotting positions exist (TR-087) | Passed |
+| `UnivariateAnalysisPositivePathReprocessTests.CredibleIntervalWidthChange_EstimatedAnalysis_PreservesResultsReference` | Fast core | Waits for the published reprocess instead of racing a second direct call (TR-090) | Passed |
+| `B17CCovarianceTests` (13 cells) | Verification | GMM sandwich versus the Numerics asymptotic covariance oracle at 15%/5% with the off-diagonal floor (TR-085) | Passed 13/13 |
+| GMM regression set: `GmmSpecificationVerificationTests` (4), `GmmObjectiveGradientVerificationTests` (2), `GmmInfluenceDiagnosticsVerificationTests` (2), `GeneralizedMethodOfMomentsRecoveryTests` (4), `B17CPenalityTests` (12), `B17CExampleTests` (10) | Verification | Unchanged contracts after the cap removal (TR-085) | Passed 34/34 |
+| `UncertainDataBootstrapVerificationTests` (2 cells) | Verification | Finite delivery, failure rate < 1%, optimizer fallback rate < 1%, centred means (TR-086) | Passed 2/2 |
+| `B17CBootstrapRefitReliabilityTests` (14 cells) | Verification | Ordinary/pivotal refits: zero retries, substitutions, and exceptions (TR-086 regression) | Passed 14/14 |
+| `NonstationaryValidationTests` (16 cells) | Verification | Gross-error gate on trend-carrying fixtures under the production defaults: posterior mode within four posterior SD of the truth, R-hat < 1.1, ESS > 100 (TR-084; under the earlier 1% rule 2/16 and under 90% interval coverage 9/16 passed, see the register) | Passed 16/16 |
+| Legacy time-series recovery cells (29) | Verification | 1,000 observations; the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat < 1.1, the 7 MLE cells keep their tolerances (TR-089; 27/29 under the former bands) | Passed 29/29 |
+| `B17CCensoredCoverageTests`, `B17CCoverageTests` | Verification | Coverage cells | Not rerun by decision (TR-087, TR-088) |
+
+Per-cell outcomes (wall-clock per guarded invocation):
+
+| Method | Outcome | Time |
+|---|---|---|
+| `NonstationaryValidationTests.Nonstationary_ConstantTrend_RecoversTrueParameters` | Passed | 25 s |
+| `NonstationaryValidationTests.Nonstationary_LinearTrend_RecoversTrueParameters` | Passed | 33 s |
+| `NonstationaryValidationTests.Nonstationary_QuadraticTrend_RecoversTrueParameters` | Passed | 47 s |
+| `NonstationaryValidationTests.Nonstationary_CubicTrend_RecoversTrueParameters` | Passed | 67 s |
+| `NonstationaryValidationTests.Nonstationary_ExponentialTrend_RecoversTrueParameters` | Passed | 39 s |
+| `NonstationaryValidationTests.Nonstationary_LogisticTrend_RecoversTrueParameters` | Passed | 41 s |
+| `NonstationaryValidationTests.Nonstationary_PowerTrend_RecoversTrueParameters` | Passed | 41 s |
+| `NonstationaryValidationTests.Nonstationary_SinusoidalTrend_RecoversTrueParameters` | Passed | 73 s |
+| `NonstationaryValidationTests.Nonstationary_StepFunctionTrend_RecoversTrueParameters` | Passed | 48 s |
+| `NonstationaryValidationTests.Nonstationary_SigmaLinearTrend_RecoversTrueParameters` | Passed | 34 s |
+| `NonstationaryValidationTests.Nonstationary_SigmaQuadraticTrend_RecoversTrueParameters` | Passed | 57 s |
+| `NonstationaryValidationTests.Nonstationary_SigmaExponentialTrend_RecoversTrueParameters` | Passed | 45 s |
+| `NonstationaryValidationTests.Nonstationary_BothLinearTrend_RecoversTrueParameters` | Passed | 52 s |
+| `NonstationaryValidationTests.Nonstationary_MuQuadraticSigmaLinear_RecoversTrueParameters` | Passed | 62 s |
+| `NonstationaryValidationTests.Nonstationary_MuLinearSigmaExponential_RecoversTrueParameters` | Passed | 53 s |
+| `NonstationaryValidationTests.Nonstationary_BothStepFunction_RecoversTrueParameters` | Passed | 71 s |
+| `ARAnalysisTests.Test_EstimateParameters_AR2` | Passed | 36 s |
+| `ARAnalysisTests.Test_EstimateParameters_AR3` | Passed | 49 s |
+| `MAAnalysisTests.Test_EstimateParameters_MA2` | Passed | 33 s |
+| `MAAnalysisTests.Test_EstimateParameters_MA3` | Passed | 39 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA11` | Passed | 40 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA21` | Passed | 50 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA12` | Passed | 45 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA22` | Passed | 58 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA_FitsAR1` | Passed | 27 s |
+| `ARIMAAnalysisTests.Test_EstimateParameters_ARIMA_FitsMA1` | Passed | 29 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX11` | Passed | 29 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX21` | Passed | 42 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX12` | Passed | 37 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX22` | Passed | 55 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX_FitsAR1` | Passed | 22 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMAX_FitsMA1` | Passed | 20 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA110` | Passed | 21 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA011` | Passed | 20 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_ARIMA111` | Passed | 27 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_LinearTrend_Only` | Passed | 20 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_AR1_LinearTrend` | Passed | 25 s |
+| `ARIMAXAnalysisTests.Test_EstimateParameters_AR1_Seasonal` | Passed | 39 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_LinearTrend_Only` | Passed | 3.3 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_QuadraticTrend_Only` | Passed | 3.3 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_CubicTrend_Only` | Passed | 3.2 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_AR1_LinearTrend` | Passed | 3.2 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_AR1_QuadraticTrend` | Passed | 3.4 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_AR1_CubicTrend` | Passed | 3.4 s |
+| `ARIMAXMLERecoveryTests.Test_EstimateParameters_MA1_LinearTrend` | Passed | 3.3 s |
+| `UncertainDataBootstrapVerificationTests.NormalBootstrap_UncertainObservationsRemainStable` | Passed | 3.6 s |
+| `UncertainDataBootstrapVerificationTests.LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable` | Passed | 3.8 s |
+| `B17CCovarianceTests.Exponential_Covariance_N25` | Passed | 3.4 s |
+| `B17CCovarianceTests.Exponential_Covariance_N100` | Passed | 3.2 s |
+| `B17CCovarianceTests.Gamma_Covariance_N25` | Passed | 3.2 s |
+| `B17CCovarianceTests.Gamma_Covariance_N100` | Passed | 3.1 s |
+| `B17CCovarianceTests.Normal_Covariance_N25` | Passed | 3.3 s |
+| `B17CCovarianceTests.Normal_Covariance_N100` | Passed | 3.3 s |
+| `B17CCovarianceTests.PearsonTypeIII_Covariance_N25` | Passed | 3.1 s |
+| `B17CCovarianceTests.PearsonTypeIII_Covariance_N100` | Passed | 3.2 s |
+| `B17CCovarianceTests.LogNormal_Covariance_N25` | Passed | 3.4 s |
+| `B17CCovarianceTests.LogNormal_Covariance_N100` | Passed | 3.4 s |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_N25` | Passed | 3.3 s |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_N100` | Passed | 3.2 s |
+| `B17CCovarianceTests.LogPearsonTypeIII_Covariance_Example1` | Passed | 3.2 s |
+
+The three `HirschStedingerPlottingPositionVerificationTests` PeakFQ cells listed under `B17CExampleTests` in the
+first run script resolved to zero tests because they belong to the second class of that file; they are
+plotting-position parity cells unrelated to TR-085 and were not rerun.

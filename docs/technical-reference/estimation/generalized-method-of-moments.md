@@ -95,7 +95,7 @@ The API implements:
 
 The default is iterative GMM with BFGS, at most 100 GMM passes, 2,000 function evaluations per pass, and absolute/relative tolerances of $10^{-8}$. If BFGS fails and `UseFallbackOptimizer` is true, the estimator tries Nelder-Mead and uses it for later passes. Other `OptimizationMethod` values are also supported. `IsEstimated` means a finite best parameter vector was retained after a nonfailure optimizer termination; it can be true even when `ConvergedWithinTolerance` is false. Always report `Status`, `GMMIterations`, `ConvergenceHistory`, `TotalFunctionEvaluations`, and the strict-convergence flag.
 
-`GetS()` regularizes the moment covariance to be symmetric positive definite. Numerical Jacobians and penalty Hessians use boundary-aware finite differences when analytic delegates are absent.
+`GetS()` regularizes the moment covariance to be symmetric positive definite, and the same floor is the only conditioning applied to the moment covariance inside the sandwich covariance (GMM.2) and to the post-estimate $\mathbf S$ and $\mathbf W$ used by Hansen's $J$ and the influence diagnostics; no eigenvalue cap is applied, so a real-space three-parameter family whose moment-covariance eigenvalues scale like $\sigma^2$, $\sigma^4$, and $\sigma^6$ keeps its exact moment covariance and the exactly identified sandwich reproduces the closed-form variances (the Pearson Type III covariance cells of `B17CCovarianceTests`). Numerical Jacobians and penalty Hessians use boundary-aware finite differences when analytic delegates are absent.
 
 ## Asymptotic Covariance
 

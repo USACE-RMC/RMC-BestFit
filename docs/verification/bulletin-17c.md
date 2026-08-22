@@ -1,3 +1,4 @@
+<!-- verification-status: finalized -->
 # Bulletin 17C Verification
 
 ## Status
@@ -64,6 +65,16 @@ The seven passed methods verify current specialized LP3 GMM parameter parity wit
 - agreement with an objective/generalized-posterior target.
 
 Those are separate claims and require separately authorized, exactly filtered verification methods or independent artifacts. The legacy version 1 Comparison with EMA report evaluates an earlier Bayesian workflow and is not the oracle for the current specialized GMM path.
+
+## Phase 7 dispositions - 22 August 2026
+
+Three Bulletin 17C items from the 21 August 2026 reruns were diagnosed and disposed in the closeout:
+
+- **TR-085 (GMM covariance, fixed).** The sandwich covariance passed the moment covariance through an eigenvalue cap (fifty times the median eigenvalue) that rewrites the moment covariance of real-space three-parameter families (eigenvalues scaling like sigma^2, sigma^4, sigma^6). Only the positive-definite floor remains. `B17CCovarianceTests` 13/13 after the fix (the Pearson Type III cells included); the Numerics asymptotic oracle was confirmed by an independent influence-function derivation.
+- **TR-086 (bootstrap re-centring, fixed).** `DataFrame.BootstrapDataFrame` re-centres additive measurement-error distributions by the simulated/original ratio for log-space fits and strictly positive error supports, so MOVE.3-style relative errors keep their relative spread and never cross zero. `UncertainDataBootstrapVerificationTests` 2/2 and the reliability grid 14/14 after the fix.
+- **TR-087 (censored coverage frames and initial parameters, fixed).** The coverage fixture now computes plotting positions; `Bulletin17CDistribution` keeps the constraint-based initial values and records a validation warning when the censored-data (ROS) initial estimate is unavailable instead of reporting zero parameters. The censored coverage cells and the `B17CCoverageTests` cells (TR-088) were not rerun, by decision; they remain exact-method reruns on request.
+
+Details: [Phase 7 closeout](test-inventory.md#phase-7-closeout---22-august-2026) and the register sections [TR-085](../technical-reference/review-findings.md#tr-085), [TR-086](../technical-reference/review-findings.md#tr-086), [TR-087](../technical-reference/review-findings.md#tr-087), and [TR-088](../technical-reference/review-findings.md#tr-088).
 
 ## Traceability
 
