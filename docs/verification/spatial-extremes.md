@@ -1,4 +1,4 @@
-<!-- verification-status: phase-6-complete -->
+<!-- verification-status: finalized -->
 
 # Spatial Extremes Verification
 

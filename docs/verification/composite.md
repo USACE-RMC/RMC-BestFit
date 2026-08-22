@@ -1,4 +1,4 @@
-<!-- verification-status: draft -->
+<!-- verification-status: finalized -->
 
 # Composite Analysis Verification
 

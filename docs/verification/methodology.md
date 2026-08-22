@@ -1,3 +1,4 @@
+<!-- verification-status: finalized -->
 # Verification Methodology
 
 ## Purpose

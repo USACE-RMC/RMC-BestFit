@@ -1,3 +1,4 @@
+<!-- verification-status: finalized -->
 # Point-Process Verification
 
 This report records the focused Phase 4 evidence for point-process exposure, Poisson-GPA generation, and seasonal changepoint defaults. It does not claim that the full `RMC.BestFit.Verification` project was run.

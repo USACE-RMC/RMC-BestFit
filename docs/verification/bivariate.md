@@ -1,4 +1,4 @@
-<!-- verification-status: draft -->
+<!-- verification-status: finalized -->
 
 # Bivariate and Coincident-Frequency Verification
 

@@ -1,4 +1,4 @@
-<!-- verification-status: phase-6-rating-curve-complete -->
+<!-- verification-status: finalized -->
 
 # Rating-Curve Verification
 

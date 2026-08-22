@@ -1,3 +1,4 @@
+<!-- verification-status: finalized -->
 # Verification References
 
 - Asquith, W. H. `lmomco`: L-moments and hydrologic distributions, CRAN package 2.5.7.

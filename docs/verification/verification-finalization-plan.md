@@ -1,4 +1,4 @@
-<!-- verification-plan-status: phase-6-complete -->
+<!-- verification-plan-status: finalized -->
 
 # RMC.BestFit Verification Finalization Plan
 
@@ -18,11 +18,11 @@ A new session should read these files in this order:
 6. `verification/data/MANIFEST.md`
 7. The relevant technical-reference chapter for the current finding
 
-Implementation checkpoint (22 August 2026): Phases 1 through 6 are closed for their approved scopes; the post-closure corrections TR-066 through TR-083 (21 August 2026), the register completion TR-084 through TR-090, and the Phase 6 batches 6.0 through 6.6 (rating curve TR-043 through TR-045, bivariate TR-047, spatial TR-048 through TR-062 with TR-091 through TR-093 found and fixed on the way) are recorded in the batch ledger; Phase 7 (closeout) remains. Phase 5 production and verification code completed through `b0dff5c`; TR-035 through TR-041 and TR-046 are closed, and TR-042 retains its closed data-likelihood-at-MAP contract with refreshed evidence. The recovery supplement pins Numerics `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`; Numerics clone correction `e57af20` preserves the configured logarithm base. The canonical Phase 4 correction anchors remain `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
+Implementation checkpoint (22 August 2026): Phases 1 through 6 are closed for their approved scopes; the post-closure corrections TR-066 through TR-083 (21 August 2026), the register completion TR-084 through TR-090, and the Phase 6 batches 6.0 through 6.6 (rating curve TR-043 through TR-045, bivariate TR-047, spatial TR-048 through TR-062 with TR-091 through TR-093 found and fixed on the way) are recorded in the batch ledger; Phase 7 (closeout) completed on 22 August 2026 (TR-084 through TR-090 disposed, status reconciled, plan finalized; see the Phase 7 ledger). Phase 5 production and verification code completed through `b0dff5c`; TR-035 through TR-041 and TR-046 are closed, and TR-042 retains its closed data-likelihood-at-MAP contract with refreshed evidence. The recovery supplement pins Numerics `c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`; Numerics clone correction `e57af20` preserves the configured logarithm base. The canonical Phase 4 correction anchors remain `3e69a93` for mixtures and `cafe6cf` for competing-risk simulation. Phase 2 diagnostic anchors remain `76f7dd0`, `5c693a8`, and `b3f14b0`.
 
 ## Summary
 
-The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1 through 5 are closed for their approved scopes, and Phase 6 (rating curve, bivariate, and spatial models) is in progress. The 30-method competing-risk/composite recovery supplement records 24 passes and six explicitly deferred Bayesian research findings. Phase 5 closes the eight time-series findings with API-compatible production corrections, deterministic regressions, independent numerical oracles, and an eight-cell MLE/Bayesian recovery matrix. No sampler, seed policy, prior, production optimizer default, likelihood definition, or convergence default changed.
+The verification program is building a traceable numerical validation record for RMC.BestFit. Phase 0 infrastructure is operational, and the method-level test-ownership audit completed on 4 August 2026. Phases 1 through 6 are closed for their approved scopes, and Phase 7 (closeout) completed on 22 August 2026; this plan is finalized. The 30-method competing-risk/composite recovery supplement records 24 passes and six explicitly deferred Bayesian research findings. Phase 5 closes the eight time-series findings with API-compatible production corrections, deterministic regressions, independent numerical oracles, and an eight-cell MLE/Bayesian recovery matrix. No sampler, seed policy, prior, production optimizer default, likelihood definition, or convergence default changed.
 
 Reconciled checkpoint (3 August 2026): Core 3,134/3,134, UI 571/571, App 428/428, and Numerics 2,072/2,072 on each of net481/net8/net9/net10 pass with zero failures. Strict XML documentation and Verification compilation gates pass. Both exact TR-014 methods pass separately through the guarded runner. All 16 Phase 1/2 oracle hashes match `verification/data/MANIFEST.md`.
 
@@ -76,16 +76,18 @@ Shared `TestData.cs` and `Datasets/` remain owned by `RMC.BestFit.Verification`.
 - The guarded focused verification runner exists.
 - External validation folder structure and manifests exist.
 - Public API baseline tests exist.
-- The review-finding register contains summary rows and detailed sections for TR-001 through TR-093; TR-066 through TR-083 record the 21 August 2026 post-closure corrections, TR-084 through TR-090 hold the open decision items worked after Phase 6, and TR-091 through TR-093 record the spatial defects found and fixed during Batches 6.3 and 6.5.
+- The review-finding register contains summary rows and detailed sections for TR-001 through TR-093; TR-066 through TR-083 record the 21 August 2026 post-closure corrections, TR-084 through TR-090 record the items disposed in Phase 7 on 22 August 2026, and TR-091 through TR-093 record the spatial defects found and fixed during Batches 6.3 and 6.5.
 - Phase 1 distribution fitting is complete for the currently scoped claims.
 - Phase 2 model estimation and diagnostics are closed for the approved scope.
 - Phase 3 data handling and Bulletin 17C are closed for the approved scope.
 - Phase 4 closes TR-004 through TR-008 and TR-012 through TR-015.
 - Phase 5 closes TR-035 through TR-041 and TR-046; TR-042 remains closed with refreshed evidence.
+- Phase 6 closes TR-043 through TR-045, consolidates the TR-047 evidence, closes TR-048 through TR-062, and fixes TR-091 through TR-093 found on the way.
+- Phase 7 disposes TR-084 through TR-090 (22 August 2026), reconciles every status marker, and finalizes this plan.
 
 ### Current Phase Checkpoint
 
-Phases 1 through 5 are formally closed for their approved scopes. The Phase 4 recovery supplement has run all 20 competing-risk and ten Composite methods individually through the guarded runner; all ten Composite methods pass, and the six remaining Bayesian competing-risk findings have an approved deferred-research disposition. Phase 5's named numerical methods and eight integrated recovery cells pass individually through the guarded runner. The full Verification project was not run. Phase 6 began on 21 August 2026 with Batch 6.0; see the Phase 6 batch ledger.
+Phases 1 through 5 are formally closed for their approved scopes. The Phase 4 recovery supplement has run all 20 competing-risk and ten Composite methods individually through the guarded runner; all ten Composite methods pass, and the six remaining Bayesian competing-risk findings have an approved deferred-research disposition. Phase 5's named numerical methods and eight integrated recovery cells pass individually through the guarded runner. The full Verification project was not run. Phase 6 closed on 22 August 2026 (see the Phase 6 batch ledger) and Phase 7 closeout completed the same day (see the Phase 7 ledger); the plan is finalized.
 
 Completed Phase 2 findings:
 
@@ -393,7 +395,7 @@ Phase exit criteria:
 
 ## Phase 6 - Rating Curve, Bivariate, and Spatial Models
 
-Status: in progress (opened 21 August 2026). The approved Phase 6 scope is the full finding set below. TR-059 is limited to a rename/relabel with an obsolete forwarding alias, TR-060 is an additive distance-metric option whose default preserves the current Cartesian behavior, and TR-056 receives a real replicate refit whose resampling scheme is decided at its fix gate.
+Status: complete (opened 21 August 2026; Batches 6.0 through 6.6 closed 22 August 2026). The approved Phase 6 scope is the full finding set below. TR-059 is limited to a rename/relabel with an obsolete forwarding alias, TR-060 is an additive distance-metric option whose default preserves the current Cartesian behavior, and TR-056 receives a real replicate refit whose resampling scheme is decided at its fix gate.
 
 Findings and required direction:
 
@@ -444,13 +446,29 @@ Phase exit criteria:
 
 ## Phase 7 - Closeout
 
-Status: planned (after Phase 6).
+Status: complete (22 August 2026).
 
 1. Dispose TR-084 through TR-090 through the mandatory workflow; tolerance re-pins and accept/fix choices are Haden Smith's decisions, and coverage cells are rerun only as exact methods on request.
 2. Reconcile status: set this plan's status marker to `finalized`; rewrite Start Here, Completed, the checkpoint paragraph, and the Fresh-Session Prompt to the final state; refresh the README table from a fresh fast-gate run; normalize chapter status markers; recheck every MANIFEST SHA-256; annotate the CLAUDE.md release checklist that the RMC.Numerics 2.1.4 pin is superseded by local fixes pending the separate Numerics release.
 3. Record external handoffs (not gates): the RMC.Numerics package release (57 commits past `v2.1.4` at this checkpoint) and the BestFit re-pin; conversion of `docs/release-notes-pending.md` into release notes; the TR-083 example-binary policy.
 4. Final gates: strict Debug build with `EnforceXmlDocumentation=true`, the four unit-test projects, public API baselines, serialization regressions, guarded focused reruns only; commit per logical unit; no push unless requested.
 5. PDF rendering of the verification report and technical reference only on explicit request.
+
+Phase 7 ledger (22 August 2026; decisions by Haden Smith, one at a time):
+
+| Item | Diagnosis | Decision and change | Evidence |
+|---|---|---|---|
+| TR-084 | Fixture defect: the nonstationary generators drew iid samples from the trend evaluated at index 0 (no trend); two truths outside the default rate bounds; the 1% rule and single-seed interval coverage are not deterministic gates at 1,000 observations | Fix the fixture, move the two truths inside the bounds, adopt the gross-error gate (4 posterior SD, R-hat, ESS), keep seed 12345 | Passed 16/16 under production defaults |
+| TR-085 | Production defect: the GMM covariance conditioning capped moment-covariance eigenvalues at 50x the median, distorting real-space three-parameter covariances; the Numerics oracle is correct (independent influence-function derivation) | Remove the cap from `ComputeCovariance` and `UpdateWeightingMatrixAtEstimate` (positive-definite floor only) | `B17CCovarianceTests` 13/13; GMM regression set 34/34; fast `GeneralizedMethodOfMomentsCovarianceScaleTests` |
+| TR-086 | Production defect: additive re-centring of measurement-error distributions in `DataFrame.BootstrapDataFrame` crossed zero for log-space fits (NaN moment conditions, BFGS fallbacks) | Ratio shift for log-space fits and strictly positive error supports; additive shift retained otherwise | uncertain-data cells 2/2; reliability grid 14/14; fast `DataFrameBootstrapShiftTests` |
+| TR-087 | Fixture defect (no plotting positions in the censored frames) plus production robustness defect (swallowed ROS failure left zero parameters) | Fixture computes plotting positions; `Bulletin17CDistribution` keeps constraint-based initial values with a validation warning (error for an outright failure); coverage cells not rerun | fast `Bulletin17CInitialParameterFallbackTests` (4); censored frames run (LinkedMVN 0.2 s, bootstrap 9.1 s per replicate) |
+| TR-088 | Re-enabled coverage assertions never rerun | Not rerun in the closeout; exact-method reruns on request | - |
+| TR-089 | Three legacy MAP recovery cells failed 40% bands at 500 observations; ARMA(2,2) is weakly identified at 1,000 | All 29 legacy fixtures use 1,000 observations; the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat; the 7 MLE cells keep their tolerances | Passed 29/29 |
+| TR-090 | Fast-test race between the fire-and-forget reprocess and a second direct call | Test waits for the published reprocess (test only) | Fast core 3,337 |
+| Hygiene | `scripts/validate-code-xml-docs.ps1` mandated by CLAUDE.md but absent | Restored as a thin wrapper (strict builds, namespace scan, private-documentation scan) | Passes on the finalized tree |
+| Reconciliation | Status markers, README, checkpoint, Fresh-Session Prompt, MANIFEST | Plan marker `finalized`; every chapter marker `finalized`; README rows refreshed from the final gate; MANIFEST 29/29 hashes rechecked; CLAUDE.md annotated for the superseded Numerics 2.1.4 pin | This document |
+
+External handoffs recorded (not gates): the RMC.Numerics package release (local fixes listed in `docs/release-notes-pending.md`, 57 commits past `v2.1.4` at the Phase 6 checkpoint) and the BestFit re-pin in a release PR; conversion of `docs/release-notes-pending.md` into release notes; the TR-083 example-binary policy (Git LFS versus save-without-results) remains an open repository decision.
 
 ## Completed Phase 2 Batch Record
 
@@ -527,13 +545,13 @@ Characterization is complete and Phase 2 is closed. A future, separately approve
 Use this prompt to continue from a clean session:
 
 ```text
-We are continuing RMC.BestFit verification finalization in Phase 6 (rating curve, bivariate, and spatial models) after closing Phases 1-5 for their approved scopes. BestFit implementation checkpoint: the head of branch documentation-verification-updates; the Phase 6 batch ledger in the finalization plan records which batches are complete. Recovery sources are pinned to Numerics c361f28 and RMC-TotalRisk d4d43e6; the Numerics logarithmic-base clone correction is e57af20, and BestFit builds against the local C:\GIT\Numerics checkout.
+The RMC.BestFit verification finalization plan is finalized (Phases 0 through 7 complete, 22 August 2026); this prompt is for follow-up work on a verified baseline. BestFit implementation checkpoint: the head of branch documentation-verification-updates. Recovery sources are pinned to Numerics c361f28 and RMC-TotalRisk d4d43e6; the Numerics logarithmic-base clone correction is e57af20, and BestFit builds against the local C:\GIT\Numerics checkout.
 
 Read docs/verification/verification-finalization-plan.md first, then docs/technical-reference/review-findings.md, docs/verification/README.md, docs/verification/model-estimation.md, docs/verification/test-inventory.md, and verification/data/MANIFEST.md.
 
 Do not compile PDFs unless I explicitly request PDF QA. Update Markdown source only.
 
-Current checkpoint: Phase 0 infrastructure is operational, Phases 1 through 6 are closed for their approved scopes (Phase 6 batches 6.0 through 6.6 complete on 21-22 August 2026), TR-066 through TR-083 record the 21 August 2026 post-closure corrections, TR-091 through TR-093 the spatial defects found and fixed in Phase 6, and TR-084 through TR-090 hold the open decision items for Phase 7. Phase 7 (closeout) is next: dispose TR-084 through TR-090 one at a time through the mandatory workflow, then reconcile the status markers, README, and this prompt. Every Verification recovery method uses the untouched production `BayesianAnalysis` defaults. The full Verification project was not run.
+Current checkpoint: Phase 0 infrastructure is operational; Phases 1 through 6 are closed for their approved scopes; Phase 7 disposed TR-084 through TR-090 (fixture defects TR-084 and TR-087, production defects TR-085, TR-086, and TR-087, test race TR-090, decisions TR-088 and TR-089) and reconciled every status marker; the register runs through TR-093. Open items are external handoffs only: the RMC.Numerics release and BestFit re-pin, conversion of docs/release-notes-pending.md into release notes, the TR-083 example-binary policy, and the coverage cells that run on request (B17CCoverageTests, B17CCensoredCoverageTests). Every Verification recovery method uses the untouched production BayesianAnalysis defaults. The full Verification project was never run.
 
 Constraints:
 - Never run the full RMC.BestFit.Verification suite.
@@ -548,7 +566,7 @@ Constraints:
 - Preserve unrelated modified/untracked files.
 
 First task:
-Continue Phase 6 at the first ledger batch that is not complete, following the per-finding workflow: construct the oracle test first, classify, present the fix plan, wait for approval, then implement. Preserve the closed Phase 1-5 numerical, API, serialization, and recovery contracts. Never run the full Verification project.
+Any new finding opens a new register row (TR-094 onward) and follows the per-finding workflow: construct the oracle test first, classify, present the fix plan, wait for approval, then implement. Preserve the closed numerical, API, serialization, and recovery contracts. Never run the full Verification project.
 ```
 
 ## Off-Ramps

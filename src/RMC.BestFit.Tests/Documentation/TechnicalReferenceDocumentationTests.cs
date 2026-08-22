@@ -213,6 +213,11 @@ public class TechnicalReferenceDocumentationTests
             "Citation anchor failures:" + Environment.NewLine + string.Join(Environment.NewLine, failures));
     }
 
+    /// <summary>
+    /// Loads every compile-checked documentation snippet (the code between <c>#region doc:id</c> markers) under the Examples folder.
+    /// </summary>
+    /// <param name="repositoryRoot">The repository root.</param>
+    /// <returns>The normalized snippets keyed by identifier.</returns>
     private static IReadOnlyDictionary<string, string> LoadSourceSnippets(string repositoryRoot)
     {
         string sourceRoot = Path.Combine(
@@ -233,6 +238,11 @@ public class TechnicalReferenceDocumentationTests
         return snippets;
     }
 
+    /// <summary>
+    /// Trims the blank edges of a snippet, removes the common indentation, and right-trims every line.
+    /// </summary>
+    /// <param name="value">The raw snippet text.</param>
+    /// <returns>The normalized snippet.</returns>
     private static string NormalizeSnippet(string value)
     {
         string[] lines = value.Replace("\r\n", "\n", StringComparison.Ordinal)
@@ -248,6 +258,10 @@ public class TechnicalReferenceDocumentationTests
             line.Length >= commonIndent ? line[commonIndent..].TrimEnd() : line.TrimEnd()));
     }
 
+    /// <summary>
+    /// Walks up from the test output directory to the directory that contains <c>RMC.BestFit.sln</c>.
+    /// </summary>
+    /// <returns>The repository root path.</returns>
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

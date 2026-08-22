@@ -1,3 +1,4 @@
+<!-- verification-status: finalized -->
 # Distribution Fitting Verification
 
 ## Scope
