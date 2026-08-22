@@ -651,4 +651,52 @@ public class GaussianCopulaTests
     }
 
     #endregion
+
+    #region Distance Metric Tests
+
+    /// <summary>
+    /// Verifies that the geodesic copula builds its correlation from great-circle kilometres (hand haversine),
+    /// that the Cartesian constructor is unchanged, that the clone keeps the metric, and that invalid
+    /// latitude/longitude pairs are rejected.
+    /// </summary>
+    [TestMethod]
+    public void GeodesicMetric_BuildsCorrelationFromGreatCircleKilometres()
+    {
+        var latLon = new double[,] { { 38.90, -77.04 }, { 39.29, -76.61 }, { 40.44, -79.99 } };
+        var copula = new GaussianCopula(latLon, CorrelationFunctionType.Exponential, SpatialDistanceMetric.Geodesic);
+        copula.SetParameterValues(new List<double> { 150.0 });
+
+        double[,] correlation = copula.GetCorrelationMatrix()!;
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                double expected = i == j ? 1.0 : Math.Exp(-Haversine(latLon[i, 0], latLon[i, 1], latLon[j, 0], latLon[j, 1]) / 150.0);
+                Assert.AreEqual(expected, correlation[i, j], 1e-12, $"Geodesic correlation ({i + 1}, {j + 1}).");
+            }
+        }
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, copula.Clone().DistanceMetric, "The clone keeps the metric.");
+        Assert.AreEqual(SpatialDistanceMetric.Cartesian, new GaussianCopula(CreateRiverCoordinates(), CorrelationFunctionType.Exponential).DistanceMetric);
+        Assert.ThrowsException<ArgumentException>(() => new GaussianCopula(new double[,] { { 95.0, 10.0 }, { 0.0, 0.0 } }, CorrelationFunctionType.Exponential, SpatialDistanceMetric.Geodesic), "Latitude beyond 90 degrees.");
+        Assert.ThrowsException<ArgumentException>(() => new GaussianCopula(new double[,] { { 10.0, 190.0 }, { 0.0, 0.0 } }, CorrelationFunctionType.Exponential, SpatialDistanceMetric.Geodesic), "Longitude beyond 180 degrees.");
+    }
+
+    /// <summary>
+    /// Hand haversine distance in kilometres (mean Earth radius 6371.0088 km).
+    /// </summary>
+    /// <param name="lat1">Latitude of the first point.</param>
+    /// <param name="lon1">Longitude of the first point.</param>
+    /// <param name="lat2">Latitude of the second point.</param>
+    /// <param name="lon2">Longitude of the second point.</param>
+    /// <returns>The great-circle distance in kilometres.</returns>
+    private static double Haversine(double lat1, double lon1, double lat2, double lon2)
+    {
+        double rad = Math.PI / 180.0;
+        double dPhi = (lat2 - lat1) * rad;
+        double dLambda = (lon2 - lon1) * rad;
+        double a = Math.Sin(dPhi / 2) * Math.Sin(dPhi / 2) + Math.Cos(lat1 * rad) * Math.Cos(lat2 * rad) * Math.Sin(dLambda / 2) * Math.Sin(dLambda / 2);
+        return 2 * 6371.0088 * Math.Asin(Math.Sqrt(a));
+    }
+
+    #endregion
 }

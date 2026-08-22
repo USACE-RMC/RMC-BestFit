@@ -861,4 +861,35 @@ public class SpatialRegressionErrorsTests
     }
 
     #endregion
+
+    #region Distance Metric Tests
+
+    /// <summary>
+    /// Verifies that the geodesic error model builds its distance matrix in great-circle kilometres, that
+    /// kriging at a site reproduces the site's latent error, that the Cartesian constructor is unchanged,
+    /// and that the clone keeps the metric (TR-060).
+    /// </summary>
+    [TestMethod]
+    public void GeodesicMetric_UsesGreatCircleKilometresForCovarianceAndKriging()
+    {
+        var latLon = new double[,] { { 38.90, -77.04 }, { 39.29, -76.61 }, { 40.44, -79.99 }, { 37.54, -77.44 } };
+        var model = new SpatialRegressionErrors(latLon, CorrelationFunctionType.Exponential, 10, SpatialDistanceMetric.Geodesic);
+
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, model.DistanceMetric);
+        Assert.AreEqual(57.08, model.DistanceMatrix[0, 1], 0.05, "Washington-Baltimore about 57 km.");
+        Assert.AreEqual(0.0, model.DistanceMatrix[2, 2], 0.0);
+        Assert.AreEqual(model.DistanceMatrix[1, 3], model.DistanceMatrix[3, 1], 0.0, "Symmetric.");
+
+        model.SetParameterValues(new List<double> { 0.2, 150.0, 0.05, -0.03, 0.02, -0.04 });
+        var (meanAtSite, varianceAtSite) = model.GetKrigingPrediction(new[] { 39.29, -76.61 });
+        Assert.AreEqual(-0.03, meanAtSite, 1e-9, "Kriging at site 2 reproduces its latent error.");
+        Assert.AreEqual(0.0, varianceAtSite, 1e-9, "Zero conditional variance at a site.");
+
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, model.Clone().DistanceMetric);
+        var cartesian = new SpatialRegressionErrors(latLon, CorrelationFunctionType.Exponential);
+        Assert.AreEqual(SpatialDistanceMetric.Cartesian, cartesian.DistanceMetric);
+        Assert.AreEqual(Numerics.Tools.Distance(latLon[0, 0], latLon[0, 1], latLon[1, 0], latLon[1, 1]), cartesian.DistanceMatrix[0, 1], 0.0, "Planar distance unchanged for the default metric.");
+    }
+
+    #endregion
 }

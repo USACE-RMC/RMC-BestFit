@@ -87,7 +87,13 @@ development.
   `BootstrapReplicates`, and `BootstrapBlockSize` are serialized as optional attributes; a non-finite
   site GEV parameter gives negative-infinite likelihood instead of throwing inside the sampler; default
   latent-error bounds under a log link use the log-space spread (floor 1.0 log unit), so
-  `ConfigureForProperCoverage` models sample under the defaults.
+  `ConfigureForProperCoverage` models sample under the defaults; `SpatialGEV.DistanceMetric`
+  (`SpatialDistanceMetric.Cartesian` default, bitwise the former planar distances; `Geodesic` for
+  latitude/longitude in decimal degrees with great-circle kilometres) with new `GaussianCopula` and
+  `SpatialRegressionErrors` constructor overloads, coordinate validation, and an optional serialized
+  attribute; `ComputeEffectiveSampleSizeWeights` is obsolete in favor of
+  `ComputeCorrelationHeuristicSiteWeights` (same numbers; the weights are a correlation heuristic on
+  the marginal terms, not a composite likelihood).
 
 ## RMC.Numerics (since 2.1.4)
 

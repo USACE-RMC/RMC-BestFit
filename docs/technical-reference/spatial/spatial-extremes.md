@@ -15,7 +15,7 @@ Use the model when:
 - each row represents the same block or event period at every included site;
 - site maxima are adequately described by GEV marginals;
 - spatial variation can be represented by the supplied covariates and residual correlation;
-- coordinates share a projected linear unit; and
+- coordinates share a projected linear unit (Cartesian metric) or are latitude/longitude pairs in decimal degrees (geodesic metric); and
 - the network is small enough for repeated dense covariance factorizations.
 
 The Bayesian model with complete or partially observed rows, site-specific posterior parameter summaries, site-specific posterior quantiles, and the row/year information criteria are implemented; the missing-site copula marginalization, the data/prior decomposition, the row/year criteria, and the Godambe estimating equations were corrected in Phase 6 Batch 6.3 ([TR-048](../review-findings.md#tr-048), [TR-049](../review-findings.md#tr-049), [TR-055](../review-findings.md#tr-055), [TR-057](../review-findings.md#tr-057)), and leave-one-site-out cross-validation was corrected in Batch 6.4 ([TR-050](../review-findings.md#tr-050) through [TR-053](../review-findings.md#tr-053)). Several ancillary paths are not suitable for decision use until their registered production findings are resolved:
@@ -32,13 +32,13 @@ Composite pairwise likelihood is a future enhancement. The current code always u
 | Symbol | Meaning |
 |---|---|
 | \(Y_{ij}\) | maximum in row \(i=1,\ldots,n\) at site \(j=1,\ldots,S\), in the response unit |
-| \(\mathbf s_j=(s_{j1},s_{j2})\) | projected site coordinates in a common linear unit |
+| \(\mathbf s_j=(s_{j1},s_{j2})\) | site coordinates: projected (X, Y) in a common linear unit (Cartesian metric) or (latitude, longitude) in decimal degrees (geodesic metric) |
 | \(\mathbf x_j\) | row of standardized or otherwise scaled site covariates |
 | \(\xi_j,\alpha_j,\kappa_j\) | Numerics GEV location, scale, and shape at site \(j\) |
 | \(\boldsymbol\beta_a\) | regression coefficients for GEV parameter \(a\) |
 | \(\boldsymbol\epsilon_a\) | optional spatial-error vector for parameter \(a\) |
 | \(\sigma_a,r_a,p_a\) | spatial-error standard deviation, range, and optional powered-exponential exponent |
-| \(R(h)\) | spatial correlation at Euclidean separation \(h\) |
+| \(R(h)\) | spatial correlation at separation \(h\) (planar Euclidean or great-circle kilometres by metric) |
 | \(\mathbf R_C\) | Gaussian-copula correlation matrix |
 | \(w_j\) | site weight multiplying the marginal log density |
 | \(p_E\) | exceedance probability; the nonexceedance probability is \(q=1-p_E\) |
@@ -144,7 +144,10 @@ $$
 The implementation has no nugget term. At separation
 
 $$
-h_{jk}=\sqrt{(s_{j1}-s_{k1})^2+(s_{j2}-s_{k2})^2}, \tag{12}
+h_{jk}=\begin{cases}
+\sqrt{(s_{j1}-s_{k1})^2+(s_{j2}-s_{k2})^2}, & \text{Cartesian metric (projected units)},\\[4pt]
+2R_\oplus\arcsin\sqrt{\sin^2\tfrac{\Delta\varphi}{2}+\cos\varphi_j\cos\varphi_k\sin^2\tfrac{\Delta\lambda}{2}}, & \text{geodesic metric (km, } R_\oplus=6371.0088\text{ km)},
+\end{cases} \tag{12}
 $$
 
 the available correlations are
@@ -173,7 +176,7 @@ $$
 
 Both Gaussian-process and copula covariance evaluators use `CachedMultivariateNormal`. Setting a covariance matrix invalidates its Cholesky/log-determinant cache; repeated density calls at unchanged parameters reuse that factorization. Updating a range or exponent requires a new dense \(S\times S\) factorization, with \(O(S^3)\) time and \(O(S^2)\) storage. Highly colocated sites and very long fitted ranges can make the matrix nearly singular because no nugget is estimated.
 
-Coordinates are not geodesic. Although some API remarks mention latitude/longitude, (12) is the pinned Numerics `Tools.Distance` calculation. Use a defensible projected coordinate reference system, pass both columns in the same linear unit, and interpret all range values in that unit. See [TR-060](../review-findings.md#tr-060).
+`SpatialDistanceMetric` selects the separation in (12) for the copula, the latent-error covariances, kriging, and the inverse-distance fallback ([TR-060](../review-findings.md#tr-060)). `Cartesian` (default) is the pinned Numerics `Tools.Distance` planar calculation: use a defensible projected coordinate reference system, pass both columns in the same linear unit, and interpret the range values in that unit. `Geodesic` interprets each row as (latitude, longitude) in decimal degrees (validated to |lat| ≤ 90, |lon| ≤ 180) and returns great-circle kilometres, so the range values are kilometres. The default range prior Uniform(\(\epsilon_{\rm mach}\), 500) is the same number in both metrics and should be reviewed for the network at hand. Components created by `ConfigureForProperCoverage` adopt the model's metric; components assigned directly must be built with the same metric, which `Validate` checks.
 
 ## Gaussian-Copula Observation Dependence
 
@@ -320,7 +323,7 @@ The analysis-level `PredictAtUngaugedLocation` applies (24)–(25) to every reta
 
 ## Site Weights and Pairwise Likelihood
 
-`ComputeEffectiveSampleSizeWeights` calculates preliminary weights
+`ComputeCorrelationHeuristicSiteWeights` (formerly `ComputeEffectiveSampleSizeWeights`, kept as an obsolete forwarding alias; [TR-059](../review-findings.md#tr-059)) calculates preliminary weights
 
 $$
 w_j^\star=\frac{1}{1+(S-1)\bar\rho_j},
@@ -328,7 +331,7 @@ w_j^\star=\frac{1}{1+(S-1)\bar\rho_j},
 \bar\rho_j=\frac{1}{S-1}\sum_{k\ne j}|\hat\rho_{jk}|, \tag{26}
 $$
 
-then rescales them so \(\sum_jw_j=S\). They modify only the marginal part of (20); the full copula contribution remains unweighted. This is relative site weighting, not an effective-sample-size reduction or pairwise composite likelihood. See [TR-059](../review-findings.md#tr-059).
+then rescales them so \(\sum_jw_j=S\). They modify only the marginal part of (20); the copula contribution of each row remains unweighted. This is a relative correlation-based down-weighting heuristic, not an effective-sample-size reduction or a pairwise composite likelihood, and no composite-likelihood (Godambe) uncertainty adjustment follows from it; `ConfigureForProperCoverage(useWeightedLikelihood: true)` applies it and its remarks say so.
 
 No method evaluates
 
@@ -434,7 +437,7 @@ Implementation symbols:
 - `Models/TrendFunctions/GeneralLinearFunction.cs`; and
 - `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs` plus its result DTOs.
 
-The formulas and parameter bounds in this chapter were checked against RMC.Numerics 2.1.4 commit `828664650c9327b309ee8332e707ccca73588e93` and the current BestFit source. Fast unit tests cover correlation values and validation, cached multivariate-normal behavior, Gaussian-copula density behavior including the observed-subset evaluation, spatial-error parameter round trips and prediction helpers, `SpatialGEV` construction/likelihood components and the data/prior identities, the row/year criteria helper, the Godambe status contract, result DTOs, serialization, and analysis lifecycle. Phase 6 Batch 6.3 (21 August 2026) verified the likelihood against the R `mvtnorm` observed-subset and location-error oracle (eight exact cells), the criteria against a guarded MCMC run, and reran the nine spatial recovery cells; see the [spatial verification chapter](../../verification/spatial-extremes.md). Phase 6 Batch 6.4 (22 August 2026) verified leave-one-site-out cross-validation against independently reduced training models fitted through the production path (three guarded cells). Phase 6 Batch 6.5 (22 August 2026) verified the conditional Gaussian-process predictor against the R conditional-GP oracle, the per-draw prediction and regional posterior against recomputation from the retained draws, the dependent simulation by a seeded 20,000-row check, and the three dispatched uncertainty methods by guarded runs.
+The formulas and parameter bounds in this chapter were checked against RMC.Numerics 2.1.4 commit `828664650c9327b309ee8332e707ccca73588e93` and the current BestFit source. Fast unit tests cover correlation values and validation, cached multivariate-normal behavior, Gaussian-copula density behavior including the observed-subset evaluation, spatial-error parameter round trips and prediction helpers, `SpatialGEV` construction/likelihood components and the data/prior identities, the row/year criteria helper, the Godambe status contract, result DTOs, serialization, and analysis lifecycle. Phase 6 Batch 6.3 (21 August 2026) verified the likelihood against the R `mvtnorm` observed-subset and location-error oracle (eight exact cells), the criteria against a guarded MCMC run, and reran the nine spatial recovery cells; see the [spatial verification chapter](../../verification/spatial-extremes.md). Phase 6 Batch 6.4 (22 August 2026) verified leave-one-site-out cross-validation against independently reduced training models fitted through the production path (three guarded cells). Phase 6 Batch 6.5 (22 August 2026) verified the conditional Gaussian-process predictor against the R conditional-GP oracle, the per-draw prediction and regional posterior against recomputation from the retained draws, the dependent simulation by a seeded 20,000-row check, and the three dispatched uncertainty methods by guarded runs. Batch 6.6 verified the geodesic metric against the R haversine oracle and the Cartesian default against the planar distances.
 
 ## References
 

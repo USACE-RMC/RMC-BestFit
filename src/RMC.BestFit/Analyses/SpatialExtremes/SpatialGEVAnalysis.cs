@@ -1154,7 +1154,8 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Predicts GEV parameters and quantiles at an ungauged location using spatial interpolation.
         /// </summary>
-        /// <param name="coordinates">The coordinates [X, Y] or [Lat, Lon] of the ungauged location.</param>
+        /// <param name="coordinates">The coordinates of the ungauged location in the model's distance metric:
+        /// [X, Y] for Cartesian or [latitude, longitude] in decimal degrees for geodesic.</param>
         /// <param name="covariates">The covariate values at the ungauged location, applied to every trend
         /// model that has covariates (the location, scale, and shape trends must then share the covariate
         /// definition); null is accepted only when no trend model has covariates.</param>

@@ -56,6 +56,7 @@
     <None Include="..\..\verification\data\bivariate\copula-estimation-oracle.json" Link="VerificationData\copula-estimation-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\spatial-extremes\spatial-copula-likelihood-oracle.json" Link="VerificationData\spatial-copula-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\spatial-extremes\spatial-conditional-gp-oracle.json" Link="VerificationData\spatial-conditional-gp-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\spatial-extremes\geodesic-distance-oracle.json" Link="VerificationData\geodesic-distance-oracle.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

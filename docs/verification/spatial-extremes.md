@@ -1,4 +1,4 @@
-<!-- verification-status: phase-6-spatial-prediction-uncertainty-complete -->
+<!-- verification-status: phase-6-complete -->
 
 # Spatial Extremes Verification
 
@@ -25,7 +25,7 @@ the findings are TR-048 through TR-062 in the [review register](../technical-ref
 | TR-050 through TR-053 leave-one-site-out cross-validation | Corrected (approved and implemented 22 August 2026) | Reduced training model per fold (`SpatialGEV.CreateReducedModel`), fold analyses with the main settings and seed, held-out covariate rows, explicit fold accounting; three guarded cells and the fast contracts pass; see [Batch 6.4](#batch-64-leave-one-site-out-cross-validation-22-august-2026) |
 | TR-054, TR-056, TR-058, TR-061, TR-062 prediction, bootstrap, regional bounds, simulation, dispatch | Corrected (approved and implemented 22 August 2026) | Conditional Gaussian-process prediction per draw, temporal block bootstrap with MAP refits, per-draw regional posterior, Cholesky-dependent simulation, method dispatch with recorded applied method; R conditional-GP oracle, seven guarded cells, and fast contracts pass; see [Batch 6.5](#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) |
 | TR-092, TR-093 (found by the Batch 6.5 runs) | Corrected (approved and implemented 22 August 2026) | Non-finite site parameters return negative-infinite likelihood; latent-error default bounds follow the link space |
-| TR-059, TR-060 | Planned (Batch 6.6) | - |
+| TR-059, TR-060 site-weight naming and distance metric | Corrected (approved and implemented 22 August 2026) | `ComputeCorrelationHeuristicSiteWeights` with an obsolete alias and corrected remarks; additive `SpatialDistanceMetric` (Cartesian default bitwise, geodesic haversine kilometres) verified against the R haversine oracle; see [Batch 6.6](#batch-66-site-weight-naming-and-distance-metric-22-august-2026) |
 
 Production changes (approved 21 August 2026): `Models/SpatialExtremes/CopulaModels/GaussianCopula.cs`,
 `Models/SpatialExtremes/SpatialGEV.cs`, and `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs`; see
@@ -297,12 +297,52 @@ posterior quantiles of the regional mean quantile; copula simulations are spatia
 fits resampled data and reports its accounting; the selected uncertainty method is applied and recorded;
 default latent-error bounds under the log link are a few log units instead of the raw spread.
 
+## Batch 6.6 site-weight naming and distance metric (22 August 2026)
+
+Confirmation by source audit: `ComputeEffectiveSampleSizeWeights` rescales `w*_j = 1/(1+(S-1)ρ̄_j)` to sum
+S and the likelihood applies the weights to the marginal terms only (TR-059); `GaussianCopula` and
+`SpatialRegressionErrors` built every separation with planar `Tools.Distance` while advertising (Lat, Lon)
+input (TR-060). The R haversine oracle `geodesic-distance-oracle.json` (generator
+`generate_geodesic_distance_oracle.R`; manifest row recorded before the run) defines the great-circle
+distances of a five-site latitude/longitude network, the exponential correlation at 150 km, and the
+simple-kriging moments at five targets.
+
+Haden Smith approved the name `ComputeCorrelationHeuristicSiteWeights` (obsolete forwarding alias kept)
+and the `SpatialDistanceMetric` option with the range prior Uniform(ε, 500) unchanged in both metrics
+(projected units for Cartesian, kilometres for geodesic). Implementation (additive API: the enum,
+`SpatialGEV.DistanceMetric`, the third-argument copula constructor, the fourth-argument error-model
+constructor, `DistanceMetric` properties on both components, the renamed method; optional serialization
+attribute; legacy projects read Cartesian): the Cartesian default is bitwise the former behavior; the
+geodesic metric validates latitude/longitude ranges and uses haversine kilometres for the copula and
+latent-error separations, kriging, and the inverse-distance fallback; `ConfigureForProperCoverage`,
+`Clone`, and the reduced/resampled factories carry the metric and `Validate` rejects mismatched
+components; the remarks of the weights, of `ConfigureForProperCoverage`, and the technical reference state
+the heuristic nature of the weights.
+
+Fast contracts added: `SpatialGEVTests.ComputeCorrelationHeuristicSiteWeights_PinsTheFormulaAndTheObsoleteAlias`
+(plus the renamed update/custom-matrix/mismatch contracts), `DistanceMetric_DefaultsToCartesianAndPropagatesToComponents`,
+`DistanceMetric_RoundTripsThroughSerializationAndFactories`; `GaussianCopulaTests.GeodesicMetric_BuildsCorrelationFromGreatCircleKilometres`;
+`SpatialRegressionErrorsTests.GeodesicMetric_UsesGreatCircleKilometresForCovarianceAndKriging`. Fast gates
+Core 3,328, UI 579, App 438, API 498, 0 failures; strict XML-documentation builds clean.
+
+Guarded acceptance runs (one method per invocation):
+
+| Exact method | Contract | Outcome |
+|---|---|---|
+| `SpatialGEVDistanceOracleTests.GeodesicMetric_MatchesHaversineOracle` | Geodesic distance matrix (`1e-9` km), exponential correlation at 150 km and simple-kriging moments at five targets (`1e-10`) equal the R haversine oracle | Passed (3.9 s) |
+| `SpatialGEVDistanceOracleTests.CartesianMetric_IsPlanarEuclidean` | The default metric reproduces the planar Euclidean distances exactly | Passed (3.5 s) |
+| Regression set (9 cells: kriging, likelihood, simulation, prediction, cross-validation, recovery) | Batches 6.3-6.5 contracts unchanged | Passed 9/9 |
+
+Behavior changes for users: none for existing projects (Cartesian default); latitude/longitude networks
+can select the geodesic metric; `ComputeEffectiveSampleSizeWeights` is obsolete in favor of
+`ComputeCorrelationHeuristicSiteWeights`.
+
 ## Next steps
 
-1. Open Batch 6.6 (TR-059 heuristic-weight rename with an obsolete alias; TR-060 additive distance metric)
-   with its own confirmation contracts, then the Phase 6 exit deliverables.
-2. Keep the eight oracle cells, the criteria cell, the three cross-validation cells, the kriging oracle
-   cell, the prediction/regional/simulation cells, the three dispatch cells, and the nine recovery cells as
-   the regression set for every later spatial change.
+Phase 6 is complete for the spatial family. Phase 7 (closeout) disposes TR-084 through TR-090 and
+reconciles the plan, README, and chapter status markers; the regression set for later spatial changes is the
+eight `mvtnorm` oracle cells, the kriging and geodesic oracle cells, the criteria cell, the three
+cross-validation cells, the prediction/regional/simulation cells, the three dispatch cells, and the nine
+recovery cells.
 
 [Verification index](README.md) | [Technical treatment](../technical-reference/spatial/spatial-extremes.md) | [Scientific findings](../technical-reference/review-findings.md#tr-048)

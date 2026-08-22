@@ -44,6 +44,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
     {
         private double[,] _coordinates;
         private CorrelationFunctionType _correlationFunctionType;
+        private readonly SpatialDistanceMetric _distanceMetric;
         private ICorrelationModel _correlationFunction = null!;
         private CachedMultivariateNormal _mvn;
         private double[,] _distanceMatrix = null!;
@@ -62,19 +63,38 @@ namespace RMC.BestFit.Models.SpatialExtremes
         private readonly Dictionary<string, CachedMultivariateNormal> _observedSubsetCache = new();
 
         /// <summary>
-        /// Creates a new Gaussian copula for spatial dependence modeling.
+        /// Creates a new Gaussian copula for spatial dependence modeling on projected (X, Y) coordinates
+        /// with the Cartesian distance metric.
         /// </summary>
-        /// <param name="coordinates">The coordinates (X, Y) or (Lat, Lon) of the sites.</param>
+        /// <param name="coordinates">The projected coordinates (X, Y) of the sites in a common linear unit.</param>
         /// <param name="correlationType">The spatial correlation function type.</param>
         public GaussianCopula(double[,] coordinates, CorrelationFunctionType correlationType)
+            : this(coordinates, correlationType, SpatialDistanceMetric.Cartesian)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new Gaussian copula for spatial dependence modeling with an explicit distance metric.
+        /// </summary>
+        /// <param name="coordinates">The site coordinates [sites × 2]: projected (X, Y) in a common linear
+        /// unit for <see cref="SpatialDistanceMetric.Cartesian"/>, or (latitude, longitude) in decimal
+        /// degrees for <see cref="SpatialDistanceMetric.Geodesic"/>.</param>
+        /// <param name="correlationType">The spatial correlation function type.</param>
+        /// <param name="distanceMetric">The distance metric used to build the site separations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="coordinates"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when the coordinates are not an n×2 array, are not finite, or
+        /// are outside the latitude/longitude ranges for the geodesic metric.</exception>
+        public GaussianCopula(double[,] coordinates, CorrelationFunctionType correlationType, SpatialDistanceMetric distanceMetric)
         {
             if (coordinates == null)
                 throw new ArgumentNullException(nameof(coordinates));
             if (coordinates.GetLength(1) != 2)
-                throw new ArgumentException("Coordinates must be n×2 array (X,Y) or (Lat,Lon).", nameof(coordinates));
+                throw new ArgumentException("Coordinates must be an n×2 array: (X, Y) for the Cartesian metric or (latitude, longitude) for the geodesic metric.", nameof(coordinates));
+            SpatialDistances.ValidateCoordinates(coordinates, distanceMetric, nameof(coordinates));
 
             _coordinates = coordinates;
             _correlationFunctionType = correlationType;
+            _distanceMetric = distanceMetric;
 
             // Initialize correlation function
             if (_correlationFunctionType == CorrelationFunctionType.Exponential)
@@ -94,6 +114,11 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// Gets the number of sites in the spatial model.
         /// </summary>
         public int Sites => _coordinates.GetLength(0);
+
+        /// <summary>
+        /// Gets the distance metric that builds the site separations.
+        /// </summary>
+        public SpatialDistanceMetric DistanceMetric => _distanceMetric;
 
         /// <summary>
         /// Gets the spatial correlation function.
@@ -126,7 +151,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
                     }
                     else
                     {
-                        _distanceMatrix[i, j] = Tools.Distance(
+                        _distanceMatrix[i, j] = SpatialDistances.Distance(
+                            _distanceMetric,
                             _coordinates[i, 0], _coordinates[i, 1],
                             _coordinates[j, 0], _coordinates[j, 1]);
                     }
@@ -361,7 +387,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// </summary>
         public GaussianCopula Clone()
         {
-            var clone = new GaussianCopula(_coordinates, _correlationFunctionType);
+            var clone = new GaussianCopula(_coordinates, _correlationFunctionType, _distanceMetric);
 
             // Copy correlation function parameters
             for (int i = 0; i < Parameters.Count; i++)

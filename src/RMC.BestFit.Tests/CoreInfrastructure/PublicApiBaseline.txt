@@ -1947,6 +1947,7 @@ TYPE enum RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType
 TYPE class RMC.BestFit.Models.SpatialExtremes.GaussianCopula
   BASE System.Object
   CTOR RMC.BestFit.Models.SpatialExtremes.GaussianCopula(System.Double[,], RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType)
+  CTOR RMC.BestFit.Models.SpatialExtremes.GaussianCopula(System.Double[,], RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType, RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric)
   METHOD RMC.BestFit.Models.SpatialExtremes.GaussianCopula Clone()
   METHOD System.Double LogPDF(System.Collections.Generic.IList<System.Double>)
   METHOD System.Double LogPDF(System.Collections.Generic.IList<System.Double>, System.Collections.Generic.IReadOnlyList<System.Int32>)
@@ -1954,6 +1955,7 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.GaussianCopula
   METHOD System.Double[,] GetCorrelationMatrix()
   METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
   PROPERTY RMC.BestFit.Models.SpatialExtremes.ICorrelationModel CorrelationFunction {get;}
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric DistanceMetric {get;}
   PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
   PROPERTY System.Int32 NumberOfParameters {get;}
   PROPERTY System.Int32 Sites {get;}
@@ -1976,6 +1978,15 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.PoweredExponential
   PROPERTY RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType Type {get;}
   PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
   PROPERTY System.Int32 NumberOfParameters {get;}
+TYPE enum RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric Cartesian = 0
+  FIELD RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric Geodesic = 1
+  FIELD System.Int32 value__
 TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialGEV
   BASE RMC.BestFit.Models.ModelBase
   INTERFACE RMC.BestFit.Models.IModel
@@ -2000,12 +2011,14 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialGEV
   METHOD System.Double[] PointwiseDataLogLikelihood(System.Double[])
   METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
   METHOD System.ValueTuple<System.Double[],System.Double[]> PredictAtUngauged(System.Double[], System.Double[] optional)
+  METHOD System.Void ComputeCorrelationHeuristicSiteWeights(System.Double[,] optional)
   METHOD System.Void ComputeEffectiveSampleSizeWeights(System.Double[,] optional)
   METHOD System.Void ConfigureForProperCoverage(RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType optional, System.Boolean optional, System.Boolean optional, System.Boolean optional)
   METHOD System.Void SetDefaultParameters()
   METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
   METHOD System.Xml.Linq.XElement ToXElement()
   PROPERTY RMC.BestFit.Models.SpatialExtremes.GaussianCopula SpatialDependence {get;set;}
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric DistanceMetric {get;set;}
   PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors LocationErrors {get;set;}
   PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors ScaleErrors {get;set;}
   PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors ShapeErrors {get;set;}
@@ -2026,6 +2039,7 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialGEV
 TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors
   BASE System.Object
   CTOR RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors(System.Double[,], RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType, System.Double optional)
+  CTOR RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors(System.Double[,], RMC.BestFit.Models.SpatialExtremes.CorrelationFunctionType, System.Double, RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric)
   METHOD RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors Clone()
   METHOD System.Double GetError(System.Int32)
   METHOD System.Double LogPDF()
@@ -2035,6 +2049,7 @@ TYPE class RMC.BestFit.Models.SpatialExtremes.SpatialRegressionErrors
   METHOD System.Void SetDefaultParameters(System.Double)
   METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
   PROPERTY RMC.BestFit.Models.SpatialExtremes.ICorrelationModel CorrelationFunction {get;}
+  PROPERTY RMC.BestFit.Models.SpatialExtremes.SpatialDistanceMetric DistanceMetric {get;}
   PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> ErrorParameters {get;}
   PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ModelParameter> Parameters {get;}
   PROPERTY System.Double[,] Coordinates {get;}

@@ -742,3 +742,17 @@ and every method below ran once through `scripts/run-verification-test.ps1`.
 | `SpatialGEVSimulationVerificationTests.GenerateRandomValues_WithCopula_ReproducesTheFittedIntersiteDependence` | Verification | Seeded 20,000 rows: correlations within ±0.02, quantiles within 3% | Passed (3.2 s) |
 | `SpatialGEVUncertaintyMethodVerificationTests.RunAsync_BayesianInflated_WidensThePosteriorIntervals`, `RunAsync_GodambeSandwich_BuildsResultsFromGaussianDraws`, `RunAsync_SpatialBootstrap_FitsResampledReplicatesAndReportsAccounting` | Verification | Dispatch, applied method, sqrt-VIF widening, MAP-centred Gaussian-draw intervals, bootstrap accounting | Passed 3/3 (63.0 s, 49.0 s, 74.4 s) |
 | Regression set (15 cells: oracle, criteria, cross-validation, recovery) | Verification | Batch 6.3/6.4 contracts unchanged | Passed 15/15 |
+
+## Phase 6 Batch 6.6 spatial site-weight naming and distance metric - 22 August 2026
+
+After the approved TR-059 rename (obsolete alias retained) and the TR-060 distance metric the fast core
+project passes 3,328/3,328 with zero build warnings, the other three unit projects pass (UI 579,
+App 438, API 498), and every method below ran once through `scripts/run-verification-test.ps1`.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `SpatialGEVTests.ComputeCorrelationHeuristicSiteWeights_PinsTheFormulaAndTheObsoleteAlias` (+ renamed update/custom-matrix/mismatch contracts) | Fast core | Heuristic formula pinned; obsolete alias forwards bitwise (TR-059) | Passed |
+| `SpatialGEVTests.DistanceMetric_DefaultsToCartesianAndPropagatesToComponents`, `DistanceMetric_RoundTripsThroughSerializationAndFactories`; `GaussianCopulaTests.GeodesicMetric_BuildsCorrelationFromGreatCircleKilometres`; `SpatialRegressionErrorsTests.GeodesicMetric_UsesGreatCircleKilometresForCovarianceAndKriging` | Fast core | Cartesian default, latitude/longitude validation, propagation, serialization, cloning, factories, hand-haversine correlation and kriging (TR-060) | Passed |
+| `SpatialGEVDistanceOracleTests.GeodesicMetric_MatchesHaversineOracle` | Verification | R haversine oracle: distances `1e-9` km, correlation and kriging `1e-10` | Passed (3.9 s) |
+| `SpatialGEVDistanceOracleTests.CartesianMetric_IsPlanarEuclidean` | Verification | Default metric equals the planar Euclidean distances | Passed (3.5 s) |
+| Regression set (9 cells) | Verification | Batches 6.3-6.5 contracts unchanged | Passed 9/9 |

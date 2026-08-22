@@ -1454,13 +1454,13 @@ public class SpatialGEVTests
         Assert.AreEqual(expectedVIF, vif, 1e-6);
     }
 
-    /// <summary>Verifies that compute effective sample size weights updates site weights.</summary>
+    /// <summary>Verifies that the correlation-heuristic site weights update the site weights.</summary>
     [TestMethod]
-    public void ComputeEffectiveSampleSizeWeights_UpdatesSiteWeights()
+    public void ComputeCorrelationHeuristicSiteWeights_UpdatesSiteWeights()
     {
         var model = CreateTestModel();
 
-        model.ComputeEffectiveSampleSizeWeights();
+        model.ComputeCorrelationHeuristicSiteWeights();
 
         Assert.IsNotNull(model.SiteWeights);
         Assert.AreEqual(model.Sites, model.SiteWeights.Length);
@@ -1474,9 +1474,9 @@ public class SpatialGEVTests
         Assert.AreEqual(model.Sites, sumWeights, 1e-6);
     }
 
-    /// <summary>Verifies that compute effective sample size weights with custom matrix works correctly.</summary>
+    /// <summary>Verifies that the correlation-heuristic site weights with a custom matrix work correctly.</summary>
     [TestMethod]
-    public void ComputeEffectiveSampleSizeWeights_WithCustomMatrix_WorksCorrectly()
+    public void ComputeCorrelationHeuristicSiteWeights_WithCustomMatrix_WorksCorrectly()
     {
         var model = CreateTestModel();
         var corrMatrix = new double[model.Sites, model.Sites];
@@ -1489,7 +1489,7 @@ public class SpatialGEVTests
             }
         }
 
-        model.ComputeEffectiveSampleSizeWeights(corrMatrix);
+        model.ComputeCorrelationHeuristicSiteWeights(corrMatrix);
 
         for (int i = 0; i < model.Sites; i++)
         {
@@ -1497,15 +1497,61 @@ public class SpatialGEVTests
         }
     }
 
-    /// <summary>Verifies that compute effective sample size weights throws when mismatched matrix.</summary>
+    /// <summary>Verifies that the correlation-heuristic site weights throw for a mismatched matrix.</summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentException))]
-    public void ComputeEffectiveSampleSizeWeights_MismatchedMatrix_ThrowsException()
+    public void ComputeCorrelationHeuristicSiteWeights_MismatchedMatrix_ThrowsException()
     {
         var model = CreateTestModel();
         var wrongSize = new double[3, 3];
 
-        model.ComputeEffectiveSampleSizeWeights(wrongSize);
+        model.ComputeCorrelationHeuristicSiteWeights(wrongSize);
+    }
+
+    /// <summary>
+    /// Verifies the heuristic formula (w*_j = 1 / (1 + (S-1) ρ̄_j), rescaled to sum S) and that the obsolete
+    /// alias forwards to it bitwise (TR-059).
+    /// </summary>
+    [TestMethod]
+    public void ComputeCorrelationHeuristicSiteWeights_PinsTheFormulaAndTheObsoleteAlias()
+    {
+        var model = CreateTestModel();
+        var corr = new double[5, 5];
+        double[,] offDiagonal =
+        {
+            { 1.0, 0.8, 0.2, 0.1, 0.0 },
+            { 0.8, 1.0, 0.3, 0.2, 0.1 },
+            { 0.2, 0.3, 1.0, 0.6, 0.2 },
+            { 0.1, 0.2, 0.6, 1.0, 0.4 },
+            { 0.0, 0.1, 0.2, 0.4, 1.0 },
+        };
+        Array.Copy(offDiagonal, corr, corr.Length);
+
+        model.ComputeCorrelationHeuristicSiteWeights(corr);
+        double[] weights = (double[])model.SiteWeights.Clone();
+
+        var expected = new double[5];
+        double sum = 0.0;
+        for (int j = 0; j < 5; j++)
+        {
+            double meanAbs = 0.0;
+            for (int k = 0; k < 5; k++)
+            {
+                if (k != j)
+                    meanAbs += Math.Abs(corr[j, k]);
+            }
+            meanAbs /= 4;
+            expected[j] = 1.0 / (1.0 + 4 * meanAbs);
+            sum += expected[j];
+        }
+        for (int j = 0; j < 5; j++)
+            Assert.AreEqual(expected[j] * 5 / sum, weights[j], 1e-12, $"Weight {j + 1}.");
+        Assert.IsTrue(weights[0] < weights[4], "The most correlated site is down-weighted relative to the least correlated one.");
+
+#pragma warning disable CS0618 // the obsolete alias must forward to the renamed method
+        model.ComputeEffectiveSampleSizeWeights(corr);
+#pragma warning restore CS0618
+        CollectionAssert.AreEqual(weights, model.SiteWeights, "The obsolete alias forwards bitwise.");
     }
 
     /// <summary>Verifies that configure for proper coverage enables required components.</summary>
@@ -2660,6 +2706,75 @@ public class SpatialGEVTests
                 Assert.IsTrue(u > 0 && u < 1, "Each value lies inside the site's GEV support.");
             }
         }
+    }
+
+    #endregion
+
+    #region Distance Metric Tests
+
+    /// <summary>
+    /// Verifies the metric default, its validation of latitude/longitude coordinates, its propagation by
+    /// <c>ConfigureForProperCoverage</c>, and the model validation of mismatched components (TR-060).
+    /// </summary>
+    [TestMethod]
+    public void DistanceMetric_DefaultsToCartesianAndPropagatesToComponents()
+    {
+        var model = CreateTestModel();
+        Assert.AreEqual(SpatialDistanceMetric.Cartesian, model.DistanceMetric, "Cartesian by default.");
+
+        var (minimalData, _) = CreateMinimalTestData();
+        var projected = new SpatialGEV(minimalData, new double[,] { { 120.0, 10.0 }, { 0.0, 0.0 } }, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        Assert.ThrowsException<ArgumentException>(() => projected.DistanceMetric = SpatialDistanceMetric.Geodesic, "A projected coordinate of 120 is not a latitude.");
+        Assert.AreEqual(SpatialDistanceMetric.Cartesian, projected.DistanceMetric, "The metric is unchanged after the rejected assignment.");
+
+        var latLon = new double[,] { { 38.90, -77.04 }, { 39.29, -76.61 }, { 40.44, -79.99 }, { 37.54, -77.44 }, { 41.88, -87.63 } };
+        var geodesic = new SpatialGEV(CreateTestAtSiteData(), latLon, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        geodesic.DistanceMetric = SpatialDistanceMetric.Geodesic;
+        geodesic.ConfigureForProperCoverage(includeScaleErrors: true);
+
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, geodesic.SpatialDependence.DistanceMetric);
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, geodesic.LocationErrors.DistanceMetric);
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, geodesic.ScaleErrors.DistanceMetric);
+        Assert.IsTrue(geodesic.Validate().IsValid, string.Join(" ", geodesic.Validate().ValidationMessages));
+        double dcBaltimore = geodesic.LocationErrors.DistanceMatrix[0, 1];
+        Assert.AreEqual(57.08, dcBaltimore, 0.05, "Washington-Baltimore is about 57 km on the sphere.");
+
+        // A component built with the other metric is rejected by validation.
+        geodesic.SpatialDependence = new GaussianCopula(latLon, CorrelationFunctionType.Exponential);
+        var (valid, messages) = geodesic.Validate();
+        Assert.IsFalse(valid);
+        Assert.IsTrue(messages.Any(m => m.Contains("distance metric")), string.Join(" ", messages));
+    }
+
+    /// <summary>
+    /// Verifies that the distance metric survives serialization, cloning, and the reduced and resampled
+    /// model factories, and that legacy XML without the attribute reads Cartesian.
+    /// </summary>
+    [TestMethod]
+    public void DistanceMetric_RoundTripsThroughSerializationAndFactories()
+    {
+        var latLon = new double[,] { { 38.90, -77.04 }, { 39.29, -76.61 }, { 40.44, -79.99 }, { 37.54, -77.44 }, { 41.88, -87.63 } };
+        var geodesic = new SpatialGEV(CreateTestAtSiteData(), latLon, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        geodesic.DistanceMetric = SpatialDistanceMetric.Geodesic;
+        geodesic.ConfigureForProperCoverage();
+
+        var restored = new SpatialGEV(CreateTestAtSiteData(), latLon, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"), geodesic.ToXElement());
+        var clone = (SpatialGEV)geodesic.Clone();
+        SpatialGEV reduced = geodesic.CreateReducedModel(2);
+        SpatialGEV resampled = geodesic.CreateResampledModel(new[] { 0, 1, 2 });
+
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, restored.DistanceMetric, "Serialized metric.");
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, clone.DistanceMetric);
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, clone.SpatialDependence.DistanceMetric);
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, reduced.DistanceMetric);
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, reduced.SpatialDependence.DistanceMetric);
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, reduced.LocationErrors.DistanceMetric);
+        Assert.AreEqual(SpatialDistanceMetric.Geodesic, resampled.LocationErrors.DistanceMetric);
+
+        System.Xml.Linq.XElement legacy = CreateTestModel().ToXElement();
+        legacy.Attribute(nameof(SpatialGEV.DistanceMetric))!.Remove();
+        var legacyModel = new SpatialGEV(CreateTestAtSiteData(), CreateTestCoordinates(), new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"), legacy);
+        Assert.AreEqual(SpatialDistanceMetric.Cartesian, legacyModel.DistanceMetric, "Legacy projects read Cartesian.");
     }
 
     #endregion

@@ -66,7 +66,9 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// Constructs a new spatial GEV model.
         /// </summary>
         /// <param name="atSiteData">The at-site data array [observations × sites].</param>
-        /// <param name="coordinates">The site coordinates [sites × 2] as (X,Y) or (Lat,Lon).</param>
+        /// <param name="coordinates">The site coordinates [sites × 2]: projected (X, Y) in a common linear unit
+        /// under the default <see cref="SpatialDistanceMetric.Cartesian"/> metric, or (latitude, longitude) in
+        /// decimal degrees when <see cref="DistanceMetric"/> is set to <see cref="SpatialDistanceMetric.Geodesic"/>.</param>
         /// <param name="location">The linear trend model for location parameter.</param>
         /// <param name="scale">The linear trend model for scale parameter.</param>
         /// <param name="shape">The linear trend model for shape parameter.</param>
@@ -141,6 +143,9 @@ namespace RMC.BestFit.Models.SpatialExtremes
             if (TryParseBool(nameof(UseShapeErrors), out var ushp)) UseShapeErrors = ushp;
             if (TryParseBool(nameof(UseLogLinkForLocation), out var ull)) UseLogLinkForLocation = ull;
             if (TryParseBool(nameof(UseLogLinkForScale), out var ulls)) UseLogLinkForScale = ulls;
+            var metricAttr = xElement.Attribute(nameof(DistanceMetric));
+            if (metricAttr != null && Enum.TryParse(metricAttr.Value, out SpatialDistanceMetric metric))
+                _distanceMetric = metric;
 
             // Site weights
             var weightsElem = xElement.Element(nameof(SiteWeights));
@@ -301,6 +306,32 @@ namespace RMC.BestFit.Models.SpatialExtremes
         [DisplayName("Log-Link for Scale")]
         [Description("Use log-link for scale: α = exp(β₀ + ...). If false, uses identity link with α > 0 constraint.")]
         public bool UseLogLinkForScale { get; set; }
+
+        /// <summary>
+        /// Gets or sets the distance metric of the network: Cartesian (planar Euclidean on projected
+        /// coordinates, the default) or geodesic (great-circle kilometres on latitude/longitude in decimal
+        /// degrees). Components created by <see cref="ConfigureForProperCoverage"/> adopt it; components
+        /// assigned directly must be built with the same metric (validated by <see cref="Validate"/>).
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the geodesic metric is selected and a coordinate is outside the latitude/longitude ranges.</exception>
+        [Category("Spatial Structure")]
+        [DisplayName("Distance Metric")]
+        [Description("How site coordinates become separations for the correlation functions, latent-error covariances, and kriging. Cartesian (default): planar Euclidean distance between projected X, Y coordinates in their linear unit, so the default correlation-range prior Uniform(ε, 500) is in that unit. Geodesic: great-circle distance in kilometres between latitude, longitude pairs in decimal degrees (|lat| ≤ 90, |lon| ≤ 180), so the range prior is in kilometres. Set it before configuring the copula and latent-error components.")]
+        [Browsable(true)]
+        public SpatialDistanceMetric DistanceMetric
+        {
+            get => _distanceMetric;
+            set
+            {
+                if (_distanceMetric == value)
+                    return;
+                SpatialDistances.ValidateCoordinates(Coordinates, value, nameof(value));
+                _distanceMetric = value;
+                RaisePropertyChange(nameof(DistanceMetric));
+            }
+        }
+
+        private SpatialDistanceMetric _distanceMetric = SpatialDistanceMetric.Cartesian;
 
         /// <summary>
         /// Gets or sets the site-specific weights for weighted likelihood.
@@ -1413,6 +1444,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
                 UseLogLinkForScale = UseLogLinkForScale,
                 SiteWeights = (double[])SiteWeights.Clone()
             };
+            clone._distanceMetric = _distanceMetric;
 
             if (SpatialDependence != null)
                 clone.SpatialDependence = SpatialDependence.Clone();
@@ -1496,6 +1528,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
                 UseLogLinkForScale = UseLogLinkForScale,
                 SiteWeights = weights
             };
+            reduced._distanceMetric = _distanceMetric;
 
             // The constructor's SetDefaultParameters assigned data-derived intercepts to the reduced trend
             // models; restore the source trend parameters (values, bounds, priors) before attaching the
@@ -1555,7 +1588,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// <returns>The reduced copula.</returns>
         private static GaussianCopula ReduceCopula(GaussianCopula copula, double[,] coordinates)
         {
-            var reduced = new GaussianCopula(coordinates, copula.CorrelationFunction.Type);
+            var reduced = new GaussianCopula(coordinates, copula.CorrelationFunction.Type, copula.DistanceMetric);
             CopyParameterSettings(copula.Parameters, reduced.Parameters);
             reduced.SetParameterValues(reduced.Parameters.Select(p => p.Value).ToList());
             return reduced;
@@ -1571,7 +1604,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// <returns>The reduced error model.</returns>
         private static SpatialRegressionErrors ReduceErrors(SpatialRegressionErrors errors, double[,] coordinates, int excludedSite)
         {
-            var reduced = new SpatialRegressionErrors(coordinates, errors.CorrelationFunction.Type, errors.Parameters[0].UpperBound);
+            var reduced = new SpatialRegressionErrors(coordinates, errors.CorrelationFunction.Type, errors.Parameters[0].UpperBound, errors.DistanceMetric);
             int hyperparameters = errors.NumberOfParameters - errors.Sites;
             for (int i = 0; i < hyperparameters; i++)
                 CopyParameterSettings(errors.Parameters[i], reduced.Parameters[i]);
@@ -1654,6 +1687,7 @@ namespace RMC.BestFit.Models.SpatialExtremes
             result.SetAttributeValue(nameof(UseShapeErrors), UseShapeErrors.ToString());
             result.SetAttributeValue(nameof(UseLogLinkForLocation), UseLogLinkForLocation.ToString());
             result.SetAttributeValue(nameof(UseLogLinkForScale), UseLogLinkForScale.ToString());
+            result.SetAttributeValue(nameof(DistanceMetric), DistanceMetric.ToString());
 
             // Site weights
             var weights = new XElement(nameof(SiteWeights));
@@ -1729,38 +1763,56 @@ namespace RMC.BestFit.Models.SpatialExtremes
                 messages.Add("Error: Site weights must be specified for all sites.");
             }
 
+            if (UseCopulaDependence && SpatialDependence != null && SpatialDependence.DistanceMetric != DistanceMetric)
+            {
+                isValid = false;
+                messages.Add($"Error: The copula uses the {SpatialDependence.DistanceMetric} distance metric but the model uses {DistanceMetric}.");
+            }
+
+            if (UseLocationErrors && LocationErrors != null && LocationErrors.DistanceMetric != DistanceMetric)
+            {
+                isValid = false;
+                messages.Add($"Error: The location errors use the {LocationErrors.DistanceMetric} distance metric but the model uses {DistanceMetric}.");
+            }
+
+            if (UseScaleErrors && ScaleErrors != null && ScaleErrors.DistanceMetric != DistanceMetric)
+            {
+                isValid = false;
+                messages.Add($"Error: The scale errors use the {ScaleErrors.DistanceMetric} distance metric but the model uses {DistanceMetric}.");
+            }
+
+            if (UseShapeErrors && ShapeErrors != null && ShapeErrors.DistanceMetric != DistanceMetric)
+            {
+                isValid = false;
+                messages.Add($"Error: The shape errors use the {ShapeErrors.DistanceMetric} distance metric but the model uses {DistanceMetric}.");
+            }
+
             return (isValid, messages);
         }
 
         /// <summary>
-        /// Computes site weights based on intersite correlation to ensure proper CI coverage.
+        /// Computes heuristic site weights from the intersite correlation: sites that are highly correlated
+        /// with the rest of the network are down-weighted in the marginal likelihood terms.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// When using independence likelihood with correlated data, uncertainty is underestimated.
-        /// This method computes weights that downweight sites with high correlation to others,
-        /// effectively adjusting for the reduced effective sample size.
+        /// For each site j the preliminary weight is <c>w*_j = 1 / (1 + (S-1) ρ̄_j)</c>, where ρ̄_j is the
+        /// mean absolute correlation of site j with the other sites, and the weights are then rescaled to sum
+        /// to the number of sites. The weights multiply only the marginal GEV log densities of
+        /// <see cref="DataLogLikelihood"/>; the Gaussian-copula term of each row stays unweighted.
         /// </para>
         /// <para>
-        /// For each site j, the weight is computed as:
-        /// w_j = 1 / (1 + (n-1) * ρ̄_j)
-        /// where ρ̄_j is the average correlation of site j with all other sites.
-        /// </para>
-        /// <para>
-        /// The weights are normalized to sum to the number of sites, so the total
-        /// effective sample size equals the nominal sample size when correlations are zero.
-        /// </para>
-        /// <para>
-        ///     <b>References:</b>
-        ///     - Ribatet, M., Cooley, D., Davison, A.C. (2012). Bayesian inference from composite likelihoods.
-        ///       Statistica Sinica, 22(2), 813-845.
-        ///     - Varin, C., Reid, N., Firth, D. (2011). An overview of composite likelihood methods.
-        ///       Statistica Sinica, 21, 5-42.
+        /// This is a relative down-weighting heuristic. It is neither an effective-sample-size reduction of
+        /// the total likelihood nor a pairwise composite likelihood, and no composite-likelihood (Godambe)
+        /// uncertainty adjustment follows from it; composite pairwise likelihood remains a documented future
+        /// enhancement. The former name <see cref="ComputeEffectiveSampleSizeWeights"/> is kept as an obsolete
+        /// alias.
         /// </para>
         /// </remarks>
         /// <param name="correlationMatrix">Intersite correlation matrix [sites × sites].
         /// If null, computes empirical correlation from data.</param>
-        public void ComputeEffectiveSampleSizeWeights(double[,]? correlationMatrix = null)
+        /// <exception cref="ArgumentException">Thrown when the matrix is not sites × sites.</exception>
+        public void ComputeCorrelationHeuristicSiteWeights(double[,]? correlationMatrix = null)
         {
             if (correlationMatrix == null)
             {
@@ -1790,19 +1842,32 @@ namespace RMC.BestFit.Models.SpatialExtremes
                 }
                 double avgCorr = count > 0 ? sumCorr / count : 0.0;
 
-                // Effective sample size weight: w_j = 1 / (1 + (n-1) * ρ̄_j)
-                // This accounts for reduced information due to correlation
+                // Heuristic weight: w*_j = 1 / (1 + (S-1) ρ̄_j); highly correlated sites are down-weighted
                 weights[j] = 1.0 / (1.0 + (Sites - 1) * avgCorr);
                 sumWeights += weights[j];
             }
 
-            // Normalize weights to sum to Sites (preserve total effective sample size when ρ=0)
+            // Rescale the weights to sum to the number of sites (equal weights when ρ = 0)
             for (int j = 0; j < Sites; j++)
             {
                 weights[j] = weights[j] * Sites / sumWeights;
             }
 
             SiteWeights = weights;
+        }
+
+        /// <summary>
+        /// Obsolete alias of <see cref="ComputeCorrelationHeuristicSiteWeights"/>, kept for compatibility.
+        /// </summary>
+        /// <param name="correlationMatrix">Intersite correlation matrix [sites × sites]; null computes the empirical correlation from the data.</param>
+        /// <remarks>
+        /// The weights are a correlation-based down-weighting heuristic applied to the marginal likelihood
+        /// terms, not an effective-sample-size adjustment; the new name states that.
+        /// </remarks>
+        [Obsolete("Renamed to ComputeCorrelationHeuristicSiteWeights: the weights are a correlation heuristic applied to the marginal terms, not an effective-sample-size adjustment.")]
+        public void ComputeEffectiveSampleSizeWeights(double[,]? correlationMatrix = null)
+        {
+            ComputeCorrelationHeuristicSiteWeights(correlationMatrix);
         }
 
         /// <summary>
@@ -1910,9 +1975,11 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// errors are sampled jointly via MCMC with proper priors. This naturally propagates uncertainty.
         /// </para>
         /// <para>
-        /// Weighted likelihood (optional) is a composite/pseudo-likelihood approach that provides
-        /// additional robustness when the copula may be mis-specified, but is not strictly necessary
-        /// in the pure Bayesian framework.
+        /// The optional site weights (<see cref="ComputeCorrelationHeuristicSiteWeights"/>) are a
+        /// correlation-based down-weighting heuristic applied to the marginal GEV terms only; they are not a
+        /// composite or pairwise likelihood and carry no Godambe adjustment. Composite pairwise likelihood is
+        /// a documented future enhancement. The components are created with the model's
+        /// <see cref="DistanceMetric"/>.
         /// </para>
         /// <para>
         ///     <b>References:</b>
@@ -1920,47 +1987,45 @@ namespace RMC.BestFit.Models.SpatialExtremes
         ///       Journal of Hydrology, 315(1-4), 203-215.
         ///     - Cooley, D., Nychka, D., Naveau, P. (2007). Bayesian spatial modeling of extreme
         ///       precipitation return levels. JASA, 102(479), 824-840.
-        ///     - Ribatet, M., Cooley, D., Davison, A.C. (2012). Bayesian inference from composite likelihoods.
-        ///       Statistica Sinica, 22(2), 813-845.
         /// </para>
         /// </remarks>
         /// <param name="correlationType">The spatial correlation function type for copula and errors.</param>
         /// <param name="includeScaleErrors">Whether to include spatially correlated errors for scale parameter.</param>
         /// <param name="includeShapeErrors">Whether to include spatially correlated errors for shape parameter.</param>
-        /// <param name="useWeightedLikelihood">If true, applies composite likelihood weights based on intersite
-        /// correlation. This is a frequentist adjustment that provides robustness when the copula may be
-        /// mis-specified. Default is false for pure Bayesian inference.</param>
+        /// <param name="useWeightedLikelihood">If true, applies the correlation-heuristic site weights of
+        /// <see cref="ComputeCorrelationHeuristicSiteWeights"/> to the marginal terms (a relative down-weighting
+        /// of highly correlated sites, not a composite likelihood). Default is false: equal weights.</param>
         public void ConfigureForProperCoverage(
             CorrelationFunctionType correlationType = CorrelationFunctionType.Exponential,
             bool includeScaleErrors = false,
             bool includeShapeErrors = false,
             bool useWeightedLikelihood = false)
         {
-            // Enable Gaussian copula for spatial dependence
+            // Enable Gaussian copula for spatial dependence (built with the model's distance metric)
             UseCopulaDependence = true;
-            SpatialDependence = new GaussianCopula(Coordinates, correlationType);
+            SpatialDependence = new GaussianCopula(Coordinates, correlationType, DistanceMetric);
 
             // Enable spatially correlated regression errors for location (core Bayesian component)
             UseLocationErrors = true;
-            LocationErrors = new SpatialRegressionErrors(Coordinates, correlationType);
+            LocationErrors = new SpatialRegressionErrors(Coordinates, correlationType, 10, DistanceMetric);
 
             // Optionally enable scale and shape errors
             if (includeScaleErrors)
             {
                 UseScaleErrors = true;
-                ScaleErrors = new SpatialRegressionErrors(Coordinates, correlationType);
+                ScaleErrors = new SpatialRegressionErrors(Coordinates, correlationType, 10, DistanceMetric);
             }
 
             if (includeShapeErrors)
             {
                 UseShapeErrors = true;
-                ShapeErrors = new SpatialRegressionErrors(Coordinates, correlationType);
+                ShapeErrors = new SpatialRegressionErrors(Coordinates, correlationType, 10, DistanceMetric);
             }
 
-            // Optionally compute composite likelihood weights (frequentist robustification)
+            // Optionally apply the correlation-heuristic site weights to the marginal terms
             if (useWeightedLikelihood)
             {
-                ComputeEffectiveSampleSizeWeights();
+                ComputeCorrelationHeuristicSiteWeights();
             }
             else
             {
@@ -2015,7 +2080,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// Predicts GEV parameters at an ungauged location using the spatial regression model
         /// with kriging interpolation for spatial errors.
         /// </summary>
-        /// <param name="coordinates">The coordinates [X, Y] or [Lat, Lon] of the ungauged location.</param>
+        /// <param name="coordinates">The coordinates of the ungauged location in the model's
+        /// <see cref="DistanceMetric"/>: [X, Y] for Cartesian or [latitude, longitude] in decimal degrees for geodesic.</param>
         /// <param name="covariates">Optional covariate values at the ungauged location for trend models.</param>
         /// <returns>
         /// A tuple containing:
@@ -2080,7 +2146,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// <summary>
         /// Gets the PDF, CDF, or inverse CDF at an ungauged location.
         /// </summary>
-        /// <param name="coordinates">The coordinates [X, Y] or [Lat, Lon] of the ungauged location.</param>
+        /// <param name="coordinates">The coordinates of the ungauged location in the model's
+        /// <see cref="DistanceMetric"/>: [X, Y] for Cartesian or [latitude, longitude] in decimal degrees for geodesic.</param>
         /// <param name="covariates">Optional covariate values at the ungauged location.</param>
         /// <returns>A GEV distribution configured with the predicted parameters.</returns>
         public GeneralizedExtremeValue GetGEVAtUngauged(double[] coordinates, double[]? covariates = null)
