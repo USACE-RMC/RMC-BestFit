@@ -705,3 +705,21 @@ projects pass (UI 579, App 438, API 498), and every method below ran once throug
 | `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks` | Verification | MCMC with production defaults on the oracle's missing-site model; AIC/BIC at the sampled MAP with eleven nonempty row/year blocks; WAIC/PSIS-LOO from the row/year terms | Passed (18.2 s) |
 | `SpatialGEVMLERecoveryTests` (2 methods) | Verification | Complete-data MLE recovery, unchanged tolerances | Passed 2/2 (4.1-4.4 s) |
 | `SpatialGEVBayesianRecoveryTests` (7 methods) | Verification | Complete-data Bayesian recovery under production defaults, unchanged tolerances | Passed 7/7 (42-115 s) |
+
+## Phase 6 Batch 6.4 spatial cross-validation corrections - 22 August 2026
+
+After the approved TR-050 through TR-053 corrections (reduced training model per fold, fold analyses with
+the main settings and seed, held-out covariate rows, explicit fold accounting) the fast core project passes
+3,309/3,309 with zero build warnings, the other three unit projects pass (UI 579, App 438, API 498),
+and every method below ran once through `scripts/run-verification-test.ps1`.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `SpatialGEVTests.CreateReducedModel_WithCopula_RemovesTheHeldOutSite`, `..._WithCopula_IsIndependentOfTheHeldOutSite`, `..._WithCovariateTrend_RemovesTheHeldOutRow`, `..._WithLatentErrors_RemovesTheHeldOutLatentError`, `..._InvalidSite_Throws` | Fast core | Reduced training model: site removed from data, coordinates, weights, covariate rows, copula dimension, and error blocks; settings copied; independent of the held-out column; equals a network built without the site | Passed |
+| `SpatialGEVAnalysisTests.SiteWeightZero_WithCopula_DoesNotExcludeTheHeldOutSite`, `SiteWeightZero_WithLatentErrors_KeepsTheHeldOutLatentError` | Fast core | The leakage mechanism of the weight-based exclusion (TR-051 evidence) | Passed |
+| `SpatialGEVAnalysisTests.PredictWithCovariates_NullForCovariateTrend_Throws`, `GeneralLinearFunctionTests.Test_PredictWithCovariates_NullOrEmpty_Throws` | Fast core | A covariate trend without covariates throws; intercept-only trends accept null (TR-052) | Passed |
+| `SpatialGEVAnalysisTests.RunCrossValidationAsync_WhenNoFoldSucceeds_ThrowsAndReportsNothing`, `SpatialGEVResultsTests.CrossValidation_FoldAccounting_RoundTrips` | Fast core | No-fold policy (two-site network, no sampler run) and DTO fold fields (TR-053) | Passed |
+| `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel` | Verification | Results retained; fold 1 equals the independently reduced copula model fitted through the production path with the same defaults and seed (`1e-6` relative) | Passed (112.0 s) |
+| `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` | Verification | Fold 1 equals the reduced regression model evaluated at the held-out covariate row (`1e-6` relative) | Passed (113.0 s) |
+| `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_SiteWithoutObservations_IsReportedNotScored` | Verification | Unscored fold with NaN metrics; aggregates over the three successful folds | Passed (54.3 s) |
+| Batch 6.3 spot checks (two oracle cells, the criteria cell, two recovery cells) | Verification | Unchanged after the cross-validation change | Passed 5/5 |

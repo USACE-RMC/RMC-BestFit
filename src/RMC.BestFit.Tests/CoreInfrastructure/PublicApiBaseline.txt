@@ -463,9 +463,21 @@ TYPE class RMC.BestFit.Analyses.SpatialGEVAnalysis
   PROPERTY System.Double VarianceInflationFactor {get;}
   PROPERTY System.Double[,] GodambeCovariance {get;}
   PROPERTY System.String GodambeCovarianceDiagnostic {get;}
+TYPE enum RMC.BestFit.Analyses.SpatialGEVCrossValidationFoldStatus
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD RMC.BestFit.Analyses.SpatialGEVCrossValidationFoldStatus FitFailed = 2
+  FIELD RMC.BestFit.Analyses.SpatialGEVCrossValidationFoldStatus NoObservations = 1
+  FIELD RMC.BestFit.Analyses.SpatialGEVCrossValidationFoldStatus PredictionFailed = 3
+  FIELD RMC.BestFit.Analyses.SpatialGEVCrossValidationFoldStatus Succeeded = 0
+  FIELD System.Int32 value__
 TYPE class RMC.BestFit.Analyses.SpatialGEVCrossValidationResults
   BASE System.Object
   CTOR RMC.BestFit.Analyses.SpatialGEVCrossValidationResults()
+  PROPERTY RMC.BestFit.Analyses.SpatialGEVCrossValidationFoldStatus[] FoldStatus {get;set;}
   PROPERTY System.Double MeanAbsoluteError {get;set;}
   PROPERTY System.Double MeanBias {get;set;}
   PROPERTY System.Double RootMeanSquareError {get;set;}
@@ -473,6 +485,9 @@ TYPE class RMC.BestFit.Analyses.SpatialGEVCrossValidationResults
   PROPERTY System.Double[] SiteCRPS {get;set;}
   PROPERTY System.Double[] SitePredictionErrors {get;set;}
   PROPERTY System.Double[] SiteRMSE {get;set;}
+  PROPERTY System.Int32 SuccessfulFolds {get;set;}
+  PROPERTY System.Int32 TotalFolds {get;set;}
+  PROPERTY System.String[] FoldMessages {get;set;}
 TYPE class RMC.BestFit.Analyses.SpatialGEVSiteResults
   BASE System.Object
   CTOR RMC.BestFit.Analyses.SpatialGEVSiteResults()

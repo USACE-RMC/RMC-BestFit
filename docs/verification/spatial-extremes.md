@@ -1,4 +1,4 @@
-<!-- verification-status: phase-6-spatial-likelihood-core-complete -->
+<!-- verification-status: phase-6-spatial-cross-validation-complete -->
 
 # Spatial Extremes Verification
 
@@ -22,7 +22,8 @@ the findings are TR-048 through TR-062 in the [review register](../technical-ref
 | GEV, copula, and kernel conventions | Verified | Complete-row copula likelihood, marginal-only likelihood, and the posterior-kernel invariance guard pass against the `mvtnorm` oracle before and after the corrections |
 | Nine existing spatial recovery cells | Passed after the corrections | Complete-data MLE (2) and Bayesian (7) recovery cells pass under production defaults (the copula cell only after the TR-091 clone fix) |
 | TR-091 spatial clone structure (found by these runs) | Corrected (approved and implemented 21 August 2026) | `SpatialGEV.Clone()` dropped the copula/error parameter blocks and reset the trend intercepts, so every copula or latent-error Bayesian run failed in post-processing; the clone now rebuilds its list from the cloned components and copies values, bounds, and priors; three fast contracts and the two blocked cells pass |
-| TR-050 through TR-054, TR-056, TR-058 through TR-062 | Planned (Batches 6.4-6.6) | - |
+| TR-050 through TR-053 leave-one-site-out cross-validation | Corrected (approved and implemented 22 August 2026) | Reduced training model per fold (`SpatialGEV.CreateReducedModel`), fold analyses with the main settings and seed, held-out covariate rows, explicit fold accounting; three guarded cells and the fast contracts pass; see [Batch 6.4](#batch-64-leave-one-site-out-cross-validation-22-august-2026) |
+| TR-054, TR-056, TR-058 through TR-062 | Planned (Batches 6.5-6.6) | - |
 
 Production changes (approved 21 August 2026): `Models/SpatialExtremes/CopulaModels/GaussianCopula.cs`,
 `Models/SpatialExtremes/SpatialGEV.cs`, and `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs`; see
@@ -168,11 +169,72 @@ latent spatial errors exclude the process densities; `ComputeGodambeCovariance` 
 of returning the variability matrix. Parameter estimates and posteriors of complete-data models and of
 models without latent errors are unchanged.
 
+## Batch 6.4 leave-one-site-out cross-validation (22 August 2026)
+
+Confirmation on the Batch 6.3 source (21-22 August 2026, guarded runner): both new cross-validation cells
+threw `InvalidOperationException: Analysis must be run before predicting at ungauged locations` from
+`RunCrossValidationAsync` on a fresh analysis, because the fold refit never set the analysis's own estimated
+flag; the fast mechanism contracts showed that a zero site weight leaves the held-out observations in the
+copula likelihood and the held-out latent error in the Gaussian-process prior (TR-051), and that a covariate
+trend evaluated with null covariates returned the intercept only (TR-052). Source audit confirmed the
+restoration refit clearing the results (TR-050) and the zero-initialized error arrays (TR-053).
+
+Haden Smith approved the three fix plans one at a time (TR-050/051 reduced training models with fold
+analyses and no restoration refit; TR-052 held-out covariate rows plus `PredictWithCovariates` throwing
+for a covariate trend without covariates; TR-053 fold status, messages, counts, NaN metrics, aggregates over
+successful folds, and an exception only when no fold succeeds). Implementation (additive API:
+`SpatialGEVCrossValidationFoldStatus`, `SpatialGEVCrossValidationResults.FoldStatus/FoldMessages/SuccessfulFolds/TotalFolds`;
+internal `SpatialGEV.CreateReducedModel`; the prediction machinery shared by `PredictAtUngaugedLocation`
+and the folds; no serialization change; `PredictWithCovariates` now throws for null/empty covariates on a
+covariate trend):
+
+- each fold builds the network without the held-out site (data column, coordinate row, covariate rows of
+  every trend, copula coordinate, latent error) with the flags, links, remaining weights, and every
+  remaining parameter's value, bounds, and prior copied, validates it, fits it with a fold
+  `BayesianAnalysis` carrying the main sampler type, defaults policy (resolved against the fold's own
+  dimension), seed, interval width, output length, point estimator, and explicit settings when the defaults
+  are off, and predicts the held-out site from the fold posterior with the site's own covariate rows;
+- the analysis model and its posterior are never modified, so the results survive the run;
+- a fold without observations, with an invalid or unfittable reduced model, or with a non-finite prediction
+  is recorded with its reason and NaN metrics; the aggregates average the successful folds; no successful
+  fold throws.
+
+Fast contracts added: `SpatialGEVTests.CreateReducedModel_WithCopula_RemovesTheHeldOutSite`,
+`..._WithCopula_IsIndependentOfTheHeldOutSite`, `..._WithCovariateTrend_RemovesTheHeldOutRow`,
+`..._WithLatentErrors_RemovesTheHeldOutLatentError`, `..._InvalidSite_Throws`;
+`SpatialGEVAnalysisTests.SiteWeightZero_WithCopula_DoesNotExcludeTheHeldOutSite`,
+`SiteWeightZero_WithLatentErrors_KeepsTheHeldOutLatentError`, `PredictWithCovariates_NullForCovariateTrend_Throws`,
+`RunCrossValidationAsync_WhenNoFoldSucceeds_ThrowsAndReportsNothing`;
+`GeneralLinearFunctionTests.Test_PredictWithCovariates_NullOrEmpty_Throws`;
+`SpatialGEVResultsTests.CrossValidation_FoldAccounting_RoundTrips`. Fast gates Core 3,309, UI 579,
+App 438, API 498, 0 failures; strict XML-documentation builds clean.
+
+The independent reduced model of the parity cells is built from the data, coordinates, covariates, and
+copula alone and adopts the full model's parameter values, bounds, and priors, because the fold keeps the
+full model's prior specification by design; the first regression run, whose independent model derived its
+own data-based intercept bounds from the three-site data, differed from the fold by 0.6% and was the reason
+for stating that contract explicitly (the copula cell matched either way).
+
+Guarded acceptance runs (one method per invocation, production defaults, 40 rows at four sites):
+
+| Exact method | Contract | Outcome |
+|---|---|---|
+| `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel` | Results retained; fold 1 prediction error equals an independently reduced three-site copula model fitted through the production path with the same defaults and seed (`1e-6` relative) | Passed (112.0 s) |
+| `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` | Results retained; fold 1 equals the reduced location-regression model evaluated at the held-out covariate row (`1e-6` relative) | Passed (113.0 s) |
+| `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_SiteWithoutObservations_IsReportedNotScored` | A fully missing site is `NoObservations` with NaN metrics; the other three folds succeed; aggregates average the successful folds | Passed (54.3 s) |
+| Spot checks after the change: `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix`, `LocationErrorModel_ScalarAndPointwiseDecompositionsAgree`, `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks`, `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversRangeParameter`, `Bayesian_WithLocationRegression_RecoversIntercept` | Batch 6.3 likelihood, criteria, and recovery contracts unchanged | Passed 5/5 (3.4 s, 3.4 s, 17.7 s, 94.5 s, 74.8 s) |
+
+Behavior changes for users: leave-one-site-out no longer refits the full model or mutates site weights, its
+results survive the run, folds are genuine reduced-network fits evaluated at the held-out covariate rows,
+failed folds are visible with NaN metrics instead of zero errors, and the ungauged-prediction methods reject
+a missing covariate vector for covariate trends. The per-fold prediction still interpolates latent errors by
+inverse distance (TR-054, Batch 6.5).
+
 ## Next steps
 
-1. Open Batch 6.4 (leave-one-site-out cross-validation: TR-050 through TR-053) with its own test-first
-   confirmation, then Batches 6.5 and 6.6.
-2. Keep the eight oracle cells, the criteria cell, and the nine recovery cells as the regression set for
-   every later spatial change.
+1. Open Batch 6.5 (prediction, uncertainty, simulation, and dispatch: TR-054, TR-058, TR-061, TR-056,
+   TR-062) with its own test-first confirmation, then Batch 6.6.
+2. Keep the eight oracle cells, the criteria cell, the three cross-validation cells, and the nine recovery
+   cells as the regression set for every later spatial change.
 
 [Verification index](README.md) | [Technical treatment](../technical-reference/spatial/spatial-extremes.md) | [Scientific findings](../technical-reference/review-findings.md#tr-048)

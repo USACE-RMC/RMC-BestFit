@@ -63,7 +63,16 @@ development.
   spatial AIC/BIC keep the nonempty row/year unit (`SpatialGEVAnalysis.ComputeInformationCriteria`);
   `SpatialGEV.Clone()` now carries the copula and latent-error parameter blocks and the source
   values, bounds, and priors (previously the clone held only the trend blocks with reset
-  intercepts, so copula and latent-error Bayesian analyses failed while building site results).
+  intercepts, so copula and latent-error Bayesian analyses failed while building site results);
+  leave-one-site-out cross-validation fits a reduced training model per fold (the held-out site's
+  data, coordinates, covariate rows, copula coordinate, and latent error removed) with a fold
+  analysis carrying the main settings and seed, predicts the held-out site with its own covariate
+  rows, never refits or mutates the main analysis (results are retained), and reports
+  `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, and `TotalFolds` with NaN metrics for unscored
+  folds, aggregates over successful folds, and an `InvalidOperationException` when no fold
+  succeeds; `GeneralLinearFunction.PredictWithCovariates(null or empty)` throws for a trend that
+  has covariates (intercept-only trends still accept null), so `PredictAtUngaugedLocation` and
+  `SpatialGEV.PredictAtUngauged` require covariate values for covariate models.
 
 ## RMC.Numerics (since 2.1.4)
 

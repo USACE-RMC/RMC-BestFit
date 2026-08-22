@@ -1259,4 +1259,104 @@ public class SpatialGEVAnalysisTests
     }
 
     #endregion
+
+    #region Cross-Validation Mechanism Tests
+
+    /// <summary>
+    /// Documents why a zero site weight is not leave-one-site-out for a copula model: the held-out site's
+    /// observations stay in the copula vector, so the training likelihood still depends on them (TR-051).
+    /// </summary>
+    [TestMethod]
+    public void SiteWeightZero_WithCopula_DoesNotExcludeTheHeldOutSite()
+    {
+        var data = CreateTestAtSiteData();
+        var coords = CreateTestCoordinates();
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        model.SpatialDependence = new GaussianCopula(coords, CorrelationFunctionType.Exponential);
+        model.UseCopulaDependence = true;
+        model.SetDefaultParameters();
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+        parameters[0] = 20.0;
+        model.SiteWeights[2] = 0.0;
+
+        double before = model.DataLogLikelihood(parameters);
+        for (int i = 0; i < model.Observations; i++)
+            model.AtSiteData[i, 2] *= 1.5;
+        double after = model.DataLogLikelihood(parameters);
+
+        Assert.AreNotEqual(before, after, 1e-6, "Changing the zero-weight site's data changes the likelihood through the copula term.");
+    }
+
+    /// <summary>
+    /// Documents why a zero site weight is not leave-one-site-out for a latent-error model: the held-out
+    /// site's latent error remains a sampled parameter with its Gaussian-process contribution (TR-051).
+    /// </summary>
+    [TestMethod]
+    public void SiteWeightZero_WithLatentErrors_KeepsTheHeldOutLatentError()
+    {
+        var data = CreateTestAtSiteData();
+        var coords = CreateTestCoordinates();
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        model.LocationErrors = new SpatialRegressionErrors(coords, CorrelationFunctionType.Exponential);
+        model.UseLocationErrors = true;
+        model.SetDefaultParameters();
+        int before = model.NumberOfParameters;
+
+        model.SiteWeights[2] = 0.0;
+        var parameters = model.Parameters.Select(p => p.Value).ToArray();
+        // Error block after the three intercepts: [σ, range, ε₁..ε₅]; use a moderate process scale so
+        // the Gaussian-process density is informative about the held-out latent error.
+        parameters[3] = 0.3;
+        parameters[4] = 30.0;
+        int heldOutErrorIndex = 3 + 2 + 2;
+        Assert.AreEqual("ε₃", model.Parameters[heldOutErrorIndex].Name);
+        double priorBefore = model.PriorLogLikelihood(parameters);
+        parameters[heldOutErrorIndex] += 0.5;
+        double priorAfter = model.PriorLogLikelihood(parameters);
+
+        Assert.AreEqual(before, model.NumberOfParameters, "The zero-weight site keeps its latent error parameter.");
+        Assert.IsTrue(Math.Abs(priorBefore - priorAfter) > 0.1, $"The held-out latent error still enters the Gaussian-process density ({priorBefore:G10} versus {priorAfter:G10}).");
+    }
+
+    /// <summary>
+    /// Verifies the TR-052 correction: a covariate trend evaluated without covariates throws instead of
+    /// silently returning the intercept, while the stored-row prediction and intercept-only trends are
+    /// unaffected.
+    /// </summary>
+    [TestMethod]
+    public void PredictWithCovariates_NullForCovariateTrend_Throws()
+    {
+        var covariates = new double[,] { { 1.0, 2.0 }, { 3.0, 4.0 }, { 5.0, 6.0 } };
+        var trend = new GeneralLinearFunction("Location", covariates);
+        trend.Parameters[0].Value = 1.5;
+        trend.Parameters[1].Value = 0.25;
+        trend.Parameters[2].Value = -0.1;
+
+        Assert.AreEqual(1.5 + 0.25 * 3.0 - 0.1 * 4.0, trend.Predict(1), 1e-12, "The stored row prediction uses the covariates.");
+        Assert.AreEqual(1.5 + 0.25 * 3.0 - 0.1 * 4.0, trend.PredictWithCovariates(new[] { 3.0, 4.0 }), 1e-12);
+        Assert.ThrowsException<ArgumentException>(() => trend.PredictWithCovariates(null), "Null covariates.");
+        Assert.ThrowsException<ArgumentException>(() => trend.PredictWithCovariates(Array.Empty<double>()), "Empty covariates.");
+        Assert.AreEqual(7.0, new GeneralLinearFunction("Scale") { Parameters = { [0] = { Value = 7.0 } } }.PredictWithCovariates(null), 1e-12, "An intercept-only trend accepts null.");
+    }
+
+    /// <summary>
+    /// Verifies the TR-053 policy without a sampler run: on a two-site network every fold's training model
+    /// has a single site and is invalid, so no fold succeeds, the run throws, and no result is reported.
+    /// </summary>
+    [TestMethod]
+    public async Task RunCrossValidationAsync_WhenNoFoldSucceeds_ThrowsAndReportsNothing()
+    {
+        var (data, coords) = CreateMinimalTestData();
+        var model = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        var analysis = new SpatialGEVAnalysis(model);
+
+        var exception = await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => analysis.RunCrossValidationAsync());
+
+        StringAssert.Contains(exception.Message, "no successful fold");
+        StringAssert.Contains(exception.Message, "FitFailed");
+        Assert.IsNull(analysis.CrossValidationResults, "An empty validation is never reported as a result.");
+        Assert.IsFalse(analysis.IsEstimated, "The analysis itself is untouched.");
+    }
+
+    #endregion
 }

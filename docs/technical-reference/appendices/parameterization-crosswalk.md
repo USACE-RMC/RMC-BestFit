@@ -95,7 +95,7 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 | `BivariateDistribution` | Copula parameter block only; the two marginal `UnivariateDistribution` models are fixed upstream and are not appended to the fitted vector | Complete with TR-047 |
 | Bivariate pseudo-likelihood | Copula receives matched nonexceedance pseudo-observations \((\widetilde u_i,\widetilde v_i)\) | Complete |
 | Bivariate IFM | Copula receives \(F_X(x_i;\widehat\eta_X),F_Y(y_i;\widehat\eta_Y)\); marginal estimates remain fixed | Complete |
-| `SpatialGEV` | copula correlation block; location regression; scale regression; shape regression; enabled location/scale/shape error blocks (process densities in `PriorLogLikelihood`) | Complete (TR-048/049/055/057 corrected; TR-050 through TR-054, TR-056, TR-058 through TR-062 open) |
+| `SpatialGEV` | copula correlation block; location regression; scale regression; shape regression; enabled location/scale/shape error blocks (process densities in `PriorLogLikelihood`) | Complete (TR-048 through TR-053, TR-055, TR-057 corrected; TR-054, TR-056, TR-058 through TR-062 open) |
 | Spatial regression | each `GeneralLinearFunction` is \((\beta_0,\beta_1,\ldots,\beta_K)\), with stored covariate row \(j\) selecting site \(j\) | Complete |
 | Spatial error block | \((\sigma_a,\boldsymbol\phi_a,\epsilon_{a,1},\ldots,\epsilon_{a,S})\); \(\boldsymbol\phi_a=(r_a)\) or \((r_a,p_a)\) | Complete |
 | Spatial GEV links | default \(\xi_j=\exp(\eta_{\xi,j}+\epsilon_{\xi,j})\), \(\alpha_j=\exp(\eta_{\alpha,j}+\epsilon_{\alpha,j})\), and \(\kappa_j=\eta_{\kappa,j}+\epsilon_{\kappa,j}\) | Complete |

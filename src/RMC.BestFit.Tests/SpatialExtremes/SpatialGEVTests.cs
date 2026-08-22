@@ -2283,4 +2283,167 @@ public class SpatialGEVTests
     }
 
     #endregion
+
+    #region Reduced Training Model Tests
+
+    /// <summary>
+    /// Verifies that the reduced model of a copula network drops the held-out site from the data, the
+    /// coordinates, the site weights, and the copula dimension while keeping the parameter settings.
+    /// </summary>
+    [TestMethod]
+    public void CreateReducedModel_WithCopula_RemovesTheHeldOutSite()
+    {
+        var original = CreateModelWithCopula();
+        original.SiteWeights = new[] { 1.0, 0.9, 0.8, 0.7, 0.6 };
+        original.Parameters[0].Value = 22.0;
+        original.Parameters[0].UpperBound = 250.0;
+        original.SetParameterValues(original.Parameters.Select(p => p.Value).ToArray());
+
+        SpatialGEV reduced = original.CreateReducedModel(2);
+
+        Assert.AreEqual(4, reduced.Sites);
+        Assert.AreEqual(original.Observations, reduced.Observations);
+        Assert.AreEqual(4, reduced.SpatialDependence.Sites, "The copula dimension follows the remaining sites.");
+        Assert.AreEqual(original.NumberOfParameters, reduced.NumberOfParameters, "Intercept-only trends and one copula range: the parameter count is unchanged.");
+        CollectionAssert.AreEqual(new[] { 1.0, 0.9, 0.7, 0.6 }, reduced.SiteWeights);
+        int[] kept = { 0, 1, 3, 4 };
+        for (int r = 0; r < 4; r++)
+        {
+            Assert.AreEqual(original.Coordinates[kept[r], 0], reduced.Coordinates[r, 0], 0.0);
+            Assert.AreEqual(original.Coordinates[kept[r], 1], reduced.Coordinates[r, 1], 0.0);
+            for (int i = 0; i < original.Observations; i++)
+                Assert.AreEqual(original.AtSiteData[i, kept[r]], reduced.AtSiteData[i, r], 0.0);
+        }
+        for (int i = 0; i < original.NumberOfParameters; i++)
+        {
+            Assert.AreEqual(original.Parameters[i].Value, reduced.Parameters[i].Value, 0.0, $"Value {i + 1}.");
+            Assert.AreEqual(original.Parameters[i].LowerBound, reduced.Parameters[i].LowerBound, 0.0, $"Lower bound {i + 1}.");
+            Assert.AreEqual(original.Parameters[i].UpperBound, reduced.Parameters[i].UpperBound, 0.0, $"Upper bound {i + 1}.");
+        }
+        Assert.IsTrue(reduced.UseCopulaDependence && reduced.UseLogLinkForLocation == original.UseLogLinkForLocation && reduced.UseLogLinkForScale == original.UseLogLinkForScale);
+        Assert.IsTrue(reduced.Validate().IsValid);
+    }
+
+    /// <summary>
+    /// Verifies that the reduced model's likelihood does not depend on the held-out site's observations
+    /// and equals the likelihood of a network built directly without that site.
+    /// </summary>
+    [TestMethod]
+    public void CreateReducedModel_WithCopula_IsIndependentOfTheHeldOutSite()
+    {
+        var original = CreateModelWithCopula();
+        var values = original.Parameters.Select(p => p.Value).ToArray();
+        values[0] = 20.0;
+        original.SetParameterValues(values);
+
+        SpatialGEV reduced = original.CreateReducedModel(1);
+        double before = reduced.DataLogLikelihood(values);
+        for (int i = 0; i < original.Observations; i++)
+            original.AtSiteData[i, 1] *= 2.0;
+        double after = reduced.DataLogLikelihood(values);
+
+        var data = new double[30, 4];
+        var coords = new double[4, 2];
+        int[] kept = { 0, 2, 3, 4 };
+        for (int r = 0; r < 4; r++)
+        {
+            coords[r, 0] = original.Coordinates[kept[r], 0];
+            coords[r, 1] = original.Coordinates[kept[r], 1];
+            for (int i = 0; i < 30; i++)
+                data[i, r] = original.AtSiteData[i, kept[r]];
+        }
+        var direct = new SpatialGEV(data, coords, new GeneralLinearFunction("Location"), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        direct.SpatialDependence = new GaussianCopula(coords, CorrelationFunctionType.Exponential);
+        direct.UseCopulaDependence = true;
+        direct.SetDefaultParameters();
+
+        Assert.AreEqual(before, after, 0.0, "The held-out column does not enter the reduced likelihood.");
+        Assert.AreEqual(direct.DataLogLikelihood(values), before, 1e-10, "Equal to the network built without the site.");
+    }
+
+    /// <summary>
+    /// Verifies that the reduced model removes the held-out covariate row of a regression trend and keeps
+    /// the coefficient settings, so site predictions of the remaining sites are unchanged.
+    /// </summary>
+    [TestMethod]
+    public void CreateReducedModel_WithCovariateTrend_RemovesTheHeldOutRow()
+    {
+        var data = CreateTestAtSiteData();
+        var coords = CreateTestCoordinates();
+        var covariates = new double[5, 2];
+        for (int j = 0; j < 5; j++)
+        {
+            covariates[j, 0] = coords[j, 0];
+            covariates[j, 1] = coords[j, 1];
+        }
+        var original = new SpatialGEV(data, coords, new GeneralLinearFunction("Location", covariates), new GeneralLinearFunction("Scale"), new GeneralLinearFunction("Shape"));
+        original.Parameters[1].Value = 0.01;
+        original.Parameters[2].Value = -0.02;
+        original.Parameters[1].PriorDistribution = new Normal(0.0, 0.1);
+        original.SetParameterValues(original.Parameters.Select(p => p.Value).ToArray());
+
+        SpatialGEV reduced = original.CreateReducedModel(3);
+
+        Assert.AreEqual(2, reduced.Location.NumberOfCovariates);
+        Assert.AreEqual(4, reduced.Location.Covariates!.GetLength(0), "One covariate row per remaining site.");
+        Assert.AreEqual(original.NumberOfParameters, reduced.NumberOfParameters);
+        Assert.IsInstanceOfType(reduced.Parameters[1].PriorDistribution, typeof(Normal), "The coefficient prior is copied.");
+        int[] kept = { 0, 1, 2, 4 };
+        for (int r = 0; r < 4; r++)
+        {
+            Assert.AreEqual(original.Location.Predict(kept[r]), reduced.Location.Predict(r), 1e-12, $"Location trend of remaining site {r + 1}.");
+            CollectionAssert.AreEqual(original.GetGEVParameters(kept[r]), reduced.GetGEVParameters(r), $"GEV parameters of remaining site {r + 1}.");
+        }
+    }
+
+    /// <summary>
+    /// Verifies that the reduced model removes the held-out site's latent error from every enabled error
+    /// block and keeps the remaining latent errors and hyperparameters.
+    /// </summary>
+    [TestMethod]
+    public void CreateReducedModel_WithLatentErrors_RemovesTheHeldOutLatentError()
+    {
+        var original = CreateModelWithSpatialErrors();
+        var values = original.Parameters.Select(p => p.Value).ToArray();
+        // Location block [σ, range, ε₁..ε₅] at 3.., scale block at 10..
+        values[3] = 0.3;
+        values[4] = 25.0;
+        for (int j = 0; j < 5; j++)
+        {
+            values[5 + j] = 0.01 * (j + 1);
+            values[12 + j] = -0.02 * (j + 1);
+        }
+        values[10] = 0.2;
+        values[11] = 15.0;
+        original.SetParameterValues(values);
+
+        SpatialGEV reduced = original.CreateReducedModel(2);
+
+        Assert.AreEqual(17 - 2, reduced.NumberOfParameters, "One latent error leaves each of the two error blocks.");
+        Assert.AreEqual(4, reduced.LocationErrors.Sites);
+        Assert.AreEqual(0.3, reduced.Parameters[3].Value, 0.0);
+        Assert.AreEqual(25.0, reduced.Parameters[4].Value, 0.0);
+        CollectionAssert.AreEqual(new[] { 0.01, 0.02, 0.04, 0.05 }, reduced.Parameters.Skip(5).Take(4).Select(p => p.Value).ToArray());
+        Assert.AreEqual(0.2, reduced.Parameters[9].Value, 0.0);
+        Assert.AreEqual(15.0, reduced.Parameters[10].Value, 0.0);
+        CollectionAssert.AreEqual(new[] { -0.02, -0.04, -0.08, -0.10 }, reduced.Parameters.Skip(11).Take(4).Select(p => p.Value).ToArray());
+        int[] kept = { 0, 1, 3, 4 };
+        for (int r = 0; r < 4; r++)
+            CollectionAssert.AreEqual(original.GetGEVParameters(kept[r]), reduced.GetGEVParameters(r), $"GEV parameters of remaining site {r + 1}.");
+        Assert.IsTrue(double.IsFinite(reduced.LogLikelihood(reduced.Parameters.Select(p => p.Value).ToArray())));
+    }
+
+    /// <summary>
+    /// Verifies the argument validation of the reduced-model factory.
+    /// </summary>
+    [TestMethod]
+    public void CreateReducedModel_InvalidSite_Throws()
+    {
+        var model = CreateTestModel();
+
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.CreateReducedModel(-1));
+        Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.CreateReducedModel(5));
+    }
+
+    #endregion
 }

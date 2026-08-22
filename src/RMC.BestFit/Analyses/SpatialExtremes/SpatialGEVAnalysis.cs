@@ -3,9 +3,11 @@ using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Sampling;
+using Numerics.Sampling.MCMC;
 using Numerics.Utilities;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models.SpatialExtremes;
+using RMC.BestFit.Models.TrendFunctions;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -875,17 +877,23 @@ namespace RMC.BestFit.Analyses
         /// Predicts GEV parameters and quantiles at an ungauged location using spatial interpolation.
         /// </summary>
         /// <param name="coordinates">The coordinates [X, Y] or [Lat, Lon] of the ungauged location.</param>
-        /// <param name="covariates">Optional covariate values at the ungauged location for the trend models.</param>
+        /// <param name="covariates">The covariate values at the ungauged location, applied to every trend
+        /// model that has covariates (the location, scale, and shape trends must then share the covariate
+        /// definition); null is accepted only when no trend model has covariates.</param>
         /// <param name="exceedanceProbabilities">Array of exceedance probabilities for quantile estimation.</param>
         /// <returns>
         /// A <see cref="SpatialGEVSiteResults"/> object containing predicted GEV parameters and quantile curves.
         /// </returns>
         /// <exception cref="InvalidOperationException">Thrown if the analysis has not been run.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="coordinates"/> is not a two-element
+        /// array, or when a trend model has covariates and <paramref name="covariates"/> is null, empty, or
+        /// of the wrong length.</exception>
         /// <remarks>
         /// <para>
         /// This method uses the posterior samples to propagate uncertainty to the ungauged location.
         /// The prediction uses the trend surface evaluated at the provided coordinates and covariates.
-        /// If spatial regression errors are enabled, a kriging-type interpolation is used for the errors.
+        /// If spatial regression errors are enabled, an inverse-distance interpolation of the sampled
+        /// latent errors is used for every posterior draw.
         /// </para>
         /// </remarks>
         public SpatialGEVSiteResults PredictAtUngaugedLocation(double[] coordinates, double[]? covariates, double[] exceedanceProbabilities)
@@ -896,8 +904,55 @@ namespace RMC.BestFit.Analyses
             if (coordinates == null || coordinates.Length != 2)
                 throw new ArgumentException("Coordinates must be a 2-element array [X, Y].", nameof(coordinates));
 
-            var realz = BayesianAnalysis.OutputLength;
-            double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
+            return PredictFromPosterior(
+                SpatialGEV,
+                BayesianAnalysis.Results,
+                BayesianAnalysis.OutputLength,
+                1 - BayesianAnalysis.CredibleIntervalWidth,
+                coordinates,
+                covariates,
+                covariates,
+                covariates,
+                exceedanceProbabilities);
+        }
+
+        /// <summary>
+        /// Predicts the GEV parameters and quantiles at a location from a posterior sample of a spatial
+        /// model: the trend surfaces evaluated at the supplied covariates, inverse-distance interpolation
+        /// of the enabled latent errors, and posterior summaries of the parameters and quantiles.
+        /// </summary>
+        /// <param name="model">The fitted model (the analysis model or a cross-validation fold's reduced model).</param>
+        /// <param name="results">The posterior sample of <paramref name="model"/>.</param>
+        /// <param name="outputLength">The number of retained draws to use (capped at the sample size).</param>
+        /// <param name="alpha">One minus the credible-interval width.</param>
+        /// <param name="coordinates">The location [X, Y].</param>
+        /// <param name="locationCovariates">The location-trend covariate values, or null for an intercept-only trend.</param>
+        /// <param name="scaleCovariates">The scale-trend covariate values, or null for an intercept-only trend.</param>
+        /// <param name="shapeCovariates">The shape-trend covariate values, or null for an intercept-only trend.</param>
+        /// <param name="exceedanceProbabilities">The exceedance probabilities of the quantile curve.</param>
+        /// <returns>The site results with <c>SiteIndex = -1</c>.</returns>
+        /// <exception cref="ArgumentException">Thrown when a trend model has covariates and its covariate
+        /// values are null, empty, or of the wrong length.</exception>
+        /// <remarks>
+        /// The latent errors are interpolated with inverse-distance weights proportional to 1/h for every
+        /// posterior draw; the conditional Gaussian-process prediction is the subject of TR-054.
+        /// </remarks>
+        private static SpatialGEVSiteResults PredictFromPosterior(
+            SpatialGEV model,
+            MCMCResults results,
+            int outputLength,
+            double alpha,
+            double[] coordinates,
+            double[]? locationCovariates,
+            double[]? scaleCovariates,
+            double[]? shapeCovariates,
+            double[] exceedanceProbabilities)
+        {
+            ValidateCovariateVector(model.Location, locationCovariates, "location");
+            ValidateCovariateVector(model.Scale, scaleCovariates, "scale");
+            ValidateCovariateVector(model.Shape, shapeCovariates, "shape");
+
+            int realz = Math.Min(outputLength, results.Output.Count);
             int nProbs = exceedanceProbabilities.Length;
 
             var result = new SpatialGEVSiteResults
@@ -913,25 +968,25 @@ namespace RMC.BestFit.Analyses
             var quantiles = new double[nProbs, realz];
 
             // Use inverse-distance weighting for spatial interpolation of errors
-            var distances = new double[SpatialGEV.Sites];
+            var distances = new double[model.Sites];
             double sumInvDist = 0;
-            for (int j = 0; j < SpatialGEV.Sites; j++)
+            for (int j = 0; j < model.Sites; j++)
             {
-                double dx = coordinates[0] - SpatialGEV.Coordinates[j, 0];
-                double dy = coordinates[1] - SpatialGEV.Coordinates[j, 1];
+                double dx = coordinates[0] - model.Coordinates[j, 0];
+                double dy = coordinates[1] - model.Coordinates[j, 1];
                 distances[j] = Math.Max(Math.Sqrt(dx * dx + dy * dy), 1e-10);
                 sumInvDist += 1.0 / distances[j];
             }
 
             Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
             {
-                var tempModel = (SpatialGEV)SpatialGEV.Clone();
-                tempModel.SetParameterValues(BayesianAnalysis.Results.Output[idx].Values);
+                var tempModel = (SpatialGEV)model.Clone();
+                tempModel.SetParameterValues(results.Output[idx].Values);
 
                 // Evaluate trend at ungauged location
-                double xi = tempModel.Location.PredictWithCovariates(covariates);
-                double scl = tempModel.Scale.PredictWithCovariates(covariates);
-                double kappa = tempModel.Shape.PredictWithCovariates(covariates);
+                double xi = tempModel.Location.PredictWithCovariates(locationCovariates);
+                double scl = tempModel.Scale.PredictWithCovariates(scaleCovariates);
+                double kappa = tempModel.Shape.PredictWithCovariates(shapeCovariates);
 
                 // Apply link functions
                 if (tempModel.UseLogLinkForLocation)
@@ -1021,6 +1076,48 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Validates the covariate values supplied for one trend model before a posterior prediction.
+        /// </summary>
+        /// <param name="trend">The trend model.</param>
+        /// <param name="covariates">The covariate values, or null.</param>
+        /// <param name="name">The trend name used in the message.</param>
+        /// <exception cref="ArgumentException">Thrown when the trend has covariates and the values are missing or of the wrong length.</exception>
+        private static void ValidateCovariateVector(GeneralLinearFunction trend, double[]? covariates, string name)
+        {
+            if (trend.NumberOfCovariates == 0)
+                return;
+            if (covariates == null || covariates.Length == 0)
+            {
+                throw new ArgumentException(
+                    $"The {name} trend has {trend.NumberOfCovariates} covariate(s); covariate values at the prediction location are required.",
+                    nameof(covariates));
+            }
+            if (covariates.Length != trend.NumberOfCovariates)
+            {
+                throw new ArgumentException(
+                    $"The {name} trend expects {trend.NumberOfCovariates} covariate(s) but received {covariates.Length}.",
+                    nameof(covariates));
+            }
+        }
+
+        /// <summary>
+        /// Extracts one site's covariate row from a trend model's stored covariate matrix.
+        /// </summary>
+        /// <param name="trend">The trend model.</param>
+        /// <param name="site">The site index.</param>
+        /// <returns>The covariate row, or null when the trend has no covariates.</returns>
+        private static double[]? CovariateRow(GeneralLinearFunction trend, int site)
+        {
+            double[,]? covariates = trend.Covariates;
+            if (covariates == null || covariates.GetLength(1) == 0)
+                return null;
+            var row = new double[covariates.GetLength(1)];
+            for (int k = 0; k < row.Length; k++)
+                row[k] = covariates[site, k];
+            return row;
+        }
+
+        /// <summary>
         /// Runs leave-one-site-out cross-validation to assess model predictive performance.
         /// </summary>
         /// <param name="progressReporter">Optional progress reporter for tracking cross-validation progress.</param>
@@ -1028,13 +1125,22 @@ namespace RMC.BestFit.Analyses
         /// A task that completes when cross-validation is finished.
         /// Results are available via the <see cref="CrossValidationResults"/> property.
         /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when the analysis is not valid, or when no fold
+        /// produces a prediction (an empty validation is never reported as a result).</exception>
         /// <remarks>
         /// <para>
         /// For each site, this method:
-        /// 1. Excludes the site by setting its weight to zero.
-        /// 2. Re-runs the Bayesian analysis.
-        /// 3. Predicts quantiles at the excluded site.
-        /// 4. Compares predictions to observed data.
+        /// 1. Builds the training model without the site (data column, coordinates, covariate row, copula
+        ///    dimension, and latent error removed) through <c>SpatialGEV.CreateReducedModel</c>.
+        /// 2. Fits it with a Bayesian analysis carrying this analysis's sampler settings and seed.
+        /// 3. Predicts the quantiles at the held-out site from the fold posterior, using the site's own
+        ///    covariate row for every covariate trend.
+        /// 4. Compares the predictions to the site's at-site maximum-likelihood GEV quantiles.
+        /// </para>
+        /// <para>
+        /// The analysis model and its posterior are never modified, so the results survive the run. A
+        /// fold that cannot be scored is recorded in <see cref="SpatialGEVCrossValidationResults.FoldStatus"/>
+        /// with NaN metrics and a message, and the aggregate metrics average the successful folds only.
         /// </para>
         /// <para>
         /// This provides an estimate of how well the model generalizes to ungauged locations.
@@ -1045,92 +1151,206 @@ namespace RMC.BestFit.Analyses
             if (Validate().IsValid == false)
                 throw new InvalidOperationException("Model validation failed.");
 
-            CrossValidationResults = new SpatialGEVCrossValidationResults
+            int sites = SpatialGEV.Sites;
+            var results = new SpatialGEVCrossValidationResults
             {
-                SitePredictionErrors = new double[SpatialGEV.Sites],
-                SiteRMSE = new double[SpatialGEV.Sites],
-                SiteBias = new double[SpatialGEV.Sites],
-                SiteCRPS = new double[SpatialGEV.Sites] // CRPS not yet computed (always zero); see remarks on the property.
+                SitePredictionErrors = new double[sites],
+                SiteRMSE = new double[sites],
+                SiteBias = new double[sites],
+                SiteCRPS = new double[sites], // CRPS not yet computed (always zero); see remarks on the property.
+                FoldStatus = new SpatialGEVCrossValidationFoldStatus[sites],
+                FoldMessages = new string[sites],
+                TotalFolds = sites
             };
-
-            var originalWeights = (double[])SpatialGEV.SiteWeights.Clone();
-
-            try
+            for (int j = 0; j < sites; j++)
             {
-                for (int j = 0; j < SpatialGEV.Sites; j++)
+                results.SitePredictionErrors[j] = double.NaN;
+                results.SiteRMSE[j] = double.NaN;
+                results.SiteBias[j] = double.NaN;
+                results.FoldMessages[j] = string.Empty;
+            }
+            CrossValidationResults = null;
+
+            var probs = new double[] { 0.5, 0.2, 0.1, 0.04, 0.02, 0.01 }; // T=2, 5, 10, 25, 50, 100
+            var successfulErrors = new List<double>();
+            var successfulBias = new List<double>();
+
+            for (int j = 0; j < sites; j++)
+            {
+                progressReporter?.ReportProgress((int)(100.0 * j / sites));
+
+                // Observed data at the held-out site
+                var siteData = new List<double>();
+                for (int i = 0; i < SpatialGEV.Observations; i++)
                 {
-                    progressReporter?.ReportProgress((int)(100.0 * j / SpatialGEV.Sites));
-
-                    // Set weight to zero for left-out site
-                    for (int k = 0; k < SpatialGEV.Sites; k++)
-                        SpatialGEV.SiteWeights[k] = k == j ? 0.0 : originalWeights[k];
-
-                    // Clear and re-run
-                    if (BayesianAnalysis is null)
-                        continue;
-                    BayesianAnalysis.ClearResults();
-                    await BayesianAnalysis.RunAsync(null, false);
-
-                    if (!BayesianAnalysis.IsEstimated)
-                        continue;
-
-                    // Predict at left-out site
-                    var coords = new double[] { SpatialGEV.Coordinates[j, 0], SpatialGEV.Coordinates[j, 1] };
-                    var probs = new double[] { 0.5, 0.2, 0.1, 0.04, 0.02, 0.01 }; // T=2, 5, 10, 25, 50, 100
-
-                    var prediction = PredictAtUngaugedLocation(coords, null, probs);
-
-                    // Compare to observed data at this site
-                    var siteData = new List<double>();
-                    for (int i = 0; i < SpatialGEV.Observations; i++)
-                    {
-                        if (!double.IsNaN(SpatialGEV.AtSiteData[i, j]))
-                            siteData.Add(SpatialGEV.AtSiteData[i, j]);
-                    }
-
-                    if (siteData.Count > 0)
-                    {
-                        // Compute prediction error as difference in T=100 quantile
-                        var gev = new GeneralizedExtremeValue();
-                        gev.Estimate(siteData, ParameterEstimationMethod.MaximumLikelihood);
-                        double obsQ100 = gev.InverseCDF(0.99);
-                        double predQ100 = prediction.QuantileMean[5]; // T=100
-
-                        CrossValidationResults.SitePredictionErrors[j] = predQ100 - obsQ100;
-                        CrossValidationResults.SiteBias[j] = (predQ100 - obsQ100) / obsQ100;
-
-                        // Compute RMSE over multiple quantiles
-                        double sumSqErr = 0;
-                        for (int p = 0; p < probs.Length; p++)
-                        {
-                            double obsQ = gev.InverseCDF(1 - probs[p]);
-                            double predQ = prediction.QuantileMean[p];
-                            sumSqErr += (predQ - obsQ) * (predQ - obsQ);
-                        }
-                        CrossValidationResults.SiteRMSE[j] = Math.Sqrt(sumSqErr / probs.Length);
-                    }
+                    if (!double.IsNaN(SpatialGEV.AtSiteData[i, j]))
+                        siteData.Add(SpatialGEV.AtSiteData[i, j]);
+                }
+                if (siteData.Count == 0)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.NoObservations;
+                    results.FoldMessages[j] = "The held-out site has no finite observation.";
+                    continue;
                 }
 
-                // Restore original weights
-                SpatialGEV.SiteWeights = originalWeights;
+                // Training model without the held-out site, fitted with this analysis's settings and seed
+                SpatialGEV fold;
+                BayesianAnalysis foldBayes;
+                try
+                {
+                    fold = SpatialGEV.CreateReducedModel(j);
+                    var (foldValid, foldMessages) = fold.Validate();
+                    if (!foldValid)
+                    {
+                        results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.FitFailed;
+                        results.FoldMessages[j] = "The reduced training model is not valid: " + string.Join(" ", foldMessages);
+                        continue;
+                    }
+                    foldBayes = CreateFoldAnalysis(fold);
+                    await foldBayes.RunAsync(null, false);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.FitFailed;
+                    results.FoldMessages[j] = "The reduced training model could not be fitted: " + ex.Message;
+                    continue;
+                }
 
-                // Compute overall metrics
-                CrossValidationResults.MeanAbsoluteError = Statistics.ParallelMean(
-                    CrossValidationResults.SitePredictionErrors.Select(Math.Abs).ToArray());
-                CrossValidationResults.RootMeanSquareError = Math.Sqrt(Statistics.ParallelMean(
-                    CrossValidationResults.SitePredictionErrors.Select(e => e * e).ToArray()));
-                CrossValidationResults.MeanBias = Statistics.ParallelMean(CrossValidationResults.SiteBias);
+                if (!foldBayes.IsEstimated || foldBayes.Results == null)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.FitFailed;
+                    results.FoldMessages[j] = foldBayes.LastError != null
+                        ? "The fold sampler failed: " + foldBayes.LastError.Message
+                        : "The fold sampler did not produce an estimate.";
+                    continue;
+                }
 
-                // Re-run full analysis
-                BayesianAnalysis?.ClearResults();
-                await RunAsync(null);
+                // Predict at the held-out site from the fold posterior with the site's own covariate rows
+                try
+                {
+                    var coords = new double[] { SpatialGEV.Coordinates[j, 0], SpatialGEV.Coordinates[j, 1] };
+                    SpatialGEVSiteResults prediction = PredictFromPosterior(
+                        fold,
+                        foldBayes.Results,
+                        foldBayes.OutputLength,
+                        1 - foldBayes.CredibleIntervalWidth,
+                        coords,
+                        CovariateRow(SpatialGEV.Location, j),
+                        CovariateRow(SpatialGEV.Scale, j),
+                        CovariateRow(SpatialGEV.Shape, j),
+                        probs);
+
+                    // Compare to the at-site maximum-likelihood GEV of the held-out site
+                    var gev = new GeneralizedExtremeValue();
+                    gev.Estimate(siteData, ParameterEstimationMethod.MaximumLikelihood);
+                    double obsQ100 = gev.InverseCDF(0.99);
+                    double predQ100 = prediction.QuantileMean[5]; // T=100
+
+                    double sumSqErr = 0;
+                    for (int p = 0; p < probs.Length; p++)
+                    {
+                        double obsQ = gev.InverseCDF(1 - probs[p]);
+                        double predQ = prediction.QuantileMean[p];
+                        sumSqErr += (predQ - obsQ) * (predQ - obsQ);
+                    }
+
+                    double error = predQ100 - obsQ100;
+                    double bias = (predQ100 - obsQ100) / obsQ100;
+                    double rmse = Math.Sqrt(sumSqErr / probs.Length);
+                    if (!Tools.IsFinite(error) || !Tools.IsFinite(bias) || !Tools.IsFinite(rmse))
+                    {
+                        results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.PredictionFailed;
+                        results.FoldMessages[j] = "The held-out prediction or its at-site comparison is not finite.";
+                        continue;
+                    }
+
+                    results.SitePredictionErrors[j] = error;
+                    results.SiteBias[j] = bias;
+                    results.SiteRMSE[j] = rmse;
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.Succeeded;
+                    successfulErrors.Add(error);
+                    successfulBias.Add(bias);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.PredictionFailed;
+                    results.FoldMessages[j] = "The held-out prediction failed: " + ex.Message;
+                }
             }
-            finally
+
+            results.SuccessfulFolds = successfulErrors.Count;
+            if (results.SuccessfulFolds == 0)
             {
-                SpatialGEV.SiteWeights = originalWeights;
+                var reasons = new List<string>();
+                for (int j = 0; j < sites; j++)
+                    reasons.Add($"site {j + 1}: {results.FoldStatus[j]} - {results.FoldMessages[j]}");
+                throw new InvalidOperationException(
+                    "Leave-one-site-out cross-validation produced no successful fold. " + string.Join(" ", reasons));
             }
 
+            // Aggregate metrics over the successful folds only
+            results.MeanAbsoluteError = Statistics.ParallelMean(successfulErrors.Select(Math.Abs).ToArray());
+            results.RootMeanSquareError = Math.Sqrt(Statistics.ParallelMean(successfulErrors.Select(e => e * e).ToArray()));
+            results.MeanBias = Statistics.ParallelMean(successfulBias.ToArray());
+
+            CrossValidationResults = results;
+            progressReporter?.ReportProgress(100);
             RaisePropertyChange(nameof(CrossValidationResults));
+        }
+
+        /// <summary>
+        /// Creates the Bayesian analysis of a cross-validation fold: the fold model with this analysis's
+        /// sampler type, defaults policy, seed, interval width, output length, and point estimator, and its
+        /// explicit iteration, chain, thinning, and tuning settings whenever the defaults are not in use.
+        /// </summary>
+        /// <param name="fold">The reduced training model.</param>
+        /// <returns>The fold analysis, ready to run.</returns>
+        /// <remarks>
+        /// When the simulation defaults are in use they resolve against the fold model's own parameter
+        /// count, exactly as a fresh analysis of that model would resolve them.
+        /// </remarks>
+        private BayesianAnalysis CreateFoldAnalysis(SpatialGEV fold)
+        {
+            var foldBayes = new BayesianAnalysis(fold)
+            {
+                UseSimulationDefaults = BayesianAnalysis.UseSimulationDefaults,
+                UseAdvancedSimulationDefaults = BayesianAnalysis.UseAdvancedSimulationDefaults
+            };
+            foldBayes.Type = BayesianAnalysis.Type;
+            foldBayes.PRNGSeed = BayesianAnalysis.PRNGSeed;
+            foldBayes.CredibleIntervalWidth = BayesianAnalysis.CredibleIntervalWidth;
+            foldBayes.OutputLength = BayesianAnalysis.OutputLength;
+            foldBayes.PointEstimator = BayesianAnalysis.PointEstimator;
+
+            if (!BayesianAnalysis.UseSimulationDefaults)
+            {
+                foldBayes.NumberOfChains = BayesianAnalysis.NumberOfChains;
+                foldBayes.ThinningInterval = BayesianAnalysis.ThinningInterval;
+                foldBayes.WarmupIterations = BayesianAnalysis.WarmupIterations;
+                foldBayes.Iterations = BayesianAnalysis.Iterations;
+                foldBayes.InitialIterations = BayesianAnalysis.InitialIterations;
+            }
+
+            if (!BayesianAnalysis.UseAdvancedSimulationDefaults)
+            {
+                foldBayes.Jump = BayesianAnalysis.Jump;
+                foldBayes.JumpThreshold = BayesianAnalysis.JumpThreshold;
+                foldBayes.SnookerThreshold = BayesianAnalysis.SnookerThreshold;
+                foldBayes.Noise = BayesianAnalysis.Noise;
+                foldBayes.Scale = BayesianAnalysis.Scale;
+                foldBayes.Beta = BayesianAnalysis.Beta;
+                foldBayes.MaxTreeDepth = BayesianAnalysis.MaxTreeDepth;
+            }
+
+            return foldBayes;
         }
 
         /// <summary>

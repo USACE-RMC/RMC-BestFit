@@ -1357,6 +1357,174 @@ namespace RMC.BestFit.Models.SpatialExtremes
         }
 
         /// <summary>
+        /// Creates the training model of a leave-one-site-out fold: this network without the excluded site.
+        /// </summary>
+        /// <param name="excludedSite">The zero-based index of the site to remove.</param>
+        /// <returns>
+        /// A new model holding the remaining sites' data columns, coordinates, covariate rows, site weights,
+        /// copula dimension, and latent errors, with the flags, link settings, and every remaining
+        /// parameter's value, bounds, and prior copied from this model.
+        /// </returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="excludedSite"/> is not a site index.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the model has fewer than two sites.</exception>
+        /// <remarks>
+        /// The removed site's marginal terms, copula coordinate, latent error, and covariate row leave the
+        /// likelihood and the prior entirely, so a fit of the reduced model is a genuine leave-one-site-out
+        /// fit; zeroing a site weight is not, because the copula vector and the latent error of the site
+        /// remain. Used by the spatial analysis's cross-validation.
+        /// </remarks>
+        internal SpatialGEV CreateReducedModel(int excludedSite)
+        {
+            if (excludedSite < 0 || excludedSite >= Sites)
+                throw new ArgumentOutOfRangeException(nameof(excludedSite));
+            if (Sites < 2)
+                throw new InvalidOperationException("At least two sites are required to leave one out.");
+
+            int kept = Sites - 1;
+            var data = new double[Observations, kept];
+            var coordinates = new double[kept, 2];
+            var weights = new double[kept];
+            for (int j = 0, r = 0; j < Sites; j++)
+            {
+                if (j == excludedSite)
+                    continue;
+                for (int i = 0; i < Observations; i++)
+                    data[i, r] = AtSiteData[i, j];
+                coordinates[r, 0] = Coordinates[j, 0];
+                coordinates[r, 1] = Coordinates[j, 1];
+                weights[r] = SiteWeights[j];
+                r++;
+            }
+
+            var reduced = new SpatialGEV(data, coordinates,
+                ReduceTrendModel(Location, excludedSite),
+                ReduceTrendModel(Scale, excludedSite),
+                ReduceTrendModel(Shape, excludedSite))
+            {
+                UseCopulaDependence = UseCopulaDependence,
+                UseLocationErrors = UseLocationErrors,
+                UseScaleErrors = UseScaleErrors,
+                UseShapeErrors = UseShapeErrors,
+                UseLogLinkForLocation = UseLogLinkForLocation,
+                UseLogLinkForScale = UseLogLinkForScale,
+                SiteWeights = weights
+            };
+
+            // The constructor's SetDefaultParameters assigned data-derived intercepts to the reduced trend
+            // models; restore the source trend parameters (values, bounds, priors) before attaching the
+            // reduced copula and error models, which carry their own copied parameters.
+            CopyParameterSettings(Location.Parameters, reduced.Location.Parameters);
+            CopyParameterSettings(Scale.Parameters, reduced.Scale.Parameters);
+            CopyParameterSettings(Shape.Parameters, reduced.Shape.Parameters);
+
+            if (SpatialDependence != null)
+                reduced.SpatialDependence = ReduceCopula(SpatialDependence, coordinates);
+            if (LocationErrors != null)
+                reduced.LocationErrors = ReduceErrors(LocationErrors, coordinates, excludedSite);
+            if (ScaleErrors != null)
+                reduced.ScaleErrors = ReduceErrors(ScaleErrors, coordinates, excludedSite);
+            if (ShapeErrors != null)
+                reduced.ShapeErrors = ReduceErrors(ShapeErrors, coordinates, excludedSite);
+
+            reduced.RebuildParameterList();
+            return reduced;
+        }
+
+        /// <summary>
+        /// Clones a trend model without the excluded site's covariate row; the coefficient values, bounds,
+        /// and priors are copied back by the caller after construction.
+        /// </summary>
+        /// <param name="trend">The source trend model.</param>
+        /// <param name="excludedSite">The site whose covariate row is removed.</param>
+        /// <returns>The reduced trend model.</returns>
+        private static GeneralLinearFunction ReduceTrendModel(GeneralLinearFunction trend, int excludedSite)
+        {
+            var reduced = (GeneralLinearFunction)trend.Clone();
+            double[,]? covariates = trend.Covariates;
+            if (covariates != null)
+            {
+                int rows = covariates.GetLength(0);
+                int columns = covariates.GetLength(1);
+                var reducedCovariates = new double[rows - 1, columns];
+                for (int j = 0, r = 0; j < rows; j++)
+                {
+                    if (j == excludedSite)
+                        continue;
+                    for (int k = 0; k < columns; k++)
+                        reducedCovariates[r, k] = covariates[j, k];
+                    r++;
+                }
+                reduced.Covariates = reducedCovariates;
+                CopyParameterSettings(trend.Parameters, reduced.Parameters);
+            }
+            return reduced;
+        }
+
+        /// <summary>
+        /// Builds the copula of the reduced network with the source correlation parameters.
+        /// </summary>
+        /// <param name="copula">The source copula.</param>
+        /// <param name="coordinates">The reduced coordinates.</param>
+        /// <returns>The reduced copula.</returns>
+        private static GaussianCopula ReduceCopula(GaussianCopula copula, double[,] coordinates)
+        {
+            var reduced = new GaussianCopula(coordinates, copula.CorrelationFunction.Type);
+            CopyParameterSettings(copula.Parameters, reduced.Parameters);
+            reduced.SetParameterValues(reduced.Parameters.Select(p => p.Value).ToList());
+            return reduced;
+        }
+
+        /// <summary>
+        /// Builds the latent-error model of the reduced network: the source scale and correlation
+        /// parameters and the latent errors of the remaining sites.
+        /// </summary>
+        /// <param name="errors">The source error model.</param>
+        /// <param name="coordinates">The reduced coordinates.</param>
+        /// <param name="excludedSite">The site whose latent error is removed.</param>
+        /// <returns>The reduced error model.</returns>
+        private static SpatialRegressionErrors ReduceErrors(SpatialRegressionErrors errors, double[,] coordinates, int excludedSite)
+        {
+            var reduced = new SpatialRegressionErrors(coordinates, errors.CorrelationFunction.Type, errors.Parameters[0].UpperBound);
+            int hyperparameters = errors.NumberOfParameters - errors.Sites;
+            for (int i = 0; i < hyperparameters; i++)
+                CopyParameterSettings(errors.Parameters[i], reduced.Parameters[i]);
+            for (int j = 0, r = 0; j < errors.Sites; j++)
+            {
+                if (j == excludedSite)
+                    continue;
+                CopyParameterSettings(errors.ErrorParameters[j], reduced.ErrorParameters[r]);
+                r++;
+            }
+            reduced.SetParameterValues(reduced.Parameters.Select(p => p.Value).ToList());
+            return reduced;
+        }
+
+        /// <summary>
+        /// Copies the values, bounds, and priors of matching parameter lists.
+        /// </summary>
+        /// <param name="source">The source parameters.</param>
+        /// <param name="target">The target parameters (same count).</param>
+        private static void CopyParameterSettings(IReadOnlyList<ModelParameter> source, IReadOnlyList<ModelParameter> target)
+        {
+            for (int i = 0; i < source.Count && i < target.Count; i++)
+                CopyParameterSettings(source[i], target[i]);
+        }
+
+        /// <summary>
+        /// Copies the value, bounds, and prior of one parameter onto another.
+        /// </summary>
+        /// <param name="source">The source parameter.</param>
+        /// <param name="target">The target parameter.</param>
+        private static void CopyParameterSettings(ModelParameter source, ModelParameter target)
+        {
+            target.Value = source.Value;
+            target.LowerBound = source.LowerBound;
+            target.UpperBound = source.UpperBound;
+            if (source.PriorDistribution is not null)
+                target.PriorDistribution = source.PriorDistribution.Clone();
+        }
+
+        /// <summary>
         /// Rebuilds the flat parameter list from the attached components in the canonical order
         /// (copula, location, scale, shape, location errors, scale errors, shape errors) without
         /// changing any parameter value, bound, or prior, and re-attaches the change handlers.

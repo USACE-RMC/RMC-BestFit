@@ -87,10 +87,10 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-048](#tr-048) | Spatial missing-site marginalization | High | Confirmed defect - fixed | Fixed (21 August 2026): observed-subset copula evaluation used by both likelihood paths | Passed - the two missing-site cells match the R `mvtnorm` observed-subset oracle after the correction; complete-row and marginal-only cells unchanged | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
 | [TR-049](#tr-049) | Spatial likelihood decomposition | High | Confirmed defect - fixed | Fixed (21 August 2026): Gaussian-process densities moved to a `PriorLogLikelihood` override; kernel unchanged | Passed - data excludes the process density, the scalar/pointwise identities hold, and the posterior kernel matches the oracle | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
-| [TR-050](#tr-050) | Spatial cross-validation result retention | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-051](#tr-051) | Spatial held-out-site leakage | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
-| [TR-052](#tr-052) | Spatial held-out covariates | High | Unreviewed; failure mode restated | Not started | Planned | This register | 2026-08-21 |
-| [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
+| [TR-050](#tr-050) | Spatial cross-validation result retention | High | Confirmed defect - fixed | Fixed (22 August 2026): folds fit reduced training models, so no restoration refit clears the results | Passed - guarded cells retain `CrossValidationResults` after the run | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
+| [TR-051](#tr-051) | Spatial held-out-site leakage | High | Confirmed defect - fixed | Fixed (22 August 2026): `SpatialGEV.CreateReducedModel` builds each fold's training model without the held-out site | Passed - fold 1 of a copula network equals an independently reduced model fitted with the same defaults and seed (`1e-6` relative); fast reduced-model contracts | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
+| [TR-052](#tr-052) | Spatial held-out covariates | High | Confirmed defect - fixed | Fixed (22 August 2026): folds predict with the held-out site's covariate rows; `PredictWithCovariates` throws for a covariate trend without covariates | Passed - fold 1 of a location-regression network equals the reduced model evaluated at the held-out row; fast throw contracts | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
+| [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Confirmed defect - fixed | Fixed (22 August 2026): `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, `TotalFolds`; NaN metrics; aggregates over successful folds; throws when none succeed | Passed - guarded no-observation fold cell and the fast two-site no-fold policy contract | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
 | [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
 | [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - closed | Corrected; row/year unit verified after TR-048/TR-049 | Passed - guarded criteria cell (AIC/BIC at the sampled MAP with nonempty row/year blocks; WAIC/PSIS-LOO from row/year terms) and fast helper contracts | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-08-21 |
 | [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Unreviewed | Not started | Planned | This register | 2026-07-24 |
@@ -972,62 +972,62 @@ retain source and binary compatibility.
 <a id="tr-050"></a>
 ## TR-050 — Spatial Leave-One-Site-Out Results Are Cleared Before Return
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. Each fold now fits its own reduced training model with its own `BayesianAnalysis`, so the analysis model, its posterior, and its site weights are never modified and the restoration refit (and the `ClearResults` it triggered) is gone; `RunCrossValidationAsync` assigns the completed DTO and raises the notification last. On the pre-fix source a fresh analysis could not even complete the run: the per-fold prediction threw "Analysis must be run before predicting at ungauged locations" because the fold refit never set the analysis's own estimated flag.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel` (112.0 s) and `LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` (113.0 s) assert that `CrossValidationResults` is retained after the run under the production defaults. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
 
-**Evidence.** `RunCrossValidationAsync` populates `CrossValidationResults`, restores site weights, and then calls `RunAsync` to refit the full model. `RunAsync` begins with `ClearResults`, which sets `CrossValidationResults = null`; the method therefore raises its final property-change notification after discarding the result it just computed.
+**Evidence.** `RunCrossValidationAsync` populated `CrossValidationResults`, restored site weights, and then called `RunAsync` to refit the full model; `RunAsync` begins with `ClearResults`, which set `CrossValidationResults = null` before the final notification.
 
-**Impact.** A successful cross-validation run does not leave the documented result available to callers.
+**Impact.** A successful cross-validation run now leaves the documented result available; the main fit is untouched by the validation.
 
-**Follow-up.** Preserve the completed cross-validation DTO across the restoration refit, or refit through a path that clears only fitting outputs; add an end-to-end unit test for result retention.
+**Follow-up.** Keep the two retention assertions in the guarded regression set.
 
 <a id="tr-051"></a>
 ## TR-051 — Spatial Leave-One-Site-Out Does Not Fully Exclude the Site
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. `SpatialGEV.CreateReducedModel(excludedSite)` (internal) builds the training model of a fold without the held-out site: its data column, coordinate row, each trend model's covariate row, copula coordinate, and latent error are removed, while the flags, links, remaining site weights, and every remaining parameter's value, bounds, and prior are copied. `RunCrossValidationAsync` fits that model with a fold `BayesianAnalysis` that carries the main analysis's sampler type, defaults policy (resolved against the fold's own parameter count), seed, interval width, output length, point estimator, and its explicit iteration/chain/thinning/tuning settings when the defaults are not in use, and predicts the held-out site from the fold posterior through the shared prediction helper. Site weights are no longer used for exclusion.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. Fast contracts show that a zero site weight leaves the held-out observations in the copula likelihood and the held-out latent error in the prior (the leakage mechanism) and that the reduced model removes the site from the data, coordinates, weights, covariate rows, copula dimension, and error blocks, is independent of the held-out column, and equals a network built directly without the site; the guarded cell `LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel` (112.0 s) finds fold 1 of a four-site copula network equal to an independently reduced three-site model fitted through the production path with the same defaults and seed (`1e-6` relative). See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
 
-**Evidence.** Cross-validation sets only the held-out site's marginal `SiteWeight` to zero. With copula dependence enabled, the held-out observations remain in the full Gaussian-copula vector and its copula log density is unweighted. Enabled spatial-error vectors also retain the held-out site's latent error and Gaussian-process contribution.
+**Evidence.** Cross-validation set only the held-out site's marginal `SiteWeight` to zero; with copula dependence the held-out observations remained in the Gaussian-copula vector and enabled spatial-error vectors retained the held-out site's latent error and Gaussian-process contribution.
 
-**Impact.** The purported leave-one-site-out fit leaks held-out information and can materially overstate ungauged-site predictive performance.
+**Impact.** The leave-one-site-out fit no longer leaks held-out information; reported ungauged-site predictive performance reflects a genuine training/validation split.
 
-**Follow-up.** Construct an actual training submodel without the held-out column, coordinates, covariates, copula dimension, or latent spatial error; verify against a manually reduced model.
+**Follow-up.** TR-056 (bootstrap replicate models) in Batch 6.5 can reuse the reduced-model construction; keep the parity cell and the reduced-model contracts in the regression set.
 
 <a id="tr-052"></a>
 ## TR-052 — Spatial Cross-Validation Omits Held-Out Covariates
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval.
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. Each fold predicts the held-out site with that site's own covariate row from each trend model's stored matrix (location, scale, and shape rows separately, so trends with different covariate sets are handled), and `GeneralLinearFunction.PredictWithCovariates(null or empty)` now throws `ArgumentException` for a trend that has covariates instead of silently returning the intercept (intercept-only trends still accept null). The public `PredictAtUngaugedLocation` keeps its single covariate vector, documented as applying to every covariate trend, and validates it before the posterior loop so the error is an `ArgumentException` rather than an aggregate exception.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` (113.0 s) finds fold 1 of a four-site location-regression network equal to the reduced model evaluated at the held-out covariate row (`1e-6` relative); the fast contracts `GeneralLinearFunctionTests.Test_PredictWithCovariates_NullOrEmpty_Throws`, `SpatialGEVAnalysisTests.PredictWithCovariates_NullForCovariateTrend_Throws`, and `SpatialGEVTests.CreateReducedModel_WithCovariateTrend_RemovesTheHeldOutRow` cover the throw and the row extraction. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
 
-**Evidence.** `RunCrossValidationAsync` calls `PredictAtUngaugedLocation(coords, null, probs)`. `GeneralLinearFunction.PredictWithCovariates` (`Models/TrendFunctions/GeneralLinearFunction.cs`) returns the intercept-only prediction when the covariate vector is null or empty and throws only for a non-null vector of the wrong length, so a fitted covariate trend is silently evaluated without its covariates.
+**Evidence.** `RunCrossValidationAsync` called `PredictAtUngaugedLocation(coords, null, probs)` and `PredictWithCovariates` returned the intercept-only prediction for a null or empty vector, so a fitted covariate trend was evaluated without its covariates.
 
-**Impact.** Cross-validation silently evaluates an intercept-only trend for the principal regional-regression use case and therefore never evaluates the trend model actually fitted.
+**Impact.** Cross-validation evaluates the fitted regression trend at the held-out site; callers of the ungauged-prediction methods that omitted covariates for a covariate model now receive an explicit error instead of an intercept-only value.
 
-**Follow-up.** Extract the held-out row from each trend model's covariate matrix, verify consistent covariate definitions across location, scale, and shape, and pass it to prediction.
+**Follow-up.** None beyond the regression set.
 
 <a id="tr-053"></a>
 ## TR-053 — Failed Spatial Cross-Validation Folds Are Counted as Zero Error
 
-**Review disposition.** Unreviewed.
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval (report what succeeded with counts; throw only when no fold succeeds).
 
-**Implementation status.** Not started.
+**Implementation status.** Fixed. `SpatialGEVCrossValidationResults` gains `FoldStatus` (`SpatialGEVCrossValidationFoldStatus`: `Succeeded`, `NoObservations`, `FitFailed`, `PredictionFailed`), `FoldMessages`, `SuccessfulFolds`, and `TotalFolds`; a fold that is not scored stores NaN in `SitePredictionErrors`, `SiteRMSE`, and `SiteBias`; `MeanAbsoluteError`, `RootMeanSquareError`, and `MeanBias` average the successful folds only; an invalid reduced model, a sampler failure, or a non-finite prediction is recorded instead of aborting the run; and when no fold succeeds `RunCrossValidationAsync` throws `InvalidOperationException` listing the fold reasons, leaving `CrossValidationResults` null.
 
-**Verification status.** Planned; no verification claim has been accepted.
+**Verification status.** Passed. `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_SiteWithoutObservations_IsReportedNotScored` (54.3 s) reports a fully missing site as `NoObservations` with NaN metrics while the three remaining folds succeed and the aggregates equal the averages over those folds; the fast contract `SpatialGEVAnalysisTests.RunCrossValidationAsync_WhenNoFoldSucceeds_ThrowsAndReportsNothing` (a two-site network whose reduced models are invalid) covers the no-fold policy without a sampler run, and `SpatialGEVResultsTests` covers the DTO fields. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
 
-**Evidence.** Site error arrays are initialized to zero. A failed Bayesian fit, missing Bayesian analysis, or site with no finite observations executes `continue` without marking the fold invalid. Overall MAE, RMSE, and bias then average all array entries.
+**Evidence.** Site error arrays were zero-initialized and a failed fit, missing analysis, or site without observations executed `continue` without marking the fold, so MAE, RMSE, and bias averaged zeros.
 
-**Impact.** Failed or unevaluable folds appear to be perfect predictions and bias aggregate validation metrics downward.
+**Impact.** Failed or unevaluable folds are visible and excluded from the aggregates; an empty validation is never reported as a result.
 
-**Follow-up.** Store fold status and `NaN` metrics for failed folds, aggregate only successful folds, report the success count, and fail the analysis when too few folds are valid.
+**Follow-up.** None beyond the regression set; CRPS remains unimplemented (zero-filled, documented).
 
 <a id="tr-054"></a>
 ## TR-054 — Analysis-Level Ungauged Prediction Uses IDW and Omits Conditional Spatial Variance
