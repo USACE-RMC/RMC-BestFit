@@ -79,9 +79,9 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
 | [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Confirmed defect; corrected | Complete | Passed - date/index regressions and independent R oracle | [Report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment) | 2026-08-20 |
 | [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Complete | Passed - counting regression and five-analysis oracle refreshed | [Report](../verification/time-series.md#tr-042--information-criteria-use-data-likelihood-at-map) | 2026-08-20 |
-| [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; three exact guarded cells differ from the discharge-space oracle by exactly the change-of-variables sum | [Report](../verification/rating-curve.md#tr-043---discharge-space-likelihood) / [Artifact](../../verification/data/rating-curve/rating-curve-likelihood-oracle.json) | 2026-08-21 |
-| [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Confirmed defect | Fix plan and exponent bound pending approval | Failed - confirms defect; default exponent lower bound 0 admits a discontinuous model (four exact cells); analytical increment cells pass | [Report](../verification/rating-curve.md#tr-044---continuity-at-activation-stages) | 2026-08-21 |
-| [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Confirmed defect | Fix plan pending approval | Failed - fast contract `Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` rejects a valid model | [Report](../verification/rating-curve.md#tr-045---aligned-pair-validation) | 2026-08-21 |
+| [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Confirmed defect; corrected | Fixed - discharge-space density in the scalar, pointwise, and component likelihoods | Passed - three exact discharge-space oracle cells (SciPy and Numerics base-10 lognormal), fast hand-calculation and identity contracts, six example-replication cells | [Report](../verification/rating-curve.md#tr-043---discharge-space-likelihood) / [Artifact](../../verification/data/rating-curve/rating-curve-likelihood-oracle.json) | 2026-08-21 |
+| [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Confirmed defect; corrected | Fixed - default exponent lower bound and prior minimum 0.1; legacy bounds restored verbatim with a validation warning | Passed - seven exact continuity/bound cells and fast bound, legacy-warning, and XML round-trip contracts | [Report](../verification/rating-curve.md#tr-044---continuity-at-activation-stages) | 2026-08-21 |
+| [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Confirmed defect; corrected | Fixed - aligned-pair positivity error plus a non-blocking unmatched-record warning with counts | Passed - fast aligned-pair, unmatched-record, and count-reporting contracts | [Report](../verification/rating-curve.md#tr-045---aligned-pair-validation) | 2026-08-21 |
 | [TR-046](#tr-046) | Manual transform state rebuild | High | Confirmed defect; corrected | Complete | Passed - fast persistence and independent likelihood oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
 | [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
 | [TR-048](#tr-048) | Spatial missing-site marginalization | High | Confirmed defect | Fix plan pending approval | Failed - confirms defect; scalar and pointwise cells reproduce the zero-placeholder value against the R `mvtnorm` observed-subset oracle | [Report](../verification/spatial-extremes.md#confirmation-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
@@ -858,45 +858,45 @@ optimum, accepting the optimum and MAP/MLE parity at `1E-3`.
 
 **Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started; the fix plan (change-of-variables term in the scalar, pointwise, and component likelihoods) awaits approval in Phase 6 Batch 6.1.
+**Implementation status.** Fixed without public API or serialization changes (approved 21 August 2026). `DataLogLikelihood`, `PointwiseDataLogLikelihood`, and `PointwiseDataLogLikelihoodComponents` add the base-10 change-of-variables term $-\log(Q_i\ln 10)$ for every aligned pair, cached alongside the aligned-observation cache and invalidated with it; a nonpositive aligned discharge makes every path negative-infinite. The observation measure is documented as discharge-space (equation RC.5 of the technical reference).
 
-**Verification status.** Failed - confirms the defect. The three exact guarded cells `RatingCurveLikelihoodOracleTests.{One,Two,Three}Segment_DataLogLikelihood_IsDischargeSpaceDensity` differ from the committed SciPy discharge-space oracle by exactly the change-of-variables sums `2043.2563714262035`, `2315.8103643545292`, and `2354.0657454049206`, and equal the log-space oracle; see the [rating-curve verification chapter](../verification/rating-curve.md#tr-043---discharge-space-likelihood).
+**Verification status.** Passed. The three exact guarded cells `RatingCurveLikelihoodOracleTests.{One,Two,Three}Segment_DataLogLikelihood_IsDischargeSpaceDensity` match the committed SciPy discharge-space oracle and the Numerics base-10 lognormal density at `1e-8` (sums) and `1e-10` (terms) after failing by exactly the change-of-variables sums `2043.2563714262035`, `2315.8103643545292`, and `2354.0657454049206` on the uncorrected source; fast hand-calculation, parameter-free-difference, pointwise/component identity, and nonpositive-discharge contracts pass; the six example-replication recovery cells pass under the approved acceptance rule. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-043---discharge-space-likelihood).
 
 **Evidence.** The rating curve assumes `Z=log10(Q)` is Normal and sums `Normal.LogPDF(log10(q)-log10(qhat))`. As a density for observed discharge `Q`, the likelihood also requires `-log(q ln 10)` per observation. The code omits this Jacobian while transformed time-series likelihoods include their corresponding Jacobians.
 
-**Impact.** Parameter estimates are unchanged because the omitted term is data-only, but absolute log likelihood, predictive density, AIC/BIC/WAIC/LOO values, and cross-model comparisons are on the wrong measure.
+**Impact.** Parameter estimates (MLE, MAP, posterior) are unchanged because the term is data-only; absolute log likelihoods, predictive densities, and AIC/BIC/DIC/WAIC/LOOIC shift by the constant $-\sum_i\log(Q_i\ln 10)$, so persisted rating-curve criteria differ on reprocess and comparisons among rating-curve models of the same data are unchanged.
 
-**Follow-up.** Decide and label the observation measure explicitly. If outputs claim a discharge-space density, include the Jacobian in scalar and pointwise paths and verify against a base-10 lognormal density.
+**Follow-up.** Retain the three oracle cells and the fast contracts as release gates; the release notes record the criteria shift.
 
 <a id="tr-044"></a>
 ## TR-044 — Rating-Curve Continuity Claim Fails at the Allowed Zero Exponent
 
 **Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started; the strictly positive exponent lower bound and the handling of legacy stored bounds await approval in Phase 6 Batch 6.1.
+**Implementation status.** Fixed (approved 21 August 2026: lower bound 0.1). `SetDefaultParameters` gives every exponent the lower bound 0.1 and the prior $\mathrm{Uniform}(0.1,5)$; legacy projects restore their stored bounds verbatim through the `ModelParameter` XML, remain loadable, and `Validate()` adds a non-blocking warning when an exponent bound admits zero. The likelihood is unchanged.
 
-**Verification status.** Failed - confirms the defect. `RatingCurveContinuityVerificationTests` shows the default exponent lower bound 0 in every configuration and a constant added-control increment `1.7534628349561987` at offsets `1e-6` and `1e-12` when the exponent sits at that bound; the analytical two-sided increment and zero-exponent jump cells pass. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-044---continuity-at-activation-stages).
+**Verification status.** Passed. The seven exact `RatingCurveContinuityVerificationTests` cells pass: the analytical two-sided increment and zero-exponent jump cells, the three default-bound cells, and the lower-bound limit cell (added increment at offset `1e-12` is `0.251` times its value at `1e-6` for $\beta=0.1$), after the bound cells and the limit cell had failed on the uncorrected source; fast contracts cover the new bounds, the legacy warning, and the verbatim XML round trip. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-044---continuity-at-activation-stages).
 
 **Evidence.** Each added control contributes zero at `h=h_k` because activation requires `h>h_k`. Its exponent prior and bound allow `beta_k=0`; immediately above the breakpoint, `(h-h_k)^0=1`, so discharge jumps by `alpha_k` rather than approaching zero.
 
-**Impact.** The implementation and documentation claim automatic continuity over a parameter space that includes discontinuous boundary models.
+**Impact.** Every admissible default model is continuous at its activation stages; the default prior support changed from $[0,5]$ to $[0.1,5]$ for new analyses, which is recorded in the release notes, and legacy projects keep their bounds with a warning.
 
-**Follow-up.** Require strictly positive exponents with a defensible lower bound or define the boundary limit explicitly, then test continuity from both sides.
+**Follow-up.** Retain the continuity cells and the legacy-bound contracts as release gates.
 
 <a id="tr-045"></a>
 ## TR-045 — Rating-Curve Validation Rejects Unused Discharge Records
 
 **Review disposition.** Confirmed defect (21 August 2026).
 
-**Implementation status.** Not started; the aligned-pair validation with separate reporting of ignored records awaits approval in Phase 6 Batch 6.1.
+**Implementation status.** Fixed (approved 21 August 2026). `Validate()` rebuilds the date alignment, reports an error only when a date-aligned discharge is not positive, and adds a non-blocking warning that counts the stage and discharge records unmatched by date (and how many ignored discharge records are nonpositive); the UI validation adapter renders the `Warning:` prefix as a warning.
 
-**Verification status.** Failed - confirms the defect. The fast contract `RatingCurveTests.Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` (twenty valid aligned pairs plus one nonpositive discharge on a date without a stage) is rejected with `Error: All discharge values must be positive`. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-045---aligned-pair-validation).
+**Verification status.** Passed. The fast contracts `Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported`, `Validate_ReportsUnmatchedRecordCounts`, and the retained `Validate_NonPositiveDischarge_IsInvalid` pass (the first failed with `Error: All discharge values must be positive` on the uncorrected source). See the [rating-curve verification chapter](../verification/rating-curve.md#tr-045---aligned-pair-validation).
 
 **Evidence.** The likelihood uses only the date-inner-joined stage/discharge pairs, but `Validate()` rejects the model if any value in the entire discharge series is nonpositive, including dates with no matching stage that never enter the likelihood.
 
-**Impact.** An irrelevant unmatched record can prevent an otherwise valid fit, contradicting the stated alignment contract.
+**Impact.** Validation now follows the likelihood's alignment contract: unmatched records no longer block a fit, and analysts see how many records are ignored.
 
-**Follow-up.** Apply likelihood-domain validation to aligned pairs, report dropped invalid/unmatched records separately, and test both matched and unmatched cases.
+**Follow-up.** Retain the aligned-pair and count-reporting contracts as release gates.
 
 <a id="tr-046"></a>
 ## TR-046 — Manual Transform Parameters Do Not Rebuild Model Data

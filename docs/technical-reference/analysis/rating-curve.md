@@ -27,7 +27,7 @@ $$
 
 of length $3K+1$. Stage parameters have stage units; discharge has the supplied discharge units; $10^{a_k}$ has discharge units divided by stage units raised to $\beta_k$; $\beta_k$ is dimensionless; and $\sigma$ is a standard deviation in log10-discharge units.
 
-The ordering constraint is $h_1<h_2<h_3$ for configured controls. Each added contribution approaches zero at activation only for $\beta_k>0$. Default bounds allow $\beta_k=0$, which creates a jump immediately above the breakpoint and contradicts the unconditional continuity claim ([TR-044](../review-findings.md#tr-044)).
+The ordering constraint is $h_1<h_2<h_3$ for configured controls. Each added contribution approaches zero at activation only for $\beta_k>0$, so the default exponent bounds are strictly positive ($\beta_k\ge0.1$) and every admissible default model is continuous at its activation stages; a zero exponent would make the curve jump by $10^{a_k}$ there. Legacy projects that stored a zero lower bound load verbatim and receive a validation warning ([TR-044](../review-findings.md#tr-044)).
 
 Equation (RC.1) is the lower-triangular-all-ones control-matrix case of the BaRatin matrix-of-controls framework: existing controls continue conveying flow as new controls activate. It can represent main-channel plus overbank contributions. It should not be applied where one control drowns out and is replaced by another without first extending the model.
 
@@ -41,25 +41,25 @@ Z_i=\log_{10}Q_i
 N\!\left(\log_{10}q(h_i;\theta),\sigma^2\right). \tag{RC.3}
 $$
 
-The implemented transformed-response log likelihood is
+The log10-space Gaussian term is
 
 $$
 \ell_Z(\theta)=
 -\frac n2\log(2\pi)-n\log\sigma
 -\frac{1}{2\sigma^2}\sum_{i=1}^{n}
-\left[\log_{10}Q_i-\log_{10}q(h_i;\theta)\right]^2. \tag{RC.4}
+\left[\log_{10}Q_i-\log_{10}q(h_i;\theta)\right]^2, \tag{RC.4}
 $$
 
-If interpreted as a density for the observed discharge $Q_i$, change of variables gives
+and the implemented data log likelihood is the density of the observed discharge, obtained by the change of variables $Z=\log_{10}Q$:
 
 $$
 \ell_Q(\theta)=\ell_Z(\theta)-
 \sum_{i=1}^{n}\log(Q_i\ln 10). \tag{RC.5}
 $$
 
-The code implements (RC.4), not (RC.5), while exposing general log-likelihood and information-criterion fields. The omitted data-only term leaves parameter estimates unchanged but shifts absolute predictive density and criteria; see [TR-043](../review-findings.md#tr-043).
+`DataLogLikelihood`, `PointwiseDataLogLikelihood`, and `PointwiseDataLogLikelihoodComponents` all carry the per-observation change-of-variables term, so AIC, BIC, DIC, WAIC, and LOO are on the discharge measure and comparable with other discharge densities. The term does not depend on the parameters, so maximum-likelihood, MAP, and posterior parameter estimates are identical to those of (RC.4); see [TR-043](../review-findings.md#tr-043) and the [verification chapter](../../verification/rating-curve.md).
 
-At least ten aligned pairs are required. Nonfinite parameters, invalid threshold ordering, nonpositive predicted flow, and invalid marginal-prior support make a fit impossible. `Validate()` currently checks nonpositive discharge across the entire discharge series rather than aligned pairs only ([TR-045](../review-findings.md#tr-045)). Stage/discharge duplicates at the same timestamp are not modeled as replicate measurements; the date dictionary determines the aligned value.
+At least ten aligned pairs are required. Nonfinite parameters, invalid threshold ordering, nonpositive predicted flow, nonpositive aligned discharge, and invalid marginal-prior support make a fit impossible. `Validate()` requires positive discharge only for the date-aligned pairs; stage or discharge records without a partner date never enter the likelihood and are reported in a non-blocking warning with their counts, including how many ignored discharge records are nonpositive ([TR-045](../review-findings.md#tr-045)). Stage/discharge duplicates at the same timestamp are not modeled as replicate measurements; the date dictionary determines the aligned value.
 
 ## Priors and Posterior
 
@@ -68,7 +68,7 @@ Default priors are bounded uniforms built from observed stage span:
 - $h_1$ ranges below/near the minimum calibration stage;
 - $h_2$ and $h_3$ occupy overlapping interior stage-span ranges;
 - $a_k\in[-10,10]$;
-- $\beta_k\in[0,5]$;
+- $\beta_k\in[0.1,5]$;
 - $\sigma$ has a positive data-scaled upper bound.
 
 With `UseJeffreysRuleForScale=true`, the full log prior is
@@ -143,7 +143,7 @@ Call `initialFit.Estimate()` for a data-likelihood starting solution; then run `
 
 ## Validation and Traceability
 
-Implementation: `Models/RatingCurve/RatingCurve.cs`; orchestration: `Analyses/RatingCurve/RatingCurveAnalysis.cs`. Fast tests cover parameter order, addition behavior, date alignment, likelihood decomposition, serialization, validation, and deterministic simulation. Computational recovery and analysis sources under `RMC.BestFit.Verification/RatingCurve/` were inspected but not executed. Existing evidence supports API behavior; it does not validate BaRatin parity for arbitrary control matrices or uncertainty coverage in extrapolation.
+Implementation: `Models/RatingCurve/RatingCurve.cs`; orchestration: `Analyses/RatingCurve/RatingCurveAnalysis.cs`. Fast tests cover parameter order, addition behavior, date alignment, the discharge-space likelihood and its pointwise/component identities, the positive exponent bounds and legacy-bound warning, unmatched-record reporting, serialization, validation, and deterministic simulation. The Phase 6 [rating-curve verification chapter](../../verification/rating-curve.md) records the executed evidence: the discharge-space likelihood against a SciPy and Numerics base-10 lognormal oracle, analytical two-sided continuity at activation stages, and maximum-likelihood and default-setting Bayesian replication of the three synthetic cases of `examples/6-rating-curve-analysis` against an independent SciPy optimum. The evidence does not validate BaRatin parity for arbitrary control matrices or uncertainty coverage in extrapolation.
 
 ## References
 

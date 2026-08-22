@@ -86,7 +86,7 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 | `ARIMA` | optional mean/drift $\mu$ of $\Delta^d g(y)$; AR block; MA block; innovation $\sigma$ | Complete; $d>0$ prediction unavailable under TR-037/TR-038 |
 | `ARIMAX` | optional $\mu$; polynomial trend; sine/cosine; covariate-by-lag blocks; AR; MA; $\sigma$ | Complete; affected configurations restricted by TR-037/TR-039/TR-041 |
 | Transform | raw $y$ to $g(y)$ before differencing; $\lambda$ is plug-in preprocessing, not a fitted `ModelParameter` | Complete with TR-036/TR-046 |
-| Rating curve | repeating $(h_k,a_k,\beta_k)$ blocks then $\sigma$, where $a_k=\log_{10}\alpha_k$ and $\sigma$ is log10-discharge SD | Complete with TR-043/TR-044 |
+| Rating curve | repeating $(h_k,a_k,\beta_k)$ blocks then $\sigma$, where $a_k=\log_{10}\alpha_k$, $\beta_k\ge0.1$ by default, and $\sigma$ is log10-discharge SD; the likelihood is the discharge-space density | Complete; TR-043 and TR-044 corrected |
 
 ## Bivariate and Spatial Mappings
 

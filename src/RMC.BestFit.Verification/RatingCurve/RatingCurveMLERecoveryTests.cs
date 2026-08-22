@@ -266,7 +266,7 @@ public class RatingCurveMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_ThreeSegment_Default()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetThreeSegmentData(sampleSize: 1500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetThreeSegmentData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 3);
 
         var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
@@ -295,7 +295,7 @@ public class RatingCurveMLERecoveryTests
     [TestMethod]
     public void Test_EstimateParameters_ThreeSegment_MultipleControl()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetMultipleControlData(sampleSize: 1500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetMultipleControlData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 3);
 
         var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);

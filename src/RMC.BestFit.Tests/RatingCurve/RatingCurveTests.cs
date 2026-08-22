@@ -248,10 +248,11 @@ public class RatingCurveTests
     }
 
     /// <summary>
-    /// Default flat priors for beta allow near-zero exponents and are not strictly positive.
+    /// Default flat priors for beta are strictly positive: the lower bound and the prior support
+    /// exclude a zero exponent, for which an added control would jump at its activation stage (TR-044).
     /// </summary>
     [TestMethod]
-    public void DefaultFlatPriors_BetaBounds_AllowZeroForAllSegments()
+    public void DefaultFlatPriors_BetaBounds_ArePositiveForAllSegments()
     {
         for (int segmentCount = 1; segmentCount <= 3; segmentCount++)
         {
@@ -266,16 +267,48 @@ public class RatingCurveTests
             foreach (int index in betaIndexes)
             {
                 var parameter = model.Parameters[index];
-                Assert.AreEqual(0.0, parameter.LowerBound, 1e-12,
-                    $"Beta parameter {index} lower bound should be 0.");
+                Assert.AreEqual(0.1, parameter.LowerBound, 1e-12,
+                    $"Beta parameter {index} lower bound should be 0.1.");
                 Assert.AreEqual(5.0, parameter.UpperBound, 1e-12,
                     $"Beta parameter {index} upper bound should be 5.");
-                Assert.IsFalse(parameter.IsPositive,
-                    $"Beta parameter {index} should be nonnegative, not strictly positive.");
-                Assert.IsFalse(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(0.0)),
-                    $"Beta parameter {index} prior should include beta=0.");
+                Assert.IsTrue(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(0.0)),
+                    $"Beta parameter {index} prior must exclude beta=0.");
+                Assert.IsTrue(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(0.05)),
+                    $"Beta parameter {index} prior must exclude beta below the lower bound.");
+                Assert.IsFalse(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(0.1)),
+                    $"Beta parameter {index} prior must include its lower bound 0.1.");
+                Assert.IsFalse(double.IsNegativeInfinity(parameter.PriorDistribution.LogPDF(2.0)),
+                    $"Beta parameter {index} prior must include typical exponents.");
             }
+
+            var validation = model.Validate();
+            Assert.IsFalse(validation.ValidationMessages.Any(message => message.Contains("zero exponent")),
+                "Default bounds must not trigger the legacy zero-exponent warning.");
         }
+    }
+
+    /// <summary>
+    /// A legacy exponent bound that admits zero keeps the model valid but is reported as a warning,
+    /// and an XML round trip preserves the stored bound verbatim (TR-044).
+    /// </summary>
+    [TestMethod]
+    public void Validate_LegacyZeroExponentBound_WarnsButRemainsValid()
+    {
+        var (model, _) = MakeContractModel();
+        model.Parameters[2].LowerBound = 0.0;
+        model.Parameters[2].PriorDistribution = new Numerics.Distributions.Uniform(0.0, 5.0);
+
+        var validation = model.Validate();
+        Assert.IsTrue(validation.IsValid, string.Join(" | ", validation.ValidationMessages));
+        Assert.IsTrue(
+            validation.ValidationMessages.Any(message => message.StartsWith("Warning: ", StringComparison.Ordinal) && message.Contains("zero exponent")),
+            "Expected a zero-exponent warning: " + string.Join(" | ", validation.ValidationMessages));
+
+        var restored = new RMC.BestFit.Models.RatingCurve(model.StageData, model.DischargeData, model.ToXElement());
+        Assert.AreEqual(0.0, restored.Parameters[2].LowerBound, 0.0, "Legacy bounds must be restored verbatim.");
+        Assert.IsTrue(
+            restored.Validate().ValidationMessages.Any(message => message.StartsWith("Warning: ", StringComparison.Ordinal) && message.Contains("zero exponent")),
+            "The restored legacy model must carry the warning.");
     }
 
     /// <summary>
@@ -1200,6 +1233,146 @@ public class RatingCurveTests
         Assert.AreEqual(model.NumberOfSegments, restored.NumberOfSegments);
         Assert.AreEqual(model.UseJeffreysRuleForScale, restored.UseJeffreysRuleForScale);
         CollectionAssert.AreEqual(parameters, restored.Parameters.Select(parameter => parameter.Value).ToArray());
+    }
+
+    /// <summary>
+    /// A nonpositive discharge record on a date with no stage observation never enters the
+    /// date-aligned likelihood, so it must not invalidate a model with enough valid aligned pairs;
+    /// the ignored record is reported separately (TR-045).
+    /// </summary>
+    [TestMethod]
+    public void Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported()
+    {
+        double[] stages = Enumerable.Range(0, 20).Select(i => 1.0 + (0.25 * i)).ToArray();
+        double[] discharges = stages.Select(stage => 10.0 * Math.Pow(stage - 0.5, 1.5)).ToArray();
+        // The 21st discharge value falls on a date without a stage observation and is nonpositive.
+        double[] dischargesWithUnmatched = discharges.Append(0.0).ToArray();
+        var model = new RMC.BestFit.Models.RatingCurve(
+            new NumericsTimeSeries(TimeInterval.OneDay, new DateTime(2000, 1, 1), stages),
+            new NumericsTimeSeries(TimeInterval.OneDay, new DateTime(2000, 1, 1), dischargesWithUnmatched),
+            numberOfSegments: 1);
+
+        var validation = model.Validate();
+
+        Assert.AreEqual(20, model.GetDataAlignmentCounts().PairedCount);
+        Assert.IsTrue(validation.IsValid, string.Join(" | ", validation.ValidationMessages));
+        Assert.IsTrue(
+            validation.ValidationMessages.Any(message => message.Contains("unmatched", StringComparison.OrdinalIgnoreCase)),
+            "The ignored unmatched record must be reported: " + string.Join(" | ", validation.ValidationMessages));
+    }
+
+    /// <summary>
+    /// The data log likelihood is the discharge-space density: the log10-space Gaussian term of each
+    /// aligned pair plus the base-10 change-of-variables term -log(Q ln 10) (TR-043). The generating
+    /// parameters give zero residuals, so the value is the normalization plus the Jacobian sum.
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_IsDischargeSpaceDensity_AtGeneratingParameters()
+    {
+        var (model, parameters) = MakeContractModel();
+        double sigma = parameters[^1];
+        var aligned = model.GetAlignedObservations();
+
+        double expected = aligned.Sum(pair =>
+            -0.5 * Math.Log(2.0 * Math.PI) - Math.Log(sigma) - Math.Log(pair.Discharge * Math.Log(10.0)));
+
+        Assert.AreEqual(expected, model.DataLogLikelihood(parameters), 1e-10);
+    }
+
+    /// <summary>
+    /// Away from the generating parameters the discharge-space density carries the scaled squared
+    /// log10 residual of each aligned pair plus its change-of-variables term, and the pointwise and
+    /// component paths agree with the scalar value (TR-043).
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_IsDischargeSpaceDensity_WithResiduals()
+    {
+        var (model, parameters) = MakeContractModel();
+        double[] shifted = (double[])parameters.Clone();
+        shifted[2] = 1.6;
+        shifted[3] = 0.08;
+        double sigma = shifted[^1];
+        var aligned = model.GetAlignedObservations();
+
+        double expected = 0.0;
+        foreach (var pair in aligned)
+        {
+            double residual = Math.Log10(pair.Discharge) - Math.Log10(model.Predict(shifted, pair.Stage));
+            expected += -0.5 * Math.Log(2.0 * Math.PI) - Math.Log(sigma) - residual * residual / (2.0 * sigma * sigma)
+                - Math.Log(pair.Discharge * Math.Log(10.0));
+        }
+
+        double scalar = model.DataLogLikelihood(shifted);
+        Assert.AreEqual(expected, scalar, 1e-10);
+        Assert.AreEqual(scalar, model.PointwiseDataLogLikelihood(shifted).Sum(), 1e-10);
+        Assert.AreEqual(scalar, model.PointwiseDataLogLikelihoodComponents(shifted).Sum(component => component.LogLikelihood), 1e-10);
+    }
+
+    /// <summary>
+    /// The change-of-variables term is parameter-free: the likelihood difference between two parameter
+    /// vectors equals the difference of their log10-space Gaussian terms, so estimates are unchanged.
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_ParameterDifferences_AreFreeOfTheChangeOfVariablesTerm()
+    {
+        var (model, parameters) = MakeContractModel();
+        double[] shifted = (double[])parameters.Clone();
+        shifted[2] = 1.6;
+        var aligned = model.GetAlignedObservations();
+        double sigma = parameters[^1];
+
+        double logSpaceDifference = 0.0;
+        foreach (var pair in aligned)
+        {
+            double residual = Math.Log10(pair.Discharge) - Math.Log10(model.Predict(shifted, pair.Stage));
+            logSpaceDifference += -residual * residual / (2.0 * sigma * sigma);
+        }
+
+        Assert.AreEqual(logSpaceDifference, model.DataLogLikelihood(shifted) - model.DataLogLikelihood(parameters), 1e-10);
+    }
+
+    /// <summary>
+    /// Aligned pairs with a nonpositive discharge have no discharge-space density and make the
+    /// likelihood negative-infinite in every path rather than undefined.
+    /// </summary>
+    [TestMethod]
+    public void DataLogLikelihood_NonPositiveAlignedDischarge_IsNegativeInfinity()
+    {
+        var (model, parameters) = MakeContractModel();
+        model.DischargeData[3] = new SeriesOrdinate<DateTime, double>(model.DischargeData[3].Index, 0.0);
+        model.Validate();
+
+        Assert.IsTrue(double.IsNegativeInfinity(model.DataLogLikelihood(parameters)));
+        Assert.IsTrue(double.IsNegativeInfinity(model.PointwiseDataLogLikelihood(parameters)[3]));
+        Assert.IsTrue(double.IsNegativeInfinity(model.PointwiseDataLogLikelihoodComponents(parameters)[3].LogLikelihood));
+    }
+
+    /// <summary>
+    /// The validation warning reports how many unmatched stage and discharge records are ignored and
+    /// how many of the ignored discharge records are nonpositive (TR-045).
+    /// </summary>
+    [TestMethod]
+    public void Validate_ReportsUnmatchedRecordCounts()
+    {
+        double[] stages = Enumerable.Range(0, 20).Select(i => 1.0 + (0.25 * i)).ToArray();
+        double[] discharges = stages.Select(stage => 10.0 * Math.Pow(stage - 0.5, 1.5)).ToArray();
+        // Two leading discharge records (1999-12-30 and 1999-12-31) precede every stage date; the first
+        // is nonpositive. The twenty curve values then align with the twenty stages on 2000-01-01..01-20,
+        // and three trailing stage records (2000-01-21..01-23) have no discharge partner.
+        double[] dischargesWithUnmatched = new[] { 0.0, 25.0 }.Concat(discharges).ToArray();
+        double[] stagesWithUnmatched = stages.Concat(new[] { 6.0, 6.25, 6.5 }).ToArray();
+        var model = new RMC.BestFit.Models.RatingCurve(
+            new NumericsTimeSeries(TimeInterval.OneDay, new DateTime(2000, 1, 1), stagesWithUnmatched),
+            new NumericsTimeSeries(TimeInterval.OneDay, new DateTime(1999, 12, 30), dischargesWithUnmatched),
+            numberOfSegments: 1);
+
+        var validation = model.Validate();
+
+        Assert.AreEqual(20, model.GetDataAlignmentCounts().PairedCount);
+        Assert.IsTrue(validation.IsValid, string.Join(" | ", validation.ValidationMessages));
+        string warning = validation.ValidationMessages.Single(message => message.StartsWith("Warning: ", StringComparison.Ordinal) && message.Contains("unmatched", StringComparison.Ordinal));
+        Assert.IsTrue(warning.Contains("3 stage and 2 discharge", StringComparison.Ordinal), warning);
+        Assert.IsTrue(warning.Contains("1 of the ignored discharge record(s) are nonpositive", StringComparison.Ordinal), warning);
     }
 
     #endregion

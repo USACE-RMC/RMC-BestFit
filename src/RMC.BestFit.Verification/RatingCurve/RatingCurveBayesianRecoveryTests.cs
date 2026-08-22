@@ -34,7 +34,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_SingleSegment_LowNoise()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetLowNoiseData(sampleSize: 500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetLowNoiseData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 1)
         {
             UseJeffreysRuleForScale = false,
@@ -69,7 +69,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_SingleSegment_Default()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetSingleSegmentData(sampleSize: 500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetSingleSegmentData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 1)
         {
             UseJeffreysRuleForScale = false,
@@ -101,7 +101,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_SingleSegment_SteepChannel()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetSteepChannelData(sampleSize: 500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetSteepChannelData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 1)
         {
             UseJeffreysRuleForScale = false,
@@ -133,7 +133,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_SingleSegment_WideChannel()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetWideChannelData(sampleSize: 500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetWideChannelData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 1)
         {
             UseJeffreysRuleForScale = false,
@@ -195,7 +195,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_SingleSegment_WideRange()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetWideRangeData(sampleSize: 500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetWideRangeData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 1)
         {
             UseJeffreysRuleForScale = false,
@@ -235,7 +235,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_TwoSegment_Default()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetTwoSegmentData(sampleSize: 500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetTwoSegmentData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 2)
         {
             UseJeffreysRuleForScale = false,
@@ -268,7 +268,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_TwoSegment_BankfullTransition()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetBankfullTransitionData(sampleSize: 500);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetBankfullTransitionData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 2)
         {
             UseJeffreysRuleForScale = false,
@@ -308,7 +308,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_ThreeSegment_Default()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetThreeSegmentData(sampleSize: 800);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetThreeSegmentData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 3)
         {
             UseJeffreysRuleForScale = false,
@@ -341,7 +341,7 @@ public class RatingCurveBayesianRecoveryTests
     [TestMethod]
     public async Task Test_EstimateParameters_ThreeSegment_MultipleControl()
     {
-        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetMultipleControlData(sampleSize: 800);
+        var (stageTS, dischargeTS, trueParams) = SyntheticRatingCurveData.GetMultipleControlData(sampleSize: 1000);
         var model = new BestFitRatingCurve(stageTS, dischargeTS, numberOfSegments: 3)
         {
             UseJeffreysRuleForScale = false,

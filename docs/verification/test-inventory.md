@@ -663,3 +663,24 @@ terms and Gaussian-process density are recorded separately. Each method ran once
 | `SpatialGEVLikelihoodOracleTests.LocationErrorModel_DataLogLikelihood_ExcludesProcessDensity` | Verification | Data likelihood holds observation terms only | Failed - confirms TR-049 |
 | `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseDecompositionsAgree` | Verification | Data equals pointwise sum; prior equals pointwise prior sum | Failed - confirms TR-049 |
 | `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseGradientsAgree` | Verification | Scalar and pointwise gradients agree (`1e-4`) | Failed - confirms TR-057 |
+
+## Phase 6 Batch 6.1 rating-curve corrections and replication - 21 August 2026
+
+After the approved TR-043/TR-044/TR-045 corrections (discharge-space density; exponent lower bound 0.1
+with a legacy warning; aligned-pair validation with an unmatched-record warning) the fast core project
+passes 3,281/3,281 with zero build warnings and every method below ran once through
+`scripts/run-verification-test.ps1`. The replication fixtures moved from the shipped 300 observations to
+the seeded 1,000-observation block under the recovery sample-size policy; the acceptance-rule
+amendments and the first-run failures are recorded in the chapter.
+
+| Test | Project | Contract | Outcome |
+|---|---|---|---|
+| `RatingCurveLikelihoodOracleTests.{One,Two,Three}Segment_DataLogLikelihood_IsDischargeSpaceDensity` | Verification | Scalar, pointwise, and component likelihoods equal the SciPy/Numerics discharge-space density | Passed 3/3 (failed by the change-of-variables sums before the correction) |
+| `RatingCurveContinuityVerificationTests` (7 methods) | Verification | Analytical two-sided continuity, positive default bounds, vanishing increment at the lower bound | Passed 7/7 |
+| `RatingCurveTests.DataLogLikelihood_IsDischargeSpaceDensity_AtGeneratingParameters`, `..._WithResiduals`, `DataLogLikelihood_ParameterDifferences_AreFreeOfTheChangeOfVariablesTerm`, `DataLogLikelihood_NonPositiveAlignedDischarge_IsNegativeInfinity` | Fast core | Hand-computed discharge-space density, parameter-free Jacobian, identities, nonpositive discharge | Passed |
+| `RatingCurveTests.DefaultFlatPriors_BetaBounds_ArePositiveForAllSegments`, `Validate_LegacyZeroExponentBound_WarnsButRemainsValid` | Fast core | Default exponent bound 0.1; legacy bound verbatim with warning | Passed |
+| `RatingCurveTests.Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported`, `Validate_ReportsUnmatchedRecordCounts`, `Validate_NonPositiveDischarge_IsInvalid` | Fast core | Aligned-pair error; unmatched-record warning with counts | Passed |
+| `RatingCurveExampleRecoveryTests.Mle_{One,Two,Three}Segment_RecoversExampleCurve` | Verification | Production MLE versus the independent SciPy optimum (same-point likelihood `1e-8`, optimality `1e-4`, parameters `1e-3`/`1e-2`, curve parity 0.5%, 10% truth band), 1,000 observations | Passed 3/3 (6.4 s, 6.5 s, 15.9 s) |
+| `RatingCurveExampleRecoveryTests.Bayesian_{One,Two,Three}Segment_RecoversExampleCurve` | Verification | Production defaults; R-hat < 1.1, ESS > 100; sampled MAP versus the optimum (5%/10%); MAP-curve parity 2%; 10% truth band; in-band fraction reported (36/36, 36/36, 34/36) | Passed 3/3 (37.4 s, 71.5 s, 122.9 s) |
+| `RatingCurveMLERecoveryTests` (10 methods, now 1,000 observations) | Verification | Self-generated truth recovery, unchanged tolerances | Passed 10/10 (3.4-4.0 s) |
+| `RatingCurveBayesianRecoveryTests` (10 methods, now 1,000 observations) | Verification | Self-generated truth recovery under production defaults, unchanged tolerances | Passed 10/10 (34-148 s) |

@@ -2,7 +2,7 @@
   "metadata": {
     "generated": "2026-08-21",
     "generator": "verification/python/rating-curve/generate_rating_curve_example_oracles.py",
-    "generator_sha256": "17d51387d5565e97e4fab1dfeecff755413162a691335fdec2dd22eecebe7936",
+    "generator_sha256": "949a303dd79c4e4d08f82d65c3ff1a8d869bcdbfbdf1fefafd2f0ccf73cb1bbb",
     "python": "3.12.13",
     "numpy": "2.4.2",
     "scipy": "1.17.1",

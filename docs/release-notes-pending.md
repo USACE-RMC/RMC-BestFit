@@ -41,6 +41,13 @@ development.
   `BoundRepairRate`, and `IncrementBoundRepair()`; `ComputeCohnStyleConfidenceIntervals()`
   throws `NotSupportedException` outside its LP3/exact-data scope; AIC/BIC use the data
   likelihood.
+- Rating curve: the data log likelihood is the discharge-space density (the log10-space Gaussian
+  term plus the base-10 change-of-variables term per aligned pair) in the scalar, pointwise, and
+  component paths, so AIC/BIC/DIC/WAIC/LOOIC shift by the data constant `-sum log(Q ln 10)` and
+  persisted rating-curve criteria differ on reprocess (parameter estimates are unchanged); the
+  default exponent lower bound and prior minimum are 0.1 instead of 0 (legacy projects keep their
+  stored bounds and receive a validation warning); validation rejects only nonpositive date-aligned
+  discharge and reports unmatched stage/discharge records as a warning with counts.
 - Mixture: MCMC samples the identified `K-1` weight coordinates; AIC/BIC count `K-1` weights;
   legacy full-`K` posteriors still open.
 

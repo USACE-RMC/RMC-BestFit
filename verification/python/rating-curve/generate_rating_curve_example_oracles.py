@@ -60,6 +60,11 @@ LN10 = math.log(10.0)
 TRUE_CURVE_STAGES = [1.5 + 0.5 * index for index in range(37)]
 MULTISTART_SEED = 20260821
 MULTISTART_COUNT = 24
+# The recovery cells use 1,000 observations (program policy: recovery fixtures between 300 and
+# 1,000 observations); the shipped example has 300 draws, so the replication block applies the
+# example's exact recipe to a seeded draw set of 1,000.
+REPLICATION_SEED = 20260822
+REPLICATION_OBSERVATIONS = 1000
 
 # Control definitions transcribed from the workbook parameter blocks.
 TRIANGULAR_CHANNEL = {
@@ -297,7 +302,7 @@ def independent_mle(
         attempt = {"start": as_floats(start), "residual_sum_of_squares": rss, "success": bool(result.success)}
         attempts.append(attempt)
         if np.isfinite(rss) and rss < 1e5 and (best is None or rss < best["residual_sum_of_squares"]):
-            best = {"parameters": result.x.copy(), "residual_sum_of_squares": rss, "status": int(result.status)}
+            best = {"parameters": result.x.copy(), "residual_sum_of_squares": rss, "status": int(result.status), "jacobian": result.jac}
     if best is None:
         raise RuntimeError("No least-squares start converged.")
     theta = best["parameters"]
@@ -307,8 +312,14 @@ def independent_mle(
     residual_vector = residuals(theta)
     log_space = log_space_log_likelihood(residual_vector, sigma_hat)
     jacobian_sum = float(np.sum(np.log(discharge * LN10)))
+    # Asymptotic standard errors of the shape parameters from the least-squares Jacobian,
+    # sigma^2 (J'J)^-1, plus sigma / sqrt(2n) for the profiled scale; documentation of identifiability.
+    jacobian = best["jacobian"]
+    shape_covariance = sigma_hat**2 * np.linalg.pinv(jacobian.T @ jacobian)
+    standard_errors = np.concatenate([np.sqrt(np.clip(np.diag(shape_covariance), 0.0, None)), [sigma_hat / math.sqrt(2.0 * observations)]])
     return {
         "parameters": as_floats(optimum),
+        "standard_errors": as_floats(standard_errors),
         "residual_sum_of_squares": rss,
         "profiled_sigma": sigma_hat,
         "log_space_log_likelihood": log_space,
@@ -363,6 +374,49 @@ def example_posterior_means() -> dict[str, list[float]]:
             9.7050122761885707, 2.7172731927614926, 1.9533262339590027,
             14.648033778968117, 3.1559684147849603, 2.1715529261903739, 0.050661441625089572,
         ],
+    }
+
+
+def replication_block() -> dict[str, Any]:
+    """Apply the example recipe to a seeded set of 1,000 draws for the recovery cells."""
+
+    generator = np.random.default_rng(REPLICATION_SEED)
+    r1 = generator.random(REPLICATION_OBSERVATIONS)
+    r2 = generator.random(REPLICATION_OBSERVATIONS)
+    stage = STAGE_MINIMUM + STAGE_RANGE * r1
+    error = LOG10_SIGMA * stats.norm.ppf(r2)
+    dates = [(START_DATE + timedelta(days=index)).isoformat() for index in range(REPLICATION_OBSERVATIONS)]
+    cases: dict[str, Any] = {}
+    for key, _, controls in CASES:
+        segments = len(controls)
+        q_true = true_discharge(stage, controls)
+        discharge = np.power(10.0, np.log10(q_true) + error)
+        truth = bestfit_parameters(controls, LOG10_SIGMA)
+        lower, upper = default_bounds(stage, discharge, segments)
+        mle = independent_mle(stage, discharge, segments, lower, upper, truth)
+        truth_terms = likelihood_terms(stage, discharge, np.array(truth), segments)
+        cases[key] = {
+            "segments": segments,
+            "discharge": as_floats(discharge),
+            "parameter_names": parameter_names(segments),
+            "true_parameters": truth,
+            "true_curve_discharge": as_floats(true_discharge(np.array(TRUE_CURVE_STAGES), controls)),
+            "default_bounds": {"lower": lower, "upper": upper},
+            "log_likelihood_at_truth": {
+                "log_space": truth_terms["log_space_log_likelihood"],
+                "jacobian_sum": truth_terms["jacobian_sum"],
+                "discharge_space": truth_terms["discharge_space_log_likelihood"],
+            },
+            "independent_mle": mle,
+        }
+    return {
+        "seed": REPLICATION_SEED,
+        "observations": REPLICATION_OBSERVATIONS,
+        "start_date": START_DATE.isoformat(),
+        "time_interval": "OneDay",
+        "recipe": "identical to the example workbook recipe with numpy default_rng draws r1 (stage) and r2 (log10 error)",
+        "stage": {"dates": dates, "values": as_floats(stage)},
+        "cases": cases,
     }
 
 
@@ -476,7 +530,13 @@ def main() -> None:
             "(DEMCzs, seed 12345, 3500 iterations, 1750 warmup, 90% interval, posterior mean)"
         ),
     }
-    fixtures_payload = {"metadata": metadata, "stage": {"dates": dates, "values": as_floats(stage)}, "cases": fixtures}
+    replication = replication_block()
+    fixtures_payload = {
+        "metadata": metadata,
+        "stage": {"dates": dates, "values": as_floats(stage)},
+        "cases": fixtures,
+        "replication_n1000": replication,
+    }
     likelihood_payload = {
         "metadata": {
             **metadata,
@@ -492,13 +552,15 @@ def main() -> None:
     LIKELIHOOD_PATH.write_text(json.dumps(likelihood_payload, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(f"Wrote {FIXTURES_PATH}")
     print(f"Wrote {LIKELIHOOD_PATH}")
-    for key, case in fixtures.items():
-        print(
-            f"{key}: truth={np.round(case['true_parameters'], 6).tolist()} "
-            f"mle={np.round(case['independent_mle']['parameters'], 6).tolist()} "
-            f"rss={case['independent_mle']['residual_sum_of_squares']:.10f} "
-            f"optima={case['independent_mle']['distinct_start_optima_rss'][:5]}"
-        )
+    for label, block in (("example n=300", fixtures), ("replication n=1000", replication["cases"])):
+        for key, case in block.items():
+            print(
+                f"{label} {key}: truth={np.round(case['true_parameters'], 6).tolist()} "
+                f"mle={np.round(case['independent_mle']['parameters'], 6).tolist()} "
+                f"se={np.round(case['independent_mle']['standard_errors'], 4).tolist()} "
+                f"rss={case['independent_mle']['residual_sum_of_squares']:.10f} "
+                f"optima={case['independent_mle']['distinct_start_optima_rss'][:4]}"
+            )
 
 
 if __name__ == "__main__":

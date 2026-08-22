@@ -100,8 +100,11 @@ internal static class RatingCurveExampleFixtures
     internal static JsonDocument LoadDocument(string fileName) =>
         JsonDocument.Parse(File.ReadAllText(ArtifactPath(fileName)));
 
+    /// <summary>The number of observations in the seeded 1,000-observation replication block.</summary>
+    internal const int ReplicationObservations = 1000;
+
     /// <summary>
-    /// Loads one example case from the fixtures artifact.
+    /// Loads one example case (the shipped 300-observation data) from the fixtures artifact.
     /// </summary>
     /// <param name="key">The artifact key (<c>one_segment</c>, <c>two_segment</c>, or <c>three_segment</c>).</param>
     /// <returns>The detached example case.</returns>
@@ -110,26 +113,60 @@ internal static class RatingCurveExampleFixtures
         using JsonDocument document = LoadDocument(FixturesFileName);
         JsonElement root = document.RootElement;
         JsonElement metadata = root.GetProperty("metadata");
-        Assert.AreEqual(Observations, metadata.GetProperty("observations").GetInt32(), "Fixture observation count.");
-        Assert.AreEqual("OneDay", metadata.GetProperty("time_interval").GetString(), "Fixture time interval.");
+        return ReadCase(root, metadata, root.GetProperty("cases").GetProperty(key), key, Observations, hasExamplePosteriorMean: true);
+    }
 
-        JsonElement stage = root.GetProperty("stage");
+    /// <summary>
+    /// Loads one recovery case from the seeded 1,000-observation replication block, which applies the
+    /// example's exact recipe to a larger draw set (recovery fixtures use between 300 and 1,000
+    /// observations; the shipped example has 300).
+    /// </summary>
+    /// <param name="key">The artifact key (<c>one_segment</c>, <c>two_segment</c>, or <c>three_segment</c>).</param>
+    /// <returns>The detached recovery case.</returns>
+    internal static ExampleCase LoadReplicationCase(string key)
+    {
+        using JsonDocument document = LoadDocument(FixturesFileName);
+        JsonElement root = document.RootElement.GetProperty("replication_n1000");
+        JsonElement metadata = document.RootElement.GetProperty("metadata");
+        Assert.AreEqual(ReplicationObservations, root.GetProperty("observations").GetInt32(), "Replication observation count.");
+        return ReadCase(root, metadata, root.GetProperty("cases").GetProperty(key), key, ReplicationObservations, hasExamplePosteriorMean: false);
+    }
+
+    /// <summary>
+    /// Reads one case block and its shared stage series.
+    /// </summary>
+    /// <param name="block">The block holding <c>stage</c>, <c>start_date</c>, and <c>time_interval</c>.</param>
+    /// <param name="metadata">The artifact metadata holding the true-curve stage grid.</param>
+    /// <param name="example">The case element.</param>
+    /// <param name="key">The case key.</param>
+    /// <param name="observations">The expected observation count.</param>
+    /// <param name="hasExamplePosteriorMean">Whether the case records the example project's posterior mean.</param>
+    /// <returns>The detached case.</returns>
+    private static ExampleCase ReadCase(
+        JsonElement block,
+        JsonElement metadata,
+        JsonElement example,
+        string key,
+        int observations,
+        bool hasExamplePosteriorMean)
+    {
+        Assert.AreEqual("OneDay", block.GetProperty("time_interval").GetString(), "Fixture time interval.");
+        JsonElement stage = block.GetProperty("stage");
         string[] dates = ReadStrings(stage.GetProperty("dates"));
         double[] stageValues = ReadDoubles(stage.GetProperty("values"));
-        Assert.AreEqual(Observations, dates.Length, "Fixture date count.");
-        Assert.AreEqual(Observations, stageValues.Length, "Fixture stage count.");
+        Assert.AreEqual(observations, dates.Length, "Fixture date count.");
+        Assert.AreEqual(observations, stageValues.Length, "Fixture stage count.");
         DateTime startDate = DateTime.ParseExact(dates[0], "yyyy-MM-dd", CultureInfo.InvariantCulture);
         Assert.AreEqual(
-            DateTime.ParseExact(metadata.GetProperty("start_date").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture),
+            DateTime.ParseExact(block.GetProperty("start_date").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture),
             startDate,
             "Fixture start date.");
 
-        JsonElement example = root.GetProperty("cases").GetProperty(key);
         JsonElement mle = example.GetProperty("independent_mle");
         JsonElement atTruth = example.GetProperty("log_likelihood_at_truth");
         JsonElement bounds = example.GetProperty("default_bounds");
         double[] discharge = ReadDoubles(example.GetProperty("discharge"));
-        Assert.AreEqual(Observations, discharge.Length, $"{key} discharge count.");
+        Assert.AreEqual(observations, discharge.Length, $"{key} discharge count.");
 
         return new ExampleCase(
             key,
@@ -150,7 +187,7 @@ internal static class RatingCurveExampleFixtures
             mle.GetProperty("log_space_log_likelihood").GetDouble(),
             mle.GetProperty("discharge_space_log_likelihood").GetDouble(),
             mle.GetProperty("residual_sum_of_squares").GetDouble(),
-            ReadDoubles(example.GetProperty("example_project_posterior_mean")));
+            hasExamplePosteriorMean ? ReadDoubles(example.GetProperty("example_project_posterior_mean")) : Array.Empty<double>());
     }
 
     /// <summary>
