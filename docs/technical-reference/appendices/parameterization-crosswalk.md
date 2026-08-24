@@ -28,7 +28,7 @@ This crosswalk prevents natural space, log/link space, Numerics parameters, tren
 | `GeneralizedNormal` | $(\xi,\alpha,\kappa)$ | Hosking GNO; not exponential-power | $\kappa<0$ unbounded upper; $\kappa>0$ bounded upper | Complete |
 | `GeneralizedPareto` | $(\xi,\alpha,\kappa)$ | Numerics $\kappa=-\xi_{\text{common}}$ | $\kappa<0$ heavy upper; $\kappa>0$ bounded upper | Complete |
 | `Gumbel` | $(\xi,\alpha)$ | Location and scale | All real; exponential upper tail | Complete |
-| `KappaFour` | $(\xi,\alpha,\kappa,h)$ | Second shape is `Hondo` | Shape-dependent | Complete; TR-001 zero-shape fix verified |
+| `KappaFour` | $(\xi,\alpha,\kappa,h)$ | Second shape is `Hondo` | Shape-dependent | Complete; zero-shape limits verified |
 | `LnNormal` | $(m,s)$ | Arithmetic mean and SD of $X$ | $x>0$; internally converts to natural-log parameters | Complete |
 | `Logistic` | $(\xi,\alpha)$ | Location and scale | All real; symmetric exponential tails | Complete |
 | `LogNormal` | $(\mu_Y,\sigma_Y)$ | Mean/SD of $Y=\log_{10}X$ | $x>0$ | Complete |
@@ -59,7 +59,7 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 |---|---|---|
 | Point process, one season | $(\mu,\sigma,\kappa)$ with Numerics $\kappa=-\xi_{\mathrm{Coles}}$; threshold and exposure are model properties, not fitted coordinates | Complete |
 | Point process, two seasons | $(k_1,k_2,\mu_1,\sigma_1,\kappa_1,\mu_2,\sigma_2,\kappa_2)$; $k_1,k_2$ are day-of-year change points | Complete |
-| Mixture, $K$ components | Numerics and BestFit's public model, configured priors, EM output, and project model use $(w_1,\ldots,w_K,\boldsymbol\theta)$. New BestFit `MCMCResults` store $(w_1,\ldots,w_{K-1},\boldsymbol\theta)$ and derive $w_K=m-\sum_{k<K}w_k$ before any physical model call. Sampler diagnostics are stored-coordinate only; physical tables and curves locally expand to full $K$. Legacy full-$K$ results use identity mapping. | Complete; TR-006 parameterization correction |
+| Mixture, $K$ components | Numerics and BestFit's public model, configured priors, EM output, and project model use $(w_1,\ldots,w_K,\boldsymbol\theta)$. New BestFit `MCMCResults` store $(w_1,\ldots,w_{K-1},\boldsymbol\theta)$ and derive $w_K=m-\sum_{k<K}w_k$ before any physical model call. Sampler diagnostics are stored-coordinate only; physical tables and curves locally expand to full $K$. Legacy full-$K$ results use identity mapping. | Complete; stored and physical parameterizations verified |
 | Competing risks | Concatenated component parameter blocks; minimum/maximum and dependence are model properties | Complete |
 | Composite analysis | No independent fitted vector; combines already fitted child parameter realizations and derived criterion weights | Complete |
 | Bulletin 17C | Parent natural parameters: two for Exponential/Gamma/Normal/Log-Normal and $(\mu,\sigma,\gamma)$ for P3/LP3; LP3 and Log-Normal moments are in base-10 log space | Complete |
@@ -71,8 +71,8 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 | API | Coordinates and reported objective | Status |
 |---|---|---|
 | `MaximumLikelihood` | Natural model coordinates within `ModelParameter` bounds; optimizer minimizes negative data log likelihood; `MaximumLogLikelihood` reverses the stored fitness sign | Complete |
-| `MaximumAPosteriori` | Same coordinates; optimizer minimizes the negative full `IModel.LogLikelihood` target; `MaximumLogLikelihood` is therefore a posterior-kernel value; profile methods reoptimize nuisance parameters on that full target | Complete with TR-023 |
-| `GeneralizedMethodOfMoments` | Natural `IGMMModel` coordinates; moment vector length $q$, parameter-vector length $p$, weighting matrix $q\times q$ | Complete with TR-026, TR-033, and TR-034 fit/covariance parity |
+| `MaximumAPosteriori` | Same coordinates; optimizer minimizes the negative full `IModel.LogLikelihood` target; `MaximumLogLikelihood` is therefore a posterior-kernel value; profile methods reoptimize nuisance parameters on that full target | Complete; profile behavior independently verified |
+| `GeneralizedMethodOfMoments` | Natural `IGMMModel` coordinates; moment vector length $q$, parameter-vector length $p$, weighting matrix $q\times q$ | Complete; fit, specification, and covariance parity verified |
 | `BayesianAnalysis` | Bounded natural coordinates targeting `IModel.LogLikelihood`; options are DEMCz, DEMCzs, ARWMH, and NUTS | Complete; PSIS, ARWMH adaptation, NUTS acceptance/gradient routes, live-sampler diagnostics, and rank-normalized R-hat/bulk-tail ESS verified |
 | Posterior results | Marginal summaries use `MCMCResults.Output`; `MAP` is the highest-target sampled output state, not a continuous optimizer | Complete |
 | DIC/WAIC/LOO | Pointwise units are `PointwiseDataLogLikelihood` components; PSIS-LOO matches R `loo` 2.10.0 for `r_eff = 1` and requires Pareto-k review | Complete with documented no-refit and relative-efficiency caveats |
@@ -83,23 +83,23 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 |---|---|---|
 | `AutoRegressive` | optional transformed-scale mean $\mu$; $\phi_1,\ldots,\phi_p$; transformed-scale $\sigma$ | Complete with findings |
 | `MovingAverage` | optional transformed-scale mean $\mu$; $\theta_1,\ldots,\theta_q$; transformed-scale $\sigma$ | Complete with findings |
-| `ARIMA` | optional mean/drift $\mu$ of $\Delta^d g(y)$; AR block; MA block; innovation $\sigma$ | Complete; $d>0$ prediction unavailable under TR-037/TR-038 |
-| `ARIMAX` | optional $\mu$; polynomial trend; sine/cosine; covariate-by-lag blocks; AR; MA; $\sigma$ | Complete; affected configurations restricted by TR-037/TR-039/TR-041 |
-| Transform | raw $y$ to $g(y)$ before differencing; $\lambda$ is plug-in preprocessing, not a fitted `ModelParameter` | Complete with TR-036/TR-046 |
-| Rating curve | repeating $(h_k,a_k,\beta_k)$ blocks then $\sigma$, where $a_k=\log_{10}\alpha_k$, $\beta_k\ge0.1$ by default, and $\sigma$ is log10-discharge SD; the likelihood is the discharge-space density | Complete; TR-043 and TR-044 corrected |
+| `ARIMA` | optional mean/drift $\mu$ of $\Delta^d g(y)$; AR block; MA block; innovation $\sigma$ | Complete; differenced forecasts are reintegrated from the final observed training state |
+| `ARIMAX` | optional $\mu$; polynomial trend; sine/cosine; covariate-by-lag blocks; AR; MA; $\sigma$ | Complete; response, covariate, lag, and Jacobian indexes share one date-aligned conditional window |
+| Transform | raw $y$ to $g(y)$ before differencing; $\lambda$ is plug-in preprocessing, not a fitted `ModelParameter` | Complete; fitted from the training prefix and rebuilt atomically after manual assignment |
+| Rating curve | repeating $(h_k,a_k,\beta_k)$ blocks then $\sigma$, where $a_k=\log_{10}\alpha_k$, $\beta_k\ge0.1$ by default, and $\sigma$ is log10-discharge SD; the likelihood is the discharge-space density | Complete and independently verified |
 
 ## Bivariate and Spatial Mappings
 
 | Model | Public parameter order and scale | Status |
 |---|---|---|
-| `BivariateDistribution` | Copula parameter block only; the two marginal `UnivariateDistribution` models are fixed upstream and are not appended to the fitted vector | Complete with TR-047 |
+| `BivariateDistribution` | Copula parameter block only; the two marginal `UnivariateDistribution` models are fixed upstream and are not appended to the fitted vector | Complete; copula parameter recovery and criteria routing verified |
 | Bivariate pseudo-likelihood | Copula receives matched nonexceedance pseudo-observations \((\widetilde u_i,\widetilde v_i)\) | Complete |
 | Bivariate IFM | Copula receives \(F_X(x_i;\widehat\eta_X),F_Y(y_i;\widehat\eta_Y)\); marginal estimates remain fixed | Complete |
-| `SpatialGEV` | copula correlation block; location regression; scale regression; shape regression; enabled location/scale/shape error blocks (process densities in `PriorLogLikelihood`) | Complete (TR-048 through TR-062 corrected or closed) |
+| `SpatialGEV` | copula correlation block; location regression; scale regression; shape regression; enabled location/scale/shape error blocks (process densities in `PriorLogLikelihood`) | Complete; likelihood, prediction, recovery, and uncertainty paths verified |
 | Spatial regression | each `GeneralLinearFunction` is \((\beta_0,\beta_1,\ldots,\beta_K)\), with stored covariate row \(j\) selecting site \(j\) | Complete |
 | Spatial error block | \((\sigma_a,\boldsymbol\phi_a,\epsilon_{a,1},\ldots,\epsilon_{a,S})\); \(\boldsymbol\phi_a=(r_a)\) or \((r_a,p_a)\) | Complete |
 | Spatial GEV links | default \(\xi_j=\exp(\eta_{\xi,j}+\epsilon_{\xi,j})\), \(\alpha_j=\exp(\eta_{\alpha,j}+\epsilon_{\alpha,j})\), and \(\kappa_j=\eta_{\kappa,j}+\epsilon_{\kappa,j}\) | Complete |
-| Spatial coordinates | `SpatialDistanceMetric.Cartesian` (default): projected coordinates, correlation range in the same linear unit; `Geodesic`: (latitude, longitude) in decimal degrees, great-circle kilometres, range in kilometres | Complete (TR-060 corrected) |
+| Spatial coordinates | `SpatialDistanceMetric.Cartesian` (default): projected coordinates, correlation range in the same linear unit; `Geodesic`: (latitude, longitude) in decimal degrees, great-circle kilometres, range in kilometres | Complete; both distance metrics verified |
 
 ---
 

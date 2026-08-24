@@ -102,9 +102,9 @@ $$
 N_{y1}=N_y\frac{k_1+366-k_2}{366},
 \qquad
 N_{y2}=N_y\frac{k_2-k_1}{366}. \tag{8}
+$$
 
 The block-day index \(k\) counts elapsed days from the block start, so a non-leap block reaches day 365 while the exposure fractions divide by 366; the resulting exposure difference is below 0.3% and is accepted.
-$$
 
 Each exact event contributes the intensity-density term from its assigned season, and each season contributes its own \(-N_{ys}\Lambda_{u,s}\) term. **POTDays** is the one-based elapsed day from the selected calendar- or water-year block start. This elapsed-day calculation, rather than a month shift, is shared by observed and generated events and preserves leap days. Uncertain, interval, and threshold-count records do not carry a usable day assignment.
 
@@ -229,7 +229,7 @@ A positive seed is deterministic; nonpositive seeds use a clock-seeded generator
 
 ## Implementation and Verification Traceability
 
-The 31 July 2026 current-source backcheck closes TR-004 and TR-005 in the approved point-process scope. All ten guarded cells pass. Recovery fixtures use 1,000 observations and the untouched `BayesianAnalysis` defaults: DEMCzs, four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning 20, and seed 12345. Calendar-year uniform recovery, October-water-year block-origin parity, and both production-generator recovery cells pass. The initial water-year failure came from changing the block-day changepoints to `80/260`; keeping `170/350` and changing only the dates and block convention produces the same modeled partition and passes. No production formula, sampler default, prior, or tolerance changed. See the [point-process verification report](../../verification/point-process.md#current-source-guarded-results) for exact outcomes.
+All ten guarded point-process cells pass. Recovery fixtures use 1,000 observations and the production `BayesianAnalysis` defaults: DEMCzs, four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning 20, and seed 12345. Calendar-year uniform recovery, October-water-year block-origin parity, and both production-generator recovery cells pass. The water-year fixture retains changepoints `170/350` while changing the dates and block convention so that it preserves the modeled partition. No production formula, sampler default, prior, or tolerance is modified by the verification. See [Point-Process Analysis](../../verification/report/point-process-analysis.md) for the methods and results.
 
 | Concern | Implementation |
 |---|---|

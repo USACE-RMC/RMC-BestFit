@@ -150,7 +150,10 @@ internal static class RatingCurveExampleFixtures
         int observations,
         bool hasExamplePosteriorMean)
     {
-        Assert.AreEqual("OneDay", block.GetProperty("time_interval").GetString(), "Fixture time interval.");
+        JsonElement timing = block.TryGetProperty("time_interval", out _)
+            ? block
+            : metadata;
+        Assert.AreEqual("OneDay", timing.GetProperty("time_interval").GetString(), "Fixture time interval.");
         JsonElement stage = block.GetProperty("stage");
         string[] dates = ReadStrings(stage.GetProperty("dates"));
         double[] stageValues = ReadDoubles(stage.GetProperty("values"));
@@ -158,7 +161,7 @@ internal static class RatingCurveExampleFixtures
         Assert.AreEqual(observations, stageValues.Length, "Fixture stage count.");
         DateTime startDate = DateTime.ParseExact(dates[0], "yyyy-MM-dd", CultureInfo.InvariantCulture);
         Assert.AreEqual(
-            DateTime.ParseExact(block.GetProperty("start_date").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture),
+            DateTime.ParseExact(timing.GetProperty("start_date").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture),
             startDate,
             "Fixture start date.");
 

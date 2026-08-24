@@ -7,8 +7,11 @@ const scriptDirectory = path.dirname(new URL(import.meta.url).pathname.replace(/
 const repositoryRoot = path.resolve(scriptDirectory, "..");
 const referenceRoot = path.join(repositoryRoot, "docs", "technical-reference");
 const manifestPath = path.join(referenceRoot, "book-order.txt");
+const metadataPath = path.join(repositoryRoot, "docs", "report-metadata.json");
 const htmlOutputPath = path.resolve(process.argv[2] || path.join(repositoryRoot, "tmp", "pdfs", "rmc-bestfit-technical-reference.html"));
 const equationOutputPath = path.resolve(process.argv[3] || path.join(repositoryRoot, "tmp", "pdfs", "technical-reference-equations.tex"));
+const reportMetadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+const report = reportMetadata.technical_reference;
 
 function loadMarked() {
     const searchRoots = [
@@ -201,7 +204,16 @@ function cleanSource(document) {
         return headingMatch[1] + " " + headingText + " {#" + uniqueSlug + "}";
     }).join("\n");
 
-    source = lines.replace(/\]\(([^)\s]+\.md)(#[^)]+)?\)/gi, (match, target, fragment) => {
+    source = lines.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (match, alternateText, target) => {
+        if (/^(?:[a-z]+:|#)/i.test(target)) {
+            return match;
+        }
+
+        const absoluteTarget = path.resolve(path.dirname(document.absolutePath), decodeURIComponent(target));
+        return "![" + alternateText + "](" + pathToFileURL(absoluteTarget).href + ")";
+    });
+
+    source = source.replace(/\]\(([^)\s]+\.md)(#[^)]+)?\)/gi, (match, target, fragment) => {
         const targetPath = normalizeRelativePath(path.relative(
             referenceRoot,
             path.resolve(path.dirname(document.absolutePath), decodeURIComponent(target))
@@ -318,20 +330,20 @@ const html = [
     "<head>",
     "<meta charset=\"utf-8\">",
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
-    "<title>RMC.BestFit 2.0 Technical Reference</title>",
+    "<title>" + escapeHtml(report.title) + "</title>",
     "<style>" + style + "</style>",
     "</head>",
     "<body>",
     "<section class=\"cover\">",
     "<div class=\"cover-rule\"></div>",
     "<h1>RMC.BestFit 2.0<br>Technical Reference</h1>",
-    "<div class=\"subtitle\">Statistical models, likelihoods, estimation, uncertainty, diagnostics, and scientific API traceability</div>",
-    "<div class=\"agency\">Risk Management Center</div>",
-    "<div class=\"edition\">Peer-review release<br>RMC.Numerics 2.1.4 parameterization<br>23 July 2026</div>",
+    "<div class=\"subtitle\">" + escapeHtml(report.subtitle) + "</div>",
+    "<div class=\"agency\">" + escapeHtml(reportMetadata.organization) + "</div>",
+    "<div class=\"edition\">" + escapeHtml(reportMetadata.release_status) + "<br>BestFit " + escapeHtml(reportMetadata.bestfit_commit.slice(0, 12)) + " / Numerics " + escapeHtml(reportMetadata.numerics_source_commit.slice(0, 12)) + "<br>" + escapeHtml(reportMetadata.publication_date_display) + "</div>",
     "</section>",
     "<section class=\"front-matter\">",
     "<h1>Contents</h1>",
-    "<p class=\"release-note\">This canonical book is generated from the source-audited Markdown chapters. Implementation behavior governs API claims; the review-findings register identifies discrepancies reserved for production-code triage.</p>",
+    "<p class=\"release-note\">This external-review draft is generated from the publication manifest. Equations, parameterizations, implementation behavior, evidence boundaries, and references are controlled in the source chapters.</p>",
     "<ol class=\"toc\">" + tocItems + "</ol>",
     "</section>",
     renderedDocuments.join("\n"),

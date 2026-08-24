@@ -42,6 +42,7 @@ $pythonFromPath = Get-Command python -ErrorAction SilentlyContinue
 $latexFromPath = Get-Command latex -ErrorAction SilentlyContinue
 $dvisvgmFromPath = Get-Command dvisvgm -ErrorAction SilentlyContinue
 $userProfilePath = [Environment]::GetFolderPath("UserProfile")
+$programFiles = [Environment]::GetEnvironmentVariable("ProgramFiles")
 $programFilesX86 = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
 $codexDependencyRoot = Join-Path $userProfilePath ".cache\codex-runtimes\codex-primary-runtime\dependencies"
 $miktexDirectory = Join-Path $userProfilePath "AppData\Local\Programs\MiKTeX\miktex\bin\x64"
@@ -72,8 +73,8 @@ $dvisvgmExecutable = Select-ExistingPath -Candidates @(
 
 $browserExecutable = Select-ExistingPath -Candidates @(
     $BrowserPath,
-    (Join-Path $env:ProgramFiles "Google\Chrome\Application\chrome.exe"),
-    (Join-Path $programFilesX86 "Microsoft\Edge\Application\msedge.exe")
+    $(if (![string]::IsNullOrWhiteSpace($programFiles)) { Join-Path $programFiles "Google\Chrome\Application\chrome.exe" }),
+    $(if (![string]::IsNullOrWhiteSpace($programFilesX86)) { Join-Path $programFilesX86 "Microsoft\Edge\Application\msedge.exe" })
 ) -Description "Chrome or Edge"
 
 if ([string]::IsNullOrWhiteSpace($NodeModulesPath)) {
@@ -140,6 +141,7 @@ $browserArguments = @(
     "--no-default-browser-check",
     "--no-first-run",
     "--allow-file-access-from-files",
+    "--export-tagged-pdf",
     "--run-all-compositor-stages-before-draw",
     "--no-pdf-header-footer",
     "--user-data-dir=$browserProfilePath",

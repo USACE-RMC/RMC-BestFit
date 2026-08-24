@@ -122,9 +122,9 @@ Grouped perception-threshold periods use the deterministic disaggregation assump
 
 ## Point-Estimate Criteria and an Important Convention
 
-`UpdatePointEstimateResultsAsync()` computes the displayed AIC and BIC from `UnivariateDistribution.DataLogLikelihood(...)` evaluated at the stored MAP parameter vector; parameter, Jeffreys, and quantile-prior densities are excluded. When every active prior is constant over the relevant parameter region, MAP coincides with the constrained MLE and these values are comparable with the fitting-analysis criteria. With any informative or otherwise nonconstant prior—including the optional Jeffreys scale term—the MAP is prior-influenced and these fields should not be interpreted as conventional AIC/BIC. Use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison in that setting. See [TR-011](../review-findings.md#tr-011).
+`UpdatePointEstimateResultsAsync()` computes the displayed AIC and BIC from `UnivariateDistribution.DataLogLikelihood(...)` evaluated at the stored MAP parameter vector; parameter, Jeffreys, and quantile-prior densities are excluded. When every active prior is constant over the relevant parameter region, MAP coincides with the constrained MLE and these values are comparable with the fitting-analysis criteria. With any informative or otherwise nonconstant prior—including the optional Jeffreys scale term—the MAP is prior-influenced and these fields should not be interpreted as conventional AIC/BIC. Use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison in that setting. See [Model Comparison](../estimation/model-comparison.md) for the interpretation of these criteria.
 
-The displayed RMSE uses the same pinned Numerics helper discussed in [TR-009](../review-findings.md#tr-009).
+The displayed RMSE uses the pinned Numerics root-mean-square-error helper.
 
 ## Persistence and Restoration
 

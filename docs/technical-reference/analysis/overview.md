@@ -120,7 +120,7 @@ This is an orchestration example, not a recommended MCMC length or convergence d
 | Distribution screening | `FittingAnalysis` | Fit candidate families and construct point-estimate comparison outputs |
 | Univariate frequency | `UnivariateAnalysis` | Bayesian parameter inference, probability ordinates, frequency results, diagnostics |
 | Peaks over threshold | `PointProcessAnalysis` | Point-process model estimation and exceedance-frequency outputs |
-| Multiple populations/processes | `MixtureAnalysis`, `CompetingRiskAnalysis` | Propagate component posterior realizations into combined distributions |
+| Multiple populations/processes | `CompetingRiskAnalysis`, `MixtureAnalysis` | Propagate component posterior realizations into combined distributions |
 | Synthesis/averaging | `CompositeAnalysis` | Combine already estimated alternatives using the selected composite rule |
 | Bulletin 17C | `Bulletin17CAnalysis` | Specialized EMA/GMM and uncertainty workflow for its supported parent families |
 | Bivariate dependence | `BivariateAnalysis` | Marginal/dependence fitting and joint uncertainty outputs |
@@ -135,7 +135,7 @@ The table states orchestration roles only. It does not imply that every class us
 
 Many analyses use preliminary estimates to initialize Bayesian sampling or complex optimization. This is computational scaffolding, not a second source of data. A failed initializer can prevent a run even when the mathematical posterior exists; conversely, a successful initializer does not establish global optimality or posterior convergence.
 
-Mixture, competing-risk, spatial, nonstationary, and high-order time-series models can have symmetric modes, label switching, boundary modes, or strongly correlated parameters. An analysis chapter must identify its initialization strategy, bounds, restart behavior, and what happens when an optimizer reports a non-success status.
+Competing-risk, mixture, spatial, nonstationary, and high-order time-series models can have symmetric modes, label switching, boundary modes, or strongly correlated parameters. An analysis chapter must identify its initialization strategy, bounds, restart behavior, and what happens when an optimizer reports a non-success status.
 
 ## Derived outputs and uncertainty
 

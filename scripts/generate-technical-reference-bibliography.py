@@ -28,10 +28,6 @@ def normalized_text(value: str) -> str:
 
 def citation_key(citation: str) -> str:
     """Build a stable de-duplication key from DOI, article title, or book title."""
-    doi = DOI_RE.search(citation)
-    if doi:
-        return "doi:" + doi.group("doi").rstrip(".,").casefold()
-
     quoted = QUOTED_TITLE_RE.search(citation)
     if quoted:
         return "title:" + normalized_text(quoted.group("title"))
@@ -39,6 +35,10 @@ def citation_key(citation: str) -> str:
     italic = ITALIC_TITLE_RE.search(citation)
     if italic:
         return "title:" + normalized_text(italic.group("title"))
+
+    doi = DOI_RE.search(citation)
+    if doi:
+        return "doi:" + doi.group("doi").rstrip(".,").casefold()
 
     return "citation:" + normalized_text(citation)
 

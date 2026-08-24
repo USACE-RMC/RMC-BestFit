@@ -24,7 +24,7 @@ $$
 
 `MaximumLikelihood.GetAIC()` and `GetBIC(n)` implement (MC.1). AIC estimates relative expected out-of-sample deviance under regularity conditions; BIC is a large-sample approximation related to a particular marginal-likelihood regime. Lower is preferred only relative to the candidate set. Neither is a goodness-of-fit test.
 
-`MaximumAPosteriori` and the Bayesian analysis summaries use the same formulas with the data log likelihood evaluated at the posterior mode, $\ell_D(\widehat{\boldsymbol\theta}_{\mathrm{MAP}})$; prior log densities are excluded. When every active prior is constant over the relevant parameter region, MAP coincides with the constrained MLE and these values are comparable with (MC.1). With informative, Jeffreys, quantile, or other nonconstant priors, MAP generally differs from MLE and the classical AIC/BIC penalties do not account for the prior. In that setting, use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than interpreting the MAP-evaluated fields as conventional AIC/BIC. See [TR-011](../review-findings.md#tr-011) and the MAP chapter.
+`MaximumAPosteriori` and the Bayesian analysis summaries use the same formulas with the data log likelihood evaluated at the posterior mode, $\ell_D(\widehat{\boldsymbol\theta}_{\mathrm{MAP}})$; prior log densities are excluded. When every active prior is constant over the relevant parameter region, MAP coincides with the constrained MLE and these values are comparable with (MC.1). With informative, Jeffreys, quantile, or other nonconstant priors, MAP generally differs from MLE and the classical AIC/BIC penalties do not account for the prior. In that setting, use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than interpreting the MAP-evaluated fields as conventional AIC/BIC. See the MAP chapter for the distinction between a posterior mode and a maximum-likelihood estimate.
 
 ## Deviance Information Criterion
 
@@ -102,7 +102,7 @@ BestFit exposes `LOOIC`, `LOO_pD = lppd - elpd_loo`, `LOOIC_SE`, and one `Pareto
 
 BestFit's smoothing path follows R `loo` 2.10.0 for independent draws (`r_eff = 1`): it selects the reference tail length, fits positive cutoff excesses with the bounded fixed-grid `posterior::gpdfit` 1.7.0 estimator and shrinkage, replaces ordered tail ratios with monotone expected order statistics, and applies the reference truncation. The same transient pointwise matrix supplies WAIC and PSIS, so the model is evaluated once per retained draw. Pointwise ELPD and Pareto-$k$ arrays are cached for later influence reporting without retaining the $n\times S$ matrix.
 
-The pinned R fixture verifies aggregate and pointwise LOO values, every smoothed weight, importance-sampling effective sample size, Pareto $k$, six bounded-through-degenerate tail regimes, and the sample-size reliability threshold. See [TR-024](../review-findings.md#tr-024), the [verification report](../../verification/model-estimation.md#psis-loo-and-pareto-diagnostics), and the [committed oracle](../../../verification/data/model-estimation/psis-loo-oracle.json).
+The pinned R fixture verifies aggregate and pointwise LOO values, every smoothed weight, importance-sampling effective sample size, Pareto $k$, six bounded-through-degenerate tail regimes, and the sample-size reliability threshold. See the [verification report](../../verification/report/estimation-diagnostics.md#psis-loo) and the [committed oracle](../../../verification/data/model-estimation/psis-loo-oracle.json).
 
 For $S$ retained draws, BestFit uses the `loo` 2.10.0 reliability limit
 

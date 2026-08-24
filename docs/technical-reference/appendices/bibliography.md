@@ -52,39 +52,39 @@ Used by: [distributions/mixture.md](../distributions/mixture.md).
 Used by: [analysis/bivariate.md](../analysis/bivariate.md), [analysis/coincident-frequency.md](../analysis/coincident-frequency.md).
 
 <a id="b010"></a>
-**[B010]** A. Vehtari, A. Gelman, and J. Gabry, “Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC,” *Statistics and Computing*, vol. 27, no. 5, pp. 1413–1432, 2017.
+**[B010]** A. Vehtari, A. Gelman, and J. Gabry, "Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC," *Statistics and Computing*, vol. 27, pp. 1413-1432, 2017. doi: 10.1007/s11222-016-9696-4.
 
-Used by: [distributions/composite.md](../distributions/composite.md), [estimation/model-comparison.md](../estimation/model-comparison.md).
+Used by: [analysis/overview.md](../analysis/overview.md), [distributions/composite.md](../distributions/composite.md), [estimation/model-comparison.md](../estimation/model-comparison.md), [models/overview.md](../models/overview.md).
 
 <a id="b011"></a>
-**[B011]** A. Vehtari, A. Gelman, and J. Gabry, "Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC," *Statistics and Computing*, vol. 27, pp. 1413-1432, 2017. doi: 10.1007/s11222-016-9696-4.
-
-Used by: [analysis/overview.md](../analysis/overview.md), [models/overview.md](../models/overview.md).
-
-<a id="b012"></a>
-**[B012]** A. Vehtari et al., “Pareto smoothed importance sampling,” *Journal of Machine Learning Research*, vol. 25, no. 72, pp. 1–58, 2024.
+**[B011]** A. Vehtari et al., “Pareto smoothed importance sampling,” *Journal of Machine Learning Research*, vol. 25, no. 72, pp. 1–58, 2024.
 
 Used by: [estimation/influence-diagnostics.md](../estimation/influence-diagnostics.md), [estimation/model-comparison.md](../estimation/model-comparison.md).
 
-<a id="b013"></a>
-**[B013]** A. Vehtari et al., “Rank-normalization, folding, and localization: An improved \(\widehat R\) for assessing convergence of MCMC,” *Bayesian Analysis*, vol. 16, no. 2, pp. 667–718, 2021.
+<a id="b012"></a>
+**[B012]** A. Vehtari et al., “Rank-normalization, folding, and localization: An improved \(\widehat R\) for assessing convergence of MCMC,” *Bayesian Analysis*, vol. 16, no. 2, pp. 667–718, 2021.
 
 Used by: [analysis/univariate.md](../analysis/univariate.md), [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md), [estimation/diagnostics.md](../estimation/diagnostics.md).
 
-<a id="b014"></a>
-**[B014]** A. Viglione, R. Merz, J. L. Salinas, and G. Blöschl, "Flood frequency hydrology: 3. A Bayesian analysis," *Water Resources Research*, vol. 49, no. 2, pp. 675-692, 2013. doi: 10.1029/2011WR010782.
+<a id="b013"></a>
+**[B013]** A. Viglione, R. Merz, J. L. Salinas, and G. Blöschl, "Flood frequency hydrology: 3. A Bayesian analysis," *Water Resources Research*, vol. 49, no. 2, pp. 675-692, 2013. doi: 10.1029/2011WR010782.
 
 Used by: [models/parameters-and-priors.md](../models/parameters-and-priors.md).
 
+<a id="b014"></a>
+**[B014]** B. Renard, “A Bayesian hierarchical approach to regional frequency analysis,” *Water Resources Research*, vol. 47, W11513, 2011, doi: 10.1029/2010WR010089.
+
+Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
+
 <a id="b015"></a>
-**[B015]** B. Renard, “A Bayesian hierarchical approach to regional frequency analysis,” *Water Resources Research*, vol. 47, W11513, 2011, doi: 10.1029/2010WR010089.
+**[B015]** B. Renard and M. Lang, “Use of a Gaussian copula for multivariate extreme value analysis: Some case studies in hydrology,” *Advances in Water Resources*, vol. 30, no. 4, pp. 897–912, 2007, doi: 10.1016/j.advwatres.2006.08.001.
 
 Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
 
 <a id="b016"></a>
-**[B016]** B. Renard and M. Lang, “Use of a Gaussian copula for multivariate extreme value analysis: Some case studies in hydrology,” *Advances in Water Resources*, vol. 30, no. 4, pp. 897–912, 2007, doi: 10.1016/j.advwatres.2006.08.001.
+**[B016]** BlackJAX Developers, “No-U-Turn Sampling,” BlackJAX API documentation, `NUTSInfo` interface. <https://blackjax-devs.github.io/blackjax/autoapi/blackjax/mcmc/nuts/index.html>
 
-Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
+Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
 <a id="b017"></a>
 **[B017]** C. Genest, K. Ghoudi, and L.-P. Rivest, “A semiparametric estimation procedure of dependence parameters in multivariate families of distributions,” *Biometrika*, vol. 82, no. 3, pp. 543–552, 1995.
@@ -92,114 +92,114 @@ Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
 Used by: [analysis/bivariate.md](../analysis/bivariate.md).
 
 <a id="b018"></a>
-**[B018]** C. J. F. ter Braak, “A Markov Chain Monte Carlo version of the genetic algorithm Differential Evolution: easy Bayesian computing for real parameter spaces,” *Statistics and Computing*, vol. 16, pp. 239–249, 2006.
+**[B018]** C. H. Smith and J. R. Stedinger, “A Bias-Corrected Pivotal Bootstrap for Objective-Bayes Parameter Ensembles,” manuscript in preparation, 2026.
 
-Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
+Used by: [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md).
 
 <a id="b019"></a>
-**[B019]** C. J. F. ter Braak and J. A. Vrugt, “Differential Evolution Markov Chain with snooker updater and fewer chains,” *Statistics and Computing*, vol. 18, pp. 435–446, 2008.
+**[B019]** C. J. F. ter Braak, “A Markov Chain Monte Carlo version of the genetic algorithm Differential Evolution: easy Bayesian computing for real parameter spaces,” *Statistics and Computing*, vol. 16, pp. 239–249, 2006.
 
 Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
 <a id="b020"></a>
-**[B020]** C. Varin, N. Reid, and D. Firth, “An overview of composite likelihood methods,” *Statistica Sinica*, vol. 21, no. 1, pp. 5–42, 2011.
+**[B020]** C. J. F. ter Braak and J. A. Vrugt, “Differential Evolution Markov Chain with snooker updater and fewer chains,” *Statistics and Computing*, vol. 18, pp. 435–446, 2008.
 
-Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
+Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
 <a id="b021"></a>
-**[B021]** D. Cooley, D. Nychka, and P. Naveau, “Bayesian spatial modeling of extreme precipitation return levels,” *Journal of the American Statistical Association*, vol. 102, no. 479, pp. 824–840, 2007, doi: 10.1198/016214506000000780.
+**[B021]** C. Varin, N. Reid, and D. Firth, “An overview of composite likelihood methods,” *Statistica Sinica*, vol. 21, no. 1, pp. 5–42, 2011.
 
 Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
 
 <a id="b022"></a>
-**[B022]** D. J. Spiegelhalter et al., “Bayesian measures of model complexity and fit,” *Journal of the Royal Statistical Society: Series B*, vol. 64, no. 4, pp. 583–639, 2002.
+**[B022]** D. Cooley, D. Nychka, and P. Naveau, “Bayesian spatial modeling of extreme precipitation return levels,” *Journal of the American Statistical Association*, vol. 102, no. 479, pp. 824–840, 2007, doi: 10.1198/016214506000000780.
+
+Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
+
+<a id="b023"></a>
+**[B023]** D. J. Spiegelhalter et al., “Bayesian measures of model complexity and fit,” *Journal of the Royal Statistical Society: Series B*, vol. 64, no. 4, pp. 583–639, 2002.
 
 Used by: [estimation/model-comparison.md](../estimation/model-comparison.md).
 
-<a id="b023"></a>
-**[B023]** D. R. H. O'Connell, D. A. Ostenaa, D. R. Levish, and R. E. Klinger, "Bayesian flood frequency analysis with paleohydrologic bound data," *Water Resources Research*, vol. 38, no. 5, 2002. doi: 10.1029/2000WR000028.
+<a id="b024"></a>
+**[B024]** D. R. H. O'Connell, D. A. Ostenaa, D. R. Levish, and R. E. Klinger, "Bayesian flood frequency analysis with paleohydrologic bound data," *Water Resources Research*, vol. 38, no. 5, 2002. doi: 10.1029/2000WR000028.
 
 Used by: [data-frame/index.md](../data-frame/index.md).
 
-<a id="b024"></a>
-**[B024]** E. J. Gumbel, *Statistics of Extremes*. Columbia University Press, 1958.
+<a id="b025"></a>
+**[B025]** E. J. Gumbel, *Statistics of Extremes*. Columbia University Press, 1958.
 
 Used by: [distributions/gumbel.md](../distributions/gumbel.md).
 
-<a id="b025"></a>
-**[B025]** E. J. Kennedy, *Discharge Ratings at Gaging Stations*, USGS Techniques of Water-Resources Investigations, book 3, chap. A10, 1984.
+<a id="b026"></a>
+**[B026]** E. J. Kennedy, *Discharge Ratings at Gaging Stations*, USGS Techniques of Water-Resources Investigations, book 3, chap. A10, 1984.
 
 Used by: [analysis/rating-curve.md](../analysis/rating-curve.md).
 
-<a id="b026"></a>
-**[B026]** E. L. Crow and K. Shimizu, eds., *Lognormal Distributions: Theory and Applications*. Marcel Dekker, 1988.
+<a id="b027"></a>
+**[B027]** E. L. Crow and K. Shimizu, eds., *Lognormal Distributions: Theory and Applications*. Marcel Dekker, 1988.
 
 Used by: [distributions/ln-normal.md](../distributions/ln-normal.md), [distributions/log-normal.md](../distributions/log-normal.md).
 
-<a id="b027"></a>
-**[B027]** F. Serinaldi, “An uncertain journey around the tails of multivariate hydrological distributions,” *Water Resour. Res.*, vol. 49, no. 10, pp. 6527–6547, 2013, doi: 10.1002/wrcr.20531.
+<a id="b028"></a>
+**[B028]** F. Serinaldi, “An uncertain journey around the tails of multivariate hydrological distributions,” *Water Resour. Res.*, vol. 49, no. 10, pp. 6527–6547, 2013, doi: 10.1002/wrcr.20531.
 
 Used by: [analysis/bivariate.md](../analysis/bivariate.md).
 
-<a id="b028"></a>
-**[B028]** G. E. P. Box and D. R. Cox, “An analysis of transformations,” *J. R. Stat. Soc. B*, vol. 26, no. 2, pp. 211–252, 1964.
+<a id="b029"></a>
+**[B029]** G. E. P. Box and D. R. Cox, “An analysis of transformations,” *J. R. Stat. Soc. B*, vol. 26, no. 2, pp. 211–252, 1964.
 
 Used by: [analysis/autoregressive.md](../analysis/autoregressive.md).
 
-<a id="b029"></a>
-**[B029]** G. E. P. Box, G. M. Jenkins, G. C. Reinsel, and G. M. Ljung, *Time Series Analysis: Forecasting and Control*, 5th ed., Wiley, 2015.
+<a id="b030"></a>
+**[B030]** G. E. P. Box, G. M. Jenkins, G. C. Reinsel, and G. M. Ljung, *Time Series Analysis: Forecasting and Control*, 5th ed., Wiley, 2015.
 
 Used by: [analysis/arima.md](../analysis/arima.md), [analysis/arimax.md](../analysis/arimax.md), [analysis/autoregressive.md](../analysis/autoregressive.md), [analysis/moving-average.md](../analysis/moving-average.md), [analysis/time-series.md](../analysis/time-series.md).
 
-<a id="b030"></a>
-**[B030]** G. E. P. Box, “Sampling and Bayes' inference in scientific modelling and robustness,” *Journal of the Royal Statistical Society: Series A*, vol. 143, no. 4, pp. 383–430, 1980.
+<a id="b031"></a>
+**[B031]** G. E. P. Box, “Sampling and Bayes' inference in scientific modelling and robustness,” *Journal of the Royal Statistical Society: Series A*, vol. 143, no. 4, pp. 383–430, 1980.
 
 Used by: [estimation/predictive-checks.md](../estimation/predictive-checks.md).
 
-<a id="b031"></a>
-**[B031]** G. McLachlan and D. Peel, *Finite Mixture Models*. New York, NY, USA: Wiley, 2000.
+<a id="b032"></a>
+**[B032]** G. McLachlan and D. Peel, *Finite Mixture Models*. New York, NY, USA: Wiley, 2000.
 
 Used by: [distributions/mixture.md](../distributions/mixture.md).
 
-<a id="b032"></a>
-**[B032]** G. Schwarz, “Estimating the dimension of a model,” *The Annals of Statistics*, vol. 6, no. 2, pp. 461–464, 1978.
-
-Used by: [analysis/distribution-fitting.md](../analysis/distribution-fitting.md), [estimation/maximum-likelihood.md](../estimation/maximum-likelihood.md), [estimation/model-comparison.md](../estimation/model-comparison.md).
-
 <a id="b033"></a>
-**[B033]** H. Akaike, “A new look at the statistical model identification,” *IEEE Transactions on Automatic Control*, vol. 19, no. 6, pp. 716–723, 1974.
+**[B033]** G. Schwarz, “Estimating the dimension of a model,” *The Annals of Statistics*, vol. 6, no. 2, pp. 461–464, 1978.
 
 Used by: [analysis/distribution-fitting.md](../analysis/distribution-fitting.md), [estimation/maximum-likelihood.md](../estimation/maximum-likelihood.md), [estimation/model-comparison.md](../estimation/model-comparison.md).
 
 <a id="b034"></a>
-**[B034]** H. Haario, E. Saksman, and J. Tamminen, “An adaptive Metropolis algorithm,” *Bernoulli*, vol. 7, no. 2, pp. 223–242, 2001.
+**[B034]** H. Akaike, “A new look at the statistical model identification,” *IEEE Transactions on Automatic Control*, vol. 19, no. 6, pp. 716–723, 1974.
+
+Used by: [analysis/distribution-fitting.md](../analysis/distribution-fitting.md), [estimation/maximum-likelihood.md](../estimation/maximum-likelihood.md), [estimation/model-comparison.md](../estimation/model-comparison.md).
+
+<a id="b035"></a>
+**[B035]** H. Haario, E. Saksman, and J. Tamminen, “An adaptive Metropolis algorithm,” *Bernoulli*, vol. 7, no. 2, pp. 223–242, 2001.
 
 Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
-<a id="b035"></a>
-**[B035]** H. Jeffreys, "An invariant form for the prior probability in estimation problems," *Proceedings of the Royal Society A*, vol. 186, no. 1007, pp. 453-461, 1946. doi: 10.1098/rspa.1946.0056.
+<a id="b036"></a>
+**[B036]** H. Jeffreys, "An invariant form for the prior probability in estimation problems," *Proceedings of the Royal Society A*, vol. 186, no. 1007, pp. 453-461, 1946. doi: 10.1098/rspa.1946.0056.
 
 Used by: [models/parameters-and-priors.md](../models/parameters-and-priors.md).
 
-<a id="b036"></a>
-**[B036]** H. Joe, “Asymptotic efficiency of the two-stage estimation method for copula-based models,” *J. R. Stat. Soc. B*, vol. 67, no. 3, pp. 409–419, 2005.
+<a id="b037"></a>
+**[B037]** H. Joe, “Asymptotic efficiency of the two-stage estimation method for copula-based models,” *J. R. Stat. Soc. B*, vol. 67, no. 3, pp. 409–419, 2005.
 
 Used by: [analysis/bivariate.md](../analysis/bivariate.md).
 
-<a id="b037"></a>
-**[B037]** H. White, “Maximum likelihood estimation of misspecified models,” *Econometrica*, vol. 50, no. 1, pp. 1–25, 1982.
+<a id="b038"></a>
+**[B038]** H. White, “Maximum likelihood estimation of misspecified models,” *Econometrica*, vol. 50, no. 1, pp. 1–25, 1982.
 
 Used by: [estimation/maximum-likelihood.md](../estimation/maximum-likelihood.md).
-
-<a id="b038"></a>
-**[B038]** I.-K. Yeo and R. A. Johnson, “A new family of power transformations to improve normality or symmetry,” *Biometrika*, vol. 87, no. 4, pp. 954–959, 2000.
-
-Used by: [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md).
 
 <a id="b039"></a>
 **[B039]** I.-K. Yeo and R. A. Johnson, "A new family of power transformations to improve normality or symmetry," *Biometrika*, vol. 87, no. 4, pp. 954-959, 2000. doi: 10.1093/biomet/87.4.954.
 
-Used by: [support/link-functions.md](../support/link-functions.md).
+Used by: [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md), [support/link-functions.md](../support/link-functions.md).
 
 <a id="b040"></a>
 **[B040]** ISO 1100-2:2010, *Hydrometry—Measurement of liquid flow in open channels—Part 2: Determination of the stage–discharge relationship*.
@@ -209,7 +209,7 @@ Used by: [analysis/rating-curve.md](../analysis/rating-curve.md).
 <a id="b041"></a>
 **[B041]** J. F. England, Jr. et al., *Guidelines for Determining Flood Flow Frequency - Bulletin 17C*, U.S. Geological Survey Techniques and Methods, book 4, chap. B5, 2019. doi: 10.3133/tm4B5.
 
-Used by: [analysis/bulletin-17c-estimation.md](../analysis/bulletin-17c-estimation.md), [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md), [analysis/bulletin-17c.md](../analysis/bulletin-17c.md), [data-frame/index.md](../data-frame/index.md).
+Used by: [analysis/bulletin-17c-estimation.md](../analysis/bulletin-17c-estimation.md), [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md), [analysis/bulletin-17c.md](../analysis/bulletin-17c.md), [data-frame/index.md](../data-frame/index.md), [distributions/log-pearson-type-iii.md](../distributions/log-pearson-type-iii.md).
 
 <a id="b042"></a>
 **[B042]** J. Gabry et al., “Visualization in Bayesian workflow,” *Journal of the Royal Statistical Society: Series A*, vol. 182, no. 2, pp. 389–402, 2019.
@@ -272,49 +272,49 @@ Used by: [analysis/bulletin-17c-estimation.md](../analysis/bulletin-17c-estimati
 Used by: [estimation/maximum-a-posteriori.md](../estimation/maximum-a-posteriori.md).
 
 <a id="b054"></a>
-**[B054]** M. C. Jones and A. Pewsey, “Sinh-arcsinh distributions,” *Biometrika*, vol. 96, no. 4, pp. 761–780, 2009.
+**[B054]** M. C. Jones and A. Pewsey, "Sinh-arcsinh distributions," *Biometrika*, vol. 96, no. 4, pp. 761-780, 2009. doi: 10.1093/biomet/asp053.
 
-Used by: [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md).
+Used by: [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md), [support/link-functions.md](../support/link-functions.md).
 
 <a id="b055"></a>
-**[B055]** M. C. Jones and A. Pewsey, "Sinh-arcsinh distributions," *Biometrika*, vol. 96, no. 4, pp. 761-780, 2009. doi: 10.1093/biomet/asp053.
-
-Used by: [support/link-functions.md](../support/link-functions.md).
-
-<a id="b056"></a>
-**[B056]** M. D. Hoffman and A. Gelman, “The No-U-Turn Sampler: adaptively setting path lengths in Hamiltonian Monte Carlo,” *Journal of Machine Learning Research*, vol. 15, pp. 1593–1623, 2014.
+**[B055]** M. D. Hoffman and A. Gelman, “The No-U-Turn Sampler: adaptively setting path lengths in Hamiltonian Monte Carlo,” *Journal of Machine Learning Research*, vol. 15, pp. 1593–1623, 2014.
 
 Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
-<a id="b057"></a>
-**[B057]** M. Ribatet, D. Cooley, and A. C. Davison, “Bayesian inference from composite likelihoods, with an application to spatial extremes,” *Statistica Sinica*, vol. 22, no. 2, pp. 813–845, 2012.
+<a id="b056"></a>
+**[B056]** M. Ribatet, D. Cooley, and A. C. Davison, “Bayesian inference from composite likelihoods, with an application to spatial extremes,” *Statistica Sinica*, vol. 22, no. 2, pp. 813–845, 2012.
 
 Used by: [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
 
-<a id="b058"></a>
-**[B058]** N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions*, 2nd ed. New York, NY, USA: Wiley, 1994.
+<a id="b057"></a>
+**[B057]** N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions*, 2nd ed. New York, NY, USA: Wiley, 1994.
 
 Used by: [distributions/competing-risks.md](../distributions/competing-risks.md), [distributions/gamma.md](../distributions/gamma.md), [distributions/logistic.md](../distributions/logistic.md), [distributions/normal.md](../distributions/normal.md).
 
-<a id="b059"></a>
-**[B059]** N. Metropolis et al., “Equation of state calculations by fast computing machines,” *The Journal of Chemical Physics*, vol. 21, no. 6, pp. 1087–1092, 1953.
+<a id="b058"></a>
+**[B058]** N. Metropolis et al., “Equation of state calculations by fast computing machines,” *The Journal of Chemical Physics*, vol. 21, no. 6, pp. 1087–1092, 1953.
 
 Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
-<a id="b060"></a>
-**[B060]** P. F. Chandler and H. S. Wheater, "Analysis of rainfall variability using generalized linear models: A case study from the west of Ireland," *Water Resources Research*, vol. 38, no. 10, 2002. doi: 10.1029/2001WR000906.
+<a id="b059"></a>
+**[B059]** P. F. Chandler and H. S. Wheater, "Analysis of rainfall variability using generalized linear models: A case study from the west of Ireland," *Water Resources Research*, vol. 38, no. 10, 2002. doi: 10.1029/2001WR000906.
 
 Used by: [support/trend-functions.md](../support/trend-functions.md).
 
-<a id="b061"></a>
-**[B061]** P. J. Brockwell and R. A. Davis, *Introduction to Time Series and Forecasting*, 3rd ed., Springer, 2016.
+<a id="b060"></a>
+**[B060]** P. J. Brockwell and R. A. Davis, *Introduction to Time Series and Forecasting*, 3rd ed., Springer, 2016.
 
 Used by: [analysis/autoregressive.md](../analysis/autoregressive.md).
 
-<a id="b062"></a>
-**[B062]** P. J. Brockwell and R. A. Davis, *Time Series: Theory and Methods*, 2nd ed., Springer, 1991.
+<a id="b061"></a>
+**[B061]** P. J. Brockwell and R. A. Davis, *Time Series: Theory and Methods*, 2nd ed., Springer, 1991.
 
 Used by: [analysis/moving-average.md](../analysis/moving-average.md).
+
+<a id="b062"></a>
+**[B062]** PyMC Developers, “`pymc.NUTS`,” PyMC API documentation, sampler-statistics interface. <https://www.pymc.io/projects/docs/en/stable/api/generated/pymc.NUTS.html>
+
+Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
 <a id="b063"></a>
 **[B063]** R. A. Fisher, “On the mathematical foundations of theoretical statistics,” *Philosophical Transactions of the Royal Society A*, vol. 222, pp. 309–368, 1922.
@@ -357,29 +357,29 @@ Used by: [analysis/coincident-frequency.md](../analysis/coincident-frequency.md)
 Used by: [estimation/influence-diagnostics.md](../estimation/influence-diagnostics.md).
 
 <a id="b071"></a>
-**[B071]** S. Coles, *An Introduction to Statistical Modeling of Extreme Values*. London, U.K.: Springer, 2001.
+**[B071]** S. Coles, *An Introduction to Statistical Modeling of Extreme Values*. London, U.K.: Springer, 2001. doi: 10.1007/978-1-4471-3675-0.
 
-Used by: [analysis/univariate.md](../analysis/univariate.md), [distributions/exponential.md](../distributions/exponential.md), [distributions/generalized-extreme-value.md](../distributions/generalized-extreme-value.md), [distributions/generalized-pareto.md](../distributions/generalized-pareto.md), [distributions/gumbel.md](../distributions/gumbel.md), [distributions/point-process.md](../distributions/point-process.md), [distributions/univariate.md](../distributions/univariate.md), [spatial/spatial-extremes.md](../spatial/spatial-extremes.md).
+Used by: [analysis/univariate.md](../analysis/univariate.md), [distributions/exponential.md](../distributions/exponential.md), [distributions/generalized-extreme-value.md](../distributions/generalized-extreme-value.md), [distributions/generalized-pareto.md](../distributions/generalized-pareto.md), [distributions/gumbel.md](../distributions/gumbel.md), [distributions/point-process.md](../distributions/point-process.md), [distributions/univariate.md](../distributions/univariate.md), [models/overview.md](../models/overview.md), [spatial/spatial-extremes.md](../spatial/spatial-extremes.md), [support/trend-functions.md](../support/trend-functions.md).
 
 <a id="b072"></a>
-**[B072]** S. Coles, *An Introduction to Statistical Modeling of Extreme Values*. London, U.K.: Springer, 2001. doi: 10.1007/978-1-4471-3675-0.
-
-Used by: [models/overview.md](../models/overview.md), [support/trend-functions.md](../support/trend-functions.md).
-
-<a id="b073"></a>
-**[B073]** S. Demarta and A. J. McNeil, “The t copula and related copulas,” *Int. Stat. Rev.*, vol. 73, no. 1, pp. 111–129, 2005, doi: 10.1111/j.1751-5823.2005.tb00254.x.
+**[B072]** S. Demarta and A. J. McNeil, “The t copula and related copulas,” *Int. Stat. Rev.*, vol. 73, no. 1, pp. 111–129, 2005, doi: 10.1111/j.1751-5823.2005.tb00254.x.
 
 Used by: [analysis/bivariate.md](../analysis/bivariate.md).
 
-<a id="b074"></a>
-**[B074]** S. E. Rantz et al., *Measurement and Computation of Streamflow*, USGS Water-Supply Paper 2175, 1982.
+<a id="b073"></a>
+**[B073]** S. E. Rantz et al., *Measurement and Computation of Streamflow*, USGS Water-Supply Paper 2175, 1982.
 
 Used by: [analysis/rating-curve.md](../analysis/rating-curve.md).
 
-<a id="b075"></a>
-**[B075]** S. G. Coles and J. A. Tawn, "A Bayesian analysis of extreme rainfall data," *Journal of the Royal Statistical Society: Series C*, vol. 45, no. 4, pp. 463-478, 1996. doi: 10.2307/2986068.
+<a id="b074"></a>
+**[B074]** S. G. Coles and J. A. Tawn, "A Bayesian analysis of extreme rainfall data," *Journal of the Royal Statistical Society: Series C*, vol. 45, no. 4, pp. 463-478, 1996. doi: 10.2307/2986068.
 
 Used by: [models/parameters-and-priors.md](../models/parameters-and-priors.md).
+
+<a id="b075"></a>
+**[B075]** S. G. Coles and L. R. Pericchi, “Anticipating catastrophes through extreme value modelling,” *Journal of the Royal Statistical Society: Series C*, vol. 52, no. 4, pp. 405–416, 2003.
+
+Used by: [distributions/point-process.md](../distributions/point-process.md).
 
 <a id="b076"></a>
 **[B076]** S. Watanabe, “Asymptotic equivalence of Bayes cross validation and widely applicable information criterion in singular learning theory,” *Journal of Machine Learning Research*, vol. 11, pp. 3571–3594, 2010.
@@ -407,27 +407,22 @@ Used by: [estimation/maximum-a-posteriori.md](../estimation/maximum-a-posteriori
 Used by: [analysis/bulletin-17c-uncertainty.md](../analysis/bulletin-17c-uncertainty.md).
 
 <a id="b081"></a>
-**[B081]** U.S. Geological Survey, *Guidelines for Determining Flood Flow Frequency—Bulletin 17C*, Techniques and Methods, book 4, chap. B5, 2018.
-
-Used by: [distributions/log-pearson-type-iii.md](../distributions/log-pearson-type-iii.md).
-
-<a id="b082"></a>
-**[B082]** W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970.
+**[B081]** W. K. Hastings, “Monte Carlo sampling methods using Markov chains and their applications,” *Biometrika*, vol. 57, no. 1, pp. 97–109, 1970.
 
 Used by: [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md).
 
-<a id="b083"></a>
-**[B083]** W. K. Newey and D. McFadden, “Large sample estimation and hypothesis testing,” in *Handbook of Econometrics*, vol. 4, 1994, pp. 2111–2245.
+<a id="b082"></a>
+**[B082]** W. K. Newey and D. McFadden, “Large sample estimation and hypothesis testing,” in *Handbook of Econometrics*, vol. 4, 1994, pp. 2111–2245.
 
 Used by: [analysis/bulletin-17c-estimation.md](../analysis/bulletin-17c-estimation.md), [estimation/generalized-method-of-moments.md](../estimation/generalized-method-of-moments.md).
 
-<a id="b084"></a>
-**[B084]** W. Weibull, “A statistical distribution function of wide applicability,” *Journal of Applied Mechanics*, vol. 18, pp. 293–297, 1951.
+<a id="b083"></a>
+**[B083]** W. Weibull, “A statistical distribution function of wide applicability,” *Journal of Applied Mechanics*, vol. 18, pp. 293–297, 1951.
 
 Used by: [distributions/weibull.md](../distributions/weibull.md).
 
-<a id="b085"></a>
-**[B085]** Y. Yao, A. Vehtari, D. Simpson, and A. Gelman, “Using stacking to average Bayesian predictive distributions,” *Bayesian Analysis*, vol. 13, no. 3, pp. 917–1007, 2018.
+<a id="b084"></a>
+**[B084]** Y. Yao, A. Vehtari, D. Simpson, and A. Gelman, “Using stacking to average Bayesian predictive distributions,” *Bayesian Analysis*, vol. 13, no. 3, pp. 917–1007, 2018.
 
 Used by: [distributions/composite.md](../distributions/composite.md).
 
@@ -439,7 +434,7 @@ Regenerate this file from chapter reference sections with:
 python scripts/generate-technical-reference-bibliography.py
 ```
 
-The current file contains 85 unique sources after DOI/title de-duplication.
+The current file contains 84 unique sources after DOI/title de-duplication.
 
 ---
 

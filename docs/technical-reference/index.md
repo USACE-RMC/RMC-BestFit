@@ -6,7 +6,7 @@
 
 ## Scope
 
-This reference documents the scientific formulations, likelihoods, priors, estimation algorithms, uncertainty propagation, numerical behavior, validation evidence, and C# API for RMC.BestFit 2.0 with RMC.Numerics 2.1.4. It is written for statistical reviewers, hydrologic practitioners, and programmatic users.
+This reference documents the scientific formulations, likelihoods, priors, estimation algorithms, uncertainty propagation, numerical behavior, verification evidence, and C# API for RMC.BestFit 2.0. The peer-review source checkpoint uses RMC.Numerics commit `90a63a46394db9ef95e72b0fcbba943408110636`; RMC.Numerics 2.1.4 remains the published-package compatibility baseline. It is written for statistical reviewers, hydrologic practitioners, and programmatic users.
 
 Implementation behavior is the authority for API and numerical claims. Primary literature and official standards establish theoretical context. Pages that have not yet passed the contract are labeled in progress and must not be treated as final peer-review chapters.
 
@@ -24,11 +24,11 @@ Implementation behavior is the authority for API and numerical claims. Primary l
 - [Distribution family index](distributions/index.md)
 - [Univariate distributions](distributions/univariate.md)
 - [Peaks over threshold and point process](distributions/point-process.md)
-- [Mixture distributions](distributions/mixture.md)
 - [Competing risks](distributions/competing-risks.md)
+- [Mixture distributions](distributions/mixture.md)
 - [Composite distributions and model averaging](distributions/composite.md)
 
-All fifteen univariate family chapters have completed their source, parameterization, likelihood, API-example, and evidence audit. The Kappa Four zero-shape Numerics defect in TR-001 is fixed and analytically verified.
+All fifteen univariate family chapters have completed their source, parameterization, likelihood, API-example, and evidence audit. The Kappa Four zero-shape branch is analytically verified by independent differentiation and CDF-quantile inversion.
 
 ## Estimation and diagnostics
 
@@ -42,15 +42,20 @@ All fifteen univariate family chapters have completed their source, parameteriza
 - [Influence diagnostics](estimation/influence-diagnostics.md)
 - [Predictive checks](estimation/predictive-checks.md)
 
-The Phase 5 estimator and diagnostic chapters are source-audited. They distinguish implemented conventions from standard theory and link all production discrepancies to the review-findings register. Phase 5 execution remains gated by the Phase 4 competing-risk/composite recovery supplement.
+The estimator and diagnostic chapters distinguish implemented conventions from standard theory. MLE and MAP profiling, GMM specification and covariance, DIC, WAIC, PSIS-LOO, rank-normalized R-hat, bulk and tail ESS, ARWMH adaptation, and NUTS acceptance routing have independent analytical or external-package evidence. Current limitations are stated directly in the affected chapters.
 
 ## Analysis workflows
 
+- [Time-series data](data/time-series-data.md)
+- [Input data](data/input-data.md)
 - [Distribution fitting](analysis/distribution-fitting.md)
 - [Univariate frequency analysis](analysis/univariate.md)
 - [Bulletin 17C overview](analysis/bulletin-17c.md)
   - [Expected moments and penalized GMM](analysis/bulletin-17c-estimation.md)
   - [Uncertainty, calibration, and diagnostics](analysis/bulletin-17c-uncertainty.md)
+- [Peaks over threshold and point process](distributions/point-process.md)
+- [Competing risks](distributions/competing-risks.md)
+- [Mixture distributions](distributions/mixture.md)
 - [Composite analysis](analysis/composite.md)
 - [Bivariate analysis](analysis/bivariate.md)
 - [Coincident-frequency analysis](analysis/coincident-frequency.md)
@@ -62,7 +67,7 @@ The Phase 5 estimator and diagnostic chapters are source-audited. They distingui
   - [ARIMAX models](analysis/arimax.md)
 - [Spatial extremes](spatial/spatial-extremes.md)
 
-Time-series and rating-curve chapters have completed their technical-reference source audits, and the bivariate, coincident-frequency, and spatial chapters have completed their source, likelihood, API, and evidence audits; these documentation audit rounds are distinct from the numbered phases of the verification finalization plan. Affected production paths are explicitly qualified by TR-036 through TR-062 in the review-findings register.
+Bivariate, coincident-frequency, rating-curve, time-series, and spatial chapters describe current implemented behavior, supported parameter regions, and evidence boundaries.
 
 ## Reviewer appendices
 
@@ -86,12 +91,12 @@ powershell -ExecutionPolicy Bypass -File scripts\build-technical-reference-book.
 
 The build first checks that the consolidated bibliography is current, then produces `output/pdf/rmc-bestfit-technical-reference.pdf`. Intermediate HTML, the browser-produced PDF, and rendered QA images belong under `tmp/pdfs/`.
 
-## Completion states
+## Publication states
 
 | Marker | Meaning |
 |---|---|
 | `technical-reference-status: complete` | Source-audited, link/citation checked, and all marked C# snippets compile from exact test-fixture regions |
-| `technical-reference-status: in-progress` | Useful working material with unresolved audit rows; not a final peer-review chapter |
+| `technical-reference-status: in-progress` | Useful working material that is excluded from the public book manifest |
 | No marker | Legacy page awaiting contract-based rewrite |
 
 The fast `TechnicalReferenceDocumentationTests` enforce local-link integrity, deleted-namespace rejection, exact compiled snippets, citation anchors on completed pages, and coverage of exported scientific API types in the traceability matrix.

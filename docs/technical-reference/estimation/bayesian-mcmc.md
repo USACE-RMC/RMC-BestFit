@@ -4,7 +4,7 @@
 
 [Estimation index](index.md) | [MAP](maximum-a-posteriori.md) | [Model comparison](model-comparison.md) | [Diagnostics](diagnostics.md) | [Technical Reference](../index.md)
 
-`BayesianAnalysis` is BestFit's primary uncertainty engine. It samples the full `IModel.LogLikelihood` target, summarizes retained posterior draws, and propagates those draws into analysis-specific frequency, prediction, and uncertainty products. The public sampler inventory in BestFit 2.0 is `DEMCz`, `DEMCzs`, `ARWMH`, and `NUTS`; plain `HMC` exists in Numerics but is not selectable through `BayesianAnalysis` ([TR-022](../review-findings.md#tr-022)).
+`BayesianAnalysis` is BestFit's primary uncertainty engine. It samples the full `IModel.LogLikelihood` target, summarizes retained posterior draws, and propagates those draws into analysis-specific frequency, prediction, and uncertainty products. The public sampler inventory in BestFit 2.0 is `DEMCz`, `DEMCzs`, `ARWMH`, and `NUTS`; plain `HMC` exists in Numerics but is not selectable through `BayesianAnalysis`.
 
 ## Posterior Target
 
@@ -96,7 +96,7 @@ s=2.38^2/d,
 \quad \beta=0.05. \tag{MCMC.7}
 $$
 
-The symmetric Metropolis ratio is (MCMC.6). The Adaptive Metropolis construction estimates covariance from the complete realized-chain history, so a rejection or infeasible proposal contributes the repeated retained state. Numerics performs exactly one covariance update after every transition and retains the original continual-adaptation schedule. Proposal covariance begins using the accumulated history after the existing `100 * d` transition threshold. This corrected contract is verified under [TR-025](../review-findings.md#tr-025).
+The symmetric Metropolis ratio is (MCMC.6). The Adaptive Metropolis construction estimates covariance from the complete realized-chain history, so a rejection or infeasible proposal contributes the repeated retained state. Numerics performs exactly one covariance update after every transition and retains the original continual-adaptation schedule. Proposal covariance begins using the accumulated history after the existing `100 * d` transition threshold. Deterministic realized-state adaptation tests verify this contract.
 
 ## No-U-Turn Sampler
 
@@ -112,7 +112,7 @@ Leapfrog integration builds a binary tree in randomly selected forward/backward 
 
 BestFit supplies no analytic gradient, so Numerics applies bound-aware finite differences to the complete `Model.LogLikelihood` posterior target. A coupled-prior verification confirms both data and prior derivatives enter this path. When a Numerics caller supplies an analytic `GradientFunction`, both ordinary leapfrog integration and the reasonable-step-size initialization heuristic use it; the latter route has a permanent regression because an earlier implementation bypassed the configured function. Sampling still occurs in the bounded API parameterization rather than an unconstrained transformed space. Nondifferentiable likelihood branches, hard support boundaries, interval-probability underflow, and strongly different parameter scales can impair Hamiltonian trajectories.
 
-At the sampler level, `MCMCSampler.AcceptanceRates` always means accepted transitions divided by samples. NUTS accepts each completed transition, so that generic counter is normally 1.0 and is not its tuning statistic. `NUTS.HamiltonianAcceptanceRates` separately exposes the mean post-warmup Hamiltonian acceptance probability. When results are constructed from NUTS, the existing `MCMCResults.AcceptanceRates` field stores this Hamiltonian statistic so BestFit can persist and report it with concise NUTS-specific wording. Diagnostic transition counts, divergences, maximum-tree-depth hits, mean tree depth, mean leapfrog steps, final step size, and energy Bayesian fraction of missing information (E-BFMI) remain available only on the live `NUTS` sampler. They are accumulated online with constant memory and no additional target or gradient evaluations, but are not serialized or displayed by BestFit. This correction is verified under [TR-030](../review-findings.md#tr-030).
+At the sampler level, `MCMCSampler.AcceptanceRates` always means accepted transitions divided by samples. NUTS accepts each completed transition, so that generic counter is normally 1.0 and is not its tuning statistic. `NUTS.HamiltonianAcceptanceRates` separately exposes the mean post-warmup Hamiltonian acceptance probability. When results are constructed from NUTS, the existing `MCMCResults.AcceptanceRates` field stores this Hamiltonian statistic so BestFit can persist and report it with concise NUTS-specific wording. Diagnostic transition counts, divergences, maximum-tree-depth hits, mean tree depth, mean leapfrog steps, final step size, and energy Bayesian fraction of missing information (E-BFMI) remain available only on the live `NUTS` sampler. They are accumulated online with constant memory and no additional target or gradient evaluations, but are not serialized or displayed by BestFit. Sampler-level diagnostic tests and BestFit result-routing tests verify this behavior.
 
 ## Posterior Summaries
 

@@ -36,7 +36,7 @@ $$
 
 This is a conditional sum-of-squares likelihood with a fixed zero presample state, not the exact Gaussian likelihood obtained by integrating the initial innovations or using a state-space/Kalman representation. Exact-likelihood results from other packages can therefore differ at short records and near the invertibility boundary.
 
-The transform and Jacobian conventions match the AR chapter. Box–Cox/Yeo–Johnson fitting currently uses the complete response, including held-out observations ([TR-036](../review-findings.md#tr-036)); manual transform parameters do not rebuild the model ([TR-046](../review-findings.md#tr-046)). The pointwise likelihood lacks the scalar $\sigma>0$ guard ([TR-040](../review-findings.md#tr-040)).
+The transform and Jacobian conventions match the AR chapter. Box-Cox/Yeo-Johnson fitting uses only the training prefix, and manual transform assignment atomically rebuilds transformed state, residuals, and dependent likelihood quantities. Scalar and pointwise likelihoods both reject nonfinite or nonpositive $\sigma$.
 
 ## Prior and Posterior
 
@@ -47,7 +47,7 @@ $$
 -I_J\log\sigma, \tag{MA.4}
 $$
 
-where $I_J$ is one when `UseJeffreysRuleForScale` is enabled. Default marginal priors are bounded uniforms. The pointwise metadata currently classifies the Jeffreys contribution as an ordinary parameter prior ([TR-035](../review-findings.md#tr-035)).
+where $I_J$ is one when `UseJeffreysRuleForScale` is enabled. Default marginal priors are bounded uniforms. Pointwise-prior metadata identifies this contribution as `JeffreysScalePrior`.
 
 ## Invertibility
 
@@ -67,7 +67,7 @@ Inside the training window, `Predict` reconstructs innovations from observations
 recursion entirely on transformed model scale, then inverse-transforms the completed vector once.
 It returns exactly `sampleSize` values; `Transform.None` retains its established fixed-seed values.
 
-`MAAnalysis` propagates joint posterior parameter uncertainty and innovations by calling `Predict` for posterior draws. Its bands are posterior predictive. Its AIC/BIC fields use the data log likelihood at the stored MAP and exclude prior-density terms. They are comparable with MLE criteria only when all active priors are constant; with the Jeffreys scale option or another nonconstant prior, use posterior criteria instead ([TR-042](../review-findings.md#tr-042)).
+`MAAnalysis` propagates joint posterior parameter uncertainty and innovations by calling `Predict` for posterior draws. Its bands are posterior predictive. Its AIC/BIC fields use the data log likelihood at the stored MAP and exclude prior-density terms. They are comparable with MLE criteria only when all active priors are constant; with the Jeffreys scale option or another nonconstant prior, use posterior criteria instead.
 
 ## Compile-Checked Workflow
 
@@ -113,8 +113,8 @@ The model assumes regular spacing, no missing times, Gaussian homoscedastic inno
 Implementation: `Models/TimeSeries/MovingAverage.cs`; orchestration:
 `Analyses/TimeSeries/MAAnalysis.cs`. Fast tests cover API behavior, deterministic calculations,
 generation transform algebra, and exact seed compatibility. The focused numerical oracle checks
-independent inverse formulas and 1,000 model-scale Gaussian moment values; recovery remains in the
-Phase 5 matrix.
+independent inverse formulas and 1,000 model-scale Gaussian moment values; the verification report
+records parameter-recovery results.
 
 ## References
 

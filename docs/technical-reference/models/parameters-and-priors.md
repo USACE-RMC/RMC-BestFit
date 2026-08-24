@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This chapter defines how RMC.BestFit represents parameters and constructs Bayesian prior terms. It applies to the general `IModel` contract and gives the exact additional prior used by `UnivariateDistribution`. Specialized chapters document extra terms for time-series, rating-curve, bivariate, and spatial models. Bulletin 17C parameter and quantile *penalties* belong to its GMM objective and must not be described as Bayesian priors.
+This chapter defines how RMC.BestFit represents parameters and constructs Bayesian prior terms. It applies to the general `IModel` contract and gives the exact additional prior used by `UnivariateDistribution`. Specialized chapters document extra terms for bivariate, rating-curve, time-series, and spatial models. Bulletin 17C parameter and quantile *penalties* belong to its GMM objective and must not be described as Bayesian priors.
 
 ## Notation and spaces
 

@@ -161,7 +161,7 @@ The formal current-path worked-example source is `src/RMC.BestFit.Verification/U
 
 The same Verification class also contains uncertain-data variants and pointwise-moment checks, while other sources contain PeakFQ plotting-position comparisons, covariance checks, penalty checks, synthetic recovery, and coverage experiments. Those are separate claims. The repository's legacy “Comparison with EMA” report concerns the earlier Bayesian workflow and is not the oracle for the current specialized GMM implementation.
 
-TR-016 documents the shared result-storage architecture without a code/API redesign. TR-020 closes the unsafe Cohn scope with unit-tested exact-LP3 guards while deferring numerical Cohn verification. TR-021 records the formal seven-example suite passing the published parameter comparisons; the [review findings register](../review-findings.md) and [Bulletin 17C verification report](../../verification/bulletin-17c.md) preserve the evidence boundary for claims not exercised by those tests.
+The shared result-storage architecture preserves the established code, API, and serialization contract. Exact-LP3 input guards are unit tested, while numerical Cohn verification remains outside the present evidence set. The formal seven-example suite passes the published parameter comparisons; [Data, Distributions, and Bulletin 17C](../../verification/report/data-distributions-b17c.md#bulletin-17c-published-examples) states the tested claim and its evidence boundary.
 
 ## Implementation Traceability
 

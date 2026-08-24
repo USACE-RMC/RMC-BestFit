@@ -30,7 +30,7 @@ $$
 
 **IsMaximum** selects equation (1); otherwise Numerics evaluates the minimum. **Dependency** selects independent, perfectly positive, perfectly negative, or correlation-matrix probability rules as described in [Competing Risks](competing-risks.md).
 
-**CompositeAnalysis.CorrelationMatrix** supplies the latent-Normal matrix used by correlation-matrix dependence. The property owns defensive copies, is serialized with invariant-culture `CorrelationMatrix`/`Correlation_Row` elements, and is propagated to every point-estimate and realization **CompetingRisks** object. The UI wrapper persists the same matrix through an appended optional project column, so legacy projects remain readable. Validation requires the matrix for this dependency mode, requires its dimension to equal the child count, and applies the finite, bounds, unit-diagonal, symmetry, and strict positive-definiteness checks described in [Competing Risks](competing-risks.md). TR-015 is complete.
+**CompositeAnalysis.CorrelationMatrix** supplies the latent-Normal matrix used by correlation-matrix dependence. The property owns defensive copies, is serialized with invariant-culture `CorrelationMatrix`/`Correlation_Row` elements, and is propagated to every point-estimate and realization **CompetingRisks** object. The UI wrapper persists the same matrix through an appended optional project column, so legacy projects remain readable. Validation requires the matrix for this dependency mode, requires its dimension to equal the child count, and applies the finite, bounds, unit-diagonal, symmetry, and strict positive-definiteness checks described in [Competing Risks](competing-risks.md).
 
 ## Fixed Mixture Composition
 
@@ -73,7 +73,7 @@ and **Equal** uses \(w_m=1/M\). A final proportional normalization corrects floa
 
 Equation (6) gives conventional Akaike weights when \(C_m=\mathrm{AIC}_m\). Applying the same exponential transform to BIC approximates normalized evidence under additional assumptions; applying it to DIC, WAIC, or LOOIC is a pseudo-BMA-style heuristic, not Bayesian posterior model probability and not predictive stacking [1](#ref-1). The implementation does not optimize stacking weights.
 
-Every estimated child is classified by the selected criterion before Numerics weighting. Non-finite information criteria, non-finite RMSE, and negative RMSE are unusable. If at least one usable child remains, each unusable child receives exactly zero weight and a named warning; if none remains, validation fails with named errors and all weights remain zero. If one or more RMSE values are exactly zero, those children divide unit weight equally and all positive or invalid RMSE children receive zero. Ordinary finite values retain equations (6) and (7). These contracts close TR-013.
+Every estimated child is classified by the selected criterion before Numerics weighting. Non-finite information criteria, non-finite RMSE, and negative RMSE are unusable. If at least one usable child remains, each unusable child receives exactly zero weight and a named warning; if none remains, validation fails with named errors and all weights remain zero. If one or more RMSE values are exactly zero, those children divide unit weight equally and all positive or invalid RMSE children receive zero. Ordinary finite values retain equations (6) and (7).
 
 **Bulletin17CAnalysis** is a supported composite child. Equal, AIC, BIC, and RMSE weighting include it normally. Its **BayesianAnalysis** member is a compatibility container for GMM/frequentist uncertainty and does not represent a likelihood-based posterior, so DIC, WAIC, and LOOIC are unavailable. Under one of those posterior criteria B17C receives zero weight with a named warning when another child has a usable value. The composite is invalid only when no child has a usable selected criterion; there is no type-based B17C rejection.
 
@@ -146,8 +146,8 @@ realization distributions at requested nonexceedance probabilities.
 This construction targets the product posterior of separately fitted children. A fixed
 seed, source order, and retained output order reproduce the exact finite mapping. Reordering
 sources or retained chains changes the finite seeded sample, but not the product-posterior
-target; summaries are therefore distributionally rather than bitwise order invariant.
-[TR-014](../review-findings.md#tr-014) records the correction and verification.
+target; summaries are therefore distributionally rather than bitwise order invariant. Independent
+Cartesian-product and closed-form Normal-sum oracles verify the mapping.
 
 The **BayesianAnalysis** property on **CompositeAnalysis** stores the point estimator,
 credible width, output length, and posterior-resampling seed. The composite does not call
@@ -155,7 +155,7 @@ its sampler. `PRNGSeed` must be nonnegative and is a result-generation setting; 
 invalidates derived results. **GetDistribution(index)** intentionally returns null because
 realization distributions are constructed internally during result creation. Index arrays
 are transient and are not serialized. Saved Composite uncertainty summaries created before
-TR-014 must be reprocessed to adopt the independent product-posterior policy.
+the independent product-posterior policy was introduced must be reprocessed to adopt it.
 
 ## Recovery and Report Verification
 
@@ -165,7 +165,7 @@ Verification therefore supplies already-estimated children with explicit retaine
 This distinction prevents the report from describing composite result construction as an
 estimator recovery.
 
-The Phase 4 supplement pins RMC-TotalRisk commit
+The verification supplement pins RMC-TotalRisk commit
 `d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7` and its 2024 composite hazard/response report.
 For Normal(10, 2), Normal(20, 1), and Normal(30, 5) with weights 0.3/0.2/0.5, it checks the
 mixture identity, 25 published R `mistr` Table 45 quantiles, inversion against the analytical
@@ -177,10 +177,9 @@ Three posterior cells use 5,000 retained draws, 20 deterministic mean-support va
 seed 20260803, five central/tail probabilities, and complete 20-by-20-by-20 Cartesian oracles.
 The independent oracle uses direct Normal CDFs and bisection rather than the production
 resampler or composite constructors. Mean ordinates have tolerance 0.02, credible limits have
-tolerance 0.05, and the fixed parent must lie inside every 90% band. Nine of the ten exact methods
-pass focused execution. The extreme-tail mixture inversion cell remains open because its residual
-exceeds the fixed TotalRisk bound by `2.566838E-10`. Details are recorded
-in [Composite Verification](../../verification/composite.md).
+tolerance 0.05, and the fixed parent must lie inside every 90% band. All ten exact methods pass,
+including the extreme-tail mixture inversion cell under the analysis's `XTransform.None` search
+contract. Details are recorded in the [public verification report](../../verification/report/composite-analysis.md).
 
 ## Validation, Run, and Cancellation
 
@@ -216,7 +215,7 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 
 - Child fits must refer to compatible data, units, block definitions, AEP semantics, and time index.
 - Criterion weights ignore uncertainty in the criteria themselves.
-- AIC/BIC values from **UnivariateAnalysis** use the data log likelihood at MAP. They are comparable with conventional MLE criteria only when all active priors are constant; with nonconstant priors, select DIC, WAIC, or verified PSIS-LOO weighting instead. See [TR-011](../review-findings.md#tr-011).
+- AIC/BIC values from **UnivariateAnalysis** use the data log likelihood at MAP. They are comparable with conventional MLE criteria only when all active priors are constant; with nonconstant priors, select DIC, WAIC, or verified PSIS-LOO weighting instead. See [Model Comparison](../estimation/model-comparison.md).
 - DIC, WAIC, and LOOIC require comparable pointwise likelihood definitions and priors.
 - Bulletin 17C has no likelihood-based posterior criterion and is therefore zero-weighted for DIC, WAIC, and LOOIC; it remains eligible for Equal, AIC, BIC, and RMSE.
 - LOOIC exponential weights are not PSIS stacking and do not use Pareto-\(k\) diagnostics in weight optimization.

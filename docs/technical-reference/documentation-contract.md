@@ -21,7 +21,7 @@ Documentation is reconciled in the following order:
 3. Verification tests and reports provide numerical or external-reference evidence.
 4. Primary standards, journal papers, and scholarly books establish theoretical context.
 
-When these sources disagree, the chapter must not silently select the most convenient account. The discrepancy is recorded in the review findings, the implemented behavior is stated accurately, and any production correction is handled as a separately authorized change.
+When these sources disagree, the chapter must not silently select the most convenient account. The implemented behavior and evidence boundary are stated accurately. Any production correction is handled through a separately authorized internal process and does not become publication narrative.
 
 ## Mathematical Conventions
 

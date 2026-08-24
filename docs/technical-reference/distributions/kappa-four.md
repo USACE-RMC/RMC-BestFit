@@ -2,7 +2,7 @@
 
 # Kappa Four Distribution
 
-[Distribution index](index.md) · [Scientific review findings](../review-findings.md) · [Parameterization crosswalk](../appendices/parameterization-crosswalk.md)
+[Distribution index](index.md) · [Parameterization crosswalk](../appendices/parameterization-crosswalk.md)
 
 ## Purpose and Parameterization
 

@@ -64,8 +64,7 @@ Transform state is rebuilt atomically before numerical results are reused. Exist
 valid; optional invariant-culture `TransformLambda` and `TransformLambdaIsManual` attributes
 preserve the effective exponent and its provenance through save/open and clone/copy workflows.
 The setter's second argument, `lambda2`, remains accepted but is intentionally ignored for API
-compatibility; it is not a shift or offset parameter. See [TR-036](../review-findings.md#tr-036)
-and [TR-046](../review-findings.md#tr-046).
+compatibility; it is not a shift or offset parameter.
 
 Prediction and simulation share the inverse statistical order but have different conditioning
 contracts. ARIMA/ARIMAX first construct intercept, trend, seasonality, exact-date level-covariate,
@@ -77,9 +76,7 @@ first $d$ observed transformed levels when data are attached or zero transformed
 The inverse response transform is applied once after reconstruction in either path. Thus
 preprocessing is raw response $\rightarrow$ transform $\rightarrow$ difference, while simulation
 is model recurrence $\rightarrow$ integration $\rightarrow$ inverse transform. For component
-arrays, model step $k$ maps to raw slot $k+d$ and the first $d$ conditioning slots are zero. See
-[TR-037](../review-findings.md#tr-037),
-[TR-038](../review-findings.md#tr-038), and [TR-039](../review-findings.md#tr-039).
+arrays, model step $k$ maps to raw slot $k+d$ and the first $d$ conditioning slots are zero.
 
 ## Analysis Lifecycle
 
@@ -117,9 +114,9 @@ Choose orders using scientific plausibility, ACF/PACF as exploratory tools, resi
 - holdout coverage and proper scores on the original decision scale;
 - sensitivity to training window, transform, order, and covariate specification.
 
-AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log likelihood evaluated at the stored MAP; prior-density terms are excluded. The values agree with MLE criteria only when every active prior is constant and MAP coincides with the constrained MLE. The default Jeffreys scale option is nonconstant, so analyses using it—or any informative prior—should use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than treating the MAP-evaluated fields as conventional AIC/BIC. See [TR-042](../review-findings.md#tr-042).
+AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log likelihood evaluated at the stored MAP; prior-density terms are excluded. The values agree with MLE criteria only when every active prior is constant and MAP coincides with the constrained MLE. The default Jeffreys scale option is nonconstant, so analyses using it—or any informative prior—should use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than treating the MAP-evaluated fields as conventional AIC/BIC.
 
-The Phase 5 refresh verifies this routing independently for AR, MA, ARIMA, ARIMAX, and rating
+The verification suite checks this routing independently for AR, MA, ARIMA, ARIMAX, and rating
 curve, with an analytical flat-prior order-zero Gaussian parity cell. It changes no production,
 UI/App/API, or persistence contract.
 
@@ -144,7 +141,7 @@ State the variable and units, interval, calendar/water-year convention, missing-
 ## Traceability and References
 
 Implementation is under `Models/TimeSeries/`; orchestration is under `Analyses/TimeSeries/`. Fast
-tests are under `RMC.BestFit.Tests/TimeSeriesModels/` and `TimeSeriesAnalysis/`. Focused Phase 5
+tests are under `RMC.BestFit.Tests/TimeSeriesModels/` and `TimeSeriesAnalysis/`. Focused numerical
 Verification methods are under the matching `RMC.BestFit.Verification` directories and are run
 only by exact fully qualified name; the complete Verification project is not run.
 

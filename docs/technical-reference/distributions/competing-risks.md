@@ -140,11 +140,11 @@ The component variables are not separately observed in this likelihood. If event
 - **PerfectlyNegative** samples the documented limiting equicorrelated Gaussian copula; and
 - **CorrelationMatrix** samples the configured Gaussian copula.
 
-The same seed reproduces the same sample within each mode. The independent seed sequence is preserved from the pre-correction implementation. Invalid user matrices fail before simulation rather than producing a downstream null reference, Cholesky failure, or silent independent sample. TR-012 is complete; the four guarded analytical rank/CDF methods and fast contracts are recorded in [Competing-Risks Verification](../../verification/competing-risks.md).
+The same seed reproduces the same sample within each mode. Invalid user matrices fail before simulation rather than producing a downstream null reference, Cholesky failure, or silent independent sample. The four guarded analytical rank/CDF methods and recovery evidence are recorded in [Competing-Risk Analysis](../../verification/report/competing-risk-analysis.md).
 
 ## Recovery Verification
 
-The Phase 4 recovery supplement reproduces eight min/max fixtures from pinned RMC.Numerics
+The recovery supplement reproduces eight min/max fixtures from pinned RMC.Numerics
 commit `c361f2864428a98a33d6072ffa9bc11ac360839d` and adds correlated minimum and maximum
 fixtures at latent correlation 0.6. Each population is generated through the BestFit model,
 then fitted by both the production Differential Evolution MLE and `CompetingRiskAnalysis`.
@@ -161,10 +161,10 @@ making the recovery family secondary evidence for default sampler configuration 
 the combined distribution. Acceptance is based primarily on parent-CDF recovery because aggregate
 minima and maxima do not generally identify every child parameter. Direct parameter gates are
 limited to the contrasting two-Weibull shapes and the separated two-Normal means. All ten MLE
-methods and four of ten Default-DEMCzs methods pass focused execution; six Bayesian findings keep
-the supplement open. See
-[Competing-Risks Verification](../../verification/competing-risks.md) for fixtures, seeds,
-diagnostics, and predeclared tolerances.
+methods and four Default-DEMCzs methods are included in the accepted evidence set. Six additional
+Bayesian fixtures are excluded from the supported recovery claim. See
+[Competing-Risk Analysis](../../verification/report/competing-risk-analysis.md) for
+fixtures, seeds, diagnostics, predeclared tolerances, and the explicit evidence boundary.
 
 ## Assumptions and Limitations
 

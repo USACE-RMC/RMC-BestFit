@@ -4,7 +4,7 @@
 
 [Back to Documentation Index](../index.md)
 
-This matrix assigns every exported scientific type to a technical-reference chapter and identifies the principal implementation and verification evidence. A row marked *complete* has passed its scheduled source audit; *partial* means that the API is treated in a completed chapter but broader algorithm coverage remains scheduled; *planned* has not yet completed scientific reconciliation.
+This matrix assigns every exported scientific type to a technical-reference chapter and identifies the principal implementation and verification evidence. A row marked *complete* has passed its source audit. A *partial* row has a documented evidence boundary that prevents a broader claim.
 
 ## Model Infrastructure and Data
 
@@ -22,11 +22,11 @@ This matrix assigns every exported scientific type to a technical-reference chap
 | Public API | Technical treatment | Primary implementation | Verification evidence | Status |
 |---|---|---|---|---|
 | `UnivariateDistributionModelBase`, `UnivariateDistribution` | Univariate likelihood and distribution-family chapters | Univariate distribution model | Univariate model and measurement-error tests | Complete |
-| `Bulletin17CDistribution`, `Bulletin17CAnalysis`, `UncertaintyMethod`, `CohnConfidenceIntervalResult` | Bulletin 17C | B17C model and analysis | Fast midpoint/ranked-initializer/bounds-repair tests, exact-LP3 Cohn scope guards, seven published-example methods, and 14 exact reliability cells passed; 13,000 unguarded finite outputs with zero retries or substitutions; no Phase 3 oracle artifact | TR-016 through TR-021 closed in the approved scope; numerical Cohn values remain deferred |
-| `PointProcessModel`, `PointProcessAnalysis` | Point-process models | Point-process model and analysis | Fast contracts plus all ten guarded cells pass; Bayesian recovery uses default DEMCzs settings and 1,000 observations, including the calendar/water-year block-origin parity fixture | Complete with TR-004/TR-005 |
-| `MixtureModel`, `MixtureAnalysis` | Mixture models | Full-$K$ public/EM boundary; identified $K-1$ posterior storage | Fast residual-weight, all-$K$ prior, covariance, sampled-diagnostic, physical-result, legacy-result, and frequency-curve contracts; three guarded Numerics/BestFit parity methods; three Bayesian recovery methods ready for focused rerun | TR-007/TR-008 complete; TR-006 deterministic correction passes and Bayesian recovery evidence is pending |
-| `CompetingRisksModel`, `CompetingRiskAnalysis` | Competing risks | Competing-risks model and analysis | Fast seed/matrix/MAP-initialization contracts, four analytical rank/CDF methods, ten passed MLE methods, and four passed Default-DEMCzs recovery methods | TR-012 complete; six Bayesian recovery findings keep the supplement open |
-| `CompositeAnalysis`, `CompositeType`, `AverageMethod`, `WeightedUnivariateAnalysis`, `CorrelationMatrix` | Composite analysis and model averaging | Composite analysis support | Fast criterion/matrix/index/seed/immutability tests, passed two-child Cartesian oracle, and nine passed report/closed-form/three-child posterior methods | TR-013/TR-014/TR-015 complete; one extreme-tail inversion finding keeps the supplement open; no TR-014 public API addition |
+| `Bulletin17CDistribution`, `Bulletin17CAnalysis`, `UncertaintyMethod`, `CohnConfidenceIntervalResult` | Bulletin 17C | B17C model and analysis | Fast moment/covariance/scope tests, seven published examples, three PeakFQ cells, and fourteen reliability cells with 13,000 finite outputs | Complete for published parameter parity and reliability; numerical Cohn values and broad coverage are outside the current claim set |
+| `PointProcessModel`, `PointProcessAnalysis` | Point-process models | Point-process model and analysis | Fast contracts plus ten Poisson/GPA, likelihood, calendar/water-year, and recovery cells under production defaults | Complete |
+| `MixtureModel`, `MixtureAnalysis` | Mixture models | Full-$K$ public/EM boundary; identified $K-1$ posterior storage | Fast residual-weight, prior, covariance, diagnostic, persistence, and frequency-curve contracts; three Numerics parity and three Bayesian recovery cells | Complete; six of six numerical cells passed |
+| `CompetingRisksModel`, `CompetingRiskAnalysis` | Competing risks | Competing-risks model and analysis | Fast seed/matrix/initialization contracts, four analytical rank/CDF cells, ten MLE cells, and four supported Bayesian cells | Complete for the reported matrix; six difficult Bayesian designs are outside the supported recovery claim |
+| `CompositeAnalysis`, `CompositeType`, `AverageMethod`, `WeightedUnivariateAnalysis`, `CorrelationMatrix` | Composite analysis and model averaging | Composite analysis support | Fast criterion/matrix/index/seed/immutability tests, two posterior-resampling oracles, and ten closed-form/published/Cartesian cells | Complete; twelve of twelve numerical cells passed |
 | `UnivariateAnalysis`, `FittingAnalysis`, `FittedDistribution` | Univariate and distribution-fitting workflows | Analysis classes | Fitting and univariate tests | Complete |
 
 ## Analysis Infrastructure
@@ -41,35 +41,35 @@ This matrix assigns every exported scientific type to a technical-reference chap
 
 | Public API | Technical treatment | Primary implementation | Verification evidence | Status |
 |---|---|---|---|---|
-| `OptimizationMethod`, `CovarianceComputationStatus`, `MaximumLikelihood`, `MaximumAPosteriori` | MLE and MAP chapters | Estimation classes and explicit covariance status | R `bbmle` profile, analytical posterior-profile, covariance-status tests, and compiled workflows | Complete with TR-023 |
-| `GeneralizedMethodOfMoments`, `GMMIdentificationStatus`, `GMMEstimationStrategy`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `JacobianFunction`, `PenaltyFunction` | GMM chapter | GMM estimator | R `gmm` fit/specification/covariance sources; compiled workflow | Fixed-weight and efficient fit/covariance verified with TR-026, TR-033, and TR-034 |
+| `OptimizationMethod`, `CovarianceComputationStatus`, `MaximumLikelihood`, `MaximumAPosteriori` | MLE and MAP chapters | Estimation classes and explicit covariance status | R `bbmle` profile, analytical posterior profile, covariance-status tests, and compiled workflows | Complete |
+| `GeneralizedMethodOfMoments`, `GMMIdentificationStatus`, `GMMEstimationStrategy`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `JacobianFunction`, `PenaltyFunction` | GMM chapter | GMM estimator | R `gmm` fit/specification/covariance and analytical sandwich reconstruction; compiled workflow | Complete for fixed-weight and efficient fit/covariance |
 | `BayesianAnalysis`, `SamplerType`, `PointEstimateType` | Bayesian MCMC and model comparison | Bayesian analysis and pinned Numerics samplers | R `loo` and `posterior` parity; Bayesian/MCMC test sources; compiled workflow | PSIS, ARWMH adaptation, NUTS acceptance/gradient routes, live-sampler diagnostics, and rank-normalized R-hat/bulk-tail ESS verified |
 | `NumericalDiff` | MLE, MAP, GMM, and leverage diagnostics | Numerical differentiation helper | Numerical-difference tests | Complete |
-| `InfluenceDiagnostics`, `ObservationInfluence`, `ParetoKCategory` | Influence diagnostics | Influence diagnostics | R `loo` threshold parity, serialization tests, compiled workflow | Complete; TR-024 fixed |
-| `LeverageDiagnostics`, `ObservationLeverage`, `PriorComponentLeverage` | Influence diagnostics | Leverage diagnostics | Leverage unit tests; compiled workflow | Complete with TR-031 |
+| `InfluenceDiagnostics`, `ObservationInfluence`, `ParetoKCategory` | Influence diagnostics | Influence diagnostics | R `loo` threshold parity, serialization tests, compiled workflow | Complete |
+| `LeverageDiagnostics`, `ObservationLeverage`, `PriorComponentLeverage` | Influence diagnostics | Leverage diagnostics | Leverage unit tests; compiled workflow | Complete |
 | `PriorInfluenceDiagnostics`, `PriorComponentSummary` | Influence diagnostics | Prior-influence diagnostics | Prior-influence tests; compiled workflow | Complete |
-| `PosteriorPredictiveCheck`, `PriorPredictiveCheck`, `PredictiveCheckResults`, `PredictiveSummary` | Predictive checks | Predictive diagnostics | Predictive-check test sources; compiled workflow | Complete with TR-028 |
+| `PosteriorPredictiveCheck`, `PriorPredictiveCheck`, `PredictiveCheckResults`, `PredictiveSummary` | Predictive checks | Predictive diagnostics | Predictive-check test sources; compiled workflow | Complete with the documented joint-prior limitation |
 
 ## Time Series and Rating Curves
 
 | Public API | Technical treatment | Primary implementation | Verification evidence | Status |
 |---|---|---|---|---|
-| `AutoRegressive`, `ARAnalysis` | Autoregressive chapter | AR model and analysis | AR unit/verification sources; compiled workflow | Complete with TR-035, TR-036, TR-040, TR-042, TR-046 |
-| `MovingAverage`, `MAAnalysis` | Moving-average chapter | MA model and analysis | MA unit/verification sources; compiled workflow | Complete with TR-035, TR-036, TR-040, TR-042, TR-046 |
-| `ARIMA`, `ARIMAAnalysis`, `Transform` | ARIMA and time-series chapters | ARIMA model and analysis | ARIMA unit/verification sources; compiled workflow | Complete with TR-035 through TR-040, TR-042, TR-046 |
-| `ARIMAX`, `ARIMAXAnalysis`, `Trend`, `CovariateExtensionMethod` | ARIMAX chapter | ARIMAX model and analysis | ARIMAX unit/verification sources; compiled workflow | Complete with TR-036, TR-037, TR-039 through TR-042, TR-046 |
-| `RatingCurve`, `RatingCurveAnalysis` | Rating-curve chapter | Rating-curve model and analysis | Rating-curve unit/verification sources; compiled workflow | Complete with TR-042 through TR-045 |
+| `AutoRegressive`, `ARAnalysis` | Autoregressive chapter | AR model and analysis | Transform, likelihood, generation, recovery, and compiled workflow evidence | Complete |
+| `MovingAverage`, `MAAnalysis` | Moving-average chapter | MA model and analysis | Transform, likelihood, generation, recovery, and compiled workflow evidence | Complete |
+| `ARIMA`, `ARIMAAnalysis`, `Transform` | ARIMA and time-series chapters | ARIMA model and analysis | Independent recurrence, forecast, transform, MLE/Bayesian recovery, and compiled workflow evidence | Complete |
+| `ARIMAX`, `ARIMAXAnalysis`, `Trend`, `CovariateExtensionMethod` | ARIMAX chapter | ARIMAX model and analysis | Date-indexed likelihood, forecast, generation, recovery, and compiled workflow evidence | Complete |
+| `RatingCurve`, `RatingCurveAnalysis` | Rating-curve chapter | Rating-curve model and analysis | SciPy likelihood/optimum, analytical continuity, MLE/Bayesian recovery, and compiled workflow evidence | Complete |
 
 ## Bivariate and Spatial Models
 
 | Public API | Technical treatment | Primary implementation | Verification evidence | Status |
 |---|---|---|---|---|
-| `BivariateDistribution`, `BivariateAnalysis` | Bivariate distributions and analysis | Bivariate model and analysis | Unit/integration and recovery-test sources; compiled workflow | Complete with TR-047 |
+| `BivariateDistribution`, `BivariateAnalysis` | Bivariate distributions and analysis | Bivariate model and analysis | Twelve independent optima, seven recovery cells, unit/integration sources, and compiled workflow | Complete; marginals are conditioned on rather than jointly estimated |
 | `CoincidentFrequencyAnalysis` | Coincident frequency | Coincident-frequency analysis | Numerical-integration test sources; compiled workflow | Complete |
-| `SpatialGEV`, `SpatialGEVAnalysis`, `SpatialGEVUncertaintyMethod`, `SpatialDistanceMetric` | Spatial GEV hierarchy, likelihood, fitting, distance metric, uncertainty methods, and results | Spatial model and analysis | Spatial unit/verification sources (likelihood, kriging, and geodesic oracles; criteria, cross-validation, prediction, dispatch cells); compiled workflow | TR-048 through TR-062 corrected or closed (Batches 6.3-6.6) |
-| `SpatialGEVSiteResults`, `SpatialGEVCrossValidationResults`, `SpatialGEVCrossValidationFoldStatus`, `SpatialGEVBootstrapResults` | Spatial result construction and leave-one-site-out validation (reduced training model per fold, held-out covariate rows, explicit fold accounting) | Spatial result types | Result DTO, fold-accounting, reduced-model, and guarded cross-validation parity sources | TR-050 through TR-053 corrected (Batch 6.4, 22 August 2026); TR-054 and TR-058 open |
-| `GaussianCopula`, `CachedMultivariateNormal`, `SpatialRegressionErrors` | Spatial copula, Gaussian-process errors, and kriging | Spatial dependence support | Gaussian-copula, cached-MVN, and regression-error tests | Complete with TR-048, TR-049, TR-054, TR-060, TR-061 |
-| `ICorrelationModel`, `CorrelationFunctionType`, `BasicExponential`, `PoweredExponential`, `Spherical` | Spatial correlation functions and bounds | Correlation implementations | Fixed-value spatial-correlation tests | Complete with TR-060 |
+| `SpatialGEV`, `SpatialGEVAnalysis`, `SpatialGEVUncertaintyMethod`, `SpatialDistanceMetric` | Spatial GEV hierarchy, likelihood, fitting, distance metric, uncertainty methods, and results | Spatial model and analysis | Likelihood, kriging, and geodesic oracles; criteria, cross-validation, prediction, simulation, dispatch, and nine recovery cells | Complete for the tested network sizes and dependence structures |
+| `SpatialGEVSiteResults`, `SpatialGEVCrossValidationResults`, `SpatialGEVCrossValidationFoldStatus`, `SpatialGEVBootstrapResults` | Spatial result construction and leave-one-site-out validation | Spatial result types | Result DTO, fold-accounting, reduced-model, cross-validation, prediction, regional-posterior, and bootstrap sources | Complete |
+| `GaussianCopula`, `CachedMultivariateNormal`, `SpatialRegressionErrors` | Spatial copula, Gaussian-process errors, and kriging | Spatial dependence support | Gaussian-copula, cached-MVN, R `mvtnorm`, and conditional-GP tests | Complete |
+| `ICorrelationModel`, `CorrelationFunctionType`, `BasicExponential`, `PoweredExponential`, `Spherical` | Spatial correlation functions and bounds | Correlation implementations | Fixed-value correlation, haversine, and Cartesian distance tests | Complete |
 
 ## Trend and Link Functions
 

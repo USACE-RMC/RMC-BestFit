@@ -7,8 +7,11 @@ const scriptDirectory = path.dirname(new URL(import.meta.url).pathname.replace(/
 const repositoryRoot = path.resolve(scriptDirectory, "..");
 const referenceRoot = path.join(repositoryRoot, "docs", "verification");
 const manifestPath = path.join(referenceRoot, "book-order.txt");
+const metadataPath = path.join(repositoryRoot, "docs", "report-metadata.json");
 const htmlOutputPath = path.resolve(process.argv[2] || path.join(repositoryRoot, "tmp", "pdfs", "rmc-bestfit-verification-report.html"));
 const equationOutputPath = path.resolve(process.argv[3] || path.join(repositoryRoot, "tmp", "pdfs", "verification-report-equations.tex"));
+const reportMetadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+const report = reportMetadata.verification_report;
 
 function loadMarked() {
     const searchRoots = [
@@ -136,7 +139,7 @@ const manifestEntries = fs.readFileSync(manifestPath, "utf8")
     .filter((line) => line.length > 0 && !line.startsWith("#"));
 
 if (manifestEntries.length === 0) {
-    throw new Error("The technical-reference book manifest is empty.");
+    throw new Error("The verification-report book manifest is empty.");
 }
 
 const duplicateEntries = manifestEntries.filter((entry, index) => manifestEntries.indexOf(entry) !== index);
@@ -201,7 +204,16 @@ function cleanSource(document) {
         return headingMatch[1] + " " + headingText + " {#" + uniqueSlug + "}";
     }).join("\n");
 
-    source = lines.replace(/\]\(([^)\s]+\.md)(#[^)]+)?\)/gi, (match, target, fragment) => {
+    source = lines.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (match, alternateText, target) => {
+        if (/^(?:[a-z]+:|#)/i.test(target)) {
+            return match;
+        }
+
+        const absoluteTarget = path.resolve(path.dirname(document.absolutePath), decodeURIComponent(target));
+        return "![" + alternateText + "](" + pathToFileURL(absoluteTarget).href + ")";
+    });
+
+    source = source.replace(/\]\(([^)\s]+\.md)(#[^)]+)?\)/gi, (match, target, fragment) => {
         const targetPath = normalizeRelativePath(path.relative(
             referenceRoot,
             path.resolve(path.dirname(document.absolutePath), decodeURIComponent(target))
@@ -318,20 +330,20 @@ const html = [
     "<head>",
     "<meta charset=\"utf-8\">",
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
-    "<title>RMC.BestFit 2.0 Verification Report</title>",
+    "<title>" + escapeHtml(report.title) + "</title>",
     "<style>" + style + "</style>",
     "</head>",
     "<body>",
     "<section class=\"cover\">",
     "<div class=\"cover-rule\"></div>",
     "<h1>RMC.BestFit 2.0<br>Verification Report</h1>",
-    "<div class=\"subtitle\">Numerical verification, independent package parity, published benchmarks, and scientific finding traceability</div>",
-    "<div class=\"agency\">Risk Management Center</div>",
-    "<div class=\"edition\">Verification program draft<br>RMC.Numerics 2.1.4 dependency<br>24 July 2026</div>",
+    "<div class=\"subtitle\">" + escapeHtml(report.subtitle) + "</div>",
+    "<div class=\"agency\">" + escapeHtml(reportMetadata.organization) + "</div>",
+    "<div class=\"edition\">" + escapeHtml(reportMetadata.release_status) + "<br>BestFit " + escapeHtml(reportMetadata.bestfit_commit.slice(0, 12)) + " / Numerics " + escapeHtml(reportMetadata.numerics_source_commit.slice(0, 12)) + "<br>" + escapeHtml(reportMetadata.publication_date_display) + "</div>",
     "</section>",
     "<section class=\"front-matter\">",
     "<h1>Contents</h1>",
-    "<p class=\"release-note\">This report is generated from the living verification Markdown. A claim is verified only when its focused test, independent oracle, tolerance, and result are recorded.</p>",
+    "<p class=\"release-note\">This external-review draft is generated from the publication manifest. A claim is verified only when its test design, oracle or recovery basis, acceptance rule, and result are stated.</p>",
     "<ol class=\"toc\">" + tocItems + "</ol>",
     "</section>",
     renderedDocuments.join("\n"),

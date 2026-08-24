@@ -164,7 +164,7 @@ the mean curve is copied from the point curve and confidence limits are `NaN`. T
 mapping is cached transiently so `GetEmpiricalDistribution(index)` returns the exact realization
 used by the aggregate result. The cache is regenerated deterministically after loading and is
 invalidated with derived results when a supplied chain or the resampling seed changes. Index
-arrays are not serialized. Saved CFA uncertainty summaries created before TR-014 must be
+arrays are not serialized. Saved CFA uncertainty summaries created by earlier versions must be
 reprocessed to use the corrected coupling policy.
 
 The response matrix is held fixed for every realization. Hydraulic parameter, routing-model, terrain, operating-rule, and numerical-model uncertainty are therefore absent unless the user represents them outside this API.

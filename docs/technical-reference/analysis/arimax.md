@@ -53,13 +53,12 @@ $$
 -\frac{1}{2\sigma^2}\sum_{t=r}^{T_d-1}e_t^2+J_g. \tag{AX.5}
 $$
 
-This is a conditional Gaussian likelihood, not an exact state-space likelihood. Marginal parameter priors are bounded uniforms by default and `UseJeffreysRuleForScale` adds $-\log\sigma$. All four time-series models type that term as `JeffreysScalePrior` in pointwise metadata and consistently reject non-finite or non-positive innovation scales with negative infinity ([TR-035](../review-findings.md#tr-035), [TR-040](../review-findings.md#tr-040)).
+This is a conditional Gaussian likelihood, not an exact state-space likelihood. Marginal parameter priors are bounded uniforms by default and `UseJeffreysRuleForScale` adds $-\log\sigma$. All four time-series models type that term as `JeffreysScalePrior` in pointwise metadata and consistently reject nonfinite or nonpositive innovation scales with negative infinity.
 
 Box–Cox/Yeo–Johnson parameters are plug-in values fitted on the raw training prefix and frozen
 before transformation of the complete response; they are not jointly estimated and their
 uncertainty is not propagated. Manual transform assignment rebuilds transformed/differenced
-state and preserves fitted/manual provenance through persistence ([TR-036](../review-findings.md#tr-036),
-[TR-046](../review-findings.md#tr-046)).
+state and preserves fitted/manual provenance through persistence.
 
 ## Covariate Alignment and Lags
 
@@ -79,7 +78,7 @@ J_g=\sum_{u=d+r}^{T-1}\log|g'(y_u)|,\qquad r=\max(p,q,b),
 $$
 
 so response, level covariates, conditional residuals, and change-of-variable terms share one raw
-index set ([TR-041](../review-findings.md#tr-041)).
+index set. Independent date-indexed likelihood calculations verify this alignment.
 
 Trend and Fourier seasonality are explicitly rejected when `DiffOrderD>0`, avoiding an additional deterministic-term ambiguity. With $d=0$, the single Fourier harmonic is useful for a stable sinusoidal cycle but cannot represent changing phase, multiple seasonal frequencies, or event-timed hydrology.
 
@@ -101,8 +100,7 @@ covariate map as the likelihood. Model step $k$ maps to raw slot $k+d$. Fitted t
 the observed lower-order state at the preceding raw index; the first forecast uses the final
 observed training states, and later forecasts recurse from generated states. Exactly $T+h$
 transformed levels are reconstructed and then inverse-transformed once. Component arrays retain
-raw length, with zero conditioning values in slots $0,\ldots,d-1$. This closes
-[TR-037](../review-findings.md#tr-037). `ARIMAXAnalysis`
+raw length, with zero conditioning values in slots $0,\ldots,d-1$. `ARIMAXAnalysis`
 combines posterior parameter and innovation draws, and its bands include whichever covariate
 extension is invoked, so clearly state that scenario.
 
@@ -112,10 +110,9 @@ transformed/highest-difference scale. The completed difference path is integrate
 $d$ observed transformed levels when data are attached or zero transformed anchors otherwise,
 then inverse-transformed once. An explicit generation covariate path overrides the configured
 extension; otherwise `None`, block-bootstrap, and KNN retain the policies above. Missing or
-duplicate required generation timestamps throw instead of using position. This closes
-[TR-039](../review-findings.md#tr-039). Analysis AIC/BIC use the data log likelihood at the stored
+duplicate required generation timestamps throw instead of using position. Analysis AIC/BIC use the data log likelihood at the stored
 MAP and exclude prior-density terms; they are comparable with MLE criteria only when every active
-prior is constant ([TR-042](../review-findings.md#tr-042)).
+prior is constant.
 
 AR stationarity and MA invertibility are warned using sums of absolute coefficients, not enforced by roots or reparameterization. Polynomial trends extrapolate without bound, empirical covariate extension can leave the historical support, and collinear lag blocks can make $\beta$, trend, seasonality, and AR persistence weakly identifiable.
 
@@ -181,8 +178,8 @@ Implementation: `Models/TimeSeries/ARIMAX.cs`; orchestration:
 shapes, covariate extension, transformations, exact-date alignment, holdout isolation, and
 likelihood decomposition. The independent R alignment oracle verifies `d=0,1,2` at `1E-10`.
 Fast irregular conditional, logarithmic, and fixed-seed tests plus the focused analytical and
-exactly 1,000-realization variance oracles verify the prediction boundary. Generation scale
-identities remain assigned to TR-039.
+exactly 1,000-realization variance oracles verify the prediction boundary and generation-scale
+identities.
 
 ## References
 

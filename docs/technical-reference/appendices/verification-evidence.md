@@ -2,42 +2,41 @@
 
 # Verification and Evidence Matrix
 
-[Technical reference](../index.md) | [Distribution verification](../distributions/verification-matrix.md) | [Review findings](../review-findings.md)
+[Technical reference](../index.md) | [Distribution verification](../distributions/verification-matrix.md) | [Public verification report](../../verification/report/executive-summary.md)
 
-This matrix distinguishes fast-gate evidence, exact guarded verification results, and verification sources that were only inspected. It prevents a source file, published citation, or test name from being presented as a reproduced result without execution evidence.
+This matrix distinguishes deterministic software contracts from independent numerical verification and summarizes the current evidence supporting each capability.
 
-| Area | Deterministic/unit evidence | Long-running or external evidence | Release disposition |
+| Area | Fast deterministic evidence | Independent numerical evidence | Supported conclusion |
 |---|---|---|---|
-| Model, parameter, trend, and link contracts | Fast constructor, mapping, likelihood-decomposition, and fixed-value tests; compiled examples | Primary statistical sources cited by chapter | Source-audited; fast gate passed |
-| Mixed exact/censored/threshold/uncertain likelihood | Fast pointwise and data-frame tests | Historical/paleoflood literature; verification data sources | Source-audited; fast gate passed |
-| Fifteen univariate distributions | Fixed PDF/CDF/quantile and parameter tests; exact API snippets | Theoretical, published-table, R/package, and report sources catalogued in [distribution verification](../distributions/verification-matrix.md) | Phase 1 closed; Kappa Four zero-shape TR-001 fixed and verified |
-| POT/point-process | Fast exposure, likelihood, simulation, prior, and lifecycle contracts; compiled workflow | All ten guarded cells pass; Bayesian recovery uses untouched DEMCzs defaults and 1,000 observations. Calendar/water-year recovery holds block-day parameters fixed and changes only the block origin | TR-004/TR-005 complete in the approved point-process scope |
-| Finite mixture | Fast simplex, hurdle, mixed-likelihood, impossible-row, and lifecycle contracts | Three guarded Numerics/BestFit parity methods and three guarded Bayesian generation-and-recovery methods | TR-006/TR-007/TR-008 complete in the approved mixture scope |
-| Competing risks | Fixed composition, dependency validation, seeded-sequence, lifecycle, and one-to-three identifiability-guard tests | Four analytical rank/CDF methods; all ten MLE and four Default-DEMCzs recovery methods pass; six Bayesian cells failed predeclared gates and are explicitly deferred | TR-012 complete; deferred supplemental research does not gate Phase 5 |
-| Composite/model averaging | Fast criterion, matrix, independent-index, seed, immutability, copy/undo/persistence, and lifecycle tests | Two-child empirical Cartesian-product oracle and all ten R `mistr`/closed-form/correlation/three-child methods pass | TR-013/TR-014/TR-015 complete; exact extreme-tail rerun passed under `XTransform.None` |
-| Bulletin 17C | Fast configuration/result tests, midpoint/ranked-initializer/bounds-repair regressions, and exact-LP3 Cohn scope guards | Seven formal worked-example GMM methods passed published mean/standard-deviation/skew parity at `1E-3`; fourteen ordinary/pivotal reliability cells produced 13,000 unguarded finite outputs with zero retries, substitutions, or exceptions | TR-016 through TR-021 closed in approved scopes; Cohn value verification and broader calibration/coverage remain deferred |
-| MLE, MAP, and GMM | Objective-sign, bounds, state, profile, covariance, and compiled-workflow tests | R `bbmle` profile and self-checking R `gmm` fit/specification/covariance oracles | MLE/MAP profiling and GMM fixed-weight/two-step fit and covariance verified |
-| Bayesian MCMC and diagnostics | Configuration, output mapping, threshold, and compiled-workflow tests | R `loo` PSIS parity and R `posterior` rank-normalized R-hat/ESS parity | Phase 2 closed; DIC/WAIC/PSIS and scoped MCMC diagnostics verified; TR-028 accepted limitation |
-| Rating curves | Fixed prediction/validation, discharge-space likelihood, exponent-bound, unmatched-record, and compiled-workflow tests | Discharge-space likelihood oracle (SciPy and Numerics base-10 lognormal), analytical continuity cells, and example-replication recovery against an independent SciPy optimum; cited hydrometry standards | TR-042 through TR-045 closed |
-| AR, MA, ARIMA, ARIMAX | Constructor, likelihood, recursion, transform, and compiled-workflow tests | Parameter recovery and forecasting verification sources | TR-042 criteria defect closed; TR-035 through TR-041 and TR-046 remain open |
-| Bivariate copulas | Pair matching, likelihood, simulation shape, and compiled workflow | Copula recovery/integration sources and pinned Numerics tests | TR-047 criteria defect closed; broader recovery evidence remains planned |
-| Coincident frequency | Dimension, monotonicity, integration, independent copula/X/Y indices, fallback, cache identity/invalidation, and seed lifecycle | Exact guarded closed-form independent Normal-sum oracle with reversed-chain variant | TR-014 complete downstream; `BivariateAnalysis` remains copula-only conditional on fixed marginals |
-| Spatial GEV | Correlation, cached MVN, error model, observed-subset copula, data/prior identity, row/year criteria, Godambe-status, reduced/resampled-model, fold-accounting, prediction, regional-posterior, dispatch, simulation, result DTO, and compiled workflow tests | R `mvtnorm` missing-site and location-error likelihood oracle (8 cells), R conditional-GP kriging oracle (15 cases), R haversine geodesic oracle, guarded criteria, leave-one-site-out (3), prediction/regional (2), simulation (1), and dispatch (3) cells, 9 recovery cells | TR-048 through TR-062 and TR-091 through TR-093 closed (Batches 6.3-6.6, 21-22 August 2026) |
-| Documentation | Namespace, local-link, citation-anchor, exported-API, and exact-snippet gates | PDF render and visual inspection | Required release gate |
+| Model, parameter, trend, and link contracts | Constructor, mapping, likelihood-decomposition, validation, and compiled-example tests | Primary statistical sources cited by chapter | Public contracts and documented mappings are source-audited |
+| Mixed exact/censored/threshold/uncertain likelihood | Pointwise and data-frame identities | Published historical/paleoflood formulations and specialized examples | Likelihood routing and pointwise decomposition are supported in declared cases |
+| Fifteen univariate distributions | Fixed PDF/CDF/quantile and parameter tests | Analytical, SciPy, and R `lmomco` comparisons | All fifteen family cells passed |
+| Point process | Exposure, prior, likelihood, simulation, and lifecycle contracts | Poisson/GPA oracles and generation-recovery | Ten of ten cells passed |
+| Finite mixture | Simplex, hurdle, likelihood, covariance, persistence, and diagnostic contracts | Numerics parity and Bayesian recovery | Six of six cells passed |
+| Competing risks | Composition, dependency, seed, matrix, and identifiability guards | Four analytical, ten MLE, and four supported Bayesian cells | All reported cells passed; six difficult Bayesian designs are outside the claim set |
+| Composite/model averaging | Criterion, matrix, independent-index, seed, cache, and persistence contracts | R `mistr`, closed forms, Gaussian orthants, and Cartesian posteriors | Twelve of twelve reported cells passed |
+| Bulletin 17C | Configuration, moments, covariance, scope guards, and reporting | Seven published parameter examples, three PeakFQ comparisons, and fourteen refit-reliability cells | Published parameter parity and numerical reliability are supported; broad coverage is not claimed |
+| MLE, MAP, and GMM | Objective, bounds, state, profile, covariance, and gradient contracts | R `bbmle`, R `gmm`, and analytical covariance | Profile, fit, specification, and covariance comparisons passed |
+| Bayesian MCMC and diagnostics | Configuration, output mapping, acceptance terminology, and thresholds | R `loo` PSIS and R `posterior` R-hat/ESS | DIC, WAIC, PSIS, R-hat, and ESS comparisons passed |
+| Rating curves | Prediction, validation, likelihood, bound, alignment, and persistence contracts | SciPy likelihood/optimum, analytical continuity, and recovery | Thirty-six of thirty-six reported cells passed |
+| AR, MA, ARIMA, and ARIMAX | Likelihood, transform, recursion, alignment, and serialization contracts | Twelve independent oracle groups and 37 recovery cells | All reported oracle and recovery cells passed |
+| Bivariate and coincident frequency | Pair matching, likelihood, simulation, cache, and seed contracts | Independent copula optima, recovery, and closed-form Normal sums | Twenty-three of twenty-three reported cells passed |
+| Spatial GEV | Correlation, likelihood, clone, criteria, prediction, bootstrap, result, and dispatch contracts | R `mvtnorm`, conditional-GP, haversine, cross-validation, simulation, and recovery | Thirty of thirty reported cells passed |
+| Documentation | Namespace, link, citation, manifest, exported-API, and exact-snippet gates | Reproducible PDF render and visual inspection | Required publication gate |
 
-## Evidence Labels
+## Evidence labels
 
-- **Fast gate passed** means the command reported in the release checklist completed with zero failures.
-- **Guarded verification passed** means one explicitly authorized fully qualified method source-resolved uniquely and produced one passing TRX through `scripts/run-verification-test.ps1`.
-- **Source-audited** means equations and API behavior were reconciled against current BestFit and pinned Numerics source.
-- **Verification source inspected** means the test logic and asserted comparison were reviewed, not executed.
-- **Published evidence** means a chapter cites the official standard, paper, or book; it does not imply that every published number was independently recomputed.
-- **Unavailable** means a production finding prevents a defensible interpretation until code and verification work are separately authorized.
+- **Fast contract** means a deterministic test protects a software behavior but does not by itself establish a scientific numerical claim.
+- **Analytical oracle** means the expected value is derived independently from a closed form or identity.
+- **External-package oracle** means a committed artifact records a result from a named package and version.
+- **Published result** means an official standard, table, or worked example supplies the comparison.
+- **Recovery** means data generated from known parameters are refitted under a predeclared design and acceptance rule.
+- **Coverage** means repeated simulations test a nominal interval rate against a Monte Carlo acceptance interval.
 
-## Controlled Verification
+## Controlled execution
 
-The full verification library remains excluded because it can run for more than a day. Repository-owner-authorized closeout work may run only the requested exact methods through the guarded runner. Broader verification work must be divided into explicit, auditable scopes before any execution claim is published.
+Long-running verification methods are executed one fully qualified method at a time. Every publication claim requires its oracle provenance, tolerance, observed result, and software checkpoint to be recorded. The complete verification project is not a publication command.
 
 ---
 
-[Technical reference](../index.md) | [Distribution verification](../distributions/verification-matrix.md) | [Review findings](../review-findings.md)
+[Technical reference](../index.md) | [Public verification report](../../verification/report/executive-summary.md)

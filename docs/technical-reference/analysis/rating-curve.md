@@ -27,7 +27,7 @@ $$
 
 of length $3K+1$. Stage parameters have stage units; discharge has the supplied discharge units; $10^{a_k}$ has discharge units divided by stage units raised to $\beta_k$; $\beta_k$ is dimensionless; and $\sigma$ is a standard deviation in log10-discharge units.
 
-The ordering constraint is $h_1<h_2<h_3$ for configured controls. Each added contribution approaches zero at activation only for $\beta_k>0$, so the default exponent bounds are strictly positive ($\beta_k\ge0.1$) and every admissible default model is continuous at its activation stages; a zero exponent would make the curve jump by $10^{a_k}$ there. Legacy projects that stored a zero lower bound load verbatim and receive a validation warning ([TR-044](../review-findings.md#tr-044)).
+The ordering constraint is $h_1<h_2<h_3$ for configured controls. Each added contribution approaches zero at activation only for $\beta_k>0$, so the default exponent bounds are strictly positive ($\beta_k\ge0.1$) and every admissible default model is continuous at its activation stages; a zero exponent would make the curve jump by $10^{a_k}$ there. Legacy projects that stored a zero lower bound load verbatim and receive a validation warning.
 
 Equation (RC.1) is the lower-triangular-all-ones control-matrix case of the BaRatin matrix-of-controls framework: existing controls continue conveying flow as new controls activate. It can represent main-channel plus overbank contributions. It should not be applied where one control drowns out and is replaced by another without first extending the model.
 
@@ -57,9 +57,9 @@ $$
 \sum_{i=1}^{n}\log(Q_i\ln 10). \tag{RC.5}
 $$
 
-`DataLogLikelihood`, `PointwiseDataLogLikelihood`, and `PointwiseDataLogLikelihoodComponents` all carry the per-observation change-of-variables term, so AIC, BIC, DIC, WAIC, and LOO are on the discharge measure and comparable with other discharge densities. The term does not depend on the parameters, so maximum-likelihood, MAP, and posterior parameter estimates are identical to those of (RC.4); see [TR-043](../review-findings.md#tr-043) and the [verification chapter](../../verification/rating-curve.md).
+`DataLogLikelihood`, `PointwiseDataLogLikelihood`, and `PointwiseDataLogLikelihoodComponents` all carry the per-observation change-of-variables term, so AIC, BIC, DIC, WAIC, and LOO are on the discharge measure and comparable with other discharge densities. The term does not depend on the parameters, so maximum-likelihood, MAP, and posterior parameter estimates are identical to those of (RC.4); see [Rating-Curve Analysis](../../verification/report/rating-curve.md#discharge-space-likelihood).
 
-At least ten aligned pairs are required. Nonfinite parameters, invalid threshold ordering, nonpositive predicted flow, nonpositive aligned discharge, and invalid marginal-prior support make a fit impossible. `Validate()` requires positive discharge only for the date-aligned pairs; stage or discharge records without a partner date never enter the likelihood and are reported in a non-blocking warning with their counts, including how many ignored discharge records are nonpositive ([TR-045](../review-findings.md#tr-045)). Stage/discharge duplicates at the same timestamp are not modeled as replicate measurements; the date dictionary determines the aligned value.
+At least ten aligned pairs are required. Nonfinite parameters, invalid threshold ordering, nonpositive predicted flow, nonpositive aligned discharge, and invalid marginal-prior support make a fit impossible. `Validate()` requires positive discharge only for the date-aligned pairs; stage or discharge records without a partner date never enter the likelihood and are reported in a non-blocking warning with their counts, including how many ignored discharge records are nonpositive. Stage/discharge duplicates at the same timestamp are not modeled as replicate measurements; the date dictionary determines the aligned value.
 
 ## Priors and Posterior
 
@@ -77,7 +77,7 @@ $$
 \ell_P(\theta)=\sum_j\log\pi_j(\theta_j)-\log\sigma. \tag{RC.6}
 $$
 
-The posterior is proportional to $\exp\{\ell_Z+\ell_P\}$. `RatingCurveAnalysis` computes AIC/BIC from the discharge-data log likelihood at the stored MAP and excludes parameter-prior and Jeffreys terms. The criteria are comparable with MLE only when every active prior is constant and MAP coincides with the constrained MLE. Because `UseJeffreysRuleForScale=true` is the default, the ordinary default analysis does not meet that condition unless the Jeffreys option is disabled; use DIC, WAIC, or verified PSIS-LOO when it or any informative prior is active ([TR-042](../review-findings.md#tr-042)).
+The posterior is proportional to $\exp\{\ell_Z+\ell_P\}$. `RatingCurveAnalysis` computes AIC/BIC from the discharge-data log likelihood at the stored MAP and excludes parameter-prior and Jeffreys terms. The criteria are comparable with MLE only when every active prior is constant and MAP coincides with the constrained MLE. Because `UseJeffreysRuleForScale=true` is the default, the ordinary default analysis does not meet that condition unless the Jeffreys option is disabled; use DIC, WAIC, or verified PSIS-LOO when it or any informative prior is active.
 
 ## Identifiability and Extrapolation
 
@@ -143,7 +143,7 @@ Call `initialFit.Estimate()` for a data-likelihood starting solution; then run `
 
 ## Validation and Traceability
 
-Implementation: `Models/RatingCurve/RatingCurve.cs`; orchestration: `Analyses/RatingCurve/RatingCurveAnalysis.cs`. Fast tests cover parameter order, addition behavior, date alignment, the discharge-space likelihood and its pointwise/component identities, the positive exponent bounds and legacy-bound warning, unmatched-record reporting, serialization, validation, and deterministic simulation. The Phase 6 [rating-curve verification chapter](../../verification/rating-curve.md) records the executed evidence: the discharge-space likelihood against a SciPy and Numerics base-10 lognormal oracle, analytical two-sided continuity at activation stages, and maximum-likelihood and default-setting Bayesian replication of the three synthetic cases of `examples/6-rating-curve-analysis` against an independent SciPy optimum. The evidence does not validate BaRatin parity for arbitrary control matrices or uncertainty coverage in extrapolation.
+Implementation: `Models/RatingCurve/RatingCurve.cs`; orchestration: `Analyses/RatingCurve/RatingCurveAnalysis.cs`. Fast tests cover parameter order, addition behavior, date alignment, the discharge-space likelihood and its pointwise/component identities, the positive exponent bounds and legacy-bound warning, unmatched-record reporting, serialization, validation, and deterministic simulation. The [rating-curve verification chapter](../../verification/report/rating-curve.md#discharge-space-likelihood) records the executed evidence: the discharge-space likelihood against a SciPy and Numerics base-10 lognormal oracle, analytical two-sided continuity at activation stages, and maximum-likelihood and default-setting Bayesian replication of the three synthetic cases of `examples/6-rating-curve-analysis` against an independent SciPy optimum. The evidence does not validate BaRatin parity for arbitrary control matrices or uncertainty coverage in extrapolation.
 
 ## References
 

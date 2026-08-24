@@ -49,7 +49,7 @@ The estimator copies initial values and bounds from `Model.Parameters` when it c
 
 The default is `DifferentialEvolution`. Every algorithm receives `Model.DataLogLikelihood`; `Brent` receives a scalar wrapper. `ReportFailure` is passed to the optimizer, traces are disabled, and the optimizer's own Hessian calculation is disabled. `Estimate()` catches optimizer exceptions, records `OptimizationStatus.Failure`, and returns `false`. It calls a fit successful only when the Numerics status is exactly `Success`; a finite best point at another termination status is not published as an estimate.
 
-Global algorithms reduce, but do not eliminate, multiple-optimum risk. For mixture, competing-risk, nonstationary, and strongly correlated models, use multiple seeds or starts and compare both objective values and fitted distribution behavior. A single `Success` status is not evidence of global optimality.
+Global algorithms reduce, but do not eliminate, multiple-optimum risk. For competing-risk, mixture, nonstationary, and strongly correlated models, use multiple seeds or starts and compare both objective values and fitted distribution behavior. A single `Success` status is not evidence of global optimality.
 
 ## Curvature and Asymptotic Covariance
 

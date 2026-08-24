@@ -67,7 +67,7 @@ Equation (MAP.5) is the covariance of a local Gaussian/Laplace approximation onl
 
 These methods now preserve parameter correlation, but they are not Bayesian credible intervals: the prior is included, posterior probability mass is not integrated, and the chi-squared likelihood-ratio calibration is only a local asymptotic convention for this posterior-kernel profile. Use MCMC marginal quantiles for Bayesian credible intervals. With constant flat priors, the profiled posterior differs from the MLE data-likelihood profile only by an additive constant and the two interval calculations agree apart from numerical error.
 
-The correlated-quadratic verification under [TR-023](../review-findings.md#tr-023) checks every profile ordinate and the 90% interval against R `bbmle` and a closed-form nuisance optimum. A second analytical fixture confirms that an informative nuisance prior participates in the reoptimization.
+The correlated-quadratic verification checks every profile ordinate and the 90% interval against R `bbmle` and a closed-form nuisance optimum. A second analytical fixture confirms that an informative nuisance prior participates in the reoptimization.
 
 ## AIC and BIC Methods
 

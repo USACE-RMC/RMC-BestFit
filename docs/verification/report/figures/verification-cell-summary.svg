@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="610" viewBox="0 0 1000 610" role="img" aria-labelledby="title description">
+  <title id="title">Passed verification cells by analysis area</title>
+  <desc id="description">Horizontal bars follow the application order and show 17 distribution fitting cells, 10 point-process cells, 18 competing-risk cells, 6 mixture cells, 12 composite cells, 23 bivariate and coincident-frequency cells, 36 rating-curve cells, 49 time-series cells, and 30 spatial-extremes cells.</desc>
+  <rect width="1000" height="610" fill="#ffffff"/>
+  <text x="30" y="38" fill="#15324b" font-family="Arial, sans-serif" font-size="25" font-weight="700">Passed verification cells by analysis area</text>
+  <text x="30" y="64" fill="#60717f" font-family="Arial, sans-serif" font-size="14">Accepted oracle and recovery evidence at the documented checkpoint</text>
+  <line x1="260" y1="90" x2="260" y2="555" stroke="#9aaeba" stroke-width="1"/>
+  <line x1="400" y1="90" x2="400" y2="555" stroke="#d6e0e6" stroke-width="1"/>
+  <line x1="540" y1="90" x2="540" y2="555" stroke="#d6e0e6" stroke-width="1"/>
+  <line x1="680" y1="90" x2="680" y2="555" stroke="#d6e0e6" stroke-width="1"/>
+  <line x1="820" y1="90" x2="820" y2="555" stroke="#d6e0e6" stroke-width="1"/>
+  <line x1="960" y1="90" x2="960" y2="555" stroke="#d6e0e6" stroke-width="1"/>
+  <g fill="#60717f" font-family="Arial, sans-serif" font-size="12" text-anchor="middle">
+    <text x="260" y="579">0</text><text x="400" y="579">10</text><text x="540" y="579">20</text><text x="680" y="579">30</text><text x="820" y="579">40</text><text x="960" y="579">50</text>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="15" fill="#1f2a33" text-anchor="end">
+    <text x="245" y="122">Distribution fitting</text>
+    <text x="245" y="174">Point process</text>
+    <text x="245" y="226">Competing risks</text>
+    <text x="245" y="278">Mixture</text>
+    <text x="245" y="330">Composite</text>
+    <text x="245" y="382">Bivariate / coincident</text>
+    <text x="245" y="434">Rating curve</text>
+    <text x="245" y="486">Time series</text>
+    <text x="245" y="538">Spatial extremes</text>
+  </g>
+  <g fill="#2c779f">
+    <rect x="260" y="100" width="238" height="30" rx="3"/>
+    <rect x="260" y="152" width="140" height="30" rx="3"/>
+    <rect x="260" y="204" width="252" height="30" rx="3"/>
+    <rect x="260" y="256" width="84" height="30" rx="3"/>
+    <rect x="260" y="308" width="168" height="30" rx="3"/>
+    <rect x="260" y="360" width="322" height="30" rx="3"/>
+    <rect x="260" y="412" width="504" height="30" rx="3"/>
+    <rect x="260" y="464" width="686" height="30" rx="3"/>
+    <rect x="260" y="516" width="420" height="30" rx="3"/>
+  </g>
+  <g fill="#15324b" font-family="Arial, sans-serif" font-size="14" font-weight="700">
+    <text x="508" y="121">17</text>
+    <text x="410" y="173">10</text>
+    <text x="522" y="225">18</text>
+    <text x="354" y="277">6</text>
+    <text x="438" y="329">12</text>
+    <text x="592" y="381">23</text>
+    <text x="774" y="433">36</text>
+    <text x="956" y="485" text-anchor="end">49</text>
+    <text x="690" y="537">30</text>
+  </g>
+  <text x="30" y="603" fill="#60717f" font-family="Arial, sans-serif" font-size="12">Counts summarize evidence cells and should not be interpreted as code coverage or equal scientific weight.</text>
+</svg>

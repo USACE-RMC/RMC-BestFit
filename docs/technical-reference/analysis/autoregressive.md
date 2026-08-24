@@ -36,9 +36,9 @@ $$
 -\frac{1}{2\sigma^2}\sum_{t=p}^{T-1}e_t^2+J_g. \tag{AR.4}
 $$
 
-`DataLogLikelihood` implements (AR.4), rejects nonpositive $\sigma$, and returns negative infinity when the training series is unavailable. `PointwiseDataLogLikelihood` returns $T-p$ terms and distributes the scalar transformation Jacobian $J_g$ equally among them. The pointwise path currently lacks the scalar path's scale guard; see [TR-040](../review-findings.md#tr-040).
+`DataLogLikelihood` implements (AR.4), rejects nonpositive or nonfinite $\sigma$, and returns negative infinity when the training series is unavailable. `PointwiseDataLogLikelihood` applies the same scale guard, returns $T-p$ terms, and distributes the scalar transformation Jacobian $J_g$ equally among them.
 
-The available transforms are none, Box–Cox logarithmic ($\lambda=0$), fitted Box–Cox, and fitted Yeo–Johnson. The change-of-variables term is evaluated over the same raw observations represented by (AR.4). Transformation parameters are plug-in preprocessing estimates, not coordinates in $\theta$ and not propagated through posterior uncertainty. They are currently fit using the full response rather than the training prefix ([TR-036](../review-findings.md#tr-036)); `SetTransformParameters` also does not rebuild dependent state ([TR-046](../review-findings.md#tr-046)). Holdout scores are therefore not publishable when an estimated transform is selected.
+The available transforms are none, Box-Cox logarithmic ($\lambda=0$), fitted Box-Cox, and fitted Yeo-Johnson. The change-of-variables term is evaluated over the same raw observations represented by (AR.4). Transformation parameters are plug-in preprocessing estimates, not coordinates in $\theta$ and not propagated through posterior uncertainty. They are fitted using only the training prefix and then applied to the complete response. `SetTransformParameters` atomically rebuilds transformed state, residuals, and dependent likelihood quantities. Holdout scoring therefore uses a transform estimated without the holdout values.
 
 ## Priors and Posterior
 
@@ -48,7 +48,7 @@ $$
 \log\pi_J(\sigma)=-\log\sigma. \tag{AR.5}
 $$
 
-Thus `LogLikelihood` is $\ell_D+\sum_j\log\pi_j+\log\pi_J$. The Jeffreys term is currently mislabeled as `ParameterPrior` in the pointwise-prior metadata ([TR-035](../review-findings.md#tr-035)). Bayesian estimation uses the bounded natural coordinates and sampler configuration described in [Bayesian MCMC](../estimation/bayesian-mcmc.md).
+Thus `LogLikelihood` is $\ell_D+\sum_j\log\pi_j+\log\pi_J$. Pointwise-prior metadata identifies the scale contribution as `JeffreysScalePrior`. Bayesian estimation uses the bounded natural coordinates and sampler configuration described in [Bayesian MCMC](../estimation/bayesian-mcmc.md).
 
 ## Stationarity and Identifiability
 
@@ -114,7 +114,7 @@ Run the analysis asynchronously, require satisfactory chain diagnostics, inspect
 Implementation: `Models/TimeSeries/AutoRegressive.cs` and `Analyses/TimeSeries/ARAnalysis.cs`.
 Fast tests cover construction, likelihood decomposition, transforms, prediction state, generation
 algebra, and analysis lifecycle. The focused generator oracle verifies inverse-transform algebra
-and 1,000 model-scale moment values; recovery remains in the Phase 5 matrix.
+and 1,000 model-scale moment values; the verification report records parameter-recovery results.
 
 ## References
 
