@@ -2536,6 +2536,12 @@ namespace RMC.BestFit.Estimation
         /// Perform the 'iterative method' that iteratively improves the weighting matrix until convergence.
         /// </summary>
         /// <remarks>
+        /// Convergence between passes is declared by any of three tests: the absolute parameter
+        /// distance below <see cref="AbsoluteTolerance"/>, the relative objective change below
+        /// <see cref="RelativeTolerance"/>, or the largest scale-relative parameter change
+        /// (relative to max(1, |value|)) below <see cref="RelativeTolerance"/>. The third test keeps
+        /// the pass count stable for well-fitted models, where the near-zero objective disables the
+        /// relative-change test and the absolute distance is not scale-aware.
         /// <see cref="GMMIterations"/> records the optimizer pass currently being attempted.
         /// Non-failure optimizer terminations retain their best finite parameter set even when
         /// strict convergence tolerance was not reached; <see cref="ConvergedWithinTolerance"/>
@@ -2575,11 +2581,24 @@ namespace RMC.BestFit.Estimation
                 double newQ = Q(newValues);
                 ConvergenceHistory.Add(newQ);
 
-                // Check convergence: absolute parameter distance OR relative objective change
+                // Check convergence: absolute parameter distance, relative objective change, or
+                // scale-relative parameter change. The relative objective test degenerates precisely
+                // when the model fits well — a near-zero Q drives its denominator to the 1e-15 floor
+                // and the ratio explodes — and the absolute distance is not scale-aware, so a
+                // real-space fit with parameters in the tens of thousands faced the same 1e-8 bar as
+                // a log-space fit near unity, making the pass count sensitive to last-bit optimizer
+                // noise. The OR-ed scale-relative test can only stop the loop earlier.
                 double distance = Tools.Distance(newValues, oldValues);
                 double relChange = Math.Abs(newQ - oldQ) / (Math.Abs(oldQ) + 1e-15);
+                double relParamChange = 0.0;
+                for (int i = 0; i < newValues.Length; i++)
+                {
+                    double change = Math.Abs(newValues[i] - oldValues[i]) / Math.Max(1.0, Math.Abs(oldValues[i]));
+                    if (change > relParamChange)
+                        relParamChange = change;
+                }
 
-                if (distance < AbsoluteTolerance || relChange < RelativeTolerance)
+                if (distance < AbsoluteTolerance || relChange < RelativeTolerance || relParamChange < RelativeTolerance)
                 {
                     _convergedWithinTolerance = true;
                     BestParameterSet = Optimizer.BestParameterSet.Clone();
