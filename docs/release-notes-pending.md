@@ -123,6 +123,26 @@ development.
   on last-bit optimizer noise in a non-scale-aware absolute distance; convergence can only trigger
   earlier. DIC and WAIC accumulate per-index terms and sum sequentially (matching PSIS-LOO), so
   the reported criteria are bit-reproducible run to run (last-bits-only change).
+- Sub-unity datasets (issue #15): LogNormal and Log-Pearson Type III accept records whose values
+  are mostly below 1 (negative log10 mean) — the Numerics constraint fix below plus a defensive
+  midpoint clamp of out-of-bounds default initials in `UnivariateDistribution.SetDefaultParameters`
+  (matching the Bulletin 17C initializer). LnNormal, parameterized by the real-space mean, was
+  never affected.
+- Mixture analysis (issues #16, #17): deleting a distribution row no longer crashes the
+  application (the grid delete is cancelled and performed from a clean dispatcher stack, and the
+  re-bind suppresses combo-box write-backs); changing the point estimator updates the summary —
+  the K-1 weight expansion clamps a ULP-scale negative residual at the simplex boundary instead of
+  throwing, and a failed reprocess now raises the conventional `AnalysisResults` notification
+  (alongside clearing `IsEstimated`) so every analysis view rebuilds and resets its wait cursor
+  instead of freezing on stale output.
+- Low outlier test (issue #13): a threshold rejected by the 50-percent-censoring guard shows the
+  validation message instead of terminating the application, and a legacy project whose stored
+  low-outlier settings the current guards reject opens with the outliers cleared instead of
+  crashing on load.
+- Input data POT diagnostics (issue #14): the mean-residual-life and parameter-stability plots
+  operate on the same smoothed series the peaks-over-threshold extraction thresholds (via the new
+  `TimeSeries.SmoothedSeries`), and editing the smoothing function, period, minimum steps between
+  peaks, or the source time-series element marks the diagnostics dirty.
 
 ## RMC.Numerics (since 2.1.4)
 
@@ -166,3 +186,8 @@ development.
 - The interpolation correlated-search windows scale as Count^0.25 (`Interpolater.deltaStart` was
   pinned to 1 by a Math.Min typo; `OrderedPairedData`'s X/Y windows were never assigned), so the
   hunt search path is reachable; brackets are unchanged.
+- `LogNormal` and `LogPearsonTypeIII` parameter constraints allow a negative log-space mean (the
+  location bounds are symmetric about zero like Normal's; the former machine-epsilon floor
+  rejected any sub-unity sample), and their `MinimumOfParameters` report negative infinity for
+  the location. `TimeSeries.SmoothedSeries` exposes the exact smoothing preprocessing
+  `PeaksOverThresholdSeries` applies, for threshold-selection diagnostics.
