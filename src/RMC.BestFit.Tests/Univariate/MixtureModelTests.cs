@@ -1324,4 +1324,39 @@ public class MixtureModelTests
     }
 
     #endregion
+    /// <summary>
+    /// Verifies the K-1 weight expansion accepts a residual weight at and vanishingly below the
+    /// simplex boundary, and still rejects a genuinely negative residual.
+    /// </summary>
+    /// <remarks>
+    /// A posterior summary of the free weights can land a few ULP above the component mass from
+    /// floating-point accumulation, making the derived final weight a vanishingly small negative.
+    /// The expansion used to reject that outright, so GetPhysicalParameters threw and the
+    /// point-estimator reprocess silently failed, freezing the GUI on stale results (issue #17).
+    /// The residual is now clamped to zero within a 1E-12 tolerance of the component mass.
+    /// </remarks>
+    [TestMethod]
+    public void Test_GetPhysicalParameters_SimplexBoundaryResidual_IsClampedNotRejected()
+    {
+        var model = new MixtureModel();
+        Assert.AreEqual(2, model.Mixture!.Distributions.Length, "Fixture precondition: two components.");
+
+        // Free weight exactly at the component mass: residual weight is exactly zero.
+        var atBoundary = new double[] { 1.0, 10.0, 2.0, 30.0, 5.0 };
+        var expanded = model.GetPhysicalParameters(atBoundary);
+        Assert.AreEqual(6, expanded.Length);
+        Assert.AreEqual(0.0, expanded[1], 0d, "The residual weight at the boundary is zero.");
+
+        // Free weight one representable step above the mass: the tiny negative residual is
+        // clamped to zero; this exact vector used to throw.
+        var justAbove = new double[] { 1.0 + 1E-15, 10.0, 2.0, 30.0, 5.0 };
+        expanded = model.GetPhysicalParameters(justAbove);
+        Assert.AreEqual(0.0, expanded[1], 0d, "A ULP-scale negative residual is clamped to zero.");
+
+        // A genuinely negative residual is still rejected.
+        var infeasible = new double[] { 1.001, 10.0, 2.0, 30.0, 5.0 };
+        Assert.IsFalse(model.TryGetPhysicalParameters(infeasible, out _),
+            "A residual below the clamp tolerance must still be rejected.");
+    }
+
 }

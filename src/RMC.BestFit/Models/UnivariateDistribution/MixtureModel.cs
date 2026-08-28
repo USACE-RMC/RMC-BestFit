@@ -428,7 +428,19 @@ namespace RMC.BestFit.Models
             }
 
             double finalWeight = componentMass - trackedWeightSum;
-            if (!Tools.IsFinite(finalWeight) || finalWeight < 0.0) return false;
+            if (!Tools.IsFinite(finalWeight)) return false;
+            if (finalWeight < 0.0)
+            {
+                // A posterior summary of the free weights can land a few ULP above the component
+                // mass from floating-point accumulation (a posterior mean concentrated at the
+                // simplex boundary, for example), making the residual weight a vanishingly small
+                // negative. That is the boundary of the simplex, not an infeasible point, so clamp
+                // it to zero within a tight tolerance; a rejection here used to make the
+                // point-estimator reprocess throw and silently freeze the GUI on stale results. A
+                // genuinely negative residual is still rejected.
+                if (finalWeight < -1E-12 * Math.Max(1.0, componentMass)) return false;
+                finalWeight = 0.0;
+            }
             physicalParameters[componentCount - 1] = finalWeight;
 
             for (int i = 0; i < distributionParameterCount; i++)
