@@ -299,6 +299,32 @@ public class FittingAnalysisTests
 
     #endregion
 
+    #region RMSE Guard Tests
+
+    /// <summary>
+    /// Tests that RMSE is undefined without positive residual degrees of freedom
+    /// and is computed normally when residual degrees of freedom are available.
+    /// </summary>
+    [TestMethod]
+    public void ComputeRmse_RoutesByResidualDegreesOfFreedom()
+    {
+        var distribution = new Uniform(0d, 1d);
+
+        var undefinedRmse = FittingAnalysis.ComputeRmse(
+            [0.25d, 0.75d],
+            [0.25d, 0.75d],
+            distribution);
+        Assert.IsTrue(double.IsNaN(undefinedRmse));
+
+        var exactRmse = FittingAnalysis.ComputeRmse(
+            [0.25d, 0.5d, 0.75d],
+            [0.25d, 0.5d, 0.75d],
+            distribution);
+        Assert.AreEqual(0d, exactRmse, 1e-12);
+    }
+
+    #endregion
+
     #region ProbabilityOrdinates Behavior Without Estimation
 
     /// <summary>

@@ -277,6 +277,26 @@ namespace RMC.BestFit.Analyses
             IsEstimated = false;
         }
 
+        /// <summary>
+        /// Computes RMSE when the fitted distribution has positive residual degrees of freedom.
+        /// </summary>
+        /// <param name="values">The observed values.</param>
+        /// <param name="plottingPositions">The plotting positions associated with the observed values.</param>
+        /// <param name="distribution">The fitted distribution.</param>
+        /// <returns>
+        /// The RMSE, or <see cref="double.NaN"/> when the observation count does not exceed
+        /// the number of fitted parameters.
+        /// </returns>
+        internal static double ComputeRmse(
+            IList<double> values,
+            IList<double> plottingPositions,
+            UnivariateDistributionBase distribution)
+        {
+            return values.Count > distribution.NumberOfParameters
+                ? GoodnessOfFit.RMSE(values, plottingPositions, distribution)
+                : double.NaN;
+        }
+
         /// <inheritdoc/>
         public override async Task RunAsync(SafeProgressReporter? progressReporter = null)
         {
@@ -362,7 +382,7 @@ namespace RMC.BestFit.Analyses
                                     probs.AddRange(DataFrame.UncertainSeries.Select(x => x.PlottingPositionComplement));
                                     probs.AddRange(DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
 
-                                    var rmse = GoodnessOfFit.RMSE(values, probs, dist.Distribution);
+                                    var rmse = ComputeRmse(values, probs, dist.Distribution);
 
                                     bool success = Tools.IsFinite(aic) && Tools.IsFinite(bic) && Tools.IsFinite(rmse);
 
