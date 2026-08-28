@@ -2785,9 +2785,17 @@ namespace RMC.BestFit.Analyses
             int startIndex = Bulletin17CDistribution.DataFrame.FullTimeSeries.First().Index;
             int endIndex = Bulletin17CDistribution.DataFrame.FullTimeSeries.Last().Index;
             var p = Bulletin17CDistribution.NumberOfParameters;
-            var I2 = new double[p];
-            var I3 = new double[p];
             var a = new double[p];
+
+            // Each jackknife sample writes its moment contributions to its own slot, and the slots
+            // are summed sequentially in index order below, matching the deterministic reductions
+            // in BayesianAnalysis and Numerics' Bootstrap: a shared accumulator combined the terms
+            // in thread-scheduler order, and floating-point addition is not associative, so the
+            // BCa acceleration constants wobbled in their last bits from run to run. A failed or
+            // unsuccessful jackknife fit leaves its slot at zero, contributing nothing.
+            int jackknifeCount = endIndex - startIndex + 1;
+            var secondMoments = new double[jackknifeCount, p];
+            var thirdMoments = new double[jackknifeCount, p];
 
             Parallel.For(startIndex, endIndex + 1, options, idx =>
             {
@@ -2802,10 +2810,11 @@ namespace RMC.BestFit.Analyses
                     if (gmm.Status == OptimizationStatus.Success)
                     {
                         var thetaJack = gmm.BestParameterSet.Values;
+                        int slot = idx - startIndex;
                         for (int i = 0; i < p; i++)
                         {
-                            Tools.ParallelAdd(ref I2[i], Math.Pow(thetaHats[i] - thetaJack[i], 2));
-                            Tools.ParallelAdd(ref I3[i], Math.Pow(thetaHats[i] - thetaJack[i], 3));
+                            secondMoments[slot, i] = Math.Pow(thetaHats[i] - thetaJack[i], 2);
+                            thirdMoments[slot, i] = Math.Pow(thetaHats[i] - thetaJack[i], 3);
                         }
                     }
                 }
@@ -2818,7 +2827,14 @@ namespace RMC.BestFit.Analyses
 
             for (int i = 0; i < p; i++)
             {
-                a[i] = I3[i] / (Math.Pow(I2[i], 1.5) * 6);
+                double secondMoment = 0d;
+                double thirdMoment = 0d;
+                for (int slot = 0; slot < jackknifeCount; slot++)
+                {
+                    secondMoment += secondMoments[slot, i];
+                    thirdMoment += thirdMoments[slot, i];
+                }
+                a[i] = thirdMoment / (Math.Pow(secondMoment, 1.5) * 6);
             }
 
             return a;
