@@ -39,7 +39,7 @@ namespace RMC_BestFit
         {
             InitializeComponent();
             DataContext = this;
-            // RowType set to null — enum types cannot be default-constructed by DataGrid toolbar
+            // RowType set to null ï¿½ enum types cannot be default-constructed by DataGrid toolbar
             // (Activator.CreateInstance on an enum yields the 0-value, which is not a supported mixture type).
             // Add/remove is handled via PreviewAddRows/PreviewDeleteRows to inject Normal as the default.
             DistributionDataGrid.RowType = null;
@@ -52,6 +52,16 @@ namespace RMC_BestFit
         /// Stores the previous name value for validation and rollback purposes.
         /// </summary>
         private string _previousName;
+
+        /// <summary>
+        /// When true, suppresses <see cref="DistributionComboBox_SelectionChanged"/> to prevent
+        /// re-entrant collection writes while the distributions grid is re-bound. Clearing
+        /// DataGrid.ItemsSource can fire ComboBox SelectionChanged events during the collection's
+        /// own CollectionChanged dispatch, and a write into an ObservableCollection inside its own
+        /// change notification throws and crashed the application. Mirrors
+        /// <c>_suppressTrendModelSelection</c> in <c>UnivariateAnalysisPropertiesControl</c>.
+        /// </summary>
+        private bool _suppressDistributionSelection = false;
 
         /// <summary>
         /// Tracks the InputDataCollection currently subscribed to, so it can be unsubscribed when the control unloads or the element changes.
@@ -84,7 +94,7 @@ namespace RMC_BestFit
             if (d as MixtureAnalysisPropertiesControl == null) return;
             var thisControl = (MixtureAnalysisPropertiesControl)d;
 
-            // Unsubscribe from old element — both PropertyChanged (element-scoped) and
+            // Unsubscribe from old element ï¿½ both PropertyChanged (element-scoped) and
             // InputDataCollection subscriptions so the new element's LoadInputData starts clean.
             if (e.OldValue is MixtureAnalysis oldElement)
             {
@@ -240,6 +250,8 @@ namespace RMC_BestFit
         /// </summary>
         private void DistributionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Suppressed while the grid re-binds; see _suppressDistributionSelection.
+            if (_suppressDistributionSelection) return;
             if (Element == null) return;
             var comboBox = sender as System.Windows.Controls.ComboBox;
             if (comboBox == null) return;
@@ -378,17 +390,37 @@ namespace RMC_BestFit
         }
 
         /// <summary>
-        /// Intercepts the DataGrid delete-row operation. Enforces a minimum of 1 distribution.
+        /// Intercepts the DataGrid delete-row operation: cancels the grid's own delete and performs
+        /// the removal after the grid's pipeline unwinds. Enforces a minimum of 1 distribution.
         /// </summary>
+        /// <remarks>
+        /// The grid's delete loop mutates the bound collection with no exception handling, and the
+        /// synchronous CollectionChanged fan-out (model sync, results clearing, and this control's
+        /// grid re-bind) runs re-entrantly inside that loop, which crashed the whole application
+        /// when a default distribution row was deleted. Every other App grid cancels and performs
+        /// its own removal; here the removal is additionally deferred through the dispatcher so the
+        /// collection mutates from a clean stack, outside the grid's delete pipeline entirely.
+        /// </remarks>
+        /// <param name="rowIndices">The grid-selected row indices to delete.</param>
+        /// <param name="cancel">Set to <see langword="true"/> to cancel the grid's own delete.</param>
         private void DistributionDataGrid_PreviewDeleteRows(List<int> rowIndices, ref bool cancel)
         {
-            if (Element == null) { cancel = true; return; }
-            // Prevent deleting all distributions — at least 1 must remain
-            if (Element.Distributions.Count - rowIndices.Count < 1)
+            cancel = true;
+            if (Element == null) return;
+            // Prevent deleting all distributions - at least 1 must remain
+            var indices = rowIndices.Distinct().OrderByDescending(i => i).ToList();
+            if (Element.Distributions.Count - indices.Count < 1) return;
+
+            Dispatcher.BeginInvoke(new Action(() =>
             {
-                cancel = true;
-                return;
-            }
+                if (Element == null) return;
+                foreach (int rowIndex in indices)
+                {
+                    if (Element.Distributions.Count <= 1) return;
+                    if (rowIndex >= 0 && rowIndex < Element.Distributions.Count)
+                        Element.Distributions.RemoveAt(rowIndex);
+                }
+            }));
         }
 
         /// <summary>
@@ -413,23 +445,34 @@ namespace RMC_BestFit
         /// <param name="e">The event data containing the name of the changed property.</param>
         private void Element_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Model object replaced (e.g., during undo) — push to sub-controls
+            // Model object replaced (e.g., during undo) ï¿½ push to sub-controls
             if (e.PropertyName == nameof(Element.MixtureDistribution))
             {
                 ParameterPriorsControl.Model = Element.MixtureDistribution;
                 QuantilePriorsControl.Model = Element.MixtureDistribution;
             }
-            // BayesianAnalysis replaced — push to sub-controls
+            // BayesianAnalysis replaced ï¿½ push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;
                 BayesianOutputControl.Analysis = Element.BayesianAnalysis;
             }
-            // Distributions collection changed — refresh the data grid
+            // Distributions collection changed - refresh the data grid. The re-bind is guarded:
+            // clearing ItemsSource fires SelectionChanged on the row combo boxes, and an unguarded
+            // write-back into the collection during its own change dispatch throws the
+            // ObservableCollection re-entrancy exception that crashed the application.
             if (e.PropertyName == nameof(Element.Distributions))
             {
-                DistributionDataGrid.ItemsSource = null;
-                DistributionDataGrid.ItemsSource = Element.Distributions;
+                _suppressDistributionSelection = true;
+                try
+                {
+                    DistributionDataGrid.ItemsSource = null;
+                    DistributionDataGrid.ItemsSource = Element.Distributions;
+                }
+                finally
+                {
+                    _suppressDistributionSelection = false;
+                }
             }
         }
 

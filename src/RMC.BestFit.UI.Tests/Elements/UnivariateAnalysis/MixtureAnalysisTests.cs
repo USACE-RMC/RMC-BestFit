@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RMC.BestFit.UI;
 
 namespace RMC.BestFit.UI.Tests.Elements.UnivariateAnalysis;
@@ -319,4 +319,45 @@ public class MixtureAnalysisTests
         Assert.IsTrue(raised.Contains(nameof(MixtureAnalysis.Name)));
         Assert.AreEqual("NameMA-Renamed", ma.Name);
     }
+    /// <summary>
+    /// Verifies that removing the second default distribution completes without an exception and
+    /// leaves a consistent one-component mixture.
+    /// </summary>
+    /// <remarks>
+    /// The App grid crash reported for this action lived in the WPF re-bind path (fixed in
+    /// MixtureAnalysisPropertiesControl); this test pins the model-facing half of the contract:
+    /// the wrapper's collection handler must rebuild the mixture, clear the results, and keep the
+    /// analysis usable for any collection mutation source.
+    /// </remarks>
+    [STATestMethod]
+    public void Distributions_RemoveSecond_LeavesConsistentSingleComponentMixture()
+    {
+        var ma = new MixtureAnalysis("RemoveSecondMA", _collection!);
+        Assert.AreEqual(2, ma.Distributions.Count, "Fixture precondition: two default components.");
+
+        ma.Distributions.RemoveAt(1);
+
+        Assert.AreEqual(1, ma.Distributions.Count);
+        Assert.IsNotNull(ma.MixtureDistribution.Mixture);
+        Assert.AreEqual(1, ma.MixtureDistribution.Mixture!.Distributions.Length);
+        Assert.IsFalse(ma.IsEstimated, "Removing a component must clear any estimated state.");
+    }
+
+    /// <summary>
+    /// Verifies that an add-then-remove round trip restores a consistent two-component mixture.
+    /// </summary>
+    [STATestMethod]
+    public void Distributions_AddThenRemove_RoundTripsComponentCount()
+    {
+        var ma = new MixtureAnalysis("RoundTripMA", _collection!);
+
+        ma.Distributions.Add(Numerics.Distributions.UnivariateDistributionType.Gumbel);
+        Assert.AreEqual(3, ma.Distributions.Count);
+        Assert.AreEqual(3, ma.MixtureDistribution.Mixture!.Distributions.Length);
+
+        ma.Distributions.RemoveAt(2);
+        Assert.AreEqual(2, ma.Distributions.Count);
+        Assert.AreEqual(2, ma.MixtureDistribution.Mixture!.Distributions.Length);
+    }
+
 }
