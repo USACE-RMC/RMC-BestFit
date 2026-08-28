@@ -1111,12 +1111,9 @@ namespace RMC.BestFit.Models
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before performing hypothesis tests.", nameof(ExactSeries));
             var indexes = ExactSeries.Select(x => (double)x.Index).ToArray();
             var values = useLog10 ? ExactSeries.Select(x => x.Log10Value).ToArray() : ExactSeries.Select(x => x.Value).ToArray();
-            var xVals = new Matrix(indexes);
-            var yVals = new Vector(values);
-            var lm = new LinearRegression(xVals, yVals, true);
-            var tdist = new StudentT(lm.DegreesOfFreedom);
-            double d = Math.Abs(lm.Parameters[1] / lm.ParameterStandardErrors[1]);
-            return (1 - tdist.CDF(Math.Abs(lm.Parameters[1] / lm.ParameterStandardErrors[1]))) * 2;
+            // Delegate to the Numerics implementation, matching every sibling hypothesis test in this
+            // class; the former inline regression duplicated it line for line (plus a dead local).
+            return HypothesisTests.LinearTrendTest(indexes, values);
         }
 
         /// <summary>
@@ -1967,6 +1964,10 @@ namespace RMC.BestFit.Models
                 result.Add("Mean", moments[0]);
                 result.Add("Std Dev", moments[1]);
                 result.Add("Skewness", moments[2]);
+                // Statistics.ProductMoments reports bias-corrected EXCESS kurtosis (a Normal reads 0).
+                // The +3 converts to Pearson kurtosis (a Normal reads 3), matching the CentralMoments
+                // convention SummaryStatisticsAllData reports, so the two summary columns share one
+                // scale. It is a unit conversion, not a bias adjustment — do not remove it.
                 result.Add("Kurtosis", moments[3] + 3);
                 result.Add("Mean (of log)", logMoments[0]);
                 result.Add("Std Dev (of log)", logMoments[1]);
@@ -2016,6 +2017,12 @@ namespace RMC.BestFit.Models
             }
             else
             {
+                // Known limitation: the three lists are sorted independently and paired positionally,
+                // which assumes the log10 transform is monotone over the sample. A zero value floors to
+                // log10(0.001) and a negative value maps to NaN (which sorts first), so samples with
+                // non-positive values can silently mispair values with plotting positions. The same
+                // pattern appears in SetStandardizedValues and GetNonparametricMoments; a structural
+                // co-sort of (value, logValue, probability) tuples is deliberately deferred.
                 var values = ExactSeries.Select(x => x.Value).ToList();
                 values.AddRange(UncertainSeries.Select(x => x.Value).ToList());
                 values.AddRange(IntervalSeries.Select(x => x.Value).ToList());
@@ -2047,6 +2054,9 @@ namespace RMC.BestFit.Models
                 result.Add("Mean", moments[0]);
                 result.Add("Std Dev", moments[1]);
                 result.Add("Skewness", moments[2]);
+                // CentralMoments already returns Pearson kurtosis (a Normal reads 3), so no +3 is
+                // needed here; SummaryStatisticsExactDataOnly adds 3 to ProductMoments' excess
+                // kurtosis to reach the same convention.
                 result.Add("Kurtosis", moments[3]);
                 result.Add("Mean (of log)", logMoments[0]);
                 result.Add("Std Dev (of log)", logMoments[1]);
@@ -2424,8 +2434,11 @@ namespace RMC.BestFit.Models
                 return;
             }
 
-            var moments = dist.CentralMoments(200);
-            var logMoments = logDist.CentralMoments(200);
+            // 1000 fixed steps, matching every other CentralMoments call on this class, so the
+            // standardization moments agree with the reported summary statistics; the former 200-step
+            // call computed the Q-Q reference at a coarser quadrature than the summary table.
+            var moments = dist.CentralMoments(1000);
+            var logMoments = logDist.CentralMoments(1000);
 
             // Check if moments are invalid
             if (double.IsNaN(moments[0]) || double.IsNaN(moments[1]))
