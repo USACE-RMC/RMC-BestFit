@@ -86,7 +86,8 @@ namespace RMC.BestFit.Analyses
         private int _statusMaximumFunctionEvaluationsCount;
 
         /// <summary>
-        /// The number of replicate GMM attempts that ended with <see cref="OptimizationStatus.Failure"/>.
+        /// The number of replicate GMM attempts that ended with <see cref="OptimizationStatus.Failure"/>
+        /// or <see cref="OptimizationStatus.LineSearchFailed"/>.
         /// </summary>
         private int _statusFailureCount;
 
@@ -228,7 +229,8 @@ namespace RMC.BestFit.Analyses
         public int StatusMaximumFunctionEvaluationsCount => _statusMaximumFunctionEvaluationsCount;
 
         /// <summary>
-        /// Gets the number of replicate GMM attempts that ended with <see cref="OptimizationStatus.Failure"/>.
+        /// Gets the number of replicate GMM attempts that ended with <see cref="OptimizationStatus.Failure"/>
+        /// or <see cref="OptimizationStatus.LineSearchFailed"/>.
         /// </summary>
         public int StatusFailureCount => _statusFailureCount;
 
@@ -394,6 +396,7 @@ namespace RMC.BestFit.Analyses
                     Interlocked.Increment(ref _statusMaximumFunctionEvaluationsCount);
                     break;
                 case OptimizationStatus.Failure:
+                case OptimizationStatus.LineSearchFailed:
                     Interlocked.Increment(ref _statusFailureCount);
                     break;
                 default:

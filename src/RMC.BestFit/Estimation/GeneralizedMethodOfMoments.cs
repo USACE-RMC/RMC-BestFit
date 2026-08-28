@@ -2347,7 +2347,8 @@ namespace RMC.BestFit.Estimation
         /// <param name="enableStartPointProbe">Whether to enable NelderMead start-point probing. Default = true for first iteration.</param>
         /// <returns>
         /// <c>true</c> when the optimizer produces a usable best parameter set without reporting
-        /// <see cref="OptimizationStatus.Failure"/>; otherwise, <c>false</c>.
+        /// <see cref="OptimizationStatus.None"/>, <see cref="OptimizationStatus.Failure"/>, or
+        /// <see cref="OptimizationStatus.LineSearchFailed"/>; otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
         /// GMM keeps the best finite optimizer point from every pass. Hitting maximum function
@@ -2464,10 +2465,16 @@ namespace RMC.BestFit.Estimation
         /// Determines whether an optimizer termination status can supply a usable best-effort result.
         /// </summary>
         /// <param name="status">The optimizer status to inspect.</param>
-        /// <returns><c>true</c> when the status is neither <see cref="OptimizationStatus.None"/> nor <see cref="OptimizationStatus.Failure"/>; otherwise, <c>false</c>.</returns>
+        /// <returns>
+        /// <c>true</c> when the status is not <see cref="OptimizationStatus.None"/>,
+        /// <see cref="OptimizationStatus.Failure"/>, or <see cref="OptimizationStatus.LineSearchFailed"/>;
+        /// otherwise, <c>false</c>.
+        /// </returns>
         private static bool IsNonFailureTermination(OptimizationStatus status)
         {
-            return status != OptimizationStatus.None && status != OptimizationStatus.Failure;
+            return status != OptimizationStatus.None &&
+                   status != OptimizationStatus.Failure &&
+                   status != OptimizationStatus.LineSearchFailed;
         }
 
         /// <summary>

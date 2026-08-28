@@ -81,6 +81,22 @@ public class GeneralizedMethodOfMomentsExpandedTests
     }
 
     /// <summary>
+    /// Line-search failure requires fallback while evaluation-budget stops remain usable best-effort results.
+    /// </summary>
+    [TestMethod]
+    public void OptimizerTerminationClassification_RejectsLineSearchFailureButKeepsBudgetStops()
+    {
+        var classifier = typeof(GeneralizedMethodOfMoments).GetMethod(
+            "IsNonFailureTermination",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+        Assert.IsNotNull(classifier);
+        Assert.IsFalse((bool)classifier.Invoke(null, new object[] { OptimizationStatus.LineSearchFailed })!);
+        Assert.IsTrue((bool)classifier.Invoke(null, new object[] { OptimizationStatus.MaximumIterationsReached })!);
+        Assert.IsTrue((bool)classifier.Invoke(null, new object[] { OptimizationStatus.MaximumFunctionEvaluationsReached })!);
+    }
+
+    /// <summary>
     /// EstimationStrategy setter accepts every value and round-trips.
     /// </summary>
     [TestMethod]

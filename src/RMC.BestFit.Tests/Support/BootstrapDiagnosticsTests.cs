@@ -215,12 +215,13 @@ public class BootstrapDiagnosticsTests
         diag.RecordGMMStatus(OptimizationStatus.MaximumIterationsReached);
         diag.RecordGMMStatus(OptimizationStatus.MaximumFunctionEvaluationsReached);
         diag.RecordGMMStatus(OptimizationStatus.Failure);
+        diag.RecordGMMStatus(OptimizationStatus.LineSearchFailed);
         diag.RecordGMMStatus(OptimizationStatus.None);
 
         Assert.AreEqual(1, diag.StatusSuccessCount);
         Assert.AreEqual(2, diag.StatusMaximumIterationsCount);
         Assert.AreEqual(1, diag.StatusMaximumFunctionEvaluationsCount);
-        Assert.AreEqual(1, diag.StatusFailureCount);
+        Assert.AreEqual(2, diag.StatusFailureCount);
         Assert.AreEqual(1, diag.StatusNoneCount);
     }
 
