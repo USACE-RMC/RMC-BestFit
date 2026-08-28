@@ -1468,16 +1468,19 @@ namespace RMC.BestFit.Estimation
             }
 
             int N = Results.Output.Count;
-            double dicHat = 0.0;
 
-            Parallel.For(0, N, () => 0d, (j, loop, sum) =>
+            // Each draw's deviance is written to its own slot and summed sequentially in index order,
+            // matching ComputePSISLOO's deterministic reduction. The former shared accumulator combined
+            // partial sums in thread-scheduler order, and floating-point addition is not associative,
+            // so the reported DIC wobbled in its last bits from run to run.
+            var deviances = new double[N];
+            Parallel.For(0, N, j =>
             {
                 double[] parameters = GetModelParameterValues(Results.Output[j].Values);
-                sum += -2.0 * Model.DataLogLikelihood(parameters);
-                return sum;
-            }, z => Tools.ParallelAdd(ref dicHat, z));
+                deviances[j] = -2.0 * Model.DataLogLikelihood(parameters);
+            });
 
-            dicHat /= N;
+            double dicHat = deviances.Sum() / N;
             double[] posteriorMean = GetModelParameterValues(Results.PosteriorMean.Values);
             double dicMu = -2.0 * Model.DataLogLikelihood(posteriorMean);
             DIC = 2.0 * dicHat - dicMu;
@@ -1556,60 +1559,58 @@ namespace RMC.BestFit.Estimation
         /// <remarks>
         /// WAIC uses the pointwise log predictive density and the sum of unbiased sample variances
         /// of pointwise log likelihoods. The calculation follows Vehtari, Gelman, and Gabry (2017).
+        /// Per-observation terms are written to their own slots and summed sequentially in index
+        /// order, matching ComputePSISLOO's deterministic reduction, so the reported WAIC is
+        /// bit-reproducible run to run.
         /// </remarks>
         private void ComputeWAIC(double[,] pointwiseLogLikelihood)
         {
             int observationCount = pointwiseLogLikelihood.GetLength(0);
             int drawCount = pointwiseLogLikelihood.GetLength(1);
-            double totalLppd = 0.0;
-            double totalPWaic = 0.0;
+            var pointwiseLppdTerms = new double[observationCount];
+            var pointwisePWaicTerms = new double[observationCount];
 
-            Parallel.For(0, observationCount,
-                () => (lppd: 0.0, pWaic: 0.0),
-                (observationIndex, loop, local) =>
+            Parallel.For(0, observationCount, observationIndex =>
+            {
+                double maxLogLikelihood = double.NegativeInfinity;
+                double sumLogLikelihood = 0.0;
+                double sumLogLikelihoodSquared = 0.0;
+
+                for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
                 {
-                    double maxLogLikelihood = double.NegativeInfinity;
-                    double sumLogLikelihood = 0.0;
-                    double sumLogLikelihoodSquared = 0.0;
+                    double value = pointwiseLogLikelihood[observationIndex, drawIndex];
+                    sumLogLikelihood += value;
+                    sumLogLikelihoodSquared += value * value;
+                    if (value > maxLogLikelihood)
+                        maxLogLikelihood = value;
+                }
 
-                    for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
-                    {
-                        double value = pointwiseLogLikelihood[observationIndex, drawIndex];
-                        sumLogLikelihood += value;
-                        sumLogLikelihoodSquared += value * value;
-                        if (value > maxLogLikelihood)
-                            maxLogLikelihood = value;
-                    }
-
-                    double sumExponentials = 0.0;
-                    for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
-                    {
-                        sumExponentials += Math.Exp(
-                            pointwiseLogLikelihood[observationIndex, drawIndex] - maxLogLikelihood);
-                    }
-
-                    double pointwiseLppd = maxLogLikelihood
-                        + Math.Log(sumExponentials)
-                        - Math.Log(drawCount);
-                    double meanLogLikelihood = sumLogLikelihood / drawCount;
-                    double pointwisePWaic = drawCount > 1
-                        ? (sumLogLikelihoodSquared
-                            - drawCount * meanLogLikelihood * meanLogLikelihood)
-                            / (drawCount - 1)
-                        : 0.0;
-
-                    if (pointwisePWaic < 0.0)
-                        pointwisePWaic = 0.0;
-
-                    local.lppd += pointwiseLppd;
-                    local.pWaic += pointwisePWaic;
-                    return local;
-                },
-                local =>
+                double sumExponentials = 0.0;
+                for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
                 {
-                    Tools.ParallelAdd(ref totalLppd, local.lppd);
-                    Tools.ParallelAdd(ref totalPWaic, local.pWaic);
-                });
+                    sumExponentials += Math.Exp(
+                        pointwiseLogLikelihood[observationIndex, drawIndex] - maxLogLikelihood);
+                }
+
+                double pointwiseLppd = maxLogLikelihood
+                    + Math.Log(sumExponentials)
+                    - Math.Log(drawCount);
+                double meanLogLikelihood = sumLogLikelihood / drawCount;
+                double pointwisePWaic = drawCount > 1
+                    ? (sumLogLikelihoodSquared
+                        - drawCount * meanLogLikelihood * meanLogLikelihood)
+                        / (drawCount - 1)
+                    : 0.0;
+
+                if (pointwisePWaic < 0.0)
+                    pointwisePWaic = 0.0;
+
+                pointwiseLppdTerms[observationIndex] = pointwiseLppd;
+                pointwisePWaicTerms[observationIndex] = pointwisePWaic;
+            });
+
+            double totalLppd = pointwiseLppdTerms.Sum();
+            double totalPWaic = pointwisePWaicTerms.Sum();
 
             WAIC_pD = totalPWaic;
             WAIC = -2.0 * totalLppd + 2.0 * totalPWaic;
