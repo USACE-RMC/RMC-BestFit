@@ -1490,12 +1490,24 @@ namespace RMC.BestFit.UI
                 double threshold = 0;
                 if (dtView.ColumnNames.Contains("LowOutlierThresholdValue")) double.TryParse(dtView.GetCell("LowOutlierThresholdValue", rowIndex).ToString(), out threshold);
                 DataFrame.LowOutlierThreshold = threshold;
-                // Update low outliers
-                if (UseMultipleGrubbsBeckTest == true)
-                    DataFrame.SetLowOutliersFromMGBT();
-                else
-                    DataFrame.SetLowOutliersFromThreshold();
-                
+                // Update low outliers. The setters validate their preconditions by throwing - a
+                // legacy project can store a threshold the current guards reject (for example one
+                // censoring more than half the record) or fewer than ten exact values - and an
+                // uncaught throw here crashed the application on project open. The outliers are
+                // left cleared instead so the project opens and the user can re-run the test.
+                try
+                {
+                    if (UseMultipleGrubbsBeckTest == true)
+                        DataFrame.SetLowOutliersFromMGBT();
+                    else
+                        DataFrame.SetLowOutliersFromThreshold();
+                }
+                catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+                {
+                    System.Diagnostics.Debug.WriteLine($"InputData.Open: the stored low-outlier settings for '{Name}' could not be applied: {ex.Message}");
+                    DataFrame.ClearLowOutliers();
+                }
+
             }
         }
 
