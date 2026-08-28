@@ -982,10 +982,7 @@ namespace RMC.BestFit.Analyses
             double[,]? covariance = ComputeGodambeCovariance(map);
             if (covariance == null)
                 throw new InvalidOperationException("The Godambe sandwich covariance is unavailable: " + GodambeCovarianceDiagnostic);
-            var cholesky = new CholeskyDecomposition(new Matrix(covariance));
-            if (!cholesky.IsPositiveDefinite)
-                throw new InvalidOperationException("The Godambe sandwich covariance is not positive definite; Gaussian parameter draws are unavailable.");
-            var L = cholesky.L;
+            var L = FactorGodambeCovariance(covariance);
 
             int k = map.Length;
             int drawCount = BayesianAnalysis.OutputLength;
@@ -1009,6 +1006,28 @@ namespace RMC.BestFit.Analyses
             }
 
             await CreateSiteResultsFromDrawsAsync(index => draws[index], drawCount, map, SpatialGEVUncertaintyMethod.GodambeSandwich);
+        }
+
+        /// <summary>
+        /// Factors a Godambe sandwich covariance for Gaussian parameter draws.
+        /// </summary>
+        /// <param name="covariance">The Godambe sandwich covariance matrix.</param>
+        /// <returns>The lower-triangular Cholesky factor.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the covariance is not positive definite.
+        /// </exception>
+        internal static Matrix FactorGodambeCovariance(double[,] covariance)
+        {
+            try
+            {
+                return new CholeskyDecomposition(new Matrix(covariance)).L;
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    "The Godambe sandwich covariance is not positive definite; Gaussian parameter draws are unavailable.",
+                    exception);
+            }
         }
 
         /// <summary>

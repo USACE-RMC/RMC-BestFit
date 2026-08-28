@@ -2172,6 +2172,8 @@ namespace RMC.BestFit.Models.SpatialExtremes
         /// dependence the sites are simulated independently (unchanged behavior).
         /// </para>
         /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown when required model state is unavailable or
+        /// the fitted copula correlation matrix cannot be factorized.</exception>
         public double[] GenerateRandomValues(int sampleSize, int seed = -1)
         {
             if (sampleSize <= 0)
@@ -2225,9 +2227,18 @@ namespace RMC.BestFit.Models.SpatialExtremes
             double[,]? correlation = SpatialDependence.GetCorrelationMatrix();
             if (correlation == null)
                 throw new InvalidOperationException("The copula parameters must be set before simulating dependent values.");
-            var cholesky = new Numerics.Mathematics.LinearAlgebra.CholeskyDecomposition(new Numerics.Mathematics.LinearAlgebra.Matrix(correlation));
-            if (!cholesky.IsPositiveDefinite)
-                throw new InvalidOperationException("The fitted copula correlation matrix is not positive definite; dependent simulation is unavailable.");
+            Numerics.Mathematics.LinearAlgebra.CholeskyDecomposition cholesky;
+            try
+            {
+                cholesky = new Numerics.Mathematics.LinearAlgebra.CholeskyDecomposition(
+                    new Numerics.Mathematics.LinearAlgebra.Matrix(correlation));
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    "The fitted copula correlation matrix is not positive definite; dependent simulation is unavailable.",
+                    exception);
+            }
             var L = cholesky.L;
 
             var distributions = new Numerics.Distributions.GeneralizedExtremeValue[Sites];

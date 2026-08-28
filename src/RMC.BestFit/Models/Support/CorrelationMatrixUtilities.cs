@@ -119,12 +119,7 @@ namespace RMC.BestFit.Models
 
             try
             {
-                var cholesky = new CholeskyDecomposition(new Matrix(matrix));
-                if (!cholesky.IsPositiveDefinite)
-                {
-                    error = "The correlation matrix must be positive definite.";
-                    return false;
-                }
+                _ = new CholeskyDecomposition(new Matrix(matrix));
             }
             catch (Exception exception)
             {

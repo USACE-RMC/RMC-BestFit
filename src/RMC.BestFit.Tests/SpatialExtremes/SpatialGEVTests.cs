@@ -2708,6 +2708,33 @@ public class SpatialGEVTests
         }
     }
 
+    /// <summary>
+    /// Verifies that a singular copula correlation matrix is reported through the documented
+    /// simulation exception contract while preserving the factorization failure.
+    /// </summary>
+    [TestMethod]
+    public void GenerateRandomValues_WithDuplicateCopulaCoordinatesReportsContextualFailure()
+    {
+        var (data, coordinates) = CreateMinimalTestData();
+        coordinates[1, 0] = coordinates[0, 0];
+        coordinates[1, 1] = coordinates[0, 1];
+        var model = new SpatialGEV(
+            data,
+            coordinates,
+            new GeneralLinearFunction("Location"),
+            new GeneralLinearFunction("Scale"),
+            new GeneralLinearFunction("Shape"));
+        model.SpatialDependence = new GaussianCopula(coordinates, CorrelationFunctionType.Exponential);
+        model.UseCopulaDependence = true;
+        model.SetDefaultParameters();
+
+        var exception = Assert.ThrowsException<InvalidOperationException>(
+            () => model.GenerateRandomValues(1, seed: 123));
+
+        StringAssert.Contains(exception.Message, "fitted copula correlation matrix");
+        Assert.IsNotNull(exception.InnerException);
+    }
+
     #endregion
 
     #region Distance Metric Tests

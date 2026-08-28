@@ -1248,6 +1248,26 @@ public class SpatialGEVAnalysisTests
     }
 
     /// <summary>
+    /// Verifies that a covariance rejected by Cholesky factorization is reported at the
+    /// Godambe parameter-draw boundary while preserving the numerical cause.
+    /// </summary>
+    [TestMethod]
+    public void FactorGodambeCovariance_RejectedMatrixReportsContextualFailure()
+    {
+        var covariance = new double[,]
+        {
+            { 1.0, 1.0 },
+            { 1.0, 1.0 },
+        };
+
+        var exception = Assert.ThrowsException<InvalidOperationException>(
+            () => SpatialGEVAnalysis.FactorGodambeCovariance(covariance));
+
+        StringAssert.Contains(exception.Message, "Godambe sandwich covariance");
+        Assert.IsNotNull(exception.InnerException);
+    }
+
+    /// <summary>
     /// Verifies that a parameter vector of the wrong length is rejected.
     /// </summary>
     [TestMethod]
