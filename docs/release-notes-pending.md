@@ -164,8 +164,10 @@ development.
   uses every residual and rejects non-positive residual degrees of freedom; positive-hurdle
   mixture law; dependent competing-risk simulation; `LogNormal.Clone` base.
 - `Statistics.RanksInPlace(data, out ties)` records a tie run that reaches the final sorted
-  element (formerly its length was silently dropped); `Statistics.ParallelMean` delegates to the
-  sequential mean, so it is bit-reproducible across machines (the PLINQ partition order was not).
+  element (formerly its length was silently dropped); `Statistics.ParallelMean` uses a
+  fixed-chunk parallel reduction merged serially in chunk order (matching the bootstrap's
+  jackknife accumulation), so it is bit-reproducible across machines and core counts — the PLINQ
+  partition order was not — with small samples falling through to the sequential mean.
 - `UncertainOrdinate.operator==` compares X with the same machine-epsilon tolerance (and NaN
   convention) as `Ordinate`; the mean-vs-median central-probe asymmetry between `OrdinateValid`
   and `OrdinateErrors` is documented as deliberate (the median is always bracketed by the
