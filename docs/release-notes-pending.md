@@ -106,6 +106,24 @@ development.
   `ComputeCorrelationHeuristicSiteWeights` (same numbers; the weights are a correlation heuristic on
   the marginal terms, not a composite likelihood).
 
+- Data frame: the low-outlier setters (`SetLowOutliersFromMGBT`, `SetLowOutliersFromThreshold`)
+  recompute the Hirsch-Stedinger plotting positions before raising `LowOutliers`, so headless and
+  GUI callers alike fit from current positions instead of the TR-087 constraint-initials fallback;
+  the setters restore the notification-suppression flag in a finally block (a throwing test can no
+  longer strand the frame silently un-refreshing); `ClearLowOutliers` saves and restores the
+  caller's suppression state and, when unsuppressed, refreshes positions and raises a single
+  `LowOutliers` change instead of per-item notifications; `LinearTrendTest` delegates to the
+  Numerics `HypothesisTests.LinearTrendTest` (identical math, dead local removed);
+  `SetStandardizedValues` computes its standardization moments with `CentralMoments(1000)`,
+  matching the summary statistics (formerly 200 steps, so the Q-Q reference normal used a coarser
+  quadrature than the reported moments).
+- Estimation: GMM's iterative method gains an OR-ed scale-relative parameter-change convergence
+  test (largest |Δθ|/max(1, |θ|) below the relative tolerance), so the pass count for well-fitted
+  models — where the near-zero objective disables the relative-objective test — no longer depends
+  on last-bit optimizer noise in a non-scale-aware absolute distance; convergence can only trigger
+  earlier. DIC and WAIC accumulate per-index terms and sum sequentially (matching PSIS-LOO), so
+  the reported criteria are bit-reproducible run to run (last-bits-only change).
+
 ## RMC.Numerics (since 2.1.4)
 
 - `CompetingRisks.CreateEmpiricalCDF` stratifies on log-spaced bins of the offset axis for any
@@ -125,3 +143,26 @@ development.
   Frechet-Hoeffding bound; `KappaFour` zero-shape density and quantile; `GoodnessOfFit.RMSE`
   uses every residual and rejects non-positive residual degrees of freedom; positive-hurdle
   mixture law; dependent competing-risk simulation; `LogNormal.Clone` base.
+- `Statistics.RanksInPlace(data, out ties)` records a tie run that reaches the final sorted
+  element (formerly its length was silently dropped); `Statistics.ParallelMean` delegates to the
+  sequential mean, so it is bit-reproducible across machines (the PLINQ partition order was not).
+- `UncertainOrdinate.operator==` compares X with the same machine-epsilon tolerance (and NaN
+  convention) as `Ordinate`; the mean-vs-median central-probe asymmetry between `OrdinateValid`
+  and `OrdinateErrors` is documented as deliberate (the median is always bracketed by the
+  percentile probes; the mean of a skewed distribution need not be).
+- RWMH factorizes its fixed proposal covariance once per chain and translates only the mean each
+  transition via the new `MultivariateNormal.SetMean` (bit-identical draws, removes an O(D³)
+  Cholesky per iteration; an invalid proposal covariance now throws at initialization rather than
+  from the first chain iteration); SNIS resamples through a stable sort, so tied fitness draws
+  (common -Infinity values under wide priors) keep their draw order and seeded output is
+  reproducible across runs and platforms.
+- `GaussianMixtureModel` applies the M-step's symmetric positive-definite repair to the stored
+  covariances (the pure helper's return value was formerly discarded, leaving only the diagonal
+  floor; fitted covariances gain the trace-scaled base ridge of about 1E-10); `DecisionTree`
+  regression stops at pure nodes (distinct-response count for both modes, scikit-learn's rule —
+  formerly a default regression tree split zero-gain pure nodes down to one observation per
+  leaf); BFGS implements dfpmin's parameter-change exit (TOLX), so a stagnated warm start returns
+  immediately instead of repeating the identical non-progressing iteration to the budget.
+- The interpolation correlated-search windows scale as Count^0.25 (`Interpolater.deltaStart` was
+  pinned to 1 by a Math.Min typo; `OrderedPairedData`'s X/Y windows were never assigned), so the
+  hunt search path is reachable; brackets are unchanged.
