@@ -605,6 +605,16 @@ namespace RMC.BestFit.Models
                     var lowers = tuple.Item2;
                     var uppers = tuple.Item3;
 
+                    // Clamp any out-of-bounds initial value to the bound midpoint, matching the
+                    // Bulletin 17C initializer: a constraint helper that mis-scales a bound for an
+                    // unusual sample would otherwise seed an invalid parameter and an invalid
+                    // uniform prior, making the whole analysis invalid before a fit could start.
+                    for (int i = 0; i < initials.Length; i++)
+                    {
+                        if (initials[i] < lowers[i] || initials[i] > uppers[i])
+                            initials[i] = 0.5 * (lowers[i] + uppers[i]);
+                    }
+
                     // Make sure full time series exists
                     if (IsNonstationary && (DataFrame.FullTimeSeries == null || DataFrame.FullTimeSeries.Count() != DataFrame.TotalRecordLength()))
                         DataFrame.CreateFullTimeSeries();
@@ -863,6 +873,16 @@ namespace RMC.BestFit.Models
                     var initials = tuple.Item1;
                     var lowers = tuple.Item2;
                     var uppers = tuple.Item3;
+
+                    // Clamp any out-of-bounds initial value to the bound midpoint, matching the
+                    // Bulletin 17C initializer: a constraint helper that mis-scales a bound for an
+                    // unusual sample would otherwise seed an invalid parameter and an invalid
+                    // uniform prior, making the whole analysis invalid before a fit could start.
+                    for (int i = 0; i < initials.Length; i++)
+                    {
+                        if (initials[i] < lowers[i] || initials[i] > uppers[i])
+                            initials[i] = 0.5 * (lowers[i] + uppers[i]);
+                    }
 
                     // Make sure full time series exists
                     if (IsNonstationary && (DataFrame.FullTimeSeries == null || DataFrame.FullTimeSeries.Count() != DataFrame.TotalRecordLength()))
