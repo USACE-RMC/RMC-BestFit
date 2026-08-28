@@ -198,3 +198,15 @@ development.
   rejected any sub-unity sample), and their `MinimumOfParameters` report negative infinity for
   the location. `TimeSeries.SmoothedSeries` exposes the exact smoothing preprocessing
   `PeaksOverThresholdSeries` applies, for threshold-selection diagnostics.
+- `Statistics.ProductMoments` accumulates its power sums about a shifted origin (first
+  observation), so moment-seeded parameter estimates and the data-frame summary statistics shift
+  in the last bits (better conditioned, same algebra); `HypothesisTests` Mann-Kendall and
+  Mann-Whitney variance corrections sum tie groups by their full size, so the displayed
+  homogeneity/stationarity p-values change on any record with ties; `Gamma.Incomplete` runs its
+  continued fraction to the convergence test (the former single-convergent break returned values
+  wrong by up to ~0.4 in probability near `X = alpha` at large shape; no BestFit path calls it).
+- `TimeSeries.CumulativeSum` preserves the source series' time interval (formerly the result
+  claimed a daily interval regardless of the source); the indexed `LogTransform`, `Inverse`, and
+  `InterpolateMissingData` overloads skip out-of-range indexes like their seven siblings instead
+  of throwing from the indexer, and the indexed interpolation carries its twin's series-start
+  extrapolation guard.
