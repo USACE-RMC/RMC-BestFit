@@ -426,7 +426,15 @@ namespace RMC_BestFit
                 e.PropertyName == nameof(Element.DataFrame.PlottingParameter) ||
                 e.PropertyName == nameof(Element.DataFrame.LowOutlierThreshold) ||
                 e.PropertyName == "LowOutliers" ||
-                e.PropertyName == "TimeSeries")
+                e.PropertyName == "TimeSeries" ||
+                // The POT diagnostics operate on the smoothed series, so editing the smoothing
+                // configuration (or swapping the source element) must mark them dirty; formerly the
+                // only refresh path was an incidental IsProcessed transition, which does not fire
+                // when the element was not yet processed and recomputed the same raw values anyway.
+                e.PropertyName == nameof(Element.SmoothingFunction) ||
+                e.PropertyName == nameof(Element.Period) ||
+                e.PropertyName == nameof(Element.MinStepsBetweenPeaks) ||
+                e.PropertyName == nameof(Element.TimeSeriesElement))
             {
                 Mouse.OverrideCursor = Cursors.Wait;
                 try
@@ -1885,7 +1893,17 @@ namespace RMC_BestFit
             var ts = Element.TimeSeriesElement?.TimeSeries;
             if (ts == null || ts.Count < 20) return;
 
-            var values = ts.Select(s => s.Value).ToList();
+            // The diagnostics must operate on the same smoothed series the peaks-over-threshold
+            // extraction thresholds: SmoothedSeries is the exact preprocessing
+            // PeaksOverThresholdSeries applies, so the threshold annotation drawn on these plots
+            // and the diagnostic curves share one value scale. The former raw-series input never
+            // changed when the user edited the smoothing function or period.
+            var diagnosticSeries = ts.SmoothedSeries(Element.SmoothingFunction, Element.Period);
+            var values = diagnosticSeries
+                .Select(s => s.Value)
+                .Where(v => !double.IsNaN(v))
+                .ToList();
+            if (values.Count < 20) return;
             var sorted = values.OrderBy(v => v).ToArray();
             double uMin = sorted[(int)(sorted.Length * 0.5)];
             double uMax = sorted[sorted.Length - 1];
