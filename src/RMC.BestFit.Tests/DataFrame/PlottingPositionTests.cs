@@ -1,4 +1,4 @@
-using Numerics;
+﻿using Numerics;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
@@ -682,4 +682,126 @@ public class PlottingPositionTests
         Assert.IsTrue(dataFrame.ExactSeries.All(
             data => data.PlottingPosition > 0d && data.PlottingPosition < 1d));
     }
+    /// <summary>
+    /// The MGBT low-outlier setter leaves the frame's plotting positions computed.
+    /// </summary>
+    /// <remarks>
+    /// The setter flips the IsLowOutlier flags under suppressed collection notifications, which also
+    /// gates the data-edit handlers that normally refresh the Hirsch-Stedinger positions; before the
+    /// fix a headless caller was left with every position at its 0.0 default (complement 1.0), and
+    /// the Bulletin 17C censored-data (ROS) initial estimate then regressed on infinite normal
+    /// scores. The setter now refreshes the positions itself before raising "LowOutliers".
+    /// </remarks>
+    [TestMethod]
+    public void Test_SetLowOutliersFromMGBT_RecomputesPlottingPositions()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPositionComplement == 1.0),
+            "Fixture precondition: plotting positions start at their defaults.");
+
+        frame.SetLowOutliersFromMGBT();
+
+        Assert.IsTrue(frame.NumberOfLowOutliers >= 1, "Fixture precondition: the two extreme lows are flagged.");
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0),
+            "The setter must leave the Hirsch-Stedinger positions computed for every observation.");
+    }
+
+    /// <summary>
+    /// The threshold low-outlier setter leaves the positions computed, and a subsequent manual
+    /// recompute reproduces them bitwise.
+    /// </summary>
+    /// <remarks>
+    /// The bitwise comparison against a follow-up <c>CalculatePlottingPositions()</c> call pins the
+    /// idempotency the verification fixtures rely on: they historically paired every setter call with
+    /// a manual recompute, which is now a benign repeat of the same deterministic computation.
+    /// </remarks>
+    [TestMethod]
+    public void Test_SetLowOutliersFromThreshold_RecomputesPlottingPositions()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        frame.LowOutlierThreshold = 100.0;
+
+        frame.SetLowOutliersFromThreshold();
+
+        Assert.AreEqual(2, frame.NumberOfLowOutliers);
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0));
+
+        var firstPass = frame.ExactSeries.Select(d => d.PlottingPosition).ToArray();
+        frame.CalculatePlottingPositions();
+        var secondPass = frame.ExactSeries.Select(d => d.PlottingPosition).ToArray();
+        for (int i = 0; i < firstPass.Length; i++)
+            Assert.AreEqual(firstPass[i], secondPass[i], 0d, "A manual recompute must be a bitwise repeat.");
+    }
+
+    /// <summary>
+    /// An unsuppressed ClearLowOutliers refreshes the positions and raises a single "LowOutliers" change.
+    /// </summary>
+    [TestMethod]
+    public void Test_ClearLowOutliers_Unsuppressed_RecomputesPositionsAndRaisesLowOutliers()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        frame.LowOutlierThreshold = 100.0;
+        frame.SetLowOutliersFromThreshold();
+        Assert.AreEqual(2, frame.NumberOfLowOutliers, "Fixture precondition: low outliers flagged.");
+
+        int lowOutlierRaises = 0;
+        frame.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == "LowOutliers")
+                lowOutlierRaises++;
+        };
+
+        frame.ClearLowOutliers();
+
+        Assert.AreEqual(0, frame.NumberOfLowOutliers);
+        Assert.AreEqual(1, lowOutlierRaises, "Exactly one LowOutliers change is raised for the whole clear.");
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0));
+    }
+
+    /// <summary>
+    /// Under caller suppression, ClearLowOutliers restores the flag and stays silent.
+    /// </summary>
+    /// <remarks>
+    /// The save-and-restore contract protects SetLowOutliersFromMGBT, which calls ClearLowOutliers
+    /// inside its own suppression window: an unconditional un-suppress there would break the MGBT
+    /// batch, and a raise would notify listeners of a half-updated state. A caller that suppressed
+    /// notifications owns the refresh itself.
+    /// </remarks>
+    [TestMethod]
+    public void Test_ClearLowOutliers_UnderCallerSuppression_RestoresFlagAndStaysSilent()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+
+        int lowOutlierRaises = 0;
+        frame.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == "LowOutliers")
+                lowOutlierRaises++;
+        };
+
+        frame.ClearLowOutliers();
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must be restored.");
+        Assert.AreEqual(0, lowOutlierRaises, "A suppressed clear must not raise LowOutliers.");
+        Assert.AreEqual(0, frame.NumberOfLowOutliers);
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPositionComplement == 1.0),
+            "A suppressed clear must not compute plotting positions; the caller owns the refresh.");
+    }
+
 }

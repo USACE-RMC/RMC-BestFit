@@ -876,59 +876,104 @@ namespace RMC.BestFit.Models
         #region Hypothesis Testing
 
         /// <summary>
-        /// Clear the low outlier results. 
+        /// Clear the low outlier results.
         /// </summary>
+        /// <remarks>
+        /// The flags are cleared under suppressed collection notifications and the caller's
+        /// suppression state is restored afterwards, so the low-outlier setters can call this inside
+        /// their own suppression window without it being un-suppressed underneath them. When the
+        /// caller was not suppressing, the Hirsch-Stedinger plotting positions — which depend on the
+        /// low-outlier flags — are refreshed and a single "LowOutliers" change is raised; a caller
+        /// that suppressed notifications owns the refresh itself.
+        /// </remarks>
         public void ClearLowOutliers()
         {
-            for (int i = 0; i < ExactSeries.Count; i++)
-                ((ExactData)ExactSeries[i]).IsLowOutlier = false;
-            _numberOfLowOutliers = 0;
+            bool wasSuppressed = ExactSeries.SuppressCollectionChanged;
+            ExactSeries.SuppressCollectionChanged = true;
+            try
+            {
+                for (int i = 0; i < ExactSeries.Count; i++)
+                    ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                _numberOfLowOutliers = 0;
+            }
+            finally
+            {
+                ExactSeries.SuppressCollectionChanged = wasSuppressed;
+            }
+            if (!wasSuppressed)
+            {
+                RecalculatePlottingPositionsAfterEdit();
+                RaisePropertyChange("LowOutliers");
+            }
         }
 
         /// <summary>
-        /// Estimates and sets the low outliers using the Multiple Grubbs Beck Test (MGBT). This is only performed on exact data. 
+        /// Estimates and sets the low outliers using the Multiple Grubbs Beck Test (MGBT). This is only performed on exact data.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when exact data series has errors or insufficient data.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the plotting-position refresh fails
+        /// for a reason other than a transiently invalid threshold series — the same exposure as any
+        /// unsuppressed data edit.</exception>
+        /// <remarks>
+        /// The flag flips run with collection notifications suppressed, which also gates the data-edit
+        /// handlers that normally refresh the Hirsch-Stedinger plotting positions, so this method
+        /// refreshes the positions itself before raising "LowOutliers": the positions depend on the
+        /// flags, and the model-layer handlers listening for that raise rebuild Bulletin 17C initial
+        /// parameters from the positions via the censored-data (ROS) regression. On return the frame's
+        /// plotting positions therefore reflect the new flags for headless and GUI callers alike; the
+        /// refresh is skipped only while the threshold series is transiently invalid. The suppression
+        /// flag is restored in a finally block so a throwing test can never strand the frame with
+        /// notifications suppressed, which would silently disable every later plotting-position refresh.
+        /// </remarks>
         public void SetLowOutliersFromMGBT()
         {
             if (!ExactSeries.Validate().IsValid) throw new ArgumentException("The exact data series has errors.", nameof(ExactSeries));
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before evaluating low outliers.", nameof(ExactSeries));
 
             ExactSeries.SuppressCollectionChanged = true;
-            ClearLowOutliers();
-            LowOutlierThreshold = 0;
-
-            // Add all data point values to an array
-            var values = ExactSeries.Select(x => x.Value).ToArray();
-
-            // Compute the number of low outliers using the Multiple Grubbs Beck Test
-            _numberOfLowOutliers = MultipleGrubbsBeckTest.Function(values);
-
-            // Set the threshold value as first value larger than N
-            Array.Sort(values);
-            if (_numberOfLowOutliers > 0)
+            try
             {
-                LowOutlierThreshold = values[_numberOfLowOutliers];
-            }            
-            else
-            {
+                ClearLowOutliers();
                 LowOutlierThreshold = 0;
-            }
 
-            // Set all exact data points to IsLowOutlier = true if less than threshold
-            for (int i = 0; i < ExactSeries.Count; i++)
-            {
-                if (ExactSeries[i].Value < _lowOutlierThreshold)
+                // Add all data point values to an array
+                var values = ExactSeries.Select(x => x.Value).ToArray();
+
+                // Compute the number of low outliers using the Multiple Grubbs Beck Test
+                _numberOfLowOutliers = MultipleGrubbsBeckTest.Function(values);
+
+                // Set the threshold value as first value larger than N
+                Array.Sort(values);
+                if (_numberOfLowOutliers > 0)
                 {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = true;
+                    LowOutlierThreshold = values[_numberOfLowOutliers];
                 }
                 else
                 {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = false;
-                }               
+                    LowOutlierThreshold = 0;
+                }
+
+                // Set all exact data points to IsLowOutlier = true if less than threshold
+                for (int i = 0; i < ExactSeries.Count; i++)
+                {
+                    if (ExactSeries[i].Value < _lowOutlierThreshold)
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = true;
+                    }
+                    else
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                    }
+                }
+            }
+            finally
+            {
+                ExactSeries.SuppressCollectionChanged = false;
             }
 
-            ExactSeries.SuppressCollectionChanged = false;
+            // Refresh the derived plotting positions BEFORE raising "LowOutliers", so the handlers
+            // that rebuild model initials on that raise read current positions instead of stale ones.
+            RecalculatePlottingPositionsAfterEdit();
             RaisePropertyChange("LowOutliers");
         }
 
@@ -936,6 +981,15 @@ namespace RMC.BestFit.Models
         /// Estimates and sets the low outliers using low outlier threshold value. This is only performed on exact data.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when exact data series has errors, insufficient data, or threshold would censor more than 50%.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the plotting-position refresh fails
+        /// for a reason other than a transiently invalid threshold series — the same exposure as any
+        /// unsuppressed data edit.</exception>
+        /// <remarks>
+        /// See <see cref="SetLowOutliersFromMGBT"/> for the derived-state contract: on return the
+        /// frame's plotting positions reflect the new flags, the refresh precedes the "LowOutliers"
+        /// raise so listeners rebuild model initials from current positions, and the suppression flag
+        /// is restored in a finally block so a throw cannot strand notifications suppressed.
+        /// </remarks>
         public void SetLowOutliersFromThreshold()
         {
             if (!ExactSeries.Validate().IsValid) throw new ArgumentException("The exact data series has errors.", nameof(ExactSeries));
@@ -943,23 +997,31 @@ namespace RMC.BestFit.Models
             if (LowOutlierThreshold > ExactSeries.UpperMiddleValue) throw new ArgumentException("The low outlier threshold value cannot be set to a value that would censor more than 50 percent of the values.", nameof(LowOutlierThreshold));
 
             ExactSeries.SuppressCollectionChanged = true;
-
-            // Set all exact data points to IsLowOutlier = true if less than threshold
-            _numberOfLowOutliers = 0;
-            for (int i = 0; i < ExactSeries.Count; i++)
+            try
             {
-                if (ExactSeries[i].Value < LowOutlierThreshold)
+                // Set all exact data points to IsLowOutlier = true if less than threshold
+                _numberOfLowOutliers = 0;
+                for (int i = 0; i < ExactSeries.Count; i++)
                 {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = true;
-                    _numberOfLowOutliers += 1;
-                }
-                else
-                {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                    if (ExactSeries[i].Value < LowOutlierThreshold)
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = true;
+                        _numberOfLowOutliers += 1;
+                    }
+                    else
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                    }
                 }
             }
+            finally
+            {
+                ExactSeries.SuppressCollectionChanged = false;
+            }
 
-            ExactSeries.SuppressCollectionChanged = false;
+            // Refresh the derived plotting positions BEFORE raising "LowOutliers", so the handlers
+            // that rebuild model initials on that raise read current positions instead of stale ones.
+            RecalculatePlottingPositionsAfterEdit();
             RaisePropertyChange("LowOutliers");
         }
 
