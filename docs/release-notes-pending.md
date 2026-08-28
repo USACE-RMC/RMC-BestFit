@@ -19,7 +19,12 @@ development.
   `ARIMAX.TrainingTimeSeries` is the differenced series.
 - Point process: seasonal Gumbel-limit annualization uses `xi + alpha ln p`; the seasonal
   simulator uses the fitted per-season threshold intensities; clones recompute the event rate;
-  seasonal quantile priors are evaluated on the annualized distribution.
+  seasonal quantile priors are evaluated on the annualized distribution; the seasonal block-day
+  list pairs positionally with the exact series in caller order, with block days computed by
+  elapsed-day arithmetic on the unshifted dates (the former date-sorted `ShiftDatesByMonth` path
+  mis-paired out-of-order records and `DayOfYear` broke across leap-year boundaries);
+  `CustomYear` blocks shift like `WaterYear`; seasonal fitting requires dated exact observations
+  (the fabricated January-1 index fallback is removed and validation reports the missing dates).
 - Composite and coincident frequency: zero inflation is inferred only when the weights sum to
   less than one by more than `1e-10`; the correlation matrix edit is undoable; the posterior
   index cache is thread safe.

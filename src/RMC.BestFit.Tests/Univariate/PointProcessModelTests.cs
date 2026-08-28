@@ -655,6 +655,29 @@ public class PointProcessModelTests
         Assert.IsTrue(model.POTDays.Count > 0);
     }
 
+    /// <summary>Verifies that seasonal block days pair positionally with the exact series when the input record is not in date order.</summary>
+    [TestMethod]
+    public void Test_SetAMSData_Seasonal_UnsortedInput_PairsBlockDaysPositionally()
+    {
+        var df = CreateSeasonalPOTDataFrame();
+        var model = new PointProcessModel
+        {
+            IsSeasonal = true,
+            TimeBlock = TimeBlockWindow.WaterYear,
+            StartMonth = 10,
+            DataFrame = df
+        };
+
+        Assert.AreEqual(df.ExactSeries.Count, model.POTDays.Count);
+        for (int i = 0; i < df.ExactSeries.Count; i++)
+        {
+            var exact = (ExactData)df.ExactSeries[i];
+            int startYear = exact.DateTime.Month >= 10 ? exact.DateTime.Year : exact.DateTime.Year - 1;
+            int expectedDay = (exact.DateTime.Date - new DateTime(startYear, 10, 1)).Days + 1;
+            Assert.AreEqual(expectedDay, model.POTDays[i], $"Block day mismatch at position {i}.");
+        }
+    }
+
     #endregion
 
     #region LogLikelihood Tests
@@ -867,6 +890,43 @@ public class PointProcessModelTests
         };
 
         CollectionAssert.AreEqual(new List<int> { 1, 366 }, model.POTDays);
+    }
+
+    /// <summary>Verifies that the seasonal data log-likelihood is invariant to the order of the exact series.</summary>
+    [TestMethod]
+    public void Test_Seasonal_DataLogLikelihood_IsInvariantToInputOrder()
+    {
+        var events = new List<ExactData>();
+        for (int year = 1990; year < 2000; year++)
+        {
+            events.Add(new ExactData(new DateTime(year, 2, 15), 1500 + (year - 1990) * 100));
+            events.Add(new ExactData(new DateTime(year, 7, 15), 2000 + (year - 1990) * 150));
+        }
+        var sortedDf = new BestFitDataFrame { ExactSeries = new ExactSeries(events.OrderBy(e => e.DateTime).ToList()) };
+        var reversedDf = new BestFitDataFrame { ExactSeries = new ExactSeries(events.OrderByDescending(e => e.DateTime).ToList()) };
+        var sortedModel = new PointProcessModel
+        {
+            IsSeasonal = true,
+            TimeBlock = TimeBlockWindow.WaterYear,
+            StartMonth = 10,
+            DataFrame = sortedDf
+        };
+        var reversedModel = new PointProcessModel
+        {
+            IsSeasonal = true,
+            TimeBlock = TimeBlockWindow.WaterYear,
+            StartMonth = 10,
+            DataFrame = reversedDf
+        };
+        double[] parameters = { 90.0, 250.0, 2100.0, 450.0, 0.10, 2500.0, 550.0, -0.05 };
+
+        double llSorted = sortedModel.DataLogLikelihood(parameters);
+        double llReversed = reversedModel.DataLogLikelihood(parameters);
+
+        Assert.IsTrue(double.IsFinite(llSorted));
+        Assert.AreEqual(llSorted, llReversed, 1E-12);
+        Assert.AreEqual(sortedModel.PointwiseDataLogLikelihood(parameters).Sum(),
+            reversedModel.PointwiseDataLogLikelihood(parameters).Sum(), 1E-10);
     }
 
     /// <summary>Verifies the analytical fitted Gumbel threshold intensity.</summary>
