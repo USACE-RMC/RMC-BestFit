@@ -5330,20 +5330,21 @@
       "model": "Exponential GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 100,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5354,20 +5355,21 @@
       "model": "Exponential GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 25,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5378,20 +5380,21 @@
       "model": "Gamma GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 100,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5402,20 +5405,21 @@
       "model": "Gamma GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 25,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5426,20 +5430,21 @@
       "model": "LogNormal GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 100,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5450,20 +5455,21 @@
       "model": "LogNormal GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 25,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5474,20 +5480,21 @@
       "model": "LogPearsonTypeIII GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 68,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5498,20 +5505,21 @@
       "model": "LogPearsonTypeIII GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 100,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5522,20 +5530,21 @@
       "model": "LogPearsonTypeIII GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 25,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5546,20 +5555,21 @@
       "model": "Normal GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 100,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5570,20 +5580,21 @@
       "model": "Normal GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 25,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5594,20 +5605,21 @@
       "model": "PearsonTypeIII GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 100,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCovarianceTests.cs",
@@ -5618,20 +5630,21 @@
       "model": "PearsonTypeIII GMM covariance",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 25,
       "seed": 12345,
-      "oracle": "Current comparison uses the same Numerics ecosystem ParameterCovariance implementation as its target; the documented Bessel-correction argument is not independently implemented.",
-      "acceptanceRule": "GMM coordinates must match same-sample product-moment coordinates within 1e-3; covariance entries use 15% at N=25, 5% at N=100, or 10% for Example 1, plus the declared off-diagonal floor.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace the same-ecosystem Numerics covariance comparison with independently implemented asymptotic formulas or published Cohn/PeakFQ covariance values; retain only after the independent parameterization is documented."
+      "oracle": "Independent C# sandwich derived from documented central moments, B17C c2/c3 centered-moment factors, and the analytical Jacobian; frozen Python 3.12.13 standard-library calculations cross-check 13 declared parameter/sample cases.",
+      "acceptanceRule": "Frozen covariance entries must match within 1e-12 scaled; current fitted covariance entries must match the independent sandwich within 1e-5 scaled plus 1e-10 absolute.",
+      "artifact": "verification/data/bulletin17c/b17c-gmm-covariance-oracle.json",
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CCoverageTests.cs",
@@ -6696,193 +6709,220 @@
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.Bulletin17CTests",
       "class": "B17CSyntheticDataTests",
-      "method": "Exponential_MatchesProductMomentParameters",
+      "method": "Exponential_GmmRecoversGeneratingParent",
       "analysis": "Bulletin17CDistribution / GeneralizedMethodOfMoments",
       "model": "Bulletin17CDistribution (Exponential)",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
         "analytical"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "The current target is produced from the same sample by the production Numerics ParametersFromMoments path; it is a same-ecosystem identity, not recovery of the generating parent.",
-      "acceptanceRule": "GMM must report success and every coordinate must match the production product-moment conversion within 1e-3 absolute.",
+      "oracle": "Generated-parent truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at the fitted Exponential coordinates, as approved for statistical recovery acceptance.",
+      "acceptanceRule": "For Xi and Alpha, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace this same-sample same-ecosystem Exponential identity with genuine N=1000 recovery of the generating parent under the common frequentist interval or standardized-error rule."
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.Bulletin17CTests",
       "class": "B17CSyntheticDataTests",
-      "method": "Gamma_MatchesProductMomentParameters",
+      "method": "Gamma_GmmRecoversGeneratingParent",
       "analysis": "Bulletin17CDistribution / GeneralizedMethodOfMoments",
       "model": "Bulletin17CDistribution (Gamma)",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
         "analytical"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "The current target is produced from the same sample by the production Numerics ParametersFromMoments path; it is a same-ecosystem identity, not recovery of the generating parent.",
-      "acceptanceRule": "GMM must report success and every coordinate must match the production product-moment conversion within 1e-3 absolute.",
+      "oracle": "Generated-parent truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at fitted Gamma (Theta scale, Kappa shape) coordinates, as approved for statistical recovery acceptance.",
+      "acceptanceRule": "For Theta and Kappa, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace this same-sample same-ecosystem Gamma identity with genuine N=1000 recovery of the generating parent under the common frequentist interval or standardized-error rule."
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.Bulletin17CTests",
       "class": "B17CSyntheticDataTests",
-      "method": "LogNormal_MatchesProductMomentParameters",
+      "method": "LogNormal_GmmRecoversGeneratingLog10Parent",
       "analysis": "Bulletin17CDistribution / GeneralizedMethodOfMoments",
       "model": "Bulletin17CDistribution (LogNormal)",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
         "analytical"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "The current target is produced from the same sample by the production Numerics ParametersFromMoments path; it is a same-ecosystem identity, not recovery of the generating parent.",
-      "acceptanceRule": "GMM must report success and every coordinate must match the production product-moment conversion within 1e-3 absolute.",
+      "oracle": "Generated-parent base-10-log truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at fitted Log-Normal (Mu, Sigma) log10 coordinates, as approved for statistical recovery acceptance.",
+      "acceptanceRule": "For log10 Mu and Sigma, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace this same-sample same-ecosystem LogNormal identity with genuine N=1000 recovery of the generating parent under the common frequentist interval or standardized-error rule."
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.Bulletin17CTests",
       "class": "B17CSyntheticDataTests",
-      "method": "LogPearsonTypeIII_MatchesProductMomentParameters",
+      "method": "LogPearsonTypeIII_GmmRecoversGeneratingLog10ParentAndQ99",
       "analysis": "Bulletin17CDistribution / GeneralizedMethodOfMoments",
       "model": "Bulletin17CDistribution (LogPearsonTypeIII)",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
         "analytical"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "The current target is produced from the same sample by the production Numerics ParametersFromMoments path; it is a same-ecosystem identity, not recovery of the generating parent.",
-      "acceptanceRule": "GMM must report success and every coordinate must match the production product-moment conversion within 1e-3 absolute.",
+      "oracle": "Generated-parent base-10-log truth assessed with fitted-parameter method-of-moments covariance for Mu and Sigma and analytical Q(0.99) variance for the weak skew direction, as approved for statistical recovery acceptance.",
+      "acceptanceRule": "Generating log10 Mu and Sigma and the generating Q(0.99) response must lie in their predeclared central 95% intervals at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace this same-sample same-ecosystem LogPearsonTypeIII identity with genuine N=1000 recovery of the generating parent under the common frequentist interval or standardized-error rule."
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.Bulletin17CTests",
       "class": "B17CSyntheticDataTests",
-      "method": "Normal_MatchesProductMomentParameters",
+      "method": "Normal_GmmRecoversGeneratingParent",
       "analysis": "Bulletin17CDistribution / GeneralizedMethodOfMoments",
       "model": "Bulletin17CDistribution (Normal)",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
         "analytical"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "The current target is produced from the same sample by the production Numerics ParametersFromMoments path; it is a same-ecosystem identity, not recovery of the generating parent.",
-      "acceptanceRule": "GMM must report success and every coordinate must match the production product-moment conversion within 1e-3 absolute.",
+      "oracle": "Generated-parent truth assessed with Numerics analytical method-of-moments parameter covariance evaluated at fitted Normal (Mu, Sigma) coordinates, as approved for statistical recovery acceptance.",
+      "acceptanceRule": "For Mu and Sigma, the generating coordinate must lie in the predeclared central 95% interval from the fitted-parameter covariance at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace this same-sample same-ecosystem Normal identity with genuine N=1000 recovery of the generating parent under the common frequentist interval or standardized-error rule."
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.Bulletin17CTests",
       "class": "B17CSyntheticDataTests",
-      "method": "PearsonTypeIII_MatchesProductMomentParameters",
+      "method": "PearsonTypeIII_GmmRecoversGeneratingParentAndQ99",
       "analysis": "Bulletin17CDistribution / GeneralizedMethodOfMoments",
       "model": "Bulletin17CDistribution (PearsonTypeIII)",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
         "analytical"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated complete scalar observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "The current target is produced from the same sample by the production Numerics ParametersFromMoments path; it is a same-ecosystem identity, not recovery of the generating parent.",
-      "acceptanceRule": "GMM must report success and every coordinate must match the production product-moment conversion within 1e-3 absolute.",
+      "oracle": "Generated-parent truth assessed with fitted-parameter method-of-moments covariance for Mu and Sigma and analytical Q(0.99) variance for the weak skew direction, as approved for statistical recovery acceptance.",
+      "acceptanceRule": "Generating Mu and Sigma and the generating Q(0.99) response must lie in their predeclared central 95% intervals at N=1000; estimation success is only a prerequisite.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/data-distributions-b17c.md#bulletin-17c-published-examples",
-      "status": "open",
-      "gap": "Chunk 7 disposition: replace this same-sample same-ecosystem PearsonTypeIII identity with genuine N=1000 recovery of the generating parent under the common frequentist interval or standardized-error rule."
+      "reportAnchor": "docs/verification/test-inventory.md#chunk-7-bulletin-17c-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessPriorTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.PointProcessTests",
       "class": "PointProcessPriorTests",
-      "method": "Test_CalendarYearPertHistogram_DefaultPriorsContainBothChangePoints",
+      "method": "Test_CalendarYearPertHistogram_MatchesIndependentPriorPlacementOracle",
       "analysis": "PointProcessAnalysis",
       "model": "seasonal PointProcessModel; calendar year automatic changepoint priors",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": false,
       "sampleUnit": "generated dated POT events",
       "sampleSize": 4000,
       "seed": 45001,
-      "oracle": "Current qualitative characterization checks only that each generating changepoint and initial value lies inside a support produced by the production occurrence-histogram heuristic.",
-      "acceptanceRule": "Both true changepoint days and both production initial values must lie within their generated lower and upper prior bounds.",
+      "oracle": "Independent monthly occurrence counts, block-year rotation, circular [1,2,1]/4 smoothing, unique separated-peak selection, valley placement, and five-month support construction; no production prior helper is invoked.",
+      "acceptanceRule": "At N=4000, both production changepoint initial values and inclusive support bounds must exactly equal the independent occurrence-histogram calculation, and each generating effective day must lie inside the independently calculated support.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 8 disposition: reclassify or replace this N=4000 prior-range characterization with an independently calculated occurrence-histogram/prior-placement oracle; do not present the cell as estimator recovery."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessPriorTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.PointProcessTests",
       "class": "PointProcessPriorTests",
-      "method": "Test_WaterYearPertHistogram_DefaultPriorsContainShiftedChangePoints",
+      "method": "Test_WaterYearPertHistogram_MatchesIndependentPriorPlacementOracle",
       "analysis": "PointProcessAnalysis",
       "model": "seasonal PointProcessModel; October water year automatic changepoint priors",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
-        "analytical"
+        "analytical",
+        "independent"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": false,
       "sampleUnit": "generated dated POT events",
       "sampleSize": 4000,
       "seed": 46001,
-      "oracle": "Current qualitative characterization checks only that each generating changepoint and initial value lies inside a support produced by the production occurrence-histogram heuristic.",
-      "acceptanceRule": "Both true changepoint days and both production initial values must lie within their generated lower and upper prior bounds.",
+      "oracle": "Independent monthly occurrence counts, October-water-year rotation, circular [1,2,1]/4 smoothing, unique separated-peak selection, valley placement, and five-month support construction; no production prior helper is invoked.",
+      "acceptanceRule": "At N=4000, both production changepoint initial values and inclusive support bounds must exactly equal the independently rotated occurrence-histogram calculation, and each generating effective day must lie inside the independently calculated support.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 8 disposition: reclassify or replace this N=4000 prior-range characterization with an independently calculated occurrence-histogram/prior-placement oracle; do not present the cell as estimator recovery."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
+    },
+    {
+      "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessExternalPackageOracleTests.cs",
+      "namespace": "RMC.BestFit.Verification.Univariate.PointProcessTests",
+      "class": "PointProcessExternalPackageOracleTests",
+      "method": "StationaryPoissonGpa_MatchesSciPyArtifact",
+      "analysis": "PointProcessModel",
+      "model": "stationary Poisson-GPA threshold process",
+      "primaryEvidenceKind": "external-package",
+      "evidenceTags": [
+        "external-package",
+        "independent"
+      ],
+      "disposition": "retain-verification",
+      "methodOverrides": [],
+      "executesEstimator": false,
+      "sampleUnit": "three fixed exact POT events over 1.25 exposure years",
+      "sampleSize": 3,
+      "seed": null,
+      "oracle": "Frozen SciPy 1.17.1 Poisson, generalized-Pareto, and GEV values with the explicit Coles xi versus Numerics Kappa sign crosswalk.",
+      "acceptanceRule": "Threshold intensity, exact-event point-process log likelihood, conditional survival at x=120, and annual-maximum Q(0.99) must match the frozen SciPy artifact within 1e-12 scaled tolerance.",
+      "artifact": "verification/data/point-process/stationary-poisson-gpa-scipy-oracle.json",
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessLikelihoodOracleTests.cs",
@@ -6905,9 +6945,9 @@
       "oracle": "Independently implemented density/CDF/Poisson or seasonal annual-maximum likelihood contribution sum.",
       "acceptanceRule": "Production data log likelihood must match the independent calculation within 2e-7 absolute; fixture event and censoring counts must match exactly.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 4A retained and renamed this independent likelihood oracle without executing it. One exact approval-gated focused run is required before verified status."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessRecoveryTests.cs",
@@ -6920,18 +6960,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated POT events",
       "sampleSize": 1000,
       "seed": "fixture 41001; production Bayesian default 12345",
-      "oracle": "Generating point-process intensity, GEV-tail coordinates, and, for seasonal cells, both changepoints.",
-      "acceptanceRule": "The current cell requires analysis completion and fixed posterior-mean coordinate bands; changepoints also require parent inclusion in the floored 95% interval and a 20-day mode band. It does not apply the common diagnostic rule to every monitored coordinate.",
+      "oracle": "Generating GEV coordinates plus annual threshold intensity and conditional generalized-Pareto tail, after explicit truth-versus-prior, likelihood, exposure, threshold, and Kappa-sign prechecks.",
+      "acceptanceRule": "At N=1000, every continuous parent coordinate must lie in its empirical central 95% posterior interval with R-hat below 1.10 and ESS at least 100; generating annual threshold intensity and the preidentified conditional tail at x=120 must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 8 disposition: retain the N=1000 recovery design but convert acceptance to the shared central-95% parent inclusion, R-hat below 1.10, and ESS at least 100 rule for every monitored coordinate, keeping identified response checks for changepoint ambiguity."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessRecoveryTests.cs",
@@ -6939,7 +6979,7 @@
       "class": "PointProcessRecoveryTests",
       "method": "Test_NonSeasonalSimulation_MatchesPoissonRateAndConditionalTail",
       "analysis": "PointProcessModel simulation",
-      "model": "seasonal Poisson/POT simulation",
+      "model": "nonseasonal Poisson/POT simulation",
       "primaryEvidenceKind": "analytical",
       "evidenceTags": [
         "analytical",
@@ -6950,11 +6990,11 @@
       "executesEstimator": false,
       "sampleUnit": "500 independent 20-year simulations",
       "sampleSize": 500,
-      "seed": "44100-44599",
+      "seed": "43100-43599",
       "oracle": "Analytical Poisson event counts, season assignment/exposure, calendar dates, and conditional generalized-Pareto tail probabilities.",
       "acceptanceRule": "Event/season counts must lie within five Poisson standard errors; conditional-tail proportions within five binomial standard errors; season assignments and date/block mappings must be exact.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
       "status": "verified",
       "gap": ""
     },
@@ -6979,9 +7019,9 @@
       "oracle": "Independently implemented density/CDF/Poisson or seasonal annual-maximum likelihood contribution sum.",
       "acceptanceRule": "Production data log likelihood must match the independent calculation within 2e-7 absolute; fixture event and censoring counts must match exactly.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 4A retained and renamed this independent likelihood oracle without executing it. One exact approval-gated focused run is required before verified status."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessRecoveryTests.cs",
@@ -6994,18 +7034,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated POT events",
       "sampleSize": 1000,
       "seed": "fixture 42001; production Bayesian default 12345",
-      "oracle": "Generating point-process intensity, GEV-tail coordinates, and, for seasonal cells, both changepoints.",
-      "acceptanceRule": "The current cell requires analysis completion and fixed posterior-mean coordinate bands; changepoints also require parent inclusion in the floored 95% interval and a 20-day mode band. It does not apply the common diagnostic rule to every monitored coordinate.",
+      "oracle": "Generating likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails, after explicit prior, likelihood, generator, exposure, threshold, Kappa-sign, and annualization prechecks.",
+      "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both component intensities and conditional tails must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 8 disposition: retain the N=1000 recovery design but convert acceptance to the shared central-95% parent inclusion, R-hat below 1.10, and ESS at least 100 rule for every monitored coordinate, keeping identified response checks for changepoint ambiguity."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessRecoveryTests.cs",
@@ -7018,18 +7058,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated POT events",
       "sampleSize": 1000,
       "seed": "fixture 42101; production Bayesian default 12345",
-      "oracle": "Generating point-process intensity, GEV-tail coordinates, and, for seasonal cells, both changepoints.",
-      "acceptanceRule": "The current cell requires analysis completion and fixed posterior-mean coordinate bands; changepoints also require parent inclusion in the floored 95% interval and a 20-day mode band. It does not apply the common diagnostic rule to every monitored coordinate.",
+      "oracle": "Generating unequal-intensity likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails, after explicit prior, likelihood, generator, exposure, threshold, Kappa-sign, and annualization prechecks.",
+      "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both unequal component intensities and conditional tails must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 8 disposition: retain the N=1000 recovery design but convert acceptance to the shared central-95% parent inclusion, R-hat below 1.10, and ESS at least 100 rule for every monitored coordinate, keeping identified response checks for changepoint ambiguity."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessRecoveryTests.cs",
@@ -7052,7 +7092,7 @@
       "oracle": "Analytical Poisson event counts, season assignment/exposure, calendar dates, and conditional generalized-Pareto tail probabilities.",
       "acceptanceRule": "Event/season counts must lie within five Poisson standard errors; conditional-tail proportions within five binomial standard errors; season assignments and date/block mappings must be exact.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
       "status": "verified",
       "gap": ""
     },
@@ -7077,7 +7117,7 @@
       "oracle": "Analytical Poisson event counts, season assignment/exposure, calendar dates, and conditional generalized-Pareto tail probabilities.",
       "acceptanceRule": "Event/season counts must lie within five Poisson standard errors; conditional-tail proportions within five binomial standard errors; season assignments and date/block mappings must be exact.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
       "status": "verified",
       "gap": ""
     },
@@ -7092,18 +7132,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated POT events",
       "sampleSize": 1000,
       "seed": "fixture 47001; production Bayesian default 12345",
-      "oracle": "Generating point-process intensity, GEV-tail coordinates, and, for seasonal cells, both changepoints.",
-      "acceptanceRule": "The current cell requires analysis completion and fixed posterior-mean coordinate bands; changepoints also require parent inclusion in the floored 95% interval and a 20-day mode band. It does not apply the common diagnostic rule to every monitored coordinate.",
+      "oracle": "Independent uniform-timing fixture with generating likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails under production automatic priors and calendar-year block origin.",
+      "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both component intensities and conditional tails must lie in their central 95% posterior bands.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 8 disposition: retain the N=1000 recovery design but convert acceptance to the shared central-95% parent inclusion, R-hat below 1.10, and ESS at least 100 rule for every monitored coordinate, keeping identified response checks for changepoint ambiguity."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessRecoveryTests.Uniform.cs",
@@ -7116,18 +7156,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "replace",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated POT events",
       "sampleSize": 1000,
       "seed": "fixture 47001; production Bayesian default 12345",
-      "oracle": "Generating point-process intensity, GEV-tail coordinates, and, for seasonal cells, both changepoints.",
-      "acceptanceRule": "The current cell requires analysis completion and fixed posterior-mean coordinate bands; changepoints also require parent inclusion in the floored 95% interval and a 20-day mode band. It does not apply the common diagnostic rule to every monitored coordinate.",
+      "oracle": "Independent uniform-timing fixture with generating likelihood-native seasonal Poisson-GPA coordinates, floored effective changepoints, component threshold intensities, and conditional tails under production automatic priors and October-water-year block origin; paired calendar data establish block-origin parity.",
+      "acceptanceRule": "At total N=1000, component s uses effective N_s=N*p_s, where p_s=w_s*Lambda_s/sum(w_j*Lambda_j) is its fixed-size seasonal mixture weight. Posterior-mean threshold intensity uses its Poisson standard error and posterior-mean GPA scale/Kappa use Numerics analytical GPA MLE covariance scaled to N_s; every absolute standardized error must be <=1.96. Every fitted GEV coordinate requires R-hat below 1.10 and ESS at least 100; each effective changepoint must lie in its floored central 95% set with the same diagnostics; both component intensities and conditional tails must lie in their central 95% posterior bands; calendar/water block-day likelihood parity remains 1e-10.",
       "artifact": "",
-      "reportAnchor": "docs/verification/report/point-process-analysis.md#point-process-analysis",
-      "status": "open",
-      "gap": "Chunk 8 disposition: retain the N=1000 recovery design but convert acceptance to the shared central-95% parent inclusion, R-hat below 1.10, and ESS at least 100 rule for every monitored coordinate, keeping identified response checks for changepoint ambiguity."
+      "reportAnchor": "docs/verification/point-process.md#chunk-8-current-source-reconciliation",
+      "status": "verified",
+      "gap": null
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskDependencyVerificationTests.cs",
@@ -7233,201 +7273,9 @@
       "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
       "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Maximum_CorrelatedTwoNormals_RecoversParent",
+      "method": "Bayesian_Minimum_TwoWeibullDogLeg_RecoversParent",
       "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum CorrelatedTwoNormals",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1000,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: revisit this deferred Bayesian maximum/correlated design at N=1000 under the common convergence and central-interval rule, judge label/dependence ambiguity through identified CDF or quantile curves, and record any unresolved result as a finding or approved limitation."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Maximum_ThreeDifferentFamilies_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum ThreeDifferentFamilies",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Maximum_ThreeSeparatedNormals_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum ThreeSeparatedNormals",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Maximum_TwoSeparatedNormals_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum TwoSeparatedNormals",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1000,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: revisit this deferred Bayesian maximum/correlated design at N=1000 under the common convergence and central-interval rule, judge label/dependence ambiguity through identified CDF or quantile curves, and record any unresolved result as a finding or approved limitation."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Maximum_WeibullAndGumbel_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum WeibullAndGumbel",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1000,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: revisit this deferred Bayesian maximum/correlated design at N=1000 under the common convergence and central-interval rule, judge label/dependence ambiguity through identified CDF or quantile curves, and record any unresolved result as a finding or approved limitation."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Minimum_CorrelatedTwoWeibulls_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum CorrelatedTwoWeibulls",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1000,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: revisit this deferred Bayesian maximum/correlated design at N=1000 under the common convergence and central-interval rule, judge label/dependence ambiguity through identified CDF or quantile curves, and record any unresolved result as a finding or approved limitation."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Minimum_ThreeWeibullBathtub_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum ThreeWeibullBathtub",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Minimum_ThreeWeibullSeparatedShapes_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum ThreeWeibullSeparatedShapes",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Minimum_TwoWeibullConstantIncreasing_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum TwoWeibullConstantIncreasing",
+      "model": "Minimum TwoWeibullDogLeg",
       "primaryEvidenceKind": "recovery",
       "evidenceTags": [
         "recovery"
@@ -7438,8 +7286,8 @@
       "sampleUnit": "generated scalar component minimum/maximum observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
+      "oracle": "Generating coordinates of an identified independent minimum of Weibull(50,1) and Weibull(80,3), ordered by increasing shape; eligibility is predeclared from theoretical cause shares, hard wins, likelihood-responsibility soft counts, dominance mass, and the required interior dog-leg crossover.",
+      "acceptanceRule": "Every ordered generating coordinate must lie in its central 95% posterior interval, with R-hat < 1.10 and chain ESS >= 100; the known composite response grid is secondary corroboration. N=1000 and seed 12345 are fixed.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
       "status": "verified",
@@ -7449,9 +7297,9 @@
       "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
       "class": "CompetingRiskRecoveryTests",
-      "method": "Bayesian_Minimum_TwoWeibullContrastingShapes_RecoversParent",
+      "method": "MLE_Minimum_TwoWeibullDogLeg_RecoversParent",
       "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum TwoWeibullContrastingShapes",
+      "model": "Minimum TwoWeibullDogLeg",
       "primaryEvidenceKind": "recovery",
       "evidenceTags": [
         "recovery"
@@ -7462,8 +7310,8 @@
       "sampleUnit": "generated scalar component minimum/maximum observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
+      "oracle": "Generating coordinates of an identified independent minimum of Weibull(50,1) and Weibull(80,3), ordered by increasing shape; eligibility is predeclared from theoretical cause shares, hard wins, likelihood-responsibility soft counts, dominance mass, and the required interior dog-leg crossover.",
+      "acceptanceRule": "Observed-information covariance is calculated from the full competing-risk likelihood at the fitted optimum without a ridge; every ordered coordinate must have absolute standardized error <= 1.96. The known composite response grid is secondary corroboration. N=1000 and seed 12345 are fixed.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
       "status": "verified",
@@ -7473,9 +7321,9 @@
       "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
       "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Maximum_CorrelatedTwoNormals_RecoversParent",
+      "method": "Bayesian_Maximum_WeibullGumbelDogLeg_RecoversParent",
       "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum CorrelatedTwoNormals",
+      "model": "Maximum WeibullGumbelDogLeg",
       "primaryEvidenceKind": "recovery",
       "evidenceTags": [
         "recovery"
@@ -7486,8 +7334,8 @@
       "sampleUnit": "generated scalar component minimum/maximum observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
+      "oracle": "Generating coordinates of an identified independent maximum of Weibull(100,3) and Gumbel(80,20); eligibility is predeclared from theoretical cause shares, hard wins, likelihood-responsibility soft counts, dominance mass, and one required interior dog-leg crossover. The complete diagnostic retains the expected Gumbel extreme-tail re-entry crossover.",
+      "acceptanceRule": "The proper bounded parameter priors remain active while the optional Jeffreys 1/scale multiplier is disabled to exclude the component-deletion boundary mode. Every generating coordinate must lie in its central 95% posterior interval, with R-hat < 1.10 and chain ESS >= 100; the known composite response grid is secondary corroboration. N=1000 and seed 12345 are fixed.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
       "status": "verified",
@@ -7497,57 +7345,9 @@
       "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
       "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Maximum_ThreeDifferentFamilies_RecoversParent",
+      "method": "MLE_Maximum_WeibullGumbelDogLeg_RecoversParent",
       "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum ThreeDifferentFamilies",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Maximum_ThreeSeparatedNormals_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum ThreeSeparatedNormals",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Maximum_TwoSeparatedNormals_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum TwoSeparatedNormals",
+      "model": "Maximum WeibullGumbelDogLeg",
       "primaryEvidenceKind": "recovery",
       "evidenceTags": [
         "recovery"
@@ -7558,8 +7358,8 @@
       "sampleUnit": "generated scalar component minimum/maximum observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
+      "oracle": "Generating coordinates of an identified independent maximum of Weibull(100,3) and Gumbel(80,20); eligibility is predeclared from theoretical cause shares, hard wins, likelihood-responsibility soft counts, dominance mass, and one required interior dog-leg crossover. The complete diagnostic retains the expected Gumbel extreme-tail re-entry crossover.",
+      "acceptanceRule": "Observed-information covariance is calculated from the full competing-risk likelihood at the fitted optimum without a ridge; every coordinate must have absolute standardized error <= 1.96. The known composite response grid is secondary corroboration. N=1000 and seed 12345 are fixed.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
       "status": "verified",
@@ -7569,9 +7369,9 @@
       "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
       "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
       "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Maximum_WeibullAndGumbel_RecoversParent",
+      "method": "MLE_Minimum_CorrelatedTwoWeibullDogLeg_RecoversParent",
       "analysis": "CompetingRiskAnalysis",
-      "model": "Maximum WeibullAndGumbel",
+      "model": "Minimum CorrelatedTwoWeibullDogLeg",
       "primaryEvidenceKind": "recovery",
       "evidenceTags": [
         "recovery"
@@ -7582,130 +7382,35 @@
       "sampleUnit": "generated scalar component minimum/maximum observations",
       "sampleSize": 1000,
       "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
+      "oracle": "Generating coordinates of an identified fixed-correlation minimum of Weibull(50,1) and Weibull(80,3), ordered by increasing shape, with Gaussian correlation fixed at 0.6; eligibility is predeclared from theoretical cause shares, hard wins, likelihood-responsibility soft counts, dominance mass, and the required interior dog-leg crossover.",
+      "acceptanceRule": "Observed-information covariance is calculated from the full correlated competing-risk likelihood at the fitted optimum without a ridge; every ordered coordinate must have absolute standardized error <= 1.96. N=1000 and seed 12345 are fixed. Bayesian execution is intentionally excluded for this expensive correlated fixture.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
       "status": "verified",
       "gap": ""
     },
     {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Minimum_CorrelatedTwoWeibulls_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum CorrelatedTwoWeibulls",
-      "primaryEvidenceKind": "recovery",
+      "source": "src/RMC.BestFit.Verification/Univariate/MixtureTests/MixtureExternalPackageOracleTests.cs",
+      "namespace": "RMC.BestFit.Verification.Univariate.MixtureTests",
+      "class": "MixtureExternalPackageOracleTests",
+      "method": "OrdinaryNormalMixture2D_MatchesScikitLearnArtifact",
+      "analysis": "MixtureAnalysis",
+      "model": "ordinary two-component Normal mixture",
+      "primaryEvidenceKind": "external-package",
       "evidenceTags": [
-        "recovery"
+        "external-package",
+        "independent"
       ],
       "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
+      "sampleUnit": "frozen scalar ordinary Normal-mixture observations",
       "sampleSize": 1000,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "verified",
-      "gap": ""
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Minimum_ThreeWeibullBathtub_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum ThreeWeibullBathtub",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Minimum_ThreeWeibullSeparatedShapes_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum ThreeWeibullSeparatedShapes",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "replace",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1500,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "open",
-      "gap": "Chunk 9 disposition: change this three-component recovery design from N=1500 to exactly N=1000, then apply identified parameter or predictive-curve acceptance without changing production estimation settings."
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Minimum_TwoWeibullConstantIncreasing_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum TwoWeibullConstantIncreasing",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "retain-verification",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1000,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
-      "status": "verified",
-      "gap": ""
-    },
-    {
-      "source": "src/RMC.BestFit.Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs",
-      "namespace": "RMC.BestFit.Verification.Univariate.CompetingRiskTests",
-      "class": "CompetingRiskRecoveryTests",
-      "method": "MLE_Minimum_TwoWeibullContrastingShapes_RecoversParent",
-      "analysis": "CompetingRiskAnalysis",
-      "model": "Minimum TwoWeibullContrastingShapes",
-      "primaryEvidenceKind": "recovery",
-      "evidenceTags": [
-        "recovery"
-      ],
-      "disposition": "retain-verification",
-      "methodOverrides": [],
-      "executesEstimator": true,
-      "sampleUnit": "generated scalar component minimum/maximum observations",
-      "sampleSize": 1000,
-      "seed": 12345,
-      "oracle": "Generating competing-risk combined distribution, evaluated through a 99-point combined-CDF grid with limited ordered component-coordinate checks where identifiable.",
-      "acceptanceRule": "Parent and fitted likelihoods at truth agree within 1e-10; maximum fitted or posterior-mean CDF error is at most 0.05 (two components) or 0.06 (three); selected ordered coordinates use 25-30% relative gates. Bayesian cells also require R-hat below 1.10 and ESS above 100 for every coordinate.",
-      "artifact": "",
-      "reportAnchor": "docs/verification/report/competing-risk-analysis.md#competing-risk-analysis",
+      "seed": "NumPy PCG64 fixture 12345; scikit-learn fit 22345",
+      "oracle": "Frozen scikit-learn 1.9.0 diagonal-covariance GaussianMixture fit plus independently evaluated SciPy Normal-mixture likelihood and CDF ordinates, with full-K weights, Normal standard deviations, and ascending-mean labels.",
+      "acceptanceRule": "Independent likelihoods agree within 1e-9, CDF ordinates within 1e-12, and ordered BestFit EM weights/means/standard deviations within 1e-4 scaled of the frozen scikit-learn fit.",
+      "artifact": "verification/data/mixture/normal-mixture-sklearn-oracle.json",
+      "reportAnchor": "docs/verification/report/mixture-analysis.md#mixture-analysis",
       "status": "verified",
       "gap": ""
     },
@@ -7720,18 +7425,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "split",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated scalar mixture observations",
       "sampleSize": 1000,
       "seed": "fixture 12345; estimator 22345",
-      "oracle": "Generating ordered mixture weights and Normal component coordinates from the BestFit generator; this is recovery but has no external package oracle.",
-      "acceptanceRule": "Posterior-mode ordered weights/components must be within max(0.15, 15% of parent); R-hat below 1.10 and ESS above 100 for every sampled coordinate.",
+      "oracle": "Generating ascending-mean ordered full-K physical weights and Normal component coordinates, reconstructed locally from every retained K-1 posterior draw.",
+      "acceptanceRule": "Every ordered physical weight, mean, and standard deviation truth must lie inside its central 95% posterior interval; every stored coordinate must have R-hat < 1.10 and ESS >= 100.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/mixture-analysis.md#mixture-analysis",
-      "status": "open",
-      "gap": "Chunk 10A disposition: retain label-identified N=1000 recovery with common interval/response acceptance, split out same-ecosystem Numerics parity, and add a frozen independent mixture-package likelihood/fit artifact where parameterizations overlap."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs",
@@ -7744,18 +7449,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "split",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated scalar mixture observations",
       "sampleSize": 1000,
       "seed": "fixture 12345; estimator 12345",
-      "oracle": "A generated parent plus same-ecosystem BestFit/Numerics likelihood and fitted-engine parity; cross-engine agreement is not independent.",
-      "acceptanceRule": "Pre-fit BestFit/Numerics likelihoods within 1e-10, fitted likelihoods within 1e-8, and ordered component weights/parameters within 0.1 of the generating values.",
+      "oracle": "N=1000 generated-parent recovery with components identified by ascending mean; same-ecosystem BestFit/Numerics parity is not used as scientific evidence.",
+      "acceptanceRule": "Every ordered physical weight, mean, and standard deviation must have absolute standardized parent error <= 1.96 using the responsibility-count weight covariance and observed-likelihood component covariance.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/mixture-analysis.md#mixture-analysis",
-      "status": "open",
-      "gap": "Chunk 10A disposition: retain label-identified N=1000 recovery with common interval/response acceptance, split out same-ecosystem Numerics parity, and add a frozen independent mixture-package likelihood/fit artifact where parameterizations overlap."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs",
@@ -7768,18 +7473,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "split",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated scalar mixture observations",
       "sampleSize": 1000,
       "seed": "fixture 12345; estimator 42345",
-      "oracle": "Generating ordered mixture weights and Normal component coordinates from the BestFit generator; this is recovery but has no external package oracle.",
-      "acceptanceRule": "Posterior-mode ordered weights/components must be within max(0.15, 15% of parent); R-hat below 1.10 and ESS above 100 for every sampled coordinate.",
+      "oracle": "Generating ascending-mean ordered full-K physical weights and Normal component coordinates, reconstructed locally from every retained K-1 posterior draw.",
+      "acceptanceRule": "Every ordered physical weight, mean, and standard deviation truth must lie inside its central 95% posterior interval; every stored coordinate must have R-hat < 1.10 and ESS >= 100.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/mixture-analysis.md#mixture-analysis",
-      "status": "open",
-      "gap": "Chunk 10A disposition: retain label-identified N=1000 recovery with common interval/response acceptance, split out same-ecosystem Numerics parity, and add a frozen independent mixture-package likelihood/fit artifact where parameterizations overlap."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs",
@@ -7792,18 +7497,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "split",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated scalar mixture observations",
       "sampleSize": 1000,
       "seed": "fixture 12345; estimator 12345",
-      "oracle": "A generated parent plus same-ecosystem BestFit/Numerics likelihood and fitted-engine parity; cross-engine agreement is not independent.",
-      "acceptanceRule": "Pre-fit BestFit/Numerics likelihoods within 1e-10, fitted likelihoods within 1e-8, and ordered component weights/parameters within 0.1 of the generating values.",
+      "oracle": "N=1000 generated-parent recovery with components identified by ascending mean; same-ecosystem BestFit/Numerics parity is not used as scientific evidence.",
+      "acceptanceRule": "Every ordered physical weight, mean, and standard deviation must have absolute standardized parent error <= 1.96 using the responsibility-count weight covariance and observed-likelihood component covariance.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/mixture-analysis.md#mixture-analysis",
-      "status": "open",
-      "gap": "Chunk 10A disposition: retain label-identified N=1000 recovery with common interval/response acceptance, split out same-ecosystem Numerics parity, and add a frozen independent mixture-package likelihood/fit artifact where parameterizations overlap."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs",
@@ -7816,18 +7521,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "split",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated scalar mixture observations",
       "sampleSize": 1000,
       "seed": "fixture 12345; estimator 32345",
-      "oracle": "Generating ordered mixture weights and Normal component coordinates from the BestFit generator; this is recovery but has no external package oracle.",
-      "acceptanceRule": "Posterior-mode ordered weights/components must be within max(0.15, 15% of parent); R-hat below 1.10 and ESS above 100 for every sampled coordinate.",
+      "oracle": "Generating zero atom plus ascending-mean ordered full-K physical continuous weights and Normal coordinates, reconstructed locally from every retained K-1 posterior draw in the observed positive-mass simplex.",
+      "acceptanceRule": "The zero atom must have binomial absolute standardized error <= 1.96; every ordered physical continuous weight, mean, and standard deviation truth must lie inside its central 95% posterior interval; every stored coordinate must have R-hat < 1.10 and ESS >= 100.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/mixture-analysis.md#mixture-analysis",
-      "status": "open",
-      "gap": "Chunk 10A disposition: retain label-identified N=1000 recovery with common interval/response acceptance, split out same-ecosystem Numerics parity, and add a frozen independent mixture-package likelihood/fit artifact where parameterizations overlap."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/MixtureTests/MixtureRecoveryTests.cs",
@@ -7840,18 +7545,18 @@
       "evidenceTags": [
         "recovery"
       ],
-      "disposition": "split",
+      "disposition": "retain-verification",
       "methodOverrides": [],
       "executesEstimator": true,
       "sampleUnit": "generated scalar mixture observations",
       "sampleSize": 1000,
       "seed": "fixture 12345; estimator 12345",
-      "oracle": "A generated parent plus same-ecosystem BestFit/Numerics likelihood and fitted-engine parity; cross-engine agreement is not independent.",
-      "acceptanceRule": "Pre-fit BestFit/Numerics likelihoods within 1e-10, fitted likelihoods within 1e-8, and ordered component weights/parameters within 0.1 of the generating values.",
+      "oracle": "N=1000 generated-parent recovery for the separately identified zero atom and ascending-mean positive-conditioned Normal components; scikit-learn parity is not claimed for the unsupported hurdle law.",
+      "acceptanceRule": "The zero atom must have binomial absolute standardized error <= 1.96; every ordered continuous weight, mean, and standard deviation must have absolute standardized parent error <= 1.96 using positive-responsibility and positive-conditioned observed-likelihood covariance.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/mixture-analysis.md#mixture-analysis",
-      "status": "open",
-      "gap": "Chunk 10A disposition: retain label-identified N=1000 recovery with common interval/response acceptance, split out same-ecosystem Numerics parity, and add a frozen independent mixture-package likelihood/fit artifact where parameterizations overlap."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -7875,8 +7580,8 @@
       "acceptanceRule": "All theoretical bounds hold with 1e-12 slack and independent/comonotonic maximum rules differ by at least 0.10.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -7900,8 +7605,8 @@
       "acceptanceRule": "Minimum and maximum CDFs at the fixed point must match the two orthant values within 1e-8.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -7925,8 +7630,8 @@
       "acceptanceRule": "Both dependency identities must match within 1e-10 absolute.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -7950,8 +7655,8 @@
       "acceptanceRule": "At every ordinate, posterior mean must match enumeration within 0.02 and 90% interval limits within 0.05; the fixed parent quantile must be bracketed.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -7975,8 +7680,8 @@
       "acceptanceRule": "Both dependency identities must match within 1e-10 absolute.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -8000,8 +7705,8 @@
       "acceptanceRule": "At every ordinate, posterior mean must match enumeration within 0.02 and 90% interval limits within 0.05; the fixed parent quantile must be bracketed.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -8025,8 +7730,8 @@
       "acceptanceRule": "Every fixed-point CDF must match within 1e-12 absolute.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -8050,8 +7755,8 @@
       "acceptanceRule": "At every ordinate, posterior mean must match enumeration within 0.02 and 90% interval limits within 0.05; the fixed parent quantile must be bracketed.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -8075,8 +7780,8 @@
       "acceptanceRule": "Analytical CDF at each returned quantile must match the target probability with the declared probability-scaled tolerance and 1e-8 floor.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs",
@@ -8101,8 +7806,108 @@
       "acceptanceRule": "All 25 quantiles must agree within 1% relative.",
       "artifact": "",
       "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
-      "status": "open",
-      "gap": "Chunk 4B completed the identity and ownership reconciliation: this independent analytical/resampling evidence remains in Verification under the Oracle identity. Status remains open because no exact approval-gated focused execution occurred after the rename. Chunk 10B separately adds N=1000 end-to-end predictive recovery through fitted child analyses."
+      "status": "verified",
+      "gap": ""
+    },
+    {
+      "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositePredictiveRecoveryTests.cs",
+      "namespace": "RMC.BestFit.Verification.Univariate.CompositeTests",
+      "class": "CompositePredictiveRecoveryTests",
+      "method": "EqualWeightModelAverage_EndToEndPredictiveRecovery",
+      "analysis": "CompositeAnalysis",
+      "model": "equal-weight model average of two Normal child analyses",
+      "primaryEvidenceKind": "recovery",
+      "evidenceTags": [
+        "recovery",
+        "analytical"
+      ],
+      "disposition": "retain-verification",
+      "methodOverrides": [],
+      "executesEstimator": true,
+      "sampleUnit": "two independently generated scalar Normal child samples",
+      "sampleSize": 1000,
+      "seed": "child generators 51001/51002; child sampler and composite production default 12345",
+      "oracle": "Analytical equal-weight Normal-mixture parent quantiles after separately fitting both child analyses and requiring exactly 0.5/0.5 model-average weights.",
+      "acceptanceRule": "Each child truth must lie in its central 95% posterior interval with R-hat < 1.10 and ESS >= 100; every parent composite quantile at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90 must lie in the central 95% composite band.",
+      "artifact": "",
+      "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
+      "status": "verified",
+      "gap": ""
+    },
+    {
+      "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositePredictiveRecoveryTests.cs",
+      "namespace": "RMC.BestFit.Verification.Univariate.CompositeTests",
+      "class": "CompositePredictiveRecoveryTests",
+      "method": "MaximumComposite_EndToEndPredictiveRecovery",
+      "analysis": "CompositeAnalysis",
+      "model": "independent maximum of two Normal child analyses",
+      "primaryEvidenceKind": "recovery",
+      "evidenceTags": [
+        "recovery",
+        "analytical"
+      ],
+      "disposition": "retain-verification",
+      "methodOverrides": [],
+      "executesEstimator": true,
+      "sampleUnit": "two independently generated scalar Normal child samples",
+      "sampleSize": 1000,
+      "seed": "child generators 51001/51002; child sampler and composite production default 12345",
+      "oracle": "Analytical independent-product maximum quantiles after separately fitting both child analyses.",
+      "acceptanceRule": "Each child truth must lie in its central 95% posterior interval with R-hat < 1.10 and ESS >= 100; every parent maximum quantile at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90 must lie in the central 95% composite band.",
+      "artifact": "",
+      "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
+      "status": "verified",
+      "gap": ""
+    },
+    {
+      "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositePredictiveRecoveryTests.cs",
+      "namespace": "RMC.BestFit.Verification.Univariate.CompositeTests",
+      "class": "CompositePredictiveRecoveryTests",
+      "method": "MinimumComposite_EndToEndPredictiveRecovery",
+      "analysis": "CompositeAnalysis",
+      "model": "independent minimum of two Normal child analyses",
+      "primaryEvidenceKind": "recovery",
+      "evidenceTags": [
+        "recovery",
+        "analytical"
+      ],
+      "disposition": "retain-verification",
+      "methodOverrides": [],
+      "executesEstimator": true,
+      "sampleUnit": "two independently generated scalar Normal child samples",
+      "sampleSize": 1000,
+      "seed": "child generators 51001/51002; child sampler and composite production default 12345",
+      "oracle": "Analytical independent survival-product minimum quantiles after separately fitting both child analyses.",
+      "acceptanceRule": "Each child truth must lie in its central 95% posterior interval with R-hat < 1.10 and ESS >= 100; every parent minimum quantile at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90 must lie in the central 95% composite band.",
+      "artifact": "",
+      "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
+      "status": "verified",
+      "gap": ""
+    },
+    {
+      "source": "src/RMC.BestFit.Verification/Univariate/CompositeTests/CompositePredictiveRecoveryTests.cs",
+      "namespace": "RMC.BestFit.Verification.Univariate.CompositeTests",
+      "class": "CompositePredictiveRecoveryTests",
+      "method": "MixtureComposite_EndToEndPredictiveRecovery",
+      "analysis": "CompositeAnalysis",
+      "model": "unequal-weight mixture of two Normal child analyses",
+      "primaryEvidenceKind": "recovery",
+      "evidenceTags": [
+        "recovery",
+        "analytical"
+      ],
+      "disposition": "retain-verification",
+      "methodOverrides": [],
+      "executesEstimator": true,
+      "sampleUnit": "two independently generated scalar Normal child samples",
+      "sampleSize": 1000,
+      "seed": "child generators 51001/51002; child sampler and composite production default 12345",
+      "oracle": "Analytical 0.35/0.65 weighted-Normal parent quantiles after separately fitting both child analyses.",
+      "acceptanceRule": "Each child truth must lie in its central 95% posterior interval with R-hat < 1.10 and ESS >= 100; every parent mixture quantile at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90 must lie in the central 95% composite band.",
+      "artifact": "",
+      "reportAnchor": "docs/verification/report/composite-analysis.md#composite-analysis",
+      "status": "verified",
+      "gap": ""
     },
     {
       "source": "src/RMC.BestFit.Verification/Bivariate/BivariateAnalysisParameterRecoveryTests.cs",

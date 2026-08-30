@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Numerics;
 
 namespace RMC.BestFit.Verification.Recovery;
 
@@ -37,7 +38,7 @@ public static class RecoveryAcceptance
     /// </remarks>
     public static void AssertFrequentistParentInInterval(string coordinate, double parent, double lower, double upper)
     {
-        Assert.IsTrue(double.IsFinite(lower) && double.IsFinite(upper) && lower <= upper,
+        Assert.IsTrue(Tools.IsFinite(lower) && Tools.IsFinite(upper) && lower <= upper,
             $"{coordinate} must provide a finite ordered 95% uncertainty interval.");
         Assert.IsTrue(lower <= parent && parent <= upper,
             $"The 95% interval [{lower:G17}, {upper:G17}] for {coordinate} does not contain parent {parent:G17}.");
@@ -57,11 +58,13 @@ public static class RecoveryAcceptance
     /// </remarks>
     public static void AssertFrequentistStandardizedError(string coordinate, double estimate, double parent, double standardError)
     {
-        Assert.IsTrue(double.IsFinite(standardError) && standardError > 0d,
+        Assert.IsTrue(Tools.IsFinite(standardError) && standardError > 0d,
             $"{coordinate} must provide a finite positive predeclared standard error.");
         double standardizedError = Math.Abs(estimate - parent) / standardError;
         Assert.IsTrue(standardizedError <= NinetyFivePercentStandardNormalCutoff,
-            $"{coordinate} standardized parent error {standardizedError:G17} exceeds {NinetyFivePercentStandardNormalCutoff:G17}.");
+            $"{coordinate} estimate {estimate:G17}, parent {parent:G17}, and observed-information " +
+            $"standard error {standardError:G17} give standardized parent error " +
+            $"{standardizedError:G17}, exceeding {NinetyFivePercentStandardNormalCutoff:G17}.");
     }
 
     /// <summary>
@@ -81,9 +84,9 @@ public static class RecoveryAcceptance
     public static void AssertBayesianRecovery(string coordinate, double parent, double lower, double upper, double rhat, double effectiveSampleSize)
     {
         AssertFrequentistParentInInterval(coordinate, parent, lower, upper);
-        Assert.IsTrue(double.IsFinite(rhat) && rhat < MaximumRhat,
+        Assert.IsTrue(Tools.IsFinite(rhat) && rhat < MaximumRhat,
             $"{coordinate} R-hat {rhat:G17} must be below {MaximumRhat:G17}.");
-        Assert.IsTrue(double.IsFinite(effectiveSampleSize) && effectiveSampleSize >= MinimumEffectiveSampleSize,
+        Assert.IsTrue(Tools.IsFinite(effectiveSampleSize) && effectiveSampleSize >= MinimumEffectiveSampleSize,
             $"{coordinate} ESS {effectiveSampleSize:G17} must be at least {MinimumEffectiveSampleSize:G17}.");
     }
 
@@ -102,9 +105,9 @@ public static class RecoveryAcceptance
     /// </remarks>
     public static void AssertSecondaryPointCriterionWhenResolved(string label, double estimate, double parent, double lower, double upper)
     {
-        Assert.IsTrue(double.IsFinite(estimate) && double.IsFinite(parent),
+        Assert.IsTrue(Tools.IsFinite(estimate) && Tools.IsFinite(parent),
             $"{label} must provide finite fitted and parent values before secondary evaluation.");
-        Assert.IsTrue(double.IsFinite(lower) && double.IsFinite(upper) && lower <= upper,
+        Assert.IsTrue(Tools.IsFinite(lower) && Tools.IsFinite(upper) && lower <= upper,
             $"{label} must provide a finite ordered 95% uncertainty interval before secondary evaluation.");
         if (parent == 0d)
             return;

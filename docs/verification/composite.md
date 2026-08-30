@@ -83,26 +83,64 @@ the published table, and deterministic bisection; posterior oracles enumerate th
 20-by-20-by-20 product of the child supports without calling the production resampler or a
 production composite constructor.
 
+### Chunk 10B predictive-recovery coverage matrix
+
+The deterministic oracle cells above remain theory, published, orthant, or independent Cartesian
+evidence; their 8,000 combinations and 5,000 resampling draws are not recovery N and remain
+unchanged. Four additional cells cover only the scientifically distinct fitted-child interactions:
+
+| Recovery cell | Child fixtures and fitting | Composite rule | Parent response and acceptance |
+|---|---|---|---|
+| Mixture composite | Two separate N=1000 Normal child samples, generated with seeds 51001/51002 and fit serially through unchanged `UnivariateAnalysis` Bayesian defaults | Physical weights 0.35/0.65 | Analytical weighted-Normal quantiles at nonexceedance 0.10, 0.25, 0.50, 0.75, 0.90 inside central 95% composite bands |
+| Competing-risk maximum | Same declared independently fit child design | Independent maximum; product CDF | Analytical maximum quantiles at the same probabilities inside central 95% composite bands |
+| Competing-risk minimum | Same declared independently fit child design | Independent minimum; survival-product union CDF | Analytical minimum quantiles at the same probabilities inside central 95% composite bands |
+| Equal-weight model averaging | Same declared independently fit child design | `AverageMethod.Equal`, requiring exactly 0.5/0.5 weights | Analytical equal-weight Normal-mixture quantiles at the same probabilities inside central 95% composite bands |
+
+The parents are Normal(10, 2) and Normal(22, 3). Every child mean and standard deviation is
+monitored directly: generating truth must lie in its locally calculated central 95% posterior
+interval, R-hat must be below 1.10, and ESS must be at least 100. Prior support and discrimination
+against a three-standard-deviation mean-shift alternative are checked before sampling. Composite
+resampling retains the production seed/default and each selected rule is evaluated independently.
+This four-cell set is sufficient because it crosses the two `CompositeAnalysis` construction
+branches (competing risks versus mixture/model average), both extrema, unequal declared mixture
+weights, and computed equal weights. Correlation-matrix dependence remains covered by the exact
+orthant cell rather than duplicating the long correlated fitted-child likelihood.
+
 | Exact method | Independent contract | Tolerance | Status |
 |---|---|---|---|
-| `CompositeRecoveryTests.MixtureCdf_MatchesExactWeightedNormalSum` | weighted three-Normal CDF identity | `1E-12` absolute | Passed - 0.354 s |
-| `CompositeRecoveryTests.MixtureQuantiles_MatchPublishedRMistrTable45` | 25 R `mistr` Table 45 quantiles | 1% relative | Passed - 0.387 s |
-| `CompositeRecoveryTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` | analytical CDF at each production quantile | `max(1E-8, 5E-3 * min(AEP, 1-AEP))` | Passed - 0.770 s exact rerun, 20 August 2026; prior logarithmic-X run failed at AEP `2E-6` with residual `1.02566838E-8` |
-| `CompositeRecoveryTests.MaximumComposite_MatchesIndependentAndComonotonicClosedForms` | product and minimum child-CDF identities | `1E-10` absolute | Passed - 0.432 s |
-| `CompositeRecoveryTests.MinimumComposite_MatchesIndependentAndComonotonicClosedForms` | union and maximum child-CDF identities | `1E-10` absolute | Passed - 0.444 s |
-| `CompositeRecoveryTests.CombinationRules_SatisfyTheoreticalBracketingAndRemainDistinct` | mixture child envelope, maximum/minimum bounds, and material rule separation | `1E-12` slack; separation at least `0.10` | Passed - 0.547 s |
-| `CompositeRecoveryTests.MixturePosterior_MatchesCompleteCartesianOracle` | three-child mixture product posterior | mean `0.02`; limits `0.05` | Passed - 4.758 s |
-| `CompositeRecoveryTests.MaximumPosterior_MatchesCompleteCartesianOracle` | three-child independent maximum product posterior | mean `0.02`; limits `0.05` | Passed - 5.580 s |
-| `CompositeRecoveryTests.MinimumPosterior_MatchesCompleteCartesianOracle` | three-child independent minimum product posterior | mean `0.02`; limits `0.05` | Passed - 4.766 s |
-| `CompositeRecoveryTests.CorrelationMatrix_MinimumAndMaximumMatchBivariateNormalOrthants` | two Normal(10, 1) medians at latent rho 0.6 | `1E-8` absolute | Passed - 0.347 s |
+| `CompositeOracleVerificationTests.MixtureCdf_MatchesExactWeightedNormalSum` | weighted three-Normal CDF identity | `1E-12` absolute | Passed - 0.324 s |
+| `CompositeOracleVerificationTests.MixtureQuantiles_MatchPublishedRMistrTable45` | 25 R `mistr` Table 45 quantiles | 1% relative | Passed - 0.319 s |
+| `CompositeOracleVerificationTests.MixtureQuantiles_InvertAnalyticWeightedNormalCdf` | analytical CDF at each production quantile | `max(1E-8, 5E-3 * min(AEP, 1-AEP))` | Passed - 0.320 s |
+| `CompositeOracleVerificationTests.MaximumComposite_MatchesIndependentAndComonotonicClosedForms` | product and minimum child-CDF identities | `1E-10` absolute | Passed - 0.390 s |
+| `CompositeOracleVerificationTests.MinimumComposite_MatchesIndependentAndComonotonicClosedForms` | union and maximum child-CDF identities | `1E-10` absolute | Passed - 0.391 s |
+| `CompositeOracleVerificationTests.CombinationRules_SatisfyTheoreticalBracketingAndRemainDistinct` | mixture child envelope, maximum/minimum bounds, and material rule separation | `1E-12` slack; separation at least `0.10` | Passed - 0.474 s |
+| `CompositeOracleVerificationTests.MixturePosterior_MatchesCompleteCartesianOracle` | three-child mixture product posterior | mean `0.02`; limits `0.05` | Passed - 3.555 s |
+| `CompositeOracleVerificationTests.MaximumPosterior_MatchesCompleteCartesianOracle` | three-child independent maximum product posterior | mean `0.02`; limits `0.05` | Passed - 3.228 s |
+| `CompositeOracleVerificationTests.MinimumPosterior_MatchesCompleteCartesianOracle` | three-child independent minimum product posterior | mean `0.02`; limits `0.05` | Passed - 3.394 s |
+| `CompositeOracleVerificationTests.CorrelationMatrix_MinimumAndMaximumMatchBivariateNormalOrthants` | two Normal(10, 1) medians at latent rho 0.6 | `1E-8` absolute | Passed - 0.296 s |
+| `CompositePredictiveRecoveryTests.MixtureComposite_EndToEndPredictiveRecovery` | fitted-child 0.35/0.65 mixture parent quantiles | central 95% child and composite bands; R-hat/ESS | Passed - 15.711 s |
+| `CompositePredictiveRecoveryTests.MaximumComposite_EndToEndPredictiveRecovery` | fitted-child independent maximum parent quantiles | central 95% child and composite bands; R-hat/ESS | Passed - 15.380 s |
+| `CompositePredictiveRecoveryTests.MinimumComposite_EndToEndPredictiveRecovery` | fitted-child independent minimum parent quantiles | central 95% child and composite bands; R-hat/ESS | Passed - 14.958 s |
+| `CompositePredictiveRecoveryTests.EqualWeightModelAverage_EndToEndPredictiveRecovery` | fitted-child equal-weight parent quantiles and exact 0.5/0.5 weights | central 95% child and composite bands; R-hat/ESS | Passed - 15.210 s |
 
-All ten methods now pass. The inversion cell originally failed only at the most extreme AEP when
+The ten current oracle identities and four predictive-recovery identities pass. `CompositeRecoveryTests`
+is the historical class name and none of its results was transferred; all ten oracle methods were
+executed under their current exact `CompositeOracleVerificationTests` identities on 30 August 2026.
+The inversion cell originally failed only at the most extreme AEP when
 the analysis used a logarithmic X search despite exposing no user-visible transform configuration.
 After `CompositeAnalysis` adopted the approved `XTransform.None` contract, the same exact method
 passed through `scripts/run-verification-test.ps1` without changing its fixture, formula, seed, or
 probability-dependent tolerance. The 20 August 2026 invocation built with zero warnings/errors,
 executed one test, produced one passing TRX under `TestResults/VerificationFocused/20260820-093600-*`,
 and ran the method in 0.770 s. The earlier residual remains recorded in the table as failure history.
+
+The first predictive-mixture attempt exposed two Verification-only construction errors in sequence:
+posterior coordinate arrays were declared sorted before percentile calculation, then composite
+exceedance probabilities were supplied in descending order. Both one-result failure TRXs are
+discarded as scientific evidence. After sorting retained arrays and supplying the same predeclared
+probability set in the required order, the exact mixture method and the other three predictive
+methods passed. No child estimator, parent, prior, sampler, seed, response set, or acceptance rule
+changed.
 
 The posterior fixtures retain 5,000 draws per child by repeating 20 evenly spaced mean supports:
 9.8-10.2, 19.8-20.2, and 29.8-30.2, with standard deviations fixed at 2, 1, and 5. They use
@@ -124,9 +162,8 @@ duplicate those deterministic contracts as long-running methods.
 
 TR-013 and TR-015 remain complete with fast programmatic evidence. TR-014 retains its existing
 fast and independent numerical evidence, and both exact TR-014 methods passed again. The
-ten-method recovery supplement now passes every method after the unchanged inversion cell passed
-its exact 20 August 2026 rerun under the approved `XTransform.None` contract. The Composite
-supplement no longer blocks Phase 5. The complete Verification project was not run.
+ten current oracle identities and all four fitted-child predictive-recovery identities pass. The
+Composite supplement no longer blocks Phase 5. The complete Verification project was not run.
 
 ---
 

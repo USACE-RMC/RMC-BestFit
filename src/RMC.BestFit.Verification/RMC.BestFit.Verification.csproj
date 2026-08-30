@@ -54,6 +54,9 @@
     <None Include="..\..\verification\data\rating-curve\rating-curve-example-fixtures.json" Link="VerificationData\rating-curve-example-fixtures.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\rating-curve\rating-curve-likelihood-oracle.json" Link="VerificationData\rating-curve-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\bivariate\copula-estimation-oracle.json" Link="VerificationData\copula-estimation-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\bulletin17c\b17c-gmm-covariance-oracle.json" Link="VerificationData\b17c-gmm-covariance-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\point-process\stationary-poisson-gpa-scipy-oracle.json" Link="VerificationData\stationary-poisson-gpa-scipy-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\mixture\normal-mixture-sklearn-oracle.json" Link="VerificationData\normal-mixture-sklearn-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\spatial-extremes\spatial-copula-likelihood-oracle.json" Link="VerificationData\spatial-copula-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\spatial-extremes\spatial-conditional-gp-oracle.json" Link="VerificationData\spatial-conditional-gp-oracle.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\verification\data\spatial-extremes\geodesic-distance-oracle.json" Link="VerificationData\geodesic-distance-oracle.json" CopyToOutputDirectory="PreserveNewest" />

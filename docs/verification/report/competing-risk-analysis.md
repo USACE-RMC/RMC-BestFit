@@ -16,11 +16,36 @@ Each dependence mode generated 40,000 observations with seed 24681357. Empirical
 | Perfect negative limit | Equation (C.1) at the implemented numerical limit | Passed |
 | User correlation matrix | Equation (C.1) at the configured correlation | Passed |
 
-Ten supported one- through three-component minimum/maximum designs were generated with seed 12345. Two-component cases used 1,000 observations and three-component cases 1,500. Every MLE fit passed the declared combined-CDF recovery rule. Four independent-minimum Bayesian designs also passed under production defaults.
+The historical 20-cell estimator cross-product was thinned to five BestFit recovery cells
+over three predeclared, clearly identified dog-leg fixtures. Each uses seed 12345 and exactly
+1,000 scalar composite observations. The labeled verification generator records theoretical
+cause shares, fixed-seed hard wins, likelihood-responsibility soft counts, component dominance
+mass, and responsibility crossovers before estimator execution.
 
-| Recovery group | Cells | Acceptance | Result |
-|---|---:|---|---:|
-| MLE, all supported fixture designs | 10 | Maximum CDF error 0.05 or 0.06 | 10 of 10 passed |
-| Bayesian, independently supported minimum designs | 4 | CDF bound, $\widehat R<1.1$, ESS greater than 100 | 4 of 4 passed |
+| Fixture | Theoretical shares | Hard wins | BestFit results |
+|---|---:|---:|---|
+| Independent minimum: Weibull(50,1) + Weibull(80,3) | 72.7%, 27.3% | 720, 280 | MLE passed; Bayesian passed |
+| Independent maximum: Weibull(100,3) + Gumbel(80,20) | 48.7%, 51.3% | 495, 505 | MLE passed; Bayesian passed without optional Jeffreys scale multiplier |
+| Correlated minimum: Weibull(50,1) + Weibull(80,3), rho=0.6 | 78.7%, 21.3% | 776, 224 | MLE passed; Bayesian intentionally not run |
 
-The report makes no Bayesian recovery claim for six difficult maximum or correlated designs whose posterior geometry, convergence, or uncertainty-curve behavior did not satisfy the predeclared criteria. No tolerance, prior, sampler, seed, or likelihood was changed to convert those designs into passes.
+MLE uncertainty comes from the full competing-risk observed-information matrix without a ridge,
+with every generating coordinate required to have absolute standardized error at most 1.96.
+Bayesian recovery requires every ordered generating coordinate inside its central 95 percent
+posterior interval, $\widehat R<1.10$, and ESS at least 100. All five retained exact BestFit
+identities produced one-result passing TRXs.
+
+The redesigned maximum has one interior responsibility crossover at composite probability 0.474
+and the expected Gumbel extreme-tail re-entry at 0.987. BestFit and Numerics MLE each recover it
+under the full-likelihood coordinate rule. The former Weibull(80,2) + Gumbel(60,10) fixture remains
+a documented single-start local-mode failure rather than a recovery test; direct cause-sum
+evaluation ruled out a log-PDF formulation defect.
+
+The optional Jeffreys scale multiplier makes the Bayesian maximum posterior kernel increase when
+the Weibull scale approaches its lower boundary and that component disappears. An exact
+default-prior diagnostic found a rank-3-of-4 MAP information matrix and a Weibull-scale 95 percent
+interval of roughly [4.44E-12, 38.17], excluding the parent 100. With only that optional multiplier
+disabled, while retaining the bounded parameter priors and every data, sampler, seed, and
+acceptance setting, the exact Bayesian maximum identity passed. The production prior default was
+not changed. A balanced three-Weibull candidate was separately removed after MLE
+boundary/observed-information failures and a Bayesian parent-interval miss showed that cause
+balance alone did not identify its coordinates.

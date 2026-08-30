@@ -2,7 +2,7 @@
 
 # Composite Analysis
 
-Composite analysis combines already estimated child distributions and therefore has no separate fitted parameter vector. Independent tests use direct Normal CDF formulas, published R `mistr` Table 45 quantiles, bivariate-Normal orthants, and complete enumeration of three child posterior supports.
+Composite analysis combines already estimated child distributions and therefore has no separate fitted parameter vector. Independent tests use direct Normal CDF formulas, published R `mistr` Table 45 quantiles, bivariate-Normal orthants, and complete enumeration of three child posterior supports. Four end-to-end cells additionally generate N=1000 observations for each of two Normal child analyses, fit both children through unchanged Bayesian defaults, and require the analytical parent composite quantiles inside central 95% propagated bands.
 
 | Verification cell | Independent reference | Tolerance | Result |
 |---|---|---:|---:|
@@ -16,5 +16,9 @@ Composite analysis combines already estimated child distributions and therefore 
 | Maximum posterior | Complete Cartesian oracle | Mean 0.02; limits 0.05 | Passed |
 | Minimum posterior | Complete Cartesian oracle | Mean 0.02; limits 0.05 | Passed |
 | Correlated min/max | Bivariate-Normal orthants at $\rho=0.6$ | `1e-8` absolute | Passed |
+| Unequal-weight predictive mixture | Analytical 0.35/0.65 Normal-mixture parent | Child truth and parent quantiles in central 95%; R-hat below 1.10; ESS at least 100 | Passed |
+| Predictive maximum | Analytical independent-product parent | Same | Passed |
+| Predictive minimum | Analytical independent survival-product parent | Same | Passed |
+| Equal-weight predictive model average | Analytical equal-weight Normal-mixture parent and exact 0.5/0.5 weights | Same | Passed |
 
-Two additional posterior-resampling tests compare the production finite resampling policy with an empirical Cartesian product and a closed-form independent Normal sum. Posterior means pass within 0.02 and interval limits within 0.05, while deliberately raw-paired chains miss by at least 0.10. This demonstrates that each separately fitted source is independently indexed rather than coupled by retained-array position. All twelve reported cells passed.
+The ten oracle results were executed under their current `CompositeOracleVerificationTests` names; historical `CompositeRecoveryTests` results were not transferred. Two additional posterior-resampling tests compare the production finite resampling policy with an empirical Cartesian product and a closed-form independent Normal sum. Posterior means pass within 0.02 and interval limits within 0.05, while deliberately raw-paired chains miss by at least 0.10. This demonstrates that each separately fitted source is independently indexed rather than coupled by retained-array position. The four predictive interactions pass in 14.958-15.711 seconds each. Initial predictive-mixture helper failures from an unsorted percentile array and descending probability grid were discarded and replaced by the current passing exact TRX; no scientific setting changed.

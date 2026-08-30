@@ -29,7 +29,19 @@ The procedure evaluates no point-process likelihood and is not a changepoint est
 
 Calendar-year and October-water-year recovery both use block-day changepoints 170 and 350. The paired fixture changes only the generated date origin and model block convention, so any recovery difference identifies a calendar/water-year coordinate defect rather than a different parent model. Recovery fixtures use 1,000 observations, ordinary automatic priors, and the untouched `BayesianAnalysis` defaults: DEMCzs, four chains, 1,500 warmup iterations, 3,000 sampling iterations, thinning 20, seed 12345, simulation defaults enabled, and posterior-mean reporting. The separate PERT prior-placement cell retains shifted `80/260` targets to exercise histogram rotation.
 
-### Current-source guarded results
+### Chunk 8 external-package crosswalk
+
+The frozen stationary compatibility cell uses SciPy's generalized-Pareto and Poisson distributions only for claims those distributions directly support. RMC.BestFit models exact values strictly above threshold `u = 80` over a known exposure `T` in years. The annual exceedance intensity is
+
+$$
+\Lambda(u)=\left[1+\xi\frac{u-\mu}{\sigma}\right]^{-1/\xi},
+$$
+
+with the exponential limit used at `xi = 0`. Conditional excesses `Y = X-u` follow SciPy `genpareto(c=xi, loc=0, scale=sigma_u)`, where `sigma_u = sigma + xi(u-mu)`, and the event count over `T` years follows SciPy `poisson(mu=T Lambda(u))`. Numerics stores Hosking `Kappa = -xi`, so the frozen cell uses RMC.BestFit/Numerics `(Mu, Sigma, Kappa) = (100, 20, -0.1)` and SciPy `(loc, scale, c) = (0, 18, +0.1)` for conditional excesses. Observation and exposure units are events and years; `Lambda` is annual, not a sample-size or seasonal count parameter.
+
+The artifact covers the stationary count probability, conditional tail above `x = 120`, and the compatible annual-maximum `p = 0.99` response. Calendar versus water-year origin and seasonal exposure annualization are deliberately absent: SciPy's univariate `genpareto`/`poisson` objects do not implement this repository's two-process seasonal likelihood. Those claims remain with the separate independent analytical seasonal likelihood, simulation, and recovery constructions below; no package-parity claim is made for them.
+
+### Historical Phase 4 guarded results
 
 On 31 July 2026, each of the ten closeout methods was run separately through `scripts/run-verification-test.ps1`. Every invocation source-resolved one fully qualified method and produced exactly one TRX. The full Verification project was not run.
 
@@ -52,7 +64,49 @@ Using the default configuration and 1,000 observations eliminated the former sea
 
 The original water-year cell changed block-day changepoints from `170/350` to `80/260`; that was a different parent model, not the calendar fixture under an October year origin. Holding the parameters fixed and changing only the date origin and block convention makes the water-year cell pass. Before MCMC, the corrected method verifies identical generated magnitudes and block days, an exact 92-day date-origin shift, and parent data log-likelihood parity at `1E-10`. This confirms that the production generator and block-day likelihood are consistent across calendar and water years.
 
-TR-004 and TR-005 are closed in the approved point-process scope. All ten guarded cells pass. PERT remains prior-placement evidence only because its interior timing law is absent from the fitted likelihood. No production formula, DEMCzs default, prior, or recovery tolerance changed.
+This 31 July checkpoint is retained as historical evidence. Chunk 8 below supersedes its method identities and recovery acceptance for current-source status. PERT remains prior-placement evidence only because its interior timing law is absent from the fitted likelihood.
+
+## Chunk 8 current-source reconciliation
+
+Chunk 8 replaces completion assertions with predeclared uncertainty evidence. Before every Bayesian run, the cell now confirms that the generating vector lies inside every configured prior, parent likelihood beats a collapsed alternative, sample count/exposure/threshold/block origin agree, Numerics `Kappa` is the negative of Coles `xi`, and seasonal intensities annualize with the floored changepoint exposure fractions. Nonseasonal coordinates use empirical central 95% posterior intervals. Seasonal component recovery uses the likelihood-native Poisson-GPA coordinates: threshold intensity, GPA scale at the threshold, and Hosking Kappa. For component (s), the fixed-size mixture probability is (p_s=w_s\Lambda_s/\sum_j w_j\Lambda_j), so its effective count is (N_s=1000p_s), not 1000. Intensity uses the analytical Poisson standard error; GPA scale and Kappa use Numerics analytical maximum-likelihood covariance scaled to (N_s); every absolute standardized error must be at most 1.96. Every monitored fitted GEV coordinate still requires R-hat below 1.10 and ESS at least 100; changepoints use floored central-95% sets; component threshold-intensity and conditional-tail response bands remain mandatory. Seeds, total N=1000, priors, DEMCzs defaults, and production code are unchanged.
+
+The equal-intensity fixtures have (p_1=186/366) and (p_2=180/366), giving (N_1=508.1967213114754) and (N_2=491.8032786885246). In the 12-versus-4 unequal-intensity fixture, the event-mixture weights include both exposure and intensity, giving (p_1=0.75609756097561), (p_2=0.24390243902439), (N_1=756.09756097561), and (N_2=243.90243902439). Using exposure fraction alone for the unequal fixture would contradict the production generator's event-assignment crosswalk.
+
+The two N=4000 PERT methods are now explicitly prior-placement evidence. A separate test implementation constructs the rotated monthly occurrence histogram, applies the documented circular smoothing and peak/valley rule, and compares both production initial values and support bounds exactly. It does not invoke an estimator or call the production prior helper. The fast `PointProcessChangePointPriorTests` continue to own deterministic defaults, fallbacks, bounds, custom-prior preservation, and serialization.
+
+The frozen stationary artifact records Python 3.12.13, NumPy 2.5.2, and SciPy 1.17.1 values. It verifies the Poisson-GPA likelihood and compatible stationary responses only; seasonal external-package parity is not claimed. Generator SHA-256 is `0d085434034e484a94dc5db3e212127f9043372e376dcbc2904ae7e650a9af56`; artifact SHA-256 is `54a57ea459ba1a71dc9e828672dda83386ed5e137348f9c2740567ba242d7d5b`.
+
+Each method below was run alone through `scripts/run-verification-test.ps1`, and each listed TRX was inspected as a one-result file.
+
+| Exact method | Isolated result directory | TRX duration | Outcome |
+|---|---|---:|---|
+| `PointProcessLikelihoodOracleTests.NonseasonalMixedObservations_MatchIndependentLikelihood` | `20260830-075825-...NonseasonalMixedObservations_MatchIndependentLikelihood` | 0.037 s | Passed |
+| `PointProcessLikelihoodOracleTests.SeasonalMixedObservations_MatchIndependentAnnualMaximumLikelihood` | `20260830-075831-...SeasonalMixedObservations_MatchIndependentAnnualMaximumLikelihood` | 0.043 s | Passed |
+| `PointProcessPriorTests.Test_CalendarYearPertHistogram_MatchesIndependentPriorPlacementOracle` | `20260830-081024-...CalendarYearPertHistogram_MatchesIndependentPriorPlacementOracle` | 0.308 s | Passed |
+| `PointProcessPriorTests.Test_WaterYearPertHistogram_MatchesIndependentPriorPlacementOracle` | `20260830-081031-...WaterYearPertHistogram_MatchesIndependentPriorPlacementOracle` | 0.307 s | Passed |
+| `PointProcessExternalPackageOracleTests.StationaryPoissonGpa_MatchesSciPyArtifact` | `20260830-081037-...StationaryPoissonGpa_MatchesSciPyArtifact` | 0.037 s | Passed |
+| `PointProcessRecoveryTests.Test_NonSeasonalProductionGenerator_RecoversParent` | `20260830-081738-...NonSeasonalProductionGenerator_RecoversParent` | 6.720 s | Passed |
+| `PointProcessRecoveryTests.Test_SeasonalProductionGenerator_RecoversParentAndBothChangePoints` | `20260830-090132-...SeasonalProductionGenerator_RecoversParentAndBothChangePoints` | 31.456 s | Passed |
+| `PointProcessRecoveryTests.Test_SeasonalProductionGenerator_WithUnequalIntensities_RecoversParentAndBothChangePoints` | `20260830-090050-...UnequalIntensities_RecoversParentAndBothChangePoints` | 28.918 s | Passed |
+| `PointProcessRecoveryTests.Test_CalendarYearUniformSeasonality_AutomaticPriorsRecoverParentAndBothChangePoints` | `20260830-090216-...CalendarYearUniformSeasonality_AutomaticPriorsRecoverParentAndBothChangePoints` | 29.746 s | Passed |
+| `PointProcessRecoveryTests.Test_WaterYearUniformSeasonality_AutomaticPriorsRecoverParentAndBothChangePoints` | `20260830-090303-...WaterYearUniformSeasonality_AutomaticPriorsRecoverParentAndBothChangePoints` | 28.106 s | Passed |
+| `PointProcessRecoveryTests.Test_NonSeasonalSimulation_MatchesPoissonRateAndConditionalTail` | `20260830-082100-...NonSeasonalSimulation_MatchesPoissonRateAndConditionalTail` | 0.048 s | Passed |
+| `PointProcessRecoveryTests.Test_SeasonalSimulation_MatchesSeasonRatesAssignmentsAndConditionalTails` | `20260830-082119-...SeasonalSimulation_MatchesSeasonRatesAssignmentsAndConditionalTails` | 0.081 s | Passed |
+| `PointProcessRecoveryTests.Test_SeasonalSimulation_WithUnequalIntensities_MatchesSeasonRatesAssignmentsAndConditionalTails` | `20260830-082125-...UnequalIntensities_MatchesSeasonRatesAssignmentsAndConditionalTails` | 0.085 s | Passed |
+
+All thirteen current Chunk 8 identities pass. The earlier equal-intensity season-two raw-Mu posterior-interval miss was resolved by applying the approved Option B oracle in the likelihood-native Poisson-GPA coordinates with the correct seasonal mixture effective counts. An intermediate unequal-intensity run used exposure fraction alone and failed season-two intensity at standardized error `2.0625878190885034`; correcting the crosswalk to the generator's event-mixture probability produced the final passing run. This was an oracle correction only: no seed, prior, sampler, likelihood, generator, production algorithm, or convergence rule changed.
+
+### Verification-space covering set
+
+| Interaction | Timing/generator | Analytical likelihood | Simulation | Bayesian recovery | External package |
+|---|---|---|---|---|---|
+| Nonseasonal | Production Poisson-GPA | Passed mixed-observation and frozen stationary likelihood | Passed rate/tail | Passed | Passed stationary SciPy cell |
+| Seasonal, equal intensity | Production Poisson-GPA | Passed annual-maximum mixed likelihood | Passed rates/assignments/tails | Passed effective-mixture-N Poisson-GPA recovery | Not package-compatible |
+| Seasonal, unequal intensity | Production Poisson-GPA | Exposure/intensity identities checked before MCMC | Passed unequal rates/assignments/tails | Passed | Not package-compatible |
+| Calendar-year automatic priors | Independent PERT and uniform timing | Parent versus collapsed likelihood precheck | Covered by independent fixtures | Passed uniform-timing recovery | Block origin not package-supported |
+| October water-year automatic priors | Independently shifted PERT and uniform timing | Exact calendar/water block-day likelihood parity | Covered by independent fixtures | Passed uniform-timing recovery | Block origin not package-supported |
+
+This set covers each scientifically distinct interaction without a Cartesian expansion. Accepted external-evidence gaps are seasonal two-process package parity and block-origin support; those remain represented by independent analytical constructions. There is no remaining Chunk 8 execution gap.
 
 ## Traceability
 
@@ -62,4 +116,5 @@ TR-004 and TR-005 are closed in the approved point-process scope. All ten guarde
 | Analysis orchestration and annual frequency output | `Analyses/Univariate/PointProcessAnalysis.cs` |
 | Fast programmatic coverage | `RMC.BestFit.Tests/Univariate/PointProcessModelTests.cs`, `PointProcessAnalysisTests.cs`, `PointProcessChangePointPriorTests.cs`, `DataFrame/ExactDataProcessTests.cs` |
 | Independent seasonal fixture | `RMC.BestFit.Verification/Univariate/PointProcessTests/PointProcessSeasonalFixture.cs` |
-| Focused scientific cells | `PointProcessPriorTests.cs`, `PointProcessRecoveryTests.cs`, `PointProcessRecoveryTests.Uniform.cs` |
+| Focused scientific cells | `PointProcessPriorTests.cs`, `PointProcessLikelihoodOracleTests.cs`, `PointProcessExternalPackageOracleTests.cs`, `PointProcessRecoveryTests.cs`, `PointProcessRecoveryTests.Uniform.cs` |
+| Frozen package artifact and generator | `verification/data/point-process/stationary-poisson-gpa-scipy-oracle.json`, `verification/python/point-process/generate_point_process_scipy_oracle.py` |

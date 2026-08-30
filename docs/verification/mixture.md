@@ -92,32 +92,62 @@ Bayesian recovery pass counts are not promoted into a current passing claim.
 
 ## Focused Recovery Results
 
-The original six methods generate $n=1000$ observations with seed 12345 through the production
-`MixtureModel.GenerateRandomValues` method. Each was run separately, most recently on 21 August 2026
-in its own `dotnet test` invocation after the test-only MCMC overrides were removed. The three
-likelihood/EM parity results remain current because the public EM algorithm is unchanged, and the
-three Bayesian results are current for the identified $K-1$ sampler under production DEMCzs defaults.
+### Chunk 10A parameterization and identification crosswalk
+
+All six current recovery identities use exactly N=1000 observations from production generation
+seed 12345. Ordinary two-component Bayesian estimation uses seed 22345, positive-hurdle
+two-component estimation uses 32345, and ordinary three-component estimation uses 42345. These
+seeds and the production EM/DEMCzs settings are fixed before any result is observed.
+
+| Fixture | Physical law and expected counts | Fitted coordinates | Identification and oracle |
+|---|---|---|---|
+| Ordinary two-Normal | Weights (0.3, 0.7); Normal (mean 0, sd 1) and Normal (mean 3, sd 0.1); expected component counts (300, 700) | Public/EM: both physical weights, then each component mean and standard deviation. Sampler: first weight only, then the component parameters; final weight is `1 - w1`. | Components are preidentified by strictly ascending means. EM parent inclusion uses the responsibility-count weight covariance and observed-likelihood Normal-parameter covariance. Bayesian full-K weights are reconstructed and components sorted by mean per draw before central-95% intervals. |
+| Ordinary three-Normal | Weights (0.2, 0.3, 0.5); Normal (0, 1), Normal (3, 0.1), Normal (5, 2); expected counts (200, 300, 500) | Public/EM: all three physical weights, then mean/sd pairs. Sampler: first two weights, then parameter pairs; `w3 = 1 - w1 - w2`. | Same ascending-mean rule and uncertainty sources. The component likelihood information, rather than N=1000 assigned independently to every coordinate, supplies parameter uncertainty. |
+| Positive-hurdle two-Normal | Atom `pi0=0.1`; continuous physical weights (0.3, 0.6); positive-conditioned Normal (3, 0.1) and Normal (5, 2); expected counts: atom 100, components 300 and 600 | Public/EM: both continuous weights, then mean/sd pairs. The fitted model fixes the atom at its observed sample fraction, so the fitted parent crosswalk keeps `w1=0.3` and closes `w2=(1-pi0_observed)-w1`. Sampler: first continuous weight, then parameter pairs; the same final-weight reconstruction is applied per draw. The atom is not sampled. | The atom uses its N=1000 binomial 95% standardized-error rule. Continuous weights use the effective positive responsibility count; parameter intervals use the positive-conditioned likelihood information. Components remain ordered by mean. |
+
+The frequentist recovery identities no longer treat BestFit/Numerics agreement as scientific
+evidence. Their primary evidence is generated-parent inclusion using the EM covariance described
+above. The Bayesian identities require every ordered physical weight, mean, and standard deviation
+truth inside its central 95% posterior interval; every stored sampler coordinate must also have
+R-hat below 1.10 and ESS at least 100. Prior support, full-K/K-1 reconstruction, ascending-mean
+ordering, and parent likelihood discrimination against the fresh collapsed/default coordinates are
+checked before estimation. Predictive CDF ordinates are reserved for a failed or demonstrably weak
+component identification; they are not substituted after seeing a miss.
+
+For independent overlap, the frozen ordinary two-Normal artifact is generated with Python 3.12.13,
+NumPy 2.5.2, SciPy 1.18.1, and scikit-learn 1.9.0. It records a NumPy-PCG64 seed-12345 N=1000 sample,
+the exact parent likelihood, the scikit-learn diagonal-covariance fit, and fixed parent/fitted CDF
+ordinates. scikit-learn does not implement BestFit's positive-conditioned zero-hurdle law, so no
+external-package parity is claimed for that fixture; its exact law is checked directly by the
+generated-parent likelihood and recovery construction.
+
+### Chunk 10A exact results - 30 August 2026
+
+Every completed method below ran separately through the guarded runner and produced exactly one
+TRX result. The method names ending in `_Parity` are retained for identity continuity, but their
+scientific oracle is now generated-parent recovery; same-ecosystem parity was removed from their
+acceptance path.
 
 | Exact method | Verification contract | Guarded duration | Status |
 |---|---|---:|---|
-| `NormalMixture2D_Recovery_Parity` | Two-component Normal generation, pre-fit likelihood parity, EM parity, and parent recovery | 1.426 s | Passed |
-| `ZeroInflatedNormalMixture2D_Recovery_Parity` | Positive-hurdle generation, likelihood parity, EM parity, and parent recovery | 1.852 s | Passed |
-| `NormalMixture3D_Recovery_Parity` | Three-component Normal generation, likelihood parity, EM parity, and parent recovery | 3.247 s | Passed |
-| `NormalMixture2D_BayesianRecovery` | Two-component `MixtureAnalysis` posterior recovery and diagnostics | 21 August 2026 rerun; 173-456 s (range of the three cells) | Passed |
-| `ZeroInflatedNormalMixture2D_BayesianRecovery` | Positive-hurdle `MixtureAnalysis` recovery, atom check, and diagnostics | 21 August 2026 rerun; 173-456 s (range of the three cells) | Passed |
-| `NormalMixture3D_BayesianRecovery` | Three-component `MixtureAnalysis` posterior recovery and diagnostics | 21 August 2026 rerun; 173-456 s (range of the three cells) | Passed |
+| `NormalMixture2D_Recovery_Parity` | Two-component EM parent inclusion from responsibility/observed-likelihood covariance | 0.373 s | Passed |
+| `ZeroInflatedNormalMixture2D_Recovery_Parity` | Separate atom plus positive-hurdle EM parent inclusion | 0.744 s | Passed |
+| `NormalMixture3D_Recovery_Parity` | Three-component EM parent inclusion | 1.371 s | Passed |
+| `NormalMixture2D_BayesianRecovery` | Reconstructed full-K central-95% posterior inclusion and diagnostics | 1:47.770 | Passed |
+| `ZeroInflatedNormalMixture2D_BayesianRecovery` | Atom plus reconstructed positive-mass central-95% posterior inclusion and diagnostics | 4:04.938 | Passed |
+| `NormalMixture3D_BayesianRecovery` | Reconstructed full-K central-95% posterior inclusion and diagnostics | 4:05.235 | Passed |
+| `MixtureExternalPackageOracleTests.OrdinaryNormalMixture2D_MatchesScikitLearnArtifact` | Frozen scikit-learn fit, independent likelihood, and CDF overlap | 0.242 s | Passed |
 
-The parity methods give Numerics and BestFit the same BestFit-generated sample, compare pre-fit data log likelihoods at $10^{-10}$, compare fitted engines at $10^{-8}$, location-sort component labels, and retain absolute recovery tolerance 0.1.
-
-The Bayesian recovery methods use the production DEMCzs defaults (the 21 August 2026 change removed
-the former test-only iteration, warmup, and chain overrides) and retain their seeds, 15% relative
-recovery tolerances with a 0.15 floor, R-hat below 1.1, ESS above 100, and the positive-hurdle atom
-gate. None was changed to accommodate the identified sampler.
+The external-package artifact method agrees with its frozen likelihood within $10^{-9}$, CDF
+ordinates within $10^{-12}$, and fitted physical coordinates within $10^{-4}$ scaled. The
+positive-hurdle law is intentionally outside the scikit-learn parity claim. No seed, prior, sampler,
+estimator, law, tolerance, or production default was changed. The first three post-edit Bayesian
+runs passed unsorted posterior arrays to `Statistics.Percentile` while declaring them sorted; their
+two false exclusions and one nonfinite interval were discarded as test-oracle evidence. Sorting the
+same retained arrays before central-95% evaluation produced the passing exact TRXs above.
 
 ## Closeout State
 
 TR-007 and TR-008 remain complete because the positive-hurdle and impossible-row contracts did not
-change. TR-006 now distinguishes the full-$K$ public/physical boundary from identified $K-1$
-posterior storage. The three Bayesian recovery methods passed their separate 21 August 2026 reruns
-under production defaults, so the identified parameterization has current passing recovery evidence;
-the complete Verification project was not run.
+change. All six current recovery identities and the independent scikit-learn identity are verified
+under the common acceptance rule. The complete Verification project was not run.

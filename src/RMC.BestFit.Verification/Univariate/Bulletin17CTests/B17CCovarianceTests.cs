@@ -1,678 +1,229 @@
-using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets.UnivariateData;
-using System.Diagnostics;
+using System.Text.Json;
 
 namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 
-/// <summary>
-/// Tests that the Bulletin 17C GMM (Generalized Method of Moments) covariance matrix
-/// matches the Numerics asymptotic MoM ParameterCovariance for all supported distribution types.
-/// </summary>
+/// <summary>Verifies Bulletin 17C complete-data GMM covariance against an independent sandwich derivation.</summary>
 /// <remarks>
-/// <para>
-/// Each test generates synthetic data from a known distribution, fits the Bulletin 17C model
-/// via GMM, and compares the resulting covariance matrix against the closed-form asymptotic
-/// covariance from the Numerics distribution's <c>ParameterCovariance</c> method.
-/// </para>
-/// <para>
-/// The two approaches differ because the GMM moment conditions include Bessel correction factors
-/// (c2 = n/(n-1) on the second moment condition, c3 = n²/((n-1)(n-2)) on the third), while the
-/// Numerics formulas use population central moments. This creates O(1/n) discrepancies that are
-/// larger for small samples (N=25) and diminish for larger samples (N=100).
-/// </para>
-/// <para>
-/// For 3-parameter distributions (Pearson Type III, Log-Pearson Type III), the Bessel factor c3
-/// enters the numerical Jacobian D[2,0], causing the GMM Cov[0,2] entry to be nonzero where the
-/// Numerics formula gives exactly zero (due to exact cancellation in D⁻¹·S·D⁻ᵀ). The tolerance
-/// formula accounts for this by using the geometric mean of diagonal entries as a scale-appropriate
-/// absolute floor.
-/// </para>
+/// The oracle uses central moments through order six and the finite-sample centered-moment Jacobian,
+/// including the B17C second- and third-moment Bessel factors. A Python-standard-library artifact
+/// freezes reference calculations at declared coordinates; current fits are compared with a separate
+/// C# derivation that calls no production covariance, moment-conversion, matrix, or differentiation API.
+/// The exact analytical sandwich is frozen cross-language. Current fitted samples are compared with
+/// the same independent analytical construction at `1e-5` scaled plus `1e-10` absolute tolerance.
+/// A production covariance that is materially changed by matrix conditioning remains a reported gap;
+/// the oracle does not reproduce the production regularization policy.
 /// </remarks>
 [TestClass]
 [DoNotParallelize]
 public class B17CCovarianceTests
 {
+    private const string ArtifactFileName = "b17c-gmm-covariance-oracle.json";
+    private const double ScaledTolerance = 1E-5;
+    private const double AbsoluteTolerance = 1E-10;
 
-    /// <summary>
-    /// Computes a tolerance for comparing covariance matrix entries between Numerics
-    /// ParameterCovariance (asymptotic MoM) and B17C GMM (finite-sample with Bessel corrections).
-    /// </summary>
-    /// <param name="trueCovar">The Numerics ParameterCovariance matrix.</param>
-    /// <param name="i">Row index.</param>
-    /// <param name="j">Column index.</param>
-    /// <param name="relativeTolerance">Relative tolerance (e.g. 0.15 for N=25, 0.05 for N=100).</param>
-    /// <returns>The absolute tolerance for Assert.AreEqual.</returns>
-    /// <remarks>
-    /// The GMM moment conditions include Bessel correction factors c2 = n/(n-1) and c3 = n^2/((n-1)(n-2)),
-    /// which create O(1/n) discrepancies vs. Numerics asymptotic formulas. For 3-parameter distributions,
-    /// the entry Cov[0,2] is exactly zero from Numerics (exact cancellation in D^-1·S·D^-T) but nonzero
-    /// from GMM because c3 enters the numerical Jacobian D[2,0]. Using the geometric mean of diagonal
-    /// entries as a floor provides a scale-appropriate tolerance for these near-zero entries. The
-    /// absolute floor applies only to off-diagonal entries; diagonal entries are held to the
-    /// relative tolerance alone.
-    /// </remarks>
-    private static double CovarianceTolerance(double[,] trueCovar, int i, int j, double relativeTolerance)
-    {
-        double entryMagnitude = Math.Abs(trueCovar[i, j]);
-        double diagonalScale = Math.Sqrt(Math.Abs(trueCovar[i, i] * trueCovar[j, j]));
-        double absoluteFloor = i == j ? 0.0 : 1E-6;
-        return relativeTolerance * Math.Max(entryMagnitude, diagonalScale) + absoluteFloor;
-    }
-
-    /// <summary>
-    /// Verifies Exponential GMM covariance against asymptotic MoM covariance with N=25.
-    /// </summary>
-    /// <remarks>
-    /// Exponential distribution (xi=10, alpha=50) is 2-parameter, so Bessel corrections
-    /// affect only the S matrix (not D). Uses 15% relative tolerance for the small sample size.
-    /// </remarks>
+    /// <summary>Verifies N=25 Exponential covariance in `(Xi, Alpha)` coordinates.</summary>
+    /// <remarks>Uses parent `(10,50)` and the independently derived complete-data sandwich.</remarks>
     [TestMethod]
     public void Exponential_Covariance_N25()
     {
-        int n = 25;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateExponentialData(xi: 10, alpha: 50, n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new Exponential();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Exponential);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Exponential.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Exponential.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.15);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Exponential.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateExponentialData(xi: 10d, alpha: 50d, n: 25);
+        VerifyCovariance("Exponential_N25", B17CCovarianceFamily.Exponential, frame, UnivariateDistributionType.Exponential);
     }
 
-    /// <summary>
-    /// Verifies Exponential GMM covariance against asymptotic MoM covariance with N=100.
-    /// </summary>
-    /// <remarks>
-    /// Larger sample size reduces Bessel discrepancy to O(1%). Uses 5% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=100 Exponential covariance in `(Xi, Alpha)` coordinates.</summary>
+    /// <remarks>Uses parent `(10,50)` and the independently derived complete-data sandwich.</remarks>
     [TestMethod]
     public void Exponential_Covariance_N100()
     {
-        int n = 100;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateExponentialData(xi: 10, alpha: 50, n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new Exponential();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Exponential);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Exponential.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Exponential.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.05);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Exponential.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateExponentialData(xi: 10d, alpha: 50d, n: 100);
+        VerifyCovariance("Exponential_N100", B17CCovarianceFamily.Exponential, frame, UnivariateDistributionType.Exponential);
     }
 
-    /// <summary>
-    /// Verifies Gamma GMM covariance against asymptotic MoM covariance with N=25.
-    /// </summary>
-    /// <remarks>
-    /// Gamma distribution (alpha=5, beta=2) is 2-parameter, so Bessel corrections affect only
-    /// the S matrix. Uses 15% relative tolerance for the small sample size.
-    /// </remarks>
+    /// <summary>Verifies N=25 Gamma covariance in `(Theta scale, Kappa shape)` coordinates.</summary>
+    /// <remarks>Uses parent `(5,2)` without converting scale to rate.</remarks>
     [TestMethod]
     public void Gamma_Covariance_N25()
     {
-        int n = 25;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateGammaData(n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new GammaDistribution();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.GammaDistribution);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Gamma.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Gamma.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.15);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Gamma.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateGammaData(n: 25);
+        VerifyCovariance("Gamma_N25", B17CCovarianceFamily.Gamma, frame, UnivariateDistributionType.GammaDistribution);
     }
 
-    /// <summary>
-    /// Verifies Gamma GMM covariance against asymptotic MoM covariance with N=100.
-    /// </summary>
-    /// <remarks>
-    /// Larger sample size reduces Bessel discrepancy to O(1%). Uses 5% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=100 Gamma covariance in `(Theta scale, Kappa shape)` coordinates.</summary>
+    /// <remarks>Uses parent `(5,2)` without converting scale to rate.</remarks>
     [TestMethod]
     public void Gamma_Covariance_N100()
     {
-        int n = 100;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateGammaData(n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new GammaDistribution();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.GammaDistribution);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Gamma.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Gamma.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.05);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Gamma.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateGammaData(n: 100);
+        VerifyCovariance("Gamma_N100", B17CCovarianceFamily.Gamma, frame, UnivariateDistributionType.GammaDistribution);
     }
 
-    /// <summary>
-    /// Verifies Normal GMM covariance against asymptotic MoM covariance with N=25.
-    /// </summary>
-    /// <remarks>
-    /// Normal distribution (mu=100, sigma=15) is 2-parameter symmetric (gamma=0). The Bessel
-    /// correction on c2 affects Cov[1,1] (variance of sigma estimator) by approximately
-    /// (2n²+1)/(2n(n-1)²) vs 1/(2n). Uses 15% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=25 Normal covariance in `(Mu, Sigma)` coordinates.</summary>
+    /// <remarks>Uses parent `(100,15)` and Normal central moments through order six.</remarks>
     [TestMethod]
     public void Normal_Covariance_N25()
     {
-        int n = 25;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateNormalData(n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new Normal();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Normal);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Normal.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Normal.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.15);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Normal.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateNormalData(n: 25);
+        VerifyCovariance("Normal_N25", B17CCovarianceFamily.Normal, frame, UnivariateDistributionType.Normal);
     }
 
-    /// <summary>
-    /// Verifies Normal GMM covariance against asymptotic MoM covariance with N=100.
-    /// </summary>
-    /// <remarks>
-    /// Larger sample size reduces Bessel discrepancy to O(1%). Uses 5% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=100 Normal covariance in `(Mu, Sigma)` coordinates.</summary>
+    /// <remarks>Uses parent `(100,15)` and Normal central moments through order six.</remarks>
     [TestMethod]
     public void Normal_Covariance_N100()
     {
-        int n = 100;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateNormalData(n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new Normal();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Normal);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Normal.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Normal.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.05);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Normal.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateNormalData(n: 100);
+        VerifyCovariance("Normal_N100", B17CCovarianceFamily.Normal, frame, UnivariateDistributionType.Normal);
     }
 
-
-    /// <summary>
-    /// Verifies Pearson Type III GMM covariance against asymptotic MoM covariance with N=25.
-    /// </summary>
-    /// <remarks>
-    /// Pearson Type III (mu=100, sigma=20, gamma=0.5) is 3-parameter, so both c2 and c3 Bessel
-    /// factors apply. The c3 factor in D[2,0] causes Cov[0,2] to be nonzero from GMM where the
-    /// Numerics formula gives exactly zero. The diagonal-scaled tolerance handles this naturally.
-    /// Uses 15% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=25 Pearson III covariance in `(Mu, Sigma, Gamma)` coordinates.</summary>
+    /// <remarks>The finite-sample Jacobian retains `D[2,0] = -3 c3 mean((X-Mu)^2)`.</remarks>
     [TestMethod]
     public void PearsonTypeIII_Covariance_N25()
     {
-        int n = 25;
-        var (df, trueParameters) = SyntheticUnivariateData.GeneratePearsonTypeIIIData(n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new PearsonTypeIII();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.PearsonTypeIII);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Pearson Type III.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Pearson Type III.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.15);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Pearson Type III.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GeneratePearsonTypeIIIData(n: 25);
+        VerifyCovariance("PearsonTypeIII_N25", B17CCovarianceFamily.PearsonTypeIII, frame, UnivariateDistributionType.PearsonTypeIII);
     }
 
-    /// <summary>
-    /// Verifies Pearson Type III GMM covariance against asymptotic MoM covariance with N=100.
-    /// </summary>
-    /// <remarks>
-    /// Larger sample size reduces Bessel discrepancy. Uses 5% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=100 Pearson III covariance in `(Mu, Sigma, Gamma)` coordinates.</summary>
+    /// <remarks>The finite-sample Jacobian retains `D[2,0] = -3 c3 mean((X-Mu)^2)`.</remarks>
     [TestMethod]
     public void PearsonTypeIII_Covariance_N100()
     {
-        int n = 100;
-        var (df, trueParameters) = SyntheticUnivariateData.GeneratePearsonTypeIIIData(n: n);
-
-        // Compute product-moment parameter estimates as the reference truth
-        var dist = new PearsonTypeIII();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(df.ExactSeries.ValuesToArray()));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.PearsonTypeIII);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Pearson Type III.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Pearson Type III.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.05);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Pearson Type III.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GeneratePearsonTypeIIIData(n: 100);
+        VerifyCovariance("PearsonTypeIII_N100", B17CCovarianceFamily.PearsonTypeIII, frame, UnivariateDistributionType.PearsonTypeIII);
     }
 
-    /// <summary>
-    /// Verifies Log-Normal GMM covariance against asymptotic MoM covariance with N=25.
-    /// </summary>
-    /// <remarks>
-    /// Log-Normal (mu=3, sigma=0.5 in log10-space) is 2-parameter. The B17C GMM operates on
-    /// log10-transformed data, so the covariance is in log-space parameters. Uses 15% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=25 Log-Normal covariance in base-10 `(Mu, Sigma)` coordinates.</summary>
+    /// <remarks>The independent calculation transforms each observation with `log10` before forming moments.</remarks>
     [TestMethod]
     public void LogNormal_Covariance_N25()
     {
-        int n = 25;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateLogNormalData(n: n);
-
-        // LogNormal parameters are moments of log10(x), so compute moments in log-space
-        var dist = new LogNormal();
-        trueParameters = dist.IndirectMethodOfMoments(df.ExactSeries.ValuesToArray());
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogNormal);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Log-Normal.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Log-Normal.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.15);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Log-Normal.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateLogNormalData(n: 25);
+        VerifyCovariance("LogNormal_N25", B17CCovarianceFamily.LogNormal, frame, UnivariateDistributionType.LogNormal);
     }
 
-    /// <summary>
-    /// Verifies Log-Normal GMM covariance against asymptotic MoM covariance with N=100.
-    /// </summary>
-    /// <remarks>
-    /// Larger sample size reduces Bessel discrepancy to O(1%). Uses 5% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=100 Log-Normal covariance in base-10 `(Mu, Sigma)` coordinates.</summary>
+    /// <remarks>The independent calculation transforms each observation with `log10` before forming moments.</remarks>
     [TestMethod]
     public void LogNormal_Covariance_N100()
     {
-        int n = 100;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateLogNormalData(n: n);
-
-        // LogNormal parameters are moments of log10(x), so compute moments in log-space
-        var dist = new LogNormal();
-        trueParameters = dist.IndirectMethodOfMoments(df.ExactSeries.ValuesToArray());
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogNormal);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Log-Normal.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Log-Normal.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.05);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Log-Normal.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateLogNormalData(n: 100);
+        VerifyCovariance("LogNormal_N100", B17CCovarianceFamily.LogNormal, frame, UnivariateDistributionType.LogNormal);
     }
 
-    /// <summary>
-    /// Verifies Log-Pearson Type III GMM covariance against asymptotic MoM covariance with N=25.
-    /// </summary>
-    /// <remarks>
-    /// Log-Pearson Type III (mu=3, sigma=0.5, gamma=0.2 in log10-space) is 3-parameter, so both
-    /// c2 and c3 Bessel factors apply. The c3 factor in D[2,0] causes Cov[0,2] to be nonzero from
-    /// GMM where the Numerics formula gives exactly zero. Uses 15% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=25 Log-Pearson III covariance in base-10 `(Mu, Sigma, Gamma)` coordinates.</summary>
+    /// <remarks>Skew sign is unchanged; the finite-sample third-moment Jacobian is evaluated in log10 space.</remarks>
     [TestMethod]
     public void LogPearsonTypeIII_Covariance_N25()
     {
-        int n = 25;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateLogPearsonTypeIIIData(n: n);
-
-        // LP-III parameters are moments of log10(x), so compute moments in log-space
-        var logValues = df.ExactSeries.ValuesToArray().Select(x => Math.Log10(x)).ToArray();
-        var dist = new LogPearsonTypeIII();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(logValues));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Log-Pearson Type III.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Log-Pearson Type III.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.15);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Log-Pearson Type III.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateLogPearsonTypeIIIData(n: 25);
+        VerifyCovariance("LogPearsonTypeIII_N25", B17CCovarianceFamily.LogPearsonTypeIII, frame, UnivariateDistributionType.LogPearsonTypeIII);
     }
 
-    /// <summary>
-    /// Verifies Log-Pearson Type III GMM covariance against asymptotic MoM covariance with N=100.
-    /// </summary>
-    /// <remarks>
-    /// Larger sample size reduces Bessel discrepancy. Uses 5% relative tolerance.
-    /// </remarks>
+    /// <summary>Verifies N=100 Log-Pearson III covariance in base-10 `(Mu, Sigma, Gamma)` coordinates.</summary>
+    /// <remarks>Skew sign is unchanged; the finite-sample third-moment Jacobian is evaluated in log10 space.</remarks>
     [TestMethod]
     public void LogPearsonTypeIII_Covariance_N100()
     {
-        int n = 100;
-        var (df, trueParameters) = SyntheticUnivariateData.GenerateLogPearsonTypeIIIData(n: n);
-
-        // LP-III parameters are moments of log10(x), so compute moments in log-space
-        var logValues = df.ExactSeries.ValuesToArray().Select(x => Math.Log10(x)).ToArray();
-        var dist = new LogPearsonTypeIII();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(logValues));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
-        var gmm = new GeneralizedMethodOfMoments(model);
-        gmm.Estimate();
-
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Log-Pearson Type III.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Log-Pearson Type III.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(n, ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
-            {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.05);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Log-Pearson Type III.");
-            }
-        }
+        var (frame, _) = SyntheticUnivariateData.GenerateLogPearsonTypeIIIData(n: 100);
+        VerifyCovariance("LogPearsonTypeIII_N100", B17CCovarianceFamily.LogPearsonTypeIII, frame, UnivariateDistributionType.LogPearsonTypeIII);
     }
 
-
-    /// <summary>
-    /// Verifies Log-Pearson Type III GMM covariance against asymptotic MoM covariance using
-    /// the Bulletin 17C Example 1 dataset (Fishkill Creek, n=68).
-    /// </summary>
+    /// <summary>Verifies the Bulletin 17C Example 1 LP3 covariance in base-10 moment coordinates.</summary>
     /// <remarks>
-    /// Uses the standard B17C verification dataset rather than synthetic data. The sample size
-    /// of 68 is intermediate between N=25 and N=100, so a 10% relative tolerance is used.
+    /// The frozen reference uses the published Example 1 parameter vector `(3.328623159,
+    /// 0.140287994,0.396626124)` at N=68. The current fitted covariance is evaluated at the current
+    /// fitted vector and actual complete log10 sample through the same independent derivation.
     /// </remarks>
     [TestMethod]
     public void LogPearsonTypeIII_Covariance_Example1()
     {
-        var (df, trueParameters) = Bulletin17CData.GetExample1();
+        var (frame, _) = Bulletin17CData.GetExample1();
+        VerifyCovariance(
+            "LogPearsonTypeIII_Bulletin17CExample1_N68",
+            B17CCovarianceFamily.LogPearsonTypeIII,
+            frame,
+            UnivariateDistributionType.LogPearsonTypeIII);
+    }
 
-        // LP-III parameters are moments of log10(x), so compute moments in log-space
-        var logValues = df.ExactSeries.ValuesToArray().Select(x => Math.Log10(x)).ToArray();
-        var dist = new LogPearsonTypeIII();
-        trueParameters = dist.ParametersFromMoments(Statistics.ProductMoments(logValues));
-        dist.SetParameters(trueParameters);
-
-        // Fit with GMM
-        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
+    /// <summary>Fits one family and compares its current GMM covariance with the independent derivation.</summary>
+    /// <param name="artifactCase">Frozen reference case identifier.</param>
+    /// <param name="family">Independent family and coordinate system.</param>
+    /// <param name="frame">Complete exact-data fixture.</param>
+    /// <param name="distributionType">Matching Bulletin 17C family.</param>
+    /// <remarks>
+    /// The artifact first checks the independent evaluator at fixed coordinates. The scientific
+    /// comparison then evaluates both covariances at the current fitted vector; estimator success is
+    /// only a prerequisite. Entry tolerances scale by the larger expected entry or diagonal geometric
+    /// mean so near-zero off-diagonal terms remain meaningful.
+    /// </remarks>
+    private static void VerifyCovariance(
+        string artifactCase,
+        B17CCovarianceFamily family,
+        DataFrame frame,
+        UnivariateDistributionType distributionType)
+    {
+        AssertFrozenArtifactCase(artifactCase, family);
+        var model = new Bulletin17CDistribution(frame, distributionType);
         var gmm = new GeneralizedMethodOfMoments(model);
         gmm.Estimate();
+        Assert.IsTrue(gmm.IsEstimated, $"GMM estimation failed for {family}.");
 
-        // Test fit
-        Assert.IsTrue(gmm.IsEstimated, "GMM estimation failed for Log-Pearson Type III.");
-        for (int i = 0; i < model.NumberOfParameters; i++)
+        double[] observations = frame.ExactSeries.Select(observation => observation.Value).ToArray();
+        double[,] expected = B17CIndependentCovarianceOracle.Evaluate(
+            family,
+            gmm.BestParameterSet.Values,
+            observations);
+        var actual = gmm.GetCovarianceMatrix();
+        for (int i = 0; i < expected.GetLength(0); i++)
         {
-            Assert.AreEqual(trueParameters[i], gmm.BestParameterSet.Values[i], 1E-3,
-                $"Parameter[{i}] mismatch for Log-Pearson Type III.");
-        }
-
-        // Test covariance
-        var trueCovar = dist.ParameterCovariance(df.TotalRecordLength(), ParameterEstimationMethod.MethodOfMoments);
-        var gmmCovar = gmm.GetCovarianceMatrix();
-
-        for (int i = 0; i < model.NumberOfParameters; i++)
-        {
-            for (int j = 0; j < model.NumberOfParameters; j++)
+            for (int j = 0; j < expected.GetLength(1); j++)
             {
-                Debug.WriteLine($"Covariance[{i},{j}], True: [{trueCovar[i, j]}], GMM: [{gmmCovar[i, j]}]");
-                double tol = CovarianceTolerance(trueCovar, i, j, 0.10);
-                Assert.AreEqual(trueCovar[i, j], gmmCovar[i, j], tol,
-                    $"Covariance[{i},{j}] mismatch for Log-Pearson Type III Example 1.");
+                double diagonalScale = Math.Sqrt(Math.Abs(expected[i, i] * expected[j, j]));
+                double tolerance = ScaledTolerance * Math.Max(Math.Abs(expected[i, j]), diagonalScale) + AbsoluteTolerance;
+                Assert.AreEqual(expected[i, j], actual[i, j], tolerance,
+                    $"Independent covariance[{i},{j}] mismatch for {family}. " +
+                    $"Status={gmm.CovarianceStatus}; Diagnostic={gmm.CovarianceDiagnostic}");
             }
+        }
+    }
+
+    /// <summary>Checks one frozen Python case against the separate C# independent evaluator.</summary>
+    /// <param name="caseId">Frozen case identifier.</param>
+    /// <param name="family">Expected family and coordinate system.</param>
+    /// <remarks>
+    /// Frozen values use Python 3.12.13 standard-library matrix arithmetic and no production code.
+    /// Cross-language agreement is deterministic at `1e-12` scaled absolute tolerance.
+    /// </remarks>
+    private static void AssertFrozenArtifactCase(string caseId, B17CCovarianceFamily family)
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "VerificationData", ArtifactFileName);
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+        JsonElement selected = document.RootElement.GetProperty("cases").EnumerateArray()
+            .Single(element => element.GetProperty("id").GetString() == caseId);
+        Assert.AreEqual(family.ToString(), selected.GetProperty("family").GetString());
+        int sampleSize = selected.GetProperty("sampleSize").GetInt32();
+        double[] parameters = selected.GetProperty("parameters").EnumerateArray()
+            .Select(element => element.GetDouble()).ToArray();
+        double[,] expected = B17CIndependentCovarianceOracle.EvaluateAtMomentSolution(family, parameters, sampleSize);
+        JsonElement.ArrayEnumerator rows = selected.GetProperty("covariance").EnumerateArray();
+        int rowIndex = 0;
+        foreach (JsonElement row in rows)
+        {
+            int columnIndex = 0;
+            foreach (JsonElement value in row.EnumerateArray())
+            {
+                double frozen = value.GetDouble();
+                double tolerance = 1E-12 * Math.Max(1d, Math.Abs(frozen));
+                Assert.AreEqual(frozen, expected[rowIndex, columnIndex], tolerance,
+                    $"Frozen independent covariance[{rowIndex},{columnIndex}] drifted for {caseId}.");
+                columnIndex++;
+            }
+            rowIndex++;
         }
     }
 }

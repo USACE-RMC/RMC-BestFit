@@ -73,12 +73,15 @@ public partial class PointProcessRecoveryTests
             trueK2,
             PointProcessSeasonalFixture.EventTiming.Uniform);
         PointProcessModel model = CreateAutomaticUniformModel(frame, timeBlock, startMonth);
-        Assert.IsTrue(
-            trueK1 >= model.Parameters[0].LowerBound && trueK1 <= model.Parameters[0].UpperBound,
-            $"The automatic {label} K1 prior did not contain the parent day.");
-        Assert.IsTrue(
-            trueK2 >= model.Parameters[1].LowerBound && trueK2 <= model.Parameters[1].UpperBound,
-            $"The automatic {label} K2 prior did not contain the parent day.");
+        double[] parent = PointProcessSeasonalFixture.ParentParameters(trueK1 + 0.5, trueK2 + 0.5);
+        AssertFixtureAndPriorAgreement(model, frame, parent, sampleSize, frame.PointProcessObservationYears, $"{label} uniform timing");
+        AssertSeasonalCrosswalkAndAnnualization(
+            parent,
+            PointProcessSeasonalFixture.Lambda,
+            PointProcessSeasonalFixture.Lambda,
+            sampleSize / frame.PointProcessObservationYears,
+            $"{label} uniform timing");
+        AssertTruthBeatsCollapsedAlternative(model, parent, true, $"{label} uniform timing");
         Assert.AreEqual(PointProcessSeasonalFixture.Lambda, model.Lambda, 1E-12, "The parent Poisson rate was not retained.");
         if (timeBlock == TimeBlockWindow.WaterYear)
             AssertCalendarWaterYearBlockOriginParity(frame, model, trueK1, trueK2, fixtureSeed);
@@ -89,21 +92,9 @@ public partial class PointProcessRecoveryTests
 
         await analysis.BayesianAnalysis.RunAsync(null, false);
 
-        Assert.IsTrue(
-            analysis.BayesianAnalysis.IsEstimated,
-            $"The {label} uniform-timing recovery did not complete. {analysis.BayesianAnalysis.LastError}");
-        var results = analysis.BayesianAnalysis.Results!;
-        double[] posteriorMean = results.PosteriorMean.Values;
-        AssertFlooredChangePointRecovery(results.Output.Select(sample => sample.Values[0]), trueK1, $"{label} K1");
-        AssertFlooredChangePointRecovery(results.Output.Select(sample => sample.Values[1]), trueK2, $"{label} K2");
-
-        double[] parent = PointProcessSeasonalFixture.ParentParameters(trueK1 + 0.5, trueK2 + 0.5);
-        Assert.AreEqual(parent[2], posteriorMean[2], 12.0, $"{label} season-one location was not recovered.");
-        Assert.AreEqual(parent[3], posteriorMean[3], 8.0, $"{label} season-one scale was not recovered.");
-        Assert.AreEqual(parent[4], posteriorMean[4], 0.12, $"{label} season-one Kappa was not recovered.");
-        Assert.AreEqual(parent[5], posteriorMean[5], 12.0, $"{label} season-two location was not recovered.");
-        Assert.AreEqual(parent[6], posteriorMean[6], 8.0, $"{label} season-two scale was not recovered.");
-        Assert.AreEqual(parent[7], posteriorMean[7], 0.12, $"{label} season-two Kappa was not recovered.");
+        var results = analysis.BayesianAnalysis.Results;
+        Assert.IsNotNull(results, $"The {label} uniform-timing recovery returned no posterior results. {analysis.BayesianAnalysis.LastError}");
+        AssertSeasonalPosteriorRecovery(results, parent, sampleSize, trueK1, trueK2, $"{label} uniform timing");
     }
 
     /// <summary>

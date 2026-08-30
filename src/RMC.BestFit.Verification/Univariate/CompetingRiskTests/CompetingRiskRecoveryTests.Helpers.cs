@@ -1,10 +1,13 @@
+using Numerics;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
+using Numerics.Mathematics.LinearAlgebra;
 using Numerics.Mathematics.Optimization;
 using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using RMC.BestFit.Verification.Recovery;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Verification.Univariate.CompetingRiskTests;
@@ -15,26 +18,14 @@ namespace RMC.BestFit.Verification.Univariate.CompetingRiskTests;
 /// </summary>
 public partial class CompetingRiskRecoveryTests
 {
-    /// <summary>The common two-component sample size.</summary>
-    private const int TwoComponentSampleSize = 1000;
-
-    /// <summary>The common three-component sample size.</summary>
-    private const int ThreeComponentSampleSize = 1500;
-
     /// <summary>The deterministic synthetic-data seed inherited from the Numerics fixtures.</summary>
     private const int FixtureSeed = 12345;
 
     /// <summary>The absolute true-parameter data-likelihood parity tolerance.</summary>
     private const double LikelihoodTolerance = 1E-10;
 
-    /// <summary>The relative parameter tolerance used only for the gated identifiable parameters.</summary>
-    private const double ParameterRelativeTolerance = 0.25d;
-
-    /// <summary>The maximum split R-hat accepted for each Bayesian parameter.</summary>
-    private const double MaximumRhat = 1.1d;
-
-    /// <summary>The minimum effective sample size accepted for each Bayesian parameter.</summary>
-    private const double MinimumEss = 100d;
+    /// <summary>The predeclared generating-composite cumulative probabilities.</summary>
+    private static readonly double[] ResponseProbabilities = [0.10d, 0.25d, 0.50d, 0.75d, 0.90d];
 
     /// <summary>
     /// Runs one fixture through the production maximum-likelihood estimator and verifies
@@ -43,7 +34,7 @@ public partial class CompetingRiskRecoveryTests
     /// <param name="fixture">The immutable recovery fixture.</param>
     private static void VerifyMaximumLikelihoodRecovery(RecoveryFixture fixture)
     {
-        (double[] sample, CompetingRisksModel fittedModel) = PrepareRecovery(fixture);
+        (_, CompetingRisksModel fittedModel) = PrepareRecovery(fixture);
         var maximumLikelihood = new MaximumLikelihood(fittedModel);
 
         Assert.AreEqual(
@@ -57,9 +48,10 @@ public partial class CompetingRiskRecoveryTests
 
         double[] fittedParameters = maximumLikelihood.BestParameterSet.Values;
         AssertFiniteParameters(fixture, fittedParameters, "MLE");
-        CompetingRisks fittedDistribution = CreateFittedDistribution(fixture, fittedParameters);
-        AssertCombinedCdfRecovery(fixture, sample, fittedDistribution, "MLE");
-        AssertApprovedParameterRecovery(fixture, fittedParameters, "MLE");
+        Matrix covariance = ComputeObservedInformationCovariance(fixture, fittedModel, fittedParameters);
+        (fittedParameters, covariance) = CanonicalizeCoordinates(fixture, fittedParameters, covariance);
+        AssertMaximumLikelihoodCoordinateRecovery(fixture, fittedModel, fittedParameters, covariance);
+        AssertMaximumLikelihoodResponseRecovery(fixture, fittedModel, fittedParameters, covariance);
     }
 
     /// <summary>
@@ -67,12 +59,19 @@ public partial class CompetingRiskRecoveryTests
     /// full DEMCzs simulation and output configuration at production defaults.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="useJeffreysRuleForScale">
+    /// Whether the fitted competing-risk model applies its optional Jeffreys scale prior.
+    /// </param>
     /// <returns>A task that completes after the Bayesian recovery assertions.</returns>
-    private static async Task VerifyBayesianRecoveryAsync(RecoveryFixture fixture)
+    private static async Task VerifyBayesianRecoveryAsync(
+        RecoveryFixture fixture,
+        bool useJeffreysRuleForScale = true)
     {
-        (double[] sample, CompetingRisksModel fittedModel) = PrepareRecovery(fixture);
+        (_, CompetingRisksModel fittedModel) = PrepareRecovery(fixture);
+        fittedModel.UseJeffreysRuleForScale = useJeffreysRuleForScale;
         var analysis = new CompetingRiskAnalysis(fittedModel);
         AssertDefaultDemczsConfiguration(fixture, analysis.BayesianAnalysis, fittedModel.NumberOfParameters);
+        SetPredeclaredPostprocessingGrid(analysis);
 
         Exception? analysisError = null;
         analysis.AnalysisCompleted += (_, args) => analysisError = args.Error;
@@ -103,9 +102,8 @@ public partial class CompetingRiskRecoveryTests
             $"{fixture.Label}: the default posterior-mean competing-risk distribution is null.");
         double[] fittedParameters = fittedDistribution!.GetParameters;
         AssertFiniteParameters(fixture, fittedParameters, "Bayesian");
-        AssertBayesianCombinedCdfRecovery(fixture, sample, analysis);
-        AssertApprovedBayesianParameterRecovery(fixture, analysis);
-        AssertBayesianDiagnostics(fixture, fittedModel, analysis);
+        AssertBayesianCoordinateRecovery(fixture, fittedModel, analysis);
+        AssertBayesianResponseRecovery(fixture, analysis);
     }
 
     /// <summary>
@@ -121,6 +119,7 @@ public partial class CompetingRiskRecoveryTests
             CompetingRisks = (CompetingRisks)fixture.Parent.Clone()
         };
         double[] sample = generatingModel.GenerateRandomValues(fixture.SampleSize, FixtureSeed);
+        AssertIdentifiableDesign(fixture, sample);
         var dataFrame = new BestFitDataFrame { ExactSeries = new ExactSeries(sample) };
         var fittedModel = new CompetingRisksModel(dataFrame, fixture.Parent);
 
@@ -133,6 +132,8 @@ public partial class CompetingRiskRecoveryTests
             LikelihoodTolerance,
             $"{fixture.Label}: BestFit true-parameter DataLogLikelihood does not equal the " +
             "flattened Numerics parent likelihood.");
+
+        AssertRecoveryCrosswalk(fixture, fittedModel, trueParameters, actualLogLikelihood);
 
         return (sample, fittedModel);
     }
@@ -189,205 +190,494 @@ public partial class CompetingRiskRecoveryTests
     }
 
     /// <summary>
-    /// Verifies the fitted parent CDF against the known generating parent at 99 fixed
-    /// empirical-quantile locations.
+    /// Replaces the default reporting ordinates with the five predeclared central response
+    /// probabilities so posterior fitting is not conflated with extreme-tail inverse-CDF output.
     /// </summary>
-    /// <param name="fixture">The immutable recovery fixture.</param>
-    /// <param name="sample">The generated synthetic sample.</param>
-    /// <param name="fitted">The fitted competing-risk distribution.</param>
-    /// <param name="estimator">The estimator label.</param>
-    private static void AssertCombinedCdfRecovery(
-        RecoveryFixture fixture,
-        double[] sample,
-        CompetingRisks fitted,
-        string estimator)
+    /// <param name="analysis">The newly constructed analysis.</param>
+    private static void SetPredeclaredPostprocessingGrid(CompetingRiskAnalysis analysis)
     {
-        double[] sortedSample = sample.OrderBy(value => value).ToArray();
-        double maximumError = 0d;
-        double maximumErrorProbability = double.NaN;
-        for (int percentile = 1; percentile <= 99; percentile++)
-        {
-            double probability = percentile / 100d;
-            double x = Statistics.Percentile(sortedSample, probability, true);
-            double error = Math.Abs(fixture.Parent.CDF(x) - fitted.CDF(x));
-            if (error > maximumError)
-            {
-                maximumError = error;
-                maximumErrorProbability = probability;
-            }
-        }
-
-        Assert.IsTrue(
-            double.IsFinite(maximumError) && maximumError <= fixture.CdfTolerance,
-            $"{fixture.Label}: {estimator} maximum parent-CDF error {maximumError:G6} at empirical " +
-            $"probability {maximumErrorProbability:G2} exceeded {fixture.CdfTolerance:G2}.");
+        analysis.ProbabilityOrdinates.Clear();
+        for (int probabilityIndex = ResponseProbabilities.Length - 1; probabilityIndex >= 0; probabilityIndex--)
+            analysis.ProbabilityOrdinates.Add(1d - ResponseProbabilities[probabilityIndex]);
     }
 
     /// <summary>
-    /// Verifies the label-invariant posterior mean combined CDF against the generating parent at
-    /// 99 fixed empirical-quantile locations. Averaging combined CDFs, rather than component
-    /// parameters, preserves the identifiable posterior target when same-family labels switch.
+    /// Verifies the fixture-to-model crosswalk, prior support, and true-parent likelihood
+    /// discrimination before either estimator is invoked.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
-    /// <param name="sample">The generated synthetic sample.</param>
-    /// <param name="analysis">The completed Bayesian competing-risk analysis.</param>
-    private static void AssertBayesianCombinedCdfRecovery(
+    /// <param name="model">The fresh fitted model.</param>
+    /// <param name="trueParameters">The flattened generating-parent coordinates.</param>
+    /// <param name="trueLogLikelihood">The exact-data likelihood at the generating parent.</param>
+    private static void AssertRecoveryCrosswalk(
         RecoveryFixture fixture,
-        double[] sample,
+        CompetingRisksModel model,
+        double[] trueParameters,
+        double trueLogLikelihood)
+    {
+        Assert.AreEqual(RecoveryDesign.SampleSize, fixture.SampleSize,
+            $"{fixture.Label}: recovery must contain exactly 1,000 scalar observations.");
+        Assert.AreEqual(RecoverySampleUnit.ScalarObservation, fixture.Design.Unit,
+            $"{fixture.Label}: recovery unit must be a scalar composite observation.");
+
+        CompetingRisks fitted = model.CompetingRisks!;
+        Assert.AreEqual(fixture.Parent.MinimumOfRandomVariables, fitted.MinimumOfRandomVariables,
+            $"{fixture.Label}: minimum/maximum convention changed in the fitted model.");
+        Assert.AreEqual(fixture.Parent.Dependency, fitted.Dependency,
+            $"{fixture.Label}: dependency convention changed in the fitted model.");
+        Assert.AreEqual(fixture.Parent.Distributions.Count, fitted.Distributions.Count,
+            $"{fixture.Label}: fitted component count changed.");
+
+        for (int componentIndex = 0; componentIndex < fixture.Parent.Distributions.Count; componentIndex++)
+        {
+            UnivariateDistributionBase parentComponent = fixture.Parent.Distributions[componentIndex];
+            UnivariateDistributionBase fittedComponent = fitted.Distributions[componentIndex];
+            Assert.AreEqual(parentComponent.Type, fittedComponent.Type,
+                $"{fixture.Label}: fitted component {componentIndex + 1} changed family.");
+            if (parentComponent is LogNormal parentLogNormal && fittedComponent is LogNormal fittedLogNormal)
+            {
+                Assert.AreEqual(parentLogNormal.Base, fittedLogNormal.Base, 0d,
+                    $"{fixture.Label}: fitted component {componentIndex + 1} changed logarithm base.");
+            }
+        }
+
+        if (fixture.Parent.Dependency == Probability.DependencyType.CorrelationMatrix)
+        {
+            for (int row = 0; row < fixture.Parent.Distributions.Count; row++)
+            {
+                for (int column = 0; column < fixture.Parent.Distributions.Count; column++)
+                {
+                    Assert.AreEqual(
+                        fixture.Parent.CorrelationMatrix[row, column],
+                        fitted.CorrelationMatrix[row, column],
+                        0d,
+                        $"{fixture.Label}: fixed correlation changed at [{row},{column}].");
+                }
+            }
+        }
+
+        Assert.AreEqual(model.Parameters.Count, trueParameters.Length,
+            $"{fixture.Label}: fitted coordinate order does not match the flattened parent.");
+        for (int parameterIndex = 0; parameterIndex < trueParameters.Length; parameterIndex++)
+        {
+            ModelParameter parameter = model.Parameters[parameterIndex];
+            double parent = trueParameters[parameterIndex];
+            Assert.IsTrue(parameter.LowerBound <= parent && parent <= parameter.UpperBound,
+                $"{fixture.Label}: parent {parameter.OwnerName} {parameter.Name}={parent:G17} " +
+                $"is outside [{parameter.LowerBound:G17}, {parameter.UpperBound:G17}].");
+            Assert.IsTrue(Tools.IsFinite(parameter.PriorDistribution.LogPDF(parent)),
+                $"{fixture.Label}: parent {parameter.OwnerName} {parameter.Name} is outside its configured prior.");
+        }
+
+        model.ProcessQuantilePriors();
+        Assert.IsTrue(Tools.IsFinite(model.PriorLogLikelihood(trueParameters)),
+            $"{fixture.Label}: the complete configured prior rejects the generating parent.");
+
+        double[] collapsedParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        Assert.IsTrue(
+            collapsedParameters.Where((value, index) => value != trueParameters[index]).Any(),
+            $"{fixture.Label}: the fresh model did not provide a distinct collapsed/default alternative.");
+        double collapsedLogLikelihood = model.DataLogLikelihood(collapsedParameters);
+        Assert.IsTrue(
+            !double.IsNaN(collapsedLogLikelihood) && trueLogLikelihood > collapsedLogLikelihood,
+            $"{fixture.Label}: parent likelihood {trueLogLikelihood:G17} did not beat the " +
+            $"collapsed/default alternative {collapsedLogLikelihood:G17}.");
+    }
+
+    /// <summary>
+    /// Computes the full-likelihood observed-information covariance and requires a full-rank,
+    /// positive-definite local parameterization at the fitted optimum.
+    /// </summary>
+    /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="model">The fitted BestFit model.</param>
+    /// <param name="fittedParameters">The maximum-likelihood coordinates.</param>
+    /// <returns>The inverse observed-information covariance.</returns>
+    private static Matrix ComputeObservedInformationCovariance(
+        RecoveryFixture fixture,
+        CompetingRisksModel model,
+        double[] fittedParameters)
+    {
+        Matrix rawInformation = NumericalDiff.ComputeHessian(
+            model.DataLogLikelihood,
+            fittedParameters,
+            fittedParameters.Length,
+            model.Parameters.Select(parameter => parameter.LowerBound).ToArray(),
+            model.Parameters.Select(parameter => parameter.UpperBound).ToArray()) * -1d;
+        var information = new Matrix(fittedParameters.Length, fittedParameters.Length);
+        var scaledInformation = new Matrix(fittedParameters.Length, fittedParameters.Length);
+        for (int row = 0; row < fittedParameters.Length; row++)
+        {
+            double rowScale = Math.Max(1d, Math.Abs(fittedParameters[row]));
+            for (int column = 0; column < fittedParameters.Length; column++)
+            {
+                double symmetricValue = 0.5d * (rawInformation[row, column] + rawInformation[column, row]);
+                information[row, column] = symmetricValue;
+                double columnScale = Math.Max(1d, Math.Abs(fittedParameters[column]));
+                scaledInformation[row, column] = symmetricValue * rowScale * columnScale;
+            }
+        }
+
+        var scaledDecomposition = new SingularValueDecomposition(scaledInformation);
+        Assert.AreEqual(
+            fittedParameters.Length,
+            scaledDecomposition.Rank(),
+            $"{fixture.Label}: scale-normalized observed information is rank deficient; " +
+            $"inverse condition={scaledDecomposition.InverseCondition:G6}.");
+        Assert.IsTrue(
+            Tools.IsFinite(scaledDecomposition.InverseCondition) &&
+            scaledDecomposition.InverseCondition > 0d,
+            $"{fixture.Label}: scale-normalized observed-information condition is unusable.");
+
+        CholeskyDecomposition informationCholesky;
+        try
+        {
+            informationCholesky = new CholeskyDecomposition(information);
+        }
+        catch (Exception exception)
+        {
+            Assert.Fail(
+                $"{fixture.Label}: full-likelihood observed information is not positive definite: " +
+                exception.Message);
+            throw;
+        }
+
+        Assert.IsTrue(informationCholesky.IsPositiveDefinite,
+            $"{fixture.Label}: full-likelihood observed information is not positive definite.");
+        Matrix covariance = informationCholesky.InverseA();
+        for (int parameterIndex = 0; parameterIndex < fittedParameters.Length; parameterIndex++)
+        {
+            Assert.IsTrue(
+                Tools.IsFinite(covariance[parameterIndex, parameterIndex]) &&
+                covariance[parameterIndex, parameterIndex] > 0d,
+                $"{fixture.Label}: parameter {parameterIndex + 1} covariance diagonal " +
+                $"{covariance[parameterIndex, parameterIndex]:G17} is invalid.");
+        }
+        return covariance;
+    }
+
+    /// <summary>
+    /// Requires every deliberately identified MLE coordinate to recover its generating value
+    /// within the central 95 percent observed-information interval.
+    /// </summary>
+    /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="model">The fitted BestFit model.</param>
+    /// <param name="fittedParameters">The maximum-likelihood coordinates.</param>
+    /// <param name="covariance">The full-likelihood observed-information covariance.</param>
+    private static void AssertMaximumLikelihoodCoordinateRecovery(
+        RecoveryFixture fixture,
+        CompetingRisksModel model,
+        IReadOnlyList<double> fittedParameters,
+        Matrix covariance)
+    {
+        double[] truth = fixture.Parent.GetParameters;
+        Assert.AreEqual(truth.Length, fittedParameters.Count,
+            $"{fixture.Label}: MLE truth and fitted coordinate counts differ.");
+        var coordinateEvidence = new List<string>(truth.Length);
+        var standardizedErrors = new double[truth.Length];
+        for (int parameterIndex = 0; parameterIndex < truth.Length; parameterIndex++)
+        {
+            double standardError = Math.Sqrt(covariance[parameterIndex, parameterIndex]);
+            standardizedErrors[parameterIndex] =
+                Math.Abs(fittedParameters[parameterIndex] - truth[parameterIndex]) / standardError;
+            coordinateEvidence.Add(
+                $"{model.Parameters[parameterIndex].OwnerName} {model.Parameters[parameterIndex].Name}: " +
+                $"fit={fittedParameters[parameterIndex]:G8}, truth={truth[parameterIndex]:G8}, " +
+                $"SE={standardError:G8}, |z|={standardizedErrors[parameterIndex]:G6}");
+        }
+        Assert.IsTrue(
+            standardizedErrors.All(value => value <=
+                RecoveryAcceptance.NinetyFivePercentStandardNormalCutoff),
+            $"{fixture.Label}: one or more identified MLE coordinates missed the central 95% " +
+            $"observed-information interval. fitted logL={model.DataLogLikelihood(fittedParameters.ToArray()):G12}, " +
+            $"parent logL={model.DataLogLikelihood(truth):G12}. " +
+            string.Join("; ", coordinateEvidence));
+        for (int parameterIndex = 0; parameterIndex < truth.Length; parameterIndex++)
+        {
+            double standardError = Math.Sqrt(covariance[parameterIndex, parameterIndex]);
+            string coordinate = $"{fixture.Label}: MLE {model.Parameters[parameterIndex].OwnerName} " +
+                model.Parameters[parameterIndex].Name;
+            RecoveryAcceptance.AssertFrequentistStandardizedError(
+                coordinate,
+                fittedParameters[parameterIndex],
+                truth[parameterIndex],
+                standardError);
+        }
+    }
+
+    /// <summary>
+    /// Requires every deliberately identified Bayesian coordinate to contain its generating
+    /// value in the central 95 percent posterior interval with acceptable R-hat and ESS.
+    /// </summary>
+    /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="model">The fitted BestFit model.</param>
+    /// <param name="analysis">The completed competing-risk analysis.</param>
+    private static void AssertBayesianCoordinateRecovery(
+        RecoveryFixture fixture,
+        CompetingRisksModel model,
         CompetingRiskAnalysis analysis)
     {
-        double[] sortedSample = sample.OrderBy(value => value).ToArray();
-        var locations = new double[99];
-        for (int percentile = 1; percentile <= 99; percentile++)
-            locations[percentile - 1] = Statistics.Percentile(sortedSample, percentile / 100d, true);
+        Assert.AreEqual(
+            Probability.DependencyType.Independent,
+            fixture.Parent.Dependency,
+            $"{fixture.Label}: Bayesian MCMC is authorized only for independent recovery fixtures.");
+        IReadOnlyList<ParameterSet> output = analysis.BayesianAnalysis.Results!.Output;
+        double[] truth = fixture.Parent.GetParameters;
+        Assert.AreEqual(truth.Length, analysis.BayesianAnalysis.Results.ParameterResults.Length,
+            $"{fixture.Label}: Bayesian truth and diagnostic coordinate counts differ.");
 
-        var cdfSums = new double[locations.Length];
-        var output = analysis.BayesianAnalysis.Results!.Output;
-        foreach (ParameterSet parameterSet in output)
+        ParameterSet[] orderedOutput = output
+            .Select(parameterSet => CanonicalizeParameterSet(fixture, parameterSet))
+            .ToArray();
+        List<ParameterSet>[] orderedChains = analysis.BayesianAnalysis.Sampler!.MarkovChains
+            .Select(chain => chain.Select(parameterSet =>
+                CanonicalizeParameterSet(fixture, parameterSet)).ToList())
+            .ToArray();
+        List<ParameterSet>[] orderedRetainedOutput = analysis.BayesianAnalysis.Sampler.Output
+            .Select(chain => chain.Select(parameterSet =>
+                CanonicalizeParameterSet(fixture, parameterSet)).ToList())
+            .ToArray();
+        double[] rhats = MCMCDiagnostics.GelmanRubin(
+            orderedChains,
+            analysis.BayesianAnalysis.WarmupIterations);
+        double[] effectiveSampleSizes = MCMCDiagnostics.EffectiveSampleSize(
+            orderedRetainedOutput,
+            out _);
+
+        for (int parameterIndex = 0; parameterIndex < truth.Length; parameterIndex++)
         {
-            var posteriorDistribution = (CompetingRisks)fixture.Parent.Clone();
-            posteriorDistribution.SetParameters(parameterSet.Values);
-            for (int locationIndex = 0; locationIndex < locations.Length; locationIndex++)
-                cdfSums[locationIndex] += posteriorDistribution.CDF(locations[locationIndex]);
+            double[] draws = orderedOutput
+                .Select(parameterSet => parameterSet.Values[parameterIndex])
+                .ToArray();
+            Array.Sort(draws);
+            double lower = Statistics.Percentile(draws, 0.025d, true);
+            double upper = Statistics.Percentile(draws, 0.975d, true);
+            string coordinate = $"{fixture.Label}: Bayesian {model.Parameters[parameterIndex].OwnerName} " +
+                model.Parameters[parameterIndex].Name;
+            RecoveryAcceptance.AssertBayesianRecovery(
+                coordinate,
+                truth[parameterIndex],
+                lower,
+                upper,
+                rhats[parameterIndex],
+                effectiveSampleSizes[parameterIndex]);
         }
-
-        double maximumError = 0d;
-        double maximumErrorProbability = double.NaN;
-        for (int locationIndex = 0; locationIndex < locations.Length; locationIndex++)
-        {
-            double posteriorMeanCdf = cdfSums[locationIndex] / output.Count;
-            double error = Math.Abs(fixture.Parent.CDF(locations[locationIndex]) - posteriorMeanCdf);
-            if (error > maximumError)
-            {
-                maximumError = error;
-                maximumErrorProbability = (locationIndex + 1) / 100d;
-            }
-        }
-
-        Assert.IsTrue(
-            double.IsFinite(maximumError) && maximumError <= fixture.CdfTolerance,
-            $"{fixture.Label}: Bayesian maximum posterior-mean combined-CDF error " +
-            $"{maximumError:G6} at empirical probability {maximumErrorProbability:G2} exceeded " +
-            $"{fixture.CdfTolerance:G2}.");
     }
 
     /// <summary>
-    /// Applies only the hybrid component gates: contrasting two-Weibull shapes
-    /// and separated two-Normal means, both with label switching resolved.
+    /// Applies the predeclared increasing-Weibull-shape label rule to a point and covariance.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
-    /// <param name="parameters">The fitted flattened parameter vector.</param>
-    /// <param name="estimator">The estimator label.</param>
-    private static void AssertApprovedParameterRecovery(
+    /// <param name="parameters">The raw flattened component coordinates.</param>
+    /// <param name="covariance">The raw coordinate covariance.</param>
+    /// <returns>The canonically ordered coordinates and covariance.</returns>
+    private static (double[] Parameters, Matrix Covariance) CanonicalizeCoordinates(
         RecoveryFixture fixture,
         double[] parameters,
-        string estimator)
+        Matrix covariance)
     {
-        if (fixture.ParameterGate == ParameterGate.WeibullShapes)
+        int[] coordinateOrder = GetCanonicalCoordinateOrder(fixture, parameters);
+        var orderedParameters = new double[parameters.Length];
+        var orderedCovariance = new Matrix(parameters.Length, parameters.Length);
+        for (int row = 0; row < parameters.Length; row++)
         {
-            double[] expected = [0.8d, 3d];
-            double[] actual = [parameters[1], parameters[3]];
-            Array.Sort(actual);
-            for (int index = 0; index < expected.Length; index++)
-            {
-                AssertRelativeDifference(
-                    fixture,
-                    estimator,
-                    $"sorted Weibull shape {index + 1}",
-                    expected[index],
-                    actual[index],
-                    ParameterRelativeTolerance);
-            }
+            orderedParameters[row] = parameters[coordinateOrder[row]];
+            for (int column = 0; column < parameters.Length; column++)
+                orderedCovariance[row, column] = covariance[coordinateOrder[row], coordinateOrder[column]];
         }
-        else if (fixture.ParameterGate == ParameterGate.NormalMeans)
-        {
-            double[] expected = [50d, 85d];
-            double[] actual = [parameters[0], parameters[2]];
-            Array.Sort(actual);
-            for (int index = 0; index < expected.Length; index++)
+        return (orderedParameters, orderedCovariance);
+    }
+
+    /// <summary>
+    /// Applies the predeclared increasing-Weibull-shape label rule to one posterior state.
+    /// </summary>
+    /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="parameterSet">The raw posterior state.</param>
+    /// <returns>The canonically ordered posterior state.</returns>
+    private static ParameterSet CanonicalizeParameterSet(
+        RecoveryFixture fixture,
+        ParameterSet parameterSet)
+    {
+        int[] coordinateOrder = GetCanonicalCoordinateOrder(fixture, parameterSet.Values);
+        var orderedValues = new double[parameterSet.Values.Length];
+        for (int coordinateIndex = 0; coordinateIndex < orderedValues.Length; coordinateIndex++)
+            orderedValues[coordinateIndex] = parameterSet.Values[coordinateOrder[coordinateIndex]];
+        return new ParameterSet(orderedValues, parameterSet.Fitness, parameterSet.Weight);
+    }
+
+    /// <summary>
+    /// Gets the scientifically predeclared component-coordinate order for one flattened state.
+    /// </summary>
+    /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="parameters">The raw flattened component coordinates.</param>
+    /// <returns>For each canonical coordinate, the corresponding raw coordinate index.</returns>
+    private static int[] GetCanonicalCoordinateOrder(
+        RecoveryFixture fixture,
+        IReadOnlyList<double> parameters)
+    {
+        bool allWeibull = fixture.Parent.Distributions.All(distribution => distribution is Weibull);
+        if (!allWeibull || fixture.Parent.Distributions.Count < 2)
+            return Enumerable.Range(0, parameters.Count).ToArray();
+
+        const int WeibullParameterCount = 2;
+        Assert.AreEqual(
+            WeibullParameterCount * fixture.Parent.Distributions.Count,
+            parameters.Count,
+            $"{fixture.Label}: Weibull label ordering requires scale/shape coordinate pairs.");
+        return Enumerable.Range(0, fixture.Parent.Distributions.Count)
+            .OrderBy(componentIndex => parameters[WeibullParameterCount * componentIndex + 1])
+            .SelectMany(componentIndex => new[]
             {
-                AssertRelativeDifference(
-                    fixture,
-                    estimator,
-                    $"sorted Normal mean {index + 1}",
-                    expected[index],
-                    actual[index],
-                    0.30d);
-            }
+                WeibullParameterCount * componentIndex,
+                WeibullParameterCount * componentIndex + 1
+            })
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Applies the observed-information covariance to the five identified composite CDF
+    /// ordinates through an independently implemented finite-difference delta method.
+    /// </summary>
+    /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="model">The estimated BestFit model, used only for parameter bounds.</param>
+    /// <param name="fittedParameters">The maximum-likelihood coordinates.</param>
+    /// <param name="covariance">The full-likelihood observed-information covariance.</param>
+    private static void AssertMaximumLikelihoodResponseRecovery(
+        RecoveryFixture fixture,
+        CompetingRisksModel model,
+        double[] fittedParameters,
+        Matrix covariance)
+    {
+        foreach (double probability in ResponseProbabilities)
+        {
+            double location = fixture.Parent.InverseCDF(probability);
+            double parentResponse = fixture.Parent.CDF(location);
+            double estimate = EvaluateCompositeCdf(fixture, fittedParameters, location);
+            double standardError = ComputeDeltaMethodStandardError(
+                fixture,
+                model,
+                covariance,
+                fittedParameters,
+                location);
+            double lower = Math.Max(0d, estimate -
+                RecoveryAcceptance.NinetyFivePercentStandardNormalCutoff * standardError);
+            double upper = Math.Min(1d, estimate +
+                RecoveryAcceptance.NinetyFivePercentStandardNormalCutoff * standardError);
+            string label = $"{fixture.Label}: MLE composite CDF at parent p={probability:G2}";
+
+            Assert.IsTrue(Tools.IsFinite(location) && Tools.IsFinite(parentResponse),
+                $"{label} did not produce a finite parent location and response.");
+            RecoveryAcceptance.AssertIdentifiedResponseGrid(label, parentResponse, lower, upper);
+            RecoveryAcceptance.AssertSecondaryPointCriterionWhenResolved(
+                label,
+                estimate,
+                parentResponse,
+                lower,
+                upper);
         }
     }
 
     /// <summary>
-    /// Verifies the gated identifiable Bayesian component parameters after ordering the
-    /// exchangeable component pair within each retained draw.
+    /// Requires each identified generating composite CDF response to lie in its central
+    /// posterior 95 percent band over the retained production DEMCzs output.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
     /// <param name="analysis">The completed competing-risk analysis.</param>
-    private static void AssertApprovedBayesianParameterRecovery(
+    private static void AssertBayesianResponseRecovery(
         RecoveryFixture fixture,
         CompetingRiskAnalysis analysis)
     {
-        if (fixture.ParameterGate == ParameterGate.None)
-            return;
-
-        int firstParameterIndex = fixture.ParameterGate == ParameterGate.WeibullShapes ? 1 : 0;
-        int secondParameterIndex = fixture.ParameterGate == ParameterGate.WeibullShapes ? 3 : 2;
-        double[] expected = fixture.ParameterGate == ParameterGate.WeibullShapes
-            ? [0.8d, 3d]
-            : [50d, 85d];
-        double relativeTolerance = fixture.ParameterGate == ParameterGate.WeibullShapes
-            ? ParameterRelativeTolerance
-            : 0.30d;
-        string parameterLabel = fixture.ParameterGate == ParameterGate.WeibullShapes
-            ? "Weibull shape"
-            : "Normal mean";
-
-        var output = analysis.BayesianAnalysis.Results!.Output;
-        double lowerSum = 0d;
-        double upperSum = 0d;
-        foreach (ParameterSet parameterSet in output)
+        IReadOnlyList<ParameterSet> output = analysis.BayesianAnalysis.Results!.Output;
+        foreach (double probability in ResponseProbabilities)
         {
-            double first = parameterSet.Values[firstParameterIndex];
-            double second = parameterSet.Values[secondParameterIndex];
-            lowerSum += Math.Min(first, second);
-            upperSum += Math.Max(first, second);
-        }
+            double location = fixture.Parent.InverseCDF(probability);
+            double parentResponse = fixture.Parent.CDF(location);
+            var responses = new double[output.Count];
+            for (int drawIndex = 0; drawIndex < output.Count; drawIndex++)
+                responses[drawIndex] = EvaluateCompositeCdf(fixture, output[drawIndex].Values, location);
 
-        double[] actual = [lowerSum / output.Count, upperSum / output.Count];
-        for (int index = 0; index < expected.Length; index++)
-        {
-            AssertRelativeDifference(
-                fixture,
-                "Bayesian",
-                $"draw-ordered posterior-mean {parameterLabel} {index + 1}",
-                expected[index],
-                actual[index],
-                relativeTolerance);
+            Array.Sort(responses);
+            double lower = Statistics.Percentile(responses, 0.025d, true);
+            double estimate = Statistics.Percentile(responses, 0.50d, true);
+            double upper = Statistics.Percentile(responses, 0.975d, true);
+            string label = $"{fixture.Label}: Bayesian composite CDF at parent p={probability:G2}";
+
+            RecoveryAcceptance.AssertIdentifiedResponseGrid(label, parentResponse, lower, upper);
+            RecoveryAcceptance.AssertSecondaryPointCriterionWhenResolved(
+                label,
+                estimate,
+                parentResponse,
+                lower,
+                upper);
         }
     }
 
     /// <summary>
-    /// Verifies one fitted parameter against a declared relative tolerance.
+    /// Computes a response-scale standard error from the MLE covariance using a bounded
+    /// central finite-difference CDF gradient.
     /// </summary>
     /// <param name="fixture">The immutable recovery fixture.</param>
-    /// <param name="estimator">The estimator label.</param>
-    /// <param name="parameterLabel">The parameter label.</param>
-    /// <param name="expected">The generating value.</param>
-    /// <param name="actual">The fitted value.</param>
-    /// <param name="relativeTolerance">The maximum relative difference.</param>
-    private static void AssertRelativeDifference(
+    /// <param name="model">The fitted model providing coordinate bounds.</param>
+    /// <param name="covariance">The observed-information covariance.</param>
+    /// <param name="parameters">The MLE coordinate vector.</param>
+    /// <param name="location">The fixed parent-quantile location.</param>
+    /// <returns>The delta-method standard error of the fitted composite CDF.</returns>
+    private static double ComputeDeltaMethodStandardError(
         RecoveryFixture fixture,
-        string estimator,
-        string parameterLabel,
-        double expected,
-        double actual,
-        double relativeTolerance)
+        CompetingRisksModel model,
+        Matrix covariance,
+        double[] parameters,
+        double location)
     {
-        double relativeDifference = Math.Abs(actual - expected) / Math.Abs(expected);
-        Assert.IsTrue(
-            double.IsFinite(relativeDifference) && relativeDifference <= relativeTolerance,
-            $"{fixture.Label}: {estimator} {parameterLabel} relative difference " +
-            $"{relativeDifference:P2} exceeded {relativeTolerance:P0}.");
+        var gradient = new double[parameters.Length];
+        for (int parameterIndex = 0; parameterIndex < parameters.Length; parameterIndex++)
+        {
+            double center = parameters[parameterIndex];
+            double step = 1E-5 * Math.Max(1d, Math.Abs(center));
+            double lower = Math.Max(model.Parameters[parameterIndex].LowerBound, center - step);
+            double upper = Math.Min(model.Parameters[parameterIndex].UpperBound, center + step);
+            Assert.IsTrue(upper > lower,
+                $"{fixture.Label}: finite-difference interval collapsed for " +
+                $"{model.Parameters[parameterIndex].OwnerName} {model.Parameters[parameterIndex].Name}.");
+
+            double[] lowerParameters = parameters.ToArray();
+            double[] upperParameters = parameters.ToArray();
+            lowerParameters[parameterIndex] = lower;
+            upperParameters[parameterIndex] = upper;
+            gradient[parameterIndex] =
+                (EvaluateCompositeCdf(fixture, upperParameters, location) -
+                 EvaluateCompositeCdf(fixture, lowerParameters, location)) /
+                (upper - lower);
+        }
+
+        double variance = 0d;
+        for (int row = 0; row < gradient.Length; row++)
+        {
+            for (int column = 0; column < gradient.Length; column++)
+                variance += gradient[row] * covariance[row, column] * gradient[column];
+        }
+
+        Assert.IsTrue(Tools.IsFinite(variance) && variance >= -1E-12,
+            $"{fixture.Label}: delta-method response variance {variance:G17} is invalid.");
+        return Math.Sqrt(Math.Max(0d, variance));
+    }
+
+    /// <summary>
+    /// Evaluates the preserved competing-risk definition at one coordinate vector and location.
+    /// </summary>
+    /// <param name="fixture">The immutable recovery fixture.</param>
+    /// <param name="parameters">The flattened component coordinates.</param>
+    /// <param name="location">The fixed response location.</param>
+    /// <returns>The combined CDF value.</returns>
+    private static double EvaluateCompositeCdf(
+        RecoveryFixture fixture,
+        double[] parameters,
+        double location)
+    {
+        CompetingRisks distribution = CreateFittedDistribution(fixture, parameters);
+        double response = distribution.CDF(location);
+        Assert.IsTrue(Tools.IsFinite(response),
+            $"{fixture.Label}: composite CDF is nonfinite at x={location:G17}.");
+        return response;
     }
 
     /// <summary>
@@ -408,38 +698,8 @@ public partial class CompetingRiskRecoveryTests
         for (int index = 0; index < parameters.Count; index++)
         {
             Assert.IsTrue(
-                double.IsFinite(parameters[index]),
+                Tools.IsFinite(parameters[index]),
                 $"{fixture.Label}: {estimator} parameter {index + 1} is not finite.");
-        }
-    }
-
-    /// <summary>
-    /// Verifies split R-hat and conservative effective sample size for every Bayesian parameter.
-    /// </summary>
-    /// <param name="fixture">The immutable recovery fixture.</param>
-    /// <param name="model">The fitted BestFit model.</param>
-    /// <param name="analysis">The completed competing-risk analysis.</param>
-    private static void AssertBayesianDiagnostics(
-        RecoveryFixture fixture,
-        CompetingRisksModel model,
-        CompetingRiskAnalysis analysis)
-    {
-        var parameterResults = analysis.BayesianAnalysis.Results!.ParameterResults;
-        Assert.AreEqual(
-            model.NumberOfParameters,
-            parameterResults.Length,
-            $"{fixture.Label}: diagnostic parameter count mismatch.");
-        for (int index = 0; index < parameterResults.Length; index++)
-        {
-            double rhat = parameterResults[index].SummaryStatistics.Rhat;
-            double ess = parameterResults[index].SummaryStatistics.ESS;
-            string parameterName = model.Parameters[index].Name;
-            Assert.IsTrue(
-                double.IsFinite(rhat) && rhat < MaximumRhat,
-                $"{fixture.Label}: {parameterName} R-hat {rhat:G6} is not finite and below {MaximumRhat:G2}.");
-            Assert.IsTrue(
-                double.IsFinite(ess) && ess > MinimumEss,
-                $"{fixture.Label}: {parameterName} ESS {ess:G6} is not finite and above {MinimumEss:G0}.");
         }
     }
 
@@ -459,177 +719,21 @@ public partial class CompetingRiskRecoveryTests
     }
 
     /// <summary>
-    /// Creates the independent minimum of Weibull(50, 1) and Weibull(80, 3).
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMinimumTwoWeibullConstantIncreasing()
-    {
-        return CreateFixture(
-            "minimum Weibull(50,1) + Weibull(80,3)",
-            true,
-            [new Weibull(50d, 1d), new Weibull(80d, 3d)],
-            TwoComponentSampleSize,
-            0.05d);
-    }
-
-    /// <summary>
-    /// Creates the identifiable independent minimum of Weibull(30, 0.8) and Weibull(100, 3).
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMinimumTwoWeibullContrastingShapes()
-    {
-        return CreateFixture(
-            "minimum Weibull(30,0.8) + Weibull(100,3)",
-            true,
-            [new Weibull(30d, 0.8d), new Weibull(100d, 3d)],
-            TwoComponentSampleSize,
-            0.05d,
-            parameterGate: ParameterGate.WeibullShapes);
-    }
-
-    /// <summary>
-    /// Creates the independent three-Weibull bathtub minimum.
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMinimumThreeWeibullBathtub()
-    {
-        return CreateFixture(
-            "minimum three-Weibull bathtub",
-            true,
-            [new Weibull(20d, 0.7d), new Weibull(200d, 1d), new Weibull(150d, 4d)],
-            ThreeComponentSampleSize,
-            0.06d);
-    }
-
-    /// <summary>
-    /// Creates the independent minimum of three Weibulls with separated shapes.
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMinimumThreeWeibullSeparatedShapes()
-    {
-        return CreateFixture(
-            "minimum Weibull(15,0.5) + Weibull(60,1.5) + Weibull(120,4)",
-            true,
-            [new Weibull(15d, 0.5d), new Weibull(60d, 1.5d), new Weibull(120d, 4d)],
-            ThreeComponentSampleSize,
-            0.06d);
-    }
-
-    /// <summary>
-    /// Creates the identifiable independent maximum of two separated Normal distributions.
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMaximumTwoSeparatedNormals()
-    {
-        return CreateFixture(
-            "maximum Normal(50,8) + Normal(85,12)",
-            false,
-            [new Normal(50d, 8d), new Normal(85d, 12d)],
-            TwoComponentSampleSize,
-            0.05d,
-            parameterGate: ParameterGate.NormalMeans);
-    }
-
-    /// <summary>
-    /// Creates the independent maximum of Weibull(50, 2) and Gumbel(70, 15).
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMaximumWeibullAndGumbel()
-    {
-        return CreateFixture(
-            "maximum Weibull(50,2) + Gumbel(70,15)",
-            false,
-            [new Weibull(50d, 2d), new Gumbel(70d, 15d)],
-            TwoComponentSampleSize,
-            0.05d);
-    }
-
-    /// <summary>
-    /// Creates the independent maximum of three separated Normal distributions.
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMaximumThreeSeparatedNormals()
-    {
-        return CreateFixture(
-            "maximum Normal(40,6) + Normal(70,8) + Normal(100,10)",
-            false,
-            [new Normal(40d, 6d), new Normal(70d, 8d), new Normal(100d, 10d)],
-            ThreeComponentSampleSize,
-            0.06d);
-    }
-
-    /// <summary>
-    /// Creates the independent maximum of Exponential, Gamma, and natural-base LogNormal components.
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMaximumThreeDifferentFamilies()
-    {
-        return CreateFixture(
-            "maximum Exponential(0.05) + Gamma(3,15) + natural LogNormal(4.2,0.4)",
-            false,
-            [
-                new Exponential(0.05d),
-                new GammaDistribution(3d, 15d),
-                new LogNormal(4.2d, 0.4d) { Base = Math.E }
-            ],
-            ThreeComponentSampleSize,
-            0.06d);
-    }
-
-    /// <summary>
-    /// Creates the correlation-matrix minimum of two Weibulls at latent correlation 0.6.
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMinimumCorrelatedTwoWeibulls()
-    {
-        return CreateFixture(
-            "correlated minimum Weibull(50,1) + Weibull(80,3), rho=0.6",
-            true,
-            [new Weibull(50d, 1d), new Weibull(80d, 3d)],
-            TwoComponentSampleSize,
-            0.06d,
-            Probability.DependencyType.CorrelationMatrix,
-            new[,] { { 1d, 0.6d }, { 0.6d, 1d } });
-    }
-
-    /// <summary>
-    /// Creates the correlation-matrix maximum of two Normals at latent correlation 0.6.
-    /// </summary>
-    /// <returns>The recovery fixture.</returns>
-    private static RecoveryFixture CreateMaximumCorrelatedTwoNormals()
-    {
-        return CreateFixture(
-            "correlated maximum Normal(50,10) + Normal(65,12), rho=0.6",
-            false,
-            [new Normal(50d, 10d), new Normal(65d, 12d)],
-            TwoComponentSampleSize,
-            0.06d,
-            Probability.DependencyType.CorrelationMatrix,
-            new[,] { { 1d, 0.6d }, { 0.6d, 1d } });
-    }
-
-    /// <summary>
     /// Creates a recovery fixture while preserving the selection rule, dependency mode,
     /// distribution base, and fixed correlation matrix on the Numerics parent.
     /// </summary>
     /// <param name="label">The human-readable fixture label.</param>
     /// <param name="isMinimum">Whether the observed response is the component minimum.</param>
     /// <param name="distributions">The generating component distributions.</param>
-    /// <param name="sampleSize">The synthetic sample size.</param>
-    /// <param name="cdfTolerance">The maximum parent-versus-fitted CDF error.</param>
     /// <param name="dependency">The fixed dependency mode.</param>
     /// <param name="correlationMatrix">The optional fixed latent correlation matrix.</param>
-    /// <param name="parameterGate">The optional component-parameter gate.</param>
     /// <returns>The immutable recovery fixture.</returns>
     private static RecoveryFixture CreateFixture(
         string label,
         bool isMinimum,
         UnivariateDistributionBase[] distributions,
-        int sampleSize,
-        double cdfTolerance,
         Probability.DependencyType dependency = Probability.DependencyType.Independent,
-        double[,]? correlationMatrix = null,
-        ParameterGate parameterGate = ParameterGate.None)
+        double[,]? correlationMatrix = null)
     {
         var parent = new CompetingRisks(distributions)
         {
@@ -639,22 +743,11 @@ public partial class CompetingRiskRecoveryTests
         if (correlationMatrix != null)
             parent.CorrelationMatrix = (double[,])correlationMatrix.Clone();
 
-        return new RecoveryFixture(label, parent, sampleSize, cdfTolerance, parameterGate);
-    }
-
-    /// <summary>
-    /// Identifies the limited component parameters selected for direct recovery checks.
-    /// </summary>
-    private enum ParameterGate
-    {
-        /// <summary>No component parameter is independently gated.</summary>
-        None,
-
-        /// <summary>The two contrasting Weibull shapes are gated after sorting.</summary>
-        WeibullShapes,
-
-        /// <summary>The two separated Normal means are gated after sorting.</summary>
-        NormalMeans
+        return new RecoveryFixture(
+            label,
+            parent,
+            RecoveryDesign.ScalarObservations(
+                "One observed scalar minimum or maximum from the declared competing-risk parent."));
     }
 
     /// <summary>
@@ -667,21 +760,15 @@ public partial class CompetingRiskRecoveryTests
         /// </summary>
         /// <param name="label">The human-readable fixture label.</param>
         /// <param name="parent">The known generating distribution.</param>
-        /// <param name="sampleSize">The synthetic sample size.</param>
-        /// <param name="cdfTolerance">The maximum parent-versus-fitted CDF error.</param>
-        /// <param name="parameterGate">The optional component-parameter gate.</param>
+        /// <param name="design">The predeclared scalar-observation recovery design.</param>
         public RecoveryFixture(
             string label,
             CompetingRisks parent,
-            int sampleSize,
-            double cdfTolerance,
-            ParameterGate parameterGate)
+            RecoveryDesign design)
         {
             Label = label;
             Parent = parent;
-            SampleSize = sampleSize;
-            CdfTolerance = cdfTolerance;
-            ParameterGate = parameterGate;
+            Design = design;
         }
 
         /// <summary>Gets the human-readable fixture label.</summary>
@@ -691,12 +778,12 @@ public partial class CompetingRiskRecoveryTests
         public CompetingRisks Parent { get; }
 
         /// <summary>Gets the synthetic sample size.</summary>
-        public int SampleSize { get; }
+        public int SampleSize => RecoveryDesign.SampleSize;
 
-        /// <summary>Gets the maximum parent-versus-fitted CDF error.</summary>
-        public double CdfTolerance { get; }
+        /// <summary>Gets the predeclared scalar-observation recovery design.</summary>
+        public RecoveryDesign Design { get; }
 
-        /// <summary>Gets the optional component-parameter gate.</summary>
-        public ParameterGate ParameterGate { get; }
+        /// <summary>Gets or sets the measured identification evidence for the fixed realization.</summary>
+        public DesignDiagnostics? Diagnostics { get; set; }
     }
 }

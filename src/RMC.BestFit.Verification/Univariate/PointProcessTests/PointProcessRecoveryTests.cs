@@ -1,7 +1,9 @@
 using Numerics.Data;
 using Numerics.Distributions;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
+using RMC.BestFit.Verification.Recovery;
 
 namespace RMC.BestFit.Verification.Univariate.PointProcessTests;
 
@@ -43,16 +45,23 @@ public partial class PointProcessRecoveryTests
         double observationYears = sampleSize / lambda;
         DataFrame frame = CreateNonSeasonalRecoveryFrame(generatedSample, observationYears);
         PointProcessModel model = CreateNonSeasonalModel(frame, observationYears);
+        double[] parentParameters = { LocationOne, ScaleOne, -ColesShapeOne };
+        AssertFixtureAndPriorAgreement(model, frame, parentParameters, sampleSize, observationYears, "nonseasonal production");
+        Assert.AreEqual(-ColesShapeOne, parentParameters[2], 0.0, "Numerics Kappa must be the negative of the Coles shape.");
+        Assert.AreEqual(lambda, ThresholdIntensity(parentParameters[0], parentParameters[1], -parentParameters[2], Threshold), 1E-12,
+            "The generator and fitted model did not share the annual threshold intensity.");
+        AssertTruthBeatsCollapsedAlternative(model, parentParameters, false, "nonseasonal production");
         PointProcessAnalysis analysis = ConfigureAnalysis(model);
 
         await analysis.RunAsync();
 
         Assert.AreEqual(sampleSize, generatedSample.Length, "The production generator did not return the requested POT sample size.");
-        Assert.IsTrue(analysis.IsEstimated, "Nonseasonal point-process recovery did not complete.");
-        double[] posteriorMean = analysis.BayesianAnalysis.Results!.PosteriorMean.Values;
-        Assert.AreEqual(LocationOne, posteriorMean[0], 8.0, "Location was not recovered.");
-        Assert.AreEqual(ScaleOne, posteriorMean[1], 5.0, "Scale was not recovered.");
-        Assert.AreEqual(-ColesShapeOne, posteriorMean[2], 0.08, "Numerics Kappa was not recovered.");
+        MCMCResults? results = analysis.BayesianAnalysis.Results;
+        Assert.IsNotNull(results, $"Nonseasonal point-process recovery returned no posterior results. {analysis.BayesianAnalysis.LastError}");
+        AssertContinuousCoordinateRecovery(results, parentParameters, 0, "nonseasonal Mu");
+        AssertContinuousCoordinateRecovery(results, parentParameters, 1, "nonseasonal Sigma");
+        AssertContinuousCoordinateRecovery(results, parentParameters, 2, "nonseasonal Kappa");
+        AssertNonseasonalResponseRecovery(results, parentParameters, "nonseasonal production");
     }
 
     /// <summary>
@@ -68,6 +77,10 @@ public partial class PointProcessRecoveryTests
         double observationYears = sampleSize / SeasonalLambda;
         DataFrame frame = CreateSeasonalRecoveryFrame(generatedSample, observationYears);
         PointProcessModel model = CreateSeasonalModel(frame, observationYears);
+        double[] parentParameters = parent.Parameters.Select(parameter => parameter.Value).ToArray();
+        AssertFixtureAndPriorAgreement(model, frame, parentParameters, sampleSize, observationYears, "seasonal equal-intensity production");
+        AssertSeasonalCrosswalkAndAnnualization(parentParameters, SeasonalLambda, SeasonalLambda, sampleSize / observationYears, "seasonal equal-intensity production");
+        AssertTruthBeatsCollapsedAlternative(model, parentParameters, true, "seasonal equal-intensity production");
         PointProcessAnalysis analysis = ConfigureAnalysis(model);
         Exception? analysisError = null;
         analysis.AnalysisCompleted += (_, args) => analysisError = args.Error;
@@ -75,34 +88,12 @@ public partial class PointProcessRecoveryTests
         var validation = analysis.Validate();
         Assert.IsTrue(validation.IsValid, string.Join(Environment.NewLine, validation.ValidationMessages));
 
-        double[] trueParameters = parent.Parameters.Select(parameter => parameter.Value).ToArray();
-        double trueLogLikelihood = model.DataLogLikelihood(trueParameters);
-        double[] collapsedParameters = (double[])trueParameters.Clone();
-        collapsedParameters[0] = 1.5;
-        double collapsedLogLikelihood = model.DataLogLikelihood(collapsedParameters);
-        Assert.IsTrue(
-            trueLogLikelihood > collapsedLogLikelihood,
-            $"The generated sample favored collapsed K1 before estimation: true={trueLogLikelihood:G17}, collapsed={collapsedLogLikelihood:G17}.");
-
         await analysis.RunAsync();
 
         Assert.AreEqual(sampleSize, generatedSample.Count, "The production generator did not return the requested seasonal POT sample size.");
-        Assert.IsTrue(
-            analysis.IsEstimated,
-            $"Seasonal point-process recovery did not complete. {analysisError ?? analysis.BayesianAnalysis.LastError}");
-        var results = analysis.BayesianAnalysis.Results!;
-        double[] posteriorMean = results.PosteriorMean.Values;
-        var output = results.Output;
-        AssertFlooredChangePointRecovery(output.Select(sample => sample.Values[0]), TrueK1, "K1");
-        AssertFlooredChangePointRecovery(output.Select(sample => sample.Values[1]), TrueK2, "K2");
-
-        double[] parentParameters = parent.Parameters.Select(parameter => parameter.Value).ToArray();
-        Assert.AreEqual(parentParameters[2], posteriorMean[2], 12.0, "Season-one location was not recovered.");
-        Assert.AreEqual(parentParameters[3], posteriorMean[3], 8.0, "Season-one scale was not recovered.");
-        Assert.AreEqual(parentParameters[4], posteriorMean[4], 0.12, "Season-one Kappa was not recovered.");
-        Assert.AreEqual(parentParameters[5], posteriorMean[5], 12.0, "Season-two location was not recovered.");
-        Assert.AreEqual(parentParameters[6], posteriorMean[6], 8.0, "Season-two scale was not recovered.");
-        Assert.AreEqual(parentParameters[7], posteriorMean[7], 0.12, "Season-two Kappa was not recovered.");
+        MCMCResults? results = analysis.BayesianAnalysis.Results;
+        Assert.IsNotNull(results, $"Seasonal point-process recovery returned no posterior results. {analysisError ?? analysis.BayesianAnalysis.LastError}");
+        AssertSeasonalPosteriorRecovery(results, parentParameters, sampleSize, TrueK1, TrueK2, "seasonal equal-intensity production");
     }
 
     /// <summary>
@@ -121,6 +112,10 @@ public partial class PointProcessRecoveryTests
         double observationYears = sampleSize / parent.FittedThresholdIntensity;
         DataFrame frame = CreateSeasonalRecoveryFrame(generatedSample, observationYears);
         PointProcessModel model = CreateSeasonalModel(frame, observationYears);
+        double[] parentParameters = parent.Parameters.Select(parameter => parameter.Value).ToArray();
+        AssertFixtureAndPriorAgreement(model, frame, parentParameters, sampleSize, observationYears, "seasonal unequal-intensity production");
+        AssertSeasonalCrosswalkAndAnnualization(parentParameters, intensityOne, intensityTwo, sampleSize / observationYears, "seasonal unequal-intensity production");
+        AssertTruthBeatsCollapsedAlternative(model, parentParameters, true, "seasonal unequal-intensity production");
         PointProcessAnalysis analysis = ConfigureAnalysis(model);
         Exception? analysisError = null;
         analysis.AnalysisCompleted += (_, args) => analysisError = args.Error;
@@ -131,22 +126,9 @@ public partial class PointProcessRecoveryTests
         await analysis.RunAsync();
 
         Assert.AreEqual(sampleSize, generatedSample.Count, "The production generator did not return the requested seasonal POT sample size.");
-        Assert.IsTrue(
-            analysis.IsEstimated,
-            $"Unequal-intensity seasonal point-process recovery did not complete. {analysisError ?? analysis.BayesianAnalysis.LastError}");
-        var results = analysis.BayesianAnalysis.Results!;
-        double[] posteriorMean = results.PosteriorMean.Values;
-        var output = results.Output;
-        AssertFlooredChangePointRecovery(output.Select(sample => sample.Values[0]), TrueK1, "K1");
-        AssertFlooredChangePointRecovery(output.Select(sample => sample.Values[1]), TrueK2, "K2");
-
-        double[] parentParameters = parent.Parameters.Select(parameter => parameter.Value).ToArray();
-        Assert.AreEqual(parentParameters[2], posteriorMean[2], 12.0, "Season-one location was not recovered.");
-        Assert.AreEqual(parentParameters[3], posteriorMean[3], 8.0, "Season-one scale was not recovered.");
-        Assert.AreEqual(parentParameters[4], posteriorMean[4], 0.12, "Season-one Kappa was not recovered.");
-        Assert.AreEqual(parentParameters[5], posteriorMean[5], 12.0, "Season-two location was not recovered.");
-        Assert.AreEqual(parentParameters[6], posteriorMean[6], 8.0, "Season-two scale was not recovered.");
-        Assert.AreEqual(parentParameters[7], posteriorMean[7], 0.12, "Season-two Kappa was not recovered.");
+        MCMCResults? results = analysis.BayesianAnalysis.Results;
+        Assert.IsNotNull(results, $"Unequal-intensity seasonal recovery returned no posterior results. {analysisError ?? analysis.BayesianAnalysis.LastError}");
+        AssertSeasonalPosteriorRecovery(results, parentParameters, sampleSize, TrueK1, TrueK2, "seasonal unequal-intensity production");
     }
 
     /// <summary>
@@ -500,18 +482,357 @@ public partial class PointProcessRecoveryTests
         Assert.AreEqual(expectedProbability, actualProbability, 5.0 * standardError, $"The {label} conditional tail missed its analytical binomial bound.");
     }
 
-    /// <summary>Checks floored posterior support and modal-day recovery without relying on a posterior mean.</summary>
-    /// <param name="samples">Continuous latent changepoint samples.</param>
+    /// <summary>Checks floored central-95% posterior support and convergence diagnostics.</summary>
+    /// <param name="results">Posterior results.</param>
+    /// <param name="parameterIndex">Changepoint parameter index.</param>
     /// <param name="truth">The true integer day.</param>
     /// <param name="label">The changepoint label.</param>
-    private static void AssertFlooredChangePointRecovery(IEnumerable<double> samples, int truth, string label)
+    private static void AssertFlooredChangePointRecovery(MCMCResults results, int parameterIndex, int truth, string label)
     {
-        int[] days = samples.Select(sample => (int)Math.Floor(sample)).OrderBy(day => day).ToArray();
+        AssertPosteriorDiagnostics(results, parameterIndex, label);
+        int[] days = results.Output
+            .Select(sample => (int)Math.Floor(sample.Values[parameterIndex]))
+            .OrderBy(day => day)
+            .ToArray();
         int lower = days[(int)Math.Floor(0.025 * (days.Length - 1))];
         int upper = days[(int)Math.Ceiling(0.975 * (days.Length - 1))];
-        int mode = days.GroupBy(day => day).OrderByDescending(group => group.Count()).ThenBy(group => group.Key).First().Key;
         Assert.IsTrue(truth >= lower && truth <= upper, $"True {label}={truth} was outside the floored 95% credible set [{lower}, {upper}].");
-        Assert.AreEqual(truth, mode, 20, $"Floored posterior mode for {label} was not recovered.");
+    }
+
+    /// <summary>Verifies the generated sample, fitted exposure, and every configured prior before MCMC.</summary>
+    /// <param name="model">Configured fitted model.</param>
+    /// <param name="frame">Generated exact POT data.</param>
+    /// <param name="truth">Generating parameter vector in fitted coordinates.</param>
+    /// <param name="sampleSize">Predeclared event count.</param>
+    /// <param name="observationYears">Predeclared exposure in years.</param>
+    /// <param name="label">Fixture label.</param>
+    private static void AssertFixtureAndPriorAgreement(
+        PointProcessModel model,
+        DataFrame frame,
+        double[] truth,
+        int sampleSize,
+        double observationYears,
+        string label)
+    {
+        Assert.AreEqual(sampleSize, frame.ExactSeries.Count, $"{label}: generated event count changed.");
+        Assert.AreEqual(observationYears, frame.PointProcessObservationYears, 0.0, $"{label}: source exposure changed.");
+        Assert.AreEqual(observationYears, model.TotalYears, 0.0, $"{label}: fitted exposure disagreed with the generator.");
+        Assert.AreEqual(Threshold, model.Threshold, 0.0, $"{label}: fitted threshold disagreed with the generator.");
+        Assert.AreEqual(truth.Length, model.Parameters.Count, $"{label}: fitted coordinate count changed.");
+        for (int index = 0; index < truth.Length; index++)
+        {
+            ModelParameter parameter = model.Parameters[index];
+            Assert.IsTrue(truth[index] >= parameter.LowerBound && truth[index] <= parameter.UpperBound,
+                $"{label}: parent {parameter.Name}={truth[index]:G17} is outside configured bounds [{parameter.LowerBound:G17}, {parameter.UpperBound:G17}].");
+            Assert.IsNotNull(parameter.PriorDistribution, $"{label}: {parameter.Name} has no configured prior.");
+            Assert.IsTrue(parameter.PriorDistribution.PDF(truth[index]) > 0.0,
+                $"{label}: parent {parameter.Name}={truth[index]:G17} is outside its configured prior.");
+        }
+
+        Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(truth)), $"{label}: the complete parent prior density is not finite.");
+    }
+
+    /// <summary>Requires the parent likelihood to beat one predeclared collapsed alternative.</summary>
+    /// <param name="model">Configured fitted model.</param>
+    /// <param name="truth">Generating vector.</param>
+    /// <param name="seasonal">Whether the vector contains changepoints.</param>
+    /// <param name="label">Fixture label.</param>
+    private static void AssertTruthBeatsCollapsedAlternative(PointProcessModel model, double[] truth, bool seasonal, string label)
+    {
+        double[] collapsed = (double[])truth.Clone();
+        if (seasonal)
+            collapsed[0] = model.Parameters[0].LowerBound + 0.5;
+        else
+            collapsed[1] = Math.Max(model.Parameters[1].LowerBound, 0.1 * truth[1]);
+        double truthLogLikelihood = model.DataLogLikelihood(truth);
+        double collapsedLogLikelihood = model.DataLogLikelihood(collapsed);
+        Assert.IsTrue(double.IsFinite(truthLogLikelihood), $"{label}: parent data likelihood is not finite.");
+        Assert.IsTrue(truthLogLikelihood > collapsedLogLikelihood,
+            $"{label}: parent likelihood {truthLogLikelihood:G17} did not beat collapsed alternative {collapsedLogLikelihood:G17}.");
+    }
+
+    /// <summary>Checks the shape sign and seasonal intensity annualization before MCMC.</summary>
+    /// <param name="truth">Generating seasonal vector.</param>
+    /// <param name="intensityOne">Generating annual intensity for season one.</param>
+    /// <param name="intensityTwo">Generating annual intensity for season two.</param>
+    /// <param name="annualRate">Generating exposure-weighted annual rate.</param>
+    /// <param name="label">Fixture label.</param>
+    private static void AssertSeasonalCrosswalkAndAnnualization(
+        double[] truth,
+        double intensityOne,
+        double intensityTwo,
+        double annualRate,
+        string label)
+    {
+        Assert.AreEqual(-ColesShapeOne, truth[4], 0.0, $"{label}: season-one Numerics Kappa is not -Coles xi.");
+        Assert.AreEqual(-ColesShapeTwo, truth[7], 0.0, $"{label}: season-two Numerics Kappa is not -Coles xi.");
+        double recoveredIntensityOne = ThresholdIntensity(truth[2], truth[3], -truth[4], Threshold);
+        double recoveredIntensityTwo = ThresholdIntensity(truth[5], truth[6], -truth[7], Threshold);
+        Assert.AreEqual(intensityOne, recoveredIntensityOne, 1E-10, $"{label}: season-one threshold intensity crosswalk changed.");
+        Assert.AreEqual(intensityTwo, recoveredIntensityTwo, 1E-10, $"{label}: season-two threshold intensity crosswalk changed.");
+        int k1 = (int)Math.Floor(truth[0]);
+        int k2 = (int)Math.Floor(truth[1]);
+        double weightOne = (k1 + 366.0 - k2) / 366.0;
+        double weightTwo = (k2 - k1) / 366.0;
+        Assert.AreEqual(annualRate, weightOne * recoveredIntensityOne + weightTwo * recoveredIntensityTwo, 1E-10,
+            $"{label}: seasonal intensities were not annualized with the configured exposure fractions.");
+    }
+
+    /// <summary>Applies central-95% parent inclusion plus R-hat and ESS to one continuous coordinate.</summary>
+    /// <param name="results">Posterior results.</param>
+    /// <param name="truth">Generating vector.</param>
+    /// <param name="parameterIndex">Continuous coordinate index.</param>
+    /// <param name="label">Coordinate label.</param>
+    private static void AssertContinuousCoordinateRecovery(MCMCResults results, double[] truth, int parameterIndex, string label)
+    {
+        (double lower, double upper) = CentralNinetyFivePercentInterval(
+            results.Output.Select(sample => sample.Values[parameterIndex]),
+            label);
+        var summary = results.ParameterResults[parameterIndex].SummaryStatistics;
+        string diagnosticLabel = $"{label} (R-hat {summary.Rhat:G17}, ESS {summary.ESS:G17})";
+        RecoveryAcceptance.AssertBayesianRecovery(diagnosticLabel, truth[parameterIndex], lower, upper, summary.Rhat, summary.ESS);
+    }
+
+    /// <summary>Applies R-hat and ESS to one monitored effective-changepoint coordinate.</summary>
+    /// <param name="results">Posterior results.</param>
+    /// <param name="parameterIndex">Coordinate index.</param>
+    /// <param name="label">Coordinate label.</param>
+    private static void AssertPosteriorDiagnostics(MCMCResults results, int parameterIndex, string label)
+    {
+        var summary = results.ParameterResults[parameterIndex].SummaryStatistics;
+        Assert.IsTrue(double.IsFinite(summary.Rhat) && summary.Rhat < RecoveryAcceptance.MaximumRhat,
+            $"{label} R-hat {summary.Rhat:G17} must be below {RecoveryAcceptance.MaximumRhat:G17}.");
+        Assert.IsTrue(double.IsFinite(summary.ESS) && summary.ESS >= RecoveryAcceptance.MinimumEffectiveSampleSize,
+            $"{label} ESS {summary.ESS:G17} must be at least {RecoveryAcceptance.MinimumEffectiveSampleSize:G17}.");
+    }
+
+    /// <summary>Applies all seasonal coordinate and identified-response recovery rules.</summary>
+    /// <param name="results">Posterior results.</param>
+    /// <param name="truth">Generating seasonal vector.</param>
+    /// <param name="sampleSize">Total generated event count across both seasonal components.</param>
+    /// <param name="trueK1">Generating effective first changepoint day.</param>
+    /// <param name="trueK2">Generating effective second changepoint day.</param>
+    /// <param name="label">Cell label.</param>
+    /// <remarks>
+    /// Continuous component recovery is evaluated in the likelihood-native Poisson-GPA
+    /// coordinates: threshold intensity, GPA scale, and Hosking Kappa. The Poisson standard error
+    /// and Numerics GPA maximum-likelihood covariance both use <c>N_s = N p_s</c>, where
+    /// <c>p_s = w_s Lambda_s / sum(w_j Lambda_j)</c> is the fixed-size generator's seasonal
+    /// mixture weight. All fitted GEV
+    /// coordinates retain R-hat and ESS checks; changepoints and identified response coordinates
+    /// retain their empirical central-95% posterior acceptance.
+    /// </remarks>
+    private static void AssertSeasonalPosteriorRecovery(
+        MCMCResults results,
+        double[] truth,
+        int sampleSize,
+        int trueK1,
+        int trueK2,
+        string label)
+    {
+        var failures = new List<string>();
+        CaptureAssertion(failures, () => AssertFlooredChangePointRecovery(results, 0, trueK1, $"{label} K1"));
+        CaptureAssertion(failures, () => AssertFlooredChangePointRecovery(results, 1, trueK2, $"{label} K2"));
+        CaptureAssertion(failures, () => AssertSeasonalResponseRecovery(results, truth, label));
+        for (int component = 0; component < 2; component++)
+        {
+            int capturedComponent = component;
+            CaptureAssertion(failures, () => AssertSeasonalComponentRecovery(
+                results,
+                truth,
+                sampleSize,
+                capturedComponent,
+                $"{label} season {capturedComponent + 1}"));
+        }
+
+        Assert.AreEqual(0, failures.Count, string.Join(Environment.NewLine, failures));
+    }
+
+    /// <summary>Applies effective-season Poisson-GPA recovery plus posterior diagnostics.</summary>
+    /// <param name="results">Posterior results.</param>
+    /// <param name="truth">Generating seasonal vector.</param>
+    /// <param name="sampleSize">Total generated event count across both seasonal components.</param>
+    /// <param name="component">Zero-based seasonal component index.</param>
+    /// <param name="label">Component label.</param>
+    /// <remarks>
+    /// The fixed-size seasonal generator has total N=1000. A component receives the fraction
+    /// <c>p_s = w_s Lambda_s / sum(w_j Lambda_j)</c> of those events, combining its
+    /// changepoint-defined exposure fraction with its threshold intensity. Thus
+    /// <c>N_s = N p_s</c>. Numerics GPA scale and
+    /// Kappa covariance entries are exactly proportional to <c>1 / N</c>, so evaluating them at
+    /// total N and dividing by <c>p_s</c> is algebraically the covariance at fractional
+    /// <c>N_s</c>. The intensity standard error follows the corresponding Poisson rate result.
+    /// </remarks>
+    private static void AssertSeasonalComponentRecovery(
+        MCMCResults results,
+        double[] truth,
+        int sampleSize,
+        int component,
+        string label)
+    {
+        Assert.AreEqual(RecoveryDesign.SampleSize, sampleSize,
+            $"{label} must retain the predeclared N={RecoveryDesign.SampleSize} recovery design.");
+        int componentOffset = 2 + 3 * component;
+        string[] coordinateNames = { "Mu", "Sigma", "Kappa" };
+        for (int coordinate = 0; coordinate < 3; coordinate++)
+        {
+            AssertPosteriorDiagnostics(
+                results,
+                componentOffset + coordinate,
+                $"{label} {coordinateNames[coordinate]}");
+        }
+
+        int k1 = (int)Math.Floor(truth[0]);
+        int k2 = (int)Math.Floor(truth[1]);
+        double exposureWeightOne = (k1 + 366.0 - k2) / 366.0;
+        double exposureWeightTwo = (k2 - k1) / 366.0;
+        double parentIntensityOne = ThresholdIntensity(truth[2], truth[3], -truth[4], Threshold);
+        double parentIntensityTwo = ThresholdIntensity(truth[5], truth[6], -truth[7], Threshold);
+        double totalAnnualIntensity = exposureWeightOne * parentIntensityOne
+            + exposureWeightTwo * parentIntensityTwo;
+        double parentIntensity = ThresholdIntensity(
+            truth[componentOffset],
+            truth[componentOffset + 1],
+            -truth[componentOffset + 2],
+            Threshold);
+        double exposureWeight = component == 0 ? exposureWeightOne : exposureWeightTwo;
+        double mixtureWeight = exposureWeight * parentIntensity / totalAnnualIntensity;
+        double effectiveSampleSize = sampleSize * mixtureWeight;
+        Assert.IsTrue(mixtureWeight > 0.0 && mixtureWeight < 1.0,
+            $"{label} seasonal mixture weight {mixtureWeight:G17} must be strictly between zero and one.");
+        Assert.IsTrue(effectiveSampleSize > 0.0,
+            $"{label} effective seasonal sample size {effectiveSampleSize:G17} must be positive.");
+
+        double parentGpaScale = truth[componentOffset + 1]
+            * Math.Pow(parentIntensity, truth[componentOffset + 2]);
+        double parentKappa = truth[componentOffset + 2];
+        double posteriorIntensityMean = results.Output.Average(sample => ThresholdIntensity(
+            sample.Values[componentOffset],
+            sample.Values[componentOffset + 1],
+            -sample.Values[componentOffset + 2],
+            Threshold));
+        double posteriorGpaScaleMean = results.Output.Average(sample =>
+        {
+            double intensity = ThresholdIntensity(
+                sample.Values[componentOffset],
+                sample.Values[componentOffset + 1],
+                -sample.Values[componentOffset + 2],
+                Threshold);
+            return sample.Values[componentOffset + 1]
+                * Math.Pow(intensity, sample.Values[componentOffset + 2]);
+        });
+        double posteriorKappaMean = results.Output.Average(sample => sample.Values[componentOffset + 2]);
+
+        var parentGpa = new GeneralizedPareto(Threshold, parentGpaScale, parentKappa);
+        double[,] totalSampleCovariance = parentGpa.ParameterCovariance(
+            sampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        double intensityStandardError = parentIntensity / Math.Sqrt(effectiveSampleSize);
+        double scaleStandardError = Math.Sqrt(totalSampleCovariance[1, 1] / mixtureWeight);
+        double kappaStandardError = Math.Sqrt(totalSampleCovariance[2, 2] / mixtureWeight);
+        string effectiveDesign = $"N_s={effectiveSampleSize:G17}, mixture weight={mixtureWeight:G17}";
+
+        RecoveryAcceptance.AssertFrequentistStandardizedError(
+            $"{label} threshold intensity ({effectiveDesign})",
+            posteriorIntensityMean,
+            parentIntensity,
+            intensityStandardError);
+        RecoveryAcceptance.AssertFrequentistStandardizedError(
+            $"{label} GPA scale ({effectiveDesign})",
+            posteriorGpaScaleMean,
+            parentGpaScale,
+            scaleStandardError);
+        RecoveryAcceptance.AssertFrequentistStandardizedError(
+            $"{label} GPA Kappa ({effectiveDesign})",
+            posteriorKappaMean,
+            parentKappa,
+            kappaStandardError);
+    }
+
+    /// <summary>Captures one recovery assertion so every predeclared coordinate is evaluated.</summary>
+    /// <param name="failures">Collected assertion messages.</param>
+    /// <param name="assertion">One shared recovery or response assertion.</param>
+    private static void CaptureAssertion(ICollection<string> failures, Action assertion)
+    {
+        try
+        {
+            assertion();
+        }
+        catch (AssertFailedException exception)
+        {
+            failures.Add(exception.Message);
+        }
+    }
+
+    /// <summary>Checks nonseasonal threshold intensity and conditional-tail posterior bands.</summary>
+    /// <param name="results">Posterior results.</param>
+    /// <param name="truth">Generating vector.</param>
+    /// <param name="label">Cell label.</param>
+    private static void AssertNonseasonalResponseRecovery(MCMCResults results, double[] truth, string label)
+    {
+        const double tailValue = 120.0;
+        double parentIntensity = ThresholdIntensity(truth[0], truth[1], -truth[2], Threshold);
+        double parentScaleAtThreshold = truth[1] - truth[2] * (Threshold - truth[0]);
+        double parentTail = GpaConditionalSurvival(parentScaleAtThreshold, -truth[2], tailValue - Threshold);
+        AssertIdentifiedResponseRecovery(results.Output.Select(sample =>
+            ThresholdIntensity(sample.Values[0], sample.Values[1], -sample.Values[2], Threshold)), parentIntensity, $"{label} annual threshold intensity");
+        AssertIdentifiedResponseRecovery(results.Output.Select(sample =>
+        {
+            double scaleAtThreshold = sample.Values[1] - sample.Values[2] * (Threshold - sample.Values[0]);
+            return GpaConditionalSurvival(scaleAtThreshold, -sample.Values[2], tailValue - Threshold);
+        }), parentTail, $"{label} conditional tail at {tailValue:G17}");
+    }
+
+    /// <summary>Checks seasonal intensity and component-tail posterior bands.</summary>
+    /// <param name="results">Posterior results.</param>
+    /// <param name="truth">Generating vector.</param>
+    /// <param name="label">Cell label.</param>
+    private static void AssertSeasonalResponseRecovery(MCMCResults results, double[] truth, string label)
+    {
+        const double tailOne = 120.0;
+        const double tailTwo = 165.0;
+        for (int component = 0; component < 2; component++)
+        {
+            int offset = 2 + 3 * component;
+            double tailValue = component == 0 ? tailOne : tailTwo;
+            double parentIntensity = ThresholdIntensity(truth[offset], truth[offset + 1], -truth[offset + 2], Threshold);
+            double parentScaleAtThreshold = truth[offset + 1] - truth[offset + 2] * (Threshold - truth[offset]);
+            double parentTail = GpaConditionalSurvival(parentScaleAtThreshold, -truth[offset + 2], tailValue - Threshold);
+            int capturedOffset = offset;
+            AssertIdentifiedResponseRecovery(results.Output.Select(sample =>
+                ThresholdIntensity(sample.Values[capturedOffset], sample.Values[capturedOffset + 1], -sample.Values[capturedOffset + 2], Threshold)),
+                parentIntensity,
+                $"{label} season {component + 1} annual threshold intensity");
+            AssertIdentifiedResponseRecovery(results.Output.Select(sample =>
+            {
+                double scaleAtThreshold = sample.Values[capturedOffset + 1] - sample.Values[capturedOffset + 2] * (Threshold - sample.Values[capturedOffset]);
+                return GpaConditionalSurvival(scaleAtThreshold, -sample.Values[capturedOffset + 2], tailValue - Threshold);
+            }), parentTail, $"{label} season {component + 1} conditional tail at {tailValue:G17}");
+        }
+    }
+
+    /// <summary>Requires one identified response truth to lie in its empirical central-95% posterior band.</summary>
+    /// <param name="samples">Derived posterior response draws.</param>
+    /// <param name="parent">Generating response.</param>
+    /// <param name="label">Response label.</param>
+    private static void AssertIdentifiedResponseRecovery(IEnumerable<double> samples, double parent, string label)
+    {
+        (double lower, double upper) = CentralNinetyFivePercentInterval(samples, label);
+        RecoveryAcceptance.AssertIdentifiedResponseGrid(label, parent, lower, upper);
+    }
+
+    /// <summary>Computes a conservative empirical central-95% interval from finite retained draws.</summary>
+    /// <param name="samples">Posterior draws.</param>
+    /// <param name="label">Coordinate or response label.</param>
+    /// <returns>The lower and upper empirical limits.</returns>
+    private static (double Lower, double Upper) CentralNinetyFivePercentInterval(IEnumerable<double> samples, string label)
+    {
+        double[] ordered = samples.OrderBy(value => value).ToArray();
+        Assert.IsTrue(ordered.Length > 0, $"{label} has no retained posterior draws.");
+        Assert.IsTrue(ordered.All(double.IsFinite), $"{label} contains non-finite retained posterior draws.");
+        int lowerIndex = (int)Math.Floor(0.025 * (ordered.Length - 1));
+        int upperIndex = (int)Math.Ceiling(0.975 * (ordered.Length - 1));
+        return (ordered[lowerIndex], ordered[upperIndex]);
     }
 
 }

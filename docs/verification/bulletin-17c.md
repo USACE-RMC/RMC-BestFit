@@ -54,13 +54,11 @@ Bulletin 17C uses penalized GMM and frequentist uncertainty ensembles, while del
 
 ## Evidence boundary
 
-The seven passed methods verify current specialized LP3 GMM parameter parity with the published Bulletin 17C worked examples. They do not verify:
+The seven passed worked-example methods verify current specialized LP3 GMM parameter parity with the published Bulletin 17C examples. Three additional PeakFQ cells verify Hirsch-Stedinger plotting-position parity, and twelve analytical penalty cells verify regional parameter/quantile weighting behavior. Chunk 7 separately verifies six generated-parent recovery cells and all thirteen independently derived complete-data covariance cells. The evidence still does not verify:
 
 - Cohn confidence-interval values or coverage;
-- asymptotic or bootstrap covariance;
+- bootstrap covariance;
 - uncertain-data variants;
-- PeakFQ plotting-position parity;
-- penalty sensitivity;
 - bootstrap interval coverage; or
 - agreement with an objective/generalized-posterior target.
 
@@ -100,11 +98,36 @@ Bessel factors. The derivation is checked against frozen values generated withou
 Numerics production code and cites Bulletin 17C version 1.1 and Cohn, Lane, and Stedinger (2001) for
 the method-of-moments/EMA uncertainty framework.
 
+## Chunk 7 current results
+
+All six generated-parent recovery identities and all thirteen covariance identities passed current
+exact guarded runs on 30 August 2026. The covariance artifact was generated with Python 3.12.13
+standard library only and independently cross-checked by the C# analytical evaluator.
+
+The two natural-space Pearson Type III cells initially failed because their fourth-to-sixth central
+moments are scale-separated. The shared Numerics positive-definite helper added a trace-scaled ridge
+before testing an already-positive-definite matrix, so the largest moment coordinate materially changed
+covariance[0,0]. Haden Smith approved correcting the shared contract: the symmetric candidate is now
+tested first and returned unchanged when Cholesky accepts it; the existing ridge magnitudes, escalation,
+and fallback remain unchanged for rejected candidates. No covariance formula, oracle, tolerance, seed,
+or B17C estimator behavior changed. Fresh isolated TRXs at `20260830-094558` and `20260830-094618`
+record the two Pearson cells passing; the other eleven covariance cells and all six recoveries passed in
+the `20260830-094658` through `20260830-094833` series. The exact method/TRX ledger is in the
+[Chunk 7 inventory](test-inventory.md#chunk-7-bulletin-17c-reconciliation).
+
+The twelve penalty identities, twelve example/plotting-position identities, and seven selected general
+GMM identities also passed fresh exact guarded runs after the shared change. Three discarded wrong-class
+attempts produced zero-result TRXs and are not evidence; the corrected
+`HirschStedingerPlottingPositionVerificationTests` identities each passed exactly once.
+
+No confidence-interval coverage method was executed. The 56 catalog entries in the three coverage
+classes remain execution-excluded historical evidence and reruns-on-request.
+
 ## Phase 7 dispositions - 22 August 2026
 
 Three Bulletin 17C items from the 21 August 2026 reruns were diagnosed and disposed in the closeout:
 
-- **TR-085 (GMM covariance, fixed).** The sandwich covariance passed the moment covariance through an eigenvalue cap (fifty times the median eigenvalue) that rewrites the moment covariance of real-space three-parameter families (eigenvalues scaling like sigma^2, sigma^4, sigma^6). Only the positive-definite floor remains. `B17CCovarianceTests` 13/13 after the fix (the Pearson Type III cells included); the Numerics asymptotic oracle was confirmed by an independent influence-function derivation.
+- **TR-085 (GMM covariance, independently closed).** The eigenvalue cap was removed and only the positive-definite floor remained. The historical 13/13 result compared with the same Numerics covariance ecosystem. Chunk 7 replaced that oracle with an independent analytical sandwich. After the approved shared Numerics correction stopped adding a ridge to already-positive-definite matrices, all 13 current exact methods passed without changing the independent oracle or tolerance.
 - **TR-086 (bootstrap re-centring, fixed).** `DataFrame.BootstrapDataFrame` re-centres additive measurement-error distributions by the simulated/original ratio for log-space fits and strictly positive error supports, so MOVE.3-style relative errors keep their relative spread and never cross zero. `UncertainDataBootstrapVerificationTests` 2/2 and the reliability grid 14/14 after the fix.
 - **TR-087 (censored coverage frames and initial parameters, fixed).** The coverage fixture now computes plotting positions; `Bulletin17CDistribution` keeps the constraint-based initial values and records a validation warning when the censored-data (ROS) initial estimate is unavailable instead of reporting zero parameters. The censored coverage cells and the `B17CCoverageTests` cells (TR-088) were not rerun, by decision; they remain exact-method reruns on request.
 

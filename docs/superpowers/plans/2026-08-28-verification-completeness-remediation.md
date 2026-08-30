@@ -307,11 +307,11 @@
 **Interfaces:**
 - Produces: `RecoveryDesign.SampleSize = 1000`; typed sample-unit descriptions; frequentist interval/standardized-error assertions; Bayesian interval, R-hat, and ESS assertions; response-grid assertions for weakly identified models.
 
-- [ ] Add the test helpers without production dependencies or direct unit tests in Verification; prove them through the first scientific recovery cell that fails under the old N/design and passes under the approved design.
-- [ ] Convert Bayesian, MAP, GMM, Profile-Q, and generic MLE recovery to N=1000.
-- [ ] Split analytical AIC/BIC and conjugate-posterior claims from recovery-named sources.
-- [ ] Predeclare seeds, parent parameters, standard-error source, interval width, and secondary 5% applicability in XML remarks and catalog entries.
-- [ ] Run only exact estimator Verification methods explicitly authorized for this chunk.
+- [x] Add the test helpers without production dependencies or direct unit tests in Verification; prove them through the first scientific recovery cell that fails under the old N/design and passes under the approved design.
+- [x] Convert Bayesian, MAP, GMM, Profile-Q, and generic MLE recovery to N=1000.
+- [x] Split analytical AIC/BIC and conjugate-posterior claims from recovery-named sources.
+- [x] Predeclare seeds, parent parameters, standard-error source, interval width, and secondary 5% applicability in XML remarks and catalog entries.
+- [x] Run only exact estimator Verification methods explicitly authorized for this chunk.
 
 ### Chunk 6A: Complete DistributionFitting verification
 
@@ -323,10 +323,10 @@
 **Interfaces:**
 - Produces: theoretical/external evidence plus N=1000 end-to-end recovery for all 15 candidate families.
 
-- [ ] Add the failing N=1000 recovery cell before each missing family path.
-- [ ] Judge the true family through recovered parameters and predeclared quantiles; do not require it to win model selection.
-- [ ] Record seeds, distribution parameterization, fit method, interval/standard-error source, and acceptance in XML and catalog entries.
-- [ ] Run each authorized exact method separately and update results only from reviewed TRX evidence.
+- [x] Add the failing N=1000 recovery cell before each missing family path.
+- [x] Judge the true family through recovered parameters and predeclared quantiles; do not require it to win model selection.
+- [x] Record seeds, distribution parameterization, fit method, interval/standard-error source, and acceptance in XML and catalog entries.
+- [x] Run each authorized exact method separately and update results only from reviewed TRX evidence.
 
 ### Chunk 6B: Complete Univariate family and trend verification
 
@@ -338,11 +338,11 @@
 **Interfaces:**
 - Produces: N=1000 Univariate recovery for all 15 families and theory/recovery for every trend including `ReciprocalTrend`.
 
-- [ ] Raise the family recovery count from N=300 to N=1000 and use shared recovery acceptance.
-- [ ] Add LogNormal and KappaFour MLE recovery if absent after current-source reconciliation.
-- [ ] Add independently calculated ReciprocalTrend values/derivatives and N=1000 nonstationary recovery.
-- [ ] Apply response-space checks where trend coefficients are near zero or weakly identified.
-- [ ] Run each authorized exact method separately and reconcile catalog/report evidence.
+- [x] Raise the family recovery count from N=300 to N=1000 and use shared recovery acceptance.
+- [x] Add LogNormal and KappaFour MLE recovery if absent after current-source reconciliation.
+- [x] Add independently calculated ReciprocalTrend values/derivatives and N=1000 nonstationary recovery.
+- [x] Apply response-space checks where trend coefficients are near zero or weakly identified.
+- [x] Run each authorized exact method separately and reconcile catalog/report evidence.
 
 ### Chunk 7: Complete Bulletin 17C verification
 
@@ -354,11 +354,11 @@
 **Interfaces:**
 - Produces: six N=1000 family recovery cells and source-backed value assertions replacing completion-only claims; coverage studies remain execution-excluded history.
 
-- [ ] Establish the exact family/parameterization crosswalk before generating any external artifact.
-- [ ] Add N=1000 family recovery with the common acceptance rule.
-- [ ] Add published or PeakFQ expected values and manifest hashes without executing any Bulletin 17C confidence-interval coverage method.
-- [ ] Preserve the three B17C confidence-interval coverage classes and their historical results as execution-excluded reruns-on-request, distinct from recovery N.
-- [ ] Run only approved exact non-coverage Bulletin 17C value/recovery methods and record failures as findings rather than tuning production or tolerances; do not run any of the three B17C coverage classes.
+- [x] Establish the exact family/parameterization crosswalk before generating any external artifact.
+- [x] Add N=1000 family recovery with the common acceptance rule.
+- [x] Add published or PeakFQ expected values and manifest hashes without executing any Bulletin 17C confidence-interval coverage method.
+- [x] Preserve the three B17C confidence-interval coverage classes and their historical results as execution-excluded reruns-on-request, distinct from recovery N.
+- [x] Run only approved exact non-coverage Bulletin 17C value/recovery methods and record failures as findings rather than tuning production or tolerances; do not run any of the three B17C coverage classes.
 
 ### Chunk 8: Complete point-process verification
 
@@ -370,11 +370,11 @@
 **Interfaces:**
 - Produces: separate theory, external-compatible, and N=1000 recovery evidence for stationary and seasonal point-process behavior.
 
-- [ ] Keep analytical likelihood and block-origin evidence distinct from recovery.
-- [ ] Establish the extRemes or alternative-package parameterization/threshold/exposure crosswalk before comparison.
-- [ ] Convert retained recovery fixtures to the shared N=1000 design.
-- [ ] Reclassify or replace prior-range sampling characterization so it is not presented as estimator recovery.
-- [ ] Run authorized exact methods and update the report from TRX evidence.
+- [x] Keep analytical likelihood and block-origin evidence distinct from recovery.
+- [x] Establish the extRemes or alternative-package parameterization/threshold/exposure crosswalk before comparison.
+- [x] Convert retained recovery fixtures to the shared N=1000 design.
+- [x] Reclassify or replace prior-range sampling characterization so it is not presented as estimator recovery.
+- [x] Run authorized exact methods and update the report from TRX evidence.
 
 ### Chunk 9: Complete competing-risk verification
 
@@ -383,13 +383,13 @@
 - Modify catalog and report sections.
 
 **Interfaces:**
-- Produces: all two- and three-component recovery at exactly N=1000, with ordered or predictive quantities for non-identifiable designs.
+- Produces: five recovery cells over three N=1000 cause-balanced dog-leg designs, with full-likelihood coordinate uncertainty and explicit fixed-correlation Bayesian exclusion.
 
-- [ ] Change the three-component sample count from 1500 to 1000 before evaluating results.
-- [ ] Apply parameter recovery only to identifiable coordinates and CDF/quantile/curve recovery to label or dependence ambiguities.
-- [ ] Revisit all deferred Bayesian maximum/correlated cells under the common convergence and interval rule.
-- [ ] Keep 20,000/40,000-draw simulation-calibration designs distinct from recovery N and retain their theoretical Monte Carlo tolerances.
-- [ ] Record unresolved cells as explicit findings or approved research limitations.
+- [x] Thin the oversized estimator cross-product and predeclare theoretical shares, hard wins, soft likelihood responsibilities, dominance mass, and dog-leg crossovers for every retained fixture.
+- [x] Apply parameter recovery only after cause-balance and coordinate-identification evidence; order same-family Weibull coordinates by increasing shape.
+- [x] Exclude Bayesian MCMC from the numerically expensive correlated design and retain matching BestFit/Numerics MLE fixtures as a cross-implementation diagnostic.
+- [x] Keep 20,000/40,000-draw simulation-calibration designs distinct from recovery N and retain their theoretical Monte Carlo tolerances.
+- [x] Preserve the independent maximum MLE optimizer finding as open without tuning a fixture, tolerance, likelihood, optimizer, or initialization.
 
 ### Chunk 10A: Complete Mixture verification
 
@@ -401,10 +401,10 @@
 **Interfaces:**
 - Produces: independent Normal-mixture package parity and label-identified N=1000 recovery.
 
-- [ ] Define ordered component parameters and predictive CDF/quantile checks before running recovery.
-- [ ] Generate and hash an external mixture artifact using an exact likelihood and parameterization overlap.
-- [ ] Keep zero-inflated and non-package-compatible designs on independently implemented likelihood or response oracles.
-- [ ] Run approved exact methods and update claims only from reviewed evidence.
+- [x] Define ordered component parameters and predictive CDF/quantile checks before running recovery.
+- [x] Generate and hash an external mixture artifact using an exact likelihood and parameterization overlap.
+- [x] Keep zero-inflated and non-package-compatible designs on independently implemented likelihood or response oracles.
+- [x] Run approved exact methods and update claims only from reviewed evidence.
 
 ### Chunk 10B: Complete Composite verification
 
@@ -415,10 +415,10 @@
 **Interfaces:**
 - Produces: analytical composition/resampling evidence plus N=1000 end-to-end predictive recovery.
 
-- [ ] Generate 1000 observations per parent component, fit each child analysis, construct the CompositeAnalysis, and compare the output curve with the analytical parent composite.
-- [ ] Cover mixture, competing-risk maximum/minimum, and equal-weight model averaging with identified predictive quantities.
-- [ ] Keep analytical formulas and posterior-resampling parity categorized as theory/independent evidence, not recovery.
-- [ ] Run approved exact methods and update claims only from reviewed TRX evidence.
+- [x] Generate 1000 observations per parent component, fit each child analysis, construct the CompositeAnalysis, and compare the output curve with the analytical parent composite.
+- [x] Cover mixture, competing-risk maximum/minimum, and equal-weight model averaging with identified predictive quantities.
+- [x] Keep analytical formulas and posterior-resampling parity categorized as theory/independent evidence, not recovery.
+- [x] Run approved exact methods and update claims only from reviewed TRX evidence.
 
 ### Chunk 11A: Complete Bivariate verification
 
@@ -812,3 +812,60 @@ At the end of each session, check completed boxes only when code, oracle, artifa
 - **Verification execution:** none. No spatial Verification method, full Verification suite, Bulletin 17C confidence-interval coverage method, or other Verification method was run. Verification was compiled only.
 - **Open scope:** Chunk 14A owns independent held-out fold predictions. Chunk 14B owns independent conditional-GP/regional-posterior, Godambe H/J, temporal block-bootstrap quantile, and analytic VIF evidence. No Chunk 5, 14A, 14B, or later implementation was started.
 - **Next:** Chunk 5 is the first unchecked implementation unit.
+
+### 30 August 2026 — current-source reconciliation through Chunk 7
+
+- **Stale-checkpoint correction:** current source, catalog, `test-inventory.md`, and exact TRX evidence show Chunk 5, Chunk 6A, and Chunk 6B complete; their plan boxes are checked without redoing or rerunning those completed units. The prior "Chunk 5 is next" sentence is retained as dated history, not current state.
+- **Chunk 7 recovery:** replaced six same-sample product-moment identities with exactly N=1000, seed-12345 generated-parent recovery in the declared natural/base-10 coordinates. All six current identities passed exact guarded runs using the shared recovery design and approved parameter/quantile-variance acceptance.
+- **Chunk 7 covariance:** replaced the same-ecosystem Numerics covariance target with an independent central-moment/Jacobian sandwich and a Python 3.12.13 standard-library frozen artifact. Eleven of thirteen current covariance identities passed. Natural-space Pearson III N=25 and N=100 failed covariance[0,0] against the independent oracle and remain open; no production conditioning policy or tolerance changed.
+- **Artifacts:** `verification/data/bulletin17c/b17c-gmm-covariance-oracle.json` SHA-256 `bbaf3d0c616b550135a32a098a611bd16c301995a147700745c5ec956b68c2cf`; generator `verification/python/bulletin17c/generate_b17c_covariance_oracle.py` SHA-256 `61dcb3280c41ece88e6c7dc1c0c1b8aa5579ea9012ed2a39df1cf5a5d84fb25b`.
+- **Scoped validation:** Verification compiled with zero warnings/errors; every one of the 19 selected B17C methods ran individually through the guarded runner and every latest TRX was inspected; JSON Schema validation returned true; default catalog validation passed with 174 open gaps and 530 declarations / 530 execution units; `git diff --check` passed with line-ending warnings only.
+- **Execution boundary:** no method in `B17CCoverageTests`, `B17CCensoredCoverageTests`, or `B17CCohnEtAlCoverageTests` ran. The full Verification project did not run. This Chunk 7/8 work staged, committed, pushed, reverted, or discarded nothing and moved or renamed no file.
+- **Next:** Chunk 8 is the first unchecked implementation unit. Chunk 9 and later work have not started.
+
+### 30 August 2026 — Chunk 8 complete; stop before Chunk 9
+
+- **Point-process ownership:** retained the two analytical likelihood identities and the three analytical simulation identities as distinct scientific claims. Reclassified the two N=4000 PERT-histogram cells as independently calculated occurrence-histogram/prior-placement claims, not estimator recovery; deterministic default-prior construction, containment, fallbacks, and serialization remain fast-test responsibilities.
+- **Recovery normalization:** all five total-N=1000 fixtures retain their established generators, seeds, sampler, and defaults. They diagnose prior support, likelihood discrimination, exposure/threshold/block-origin agreement, the Numerics-Kappa versus Coles-shape sign, and seasonal annualization before MCMC. Nonseasonal coordinates use empirical central-95% parent inclusion. Seasonal recovery uses likelihood-native threshold intensity, GPA scale, and Hosking Kappa with effective component count `N_s=N*p_s`, `p_s=w_s*Lambda_s/sum(w_j*Lambda_j)`; intensity uses its Poisson standard error, GPA scale/Kappa use Numerics analytical MLE covariance scaled to `N_s`, and absolute standardized error must be at most 1.96. Every raw fitted coordinate retains R-hat below 1.10 and ESS at least 100; changepoints and response-space checks retain central-95% inclusion.
+- **Exact evidence:** all thirteen current Chunk 8 identities passed individual guarded runs: both likelihood oracles, both prior-placement oracles, the stationary SciPy oracle, all five recoveries, and all three analytical simulations. Final exact reruns of the four seasonal recoveries passed from isolated one-result TRXs at `20260830-090050`, `090132`, `090216`, and `090303`. Equal-intensity effective counts are `508.1967213114754` and `491.8032786885246`; the 12-versus-4 unequal-intensity event-mixture counts are `756.09756097561` and `243.90243902439`. No seed, prior, sampler, likelihood, generator, production algorithm, or convergence rule changed.
+- **External artifact:** the predeclared stationary crosswalk uses annual exposure, threshold `u=80`, annual Poisson intensity, and `Kappa=-xi`; it explicitly makes no seasonal package-parity claim. `verification/data/point-process/stationary-poisson-gpa-scipy-oracle.json` was generated with Python 3.12.13, SciPy 1.17.1, and NumPy 2.5.2 and has SHA-256 `54a57ea459ba1a71dc9e828672dda83386ed5e137348f9c2740567ba242d7d5b`; generator `verification/python/point-process/generate_point_process_scipy_oracle.py` has SHA-256 `0d085434034e484a94dc5db3e212127f9043372e376dcbc2904ae7e650a9af56`.
+- **Catalog and validation:** the catalog validator harness passed 22/22, JSON Schema validation returned true, and default catalog validation passed with 531 declarations / 531 execution units and 165 open gaps. Declaration statuses are 308 verified, 165 open, 56 execution-excluded, and two accepted limitations. Core, UI, and App fast gates passed 3,375/3,375, 581/581, and 443/443; Verification compiled with zero warnings/errors; the strict Debug XML gate passed across 931 source files. Final whitespace/newline and task-scoped status review are recorded in the handoff.
+- **Repository-state note:** after the supplied `73cf9beb` baseline, the reflog records user-authored commit `0a2703a5` (`Complete verification remediation through Chunk 6`) at 07:28:59 MDT. This Chunk 7/8 work remains entirely unstaged on top of that commit and did not create it.
+- **Execution boundary:** no method in `B17CCoverageTests`, `B17CCensoredCoverageTests`, or `B17CCohnEtAlCoverageTests` ran. The full Verification project did not run. Chunk 9 was not started. This Chunk 7/8 work staged, committed, pushed, reverted, or discarded nothing and moved or renamed no file.
+- **Next:** Chunk 9 is the first unchecked implementation unit and is outside this execution scope.
+
+### 30 August 2026 — Chunk 7 covariance remediation complete; Chunk 8 boundary retained
+
+- **Approved shared correction:** Haden Smith approved changing Numerics `MatrixRegularization.MakeSymmetricPositiveDefinite` to test the symmetric candidate before adding a ridge. TDD pinned unchanged well-conditioned, scale-separated, asymmetric-SPD, rank-deficient, indefinite-fallback, and Gaussian-mixture caller behavior. Accepted candidates now return unchanged; rejected candidates retain the prior ridge magnitude, escalation, and fallback. No Boolean bypass overload was added, and no B17C covariance formula, independent oracle, tolerance, seed, or estimator behavior changed.
+- **Chunk 7 exact evidence:** all 13 independent covariance identities and all six generated-parent recovery identities passed current individual guarded runs with one executed result in each inspected TRX. Downstream exact guarded regression runs also passed all 12 B17C penalty identities, all 12 example/plotting-position identities, and all seven selected general-GMM identities. Three wrong-class plotting-position attempts produced zero-result TRXs, were discarded as evidence, and were replaced by passing runs under the exact `HirschStedingerPlottingPositionVerificationTests` identities.
+- **Numerics validation:** the Release build passed on net481, net8, net9, and net10 with zero warnings/errors. All focused matrix/GMM tests passed on every framework, and the deterministic suite excluding the live time-series download fixture passed 2,430/2,430 on every framework. The unfiltered suite's only persistent exact rerun failure was the external Australian BOM Cotter River HTTP 500; the other initially affected BOM identities passed on exact framework-specific reruns.
+- **Chunk 8 retained:** all 13 current point-process identities remain passed under the completed Chunk 8 evidence, including the user-approved seasonal effective-count rule `N_s=N*p_s`. No Chunk 8 seed, prior, sampler, likelihood, generator, convergence rule, or acceptance threshold changed during this remediation.
+- **Catalog:** current default validation passes with 531 declarations / 531 execution units and 163 open gaps. Declaration statuses are 310 verified, 163 open, 56 execution-excluded, and two accepted limitations.
+- **Execution boundary:** no method in `B17CCoverageTests`, `B17CCensoredCoverageTests`, or `B17CCohnEtAlCoverageTests` ran. The full Verification project did not run. Chunk 9 was not started. Nothing was staged, committed, pushed, reverted, discarded, moved, or renamed.
+- **Stop:** Chunks 7 and 8 are reconciled. Chunk 9 remains the first unchecked implementation unit and is outside this execution scope.
+
+### 30 August 2026 — Chunk 9 reconciled; proceed to Chunk 10A
+
+- **Design:** the historical 20-cell cross-product is replaced by five BestFit cells over three N=1000, seed-12345 dog-leg fixtures. The labeled Verification generator matches production draws and predeclares theoretical cause shares, hard wins, soft likelihood responsibilities, dominance mass, and interior crossovers while retaining any extreme-tail re-entry. Same-family Weibulls use increasing-shape ordering. MLE uncertainty comes from the full observed-information matrix without a ridge; both independent Bayesian cells use central-95-percent coordinate intervals, R-hat below 1.10, and ESS at least 100, with the maximum cell disabling the optional Jeffreys scale multiplier.
+- **Thinning:** independent minimum, independent maximum, and fixed-rho=0.6 minimum designs remain. A balanced three-Weibull candidate passed cause-share gates but was removed after BestFit MLE hit a shape bound, Numerics information was not positive definite, and BestFit Bayesian recovery excluded the first scale. Cause balance is necessary but not sufficient for coordinate identification.
+- **Disposition:** all five retained BestFit identities pass exact one-result TRXs. The redesigned independent maximum, Weibull(100,3) + Gumbel(80,20), passes MLE and Bayesian recovery with hard wins 495/505, soft counts 488.2/511.8, an interior crossover at 0.474, and expected Gumbel tail re-entry at 0.987. The Bayesian cell retains bounded parameter priors but disables the optional Jeffreys scale multiplier. The former Weibull(80,2) + Gumbel(60,10) fixture remains a documented single-start local-mode example; direct cause-sum parity ruled out its log-PDF formulation.
+- **Numerics:** three matching MLE fixtures replace the old estimator/recovery matrix. Independent minimum, redesigned independent maximum, and correlated minimum each pass individually on net481, net8, net9, and net10. The test helper uses `Tools.IsFinite` and `Tools.Clamp`; no Numerics competing-risk production file changed.
+- **Boundary:** no correlated Bayesian method exists or ran. A default-prior Bayesian maximum diagnostic showed that the optional Jeffreys scale multiplier and MAP initialization select a disappeared-Weibull boundary mode with rank-deficient information. The retained identity disables only that multiplier and passes without changing the production default. The four 40,000-draw dependency calibrations remain unchanged and were not conflated with N=1000 recovery. No Bulletin 17C confidence-interval coverage identity or full Verification suite ran. Chunk 10A follows; Chunk 11A remains outside scope.
+
+### 30 August 2026 — Chunk 10A reconciled; proceed to Chunk 10B
+
+- **Crosswalk:** the six current identities retain N=1000 and their declared fixture/estimator seeds. Full-K physical weights, stored K-1 weights, final-weight reconstruction, ascending-mean labels, Normal mean/standard-deviation coordinates, zero-atom mass, positive-component mass, and expected component counts are explicit. Same-ecosystem BestFit/Numerics parity is no longer the scientific acceptance oracle.
+- **Independent artifact:** `verification/data/mixture/normal-mixture-sklearn-oracle.json` freezes a NumPy-PCG64 seed-12345 N=1000 sample, scikit-learn 1.9.0 diagonal-covariance fit, and independently evaluated likelihood/CDF values. The generator is `verification/python/mixture/generate_sklearn_normal_mixture_oracle.py`. Artifact SHA-256 is `20d0bb7f8b351b18e01135fbdce00d8090a5ecb7dfa9709f9f32b61571ce5d4b`; generator SHA-256 is `7ff9f480aa696efe488b62370fbde4d74aff4880440e4ef2d007e5ca6215eb93`.
+- **Disposition:** all six current recovery identities and the new external-package identity passed. The first post-edit Bayesian runs incorrectly declared unsorted retained arrays as sorted to `Statistics.Percentile`; those two false exclusions and one nonfinite interval were discarded, and the exact methods passed after the Verification-only arrays were sorted. No seed, prior, sampler, likelihood, parent, or acceptance rule changed.
+- **Evidence:** all seven final exact guarded invocations produced one inspected TRX result. The three superseded percentile-oracle failures also produced one-result TRXs but are not scientific evidence. The complete Verification project and Bulletin 17C confidence-interval coverage classes did not run. Chunk 10B is next; Chunk 11A remains outside scope.
+
+### 30 August 2026 — Chunk 10B complete; stop before Chunk 11A
+
+- **Current oracle identities:** all ten exact `CompositeOracleVerificationTests` methods passed under their current post-rename names with one inspected TRX result each. Historical `CompositeRecoveryTests` results were not transferred. Fixed analytical grids, 8,000 Cartesian combinations, and 5,000 resampling draws retain their theory/published/independent classifications and are not treated as recovery N.
+- **Predictive coverage:** four new `CompositePredictiveRecoveryTests` methods generate exactly N=1000 observations for each Normal child, fit children serially through unchanged Bayesian defaults, and cover an unequal-weight mixture, independent maximum, independent minimum, and equal-weight model average. Every child coordinate satisfies central-95% parent inclusion, R-hat below 1.10, and ESS at least 100; analytical parent quantiles at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90 lie in every central 95% propagated band. All four pass in 14.958-15.711 seconds.
+- **Discarded runs:** the first predictive-mixture attempt used an unsorted posterior array with `dataIsSorted: true`; the next used the same probabilities in descending exceedance order. Both one-result helper-construction failure TRXs are discarded, and the final exact method passes after Verification-only sorting/order corrections. No production or scientific setting changed.
+- **Stop boundary:** Chunk 10B is reconciled. Chunk 11A was not inspected or started. No Bulletin 17C confidence-interval coverage identity or full Verification suite ran.
+- **Final catalog after the approved Bayesian maximum follow-up:** default validation passes with 521 declarations / 521 execution units and 135 open gaps. Declaration statuses are 328 verified, 135 open, 56 execution-excluded, and two accepted limitations. JSON Schema validation returned true and the validator fixture harness passed 22/22.
+- **Final gates:** Core, UI, and App passed 3,375/3,375, 581/581, and 443/443. Verification compiled with zero warnings/errors. The initial strict XML command was blocked by sandbox access to the existing Windows SDK/NuGet profile; the identical elevated retry passed across 935 source files. `git diff --check` passed with line-ending warnings only, and the direct untracked-file whitespace/final-newline scan passed for all 13 untracked files.
+- **Numerics validation:** the four-framework Release build passed with zero warnings/errors. On each of net481, net8, net9, and net10, all three exact retained competing-risk MLE identities passed and the deterministic suite excluding the live `Data.TimeSeriesAnalysis.Test_TimeSeriesDownload` class passed 2,423/2,423. No live-network fixture ran in the final sweep.
+- **Repository preservation:** the RMC-BestFit staged diff is empty. The sibling Numerics checkout remains at `9b66ad7f77d91dd60e3870104dc0edee907a830b` on `bug-fixes-and-enhancements` with its four preserved Chunk 7 files plus the approved `Test_CompetingRisks.cs` change and an empty staged diff. This work staged, committed, pushed, reverted, discarded, moved, or renamed nothing.

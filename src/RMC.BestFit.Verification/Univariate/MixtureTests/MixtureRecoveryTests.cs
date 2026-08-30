@@ -1,13 +1,15 @@
+using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using RMC.BestFit.Verification.Recovery;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Verification.Univariate.MixtureTests;
 
 /// <summary>
-/// Cross-engine recovery verification for finite Normal mixtures.
+/// Generated-parent recovery verification for finite Normal mixtures.
 /// </summary>
 [TestClass]
 public class MixtureRecoveryTests
@@ -18,7 +20,7 @@ public class MixtureRecoveryTests
     private const int SampleSize = 1000;
 
     /// <summary>
-    /// Verifies recovery and cross-engine parity for a two-component Normal mixture.
+    /// Verifies generated-parent recovery for a two-component Normal mixture.
     /// </summary>
     [TestMethod]
     public void NormalMixture2D_Recovery_Parity()
@@ -35,7 +37,7 @@ public class MixtureRecoveryTests
     }
 
     /// <summary>
-    /// Verifies recovery and cross-engine parity for a zero-inflated two-component Normal hurdle mixture.
+    /// Verifies generated-parent recovery for a zero-inflated two-component Normal hurdle mixture.
     /// </summary>
     [TestMethod]
     public void ZeroInflatedNormalMixture2D_Recovery_Parity()
@@ -52,7 +54,7 @@ public class MixtureRecoveryTests
     }
 
     /// <summary>
-    /// Verifies recovery and cross-engine parity for a three-component Normal mixture.
+    /// Verifies generated-parent recovery for a three-component Normal mixture.
     /// </summary>
     [TestMethod]
     public void NormalMixture3D_Recovery_Parity()
@@ -128,7 +130,7 @@ public class MixtureRecoveryTests
     }
 
     /// <summary>
-    /// Generates one shared sample, compares pre-fit likelihoods, fits both engines, and checks parity and recovery.
+    /// Generates one sample, validates the parameterization crosswalk, and applies the common frequentist recovery rule.
     /// </summary>
     /// <param name="generatingWeights">The physical component weights.</param>
     /// <param name="generatingDistributions">The generating Normal components.</param>
@@ -156,94 +158,145 @@ public class MixtureRecoveryTests
             .ToList();
         var bestFit = new MixtureModel(dataFrame, distributionTypes, isZeroInflated);
 
-        double fittedZeroWeight = isZeroInflated ? bestFit.Mixture!.ZeroWeight : 0.0;
-        double componentMass = 1.0 - fittedZeroWeight;
-        double[] prefitWeights = generatingWeights.ToArray();
-        if (isZeroInflated)
-        {
-            prefitWeights[^1] = componentMass - prefitWeights.Take(prefitWeights.Length - 1).Sum();
-        }
-        var numericsPrefit = new Mixture(
-            prefitWeights,
-            generatingDistributions.Select(distribution => distribution.Clone()).ToArray())
-        {
-            IsZeroInflated = isZeroInflated,
-            ZeroWeight = fittedZeroWeight
-        };
-        double[] bestFitPrefitParameters = CreateBestFitParameters(
-            prefitWeights,
-            generatingDistributions);
-
-        Assert.AreEqual(
-            numericsPrefit.LogLikelihood(sample),
-            bestFit.DataLogLikelihood(bestFitPrefitParameters),
-            1E-10,
-            "Pre-fit Numerics and BestFit data log likelihoods differ.");
-
-        double initialWeight = componentMass / generatingWeights.Length;
-        var numericsFit = new Mixture(
-            Enumerable.Repeat(initialWeight, generatingWeights.Length).ToArray(),
-            generatingDistributions
-                .Select(_ => (UnivariateDistributionBase)new Normal())
-                .ToArray())
-        {
-            IsZeroInflated = isZeroInflated,
-            ZeroWeight = fittedZeroWeight
-        };
-        double[] numericsParameters = numericsFit.MLE(sample);
-        numericsFit.SetParameters(numericsParameters);
-
+        AssertRecoveryCrosswalk(
+            bestFit,
+            generatingWeights,
+            generatingDistributions,
+            isZeroInflated,
+            zeroWeight);
         bestFit.ExpectationMaximization(
             out double[] bestFitParameters,
-            out _,
+            out double[,] covariance,
             out _);
         Mixture bestFitFit = ReconstructBestFitMixture(bestFit, bestFitParameters);
+        AssertFrequentistRecovery(
+            generatingWeights,
+            generatingDistributions,
+            bestFit,
+            bestFitFit,
+            covariance);
+        AssertZeroAtomRecovery(bestFit, isZeroInflated, zeroWeight);
+    }
 
-        var numericsSorted = SortByComponentMean(numericsFit);
-        var bestFitSorted = SortByComponentMean(bestFitFit);
-        for (int componentIndex = 0; componentIndex < generatingWeights.Length; componentIndex++)
+    /// <summary>
+    /// Verifies the declared full-K/K-1, prior-support, label, and likelihood crosswalk before fitting.
+    /// </summary>
+    /// <param name="model">The fresh fitted model.</param>
+    /// <param name="generatingWeights">The generating physical component weights.</param>
+    /// <param name="generatingDistributions">The generating Normal components.</param>
+    /// <param name="isZeroInflated">Whether the fixture contains a zero atom.</param>
+    /// <param name="zeroWeight">The generating zero-atom probability.</param>
+    private static void AssertRecoveryCrosswalk(
+        MixtureModel model,
+        double[] generatingWeights,
+        IReadOnlyList<Normal> generatingDistributions,
+        bool isZeroInflated,
+        double zeroWeight)
+    {
+        Assert.AreEqual(isZeroInflated, model.IsZeroInflated, "Zero-inflation convention changed.");
+        Assert.AreEqual(generatingDistributions.Count, model.Mixture!.Distributions.Length,
+            "Mixture component count changed.");
+        Assert.IsTrue(
+            generatingDistributions.Select(distribution => distribution.Mean).SequenceEqual(
+                generatingDistributions.Select(distribution => distribution.Mean).OrderBy(value => value)),
+            "The predeclared component labels must be ordered by strictly separated means.");
+
+        double[] fittedCoordinateWeights = GetFittedCoordinateWeights(model, generatingWeights);
+        double[] parentParameters = CreateBestFitParameters(
+            fittedCoordinateWeights,
+            generatingDistributions);
+        Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(parentParameters)),
+            "The generating physical coordinates must lie inside every configured prior.");
+        double parentLogLikelihood = model.DataLogLikelihood(parentParameters);
+        double[] collapsedParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        double collapsedLogLikelihood = model.DataLogLikelihood(collapsedParameters);
+        Assert.IsTrue(
+            double.IsFinite(parentLogLikelihood) && parentLogLikelihood > collapsedLogLikelihood,
+            $"Parent log likelihood {parentLogLikelihood:G17} must beat the fresh collapsed/default alternative {collapsedLogLikelihood:G17}.");
+
+        if (isZeroInflated)
         {
-            Assert.AreEqual(
-                numericsSorted[componentIndex].Weight,
-                bestFitSorted[componentIndex].Weight,
-                1E-8,
-                $"Cross-engine weight mismatch for component {componentIndex + 1}.");
-            for (int parameterIndex = 0;
-                 parameterIndex < numericsSorted[componentIndex].Parameters.Length;
-                 parameterIndex++)
-            {
-                Assert.AreEqual(
-                    numericsSorted[componentIndex].Parameters[parameterIndex],
-                    bestFitSorted[componentIndex].Parameters[parameterIndex],
-                    1E-8,
-                    $"Cross-engine parameter mismatch for component {componentIndex + 1}, parameter {parameterIndex + 1}.");
-            }
+            Assert.AreEqual(1.0, zeroWeight + generatingWeights.Sum(), 1E-12,
+                "Generating zero and continuous physical weights must sum to one.");
         }
+        else
+        {
+            Assert.AreEqual(1.0, generatingWeights.Sum(), 1E-12,
+                "Generating physical weights must sum to one.");
+        }
+    }
 
-        var generatingSorted = generatingWeights
+    /// <summary>
+    /// Applies the central-95% standardized-error rule using the production EM covariance.
+    /// </summary>
+    /// <param name="generatingWeights">The generating physical weights.</param>
+    /// <param name="generatingDistributions">The generating Normal components.</param>
+    /// <param name="model">The fitted model that defines the observed zero-atom mass.</param>
+    /// <param name="fittedMixture">The reconstructed full-K EM fit.</param>
+    /// <param name="covariance">The full-K EM covariance.</param>
+    private static void AssertFrequentistRecovery(
+        double[] generatingWeights,
+        IReadOnlyList<Normal> generatingDistributions,
+        MixtureModel model,
+        Mixture fittedMixture,
+        double[,] covariance)
+    {
+        int componentCount = generatingDistributions.Count;
+        double[] fittedCoordinateWeights = GetFittedCoordinateWeights(model, generatingWeights);
+        var expected = fittedCoordinateWeights
             .Select((weight, index) => (
                 Weight: weight,
                 Parameters: generatingDistributions[index].GetParameters))
             .OrderBy(component => component.Parameters[0])
             .ToArray();
-        for (int componentIndex = 0; componentIndex < generatingSorted.Length; componentIndex++)
+        var actual = SortByComponentMeanWithIndex(fittedMixture);
+        Assert.AreEqual(componentCount * 3, covariance.GetLength(0),
+            "The full-K EM covariance row count changed.");
+        Assert.AreEqual(componentCount * 3, covariance.GetLength(1),
+            "The full-K EM covariance column count changed.");
+
+        for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
         {
-            Assert.AreEqual(
-                generatingSorted[componentIndex].Weight,
-                bestFitSorted[componentIndex].Weight,
-                0.1,
-                $"Weight recovery failed for component {componentIndex + 1}.");
-            for (int parameterIndex = 0;
-                 parameterIndex < generatingSorted[componentIndex].Parameters.Length;
-                 parameterIndex++)
+            int originalIndex = actual[componentIndex].OriginalIndex;
+            RecoveryAcceptance.AssertFrequentistStandardizedError(
+                $"ordered component {componentIndex + 1} weight",
+                actual[componentIndex].Weight,
+                expected[componentIndex].Weight,
+                Math.Sqrt(covariance[originalIndex, originalIndex]));
+
+            for (int parameterIndex = 0; parameterIndex < 2; parameterIndex++)
             {
-                Assert.AreEqual(
-                    generatingSorted[componentIndex].Parameters[parameterIndex],
-                    bestFitSorted[componentIndex].Parameters[parameterIndex],
-                    0.1,
-                    $"Parameter recovery failed for component {componentIndex + 1}, parameter {parameterIndex + 1}.");
+                int covarianceIndex = componentCount + 2 * originalIndex + parameterIndex;
+                string parameterName = parameterIndex == 0 ? "mean" : "standard deviation";
+                RecoveryAcceptance.AssertFrequentistStandardizedError(
+                    $"ordered component {componentIndex + 1} {parameterName}",
+                    actual[componentIndex].Parameters[parameterIndex],
+                    expected[componentIndex].Parameters[parameterIndex],
+                    Math.Sqrt(covariance[covarianceIndex, covarianceIndex]));
             }
         }
+    }
+
+    /// <summary>
+    /// Applies the N=1000 binomial standardized-error rule to the separately identified zero atom.
+    /// </summary>
+    /// <param name="model">The fitted model.</param>
+    /// <param name="isZeroInflated">Whether the fixture contains a zero atom.</param>
+    /// <param name="zeroWeight">The generating atom probability.</param>
+    private static void AssertZeroAtomRecovery(
+        MixtureModel model,
+        bool isZeroInflated,
+        double zeroWeight)
+    {
+        if (!isZeroInflated)
+            return;
+
+        double standardError = Math.Sqrt(zeroWeight * (1.0 - zeroWeight) / SampleSize);
+        RecoveryAcceptance.AssertFrequentistStandardizedError(
+            "zero-atom probability",
+            model.Mixture!.ZeroWeight,
+            zeroWeight,
+            standardError);
     }
 
     /// <summary>
@@ -279,6 +332,12 @@ public class MixtureRecoveryTests
             .Repeat(UnivariateDistributionType.Normal, generatingDistributions.Length)
             .ToList();
         var model = new MixtureModel(dataFrame, distributionTypes, isZeroInflated);
+        AssertRecoveryCrosswalk(
+            model,
+            generatingWeights,
+            generatingDistributions,
+            isZeroInflated,
+            zeroWeight);
         MixtureAnalysis analysis = ConfigureBayesianAnalysis(model, samplerSeed);
         Exception? analysisError = null;
         analysis.AnalysisCompleted += (_, args) => analysisError = args.Error;
@@ -293,23 +352,12 @@ public class MixtureRecoveryTests
             $"Bayesian mixture recovery did not complete. {analysisError ?? analysis.BayesianAnalysis.LastError}");
         Assert.IsNotNull(analysis.BayesianAnalysis.Results, "Bayesian mixture results are null.");
 
-        if (isZeroInflated)
-        {
-            double zeroStandardError = Math.Sqrt(zeroWeight * (1.0 - zeroWeight) / SampleSize);
-            Assert.AreEqual(
-                zeroWeight,
-                model.Mixture!.ZeroWeight,
-                5.0 * zeroStandardError,
-                "The BestFit-generated zero atom missed its binomial Monte Carlo bound.");
-        }
-
-        var pointEstimate = (Mixture?)analysis.GetPointEstimateDistribution(
-            BayesianAnalysis.PointEstimateType.PosteriorMode);
-        Assert.IsNotNull(pointEstimate, "The Bayesian posterior-mode mixture is null.");
-        AssertBayesianRecovery(
+        AssertZeroAtomRecovery(model, isZeroInflated, zeroWeight);
+        AssertBayesianPhysicalRecovery(
             generatingWeights,
             generatingDistributions,
-            pointEstimate!);
+            model,
+            analysis);
         AssertBayesianDiagnostics(model, analysis);
     }
 
@@ -323,51 +371,66 @@ public class MixtureRecoveryTests
     {
         var analysis = new MixtureAnalysis(model);
         analysis.BayesianAnalysis.PRNGSeed = seed;
-        analysis.BayesianAnalysis.CredibleIntervalWidth = 0.9;
-        analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMode;
         return analysis;
     }
 
     /// <summary>
-    /// Verifies posterior-mode component weights and Normal parameters after resolving label order by mean.
+    /// Verifies central-95% posterior intervals after reconstructing physical weights and ordering each draw by mean.
     /// </summary>
     /// <param name="generatingWeights">The true physical component weights.</param>
     /// <param name="generatingDistributions">The true Normal components.</param>
-    /// <param name="fittedMixture">The posterior-mode mixture.</param>
-    private static void AssertBayesianRecovery(
+    /// <param name="model">The fitted BestFit mixture model.</param>
+    /// <param name="analysis">The completed Bayesian mixture analysis.</param>
+    private static void AssertBayesianPhysicalRecovery(
         double[] generatingWeights,
         IReadOnlyList<Normal> generatingDistributions,
-        Mixture fittedMixture)
+        MixtureModel model,
+        MixtureAnalysis analysis)
     {
-        var expected = generatingWeights
+        double[] fittedCoordinateWeights = GetFittedCoordinateWeights(model, generatingWeights);
+        var expected = fittedCoordinateWeights
             .Select((weight, index) => (
                 Weight: weight,
                 Parameters: generatingDistributions[index].GetParameters))
             .OrderBy(component => component.Parameters[0])
             .ToArray();
-        var actual = SortByComponentMean(fittedMixture);
+        int componentCount = expected.Length;
+        double componentMass = model.IsZeroInflated ? 1.0 - model.Mixture!.ZeroWeight : 1.0;
+        var orderedDraws = analysis.BayesianAnalysis.Results!.Output
+            .Select(output => ExpandAndSortDraw(output.Values, componentCount, componentMass))
+            .ToArray();
 
-        Assert.AreEqual(expected.Length, actual.Length, "Bayesian mixture component count mismatch.");
+        Assert.IsTrue(orderedDraws.Length > 0, "Bayesian mixture output is empty.");
         for (int componentIndex = 0; componentIndex < expected.Length; componentIndex++)
         {
-            Assert.AreEqual(
+            double[] weightDraws = orderedDraws
+                .Select(draw => draw[componentIndex].Weight)
+                .ToArray();
+            Assert.IsTrue(weightDraws.All(double.IsFinite),
+                $"Ordered component {componentIndex + 1} physical-weight draws must be finite.");
+            Array.Sort(weightDraws);
+            RecoveryAcceptance.AssertFrequentistParentInInterval(
+                $"ordered component {componentIndex + 1} weight",
                 expected[componentIndex].Weight,
-                actual[componentIndex].Weight,
-                0.1,
-                $"Bayesian weight recovery failed for component {componentIndex + 1}.");
+                Statistics.Percentile(weightDraws, 0.025d, true),
+                Statistics.Percentile(weightDraws, 0.975d, true));
 
             for (int parameterIndex = 0;
                  parameterIndex < expected[componentIndex].Parameters.Length;
                  parameterIndex++)
             {
-                double trueValue = expected[componentIndex].Parameters[parameterIndex];
-                double tolerance = Math.Max(0.15, Math.Abs(trueValue) * 0.15);
-                Assert.AreEqual(
-                    trueValue,
-                    actual[componentIndex].Parameters[parameterIndex],
-                    tolerance,
-                    $"Bayesian parameter recovery failed for component {componentIndex + 1}, " +
-                    $"parameter {parameterIndex + 1}.");
+                double[] coordinateDraws = orderedDraws
+                    .Select(draw => draw[componentIndex].Parameters[parameterIndex])
+                    .ToArray();
+                string parameterName = parameterIndex == 0 ? "mean" : "standard deviation";
+                Assert.IsTrue(coordinateDraws.All(double.IsFinite),
+                    $"Ordered component {componentIndex + 1} {parameterName} draws must be finite.");
+                Array.Sort(coordinateDraws);
+                RecoveryAcceptance.AssertFrequentistParentInInterval(
+                    $"ordered component {componentIndex + 1} {parameterName}",
+                    expected[componentIndex].Parameters[parameterIndex],
+                    Statistics.Percentile(coordinateDraws, 0.025d, true),
+                    Statistics.Percentile(coordinateDraws, 0.975d, true));
             }
         }
     }
@@ -395,9 +458,59 @@ public class MixtureRecoveryTests
                 double.IsFinite(rhat) && rhat < 1.1,
                 $"{parameterName} has R-hat {rhat:G6}; expected a finite value below 1.1.");
             Assert.IsTrue(
-                double.IsFinite(ess) && ess > 100.0,
-                $"{parameterName} has ESS {ess:G6}; expected a finite value above 100.");
+                double.IsFinite(ess) && ess >= RecoveryAcceptance.MinimumEffectiveSampleSize,
+                $"{parameterName} has ESS {ess:G6}; expected a finite value at least {RecoveryAcceptance.MinimumEffectiveSampleSize:G6}.");
         }
+    }
+
+    /// <summary>
+    /// Maps the generating continuous weights into the fitted model's fixed observed-atom simplex.
+    /// </summary>
+    /// <param name="model">The fitted mixture model.</param>
+    /// <param name="generatingWeights">The generating unconditional continuous weights.</param>
+    /// <returns>Full-K physical weights whose final coordinate closes the fitted component mass.</returns>
+    private static double[] GetFittedCoordinateWeights(
+        MixtureModel model,
+        IReadOnlyList<double> generatingWeights)
+    {
+        double[] weights = generatingWeights.ToArray();
+        double componentMass = model.IsZeroInflated ? 1.0 - model.Mixture!.ZeroWeight : 1.0;
+        weights[^1] = componentMass - weights.Take(weights.Length - 1).Sum();
+        Assert.IsTrue(weights.All(weight => double.IsFinite(weight) && weight > 0.0),
+            "The fitted physical-weight crosswalk produced a nonpositive coordinate.");
+        return weights;
+    }
+
+    /// <summary>
+    /// Reconstructs the final physical weight in one K-1 posterior draw and orders components by mean.
+    /// </summary>
+    /// <param name="sampledParameters">The stored K-1 weight and component-parameter vector.</param>
+    /// <param name="componentCount">The number of Normal components.</param>
+    /// <param name="componentMass">The continuous mixture mass.</param>
+    /// <returns>The physical components ordered by ascending mean.</returns>
+    private static (double Weight, double[] Parameters)[] ExpandAndSortDraw(
+        IReadOnlyList<double> sampledParameters,
+        int componentCount,
+        double componentMass)
+    {
+        int freeWeightCount = componentCount - 1;
+        Assert.AreEqual(freeWeightCount + 2 * componentCount, sampledParameters.Count,
+            "Stored mixture draw does not match the declared K-1 parameterization.");
+        var weights = new double[componentCount];
+        for (int i = 0; i < freeWeightCount; i++)
+            weights[i] = sampledParameters[i];
+        weights[^1] = componentMass - weights.Take(freeWeightCount).Sum();
+
+        return weights
+            .Select((weight, index) => (
+                Weight: weight,
+                Parameters: new[]
+                {
+                    sampledParameters[freeWeightCount + 2 * index],
+                    sampledParameters[freeWeightCount + 2 * index + 1]
+                }))
+            .OrderBy(component => component.Parameters[0])
+            .ToArray();
     }
 
     /// <summary>
@@ -492,6 +605,23 @@ public class MixtureRecoveryTests
     {
         return mixture.Weights
             .Select((weight, index) => (
+                Weight: weight,
+                Parameters: mixture.Distributions[index].GetParameters))
+            .OrderBy(component => component.Parameters[0])
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Sorts a fitted mixture by mean while retaining each component's covariance index.
+    /// </summary>
+    /// <param name="mixture">The fitted mixture.</param>
+    /// <returns>The indexed physical components ordered by ascending mean.</returns>
+    private static (int OriginalIndex, double Weight, double[] Parameters)[] SortByComponentMeanWithIndex(
+        Mixture mixture)
+    {
+        return mixture.Weights
+            .Select((weight, index) => (
+                OriginalIndex: index,
                 Weight: weight,
                 Parameters: mixture.Distributions[index].GetParameters))
             .OrderBy(component => component.Parameters[0])
