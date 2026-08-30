@@ -84,6 +84,43 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
+    /// Verifies that Bulletin 17C keeps the broader moments-based location search range for
+    /// the Exponential distribution instead of inheriting its support-limited MLE upper bound.
+    /// </summary>
+    [TestMethod]
+    public void SetDefaultParameters_Exponential_UsesMomentsLocationUpperBound()
+    {
+        double[] values = [100d, 120d, 140d, 160d, 180d];
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(values) };
+        var constraints = new Exponential().GetParameterConstraints(values);
+        double expectedUpperBound = Math.Pow(
+            10d,
+            Math.Ceiling(Math.Log10(constraints.Item1[0]) + 1d));
+
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Exponential);
+
+        Assert.AreEqual(expectedUpperBound, model.Parameters[0].UpperBound, 1e-12);
+        Assert.IsTrue(model.Parameters[0].UpperBound > values.Min(),
+            "B17C GMM must allow an Exponential location above the minimum observation.");
+    }
+
+    /// <summary>
+    /// Verifies that the Bulletin 17C GMM-specific upper-bound override does not alter the
+    /// Numerics constraints for other supported distribution families.
+    /// </summary>
+    [TestMethod]
+    public void SetDefaultParameters_Normal_PreservesNumericsLocationUpperBound()
+    {
+        double[] values = [100d, 120d, 140d, 160d, 180d];
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(values) };
+        var constraints = new Normal().GetParameterConstraints(values);
+
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Normal);
+
+        Assert.AreEqual(constraints.Item3[0], model.Parameters[0].UpperBound, 1e-12);
+    }
+
+    /// <summary>
     /// Duplicate bootstrap-like values must not poison the ROS moment path used by B17C
     /// default parameter setup when low outliers are present.
     /// </summary>

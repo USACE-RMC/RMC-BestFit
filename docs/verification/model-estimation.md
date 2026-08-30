@@ -7,6 +7,45 @@ Phase 2 is complete for its approved scope. The Log10-Normal MLE/MAP/GMM baselin
 
 Phase 2 is closed for its approved scope. The 3 August 2026 normalized checkpoint confirms all seven model-estimation artifact hashes match `verification/data/MANIFEST.md`. BestFit closes through commits `6ffab67` and `1a848ef`, with Numerics diagnostic anchors `5c693a8`, `76f7dd0`, and `b3f14b0`; current gates are Numerics 2,024/2,024, Core 3,116/3,116, UI 568/568, and App 428/428 with zero failures.
 
+## Shared Generated-Parent Recovery Policy
+
+Current estimator recovery cells use exactly 1,000 declared observational units. Probability-distribution
+MLE cells require generating-parent inclusion in a predeclared 95% confidence interval or an absolute
+standardized error no greater than 1.96 using the Numerics distribution-level parameter-variance API
+at recovered parameters and N=1000 where implemented. LnNormal is assessed in Numerics covariance
+coordinates `(Mu, SigmaSquared)`, while Pearson III and Log-Pearson III are assessed in
+`(Mu, OneOverBeta, Alpha)`; their covariances are not transformed into public moment coordinates.
+GeneralizedNormal and GeneralizedLogistic instead
+use Haden's approved production true-profile-likelihood 95% interval alternative because their Numerics
+parameter- and quantile-variance APIs are unavailable. MAP cells retain documented observed-information
+intervals; GMM cells retain documented sandwich or true-profile uncertainty sources. Bayesian cells require
+central-95% parent inclusion, R-hat below 1.10, and ESS of at least 100 for every monitored coordinate.
+Correlated, boundary, weakly identified, label-switching, and zero-parent probability-distribution MLE
+coordinates use a predeclared scientifically identified response ordinate instead of a relative coordinate
+band; where implemented, the Numerics distribution-level quantile-variance 95% response band must contain
+the generating response. A secondary 5% point/curve check is permitted only when an already-computed finite, ordered 95%
+band is narrower than 5% of a nonzero parent. Status is assigned only from specifically approved,
+reviewed current focused evidence; historical results are not transferred.
+
+### Chunk 5 exact execution - 29 August 2026
+
+Twenty-two current Chunk 5 identities were run one method at a time through
+`scripts/run-verification-test.ps1`: two Bayesian recovery cells, the Normal-Normal conjugate oracle,
+one MAP recovery cell, two MAP information-criteria oracles, thirteen family MLE recovery cells, the
+retained LnNormal closed-form MLE comparison, the two-step GMM recovery cell, and the LP3 Q(0.99)
+Profile-Q recovery cell. Every final focused run passed.
+
+The first LnNormal and Pearson III recovery runs exposed a coordinate mismatch: their public moment
+coordinates had been compared to standard errors from native Numerics covariance coordinates. The
+same defect also applied to Log-Pearson III even though its first run happened to pass. The three cells
+now compare parent and recovered distributions in `(Mu, SigmaSquared)` or `(Mu, OneOverBeta, Alpha)`,
+matching the declared covariance without transforming it. Their final exact reruns passed; no seed,
+parent, sample size, covariance, or 1.96 acceptance rule changed.
+
+Reviewed TRX evidence is retained in the isolated `TestResults/VerificationFocused/20260829-165839-*`
+through `20260829-170359-*` directories. The preliminary LnNormal and Pearson III failures remain as
+diagnostic evidence, while the catalog records the 22 current final identities as verified.
+
 ## Log10-Normal fixture
 
 The deterministic exact-data fixture is defined in base-10 log space by
@@ -426,5 +465,19 @@ Focused methods:
 - `GmmCookInfluence_LegacyPsisAdapterIsObsoleteCompatibilityOnly`
 
 ## External Model-Comparison Oracle Status
+
+## Univariate Family and Trend Recovery
+
+The fifteen stationary generated-parent Bayesian family cells use 1,000 scalar observations with seed 12345 and the untouched production sampler defaults. Each non-boundary coordinate requires central-95% parent inclusion, R-hat below 1.10, ESS at least 100, and the secondary five-percent point criterion only when the existing 95% band is narrower than five percent of a nonzero parent. Exponential and Generalized Pareto generate `Xi=0`; that boundary location remains diagnostically monitored, but its parent-recovery assertion is the predeclared Q(0.99) central-95% response band. LogNormal and KappaFour do not duplicate generic MLE evidence: their default-MLE generated-parent coverage is the Chunk 6A `FittingAnalysis` recovery cell.
+
+The first guarded pass on 29 August 2026 produced 15 passes from 17 identities. Exponential failed before estimation because a Numerics regression calculated the location upper bound with `Log10` of the negative fixed-seed initializer. Restoring the support-aware constraint `upper location = sample minimum` makes every bound finite while preserving the MLE support condition. The reciprocal Normal response-grid cell completed but its Normal-scale ESS was below 100 because BestFit copied the stationary response initializer directly into reciprocal coefficient `a`, so the initial response was its reciprocal and both reciprocal priors were orders of magnitude broader than the generating coefficients.
+
+The approved remediation initializes reciprocal trends in response space: `a=1/responseInitial`, a finite same-sign one-decade response interval is transformed to the `a` prior, and endpoint response changes over the record determine the `b` prior. Sinusoidal amplitude now uses the smaller distance from the stationary initializer to either parent-parameter bound, keeping the full default trajectory valid. No likelihood, sampler, chain count, iteration count, convergence threshold, seed, or generating parent changed. Focused reruns passed for Exponential (`20260829-182917-*`) and reciprocal Normal mean (`182932-*`).
+
+The deterministic fast test `AllSupportedParentAndTemporalTrendAssignments_HaveFiniteValidDefaults` crosses all 38 parameters of the 15 supported parent distributions with the ten temporal trend types: 380 assignments. It requires finite ordered priors, valid model construction, and valid default response trajectories across all 1,000 time indices. This exhausts the supported default-configuration space without treating construction success as statistical recovery.
+
+Five Bayesian covering-array cells add nonredundant statistical evidence under the shared central-95% rule: Normal reciprocal scale (`20260829-183018-*`), Normal sinusoidal scale (`183058-*`), GEV linear shape (`183143-*`), GPD linear location with exponential scale (`183323-*`), and Log-Pearson III linear log-mean with exponential log-scale (`183534-*`). All five exact runs passed their predeclared response grids, directly identified constant coordinates, R-hat, ESS, and conditional secondary criteria. Together with the earlier 15 passes and the two repaired reruns, the current Chunk 6B matrix is 22 of 22 passed identities.
+
+The older sixteen Normal trend-recovery methods still use their documented four-posterior-standard-deviation gross-error rule. They remain legitimate legacy recovery evidence but are not counted as satisfying the shared central-95% policy until migrated and individually rerun. Exhaustively running 380 Bayesian cells is neither necessary nor a calibrated substitute for a multi-seed coverage study; the deterministic matrix plus the targeted family/parameter-role covering array is the current bounded verification design.
 
 The scoped DIC, WAIC, PSIS-LOO, Pareto-k, and GMM covariance artifacts are committed and consumed without an R or Python runtime. ArviZ would be a redundant secondary WAIC/LOO implementation, not missing verification evidence or a Phase 2 exit requirement.

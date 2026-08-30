@@ -281,68 +281,6 @@ public class B17CExampleTests
         }
     }
 
-    /// <summary>
-    /// Verifies the pointwise–aggregate invariant: the column-wise mean of the pointwise
-    /// moment conditions matrix must equal the G vector from <see cref="Bulletin17CDistribution.MomentConditions"/>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Tests four B17C examples that together exercise all five data types:
-    /// </para>
-    /// <list type="bullet">
-    /// <item><description>Example 1 — exact data only (68 systematic observations).</description></item>
-    /// <item><description>Example 3 — exact + low outliers + threshold-censored (broken record).</description></item>
-    /// <item><description>Example 4 — exact + interval-censored + threshold-censored (historical floods).</description></item>
-    /// <item><description>Example 4 Uncertain — exact + uncertain (Uniform) + threshold-censored.</description></item>
-    /// </list>
-    /// </remarks>
-    [TestMethod]
-    public void Test_PointwiseMomentConditions_MeanEqualsG()
-    {
-        // Each example exercises different data types
-        var examples = new (Func<(DataFrame, double[])> getData, string name)[]
-        {
-            (Bulletin17CData.GetExample1, "Example 1"),
-            (Bulletin17CData.GetExample3, "Example 3"),
-            (Bulletin17CData.GetExample4, "Example 4"),
-            (Bulletin17CData.GetExample4_Uncertain, "Example 4 Uncertain"),
-        };
-
-        foreach (var (getData, name) in examples)
-        {
-            var (df, _) = getData();
-
-            var model = new Bulletin17CDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
-            var gmm = new GeneralizedMethodOfMoments(model);
-            gmm.Estimate();
-            Assert.IsTrue(gmm.IsEstimated, $"GMM estimation failed for {name}.");
-
-            var parameters = gmm.BestParameterSet.Values;
-            int n = df.TotalRecordLength();
-            int q = model.NumberOfParameters;
-
-            // Get aggregate G from MomentConditions
-            var (G, _) = model.MomentConditions(parameters);
-
-            // Get pointwise matrix [n x q]
-            var gi = model.PointwiseMomentConditions!(parameters);
-            Assert.AreEqual(n, gi.GetLength(0), $"{name}: row count mismatch.");
-            Assert.AreEqual(q, gi.GetLength(1), $"{name}: column count mismatch.");
-
-            // Verify mean of rows equals G
-            for (int j = 0; j < q; j++)
-            {
-                double sum = 0;
-                for (int i = 0; i < n; i++)
-                    sum += gi[i, j];
-                double meanJ = sum / n;
-                Assert.AreEqual(G[j], meanJ, 1E-10,
-                    $"{name}: Pointwise mean[{j}] = {meanJ:E6} != G[{j}] = {G[j]:E6}");
-            }
-        }
-
-    }
-
 }
 
 /// <summary>

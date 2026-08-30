@@ -2,12 +2,19 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using RMC.BestFit.Verification.Recovery;
 
 namespace RMC.BestFit.Verification.ModelEstimation;
 
 /// <summary>
-/// Verifies MAP mode recovery and analytical information-criterion contracts.
+/// Verifies a generated-parent Normal MAP recovery under the existing optimizer configuration.
 /// </summary>
+/// <remarks>
+/// The recovery design uses N=1000 scalar Normal observations from parent=(mu=100, sigma=10) with
+/// seed=12345. The acceptance rule is absolute standardized error no greater than 1.96 using the
+/// MAP observed-information Hessian standard errors. AIC and BIC analytical claims reside in
+/// <see cref="MaximumAPosterioriInformationCriteriaOracleTests"/>.
+/// </remarks>
 [TestClass]
 public class MaximumAPosterioriRecoveryTests
 {
@@ -164,14 +171,19 @@ public class MaximumAPosterioriRecoveryTests
     #endregion
 
     /// <summary>
-    /// Verifies <c>Test_Estimate_NormalData_FindsMode</c>.
+    /// Verifies N=1000 Normal MAP generated-parent recovery using the common frequentist rule.
     /// </summary>
+    /// <remarks>
+    /// Sample unit: scalar observation; N=1000; seed=12345; parent=(mu=100, sigma=10); fitted
+    /// coordinates=(mu, sigma). Standard errors come from the MAP observed-information Hessian.
+    /// The conditional secondary 5% criterion is not used because this is not a response-grid cell.
+    /// </remarks>
     [TestMethod]
     public void Test_Estimate_NormalData_FindsMode()
     {
         double trueMu = 100;
         double trueSigma = 10;
-        var data = CreateNormalData(trueMu, trueSigma, 100);
+        var data = CreateNormalData(trueMu, trueSigma, RecoveryDesign.SampleSize);
         var model = new SimpleNormalModel(data);
 
         // Set initial values closer to the expected range for better convergence
@@ -185,55 +197,9 @@ public class MaximumAPosterioriRecoveryTests
         Assert.IsTrue(success, "MAP estimation failed.");
         Assert.IsTrue(map.IsEstimated);
 
-        // MAP estimates should be close to sample statistics (MLE with flat priors)
-        double sampleMean = data.Average();
-        double sampleStd = Math.Sqrt(data.Select(x => Math.Pow(x - sampleMean, 2)).Average());
-
-        Assert.AreEqual(sampleMean, map.BestParameterSet.Values[0], 5.0, "μ estimate not close to sample mean.");
-        Assert.AreEqual(sampleStd, map.BestParameterSet.Values[1], 5.0, "σ estimate not close to sample std.");
+        double[] standardErrors = map.GetStandardErrors();
+        RecoveryAcceptance.AssertFrequentistStandardizedError("mu", map.BestParameterSet.Values[0], trueMu, standardErrors[0]);
+        RecoveryAcceptance.AssertFrequentistStandardizedError("sigma", map.BestParameterSet.Values[1], trueSigma, standardErrors[1]);
     }
 
-    /// <summary>
-    /// Verifies that AIC uses the data likelihood at MAP and excludes prior density.
-    /// </summary>
-    [TestMethod]
-    public void Test_GetAIC_ReturnsFiniteValue()
-    {
-        var data = CreateNormalData(100, 10, 100);
-        var model = new SimpleNormalModel(data);
-
-        var map = new MaximumAPosteriori(model);
-        map.Estimate();
-
-        double dataLogLikelihood = model.DataLogLikelihood(map.BestParameterSet.Values);
-        double posteriorLogLikelihood = model.LogLikelihood(map.BestParameterSet.Values);
-        double aic = map.GetAIC();
-        double expectedAic = -2.0 * dataLogLikelihood + 2.0 * map.NumberOfParameters;
-        double posteriorKernelAic = -2.0 * posteriorLogLikelihood + 2.0 * map.NumberOfParameters;
-
-        Assert.AreEqual(expectedAic, aic, 1e-10);
-        Assert.IsTrue(Math.Abs(aic - posteriorKernelAic) > 1e-6);
-    }
-
-    /// <summary>
-    /// Verifies that BIC uses the data likelihood at MAP and excludes prior density.
-    /// </summary>
-    [TestMethod]
-    public void Test_GetBIC_ReturnsFiniteValue()
-    {
-        var data = CreateNormalData(100, 10, 100);
-        var model = new SimpleNormalModel(data);
-
-        var map = new MaximumAPosteriori(model);
-        map.Estimate();
-
-        double dataLogLikelihood = model.DataLogLikelihood(map.BestParameterSet.Values);
-        double posteriorLogLikelihood = model.LogLikelihood(map.BestParameterSet.Values);
-        double bic = map.GetBIC(sampleSize: data.Length);
-        double expectedBic = -2.0 * dataLogLikelihood + map.NumberOfParameters * Math.Log(data.Length);
-        double posteriorKernelBic = -2.0 * posteriorLogLikelihood + map.NumberOfParameters * Math.Log(data.Length);
-
-        Assert.AreEqual(expectedBic, bic, 1e-10);
-        Assert.IsTrue(Math.Abs(bic - posteriorKernelBic) > 1e-6);
-    }
 }

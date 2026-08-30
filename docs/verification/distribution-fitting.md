@@ -27,6 +27,59 @@ Phase 1 is closed for its approved scope. The 3 August 2026 normalized checkpoin
 | Pearson III | SciPy | lmomco | Passed - SciPy parity |
 | Weibull | SciPy | lmomco | Passed - SciPy parity |
 
+## Chunk 6A generated-parent recovery preparation
+
+`FittingAnalysisRecoveryTests` adds one separately named generated-parent recovery cell for each
+of the 15 supported default candidates. Each cell uses exactly 1,000 generated scalar observations,
+seed `12345`, and the unmodified default `FittingAnalysis` candidate list. It requires overall
+analysis completion, locates the generating-family `FittedDistribution`, and requires only that
+candidate's `FitSucceeded` result; it does not assert an AIC, BIC, RMSE, or model-selection rank.
+
+| Families | Parent/uncertainty design | Current evidence status |
+|---|---|---|
+| Normal, LogNormal, Exponential, Gamma, GEV, Gumbel, Logistic, Weibull | Explicit seeded parent vectors; fitted Numerics `ParameterCovariance(1000, MaximumLikelihood)` standardized-parent error at most 1.96 | Verified by authorized exact focused runs on 29 August 2026 |
+| LnNormal | Explicit real-space parent `(mean=3.5, standard deviation=0.4)`; actual and parent distributions compared in Numerics covariance coordinates `(Mu, Sigma^2)` using untransformed `ParameterCovariance(1000, MaximumLikelihood)` | Verified by an authorized exact focused run on 29 August 2026 |
+| Log-Pearson III, Pearson III | Explicit moment parents; actual and parent distributions compared in Numerics MLE covariance coordinates `(Mu, 1/Beta, Alpha)` using untransformed `ParameterCovariance(1000, MaximumLikelihood)` | Verified by authorized exact focused runs on 29 August 2026 |
+| Generalized Pareto | Parent `(xi=0, alpha=20, kappa=0.15)`; covariance for alpha/kappa and Q(0.99) `QuantileVariance(0.99, 1000, MaximumLikelihood)` response band for the zero-location design | Verified by an authorized exact focused run on 29 August 2026 |
+| Generalized Logistic, Generalized Normal, Kappa Four | Explicit seeded parent vectors; same-data auxiliary production `MaximumLikelihood.ParameterConfidenceIntervals(alpha: 0.05)` profile intervals must be finite, ordered, contain the parent, and contain the actual `FittingAnalysis` coordinate | Verified by authorized exact focused runs on 29 August 2026 after the RMC.BestFit finite-bracket and deterministic warm-start correction |
+
+The secondary 5% point/curve criterion is conditional: it is evaluated only when the existing
+95% band is narrower than 5% of a nonzero parent. The Generalized Pareto boundary coordinate is
+evaluated in response space. The class is marked `[DoNotParallelize]` because each default-list
+analysis internally fits 15 candidates in parallel; this avoids a method-level 15-by-15 estimator
+fan-out when an approved suite run eventually occurs.
+
+The retained `FittingAnalysisTests` are separate fixed-data published/real-source comparisons.
+Their historical results remain evidence for those sources only and are not recovery evidence for
+these new generated-parent cells.
+
+### Chunk 6A exact execution - 29 August 2026
+
+Each identity was run separately through `scripts/run-verification-test.ps1` with its exact fully
+qualified method name. Twelve cells passed: Normal, LogNormal, LnNormal, Exponential, Gamma,
+Generalized Extreme Value, Generalized Pareto, Gumbel, Logistic, Log-Pearson Type III, Pearson Type
+III, and Weibull. Their reviewed TRX records are under the corresponding timestamped
+`TestResults/VerificationFocused/20260829-1620*` through `20260829-1623*` directories, and those
+catalog identities are now verified.
+
+The first Generalized Logistic, Generalized Normal, and Kappa Four runs reached a successful
+default-list `FittingAnalysis` generating-family fit and auxiliary MLE, then exposed unsupported or
+nonconvergent parameter-0 profile evaluations. The authorized RMC.BestFit correction now probes
+outward to finite, model-constrained sign-changing endpoints, verifies them with Numerics
+`Brent.Bracket`, solves them with `Brent.Solve`, and retries strict nuisance optimization from cached
+successful profile starts in deterministic nearest-coordinate order. It changes no chi-squared
+threshold, nuisance convergence requirement, optimizer default, Brent default, seed, parent, or
+acceptance threshold.
+
+Final one-method reruns of the three affected cells all passed. Their reviewed TRX records are:
+
+- Generalized Logistic: `TestResults/VerificationFocused/20260829-165506-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisRecoveryTests_GeneralizedLogistic_N1000_FittingAnalysisRecoversGeneratingFamily/haden_HADEN_2026-08-29_22_55_25.116.trx`.
+- Generalized Normal: `TestResults/VerificationFocused/20260829-165528-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisRecoveryTests_GeneralizedNormal_N1000_FittingAnalysisRecoversGeneratingFamily/haden_HADEN_2026-08-29_22_55_33.154.trx`.
+- Kappa Four: `TestResults/VerificationFocused/20260829-165445-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisRecoveryTests_KappaFour_N1000_FittingAnalysisRecoversGeneratingFamily/haden_HADEN_2026-08-29_22_54_53.189.trx`.
+
+All 15 new generated-parent identities are therefore verified. The preliminary failed runs remain
+retained as diagnostic evidence for the production correction.
+
 ## TR-001 - Kappa Four zero primary shape
 
 For \(\kappa=0\), \(h\ne0\), \(z=(x-\xi)/\alpha\), the implemented CDF is
@@ -185,4 +238,7 @@ SciPy 1.16.1 supplies the overlapping family implementations. Generalized Pareto
 - [lmomco family oracles](../../verification/data/distribution-fitting/lmomco-family-oracles.json)
 - [Verification data manifest](../../verification/data/MANIFEST.md)
 
-All 15 family-specific methods and both multi-candidate `FittingAnalysis` methods passed. The result verifies the individual family implementations and the declared common-data ranking, criteria, RMSE-formula, and weighting claims.
+All 15 historical family-specific methods and both historical multi-candidate `FittingAnalysis`
+methods passed in their recorded focused executions. Those results verify the individual-family
+external/package claims and the declared common-data ranking, criteria, RMSE-formula, and weighting
+claims; they do not establish a pass result for the new Chunk 6A generated-parent recovery cells.

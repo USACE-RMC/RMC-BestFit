@@ -14,7 +14,7 @@ namespace RMC.BestFit.Verification.Univariate.CompositeTests;
 /// composite probability and uncertainty-propagation contracts.
 /// </remarks>
 [TestClass]
-public partial class CompositeRecoveryTests
+public partial class CompositeOracleVerificationTests
 {
     /// <summary>
     /// Verifies the three-Normal mixture CDF against the exact weighted sum of child CDFs.

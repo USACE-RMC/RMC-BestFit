@@ -14,11 +14,10 @@ namespace RMC.BestFit.Verification.SpatialExtremes;
 /// covariate row must feed its prediction, and fold accounting must be explicit.
 /// </summary>
 /// <remarks>
-/// Both cells run the production <c>RunCrossValidationAsync</c> with the untouched DEMCzs defaults and
-/// compare one fold with a manually reduced <see cref="SpatialGEV"/> (data column, coordinates, covariate
-/// row, and copula dimension of the held-out site removed) fitted through the same production path with
-/// the same seed. The comparison is deterministic given the seed; the tolerance covers floating-point
-/// summation order only.
+/// Deterministic reduced-model construction, held-out covariate handling, no-fold failure, and final
+/// result accounting are fast-owned by the sampler-free SpatialGEV tests. These cells compare production
+/// paths with each other, not with independent evidence, so the remaining independent held-out
+/// fold-prediction evidence is open for Chunk 14A.
 /// </remarks>
 [TestClass]
 public class SpatialGEVCrossValidationVerificationTests

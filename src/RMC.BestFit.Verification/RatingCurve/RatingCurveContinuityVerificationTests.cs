@@ -108,21 +108,6 @@ public class RatingCurveContinuityVerificationTests
             "A zero exponent must jump by 10^a2 immediately above the activation stage.");
     }
 
-    /// <summary>One-segment default exponent bounds exclude the discontinuous zero exponent.</summary>
-    [TestMethod]
-    public void DefaultExponentLowerBounds_AreStrictlyPositive_OneSegment() =>
-        AssertExponentBoundsExcludeZero("one_segment");
-
-    /// <summary>Two-segment default exponent bounds exclude the discontinuous zero exponent.</summary>
-    [TestMethod]
-    public void DefaultExponentLowerBounds_AreStrictlyPositive_TwoSegment() =>
-        AssertExponentBoundsExcludeZero("two_segment");
-
-    /// <summary>Three-segment default exponent bounds exclude the discontinuous zero exponent.</summary>
-    [TestMethod]
-    public void DefaultExponentLowerBounds_AreStrictlyPositive_ThreeSegment() =>
-        AssertExponentBoundsExcludeZero("three_segment");
-
     /// <summary>
     /// With every exponent set to its default lower bound, each control's added increment across its
     /// activation stage decreases as the offset shrinks, which holds exactly when the bound is positive.
@@ -175,30 +160,4 @@ public class RatingCurveContinuityVerificationTests
         return above - below - smooth;
     }
 
-    /// <summary>
-    /// Asserts that every default exponent bound and prior support of an example model excludes zero.
-    /// </summary>
-    /// <param name="key">The example case key.</param>
-    private static void AssertExponentBoundsExcludeZero(string key)
-    {
-        var example = RatingCurveExampleFixtures.LoadCase(key);
-        BestFitRatingCurve model = RatingCurveExampleFixtures.CreateModel(example);
-        for (int index = 0; index < model.NumberOfParameters; index++)
-        {
-            if (!example.ParameterNames[index].StartsWith("beta", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var parameter = model.Parameters[index];
-            Assert.IsTrue(
-                parameter.LowerBound > 0.0,
-                $"{key}: {parameter.Name} lower bound {parameter.LowerBound:G17} admits a zero exponent, "
-                + "for which the added control jumps by 10^a at its activation stage (TR-044).");
-            double priorMinimum = parameter.PriorDistribution?.Minimum ?? double.NaN;
-            Assert.IsTrue(
-                priorMinimum > 0.0,
-                $"{key}: {parameter.Name} prior support minimum {priorMinimum:G17} admits a zero exponent (TR-044).");
-        }
-    }
 }

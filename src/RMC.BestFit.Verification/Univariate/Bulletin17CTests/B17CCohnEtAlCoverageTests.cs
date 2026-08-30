@@ -42,60 +42,228 @@ namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 [DoNotParallelize]
 public class B17CCohnEtAlCoverageTests
 {
-    #region Parameterized Coverage Tests
+    #region Exact Coverage Methods
 
-    /// <summary>
-    /// Runs the Cohn et al. LP3 coverage verification scenarios.
-    /// </summary>
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-1.0, Ns=25, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus1p0_Ns25_Nh0_Coverage() => RunCohnEtAlCoverage(-1.0, 25, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-1.0, Ns=25, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus1p0_Ns25_Nh50_Coverage() => RunCohnEtAlCoverage(-1.0, 25, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-1.0, Ns=25, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus1p0_Ns25_Nh150_Coverage() => RunCohnEtAlCoverage(-1.0, 25, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-1.0, Ns=100, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus1p0_Ns100_Nh0_Coverage() => RunCohnEtAlCoverage(-1.0, 100, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-1.0, Ns=100, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus1p0_Ns100_Nh50_Coverage() => RunCohnEtAlCoverage(-1.0, 100, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-1.0, Ns=100, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus1p0_Ns100_Nh150_Coverage() => RunCohnEtAlCoverage(-1.0, 100, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-0.5, Ns=25, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus0p5_Ns25_Nh0_Coverage() => RunCohnEtAlCoverage(-0.5, 25, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-0.5, Ns=25, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus0p5_Ns25_Nh50_Coverage() => RunCohnEtAlCoverage(-0.5, 25, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-0.5, Ns=25, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus0p5_Ns25_Nh150_Coverage() => RunCohnEtAlCoverage(-0.5, 25, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-0.5, Ns=100, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus0p5_Ns100_Nh0_Coverage() => RunCohnEtAlCoverage(-0.5, 100, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-0.5, Ns=100, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus0p5_Ns100_Nh50_Coverage() => RunCohnEtAlCoverage(-0.5, 100, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=-0.5, Ns=100, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_GammaMinus0p5_Ns100_Nh150_Coverage() => RunCohnEtAlCoverage(-0.5, 100, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.0, Ns=25, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p0_Ns25_Nh0_Coverage() => RunCohnEtAlCoverage(0.0, 25, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.0, Ns=25, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p0_Ns25_Nh50_Coverage() => RunCohnEtAlCoverage(0.0, 25, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.0, Ns=25, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p0_Ns25_Nh150_Coverage() => RunCohnEtAlCoverage(0.0, 25, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.0, Ns=100, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p0_Ns100_Nh0_Coverage() => RunCohnEtAlCoverage(0.0, 100, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.0, Ns=100, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p0_Ns100_Nh50_Coverage() => RunCohnEtAlCoverage(0.0, 100, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.0, Ns=100, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p0_Ns100_Nh150_Coverage() => RunCohnEtAlCoverage(0.0, 100, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.5, Ns=25, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p5_Ns25_Nh0_Coverage() => RunCohnEtAlCoverage(0.5, 25, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.5, Ns=25, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p5_Ns25_Nh50_Coverage() => RunCohnEtAlCoverage(0.5, 25, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.5, Ns=25, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p5_Ns25_Nh150_Coverage() => RunCohnEtAlCoverage(0.5, 25, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.5, Ns=100, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p5_Ns100_Nh0_Coverage() => RunCohnEtAlCoverage(0.5, 100, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.5, Ns=100, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p5_Ns100_Nh50_Coverage() => RunCohnEtAlCoverage(0.5, 100, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=0.5, Ns=100, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma0p5_Ns100_Nh150_Coverage() => RunCohnEtAlCoverage(0.5, 100, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=1.0, Ns=25, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma1p0_Ns25_Nh0_Coverage() => RunCohnEtAlCoverage(1.0, 25, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=1.0, Ns=25, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma1p0_Ns25_Nh50_Coverage() => RunCohnEtAlCoverage(1.0, 25, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=1.0, Ns=25, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma1p0_Ns25_Nh150_Coverage() => RunCohnEtAlCoverage(1.0, 25, 150);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=1.0, Ns=100, and Nh=0.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma1p0_Ns100_Nh0_Coverage() => RunCohnEtAlCoverage(1.0, 100, 0);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=1.0, Ns=100, and Nh=50.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma1p0_Ns100_Nh50_Coverage() => RunCohnEtAlCoverage(1.0, 100, 50);
+
+    /// <summary>Runs the Cohn LP3 coverage scenario for gamma=1.0, Ns=100, and Nh=150.</summary>
+    /// <returns>A task representing the governed coverage study.</returns>
+    /// <remarks>This execution-excluded scenario is rerun only on explicit request.</remarks>
+    [TestMethod]
+    [TestCategory("LongRunning")]
+    public Task CohnEtAl_LP3_Gamma1p0_Ns100_Nh150_Coverage() => RunCohnEtAlCoverage(1.0, 100, 150);
+
+    /// <summary>Runs one exact Cohn et al. LP3 coverage scenario.</summary>
     /// <param name="gamma">The skew coefficient used by the scenario.</param>
     /// <param name="nSys">The number of systematic observations.</param>
     /// <param name="nHist">The number of historical observations.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <returns>A task representing the asynchronous coverage calculation.</returns>
     /// <remarks>
-    /// Data rows cover systematic-only and historical-record cases across the LP3 skew values used by the coverage study.
+    /// The scientific design, seed, 1,000-replicate count, nominal interval, and completion rule
+    /// are shared without changing the formerly parameterized scenario semantics.
     /// </remarks>
-    [DataTestMethod]
-    [TestCategory("LongRunning")]
-    [DataRow(-1.0, 25, 0, DisplayName = "LP3 γ=-1.0 Ns=25 Nh=0")]
-    [DataRow(-1.0, 25, 50, DisplayName = "LP3 γ=-1.0 Ns=25 Nh=50")]
-    [DataRow(-1.0, 25, 150, DisplayName = "LP3 γ=-1.0 Ns=25 Nh=150")]
-    // gamma = -1.0, Ns = 100
-    [DataRow(-1.0, 100, 0, DisplayName = "LP3 γ=-1.0 Ns=100 Nh=0")]
-    [DataRow(-1.0, 100, 50, DisplayName = "LP3 γ=-1.0 Ns=100 Nh=50")]
-    [DataRow(-1.0, 100, 150, DisplayName = "LP3 γ=-1.0 Ns=100 Nh=150")]
-    // gamma = -0.5, Ns = 25
-    [DataRow(-0.5, 25, 0, DisplayName = "LP3 γ=-0.5 Ns=25 Nh=0")]
-    [DataRow(-0.5, 25, 50, DisplayName = "LP3 γ=-0.5 Ns=25 Nh=50")]
-    [DataRow(-0.5, 25, 150, DisplayName = "LP3 γ=-0.5 Ns=25 Nh=150")]
-    // gamma = -0.5, Ns = 100
-    [DataRow(-0.5, 100, 0, DisplayName = "LP3 γ=-0.5 Ns=100 Nh=0")]
-    [DataRow(-0.5, 100, 50, DisplayName = "LP3 γ=-0.5 Ns=100 Nh=50")]
-    [DataRow(-0.5, 100, 150, DisplayName = "LP3 γ=-0.5 Ns=100 Nh=150")]
-    // gamma = 0.0, Ns = 25
-    [DataRow(0.0, 25, 0, DisplayName = "LP3 γ=0.0 Ns=25 Nh=0")]
-    [DataRow(0.0, 25, 50, DisplayName = "LP3 γ=0.0 Ns=25 Nh=50")]
-    [DataRow(0.0, 25, 150, DisplayName = "LP3 γ=0.0 Ns=25 Nh=150")]
-    // gamma = 0.0, Ns = 100
-    [DataRow(0.0, 100, 0, DisplayName = "LP3 γ=0.0 Ns=100 Nh=0")]
-    [DataRow(0.0, 100, 50, DisplayName = "LP3 γ=0.0 Ns=100 Nh=50")]
-    [DataRow(0.0, 100, 150, DisplayName = "LP3 γ=0.0 Ns=100 Nh=150")]
-    // gamma = 0.5, Ns = 25
-    [DataRow(0.5, 25, 0, DisplayName = "LP3 γ=0.5 Ns=25 Nh=0")]
-    [DataRow(0.5, 25, 50, DisplayName = "LP3 γ=0.5 Ns=25 Nh=50")]
-    [DataRow(0.5, 25, 150, DisplayName = "LP3 γ=0.5 Ns=25 Nh=150")]
-    // gamma = 0.5, Ns = 100
-    [DataRow(0.5, 100, 0, DisplayName = "LP3 γ=0.5 Ns=100 Nh=0")]
-    [DataRow(0.5, 100, 50, DisplayName = "LP3 γ=0.5 Ns=100 Nh=50")]
-    [DataRow(0.5, 100, 150, DisplayName = "LP3 γ=0.5 Ns=100 Nh=150")]
-    // gamma = 1.0, Ns = 25
-    [DataRow(1.0, 25, 0, DisplayName = "LP3 γ=1.0 Ns=25 Nh=0")]
-    [DataRow(1.0, 25, 50, DisplayName = "LP3 γ=1.0 Ns=25 Nh=50")]
-    [DataRow(1.0, 25, 150, DisplayName = "LP3 γ=1.0 Ns=25 Nh=150")]
-    // gamma = 1.0, Ns = 100
-    [DataRow(1.0, 100, 0, DisplayName = "LP3 γ=1.0 Ns=100 Nh=0")]
-    [DataRow(1.0, 100, 50, DisplayName = "LP3 γ=1.0 Ns=100 Nh=50")]
-    [DataRow(1.0, 100, 150, DisplayName = "LP3 γ=1.0 Ns=100 Nh=150")]
-    public async Task CohnEtAl_LP3_Coverage(double gamma, int nSys, int nHist)
+    private static async Task RunCohnEtAlCoverage(double gamma, int nSys, int nHist)
     {
         // LP3 parameters: fixed mu and sigma, variable skewness
         double mu = 3.0;

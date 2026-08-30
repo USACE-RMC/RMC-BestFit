@@ -236,7 +236,7 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 | Posterior index generation | **Analyses/Support/PosteriorIndexResampler.cs** |
 | Fast contract evidence | **RMC.BestFit.Tests/Analyses/PosteriorIndexResamplerTests.cs**, **RMC.BestFit.Tests/Univariate/CompositeWeightingAndResamplingTests.cs**, and Composite UI tests |
 | Independent numerical oracle | **RMC.BestFit.Verification/ModelEstimation/PosteriorResamplingVerificationTests.cs** |
-| Report and three-child recovery supplement | **RMC.BestFit.Verification/Univariate/CompositeTests/CompositeRecoveryTests.cs** and helper partial |
+| Report and three-child oracle supplement | **RMC.BestFit.Verification/Univariate/CompositeTests/CompositeOracleVerificationTests.cs** and helper partial |
 
 ## References
 

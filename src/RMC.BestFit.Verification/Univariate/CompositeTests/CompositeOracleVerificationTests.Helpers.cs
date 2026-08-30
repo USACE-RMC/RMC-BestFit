@@ -11,9 +11,9 @@ namespace RMC.BestFit.Verification.Univariate.CompositeTests;
 
 /// <summary>
 /// Supplies report constants, controlled estimated children, and independent Cartesian
-/// probability oracles for <see cref="CompositeRecoveryTests"/>.
+/// probability oracles for <see cref="CompositeOracleVerificationTests"/>.
 /// </summary>
-public partial class CompositeRecoveryTests
+public partial class CompositeOracleVerificationTests
 {
     /// <summary>The report Table 44 child means.</summary>
     private static readonly double[] ReportMeans = [10d, 20d, 30d];

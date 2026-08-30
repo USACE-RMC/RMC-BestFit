@@ -13,6 +13,12 @@ namespace RMC.BestFit.Verification.SpatialExtremes;
 /// (TR-056): each cell runs the production analysis with the untouched DEMCzs defaults on a four-site copula
 /// network and checks the applied method, the replicate counts, and the structure of the resulting bounds.
 /// </summary>
+/// <remarks>
+/// Deterministic uncertainty dispatch and selected-method state, Godambe availability and failure state,
+/// block-bootstrap row construction, and result/settings DTO state are fast-owned by sampler-free
+/// SpatialGEV tests. The remaining independent Godambe H/J, bootstrap-quantile, and VIF evidence is open
+/// for Chunk 14B.
+/// </remarks>
 [TestClass]
 public class SpatialGEVUncertaintyMethodVerificationTests
 {

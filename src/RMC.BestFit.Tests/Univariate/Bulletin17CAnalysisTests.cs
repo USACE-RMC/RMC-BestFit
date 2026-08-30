@@ -13,10 +13,10 @@ namespace RMC.BestFit.Tests.Univariate;
 /// Programmatic unit tests for the <c>Bulletin17CAnalysis</c> class.
 /// </summary>
 /// <remarks>
-/// Covers construction, property round-trip, validation, XElement serialization, and the
-/// supporting <c>UncertaintyMethod</c> enum + <c>CohnConfidenceIntervalResult</c>
-/// DTO. GMM estimation, bootstrap, and Cohn-style CI computations are computationally
-/// expensive and live in <c>RMC.BestFit.Verification</c>.
+/// Covers construction, property round-trip, validation, XElement serialization, deterministic
+/// bootstrap retry policy, and the supporting <c>UncertaintyMethod</c> enum plus
+/// <c>CohnConfidenceIntervalResult</c> DTO. GMM estimation, bootstrap refits, and Cohn-style CI
+/// computations are computationally expensive and live in <c>RMC.BestFit.Verification</c>.
 /// </remarks>
 [TestClass]
 public class Bulletin17CAnalysisTests
@@ -925,6 +925,81 @@ public class Bulletin17CAnalysisTests
         var reSaved = restored.ToXElement();
         Assert.IsNotNull(reSaved.Element(nameof(BootstrapDiagnostics)),
             "Restored diagnostics must be re-emitted on the next save.");
+    }
+
+    #endregion
+
+    #region Bootstrap retry policy
+
+    /// <summary>
+    /// A thrown attempt and a rejected attempt are both retried before a later valid result is returned.
+    /// </summary>
+    /// <remarks>
+    /// This protects the outer bootstrap policy from letting a realization-level exception abort the
+    /// uncertainty run or from treating a rejected fit as a delivered parameter vector. The injected
+    /// attempt delegate supplies deterministic state and performs no data resampling or estimation.
+    /// </remarks>
+    [TestMethod]
+    public void ResolveBootstrapReplicate_ExceptionThenRejection_RetriesUntilSuccess()
+    {
+        var diagnostics = new BootstrapDiagnostics { TotalReplicates = 1 };
+        double[] parent = [1.0, 2.0, 3.0];
+        double[] accepted = [4.0, 5.0, 6.0];
+        int attempts = 0;
+
+        double[] actual = Bulletin17CAnalysis.ResolveBootstrapReplicate(
+            attemptIndex =>
+            {
+                attempts++;
+                diagnostics.IncrementAttempted();
+                return attemptIndex switch
+                {
+                    0 => throw new InvalidOperationException("deterministic attempt failure"),
+                    1 => null,
+                    _ => accepted
+                };
+            },
+            parent,
+            maxAttempts: 3,
+            diagnostics);
+
+        Assert.AreSame(accepted, actual);
+        Assert.AreEqual(3, attempts);
+        Assert.AreEqual(2, diagnostics.TotalRetries);
+        Assert.AreEqual(0, diagnostics.FailedReplicates);
+    }
+
+    /// <summary>
+    /// Exhausting the bounded retry policy substitutes the parent fit and records one failed replicate.
+    /// </summary>
+    /// <remarks>
+    /// This protects configured output delivery and substitution accounting without invoking a bootstrap
+    /// refit. A regression that returned <c>null</c>, exceeded the attempt bound, or omitted the failure
+    /// counter would fail this deterministic test.
+    /// </remarks>
+    [TestMethod]
+    public void ResolveBootstrapReplicate_ExhaustedAttempts_SubstitutesParentAndAccountsFailure()
+    {
+        var diagnostics = new BootstrapDiagnostics { TotalReplicates = 1 };
+        double[] parent = [1.0, 2.0, 3.0];
+        int attempts = 0;
+
+        double[] actual = Bulletin17CAnalysis.ResolveBootstrapReplicate<double[]>(
+            _ =>
+            {
+                attempts++;
+                diagnostics.IncrementAttempted();
+                return null;
+            },
+            parent,
+            maxAttempts: 3,
+            diagnostics);
+
+        Assert.AreSame(parent, actual);
+        Assert.AreEqual(3, attempts);
+        Assert.AreEqual(2, diagnostics.TotalRetries);
+        Assert.AreEqual(1, diagnostics.FailedReplicates);
+        Assert.AreEqual(0, diagnostics.RetainedReplicates);
     }
 
     #endregion

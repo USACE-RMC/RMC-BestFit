@@ -1379,6 +1379,85 @@ public class SpatialGEVAnalysisTests
         Assert.IsFalse(analysis.IsEstimated, "The analysis itself is untouched.");
     }
 
+    /// <summary>
+    /// Verifies that finalizing successful cross-validation folds retains the supplied fold details,
+    /// publishes hand-calculated aggregate metrics, and leaves the analysis estimation state unchanged.
+    /// </summary>
+    [TestMethod]
+    public void CompleteCrossValidation_PublishesSuccessfulFoldAccountingWithoutChangingEstimateState()
+    {
+        var analysis = new SpatialGEVAnalysis(CreateTestSpatialGEV());
+        var results = new SpatialGEVCrossValidationResults
+        {
+            SitePredictionErrors = new[] { 2.0, double.NaN, -4.0, double.NaN, double.NaN },
+            SiteRMSE = new[] { 1.0, double.NaN, 2.0, double.NaN, double.NaN },
+            SiteBias = new[] { 0.25, double.NaN, -0.50, double.NaN, double.NaN },
+            SiteCRPS = new[] { 0.0, 0.0, 0.0, 0.0, 0.0 },
+            FoldStatus = new[]
+            {
+                SpatialGEVCrossValidationFoldStatus.Succeeded,
+                SpatialGEVCrossValidationFoldStatus.PredictionFailed,
+                SpatialGEVCrossValidationFoldStatus.Succeeded,
+                SpatialGEVCrossValidationFoldStatus.FitFailed,
+                SpatialGEVCrossValidationFoldStatus.NoObservations
+            },
+            FoldMessages = new[]
+            {
+                string.Empty,
+                "The held-out prediction failed.",
+                string.Empty,
+                "The reduced training model could not be fitted.",
+                "The held-out site has no finite observation."
+            },
+            TotalFolds = 5
+        };
+        int crossValidationNotificationCount = 0;
+        analysis.PropertyChanged += (_, eventArgs) =>
+        {
+            if (eventArgs.PropertyName == nameof(SpatialGEVAnalysis.CrossValidationResults))
+                crossValidationNotificationCount++;
+        };
+
+        analysis.CompleteCrossValidation(
+            results,
+            new List<double> { 2.0, -4.0 },
+            new List<double> { 0.25, -0.50 },
+            sites: 5,
+            progressReporter: null);
+
+        Assert.AreSame(results, analysis.CrossValidationResults, "The completed results must be retained.");
+        Assert.AreEqual(2, results.SuccessfulFolds, "Successful-fold count.");
+        Assert.AreEqual(3.0, results.MeanAbsoluteError, 1e-12, "MAE over successful folds.");
+        Assert.AreEqual(Math.Sqrt(10.0), results.RootMeanSquareError, 1e-12, "RMSE over successful folds.");
+        Assert.AreEqual(-0.125, results.MeanBias, 1e-12, "Mean bias over successful folds.");
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                SpatialGEVCrossValidationFoldStatus.Succeeded,
+                SpatialGEVCrossValidationFoldStatus.PredictionFailed,
+                SpatialGEVCrossValidationFoldStatus.Succeeded,
+                SpatialGEVCrossValidationFoldStatus.FitFailed,
+                SpatialGEVCrossValidationFoldStatus.NoObservations
+            },
+            results.FoldStatus,
+            "Fold statuses must be preserved.");
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                string.Empty,
+                "The held-out prediction failed.",
+                string.Empty,
+                "The reduced training model could not be fitted.",
+                "The held-out site has no finite observation."
+            },
+            results.FoldMessages,
+            "Fold messages must be preserved.");
+        Assert.AreEqual(1, crossValidationNotificationCount, "Publishing final results raises one property notification.");
+        Assert.IsFalse(analysis.IsEstimated, "Finalizing fold accounting must not estimate the analysis.");
+        Assert.IsFalse(analysis.BayesianAnalysis.IsEstimated, "Finalizing fold accounting must not estimate the Bayesian analysis.");
+        Assert.IsNull(analysis.AnalysisResults, "Finalizing fold accounting must not create analysis results.");
+    }
+
     #endregion
 
     #region Prediction, Regional Posterior, Dispatch, and Bootstrap Contracts

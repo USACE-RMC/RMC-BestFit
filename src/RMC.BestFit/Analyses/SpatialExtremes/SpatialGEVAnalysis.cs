@@ -1603,6 +1603,30 @@ namespace RMC.BestFit.Analyses
                 }
             }
 
+            CompleteCrossValidation(results, successfulErrors, successfulBias, sites, progressReporter);
+        }
+
+        /// <summary>
+        /// Finalizes leave-one-site-out cross-validation accounting and publishes the completed results.
+        /// </summary>
+        /// <param name="results">The per-fold results collected during the cross-validation run.</param>
+        /// <param name="successfulErrors">The prediction errors from folds whose predictions were scored.</param>
+        /// <param name="successfulBias">The prediction biases from folds whose predictions were scored.</param>
+        /// <param name="sites">The number of folds in the cross-validation run.</param>
+        /// <param name="progressReporter">The optional reporter notified when finalization reaches completion.</param>
+        /// <exception cref="InvalidOperationException">Thrown when no cross-validation fold succeeded.</exception>
+        /// <remarks>
+        /// This internal completion seam preserves the accounting and publication behavior of
+        /// <see cref="RunCrossValidationAsync"/> while allowing the deterministic finalization contract
+        /// to be exercised without fitting a fold model or running a sampler.
+        /// </remarks>
+        internal void CompleteCrossValidation(
+            SpatialGEVCrossValidationResults results,
+            List<double> successfulErrors,
+            List<double> successfulBias,
+            int sites,
+            SafeProgressReporter? progressReporter)
+        {
             results.SuccessfulFolds = successfulErrors.Count;
             if (results.SuccessfulFolds == 0)
             {

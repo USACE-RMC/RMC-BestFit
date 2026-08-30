@@ -14,9 +14,10 @@ namespace RMC.BestFit.Verification.SpatialExtremes;
 /// bounds must be posterior quantiles of the per-draw regional statistic.
 /// </summary>
 /// <remarks>
-/// Each cell runs the production analysis with the untouched DEMCzs defaults on a small synthetic
-/// network and recomputes the contract from <c>Results.Output</c> through the model-level API, so the
-/// comparison is deterministic given the sampled posterior.
+/// Deterministic posterior-draw prediction and regional aggregation are fast-owned by sampler-free
+/// SpatialGEV tests. These cells recompute through production paths rather than supplying independent
+/// evidence, so the remaining independent conditional-GP and regional-posterior evidence is open for
+/// Chunk 14B.
 /// </remarks>
 [TestClass]
 public class SpatialGEVPredictionVerificationTests

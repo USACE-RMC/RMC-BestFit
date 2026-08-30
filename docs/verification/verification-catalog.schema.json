@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verification-catalog.schema.json",
+  "title": "RMC.BestFit Verification Catalog",
+  "description": "Method-level scientific evidence, ownership, recovery-design, and report traceability for RMC.BestFit.Verification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "entries"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/catalogEntry"
+      }
+    }
+  },
+  "$defs": {
+    "evidenceKind": {
+      "type": "string",
+      "enum": [
+        "analytical",
+        "independent",
+        "external-package",
+        "published-source",
+        "real-source",
+        "recovery",
+        "coverage"
+      ]
+    },
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "retain-verification",
+        "move-to-fast",
+        "remove",
+        "replace",
+        "split",
+        "execution-excluded"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "open",
+        "accepted-limitation",
+        "execution-excluded"
+      ]
+    },
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "seed": {
+      "type": [
+        "integer",
+        "string",
+        "null"
+      ]
+    },
+    "methodOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primaryEvidenceKind": {
+          "$ref": "#/$defs/evidenceKind"
+        },
+        "evidenceTags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/evidenceKind"
+          }
+        },
+        "disposition": {
+          "$ref": "#/$defs/disposition"
+        },
+        "executesEstimator": {
+          "type": "boolean"
+        },
+        "sampleUnit": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "sampleSize": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "seed": {
+          "$ref": "#/$defs/seed"
+        },
+        "oracle": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "acceptanceRule": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "artifact": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "reportAnchor": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "gap": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "catalogEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "namespace",
+        "class",
+        "method",
+        "analysis",
+        "model",
+        "primaryEvidenceKind",
+        "evidenceTags",
+        "disposition",
+        "methodOverrides",
+        "executesEstimator",
+        "sampleUnit",
+        "sampleSize",
+        "seed",
+        "oracle",
+        "acceptanceRule",
+        "artifact",
+        "reportAnchor",
+        "status",
+        "gap"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\.cs$"
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "analysis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primaryEvidenceKind": {
+          "$ref": "#/$defs/evidenceKind"
+        },
+        "evidenceTags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/evidenceKind"
+          }
+        },
+        "disposition": {
+          "$ref": "#/$defs/disposition"
+        },
+        "methodOverrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/methodOverride"
+          }
+        },
+        "executesEstimator": {
+          "type": "boolean"
+        },
+        "sampleUnit": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "sampleSize": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "seed": {
+          "$ref": "#/$defs/seed"
+        },
+        "oracle": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "acceptanceRule": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "artifact": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "reportAnchor": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "gap": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    }
+  }
+}

@@ -417,7 +417,8 @@ namespace RMC.BestFit.Estimation
         /// <param name="alpha">The significance level. Default = 0.1 (90% confidence). Must be between 0 and 1.</param>
         /// <returns>A matrix where each row contains [lower bound, upper bound] for each parameter.</returns>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the model has not been estimated or nuisance-parameter optimization fails.
+        /// Thrown when the model has not been estimated, nuisance-parameter optimization fails, or no finite
+        /// model-constrained profile threshold-crossing bracket can be found.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when alpha is not between 0 and 1.</exception>
         /// <remarks>
@@ -440,49 +441,37 @@ namespace RMC.BestFit.Estimation
                 double lowerBound = Model.Parameters[parameterIndex].LowerBound;
                 double upperBound = Model.Parameters[parameterIndex].UpperBound;
 
-                var lowerResult = MaximizeProfileDataLogLikelihood(
-                    parameterIndex,
+                var lowerStarts = new ProfileLikelihoodWarmStartCache(
+                    BestParameterSet.Values[parameterIndex],
+                    BestParameterSet.Values);
+                confidenceIntervals[parameterIndex, 0] = ProfileLikelihoodIntervalBracketer.FindThresholdCrossing(
+                    value =>
+                    {
+                        return lowerStarts.Evaluate(value, startingParameters =>
+                        {
+                            var result = MaximizeProfileDataLogLikelihood(parameterIndex, value, startingParameters);
+                            return (result.LogLikelihood - threshold, result.Parameters);
+                        });
+                    },
+                    BestParameterSet.Values[parameterIndex],
                     lowerBound,
-                    BestParameterSet.Values);
-                if (lowerResult.LogLikelihood < threshold)
-                {
-                    double[] lowerStart = lowerResult.Parameters;
-                    confidenceIntervals[parameterIndex, 0] = Brent.Solve(
-                        value =>
-                        {
-                            var result = MaximizeProfileDataLogLikelihood(parameterIndex, value, lowerStart);
-                            lowerStart = result.Parameters;
-                            return result.LogLikelihood - threshold;
-                        },
-                        lowerBound,
-                        BestParameterSet.Values[parameterIndex]);
-                }
-                else
-                {
-                    confidenceIntervals[parameterIndex, 0] = lowerBound;
-                }
+                    isLower: true);
 
-                var upperResult = MaximizeProfileDataLogLikelihood(
-                    parameterIndex,
-                    upperBound,
+                var upperStarts = new ProfileLikelihoodWarmStartCache(
+                    BestParameterSet.Values[parameterIndex],
                     BestParameterSet.Values);
-                if (upperResult.LogLikelihood < threshold)
-                {
-                    double[] upperStart = upperResult.Parameters;
-                    confidenceIntervals[parameterIndex, 1] = Brent.Solve(
-                        value =>
+                confidenceIntervals[parameterIndex, 1] = ProfileLikelihoodIntervalBracketer.FindThresholdCrossing(
+                    value =>
+                    {
+                        return upperStarts.Evaluate(value, startingParameters =>
                         {
-                            var result = MaximizeProfileDataLogLikelihood(parameterIndex, value, upperStart);
-                            upperStart = result.Parameters;
-                            return result.LogLikelihood - threshold;
-                        },
-                        BestParameterSet.Values[parameterIndex],
-                        upperBound);
-                }
-                else
-                {
-                    confidenceIntervals[parameterIndex, 1] = upperBound;
-                }
+                            var result = MaximizeProfileDataLogLikelihood(parameterIndex, value, startingParameters);
+                            return (result.LogLikelihood - threshold, result.Parameters);
+                        });
+                    },
+                    BestParameterSet.Values[parameterIndex],
+                    upperBound,
+                    isLower: false);
             }
 
             return confidenceIntervals;

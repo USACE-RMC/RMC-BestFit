@@ -59,6 +59,28 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
         }
 
         /// <summary>
+        /// Generates seeded Normal observations with a reciprocal trend on the mean.
+        /// </summary>
+        /// <param name="n">The number of response/covariate rows. Default = 1000.</param>
+        /// <param name="prngSeed">The deterministic pseudo-random seed. Default = 12345.</param>
+        /// <returns>The data frame and parents [mean alpha, mean beta, Normal sigma].</returns>
+        /// <remarks>
+        /// The small reciprocal coefficients define a mean response from 100 at index zero to about 50 at
+        /// index 999. This intentionally correlated parameterization is assessed by identified response
+        /// ordinates rather than coefficient-wise inclusion.
+        /// </remarks>
+        public static (DataFrame DataFrame, double[] TrueParameters) GenerateReciprocalMeanTrendData(int n = 1000, int prngSeed = 12345)
+        {
+            var trueParameters = new double[] { 0.01d, 0.00001d, 15d };
+            var model = new UnivariateDistribution { DistributionType = UnivariateDistributionType.Normal, IsNonstationary = true };
+            model.SetTrendModel(0, TrendModelType.Reciprocal);
+            model.SetParameterValues(trueParameters);
+            var values = GenerateTrendValues(model, n, prngSeed);
+            var df = new DataFrame { ExactSeries = new ExactSeries(values) };
+            return (df, trueParameters);
+        }
+
+        /// <summary>
         /// Generates synthetic nonstationary data from a normal distribution with a cubic trend on the mean parameter.
         /// </summary>
         /// <param name="n">The sample size to simulate. Default = 1000</param>
@@ -386,6 +408,112 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
             return (df, trueParameters);
+        }
+
+        #endregion
+
+        #region Parent Distribution and Trend Coverage
+
+        /// <summary>
+        /// Generates Normal observations with constant mean and reciprocal standard deviation.
+        /// </summary>
+        /// <param name="n">The number of observations. Default = 1000.</param>
+        /// <param name="prngSeed">The deterministic pseudo-random seed. Default = 12345.</param>
+        /// <returns>The data frame and parents [mean, reciprocal sigma alpha, reciprocal sigma beta].</returns>
+        public static (DataFrame DataFrame, double[] TrueParameters) GenerateReciprocalSigmaNormalData(int n = 1000, int prngSeed = 12345)
+        {
+            var trueParameters = new[] { 100d, 1d / 15d, (1d / 10d - 1d / 15d) / (n - 1d) };
+            var model = new UnivariateDistribution
+            {
+                DistributionType = UnivariateDistributionType.Normal,
+                IsNonstationary = true
+            };
+            model.SetTrendModel(1, TrendModelType.Reciprocal);
+            model.SetParameterValues(trueParameters);
+            double[] values = GenerateTrendValues(model, n, prngSeed);
+            return (new DataFrame { ExactSeries = new ExactSeries(values) }, trueParameters);
+        }
+
+        /// <summary>
+        /// Generates Normal observations with constant mean and sinusoidal standard deviation.
+        /// </summary>
+        /// <param name="n">The number of observations. Default = 1000.</param>
+        /// <param name="prngSeed">The deterministic pseudo-random seed. Default = 12345.</param>
+        /// <returns>The data frame and parents [mean, sigma level, amplitude, frequency, phase].</returns>
+        public static (DataFrame DataFrame, double[] TrueParameters) GenerateSinusoidalSigmaNormalData(int n = 1000, int prngSeed = 12345)
+        {
+            var trueParameters = new[] { 100d, 15d, 3d, 0.01d, 0.3d };
+            var model = new UnivariateDistribution
+            {
+                DistributionType = UnivariateDistributionType.Normal,
+                IsNonstationary = true
+            };
+            model.SetTrendModel(1, TrendModelType.Sinusoidal);
+            model.SetParameterValues(trueParameters);
+            double[] values = GenerateTrendValues(model, n, prngSeed);
+            return (new DataFrame { ExactSeries = new ExactSeries(values) }, trueParameters);
+        }
+
+        /// <summary>
+        /// Generates generalized-extreme-value observations with a linear shape response.
+        /// </summary>
+        /// <param name="n">The number of observations. Default = 1000.</param>
+        /// <param name="prngSeed">The deterministic pseudo-random seed. Default = 12345.</param>
+        /// <returns>The data frame and parents [location, scale, shape intercept, shape slope].</returns>
+        public static (DataFrame DataFrame, double[] TrueParameters) GenerateLinearShapeGevData(int n = 1000, int prngSeed = 12345)
+        {
+            var trueParameters = new[] { 50d, 15d, 0.05d, 0.0001d };
+            var model = new UnivariateDistribution
+            {
+                DistributionType = UnivariateDistributionType.GeneralizedExtremeValue,
+                IsNonstationary = true
+            };
+            model.SetTrendModel(2, TrendModelType.Linear);
+            model.SetParameterValues(trueParameters);
+            double[] values = GenerateTrendValues(model, n, prngSeed);
+            return (new DataFrame { ExactSeries = new ExactSeries(values) }, trueParameters);
+        }
+
+        /// <summary>
+        /// Generates generalized-Pareto observations with linear location and exponential scale responses.
+        /// </summary>
+        /// <param name="n">The number of observations. Default = 1000.</param>
+        /// <param name="prngSeed">The deterministic pseudo-random seed. Default = 12345.</param>
+        /// <returns>The data frame and parents [location intercept, location slope, scale level, scale rate, shape].</returns>
+        public static (DataFrame DataFrame, double[] TrueParameters) GenerateLinearLocationExponentialScaleGpdData(int n = 1000, int prngSeed = 12345)
+        {
+            var trueParameters = new[] { 10d, 0.02d, 20d, 0.0005d, 0.1d };
+            var model = new UnivariateDistribution
+            {
+                DistributionType = UnivariateDistributionType.GeneralizedPareto,
+                IsNonstationary = true
+            };
+            model.SetTrendModel(0, TrendModelType.Linear);
+            model.SetTrendModel(1, TrendModelType.Exponential);
+            model.SetParameterValues(trueParameters);
+            double[] values = GenerateTrendValues(model, n, prngSeed);
+            return (new DataFrame { ExactSeries = new ExactSeries(values) }, trueParameters);
+        }
+
+        /// <summary>
+        /// Generates Log-Pearson type III observations with linear log-mean and exponential log-scale responses.
+        /// </summary>
+        /// <param name="n">The number of observations. Default = 1000.</param>
+        /// <param name="prngSeed">The deterministic pseudo-random seed. Default = 12345.</param>
+        /// <returns>The data frame and parents [log-mean intercept, log-mean slope, log-scale level, log-scale rate, skew].</returns>
+        public static (DataFrame DataFrame, double[] TrueParameters) GenerateLinearLogMeanExponentialLogScaleLp3Data(int n = 1000, int prngSeed = 12345)
+        {
+            var trueParameters = new[] { 3d, 0.0002d, 0.2d, 0.0002d, 0.2d };
+            var model = new UnivariateDistribution
+            {
+                DistributionType = UnivariateDistributionType.LogPearsonTypeIII,
+                IsNonstationary = true
+            };
+            model.SetTrendModel(0, TrendModelType.Linear);
+            model.SetTrendModel(1, TrendModelType.Exponential);
+            model.SetParameterValues(trueParameters);
+            double[] values = GenerateTrendValues(model, n, prngSeed);
+            return (new DataFrame { ExactSeries = new ExactSeries(values) }, trueParameters);
         }
 
         #endregion

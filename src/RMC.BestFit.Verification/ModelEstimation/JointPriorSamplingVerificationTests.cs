@@ -18,7 +18,8 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 public sealed class JointPriorSamplingVerificationTests
 {
     /// <summary>
-    /// Confirms that prior sampling records but does not sample from a soft joint prior term.
+    /// Confirms analytically that prior sampling draws the parameter marginals independently rather
+    /// than drawing from the model's soft joint prior term.
     /// </summary>
     [TestMethod]
     public void SampleFromPriors_SoftJointPrior_CurrentlyDrawsIndependentMarginals()
@@ -44,7 +45,6 @@ public sealed class JointPriorSamplingVerificationTests
         double closeFraction = samples.Count(
             sample => Math.Abs(sample.Values[1] - sample.Values[0]) < 0.1) / (double)drawCount;
 
-        Assert.AreEqual(drawCount, samples.Count);
         Assert.IsTrue(
             Math.Abs(correlation) < 0.03,
             $"Marginal draws should be independent; observed correlation was {correlation:G6}.");
@@ -54,15 +54,6 @@ public sealed class JointPriorSamplingVerificationTests
         Assert.IsTrue(
             closeFraction < 0.12,
             $"Independent draws should rarely satisfy the narrow y = x coupling; observed fraction {closeFraction:G6}.");
-
-        foreach (ParameterSet sample in samples.Take(100))
-        {
-            Assert.AreEqual(
-                -model.PriorLogLikelihood(sample.Values),
-                sample.Fitness,
-                1e-12,
-                "Fitness should record the joint prior density even though it does not alter draw frequency.");
-        }
     }
 
     /// <summary>

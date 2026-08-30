@@ -675,8 +675,13 @@ namespace RMC.BestFit.Models
                         tdelta2 = Math.Abs(tdelta2) > 1e-15 ? Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(tdelta2)) + 1)) : 1e-15;
                         tdelta3 = Math.Abs(tdelta3) > 1e-15 ? Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(tdelta3)) + 1)) : 1e-15;
 
+                        // Reciprocal Trend
+                        if (TrendModels[i] is ReciprocalTrend reciprocalTrend)
+                        {
+                            ConfigureReciprocalTrendDefaults(reciprocalTrend, initials[i], lowers[i], uppers[i], trange);
+                        }
                         // Linear Trend
-                        if (TrendModels[i] is LinearTrend)
+                        else if (TrendModels[i] is LinearTrend)
                         {
                             TrendModels[i].Parameters[1].Value = 0;
                             TrendModels[i].Parameters[1].LowerBound = -tdelta1;
@@ -725,9 +730,7 @@ namespace RMC.BestFit.Models
                         // Sinusoidal
                         else if (TrendModels[i] is SinusoidalTrend)
                         {
-                            TrendModels[i].Parameters[1].LowerBound = 0;
-                            TrendModels[i].Parameters[1].UpperBound = uppers[i] / 2d;
-                            TrendModels[i].Parameters[1].PriorDistribution = new Uniform(0, uppers[i] / 2d);
+                            ConfigureSinusoidalAmplitudeDefault(TrendModels[i], initials[i], lowers[i], uppers[i]);
                         }
                         // Step Function
                         else if (TrendModels[i] is StepFunction)
@@ -942,8 +945,13 @@ namespace RMC.BestFit.Models
                     tdelta3 = Math.Abs(tdelta3) > 1e-15 ? Math.Pow(10, Math.Floor(Math.Log10(Math.Abs(tdelta3)) + 1)) : 1e-15;
 
 
+                    // Reciprocal Trend
+                    if (model is ReciprocalTrend reciprocalTrend)
+                    {
+                        ConfigureReciprocalTrendDefaults(reciprocalTrend, initials[index], lowers[index], uppers[index], trange);
+                    }
                     // Linear Trend
-                    if (model is LinearTrend)
+                    else if (model is LinearTrend)
                     {
                         model.Parameters[1].Value = 0;
                         model.Parameters[1].LowerBound = -tdelta1;
@@ -991,11 +999,8 @@ namespace RMC.BestFit.Models
                     }
                     // Sinusoidal
                     else if (model is SinusoidalTrend)
-                    {                   
-                        model.Parameters[1].LowerBound = 0;
-                        model.Parameters[1].UpperBound = uppers[index] / 2d;
-                        model.Parameters[1].Value = 0.5 * (model.Parameters[1].LowerBound + model.Parameters[1].UpperBound);
-                        model.Parameters[1].PriorDistribution = new Uniform(0, uppers[index] / 2d);
+                    {
+                        ConfigureSinusoidalAmplitudeDefault(model, initials[index], lowers[index], uppers[index]);
                     }
                     // Step Function
                     else if (model is StepFunction)
@@ -1038,6 +1043,113 @@ namespace RMC.BestFit.Models
             }
 
             RaisePropertyChange(nameof(Parameters));
+        }
+
+        /// <summary>
+        /// Configures reciprocal-trend coefficients from a stationary response-scale initializer.
+        /// </summary>
+        /// <param name="model">The reciprocal trend model to configure.</param>
+        /// <param name="responseInitial">The stationary initializer on the modeled response scale.</param>
+        /// <param name="responseLowerBound">The response parameter's lower constraint.</param>
+        /// <param name="responseUpperBound">The response parameter's upper constraint.</param>
+        /// <param name="timeRange">The fitted time range.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when a finite, nonzero, same-sign response interval cannot be constructed.
+        /// </exception>
+        /// <remarks>
+        /// For <c>f(t)=1/(a+b(t-t0))</c>, the stationary response is preserved with
+        /// <c>a=1/responseInitial</c>. A one-decade same-sign response interval is clipped to the
+        /// parent distribution constraint, transformed to reciprocal space for <c>a</c>, and used
+        /// to derive endpoint-compatible bounds for <c>b</c> over the observed time range.
+        /// </remarks>
+        private static void ConfigureReciprocalTrendDefaults(
+            ITrendModel model,
+            double responseInitial,
+            double responseLowerBound,
+            double responseUpperBound,
+            double timeRange)
+        {
+            if (!double.IsFinite(responseInitial) || Math.Abs(responseInitial) <= 1e-12d ||
+                !double.IsFinite(timeRange) || timeRange <= 0d)
+            {
+                throw new InvalidOperationException(
+                    "Reciprocal trend defaults require a finite, nonzero stationary response and a positive time range. Supply explicit priors for this parameter.");
+            }
+
+            double responseLower = responseInitial > 0d ? responseInitial / 10d : responseInitial * 10d;
+            double responseUpper = responseInitial > 0d ? responseInitial * 10d : responseInitial / 10d;
+            if (double.IsFinite(responseLowerBound))
+                responseLower = Math.Max(responseLower, responseLowerBound);
+            if (double.IsFinite(responseUpperBound))
+                responseUpper = Math.Min(responseUpper, responseUpperBound);
+
+            bool hasSafeInterval = responseLower < responseInitial && responseInitial < responseUpper &&
+                Math.Abs(responseLower) > 1e-12d && Math.Abs(responseUpper) > 1e-12d &&
+                Math.Sign(responseLower) == Math.Sign(responseInitial) &&
+                Math.Sign(responseUpper) == Math.Sign(responseInitial);
+            if (!hasSafeInterval)
+            {
+                throw new InvalidOperationException(
+                    "Reciprocal trend defaults could not construct a finite same-sign response interval. Supply explicit priors for this parameter.");
+            }
+
+            double aInitial = 1d / responseInitial;
+            double reciprocalAtLowerResponse = 1d / responseLower;
+            double reciprocalAtUpperResponse = 1d / responseUpper;
+            double aLower = Math.Min(reciprocalAtLowerResponse, reciprocalAtUpperResponse);
+            double aUpper = Math.Max(reciprocalAtLowerResponse, reciprocalAtUpperResponse);
+            double bAtLowerResponse = (reciprocalAtLowerResponse - aInitial) / timeRange;
+            double bAtUpperResponse = (reciprocalAtUpperResponse - aInitial) / timeRange;
+            double bLower = Math.Min(bAtLowerResponse, bAtUpperResponse);
+            double bUpper = Math.Max(bAtLowerResponse, bAtUpperResponse);
+
+            model.Parameters[0].Value = aInitial;
+            model.Parameters[0].LowerBound = aLower;
+            model.Parameters[0].UpperBound = aUpper;
+            model.Parameters[0].IsPositive = aLower > 0d;
+            model.Parameters[0].PriorDistribution = new Uniform(aLower, aUpper);
+
+            model.Parameters[1].Value = 0d;
+            model.Parameters[1].LowerBound = bLower;
+            model.Parameters[1].UpperBound = bUpper;
+            model.Parameters[1].IsPositive = false;
+            model.Parameters[1].PriorDistribution = new Uniform(bLower, bUpper);
+        }
+
+        /// <summary>
+        /// Constrains a sinusoidal amplitude so its complete default trajectory remains within the
+        /// parent distribution parameter bounds.
+        /// </summary>
+        /// <param name="model">The sinusoidal trend model to configure.</param>
+        /// <param name="responseInitial">The stationary response-scale initializer.</param>
+        /// <param name="responseLowerBound">The response parameter's lower constraint.</param>
+        /// <param name="responseUpperBound">The response parameter's upper constraint.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when no finite positive amplitude interval exists around the initializer.
+        /// </exception>
+        /// <remarks>
+        /// The maximum amplitude is the smaller distance from the initializer to either response
+        /// bound, which keeps <c>responseInitial +/- amplitude</c> inside the valid parameter range.
+        /// </remarks>
+        private static void ConfigureSinusoidalAmplitudeDefault(
+            ITrendModel model,
+            double responseInitial,
+            double responseLowerBound,
+            double responseUpperBound)
+        {
+            double maximumAmplitude = Math.Min(
+                responseInitial - responseLowerBound,
+                responseUpperBound - responseInitial);
+            if (!double.IsFinite(maximumAmplitude) || maximumAmplitude <= 0d)
+            {
+                throw new InvalidOperationException(
+                    "Sinusoidal trend defaults require a finite positive amplitude interval around the stationary response. Supply explicit priors for this parameter.");
+            }
+
+            model.Parameters[1].LowerBound = 0d;
+            model.Parameters[1].UpperBound = maximumAmplitude;
+            model.Parameters[1].Value = maximumAmplitude / 2d;
+            model.Parameters[1].PriorDistribution = new Uniform(0d, maximumAmplitude);
         }
 
         /// <inheritdoc/>

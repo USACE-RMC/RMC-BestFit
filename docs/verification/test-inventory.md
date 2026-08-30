@@ -5,6 +5,55 @@
 
 Fast behavior, validation, serialization, property, state, event, exception, and regression tests belong in `RMC.BestFit.Tests`. Numerical verification remains only when a test uses an analytical, external, published, independently implemented, recovery, or coverage oracle.
 
+## Verification completeness Chunk 6A distribution-fitting recovery preparation - 29 August 2026
+
+`DistributionFitting/FittingAnalysisRecoveryTests.cs` now contains 15 separately named generated-parent
+cells, one per supported default `FittingAnalysis` candidate. Every cell has scalar sample size 1,000,
+seed 12345, an explicit parent vector, a recovered generating-family fit-success assertion, and no
+information-criterion or RMSE-rank assertion. The regular families use fitted Numerics
+`ParameterCovariance(1000, MaximumLikelihood)` standardized-error acceptance. LnNormal compares
+the parent and actual distributions in covariance coordinates `(Mu, Sigma^2)`, while Pearson Type
+III and Log-Pearson Type III compare them in MLE covariance coordinates `(Mu, 1/Beta, Alpha)`;
+none of those covariance matrices is transformed. Generalized Pareto
+uses the predeclared Q(0.99) response band for its zero-location design; and Generalized Logistic,
+Generalized Normal, and Kappa Four use same-data auxiliary profile intervals because their variance
+APIs are unavailable. The secondary five-percent check remains conditional on a sufficiently narrow
+nonzero-parent band.
+
+Authorized one-method-at-a-time execution on 29 August 2026 initially produced 12 reviewed passes:
+Normal, LogNormal, LnNormal, Exponential, Gamma, Generalized Extreme Value, Generalized Pareto,
+Gumbel, Logistic, Log-Pearson Type III, Pearson Type III, and Weibull. Generalized Logistic,
+Generalized Normal, and Kappa Four first exposed unsupported or nonconvergent parameter-0 profile
+evaluations after their generating-family `FittingAnalysis` and auxiliary MLE completed.
+
+Haden Smith authorized an RMC.BestFit production profile-method correction. MLE and MAP interval
+construction now searches for finite model-constrained brackets, calls Numerics `Brent.Bracket` and
+`Brent.Solve`, and retries strict nuisance optimization from cached successful profile starts in
+deterministic nearest-coordinate order. Final exact reruns of Generalized Logistic, Generalized
+Normal, and Kappa Four passed in the isolated `20260829-165506`, `20260829-165528`, and
+`20260829-165445` result directories, respectively. All 15 Chunk 6A generated-parent identities are
+now **verified**; the solver correction did not change the recovery seed, parent, acceptance rule,
+optimizer defaults, convergence requirement, chi-squared threshold, or Brent defaults. The eight retained
+`FittingAnalysisTests` entries continue to document distinct published/real-data comparisons; no
+historical external or published result was transferred to the generated-parent recovery cells.
+`FittingAnalysisRecoveryTests` is class-level `[DoNotParallelize]` because each default-list fitting
+run internally parallelizes 15 candidates, avoiding 15 simultaneous nested fitting runs under the
+assembly's method-level MSTest parallelization.
+
+## Verification completeness Chunk 3 model-estimation ownership - 28 August 2026
+
+Chunk 3 reapplied the ownership rule to the five cataloged ModelEstimation sources without changing production code, algorithms, priors, samplers, seeds, optimizer behavior, or tolerances.
+
+| Source | Chunk 3 disposition | Remaining work or evidence boundary |
+|---|---|---|
+| `MLEIntegrationTests.cs` | Retained 12 N=1000 generating-family recovery methods; renamed the LnNormal cell as a same-sample closed-form MLE comparison; removed small-sample completion, likelihood-sign, and repeated-run smoke cells without fast replacements | Chunk 5 must normalize the 12 recovery acceptance rules and add distinct LnNormal generating-parent recovery |
+| `GeneralizedMethodOfMomentsRecoveryTests.cs` | Removed the empty source after deleting four optimizer-success and same-production-path cells; the four R-backed specification methods and two independent objective-gradient methods remain | Genuine N=1000 GMM recovery remains open for Chunk 5 |
+| `ProfileLikelihoodGridPointFailureTests.cs` | Retained MLE and flat-prior MAP supported-grid comparisons against the independently derived correlated-quadratic profiles; removed NaN-placement and confidence-interval throw assertions | No fast failure-policy test was added because the behavior has no public seam that avoids an estimator and nuisance optimizer; the renamed Verification methods require approval-gated focused reruns before a new passed claim |
+| `JointPriorSamplingVerificationTests.cs` | Retained only the analytical independent-marginal moment characterization as an accepted limitation; removed the same-production-path fitness equality | `PriorPredictiveSamplingContractTests.SampleFromPriors_StoresNegativeFullModelPriorLogLikelihood` now protects the deterministic full-prior fitness sign and inclusion contract without running an estimator |
+| `BayesianAnalysisRecoveryTests.cs` | Replaced both N=100 fixtures with N=1000; made the interval method assert actual generating-parameter inclusion; replaced the qualitative prior-shift ordering with an independently calculated known-scale Normal-Normal posterior mean, scale, and interval oracle | Chunk 5 still owns central-95% recovery, R-hat, and ESS normalization; the new conjugate method requires an approval-gated focused run before verified status |
+
+No Verification method was executed for this ownership cleanup. Historical focused results later in this inventory remain historical and were not rewritten as current executions.
+
 ## Initial migration - 24 July 2026
 
 | Verification source | Disposition | Fast-test destination or coverage |
@@ -855,3 +904,138 @@ Per-cell outcomes (wall-clock per guarded invocation):
 The three `HirschStedingerPlottingPositionVerificationTests` PeakFQ cells listed under `B17CExampleTests` in the
 first run script resolved to zero tests because they belong to the second class of that file; they are
 plotting-position parity cells unrelated to TR-085 and were not rerun.
+
+## Verification completeness Chunk 4A ownership disposition - 29 August 2026
+
+This section records the current ownership ruling and supersedes the ownership labels in the historical run
+registers above without rewriting their dated outcomes. No Verification method, including the three governed
+Bulletin 17C coverage classes, was executed for this disposition.
+
+The cumulative default catalog now resolves 509 declarations and 509 execution units: 224 verified, 227 open,
+56 execution-excluded, and two accepted limitations. The two renamed point-process likelihood oracles remain
+open until exact approval-gated focused runs provide current execution evidence.
+
+### Removed completion-only or engineering-contract Verification methods
+
+| Former Verification method | Current disposition | Fast or retained protection |
+|---|---|---|
+| `B17CBootstrapRefitReliabilityTests.Example1_OrdinaryBootstrap_ThousandRefits` | Removed: completion/accounting only | Deterministic retry, exception, substitution, and failure accounting in `Bulletin17CAnalysisTests.ResolveBootstrapReplicate_*` |
+| `B17CBootstrapRefitReliabilityTests.Example1_PivotalBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection; pivotal production path uses the same seam |
+| `B17CBootstrapRefitReliabilityTests.Example2_OrdinaryBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection |
+| `B17CBootstrapRefitReliabilityTests.Example2_PivotalBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection; pivotal production path uses the same seam |
+| `B17CBootstrapRefitReliabilityTests.Example3_OrdinaryBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection |
+| `B17CBootstrapRefitReliabilityTests.Example3_PivotalBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection; pivotal production path uses the same seam |
+| `B17CBootstrapRefitReliabilityTests.Example4_OrdinaryBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection |
+| `B17CBootstrapRefitReliabilityTests.Example4_PivotalBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection; pivotal production path uses the same seam |
+| `B17CBootstrapRefitReliabilityTests.Example5_OrdinaryBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection |
+| `B17CBootstrapRefitReliabilityTests.Example5_PivotalBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection; pivotal production path uses the same seam |
+| `B17CBootstrapRefitReliabilityTests.Example6_OrdinaryBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection |
+| `B17CBootstrapRefitReliabilityTests.Example6_PivotalBootstrap_ThousandRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection; pivotal production path uses the same seam |
+| `B17CBootstrapRefitReliabilityTests.Example7_OrdinaryBootstrap_FiveHundredRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection |
+| `B17CBootstrapRefitReliabilityTests.Example7_PivotalBootstrap_FiveHundredRefits` | Removed: completion/accounting only | Same deterministic retry-policy protection; pivotal production path uses the same seam |
+| `UncertainDataBootstrapVerificationTests.LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable` | Removed: same-parent centering and delivery, no independent accuracy oracle | Delivery/accounting policy protected deterministically; uncertain-data bootstrap accuracy remains open for Chunk 7 |
+| `UncertainDataBootstrapVerificationTests.NormalBootstrap_UncertainObservationsRemainStable` | Removed: same-parent centering and delivery, no independent accuracy oracle | Delivery/accounting policy protected deterministically; uncertain-data bootstrap accuracy remains open for Chunk 7 |
+| `B17CLowOutlierSetterFitTests.Gmm_SetterOnly_MatchesSetterPlusManualRecompute` | Removed from Verification; estimator invocation was unnecessary | Existing fast `PlottingPositionTests.Test_SetLowOutliersFromMGBT_RecomputesPlottingPositions` protects immediate recalculation |
+| `B17CExampleTests.Test_PointwiseMomentConditions_MeanEqualsG` | Removed from Verification; same-production identity | Existing fast `Bulletin17CDistributionTests.PointwiseMomentConditions_ColumnMeans_MatchMomentConditionsG_*` methods use valid fixed parameter vectors and no estimator |
+| `PointProcessRecoveryTests.Test_SeasonalMixedObservationLikelihood_IsOrderInvariantAndMatchesIndependentCalculation` | Removed after separating the duplicated oracle and engineering contract | Seasonal oracle retained below; existing fast `PointProcessModelTests.Test_Seasonal_DataLogLikelihood_IsInvariantToInputOrder` protects ordering |
+
+The obsolete source scraper `src/RMC.BestFit.Verification/extract_tests.py` was also removed; no build,
+validation, or catalog workflow referenced it.
+
+### Retained point-process numerical oracles
+
+| Current Verification method | Disposition | Oracle and acceptance |
+|---|---|---|
+| `PointProcessLikelihoodOracleTests.NonseasonalMixedObservations_MatchIndependentLikelihood` | Retained and explicitly named; open pending an exact approval-gated rerun | Independent Poisson, intensity-density, Normal-convolution, interval, and threshold contribution sum; absolute tolerance `2e-7`; exact event count |
+| `PointProcessLikelihoodOracleTests.SeasonalMixedObservations_MatchIndependentAnnualMaximumLikelihood` | Retained and explicitly named; open pending an exact approval-gated rerun | Independent exposure-weighted seasonal annual-maximum distribution; absolute tolerance `2e-7`; exact censoring and event counts |
+
+### Execution-excluded Cohn coverage methods
+
+The former 30-row `DataTestMethod` is now 30 ordinary methods so every governed scenario has an exact catalog
+identity. Each method preserves gamma, `Ns`, `Nh`, the 1,000-replicate design, master seed `12345`, nominal
+coverage `0.90`, and the historical at-least-800-completions rule. These methods remain historical evidence,
+rerun only on explicit request, and were not executed during Chunk 4A.
+
+| Exact method | Gamma | Ns | Nh | Status |
+|---|---:|---:|---:|---|
+| `CohnEtAl_LP3_GammaMinus1p0_Ns25_Nh0_Coverage` | -1.0 | 25 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus1p0_Ns25_Nh50_Coverage` | -1.0 | 25 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus1p0_Ns25_Nh150_Coverage` | -1.0 | 25 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus1p0_Ns100_Nh0_Coverage` | -1.0 | 100 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus1p0_Ns100_Nh50_Coverage` | -1.0 | 100 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus1p0_Ns100_Nh150_Coverage` | -1.0 | 100 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus0p5_Ns25_Nh0_Coverage` | -0.5 | 25 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus0p5_Ns25_Nh50_Coverage` | -0.5 | 25 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus0p5_Ns25_Nh150_Coverage` | -0.5 | 25 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus0p5_Ns100_Nh0_Coverage` | -0.5 | 100 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus0p5_Ns100_Nh50_Coverage` | -0.5 | 100 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_GammaMinus0p5_Ns100_Nh150_Coverage` | -0.5 | 100 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p0_Ns25_Nh0_Coverage` | 0.0 | 25 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p0_Ns25_Nh50_Coverage` | 0.0 | 25 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p0_Ns25_Nh150_Coverage` | 0.0 | 25 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p0_Ns100_Nh0_Coverage` | 0.0 | 100 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p0_Ns100_Nh50_Coverage` | 0.0 | 100 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p0_Ns100_Nh150_Coverage` | 0.0 | 100 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p5_Ns25_Nh0_Coverage` | 0.5 | 25 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p5_Ns25_Nh50_Coverage` | 0.5 | 25 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p5_Ns25_Nh150_Coverage` | 0.5 | 25 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p5_Ns100_Nh0_Coverage` | 0.5 | 100 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p5_Ns100_Nh50_Coverage` | 0.5 | 100 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma0p5_Ns100_Nh150_Coverage` | 0.5 | 100 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma1p0_Ns25_Nh0_Coverage` | 1.0 | 25 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma1p0_Ns25_Nh50_Coverage` | 1.0 | 25 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma1p0_Ns25_Nh150_Coverage` | 1.0 | 25 | 150 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma1p0_Ns100_Nh0_Coverage` | 1.0 | 100 | 0 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma1p0_Ns100_Nh50_Coverage` | 1.0 | 100 | 50 | Execution-excluded |
+| `CohnEtAl_LP3_Gamma1p0_Ns100_Nh150_Coverage` | 1.0 | 100 | 150 | Execution-excluded |
+
+## Verification completeness Chunk 5 estimator recovery - 29 August 2026
+
+The common test-only recovery policy fixes generated-parent estimator experiments at 1,000 declared
+observational units. Regular MLE cells use Numerics distribution-level parameter variance at recovered
+parameters; the true-profile-supported LP3 Q(0.99) identified-response cell and the Generalized-Pareto
+zero-location MLE cell use the corresponding Numerics Q(0.99) quantile-variance response bands. Although
+their Numerics parameter- and quantile-variance methods throw `NotImplementedException`, the
+GeneralizedNormal and GeneralizedLogistic MLE cells use Haden's approved production true-profile-likelihood
+path at alpha=0.05: every generating coordinate must lie inside a finite, ordered true 95% profile interval.
+LnNormal uses native covariance coordinates `(Mu, SigmaSquared)`; Pearson III and Log-Pearson III use
+`(Mu, OneOverBeta, Alpha)`, with no covariance transformation. Bayesian Normal, MAP Normal, and the
+two-step GMM response/instrument cell retain their common acceptance rules. The Normal-Normal conjugate
+and MAP AIC/BIC formula claims remain explicitly analytical.
+
+Chunk 6B exact guarded execution now passes 22 of 22 current identities. The original fifteen passes are
+Gamma (`20260829-173507-*`), Weibull (`173529-*`), Normal (`173557-*`), Generalized Normal (`173611-*`),
+Logistic (`173638-*`), Generalized Logistic (`173706-*`), Gumbel (`173740-*`), GEV (`173753-*`),
+Generalized Pareto (`173827-*`), Kappa Four (`173849-*`), Pearson III (`173957-*`), Log-Pearson III
+(`174057-*`), LogNormal (`174200-*`), LnNormal (`174221-*`), and the ReciprocalTrend analytical identity
+(`174245-*`).
+
+The Exponential failure was a Numerics constraint regression: a negative location initializer was passed
+to `Log10` for its upper bound. Restoring the distribution-support upper bound to the sample minimum made
+the fixed-seed priors finite; the exact Exponential rerun passed in `20260829-182917-*`. Because Bulletin 17C
+fits Exponential parameters by GMM moments rather than likelihood support, `Bulletin17CDistribution` now
+restores the former order-of-magnitude location upper bound only for that B17C/GMM path. Fast regressions
+distinguish the Exponential override from unchanged Numerics constraints for other B17C families; no B17C
+Verification method was rerun for this default-bound correction. Reciprocal defaults had copied a
+response-scale initializer into coefficient `a` of `1/(a+b t)`, mis-centering the response and creating
+orders-of-magnitude prior mismatch. Response-anchored reciprocal defaults passed the unchanged Normal
+reciprocal-mean cell in `20260829-182932-*`. Sinusoidal amplitude defaults were also constrained by the nearer
+parent-parameter bound so the complete default response remains valid.
+
+The fast deterministic configuration matrix covers all 38 supported parent-distribution parameters crossed
+with all ten temporal trend types, for 380 finite-prior and valid-default-trajectory assignments. The targeted
+Bayesian covering array adds Normal reciprocal scale (`20260829-183018-*`), Normal sinusoidal scale
+(`183058-*`), GEV linear shape (`183143-*`), GPD linear location plus exponential scale (`183323-*`), and
+Log-Pearson III linear log-mean plus exponential log-scale (`183534-*`); all five exact methods passed the
+shared central-95% response/coordinate inclusion rule and per-coordinate R-hat/ESS gates. The sixteen older
+Normal trend cells retain their documented four-posterior-standard-deviation rule and are not represented as
+shared-policy cells until a separately authorized migration and exact rerun.
+
+Twenty-two current identities were run separately through the guarded exact-method runner. All final
+runs passed: two Bayesian recovery cells, one conjugate oracle, MAP recovery and two information-criteria
+oracles, thirteen MLE family recoveries, the retained LnNormal closed-form comparison, two-step GMM,
+and LP3 Q(0.99) Profile-Q. TRXs are retained in the isolated `20260829-165839` through
+`20260829-170359` result directories. Initial LnNormal and Pearson III failures exposed the covariance-
+coordinate mismatch; the same correction was applied to Log-Pearson III, and all three final exact reruns
+passed without changing N, seed, generating parent, covariance method, or the 1.96 rule. The 22 catalog
+identities are now verified.

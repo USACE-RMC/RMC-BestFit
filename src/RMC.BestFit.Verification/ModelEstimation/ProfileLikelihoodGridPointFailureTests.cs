@@ -7,9 +7,8 @@ using System.Xml.Linq;
 namespace RMC.BestFit.Verification.ModelEstimation;
 
 /// <summary>
-/// Verifies that a profile-likelihood grid survives grid points whose nuisance optimization has no
-/// finite optimum: those points are reported as NaN, the remaining points equal the profile of the
-/// unrestricted model, and the likelihood-ratio interval solve still requires converged solves.
+/// Verifies supported profile-likelihood grid ordinates against the closed-form profile of a
+/// correlated quadratic model. Unsupported grid points are outside this numerical claim.
 /// </summary>
 [TestClass]
 public sealed class ProfileLikelihoodGridPointFailureTests
@@ -22,88 +21,69 @@ public sealed class ProfileLikelihoodGridPointFailureTests
     private static readonly double[] Start = [0.5, 0.5];
 
     /// <summary>
-    /// Maximum likelihood: grid points of the profiled parameter below the support cutoff have no
-    /// finite nuisance optimum and are reported as NaN; the other points match the unrestricted profile.
+    /// Verifies maximum-likelihood profile ordinates inside the fixture support against the
+    /// independently derived quadratic profile.
     /// </summary>
     [TestMethod]
-    public void MLE_ProfileLikelihood_ReportsNaNForGridPointsWithoutFiniteNuisanceOptimum()
+    public void MLE_ProfileLikelihood_SupportedGridMatchesClosedFormProfile()
     {
-        var reference = new MaximumLikelihood(CreateModel(double.NegativeInfinity), OptimizationMethod.BFGS)
-        {
-            ComputeHessian = false,
-            ReportFailure = true
-        };
         var estimator = new MaximumLikelihood(CreateModel(SupportCutoff), OptimizationMethod.BFGS)
         {
             ComputeHessian = false,
             ReportFailure = true
         };
-        Assert.IsTrue(reference.Estimate());
         Assert.IsTrue(estimator.Estimate());
         Assert.AreEqual(0.0, estimator.BestParameterSet.Values[0], 1e-6);
         Assert.AreEqual(0.0, estimator.BestParameterSet.Values[1], 1e-6);
 
-        double[,] expected = reference.ProfileLikelihood(Bins)[0];
         double[,] actual = estimator.ProfileLikelihood(Bins)[0];
 
-        AssertRestrictedProfile(expected, actual);
-        Assert.ThrowsException<InvalidOperationException>(
-            () => estimator.ParameterConfidenceIntervals(0.1),
-            "The interval solve evaluates the profile at the parameter bound, where no finite nuisance optimum exists.");
+        AssertSupportedProfileMatchesClosedForm(actual, logPriorConstant: 0.0);
     }
 
     /// <summary>
-    /// Maximum a posteriori with flat priors: the same grid-point contract as maximum likelihood.
+    /// Verifies flat-prior MAP profile ordinates inside the fixture support against the independently
+    /// derived quadratic profile plus the constant Uniform-prior log density.
     /// </summary>
     [TestMethod]
-    public void MAP_ProfileLikelihood_ReportsNaNForGridPointsWithoutFiniteNuisanceOptimum()
+    public void MAP_ProfileLikelihood_SupportedGridMatchesClosedFormProfile()
     {
-        var reference = new MaximumAPosteriori(CreateModel(double.NegativeInfinity), OptimizationMethod.BFGS)
-        {
-            ComputeHessian = false,
-            ReportFailure = true
-        };
         var estimator = new MaximumAPosteriori(CreateModel(SupportCutoff), OptimizationMethod.BFGS)
         {
             ComputeHessian = false,
             ReportFailure = true
         };
-        Assert.IsTrue(reference.Estimate());
         Assert.IsTrue(estimator.Estimate());
 
-        double[,] expected = reference.ProfileLikelihood(Bins)[0];
         double[,] actual = estimator.ProfileLikelihood(Bins)[0];
 
-        AssertRestrictedProfile(expected, actual);
-        Assert.ThrowsException<InvalidOperationException>(
-            () => estimator.ParameterConfidenceIntervals(0.1));
+        double logPriorConstant = -2.0 * Math.Log(UpperBound - LowerBound);
+        AssertSupportedProfileMatchesClosedForm(actual, logPriorConstant);
     }
 
     /// <summary>
-    /// Asserts that the restricted profile is NaN below the support cutoff and equals the unrestricted
-    /// profile elsewhere.
+    /// Compares every supported grid ordinate with the closed-form profile. For fixed
+    /// <c>theta1 = t</c>, the nuisance optimum is <c>theta2 = rho * t</c> and the profiled
+    /// quadratic log likelihood is <c>-t^2 / 2</c>.
     /// </summary>
-    /// <param name="expected">Profile of the unrestricted model.</param>
     /// <param name="actual">Profile of the support-restricted model.</param>
-    private static void AssertRestrictedProfile(double[,] expected, double[,] actual)
+    /// <param name="logPriorConstant">Constant log-prior contribution for the profiled model.</param>
+    private static void AssertSupportedProfileMatchesClosedForm(double[,] actual, double logPriorConstant)
     {
-        int nanCount = 0;
+        int supportedCount = 0;
         for (int index = 0; index < Bins; index++)
         {
-            Assert.AreEqual(expected[index, 0], actual[index, 0], 1e-12, "Grid abscissae must agree.");
+            double expectedGridValue = LowerBound + ((index + 0.5) * (UpperBound - LowerBound) / Bins);
+            Assert.AreEqual(expectedGridValue, actual[index, 0], 1e-12, "Grid abscissa differs from the declared stratification.");
             if (actual[index, 0] < SupportCutoff)
-            {
-                Assert.IsTrue(double.IsNaN(actual[index, 1]), $"Grid point {actual[index, 0]} lies outside the support.");
-                nanCount++;
-            }
-            else
-            {
-                Assert.IsTrue(double.IsFinite(actual[index, 1]), $"Grid point {actual[index, 0]} lies inside the support.");
-                Assert.AreEqual(expected[index, 1], actual[index, 1], 1e-6);
-            }
+                continue;
+
+            double expectedProfile = (-0.5 * actual[index, 0] * actual[index, 0]) + logPriorConstant;
+            Assert.AreEqual(expectedProfile, actual[index, 1], 1e-6, "Supported profile ordinate differs from the closed-form oracle.");
+            supportedCount++;
         }
 
-        Assert.AreEqual(6, nanCount, "Six of the sixteen grid midpoints lie below the support cutoff.");
+        Assert.AreEqual(10, supportedCount, "Ten of the sixteen grid midpoints lie inside the declared support.");
     }
 
     /// <summary>

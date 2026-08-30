@@ -45,19 +45,19 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
         /// <summary>
         /// Generates synthetic data from a Gamma distribution.
         /// </summary>
-        /// <param name="alpha">The shape parameter. Default = 5.0.</param>
-        /// <param name="beta">The rate parameter. Default = 2.0.</param>
+        /// <param name="theta">The Numerics scale parameter. Default = 5.0.</param>
+        /// <param name="kappa">The Numerics shape parameter. Default = 2.0.</param>
         /// <param name="n">The sample size to simulate. Default = 1000.</param>
         /// <param name="prngSeed">The pseudo random number generator seed. Default = 12345.</param>
-        /// <returns>A tuple containing the DataFrame and the true parameters [Alpha, Beta].</returns>
+        /// <returns>A tuple containing the DataFrame and the true parameters [Theta, Kappa].</returns>
         public static (DataFrame DataFrame, double[] TrueParameters) GenerateGammaData(
-            double alpha = 5.0, double beta = 2.0, int n = 1000, int prngSeed = 12345)
+            double theta = 5.0, double kappa = 2.0, int n = 1000, int prngSeed = 12345)
         {
-            var dist = new GammaDistribution(alpha, beta);
+            var dist = new GammaDistribution(theta, kappa);
             var values = dist.GenerateRandomValues(n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
-            return (df, new[] { alpha, beta });
+            return (df, new[] { theta, kappa });
         }
 
         /// <summary>
@@ -306,19 +306,19 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
         /// Generates synthetic data from a Ln-Normal (base-e Log-Normal) distribution.
         /// This is equivalent to the standard Log-Normal but uses natural logarithm explicitly.
         /// </summary>
-        /// <param name="mu">The mean of the ln-transformed data. Default = 4.5.</param>
-        /// <param name="sigma">The standard deviation of the ln-transformed data. Default = 0.4.</param>
+        /// <param name="mean">The real-space arithmetic mean. Default = 4.5.</param>
+        /// <param name="standardDeviation">The real-space standard deviation. Default = 0.4.</param>
         /// <param name="n">The sample size to simulate. Default = 1000.</param>
         /// <param name="prngSeed">The pseudo random number generator seed. Default = 12345.</param>
-        /// <returns>A tuple containing the DataFrame and the true parameters [Mu, Sigma].</returns>
+        /// <returns>A tuple containing the DataFrame and the true parameters [Mean, StandardDeviation].</returns>
         public static (DataFrame DataFrame, double[] TrueParameters) GenerateLnNormalData(
-            double mu = 4.5, double sigma = 0.4, int n = 1000, int prngSeed = 12345)
+            double mean = 4.5, double standardDeviation = 0.4, int n = 1000, int prngSeed = 12345)
         {
-            var dist = new LnNormal(mu, sigma);
+            var dist = new LnNormal(mean, standardDeviation);
             var values = dist.GenerateRandomValues(n, prngSeed);
             var df = new DataFrame();
             df.ExactSeries = new ExactSeries(values);
-            return (df, new[] { mu, sigma });
+            return (df, new[] { mean, standardDeviation });
         }
 
         #endregion

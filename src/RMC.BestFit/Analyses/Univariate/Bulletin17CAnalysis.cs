@@ -1904,6 +1904,67 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Applies the bounded outer retry and fallback policy for one bootstrap replicate.
+        /// </summary>
+        /// <typeparam name="T">Reference type delivered by a successful replicate attempt.</typeparam>
+        /// <param name="tryAttempt">
+        /// Deterministic or production attempt function. The zero-based argument is the current
+        /// attempt index; a <c>null</c> result requests another fresh realization.
+        /// </param>
+        /// <param name="parentFallback">Parent-fit value substituted after every attempt fails.</param>
+        /// <param name="maxAttempts">Maximum number of fresh realizations allowed for the replicate.</param>
+        /// <param name="diagnostics">Diagnostics receiving retry and substitution counts.</param>
+        /// <param name="exceptionHandler">Optional observer for an exception caught from an attempt.</param>
+        /// <returns>The first accepted result, or <paramref name="parentFallback"/> after exhaustion.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when the attempt function, fallback value, or diagnostics are <c>null</c>.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when <paramref name="maxAttempts"/> is less than one.
+        /// </exception>
+        /// <remarks>
+        /// Attempt-specific data generation and estimation remain in the supplied delegate. This
+        /// helper owns only the engineering policy shared by ordinary and pivotal bootstrap:
+        /// catch a realization-level exception, retry with a fresh realization, and preserve the
+        /// configured output length by substituting the parent fit after the final attempt.
+        /// </remarks>
+        internal static T ResolveBootstrapReplicate<T>(
+            Func<int, T?> tryAttempt,
+            T parentFallback,
+            int maxAttempts,
+            BootstrapDiagnostics diagnostics,
+            Action<int, Exception>? exceptionHandler = null)
+            where T : class
+        {
+            ArgumentNullException.ThrowIfNull(tryAttempt);
+            ArgumentNullException.ThrowIfNull(parentFallback);
+            ArgumentNullException.ThrowIfNull(diagnostics);
+            if (maxAttempts < 1)
+                throw new ArgumentOutOfRangeException(nameof(maxAttempts));
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                T? accepted = null;
+                try
+                {
+                    accepted = tryAttempt(attempt);
+                }
+                catch (Exception ex)
+                {
+                    exceptionHandler?.Invoke(attempt, ex);
+                }
+
+                if (accepted != null)
+                    return accepted;
+                if (attempt < maxAttempts - 1)
+                    diagnostics.AddRetries(1);
+            }
+
+            diagnostics.IncrementFailed();
+            return parentFallback;
+        }
+
+        /// <summary>
         /// Generates distributions using parametric bootstrap resampling.
         /// </summary>
         /// <param name="progressReporter">Optional progress reporter.</param>
@@ -1953,11 +2014,8 @@ namespace RMC.BestFit.Analyses
                     options.CancellationToken.ThrowIfCancellationRequested();
 
                     var prng = new MersenneTwister(seeds[idx]);
-                    double[]? acceptedParams = null;
-
-                    for (int attempt = 0; attempt < maxRetries && acceptedParams == null; attempt++)
-                    {
-                        try
+                    double[] acceptedParams = ResolveBootstrapReplicate(
+                        attempt =>
                         {
                             // BootstrapDataFrame uses the parent distribution as the data-generating model.
                             var samplingDist = parentDistribution.Clone();
@@ -1967,30 +2025,20 @@ namespace RMC.BestFit.Analyses
                             if (!TryFitBootstrapRealization(
                                 bootDataFrame, thetaHat, prng,
                                 requireCovariance: false, diag, idx, "Bootstrap",
-                                out acceptedParams, out _))
+                                out double[]? candidate, out _))
                             {
                                 Debug.WriteLine(
                                     $"Bootstrap replicate {idx}, attempt {attempt}: " +
                                     "the GMM solver exhausted every initialization candidate.");
+                                return null;
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Bootstrap replicate {idx}, attempt {attempt}: {ex.Message}");
-                        }
-
-                        if (acceptedParams == null && attempt < maxRetries - 1)
-                            diag.AddRetries(1);
-                    }
-
-                    // Substitute the parent fit when every retry failed. The substitution keeps the
-                    // delivered sample at the configured length; it is counted and reported because
-                    // the substituted replicates form a point mass at the parent estimate.
-                    if (acceptedParams == null)
-                    {
-                        diag.IncrementFailed();
-                        acceptedParams = thetaHat;
-                    }
+                            return candidate;
+                        },
+                        thetaHat,
+                        maxRetries,
+                        diag,
+                        (attempt, ex) => Debug.WriteLine(
+                            $"Bootstrap replicate {idx}, attempt {attempt}: {ex.Message}"));
 
                     results[idx] = new ParameterSet(acceptedParams, double.NaN);
 
@@ -2398,12 +2446,9 @@ namespace RMC.BestFit.Analyses
                     options.CancellationToken.ThrowIfCancellationRequested();
 
                     var prng = new MersenneTwister(seeds[idx]);
-                    double[]? acceptedParams = null;
-                    Matrix? acceptedSigma = null;
-
-                    for (int attempt = 0; attempt < maxRetries && acceptedParams == null; attempt++)
-                    {
-                        try
+                    var parentFit = Tuple.Create(thetaHat, sigmaHat);
+                    Tuple<double[], Matrix> acceptedFit = ResolveBootstrapReplicate(
+                        attempt =>
                         {
                             // BootstrapDataFrame uses the parent distribution as the data-generating model.
                             var samplingDist = parentDistribution.Clone();
@@ -2413,34 +2458,23 @@ namespace RMC.BestFit.Analyses
                             if (!TryFitBootstrapRealization(
                                 bootDataFrame, thetaHat, prng,
                                 requireCovariance: true, diag, idx, "Pivot bootstrap",
-                                out acceptedParams, out acceptedSigma))
+                                out double[]? candidateParameters, out Matrix? candidateCovariance))
                             {
                                 Debug.WriteLine(
                                     $"Pivot bootstrap Phase 1, replicate {idx}, attempt {attempt}: " +
                                     "the GMM solver exhausted every initialization candidate.");
+                                return null;
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Pivot bootstrap Phase 1, replicate {idx}, attempt {attempt}: {ex.Message}");
-                        }
+                            return Tuple.Create(candidateParameters!, candidateCovariance!);
+                        },
+                        parentFit,
+                        maxRetries,
+                        diag,
+                        (attempt, ex) => Debug.WriteLine(
+                            $"Pivot bootstrap Phase 1, replicate {idx}, attempt {attempt}: {ex.Message}"));
 
-                        if ((acceptedParams == null || acceptedSigma == null) && attempt < maxRetries - 1)
-                            diag.AddRetries(1);
-                    }
-
-                    // Substitute the parent fit and covariance when every retry failed; the
-                    // substitution is counted and reported because it places a point mass at the
-                    // parent estimate.
-                    if (acceptedParams == null || acceptedSigma == null)
-                    {
-                        acceptedParams = thetaHat;
-                        acceptedSigma = sigmaHat;
-                        diag.IncrementFailed();
-                    }
-
-                    bootTheta[idx] = acceptedParams;
-                    bootSigma[idx] = acceptedSigma;
+                    bootTheta[idx] = acceptedFit.Item1;
+                    bootSigma[idx] = acceptedFit.Item2;
 
                     int current = Interlocked.Increment(ref phase1Iteration);
                     if (AnalysisProgress.ShouldReportLoopProgress(current, B))

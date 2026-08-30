@@ -666,6 +666,36 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Gets distribution parameter constraints for Bulletin 17C GMM estimation.
+        /// </summary>
+        /// <param name="data">The observations used to initialize the distribution parameters.</param>
+        /// <returns>
+        /// A tuple containing the initial values, lower bounds, and upper bounds used by the
+        /// Bulletin 17C GMM optimizer.
+        /// </returns>
+        /// <remarks>
+        /// Numerics constrains the Exponential location to the sample minimum for maximum
+        /// likelihood estimation because the likelihood is zero when the location exceeds an
+        /// observation. Bulletin 17C estimates the distribution from moments, so its location
+        /// search range intentionally retains the broader order-of-magnitude upper bound.
+        /// </remarks>
+        private Tuple<double[], double[], double[]> GetGmmParameterConstraints(IList<double> data)
+        {
+            var constraints =
+                ((IMaximumLikelihoodEstimation)Distribution).GetParameterConstraints(data);
+
+            if (DistributionType == UnivariateDistributionType.Exponential)
+            {
+                double initialLocationMagnitude = Math.Abs(constraints.Item1[0]);
+                constraints.Item3[0] = Math.Pow(
+                    10d,
+                    Math.Ceiling(Math.Log10(initialLocationMagnitude) + 1d));
+            }
+
+            return constraints;
+        }
+
+        /// <summary>
         /// Sets initial parameter values based on the input data and distribution constraints.
         /// </summary>
         public void SetInitialParameters()
@@ -677,7 +707,7 @@ namespace RMC.BestFit.Models
                 data.AddRange(DataFrame.UncertainSeries.Select(x => x.Value));
                 data.AddRange(DataFrame.IntervalSeries.Select(x => x.Value));
 
-                var tuple = ((IMaximumLikelihoodEstimation)Distribution).GetParameterConstraints(data);
+                var tuple = GetGmmParameterConstraints(data);
                 var initials = tuple.Item1;
                 var lowers = tuple.Item2;
                 var uppers = tuple.Item3;
@@ -1017,7 +1047,7 @@ namespace RMC.BestFit.Models
                 data.AddRange(DataFrame.UncertainSeries.Select(x => x.Value));
                 data.AddRange(DataFrame.IntervalSeries.Select(x => x.Value));
 
-                var tuple = ((IMaximumLikelihoodEstimation)Distribution).GetParameterConstraints(data);
+                var tuple = GetGmmParameterConstraints(data);
                 var initials = tuple.Item1;
                 var lowers = tuple.Item2;
                 var uppers = tuple.Item3;

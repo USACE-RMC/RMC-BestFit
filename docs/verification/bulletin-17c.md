@@ -66,6 +66,40 @@ The seven passed methods verify current specialized LP3 GMM parameter parity wit
 
 Those are separate claims and require separately authorized, exactly filtered verification methods or independent artifacts. The legacy version 1 Comparison with EMA report evaluates an earlier Bayesian workflow and is not the oracle for the current specialized GMM path.
 
+## Chunk 7 six-family parameterization crosswalk
+
+The generated-parent recovery design uses exactly 1,000 complete scalar observations and the fixed
+generator seed `12345` for every supported family. The generator constructs the listed Numerics
+distribution directly; `Bulletin17CDistribution` exposes the same parameter names and order through
+the wrapped distribution. Complete raw-space families enter the GMM moments without transformation.
+Log-Normal and Log-Pearson Type III observations are transformed with `log10` before the GMM moment
+conditions are evaluated.
+
+| Family | Generator and Numerics order | B17C/GMM order | Coordinate space and convention | Predeclared recovery uncertainty |
+|---|---|---|---|---|
+| Exponential | `(Xi location, Alpha scale) = (0, 50)` | `(Xi, Alpha)` | Natural response space; positive scale | Numerics method-of-moments `ParameterCovariance(1000, MethodOfMoments)` at the fitted `(Xi, Alpha)` |
+| Gamma | `(Theta scale, Kappa shape) = (5, 2)` | `(Theta, Kappa)` | Natural response space; `Theta` is scale and the derived rate is `1/Theta` | Numerics method-of-moments parameter covariance at fitted `(Theta, Kappa)` |
+| Normal | `(Mu mean, Sigma standard deviation) = (100, 15)` | `(Mu, Sigma)` | Natural response space; positive standard deviation | Numerics method-of-moments parameter covariance at fitted `(Mu, Sigma)` |
+| Pearson Type III | `(Mu mean, Sigma standard deviation, Gamma skew) = (100, 20, 0.5)` | `(Mu, Sigma, Gamma)` | Natural response space; positive `Gamma` is positive/right skew | Parameter covariance for fitted `Mu` and `Sigma`; Numerics method-of-moments Q(0.99) variance for the weak skew direction |
+| Log-Normal | `(Mu, Sigma) = (3, 0.5)` | `(Mu, Sigma)` | Base-10 log space; both coordinates describe `log10(X)`, not natural-log or real-space moments | Numerics method-of-moments parameter covariance in fitted base-10 `(Mu, Sigma)` coordinates |
+| Log-Pearson Type III | `(Mu, Sigma, Gamma) = (3, 0.5, 0.2)` | `(Mu, Sigma, Gamma)` | Base-10 log space; skew sign is unchanged by the monotone transform and positive `Gamma` is positive/right log-space skew | Parameter covariance for fitted log-space `Mu` and `Sigma`; Numerics method-of-moments Q(0.99) variance in real response space for the weak skew direction |
+
+For each parameter-coordinate check, the generating coordinate must have absolute standardized error
+no greater than `1.96` using the fitted method-of-moments covariance at `N=1000`. For the two
+predeclared Q(0.99) response checks, the generating quantile must lie inside the fitted response's
+central Normal-approximation 95-percent band formed from Numerics `QuantileVariance`. These
+acceptance rules are fixed before observing the Chunk 7 GMM results; estimator success, finiteness,
+or agreement with sample product moments is not the scientific oracle.
+
+The covariance cells use a separate evidence boundary. Approval to use Numerics uncertainty for the
+recovery acceptance above does not make Numerics an independent covariance oracle. Their Chunk 7
+replacement derives the complete-data just-identified GMM sandwich independently from the first six
+central moments and the finite-sample centered-moment Jacobian. In particular, the three-coordinate
+Jacobian uses `D[2,0] = -3 * (N / (N - 2)) * Sigma^2`, preserving the B17C second- and third-moment
+Bessel factors. The derivation is checked against frozen values generated without RMC.BestFit or
+Numerics production code and cites Bulletin 17C version 1.1 and Cohn, Lane, and Stedinger (2001) for
+the method-of-moments/EMA uncertainty framework.
+
 ## Phase 7 dispositions - 22 August 2026
 
 Three Bulletin 17C items from the 21 August 2026 reruns were diagnosed and disposed in the closeout:
