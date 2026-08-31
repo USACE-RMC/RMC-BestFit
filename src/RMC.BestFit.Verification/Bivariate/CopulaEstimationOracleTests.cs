@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Numerics.Mathematics.Optimization;
 using Numerics.Distributions.Copulas;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -7,7 +8,7 @@ namespace RMC.BestFit.Verification.Bivariate;
 
 /// <summary>
 /// Verifies BestFit copula estimation by maximum pseudo-likelihood and by inference from margins for
-/// the Ali-Mikhail-Haq, Clayton, Frank, Gumbel, Joe, and Gaussian families against the independent
+/// the Ali-Mikhail-Haq, Clayton, Frank, Gumbel, Joe, Gaussian, and Student-t families against the independent
 /// SciPy optimum committed in <c>copula-estimation-oracle.json</c>.
 /// </summary>
 /// <remarks>
@@ -17,9 +18,10 @@ namespace RMC.BestFit.Verification.Bivariate;
 /// the numerical mixed partial of its distribution function), and records the independent optimum, the
 /// maximized log likelihood, the closed-form Normal marginal estimates used for inference from margins,
 /// and the historical R <c>copula</c> target embedded in the test source. Each cell rebuilds the fixture,
-/// fits with the production Brent path, and requires same-point likelihood parity at the independent
-/// optimum, agreement of the fitted dependence parameter with that optimum, and optimality of the
-/// production maximum; the historical R value is retained as a provenance check at its original tolerance.
+/// fits with the production Differential Evolution path at default optimizer tolerances, and requires
+/// same-point likelihood parity at the independent optimum, parameterization agreement with the fitted
+/// dependence coordinate, and production optimality at the untouched Differential Evolution objective
+/// tolerance; the historical R value is retained as a provenance check at its original tolerance.
 /// </para>
 /// <para>
 /// Maximum pseudo-likelihood uses the default Weibull plotting-position complements; inference from
@@ -33,17 +35,11 @@ public class CopulaEstimationOracleTests
     /// <summary>The committed artifact copied to the test output.</summary>
     private const string ArtifactFileName = "copula-estimation-oracle.json";
 
-    /// <summary>Relative tolerance on the fitted dependence parameter versus the independent optimum.</summary>
-    private const double ThetaRelativeTolerance = 1e-5;
-
-    /// <summary>Absolute floor for the dependence-parameter tolerance.</summary>
-    private const double ThetaAbsoluteFloor = 1e-6;
+    /// <summary>Absolute parameterization-crosswalk tolerance for independent and historical targets.</summary>
+    private const double ThetaCrosswalkTolerance = 1e-3;
 
     /// <summary>Absolute tolerance for log likelihoods.</summary>
     private const double LikelihoodTolerance = 1e-8;
-
-    /// <summary>Absolute tolerance of the historical R <c>copula</c> provenance check.</summary>
-    private const double HistoricalRTolerance = 1e-3;
 
     /// <summary>Ali-Mikhail-Haq copula by maximum pseudo-likelihood.</summary>
     [TestMethod]
@@ -93,8 +89,17 @@ public class CopulaEstimationOracleTests
     [TestMethod]
     public void Normal_InferenceFromMargins_MatchesIndependentOptimum() => AssertFixture("Test_Normal_IFM");
 
+    /// <summary>Student-t copula by maximum pseudo-likelihood.</summary>
+    [TestMethod]
+    public void StudentT_PseudoLikelihood_MatchesIndependentOptimum() => AssertStudentTFixture("StudentT_MPL");
+
+    /// <summary>Student-t copula by inference from margins.</summary>
+    [TestMethod]
+    public void StudentT_InferenceFromMargins_MatchesIndependentOptimum() => AssertStudentTFixture("StudentT_IFM");
+
     /// <summary>
-    /// Rebuilds one fixture, fits it with the production Brent path, and compares with the oracle.
+    /// Rebuilds one fixture, fits it with production Differential Evolution at default optimizer
+    /// tolerances, and compares with the oracle.
     /// </summary>
     /// <param name="testMethod">The fixture key (the historical test method name).</param>
     private static void AssertFixture(string testMethod)
@@ -134,7 +139,7 @@ public class CopulaEstimationOracleTests
         {
             CopulaEstimationMethod = estimationMethod,
         };
-        var mle = new MaximumLikelihood(bivariate, OptimizationMethod.Brent);
+        var mle = new MaximumLikelihood(bivariate, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         Assert.IsTrue(mle.IsEstimated, $"{testMethod}: copula estimation did not complete.");
         double theta = mle.BestParameterSet.Values[0];
@@ -147,16 +152,87 @@ public class CopulaEstimationOracleTests
         Assert.AreEqual(
             independentTheta,
             theta,
-            Math.Max(ThetaAbsoluteFloor, Math.Abs(independentTheta) * ThetaRelativeTolerance),
-            $"{testMethod}: {family} {method} dependence parameter versus the independent optimum.");
+            ThetaCrosswalkTolerance,
+            $"{testMethod}: {family} {method} dependence-parameter crosswalk versus the independent optimum.");
+        double optimizerObjectiveTolerance =
+            mle.Optimizer.AbsoluteTolerance +
+            mle.Optimizer.RelativeTolerance * Math.Abs(independentLogLikelihood);
         Assert.IsTrue(
-            mle.MaximumLogLikelihood >= independentLogLikelihood - LikelihoodTolerance,
-            $"{testMethod}: production maximum {mle.MaximumLogLikelihood:G17} must reach the independent optimum {independentLogLikelihood:G17}.");
+            mle.MaximumLogLikelihood >= independentLogLikelihood - optimizerObjectiveTolerance,
+            $"{testMethod}: production maximum {mle.MaximumLogLikelihood:G17} must reach the independent optimum " +
+            $"{independentLogLikelihood:G17} within the untouched optimizer objective tolerance " +
+            $"{optimizerObjectiveTolerance:G17}.");
         Assert.AreEqual(
             historicalTarget,
             theta,
-            HistoricalRTolerance,
+            ThetaCrosswalkTolerance,
             $"{testMethod}: historical R copula provenance check.");
+    }
+
+    /// <summary>
+    /// Rebuilds one independently generated Student-t fixture, fits both continuous copula
+    /// coordinates with the default production MLE, and compares with the SciPy optimum.
+    /// </summary>
+    /// <param name="testMethod">The Student-t artifact fixture key.</param>
+    private static void AssertStudentTFixture(string testMethod)
+    {
+        JsonElement fixture = LoadFixture(testMethod);
+        string method = fixture.GetProperty("method").GetString()!;
+        double[] dataX = ReadDoubles(fixture.GetProperty("data_x"));
+        double[] dataY = ReadDoubles(fixture.GetProperty("data_y"));
+        double[] independentParameters = ReadDoubles(fixture.GetProperty("independent_parameters"));
+        double[] parameterTolerances = ReadDoubles(fixture.GetProperty("cross_solver_parameter_tolerances"));
+        double independentLogLikelihood = fixture.GetProperty("independent_maximum_log_likelihood").GetDouble();
+        double likelihoodTolerance = fixture.GetProperty("cross_solver_log_likelihood_tolerance").GetDouble();
+        CopulaEstimationMethod estimationMethod = method == "MPL"
+            ? CopulaEstimationMethod.PseudoLikelihood
+            : CopulaEstimationMethod.InferenceFromMargins;
+
+        var dfX = new DataFrame { ExactSeries = new ExactSeries(dataX) };
+        var dfY = new DataFrame { ExactSeries = new ExactSeries(dataY) };
+        dfX.CalculatePlottingPositions();
+        dfY.CalculatePlottingPositions();
+        var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
+        var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
+        if (estimationMethod == CopulaEstimationMethod.InferenceFromMargins)
+        {
+            JsonElement marginals = fixture.GetProperty("marginal_mle");
+            distX.SetParameterValues([marginals.GetProperty("mu_x").GetDouble(), marginals.GetProperty("sigma_x").GetDouble()]);
+            distY.SetParameterValues([marginals.GetProperty("mu_y").GetDouble(), marginals.GetProperty("sigma_y").GetDouble()]);
+        }
+        else
+        {
+            distX.SetParameterValues(ClosedFormNormal(dataX));
+            distY.SetParameterValues(ClosedFormNormal(dataY));
+        }
+
+        var bivariate = new BivariateDistribution(distX, distY, CopulaType.StudentT)
+        {
+            CopulaEstimationMethod = estimationMethod,
+        };
+        Assert.AreEqual(
+            independentLogLikelihood,
+            bivariate.DataLogLikelihood(independentParameters),
+            LikelihoodTolerance,
+            $"{testMethod}: production likelihood at the independent [rho, nu] optimum.");
+
+        var mle = new MaximumLikelihood(bivariate, OptimizationMethod.DifferentialEvolution);
+        Assert.IsTrue(mle.Estimate(), $"{testMethod}: Student-t MLE failed with status {mle.Status}.");
+        Assert.IsTrue(mle.IsEstimated, $"{testMethod}: Student-t MLE did not publish an estimate.");
+        Assert.AreEqual(independentParameters.Length, mle.BestParameterSet.Values.Length,
+            $"{testMethod}: fitted coordinate order must be [rho, nu].");
+        for (int index = 0; index < independentParameters.Length; index++)
+        {
+            Assert.AreEqual(
+                independentParameters[index],
+                mle.BestParameterSet.Values[index],
+                parameterTolerances[index],
+                $"{testMethod}: coordinate {index} ([rho, nu]) versus independent optimum.");
+        }
+        Assert.IsTrue(
+            mle.MaximumLogLikelihood >= independentLogLikelihood - likelihoodTolerance,
+            $"{testMethod}: production maximum {mle.MaximumLogLikelihood:G17} must reach the independent optimum " +
+            $"{independentLogLikelihood:G17} within {likelihoodTolerance:G17}.");
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Numerics.Distributions.Copulas;
+using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Models;
 using RMC.BestFit.Estimation;
 
@@ -70,7 +71,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -79,7 +80,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -98,7 +99,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -155,7 +156,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -164,7 +165,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -178,7 +179,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -226,7 +227,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -235,7 +236,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -254,7 +255,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -308,7 +309,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -317,7 +318,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -331,7 +332,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -379,7 +380,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -388,7 +389,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -407,7 +408,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -461,7 +462,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -470,7 +471,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -484,7 +485,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -532,7 +533,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -541,7 +542,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -560,7 +561,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -614,7 +615,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -623,7 +624,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -637,7 +638,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -685,7 +686,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -694,7 +695,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -713,7 +714,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -767,7 +768,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -776,7 +777,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -790,7 +791,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -838,7 +839,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -847,7 +848,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -866,7 +867,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -920,7 +921,7 @@ public class BivariateDistributionMLETests
         // Fit each marginal univariate distribution
         // Fit marginal-X
         var distX = new UnivariateDistribution(dfX, Numerics.Distributions.UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(distX);
+        var mle = new MaximumLikelihood(distX, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distX.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -929,7 +930,7 @@ public class BivariateDistributionMLETests
 
         // Fit marginal-Y
         var distY = new UnivariateDistribution(dfY, Numerics.Distributions.UnivariateDistributionType.Normal);
-        mle = new MaximumLikelihood(distY);
+        mle = new MaximumLikelihood(distY, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         distY.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -943,7 +944,7 @@ public class BivariateDistributionMLETests
         };
 
         // Estimate using MLE
-        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.Brent);
+        mle = new MaximumLikelihood(bivariateDist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         bivariateDist.SetParameterValues(mle.BestParameterSet.Values);
 

@@ -226,7 +226,7 @@ The focused method is:
 
 - `RMC.BestFit.Verification.DistributionFitting.Log10NormalFittingVerificationTests.ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle`
 
-**Verification:** Passed. BFGS used verification-only absolute and relative convergence tolerances of `1e-12`. Parameters passed at absolute tolerance `1e-5`, maximum log likelihood at `1e-8`, the direct and pointwise analytical likelihood at `1e-10`, the median CDF at `1e-12`, and the analytical quantile at `1e-9`. The fitted quantile uses the declared optimizer-scale relative tolerance. See the [evidence artifact](../../verification/data/distribution-fitting/log10-normal-closed-form.json).
+**Verification:** Passed. Production Differential Evolution used untouched default tolerances. The compatible parameter crosswalk passed at absolute tolerance `1e-4`, maximum log likelihood at `1e-8`, the direct and pointwise analytical likelihood at `1e-10`, the median CDF at `1e-12`, and the analytical quantile at `1e-9`. The fitted quantile uses the declared optimizer-scale relative tolerance. See the [evidence artifact](../../verification/data/distribution-fitting/log10-normal-closed-form.json).
 
 ## External family-oracle execution
 

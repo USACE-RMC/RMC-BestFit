@@ -13,11 +13,61 @@ in the [bivariate](../technical-reference/analysis/bivariate.md) and
 
 | Claim | Evidence | State |
 |---|---|---|
-| Copula maximum pseudo-likelihood and inference-from-margins estimation (six families) | `CopulaEstimationOracleTests` (12 exact methods) against the independent `copula-estimation-oracle.json` optimum; historical R `copula` targets retained | Passed 12/12 (21 August 2026) |
-| Bayesian bivariate copula recovery (seven families) | `BivariateAnalysisParameterRecoveryTests` under production DEMCzs defaults | Passed 7/7 (21 August 2026; Student t 470 s) |
-| Coincident-frequency response surface | `CoincidentFrequencyAnalysisTests` closed-form sum-of-Normals cells under production defaults | Passed 3/3 (21 August 2026) |
+| Copula maximum pseudo-likelihood and inference-from-margins estimation (seven families) | `CopulaEstimationOracleTests` (14 exact methods) against the independent `copula-estimation-oracle.json` optimum; historical R `copula` targets retained for the original six families | Passed 14/14 (31 August 2026) |
+| Generated-parent conditional copula recovery | Six `BivariateAnalysisParameterRecoveryTests` identities under production DEMCzs defaults, plus one Student-t MLE identity | Passed 7/7 (31 August 2026) |
+| Coincident-frequency response surface | Three analytical Normal-sum cells plus one N=1000 nonlinear Lognormal response recovery | Passed 4/4 (31 August 2026) |
 | Independent product-posterior propagation (TR-014) | `PosteriorResamplingVerificationTests.CoincidentFrequencyPosteriorResampling_MatchesIndependentClosedFormOracle` | Passed (3 August 2026) |
 | AIC/BIC use the copula data likelihood at the stored MAP (TR-047) | Fast routing regression `AnalysisInformationCriteriaRoutingTests.BivariateCriteria_UseOneDataLikelihoodCallAtMap` | Passed (fast gate) |
+
+## Chunk 11 identification and ownership design
+
+Every generated-parent bivariate recovery cell uses exactly 1,000 matched pairs. The physical
+marginals are `X ~ Normal(mu=100, sigma=15)` and `Y ~ Normal(mu=80, sigma=25)`, in X-then-Y
+coordinate order. Each marginal is fitted separately by maximum likelihood in `[mu, sigma]` order;
+its generating coordinates are judged with the Normal distribution's maximum-likelihood covariance
+at N=1000. The fitted marginal distributions are then held fixed while the conditional copula is
+estimated. Marginal MLE uncertainty is therefore not described as posterior uncertainty and is not
+propagated into either the copula posterior intervals or the Student-t conditional MLE covariance.
+
+| Family | Parent copula coordinates | Generator seed | Estimator and support | Identified coordinates and response |
+|---|---|---:|---|---|
+| Ali-Mikhail-Haq | `[theta=0.8]` | 13050 | Bayesian; Numerics AMH constraint, approximately `(-1, 1)` | `theta`; parent likelihood must exceed independence |
+| Clayton | `[theta=1.5]` | 13049 | Bayesian; Numerics Clayton constraint | `theta`; lower-tail dependence is implied by the identified coordinate |
+| Frank | `[theta=8]` | 13048 | Bayesian; positive branch selected from sample Kendall tau | `theta`; parent likelihood must exceed the near-independence boundary |
+| Gumbel | `[theta=2]` | 13047 | Bayesian; `[1, 100]` | `theta`; upper-tail dependence is implied by the identified coordinate |
+| Joe | `[theta=3]` | 13046 | Bayesian; `[1, 100]` | `theta`; upper-tail dependence is implied by the identified coordinate |
+| Gaussian | `[rho=0.8]` | 13045 | Bayesian; approximately `(-1, 1)` | `rho`; parent likelihood must exceed `rho=0` |
+| Student t | `[rho=0.8, nu=4]` | 13051 | MLE; `rho` approximately `(-1, 1)`; `2+1e-10 <= nu <= 30` | observed-information `rho`; weak `nu` is evaluated only through symmetric tail dependence |
+
+The six one-coordinate copula posterior coordinates use the unchanged DEMCzs configuration and seed
+12345, a central 95% interval, R-hat below 1.10, and ESS at least 100. Haden Smith directed removal of
+the Student-t MCMC identity because repeated beta-function evaluation made that realization
+impractical. Its replacement uses production Differential Evolution with untouched default tolerances, requires an unregularized
+observed-information covariance, judges `rho` by absolute standardized error no greater than 1.96,
+and applies the same standardized-error threshold to the closed-form symmetric tail-dependence
+response via the full covariance delta method. It makes no raw recovery claim for weak `nu`.
+Every cell first checks support and parent-versus-independence likelihood discrimination. The
+separate external artifact owns both maximum-pseudo-likelihood and inference-from-margins parity.
+
+## Coincident-frequency coverage matrix
+
+The three retained analytical cells and one nonlinear recovery cell form the minimal interaction
+matrix. Repeating every correlation sign for the nonlinear transformation would add runtime without
+a new response mechanism.
+
+| Response | Parent design | Oracle and uncertainty separation | Scientific interaction |
+|---|---|---|---|
+| `Z=X+Y`, `rho=0` | N=1000 pairs, seed 12345 | Exact Normal-sum law conditional on fitted Normal marginals and fitted `rho`; point response only | independence and linear additivity |
+| `Z=X+Y`, `rho=0.5` | N=1000 pairs, seed 12345 | Same exact law | positive dependence in a linear response |
+| `Z=X+Y`, `rho=-0.5` | N=1000 pairs, seed 12345 | Same exact law | negative dependence in a linear response |
+| `Z=exp(0.01X+0.01Y)`, `rho=0.5` | N=1000 pairs, generator seed 13055; `X ~ Normal(100,15)`, `Y ~ Normal(80,25)` | Exact Lognormal law. Response-table numerical error is bounded separately at 0.015 AEP. Marginal MLE uncertainty uses 2,000 independent asymptotic Normal-MLE draws (seeds 24680/24681), explicitly not posterior draws; copula uncertainty uses retained DEMCzs draws with central-95% parent inclusion, R-hat below 1.10, and ESS at least 100. The response uses the minimum available chain length, and the parent AEP must be inside the central 95% propagated band at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90. | monotone nonlinear transformation, parameter-fitting propagation, and response prediction |
+
+For the nonlinear parent, `log(Z)` has mean `0.01(mu_X+mu_Y)` and variance
+`0.01^2(sigma_X^2+sigma_Y^2+2 rho sigma_X sigma_Y)`. This closed form is independent of the
+production response-table constructor. Numerical response integration, parent fitting, and propagated
+predictive uncertainty therefore have separate acceptance checks; no fitted empirical response is used
+as the scientific oracle. No frozen nonlinear artifact is needed because the complete oracle is
+analytical and reproduced directly from the predeclared inputs.
 
 ## Copula estimation oracle
 
@@ -27,12 +77,13 @@ copulas to twelve embedded fixtures (one hundred paired observations each) by ma
 fitted by maximum likelihood) and compares the dependence parameter with historical R `copula` values
 at `1e-3`. The package version behind those values was never recorded. The generator
 `verification/python/bivariate/generate_copula_estimation_oracle.py` (SHA-256
-`4c90189d85864c7c2d84b6a5fbfb34cda64e7a7cac7eb72b0b3966f65d0b8fcb`) transcribes the fixtures from
-the test source, implements every copula density independently in closed form, self-checks each density
-against the numerical mixed partial derivative of its distribution function (maximum relative error
-`1.1e-6`, tolerance `1e-5`), maximizes the pseudo- or IFM log likelihood with a 401-point grid scan
-and bounded refinement (`xatol 1e-12`), and writes `verification/data/bivariate/copula-estimation-oracle.json`
-(SHA-256 `9d802581f5a6057b6582f80a2fe11f7b79c8a554c571139ca7864e009610b836`).
+`358dca1910f1091e1f9f07978f38662444575f9a0373e39cd31189c37918307b`) transcribes those fixtures and
+adds a NumPy-PCG64 seed-20260830 Student-t sample of exactly 1,000 pairs with parent `[rho=0.8, nu=4]`,
+`X ~ Normal(100,15)`, and `Y ~ Normal(80,25)`. Python 3.12.13, NumPy 2.3.5, and SciPy 1.18.1 implement
+the Student-t density in physical `[rho, nu]` order, self-check it against SciPy's bivariate-t over
+univariate-t density ratio (maximum relative error `8.5e-16`), and use deterministic differential
+evolution followed by L-BFGS-B. The generated `verification/data/bivariate/copula-estimation-oracle.json`
+has SHA-256 `28edfbd28e392df1ac540766f3ba5c3f1ce57d8a442facbcd6541866f683956e`.
 
 | Fixture | Method | Independent optimum | Historical R target | Difference |
 |---|---|---|---|---|
@@ -48,28 +99,36 @@ and bounded refinement (`xatol 1e-12`), and writes `verification/data/bivariate/
 | Joe | IFM | 2.9656127 | 2.9652690 | `+3.4e-4` |
 | Gaussian | MPL | 0.8000853 | 0.8000820 | `+3.3e-6` |
 | Gaussian | IFM | 0.7871334 | 0.7871479 | `-1.5e-5` |
+| Student t | MPL | `[rho=0.8157372, nu=5.0704726]` | Not claimed | N/A |
+| Student t | IFM | `[rho=0.8142171, nu=5.0055361]` | Not claimed | N/A |
 
 The pseudo-likelihood optima agree with the historical R values to `1e-7`-`1e-6`, which confirms that
 those values used Weibull pseudo-observations; the inference-from-margins optima differ by up to
 `3.4e-4`, consistent with a different marginal standard-deviation convention in the historical fits, and
 remain inside the historical `1e-3` tolerance. `CopulaEstimationOracleTests` rebuilds each fixture,
-sets the Normal marginals to the closed-form maximum-likelihood estimates, fits with the production
-Brent path, and requires the log likelihood at the independent optimum within `1e-8`, the fitted
-dependence parameter within `1e-5` relative (`1e-6` floor), the production maximum at least the
-independent optimum, and the historical R value within `1e-3`. All twelve exact methods passed on
-21 August 2026 through the guarded runner.
+sets the Normal marginals to the closed-form maximum-likelihood estimates, fits with production
+Differential Evolution and untouched default tolerances, and requires same-point log-likelihood parity
+within `1e-8`, the fitted dependence parameter within `1e-3` relative (`1e-6` floor), the attained
+objective within the optimizer's actual default objective tolerance of the independent optimum, and
+the historical R value within `1e-3`. The two Student-t cells require
+same-point/optimality agreement within `1e-5`, `rho` within `5e-4`, and `nu` within `2e-2` of the
+independent two-dimensional optimum. The original twelve and both Student-t additions pass; the
+Student-t methods passed separately through the guarded runner on 31 August 2026.
 
 ## Bayesian recovery and coincident frequency
 
 `BivariateAnalysisParameterRecoveryTests` generates paired Normal-marginal samples from the Normal,
-Joe, Gumbel, Frank, Clayton, Ali-Mikhail-Haq, and Student t copulas and requires the posterior MAP to
-recover the copula parameter within 15% relative and each marginal parameter within 5.0 absolute under
-the production DEMCzs defaults (seed 12345). All seven methods passed separately on 21 August 2026
-(4-10 s each, Student t 470 s). `CoincidentFrequencyAnalysisTests` fits two Normal marginals and a
+Joe, Gumbel, Frank, Clayton, Ali-Mikhail-Haq, and Student-t copulas. The six one-coordinate Bayesian
+identities apply the common central-95%/R-hat/ESS rule; the renamed Student-t MLE identity applies
+observed-information rules to `rho` and tail dependence. All seven current identities passed
+separately on 31 August 2026. The removed `RecoverStudentTCopulaParameters` MCMC attempt was interrupted
+at Haden Smith's direction and produced no TRX, so it is not evidence. `CoincidentFrequencyAnalysisTests` fits two Normal marginals and a
 Gaussian copula to simulated pairs and requires the mode curve of the coincident-frequency response
 surface to match the closed-form distribution of the sum of two correlated standard Normals within
-maximum absolute error 0.05 and mean absolute error 0.01 for rho = 0, positive, and negative; all three
-cells passed on 21 August 2026 under production defaults. The TR-014 product-posterior oracle is
+maximum absolute error 0.05 and mean absolute error 0.01 for rho = 0, positive, and negative. The
+fourth cell uses `exp(0.01X+0.01Y)`, the exact Lognormal law, separate response-table error and parent-
+fit checks, and central-95% propagated parent-response bands at five predeclared ordinates. All four
+current cells passed separately on 31 August 2026. The TR-014 product-posterior oracle is
 recorded in the [composite chapter](composite.md#independent-posterior-resampling).
 
 ## Criteria
@@ -86,8 +145,9 @@ formulas rather than the posterior-kernel formulas.
 
 ## Limitations
 
-The copula estimation oracle covers the one-parameter Archimedean and Gaussian families with Normal
-marginals; the Student t copula is covered by Bayesian recovery only. The bivariate analysis remains
+The copula estimation oracle covers the one-parameter Archimedean, Gaussian, and Student-t families
+with Normal marginals. No historical R-package parity is claimed for Student t, and its weak raw
+degrees-of-freedom coordinate is not claimed recovered. The bivariate analysis remains
 conditional on fixed marginal fits, and comparisons of its criteria are valid only across models with
 identical marginals, paired events, and likelihood convention.
 

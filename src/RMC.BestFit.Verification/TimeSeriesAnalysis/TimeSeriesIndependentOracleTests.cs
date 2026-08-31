@@ -886,9 +886,9 @@ public class TimeSeriesIndependentOracleTests
         // The production estimators must reach the analytical optimum from the model defaults,
         // and under flat priors the MAP must coincide with the MLE. The 1E-3 acceptance reflects
         // the global optimizer's convergence tolerance on a quadratic objective.
-        var mle = new MaximumLikelihood(flatModel);
+        var mle = new MaximumLikelihood(flatModel, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
-        var map = new MaximumAPosteriori(flatModel);
+        var map = new MaximumAPosteriori(flatModel, OptimizationMethod.DifferentialEvolution);
         map.Estimate();
         Assert.IsTrue(mle.IsEstimated, "Flat-prior MLE estimation.");
         Assert.IsTrue(map.IsEstimated, "Flat-prior MAP estimation.");

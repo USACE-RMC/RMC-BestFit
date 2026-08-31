@@ -1,4 +1,5 @@
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using System.Xml.Linq;
@@ -25,7 +26,7 @@ public sealed class MaximumAPosterioriInformationCriteriaOracleTests
     public void AIC_UsesDataLikelihoodAtMap_ExcludesPriorDensity()
     {
         var model = new NormalLocationScaleModel(CreateNormalData());
-        var map = new MaximumAPosteriori(model);
+        var map = new MaximumAPosteriori(model, OptimizationMethod.DifferentialEvolution);
         Assert.IsTrue(map.Estimate(), "MAP estimation failed.");
         double dataLogLikelihood = model.DataLogLikelihood(map.BestParameterSet.Values);
         double posteriorLogLikelihood = model.LogLikelihood(map.BestParameterSet.Values);
@@ -45,7 +46,7 @@ public sealed class MaximumAPosterioriInformationCriteriaOracleTests
     {
         double[] data = CreateNormalData();
         var model = new NormalLocationScaleModel(data);
-        var map = new MaximumAPosteriori(model);
+        var map = new MaximumAPosteriori(model, OptimizationMethod.DifferentialEvolution);
         Assert.IsTrue(map.Estimate(), "MAP estimation failed.");
         double dataLogLikelihood = model.DataLogLikelihood(map.BestParameterSet.Values);
         double posteriorLogLikelihood = model.LogLikelihood(map.BestParameterSet.Values);

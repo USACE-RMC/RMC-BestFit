@@ -17,10 +17,11 @@ validation (TR-045), and the replication of the three synthetic cases of
 | TR-044 continuity at activation stages | Corrected (approved 21 August 2026; default exponent lower bound 0.1, legacy bounds kept with a warning) | Seven exact continuity/bound cells pass; fast bound, legacy-warning, and XML round-trip contracts |
 | TR-045 aligned-pair validation | Corrected (approved 21 August 2026) | Fast aligned-pair, unmatched-record, and count-reporting contracts pass |
 | Example replication recovery cells (1,000 observations) | Passed 6/6 (21 August 2026) | `RatingCurveExampleRecoveryTests`, production defaults, independent SciPy optima |
-| Legacy rating-curve recovery cells (1,000 observations) | Passed 20/20 (21 August 2026) | `RatingCurveMLERecoveryTests` (10) and `RatingCurveBayesianRecoveryTests` (10) |
+| Reconciled rating-curve recovery cells (1,000 observations) | Passed 10/10 (31 August 2026) | Five scientifically distinct fixtures retained for both MLE and Bayesian recovery; ten redundant declarations consolidated before execution; log10 residual and parameter uncertainty propagated separately into simultaneous predictive bands |
 
-No sampler, seed, prior other than the approved exponent bound, production optimizer default,
-convergence rule, or tolerance of a closed phase changed. The complete Verification project was not run.
+No sampler, generator or estimator seed, prior other than the approved exponent bound, production
+optimizer default, convergence rule, or tolerance of a closed phase changed. The new Verification-only
+predictive-draw seeds are recorded below. The complete Verification project was not run.
 
 ## Fixtures and oracles
 
@@ -173,11 +174,71 @@ truth at the upper stages, an offset the independent optimum shares), and the th
 optimum's). Each amendment above was approved before the cells were rerun, and the fixtures moved to
 1,000 observations under the recovery sample-size policy.
 
-## Legacy recovery cells
+## Reconciled recovery coverage and identification matrix
 
-The ten `RatingCurveMLERecoveryTests` and ten `RatingCurveBayesianRecoveryTests` methods (self-generated
-synthetic truth through `SyntheticRatingCurveData`, unchanged tolerances, production DEMCzs defaults)
-now use 1,000 observations and all passed on 21 August 2026: MLE cells in 3.4-4.0 s, single-segment
-Bayesian cells in 34-38 s, two-segment in 73-74 s, and three-segment in 115-148 s per guarded invocation.
+The legacy ten-fixture Cartesian set mixed distinct hydraulic interactions with arbitrary names for
+width, slope, sample size, and range. Chunk 12 reconciles the design before executing it. Every retained
+fixture generates exactly 1,000 stage-discharge observations, preserves its existing seed, generating
+physics, Bayesian priors and sampler configuration, and uses production Differential Evolution with
+untouched default tolerances for MLE. The Bayesian recovery cells publish posterior MAP as their point
+estimator while retaining the same posterior draws, intervals, diagnostics, and curve bands, and use
+the model coordinate order shown below. The observational law is Normal error with standard deviation
+`sigma` in base-10 log discharge; the physical curve is the additive BaRatin response
+`sum alpha_k (h-h_k)^beta_k I(h>h_k)`.
+
+| Retained fixture (seed) | Controls and parameter order | Stage range | Scientific interaction | Identification and predeclared response stages |
+|---|---|---|---|---|
+| `SingleSegment_Default` (12345) | 1; `[h1, log10(alpha1), beta1, sigma]` | 1-10 | Standard single-control geometry and moderate error | All four coordinates identified; curve stages 1.25, 3, 6, 9.5 |
+| `SingleSegment_LowNoise` (54321) | 1; same order | 1-12 | Observation/error-model behavior at `sigma=0.02` | All four coordinates identified; curve stages 1.25, 3, 7, 11.5 |
+| `SingleSegment_WideRange` (99999) | 1; same order | 1-25 | Range leverage over a wide calibration domain | All four coordinates identified; curve stages 1.25, 5, 15, 24.5 |
+| `TwoSegment_BankfullTransition` (44444) | 2; `[h1, log10(alpha1), beta1, h2, log10(alpha2), beta2, sigma]` | 0.5-12 | In-bank/overbank activation at `h2=6` | Exact exclusive allocation 495 below and 505 at/above `h2`; controls 1/2 are active for 1,000/505 observations. Individual control coordinates may trade along a likelihood ridge; response stages 0.75, 2, 5.5, 6.5, 9, 11.5 and raw `sigma` are evaluated |
+| `ThreeSegment_MultipleControl` (66666) | 3; `[h1, log10(alpha1), beta1, h2, log10(alpha2), beta2, h3, log10(alpha3), beta3, sigma]` | 0.5-10 | Low-flow, channel, and floodplain controls activating at 3 and 7 | Exact exclusive allocation 270/406/324; controls 1/2/3 are active for 1,000/730/324 observations. Individual control coordinates may trade along ridges; response stages 0.75, 2, 2.75, 3.25, 5.5, 6.75, 7.25, 8.5, 9.75 and raw `sigma` are evaluated |
+
+The MLE cells require an unregularized observed-information covariance. Identifiable single-control
+coordinates and the multi-control scale use absolute standardized error no greater than 1.96. Response
+recovery is predictive rather than a latent mean-curve Wald check. Twenty thousand bounded
+multivariate-Normal parameter draws propagate the full covariance through the nonlinear curve on the
+log10-discharge scale (seed 20260831); an independent Normal residual using each draw's `sigma` is then
+added at every ordinate (seed 20260901). The empirical 95th percentile of the maximum absolute
+standardized deviation across the complete predeclared grid defines one simultaneous 95% predictive band.
+
+The Bayesian cells use central 95% posterior coordinate intervals, require R-hat below 1.10 and ESS at
+least 100 for every coordinate, and require all single-control truths and the multi-control `sigma` truth
+inside their coordinate intervals. Each retained posterior draw separately propagates parameter
+uncertainty; an independent draw-specific log10 residual is added at every ordinate (seed 20260902), and
+the same max-|t| construction yields one MAP-centered simultaneous 95% posterior-predictive band over the
+complete grid. Multi-control hydraulic coordinates are deliberately not claimed individually recovered;
+their generating responses are evaluated in that predictive space. MAP is the declared Bayesian point
+estimator but does not replace any coordinate interval, R-hat, ESS, or predictive-band requirement. Prior
+support is checked for every Bayesian coordinate. The exact stage allocations are reported as
+identification diagnostics, not substituted as interchangeable effective sample sizes: the likelihood
+covariance and posterior already reflect which observations activate each control. No empirical fitted
+curve is used as an oracle, and no conditional 5% tail rule substitutes for the stated 95% rules.
+
+`SingleSegment_LargeSample` is consolidated because every recovery fixture now has the same required
+N=1000. `SingleSegment_SteepChannel` and `SingleSegment_WideChannel` are consolidated into the standard,
+wide-range, and multiple-control cells because their differently named exponent/coefficient variants do
+not add another identification mechanism. `TwoSegment_Default` is consolidated into the sharper bankfull
+transition, and `ThreeSegment_Default` into the multiple-control activation case. Their historical results
+are not transferred to another identity. The retained likelihood-oracle and example-replication cells
+remain separate evidence. No `bdrc` parity is claimed because exact equivalence of its additive-control
+law, base-10 error density, segmentation, and parameterization has not been established; the independent
+SciPy likelihood and optimum artifacts above cover the compatible overlap.
+
+### Current exact outcomes
+
+| Retained fixture | MLE | Bayesian |
+|---|---|---|
+| `SingleSegment_Default` | Passed | Passed |
+| `SingleSegment_LowNoise` | Passed | Passed |
+| `SingleSegment_WideRange` | Passed | Passed |
+| `TwoSegment_BankfullTransition` | Passed; simultaneous critical 2.62536; stage-6.5 band `[578.013, 950.262]` contains parent 724.391 | Passed; simultaneous critical 2.63612; stage-6.5 band `[576.299, 953.454]` contains parent 724.391 |
+| `ThreeSegment_MultipleControl` | Passed; simultaneous critical 2.76477; stage-8.5 band `[1695.479, 2851.016]` contains parent 2144.093 | Passed; simultaneous critical 2.75410; stage-8.5 band `[1701.739, 2838.807]` contains parent 2144.093 |
+
+Every latest guarded run produced exactly one passing TRX result. Earlier pointwise mean-curve results are
+superseded because they omitted the residual term required by the declared log10 observation model and
+treated multiple pointwise intervals as one 95% statement. Parents, generator seeds, stage grids, priors,
+samplers, chains, convergence rules, optimizer defaults, and fitted realizations were unchanged. Current
+accounting is 22 rating-curve declarations, all verified.
 
 [Verification index](README.md) | [Technical treatment](../technical-reference/analysis/rating-curve.md) | [Scientific findings](../technical-reference/review-findings.md#tr-043)

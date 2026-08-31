@@ -1,4 +1,5 @@
 using Numerics.Sampling.MCMC;
+using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Verification.TimeSeriesAnalysis;
@@ -119,7 +120,7 @@ public class RatingCurveExampleRecoveryTests
             SamePointLikelihoodTolerance,
             $"{key}: data log likelihood evaluated at the independent optimum.");
 
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         Assert.IsTrue(mle.IsEstimated, $"{key}: MLE estimation did not complete.");
         double[] estimated = mle.BestParameterSet.Values;

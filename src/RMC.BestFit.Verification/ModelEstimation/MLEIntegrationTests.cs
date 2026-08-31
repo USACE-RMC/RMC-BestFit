@@ -1,4 +1,5 @@
 using Numerics;
+using Numerics.Mathematics.Optimization;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
@@ -35,7 +36,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Normal);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -65,7 +66,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.LnNormal);
 
         // Act - use MLSL for better global optimization on this distribution
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert - MLE should converge
@@ -99,7 +100,7 @@ public class MLEIntegrationTests
     {
         var df = new Models.DataFrame { ExactSeries = new ExactSeries(TestData.LnNormalData) };
         var model = new UnivariateDistribution(df, UnivariateDistributionType.LnNormal);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
 
         Assert.IsTrue(mle.Estimate(), "Ln-Normal maximum-likelihood estimation failed.");
         model.SetParameterValues(mle.BestParameterSet.Values);
@@ -127,7 +128,7 @@ public class MLEIntegrationTests
     {
         var df = new Models.DataFrame { ExactSeries = new ExactSeries(TestData.GeneralizedNormalData) };
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedNormal);
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
 
         Assert.IsTrue(mle.Estimate(), "Generalized-Normal maximum-likelihood estimation failed.");
         AssertMleTrueProfileRecovery(
@@ -157,7 +158,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Exponential);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -186,7 +187,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GammaDistribution);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -216,7 +217,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.PearsonTypeIII);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -253,7 +254,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -293,7 +294,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Gumbel);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -322,7 +323,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Weibull);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -351,7 +352,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedExtremeValue);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -383,7 +384,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedPareto);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -422,7 +423,7 @@ public class MLEIntegrationTests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Logistic);
 
         // Act
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert
@@ -449,7 +450,7 @@ public class MLEIntegrationTests
     {
         var df = new Models.DataFrame { ExactSeries = new ExactSeries(TestData.GeneralizedLogisticData) };
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedLogistic);
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
 
         Assert.IsTrue(mle.Estimate(), "Generalized-Logistic maximum-likelihood estimation failed.");
         AssertMleTrueProfileRecovery(

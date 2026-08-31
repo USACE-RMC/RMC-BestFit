@@ -1,4 +1,5 @@
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 
@@ -11,8 +12,8 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// <remarks>
 /// The deterministic fixture has log10 values symmetric about two. The MLE scale is 0.6 using
 /// the finite-sample denominator n; the GMM scale is 0.648074069840786 using the unbiased sample
-/// moment denominator n-1. The tests use local optimizers so comparisons are governed by
-/// parameter convergence rather than stochastic search.
+/// moment denominator n-1. MLE and MAP use Differential Evolution at untouched default tolerances;
+/// GMM retains its separately declared optimizer policy.
 /// </remarks>
 [TestClass]
 public class Log10NormalEstimationEquivalenceTests
@@ -21,6 +22,7 @@ public class Log10NormalEstimationEquivalenceTests
     private const double ExpectedMu = 2d;
     private const double ExpectedMleSigma = 0.6d;
     private const double ExpectedMomentSigma = 0.648074069840786d;
+    private const double ParameterCrosswalkTolerance = 1E-4d;
 
     /// <summary>
     /// Verifies that MLE and flat-prior MAP recover the same closed-form Log10-Normal parameters
@@ -31,13 +33,11 @@ public class Log10NormalEstimationEquivalenceTests
     {
         DataFrame dataFrame = CreateDataFrame();
         var mleModel = new UnivariateDistribution(dataFrame, UnivariateDistributionType.LogNormal);
-        var mle = new MaximumLikelihood(mleModel, OptimizationMethod.BFGS)
+        var mle = new MaximumLikelihood(mleModel, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = false,
             ReportFailure = true
         };
-        mle.Optimizer.AbsoluteTolerance = 1E-12d;
-        mle.Optimizer.RelativeTolerance = 1E-12d;
 
         bool mleEstimated = mle.Estimate();
 
@@ -47,22 +47,20 @@ public class Log10NormalEstimationEquivalenceTests
             // this method isolates the flat-prior MAP/MLE identity before testing informative priors.
             UseJeffreysRuleForScale = false
         };
-        var map = new MaximumAPosteriori(mapModel, OptimizationMethod.BFGS)
+        var map = new MaximumAPosteriori(mapModel, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = false,
             ReportFailure = true
         };
-        map.Optimizer.AbsoluteTolerance = 1E-12d;
-        map.Optimizer.RelativeTolerance = 1E-12d;
 
         bool mapEstimated = map.Estimate();
 
         Assert.IsTrue(mleEstimated, "The deterministic Log10-Normal MLE must converge.");
         Assert.IsTrue(mapEstimated, "The deterministic flat-prior Log10-Normal MAP must converge.");
-        Assert.AreEqual(ExpectedMu, mle.BestParameterSet.Values[0], 1E-5d, "MLE mu mismatch.");
-        Assert.AreEqual(ExpectedMleSigma, mle.BestParameterSet.Values[1], 1E-5d, "MLE sigma mismatch.");
-        Assert.AreEqual(ExpectedMu, map.BestParameterSet.Values[0], 1E-5d, "MAP mu mismatch.");
-        Assert.AreEqual(ExpectedMleSigma, map.BestParameterSet.Values[1], 1E-5d, "MAP sigma mismatch.");
+        Assert.AreEqual(ExpectedMu, mle.BestParameterSet.Values[0], ParameterCrosswalkTolerance, "MLE mu mismatch.");
+        Assert.AreEqual(ExpectedMleSigma, mle.BestParameterSet.Values[1], ParameterCrosswalkTolerance, "MLE sigma mismatch.");
+        Assert.AreEqual(ExpectedMu, map.BestParameterSet.Values[0], ParameterCrosswalkTolerance, "MAP mu mismatch.");
+        Assert.AreEqual(ExpectedMleSigma, map.BestParameterSet.Values[1], ParameterCrosswalkTolerance, "MAP sigma mismatch.");
         Assert.AreEqual(
             mleModel.DataLogLikelihood(mle.BestParameterSet.Values),
             mapModel.DataLogLikelihood(map.BestParameterSet.Values),
@@ -294,13 +292,11 @@ public class Log10NormalEstimationEquivalenceTests
         if (priorMean.HasValue && priorStandardDeviation.HasValue)
             model.Parameters[0].PriorDistribution = new Normal(priorMean.Value, priorStandardDeviation.Value);
 
-        var map = new MaximumAPosteriori(model, OptimizationMethod.BFGS)
+        var map = new MaximumAPosteriori(model, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = true,
             ReportFailure = true
         };
-        map.Optimizer.AbsoluteTolerance = 1E-12d;
-        map.Optimizer.RelativeTolerance = 1E-12d;
 
         bool estimated = map.Estimate();
 

@@ -1,6 +1,7 @@
 using Numerics.Distributions;
 using Numerics.Distributions.Copulas;
 using RMC.BestFit.Models;
+using RMC.BestFit.Verification.Recovery;
 using System.Diagnostics;
 
 namespace RMC.BestFit.Verification.Datasets
@@ -24,7 +25,7 @@ namespace RMC.BestFit.Verification.Datasets
     ///     <b>Parent setup (mirrors <c>examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit</c>):</b>
     ///     X ~ Normal(μ=<see cref="MuX"/>=100, σ=<see cref="SigmaX"/>=15),
     ///     Y ~ Normal(μ=<see cref="MuY"/>=80, σ=<see cref="SigmaY"/>=25),
-    ///     sample size n=<see cref="DefaultSampleSize"/>=100.
+    ///     sample size n=<see cref="DefaultSampleSize"/>=1000.
     /// </para>
     /// <para>
     ///     <b>Parent copula parameters (defaults):</b>
@@ -49,8 +50,8 @@ namespace RMC.BestFit.Verification.Datasets
         /// <summary>Standard deviation of the marginal Y (Normal).</summary>
         public const double SigmaY = 25.0;
 
-        /// <summary>Default paired sample size; matches the example project.</summary>
-        public const int DefaultSampleSize = 100;
+        /// <summary>Default paired sample size required by the generated-parent recovery policy.</summary>
+        public const int DefaultSampleSize = RecoveryDesign.SampleSize;
 
         /// <summary>Shared base seed; per-copula methods add offsets for independence.</summary>
         public const int BaseSeed = 12345;

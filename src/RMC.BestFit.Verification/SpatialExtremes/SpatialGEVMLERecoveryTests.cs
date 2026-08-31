@@ -31,7 +31,7 @@ public class SpatialGEVMLERecoveryTests
         var model = new SpatialGEV(data, coords, location, scale, shape);
 
         // Act
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         model.SetParameterValues(mle.BestParameterSet.Values);
 
@@ -70,7 +70,7 @@ public class SpatialGEVMLERecoveryTests
         model.SetDefaultParameters();
 
         // Act
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         model.SetParameterValues(mle.BestParameterSet.Values);
 

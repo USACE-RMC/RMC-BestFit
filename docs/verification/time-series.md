@@ -843,7 +843,7 @@ retained draws. After the prediction-oracle correction, the recovery-source SHA-
 
 | Cell | Fully qualified method | Disposition |
 |---|---|---|
-| AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Passed 1/1 after approved 110-step burn-in correction |
+| AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Open under required Differential Evolution/default tolerances; historical burn-in-corrected pass is superseded for the current source |
 | AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 with unchanged production DEMCzs defaults |
 | MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 at the unchanged 5% gate |
 | MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 with unchanged production DEMCzs defaults |
@@ -877,9 +877,11 @@ model-step budgets before estimation.
 The first sandboxed corrected run could not read the user NuGet configuration, failed during SDK
 resolution, and ran no test. The same exact guarded command then passed 1/1 in 0.499 s from commit
 `a9e9bbd` under `20260820-134940-...`. Its TRX SHA-256 is
-`AEDDD87466F9FB3757C1CBEB0E1D08F4940095175AD2DD5224CEEBA158146B81`. This result resolves the
-AR MLE stop condition without changing the retained sample size, seed, 5% gate, production code,
-optimizer, likelihood, prior, or numerical defaults.
+`AEDDD87466F9FB3757C1CBEB0E1D08F4940095175AD2DD5224CEEBA158146B81`. That result remains historical
+evidence for the burn-in correction. The current required Differential Evolution/default-tolerance run
+reported success at `[mu,phi,sigma]=[1,0.8761272668,5.330319728]`, whose likelihood `-3089.265435` is
+worse than `-3013.536326` at parent `[10,0.6,5]`; the current identity is therefore open. The generator,
+retained sample size, seed, bounds, 5% gate, production code, likelihood, and prior were not changed.
 
 The next exact guarded command selected only
 `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1`. Its

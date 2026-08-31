@@ -1,4 +1,5 @@
 using System;
+using Numerics.Mathematics.Optimization;
 using System.IO;
 using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,6 +19,9 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 [TestClass]
 public class LmomcoDistributionFittingVerificationTests
 {
+    /// <summary>Scaled coordinate crosswalk tolerance compatible with default Differential Evolution.</summary>
+    private const double ParameterCrosswalkRelativeTolerance = 1E-4d;
+
     /// <summary>
     /// Verifies Generalized Logistic MLE and distribution functions against lmomco.
     /// </summary>
@@ -26,8 +30,7 @@ public class LmomcoDistributionFittingVerificationTests
     {
         VerifyFamily(
             "GeneralizedLogistic",
-            UnivariateDistributionType.GeneralizedLogistic,
-            OptimizationMethod.BFGS);
+            UnivariateDistributionType.GeneralizedLogistic);
     }
 
     /// <summary>
@@ -38,8 +41,7 @@ public class LmomcoDistributionFittingVerificationTests
     {
         VerifyFamily(
             "GeneralizedNormal",
-            UnivariateDistributionType.GeneralizedNormal,
-            OptimizationMethod.BFGS);
+            UnivariateDistributionType.GeneralizedNormal);
     }
 
     /// <summary>
@@ -47,11 +49,9 @@ public class LmomcoDistributionFittingVerificationTests
     /// </summary>
     /// <param name="familyName">Artifact key for the family.</param>
     /// <param name="distributionType">BestFit distribution type.</param>
-    /// <param name="optimizationMethod">Deterministic optimizer used for the C# fit.</param>
     private static void VerifyFamily(
         string familyName,
-        UnivariateDistributionType distributionType,
-        OptimizationMethod optimizationMethod)
+        UnivariateDistributionType distributionType)
     {
         JsonElement family = LoadFamily(familyName);
         double[] data = ReadArray(family.GetProperty("data"));
@@ -83,13 +83,11 @@ public class LmomcoDistributionFittingVerificationTests
             model.DataLogLikelihood(expectedParameters),
             "data log likelihood at the lmomco optimum");
 
-        var mle = new MaximumLikelihood(model, optimizationMethod)
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = false,
             ReportFailure = true
         };
-        mle.Optimizer.AbsoluteTolerance = 1E-12d;
-        mle.Optimizer.RelativeTolerance = 1E-12d;
 
         bool estimated = mle.Estimate();
 
@@ -101,7 +99,8 @@ public class LmomcoDistributionFittingVerificationTests
             "maximized data log likelihood");
         for (int i = 0; i < expectedParameters.Length; i++)
         {
-            double parameterTolerance = 1E-5d * Math.Max(1d, Math.Abs(expectedParameters[i]));
+            double parameterTolerance =
+                ParameterCrosswalkRelativeTolerance * Math.Max(1d, Math.Abs(expectedParameters[i]));
             Assert.AreEqual(
                 expectedParameters[i],
                 mle.BestParameterSet.Values[i],

@@ -1,4 +1,5 @@
 using Numerics.Data.Statistics;
+using Numerics.Mathematics.Optimization;
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -16,6 +17,9 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 [TestClass]
 public class Log10NormalFittingVerificationTests
 {
+    /// <summary>Absolute coordinate crosswalk tolerance compatible with default Differential Evolution.</summary>
+    private const double ParameterCrosswalkTolerance = 1E-4d;
+
     /// <summary>
     /// Verifies closed-form MLE parameters, data log likelihood, CDF, and quantile calculations.
     /// </summary>
@@ -39,19 +43,17 @@ public class Log10NormalFittingVerificationTests
             ExactSeries = new ExactSeries(observedValues)
         };
         var model = new UnivariateDistribution(dataFrame, UnivariateDistributionType.LogNormal);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.BFGS)
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = false,
             ReportFailure = true
         };
-        mle.Optimizer.AbsoluteTolerance = 1E-12d;
-        mle.Optimizer.RelativeTolerance = 1E-12d;
 
         bool estimated = mle.Estimate();
 
         Assert.IsTrue(estimated, "The deterministic Log10-Normal MLE must converge.");
-        Assert.AreEqual(expectedMu, mle.BestParameterSet.Values[0], 1E-5d);
-        Assert.AreEqual(expectedSigma, mle.BestParameterSet.Values[1], 1E-5d);
+        Assert.AreEqual(expectedMu, mle.BestParameterSet.Values[0], ParameterCrosswalkTolerance);
+        Assert.AreEqual(expectedSigma, mle.BestParameterSet.Values[1], ParameterCrosswalkTolerance);
         Assert.AreEqual(expectedDataLogLikelihood, model.DataLogLikelihood([expectedMu, expectedSigma]), 1E-10d);
         Assert.AreEqual(
             expectedDataLogLikelihood,

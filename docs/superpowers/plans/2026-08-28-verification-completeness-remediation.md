@@ -430,10 +430,10 @@
 **Interfaces:**
 - Produces: N=1000 recovery for all seven copulas and Student-t external parity.
 
-- [ ] Change the synthetic bivariate default from 100 paired observations to 1000.
-- [ ] Add Student-t MPL/IFM external targets with correlation and degrees-of-freedom parameterization documented.
-- [ ] Replace observed-delta tolerances with interval/standardized-error and predictive tail-dependence checks.
-- [ ] Run approved exact methods and update artifacts, hashes, catalog, and report.
+- [x] Change the synthetic bivariate default from 100 paired observations to 1000.
+- [x] Add Student-t MPL/IFM external targets with correlation and degrees-of-freedom parameterization documented.
+- [x] Replace observed-delta tolerances with interval/standardized-error and predictive tail-dependence checks.
+- [x] Run approved exact methods and update artifacts, hashes, catalog, and report.
 
 ### Chunk 11B: Complete CoincidentFrequency verification
 
@@ -445,10 +445,10 @@
 **Interfaces:**
 - Produces: retained closed-form Normal-sum evidence plus N=1000 nonlinear response recovery.
 
-- [ ] Define a monotone nonlinear response function and its independent two-dimensional numerical integration or Monte Carlo oracle.
-- [ ] Generate exactly 1000 paired parent observations for the recovery path.
-- [ ] Predeclare the probability/quantile grid and integration or Monte Carlo error bound.
-- [ ] Run approved exact methods and update artifacts, catalog, and report.
+- [x] Define a monotone nonlinear response function and its independent two-dimensional numerical integration or Monte Carlo oracle.
+- [x] Generate exactly 1000 paired parent observations for the recovery path.
+- [x] Predeclare the probability/quantile grid and integration or Monte Carlo error bound.
+- [x] Run approved exact methods and update artifacts, catalog, and report.
 
 ### Chunk 12: Normalize rating-curve verification
 
@@ -460,11 +460,30 @@
 **Interfaces:**
 - Produces: consistent N=1000 MLE/Bayesian recovery and source-specific external parity separated from recovery acceptance.
 
-- [ ] Predeclare uncertainty and curve grids for standard, segmented, and error-model configurations.
-- [ ] Replace parameter bands ranging from 5% to 50% with the common interval/standardized-error rule and conditional 5% reporting.
-- [ ] Retain tighter deterministic independent-optimum parity as external evidence, not recovery tolerance.
-- [ ] Use bdrc or another package only where the rating equation and residual model exactly match; otherwise document incompatibility.
-- [ ] Run approved exact cells and reconcile XML comments with executable thresholds.
+- [x] Predeclare uncertainty and curve grids for standard, segmented, and error-model configurations.
+- [x] Replace parameter bands ranging from 5% to 50% with the common interval/standardized-error rule and conditional 5% reporting.
+- [x] Retain tighter deterministic independent-optimum parity as external evidence, not recovery tolerance.
+- [x] Use bdrc or another package only where the rating equation and residual model exactly match; otherwise document incompatibility.
+- [x] Run approved exact cells and reconcile XML comments with executable thresholds.
+
+**Chunk 12 checkpoint (31 August 2026):** The pre-run matrix consolidated ten redundant declarations
+and retained five fixtures for each estimator. Haden Smith identified that response recovery must include
+the declared log10 residual; the superseded pointwise checks had propagated parameter uncertainty only and
+also treated six or nine pointwise intervals as one 95% statement. MLE now propagates 20,000 bounded
+observed-information draws plus independent draw-specific log10 residuals into a simultaneous max-|t| 95%
+predictive band. Bayesian recovery uses posterior MAP, retained posterior draws, independent draw-specific
+log10 residuals, and the analogous simultaneous posterior-predictive band. Exact segmented allocations are
+495/505 and 270/406/324 rather than nominal N=1000 per control. All ten exact recovery identities pass with
+one result each. No parent, generator seed, prior, sampler, response grid, optimizer default, convergence
+rule, or fitted realization was tuned. Chunk 13A implementation was not started.
+
+**Whole-library estimator audit:** 149 direct `MaximumLikelihood`/`MaximumAPosteriori` constructions
+were reconciled. The 144 non-profile constructions use Differential Evolution with untouched default
+tolerances; the five intentional profile-likelihood constructions retain BFGS because Brent/BFGS are
+part of those profile oracles. Three current exact methods remain open under the required defaults:
+two existing Log10-Normal analytical MAP/GMM cells and the AR(1) MLE recovery cell. The AR(1) MLE
+identity was the sole later-chunk execution under the whole-library audit; no Chunk 13A recovery design
+or remediation was begun.
 
 ### Chunk 13A: Normalize AR and MA verification
 
@@ -869,3 +888,29 @@ At the end of each session, check completed boxes only when code, oracle, artifa
 - **Final gates:** Core, UI, and App passed 3,375/3,375, 581/581, and 443/443. Verification compiled with zero warnings/errors. The initial strict XML command was blocked by sandbox access to the existing Windows SDK/NuGet profile; the identical elevated retry passed across 935 source files. `git diff --check` passed with line-ending warnings only, and the direct untracked-file whitespace/final-newline scan passed for all 13 untracked files.
 - **Numerics validation:** the four-framework Release build passed with zero warnings/errors. On each of net481, net8, net9, and net10, all three exact retained competing-risk MLE identities passed and the deterministic suite excluding the live `Data.TimeSeriesAnalysis.Test_TimeSeriesDownload` class passed 2,423/2,423. No live-network fixture ran in the final sweep.
 - **Repository preservation:** the RMC-BestFit staged diff is empty. The sibling Numerics checkout remains at `9b66ad7f77d91dd60e3870104dc0edee907a830b` on `bug-fixes-and-enhancements` with its four preserved Chunk 7 files plus the approved `Test_CompetingRisks.cs` change and an empty staged diff. This work staged, committed, pushed, reverted, discarded, moved, or renamed nothing.
+
+### 30 August 2026 — Chunk 11A reconciled; proceed to Chunk 11B
+
+- **Identification and ownership:** all seven generated-parent copula fixtures now contain exactly N=1000 matched pairs with their established generator offsets. Normal margins are fitted in `[mu, sigma]` order and judged with Normal MLE covariance; they remain fixed during conditional copula estimation and are not described as posterior coordinates. The six one-coordinate copulas use unchanged DEMCzs defaults, central-95% parent inclusion, R-hat below 1.10, ESS at least 100, prior support, and parent-versus-independence discrimination.
+- **Student-t disposition:** Haden Smith directed stopping and removing `RecoverStudentTCopulaParameters` because repeated beta-function evaluation made the MCMC realization impractical. The interrupted directory contains no TRX and is not evidence. The replacement `RecoverStudentTCopulaParametersWithMaximumLikelihood` uses the unchanged default production MLE, an unregularized observed-information covariance for `rho`, and a full-covariance delta-method standardized-error check for symmetric tail dependence; weak raw `nu` recovery is not claimed. The exact replacement passed in one inspected result.
+- **Independent Student-t evidence:** two new `CopulaEstimationOracleTests` identities cover MPL and IFM on an independently generated N=1000 Student-t sample in physical `[rho, nu]` order. Python 3.12.13, NumPy 2.3.5, and SciPy 1.18.1 perform deterministic differential evolution followed by L-BFGS-B and independently check the density against the bivariate-t/univariate-t ratio. Artifact SHA-256 is `28edfbd28e392df1ac540766f3ba5c3f1ce57d8a442facbcd6541866f683956e`; generator SHA-256 is `358dca1910f1091e1f9f07978f38662444575f9a0373e39cd31189c37918307b`.
+- **Exact evidence:** the six final Bayesian recovery reruns, the Student-t MLE recovery, and both Student-t external optimum cells passed individually through the guarded runner; every final TRX contains exactly one result. The first MLE run failed only because covariance status was inspected before computation, and the first Student-t MPL run was the expected TDD missing-fixture failure; neither superseded failure is accepted evidence.
+- **Scoped checkpoint:** Verification builds with zero warnings/errors. JSON Schema validation passes. Default catalog validation passes with 523 declarations / 523 execution units and 128 open gaps: 337 verified, 128 open, 56 execution-excluded, and two accepted limitations. All Chunk 11A changes remain test/oracle/artifact/catalog/documentation-only, so the approved workflow proceeds automatically to Chunk 11B. No Bulletin 17C confidence-interval coverage method or full Verification suite ran.
+
+### 30 August 2026 — Chunk 11B reconciled; proceed to Chunk 12
+
+- **Coverage matrix:** the three existing analytical Normal-sum identities retain their classification and cover zero, positive, and negative dependence in a linear response. One new N=1000, seed-13055 identity covers the distinct monotone nonlinear response `Z=exp(0.01X+0.01Y)` under positive Gaussian-copula dependence. A full correlation-sign-by-response Cartesian expansion was rejected as scientifically redundant.
+- **Independent oracle and uncertainty:** `log(Z)` has an exact Normal law, so no frozen artifact is needed. The response-table approximation has a separate predeclared 0.015 AEP bound. Normal marginal MLE recovery uses observed-information standardized errors; copula `rho` uses central-95% inclusion, R-hat below 1.10, and ESS at least 100. Two thousand independent asymptotic Normal-MLE draws at seeds 24680/24681 propagate marginal-fit uncertainty and are explicitly not posterior draws. Parent response AEP is inside the central 95% propagated band at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90.
+- **Exact evidence:** the new nonlinear identity and all three source-affected analytical identities passed individually through the guarded runner; every latest TRX contains exactly one result. The only authored-red issue was a build-time shared-constant ownership error, corrected entirely in Verification source.
+- **Scoped checkpoint:** Verification builds with zero warnings/errors. JSON Schema validation passes. Default catalog validation passes with 524 declarations / 524 execution units and 128 open gaps: 338 verified, 128 open, 56 execution-excluded, and two accepted limitations. Chunk 11B changed no production source or scientific contract, so the approved workflow proceeds to Chunk 12. No Bulletin 17C confidence-interval coverage method or full Verification suite ran.
+
+### 31 August 2026 — Chunk 12 and Verification-wide MLE/MAP normalization complete; stop before Chunk 13A
+
+- **Optimizer policy:** the final source audit found 149 direct MLE/MAP constructions. All 144 non-profile constructions use Differential Evolution with untouched default tolerances. Five deliberate profile-likelihood constructions retain BFGS because their nuisance optimizations are paired with Brent roots and are part of the independent profile oracles. No GMM-only optimizer or tolerance was changed.
+- **Chunk 11A:** all seven N=1000 generated-parent recovery identities, all twelve bivariate MLE cells, and all fourteen independent copula optimum cells pass their current exact identities. Student-t MCMC was removed at Haden Smith's direction; its MLE replacement and both independent Student-t MPL/IFM cells pass. The current Chunk 11A matrix is 33/33 verified.
+- **Chunk 11B:** the three analytical Normal-sum cells and the distinct N=1000 nonlinear Lognormal-response recovery cell pass. The current matrix is 4/4 verified.
+- **Chunk 12:** five fixtures per estimator remain after ten redundant declarations were consolidated. MLE uses DE/default; Bayesian recovery publishes posterior MAP without changing coordinate intervals, R-hat, or ESS. Parameter uncertainty and the declared draw-specific log10 residual uncertainty are propagated separately into simultaneous max-|t| 95% predictive bands over the predeclared grids. Exact segmented allocations are 495/505 and 270/406/324. All ten recovery identities pass; including continuity, example recovery, and likelihood oracles, rating curve is 22 verified / 0 open.
+- **Additional current gaps exposed by the optimizer audit:** two Log10-Normal analytical MAP/GMM cells and the AR(1) MLE recovery cell remain open under the unchanged fixtures and acceptance rules. No tolerance, bound, prior, seed, fixture, or production/scientific contract was tuned to clear them. The exact AR(1) MLE method was run once under Haden Smith's later whole-library MLE/MAP audit direction; no other Chunk 13A method ran and no Chunk 13A recovery design or remediation was begun.
+- **Final catalog:** default validation passes with 514 declarations / 514 execution units and 111 open gaps: 345 verified, 111 open, 56 execution-excluded, and two accepted limitations. JSON Schema validation is true; catalog-validator fixtures pass 22/22.
+- **Final gates:** Core, UI, and App pass 3,375/3,375, 581/581, and 443/443. Verification builds with zero warnings/errors. The first strict XML attempt was blocked by sandbox access to existing Windows SDK/NuGet profile directories; the identical elevated command passes across 936 source files. `git diff --check` and the direct untracked-file whitespace/final-newline scan pass.
+- **Boundary:** no Bulletin 17C confidence-interval coverage method or full Verification suite ran. Chunk 13A implementation/design did not start; the sole later-chunk execution was the AR(1) MLE audit run disclosed above. No file was staged, committed, pushed, reverted, discarded, moved, or renamed.

@@ -1,4 +1,5 @@
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
 using RMC.BestFit.Diagnostics;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -228,13 +229,11 @@ public class PriorPenaltyInfluenceVerificationTests
                 new Normal(priorMean.Value, priorStandardDeviation.Value);
         }
 
-        var estimator = new MaximumAPosteriori(model, OptimizationMethod.BFGS)
+        var estimator = new MaximumAPosteriori(model, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = true,
             ReportFailure = true
         };
-        estimator.Optimizer.AbsoluteTolerance = 1E-12d;
-        estimator.Optimizer.RelativeTolerance = 1E-12d;
         Assert.IsTrue(estimator.Estimate(), "The deterministic Log10-Normal MAP fit must converge.");
         return (estimator, model);
     }

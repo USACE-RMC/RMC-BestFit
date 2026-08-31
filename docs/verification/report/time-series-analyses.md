@@ -27,7 +27,7 @@ The ARIMA forecast oracle anchors the first prediction to the final observed tra
 
 | Model and estimator | Generating coordinates | Sample size | Acceptance | Result |
 |---|---|---:|---|---:|
-| AR(1), MLE | $\mu=10$, $\phi=0.6$, $\sigma=5$ | 1,000 | Existing coefficient and scale gates | Passed |
+| AR(1), MLE | $\mu=10$, $\phi=0.6$, $\sigma=5$ | 1,000 | Existing coefficient and scale gates; required Differential Evolution with untouched defaults | Open - attained likelihood is below the parent likelihood and the estimate misses the gates |
 | AR(1), Bayesian | Same | 1,000 | Central interval, $\widehat R<1.1$, ESS greater than 100 | Passed |
 | MA(1), MLE | $\mu=10$, $\theta=0.6$, $\sigma=5$ | 1,000 | 5% parameter gate | Passed |
 | MA(1), Bayesian | Same | 1,000 | Central interval, $\widehat R<1.1$, ESS greater than 100 | Passed |

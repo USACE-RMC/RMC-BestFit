@@ -1,4 +1,5 @@
 using Numerics;
+using Numerics.Mathematics.Optimization;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
@@ -49,7 +50,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Normal);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -88,7 +89,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.LnNormal);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -126,7 +127,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.LogNormal);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -162,7 +163,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedNormal);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -207,7 +208,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Exponential);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -242,7 +243,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GammaDistribution);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -280,7 +281,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.PearsonTypeIII);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -320,7 +321,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.LogPearsonTypeIII);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -363,7 +364,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Gumbel);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -403,7 +404,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Weibull);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -442,7 +443,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedExtremeValue);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -482,7 +483,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedPareto);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -523,7 +524,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.KappaFour);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -567,7 +568,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.Logistic);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully
@@ -612,7 +613,7 @@ public class UnivariateDistributionMLETests
         var model = new UnivariateDistribution(df, UnivariateDistributionType.GeneralizedLogistic);
 
         // Create MLE estimator and fit the distribution
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the distributions were fitted successfully

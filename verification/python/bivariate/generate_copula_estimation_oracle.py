@@ -4,7 +4,8 @@
 Frank, Gumbel, Joe, and Gaussian) by maximum pseudo-likelihood (MPL, Weibull plotting-position
 complements) and by inference from margins (IFM, Normal marginals fitted by maximum likelihood) and
 compares the fitted dependence parameter with historical R ``copula`` package values embedded in the
-test source. This script transcribes those fixtures from the test source, implements every copula
+test source. This script transcribes those fixtures from the test source and adds an independently
+generated N=1000 Student-t copula fixture for MPL and IFM. It implements every copula
 density independently in closed form (each density is self-checked against the numerical mixed
 partial derivative of its copula distribution function), maximizes the pseudo- or IFM log likelihood
 with SciPy, and writes a committed artifact that records the data, the independent optimum, the
@@ -28,7 +29,7 @@ from typing import Any, Callable
 
 import numpy as np
 import scipy
-from scipy import optimize, stats
+from scipy import optimize, special, stats
 
 
 SCRIPT_PATH = Path(__file__).resolve()
@@ -69,6 +70,11 @@ SELF_CHECK_THETAS = {
     "Normal": [-0.5, 0.3, 0.8],
 }
 SELF_CHECK_TOLERANCE = 1e-5
+STUDENT_T_SEED = 20260830
+STUDENT_T_SAMPLE_SIZE = 1000
+STUDENT_T_PARENT = (0.8, 4.0)
+STUDENT_T_CROSS_SOLVER_PARAMETER_TOLERANCES = (5e-4, 2e-2)
+STUDENT_T_CROSS_SOLVER_LOGLIK_TOLERANCE = 1e-5
 
 
 # --------------------------------------------------------------------------- copula functions
@@ -166,6 +172,25 @@ def logpdf_normal(u: np.ndarray, v: np.ndarray, theta: float) -> np.ndarray:
     y = stats.norm.ppf(v)
     r2 = 1.0 - theta * theta
     return -0.5 * np.log(r2) - (theta * theta * (x * x + y * y) - 2.0 * theta * x * y) / (2.0 * r2)
+
+
+def logpdf_student_t(u: np.ndarray, v: np.ndarray, rho: float, nu: float) -> np.ndarray:
+    """Student-t copula log density in the physical parameter order [rho, nu]."""
+
+    x = stats.t.ppf(u, df=nu)
+    y = stats.t.ppf(v, df=nu)
+    r2 = rho * rho
+    quadratic = x * x - 2.0 * rho * x * y + y * y
+    log_density = (
+        special.gammaln((nu + 2.0) / 2.0)
+        + special.gammaln(nu / 2.0)
+        - 2.0 * special.gammaln((nu + 1.0) / 2.0)
+        - 0.5 * np.log1p(-r2)
+    )
+    log_density -= ((nu + 2.0) / 2.0) * np.log1p(quadratic / (nu * (1.0 - r2)))
+    log_density += ((nu + 1.0) / 2.0) * np.log1p(x * x / nu)
+    log_density += ((nu + 1.0) / 2.0) * np.log1p(y * y / nu)
+    return log_density
 
 
 FAMILIES: dict[str, tuple[Callable[..., np.ndarray], Callable[..., np.ndarray]]] = {
@@ -297,12 +322,88 @@ def maximize(family: str, u: np.ndarray, v: np.ndarray) -> dict[str, Any]:
     }
 
 
+def generate_student_t_data() -> tuple[np.ndarray, np.ndarray]:
+    """Generate N=1000 Normal-margin observations from a Student-t copula independently with NumPy/SciPy."""
+
+    rho, nu = STUDENT_T_PARENT
+    rng = np.random.default_rng(STUDENT_T_SEED)
+    normal = rng.multivariate_normal([0.0, 0.0], [[1.0, rho], [rho, 1.0]], STUDENT_T_SAMPLE_SIZE)
+    scale = np.sqrt(rng.chisquare(nu, STUDENT_T_SAMPLE_SIZE) / nu)
+    latent = normal / scale[:, np.newaxis]
+    uniforms = stats.t.cdf(latent, df=nu)
+    x = stats.norm.ppf(uniforms[:, 0], loc=100.0, scale=15.0)
+    y = stats.norm.ppf(uniforms[:, 1], loc=80.0, scale=25.0)
+    return x, y
+
+
+def self_check_student_t_density() -> float:
+    """Compare the independent closed form with SciPy's bivariate/univariate t density ratio."""
+
+    worst = 0.0
+    for rho, nu in ((-0.4, 3.5), (0.3, 8.0), (0.8, 4.0)):
+        for u, v in SELF_CHECK_POINTS:
+            x, y = stats.t.ppf([u, v], df=nu)
+            scipy_log = stats.multivariate_t.logpdf(
+                [x, y], loc=[0.0, 0.0], shape=[[1.0, rho], [rho, 1.0]], df=nu
+            ) - stats.t.logpdf(x, df=nu) - stats.t.logpdf(y, df=nu)
+            closed_log = float(logpdf_student_t(np.array(u), np.array(v), rho, nu))
+            worst = max(worst, abs(math.exp(closed_log) - math.exp(scipy_log)) / math.exp(scipy_log))
+    if worst > 1e-12:
+        raise RuntimeError(f"StudentT: closed-form density disagrees with SciPy's density ratio ({worst})")
+    return worst
+
+
+def maximize_student_t(u: np.ndarray, v: np.ndarray) -> dict[str, Any]:
+    """Maximize the two-coordinate Student-t copula likelihood with deterministic global and local solvers."""
+
+    bounds = [(-1.0 + EPSILON, 1.0 - EPSILON), (2.0 + 1e-10, 30.0)]
+
+    def negative(parameters: np.ndarray) -> float:
+        values = logpdf_student_t(u, v, float(parameters[0]), float(parameters[1]))
+        if not np.all(np.isfinite(values)):
+            return float("inf")
+        return float(-np.sum(values))
+
+    global_result = optimize.differential_evolution(
+        negative,
+        bounds=bounds,
+        seed=STUDENT_T_SEED,
+        popsize=20,
+        maxiter=500,
+        tol=1e-10,
+        polish=False,
+        updating="immediate",
+        workers=1,
+    )
+    if not global_result.success:
+        raise RuntimeError(f"StudentT: differential evolution failed: {global_result.message}")
+    local_result = optimize.minimize(
+        negative,
+        global_result.x,
+        method="L-BFGS-B",
+        bounds=bounds,
+        options={"ftol": 1e-14, "gtol": 1e-8, "maxiter": 2000, "maxls": 50},
+    )
+    if not local_result.success:
+        raise RuntimeError(f"StudentT: L-BFGS-B refinement failed: {local_result.message}")
+    return {
+        "parameters": [float(value) for value in local_result.x],
+        "maximum_log_likelihood": float(-local_result.fun),
+        "search_bounds": bounds,
+        "optimizer": (
+            "scipy.optimize.differential_evolution(seed=20260830, popsize=20, maxiter=500, tol=1e-10) "
+            "followed by L-BFGS-B(ftol=1e-14, gtol=1e-8)"
+        ),
+    }
+
+
 def main() -> None:
     """Parse the fixtures, fit every copula independently, and write the artifact."""
 
     source = SOURCE_PATH.read_text(encoding="utf-8")
     fixtures = parse_fixtures(source)
     self_checks = {family: self_check_density(family) for family in FAMILIES}
+    self_checks["StudentT"] = self_check_student_t_density()
 
     records: list[dict[str, Any]] = []
     for fixture in fixtures:
@@ -339,6 +440,47 @@ def main() -> None:
             }
         )
 
+    student_x, student_y = generate_student_t_data()
+    for method in ("MPL", "IFM"):
+        if method == "MPL":
+            student_u = weibull_complements(student_x)
+            student_v = weibull_complements(student_y)
+            student_marginals = None
+        else:
+            mu_x, sigma_x = normal_mle(student_x)
+            mu_y, sigma_y = normal_mle(student_y)
+            student_u = stats.norm.cdf((student_x - mu_x) / sigma_x)
+            student_v = stats.norm.cdf((student_y - mu_y) / sigma_y)
+            student_marginals = {"mu_x": mu_x, "sigma_x": sigma_x, "mu_y": mu_y, "sigma_y": sigma_y}
+        student_fit = maximize_student_t(student_u, student_v)
+        records.append(
+            {
+                "test_method": f"StudentT_{method}",
+                "family": "StudentT",
+                "method": method,
+                "data_x": [float(value) for value in student_x],
+                "data_y": [float(value) for value in student_y],
+                "sample_size": STUDENT_T_SAMPLE_SIZE,
+                "generator_seed": STUDENT_T_SEED,
+                "generator_parent_parameters": list(STUDENT_T_PARENT),
+                "generator_parameter_order": ["rho", "nu"],
+                "generator_marginals": {"x": ["Normal", 100.0, 15.0], "y": ["Normal", 80.0, 25.0]},
+                "coordinate_order": ["rho", "nu"],
+                "pseudo_observations": (
+                    "Weibull plotting-position complements rank/(n + 1) with ascending ranks"
+                    if method == "MPL"
+                    else "Normal marginal CDFs at the closed-form maximum-likelihood mean and (1/n) standard deviation"
+                ),
+                "marginal_mle": student_marginals,
+                "independent_parameters": student_fit["parameters"],
+                "independent_maximum_log_likelihood": student_fit["maximum_log_likelihood"],
+                "search_bounds": student_fit["search_bounds"],
+                "optimizer": student_fit["optimizer"],
+                "cross_solver_parameter_tolerances": list(STUDENT_T_CROSS_SOLVER_PARAMETER_TOLERANCES),
+                "cross_solver_log_likelihood_tolerance": STUDENT_T_CROSS_SOLVER_LOGLIK_TOLERANCE,
+            }
+        )
+
     payload = {
         "metadata": {
             "generated": date.today().isoformat(),
@@ -349,10 +491,11 @@ def main() -> None:
             "scipy": scipy.__version__,
             "fixture_source": "src/RMC.BestFit.Verification/Bivariate/BivariateDistributionMLETests.cs",
             "fixture_source_sha256": hashlib.sha256(SOURCE_PATH.read_bytes()).hexdigest(),
-            "seed": "deterministic-no-random-sampling",
+            "seed": "historical cells: deterministic-no-random-sampling; Student-t generator: 20260830",
             "density_self_check": (
                 "each closed-form density equals the numerical mixed partial derivative of its distribution "
-                "function (Gaussian: bivariate-normal density ratio) at five points and three parameters"
+                "function (Gaussian: bivariate-normal density ratio) at five points and three parameters; "
+                "Student-t equals SciPy's bivariate-t over univariate-t density ratio"
             ),
             "density_self_check_max_relative_error": self_checks,
             "density_self_check_tolerance": SELF_CHECK_TOLERANCE,
@@ -364,11 +507,17 @@ def main() -> None:
     OUTPUT_PATH.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(f"Wrote {OUTPUT_PATH}")
     for record in records:
-        print(
-            f"{record['test_method']:<22} theta={record['independent_theta']:.7f} "
-            f"R={record['r_copula_target']:.7f} diff={record['independent_minus_r_target']:+.2e} "
-            f"loglik={record['independent_maximum_log_likelihood']:.6f}"
-        )
+        if record["family"] == "StudentT":
+            print(
+                f"{record['test_method']:<22} parameters={record['independent_parameters']} "
+                f"loglik={record['independent_maximum_log_likelihood']:.6f}"
+            )
+        else:
+            print(
+                f"{record['test_method']:<22} theta={record['independent_theta']:.7f} "
+                f"R={record['r_copula_target']:.7f} diff={record['independent_minus_r_target']:+.2e} "
+                f"loglik={record['independent_maximum_log_likelihood']:.6f}"
+            )
     print("self-checks:", {k: f"{v:.2e}" for k, v in self_checks.items()})
 
 

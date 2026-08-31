@@ -140,9 +140,9 @@ The corresponding timeless implementation treatment is in [Generalized Method of
 |---|---|---|---|
 | `FlatPriorMap_MatchesClosedFormLog10NormalMle` | Equations (ME.1)-(ME.2) and direct likelihood | $10^{-5}$ parameters; $10^{-8}$ likelihood | Passed |
 | `UnpenalizedB17CGmm_MatchesExactSampleMoments` | Equations (ME.1) and (ME.3) | $10^{-5}$ parameters; $10^{-10}$ objective | Passed |
-| `MapMuPriorRegimes_MatchAnalyticalFitAndVarianceInfluence` | Normal score and full analytical Hessian | $2\times10^{-5}$ to $2\times10^{-3}$ scaled | Passed |
+| `MapMuPriorRegimes_MatchAnalyticalFitAndVarianceInfluence` | Normal score and full analytical Hessian | $2\times10^{-5}$ to $2\times10^{-3}$ scaled | Open - required DE/default run gives flat-prior mu score $-3.6205\times10^{-4}$ versus the $2\times10^{-4}$ gate |
 | `GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence` | Moment equations and analytical GMM bread | $2\times10^{-5}$ to $2\times10^{-3}$ scaled | Passed |
-| `MapAndGmmMuPosterior_MatchesInverseVarianceWeighting` | Equation (ME.6), mean and variance | $10^{-4}$ centered means; shifted mean $0.01SE_L$; variance 0.2%-1.5% | Passed |
+| `MapAndGmmMuPosterior_MatchesInverseVarianceWeighting` | Equation (ME.6), mean and variance | $10^{-4}$ centered means; shifted mean $0.01SE_L$; variance 0.2%-1.5% | Open - unchanged GMM shifted-prior mean misses its $0.01SE_L$ gate |
 | `PenalizedObjectiveGradient_MatchesIndependentCentralDifference` | Independently coded central difference | $10^{-8}$ absolute | Passed |
 | `UnpenalizedEstimatingGradient_IsHalfConventionalObjectiveDerivative` | Independently coded central difference and exact factor $1/2$ | $10^{-8}$ absolute | Passed |
 | `Log10NormalObservationInfluence_MatchesRGmmOracle` | R `gmm` 1.9.1 score and bread | $10^{-5}$ absolute | Passed |

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Numerics.Mathematics.Optimization;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using RMC.BestFit.Analyses;
@@ -33,7 +34,7 @@ public class TimeSeriesIndependentRecoveryTests
         JsonElement oracle = LoadArimaMleOracle();
         ARIMA model = CreateArimaModel(fixture);
         double[] truth = GetArimaTruth(fixture);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
 
         mle.Estimate();
 
@@ -76,7 +77,7 @@ public class TimeSeriesIndependentRecoveryTests
         JsonElement oracle = LoadArimaxMleOracle();
         ARIMAX model = CreateArimaxModel(fixture);
         double[] truth = GetArimaxTruth(fixture);
-        var mle = new MaximumLikelihood(model);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         Assert.AreEqual(
             OptimizationMethod.DifferentialEvolution,
             mle.OptimizerMethod,

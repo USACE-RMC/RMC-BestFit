@@ -1,4 +1,5 @@
 using Numerics.Data;
+using Numerics.Mathematics.Optimization;
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -44,7 +45,7 @@ public class MovingAverageMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = 1000;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "Model fitting failed.");
@@ -81,7 +82,7 @@ public class MovingAverageMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -116,7 +117,7 @@ public class MovingAverageMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -162,7 +163,7 @@ public class MovingAverageMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "Model fitting failed.");
@@ -202,7 +203,7 @@ public class MovingAverageMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "Model fitting failed.");

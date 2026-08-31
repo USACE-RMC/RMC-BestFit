@@ -1,4 +1,5 @@
 using Numerics.Data;
+using Numerics.Mathematics.Optimization;
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -46,7 +47,7 @@ public class AutoRegressiveMLERecoveryTests
             UseDefaultTrainingSteps = false,
         };
         model.TrainingTimeSteps = 1000;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "Model fitting failed.");
@@ -79,7 +80,7 @@ public class AutoRegressiveMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetAR2Data(-10, 0.75, -0.5, 2, 10000);
         var model = new AutoRegressive(data.TimeSeries, order: 2, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -111,7 +112,7 @@ public class AutoRegressiveMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetAR3Data(25, 0.75, -0.5, 0.3, 2, 10000);
         var model = new AutoRegressive(data.TimeSeries, order: 3, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -158,7 +159,7 @@ public class AutoRegressiveMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "Model fitting failed.");
@@ -198,7 +199,7 @@ public class AutoRegressiveMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "Model fitting failed.");

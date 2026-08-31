@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Numerics.Mathematics.Optimization;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
@@ -17,13 +18,16 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 [TestClass]
 public class ScipyDistributionFittingVerificationTests
 {
+    /// <summary>Scaled coordinate crosswalk tolerance compatible with default Differential Evolution.</summary>
+    private const double ParameterCrosswalkRelativeTolerance = 1E-4d;
+
     /// <summary>
     /// Verifies the Normal family against SciPy.
     /// </summary>
     [TestMethod]
     public void Normal_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("Normal", UnivariateDistributionType.Normal, OptimizationMethod.BFGS);
+        VerifyFamily("Normal", UnivariateDistributionType.Normal);
     }
 
     /// <summary>
@@ -32,7 +36,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void LogNormal_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("LogNormal", UnivariateDistributionType.LogNormal, OptimizationMethod.BFGS);
+        VerifyFamily("LogNormal", UnivariateDistributionType.LogNormal);
     }
 
     /// <summary>
@@ -41,7 +45,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void LnNormal_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("LnNormal", UnivariateDistributionType.LnNormal, OptimizationMethod.BFGS);
+        VerifyFamily("LnNormal", UnivariateDistributionType.LnNormal);
     }
 
     /// <summary>
@@ -50,7 +54,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void Exponential_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("Exponential", UnivariateDistributionType.Exponential, OptimizationMethod.NelderMead);
+        VerifyFamily("Exponential", UnivariateDistributionType.Exponential);
     }
 
     /// <summary>
@@ -59,7 +63,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void Gamma_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("Gamma", UnivariateDistributionType.GammaDistribution, OptimizationMethod.NelderMead);
+        VerifyFamily("Gamma", UnivariateDistributionType.GammaDistribution);
     }
 
     /// <summary>
@@ -70,8 +74,7 @@ public class ScipyDistributionFittingVerificationTests
     {
         VerifyFamily(
             "GeneralizedExtremeValue",
-            UnivariateDistributionType.GeneralizedExtremeValue,
-            OptimizationMethod.NelderMead);
+            UnivariateDistributionType.GeneralizedExtremeValue);
     }
 
     /// <summary>
@@ -82,8 +85,7 @@ public class ScipyDistributionFittingVerificationTests
     {
         VerifyFamily(
             "GeneralizedPareto",
-            UnivariateDistributionType.GeneralizedPareto,
-            OptimizationMethod.DifferentialEvolution);
+            UnivariateDistributionType.GeneralizedPareto);
     }
 
     /// <summary>
@@ -92,7 +94,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void Gumbel_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("Gumbel", UnivariateDistributionType.Gumbel, OptimizationMethod.BFGS);
+        VerifyFamily("Gumbel", UnivariateDistributionType.Gumbel);
     }
 
     /// <summary>
@@ -101,7 +103,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void Logistic_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("Logistic", UnivariateDistributionType.Logistic, OptimizationMethod.BFGS);
+        VerifyFamily("Logistic", UnivariateDistributionType.Logistic);
     }
 
     /// <summary>
@@ -110,7 +112,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void Weibull_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("Weibull", UnivariateDistributionType.Weibull, OptimizationMethod.NelderMead);
+        VerifyFamily("Weibull", UnivariateDistributionType.Weibull);
     }
 
     /// <summary>
@@ -119,7 +121,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void PearsonTypeIII_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("PearsonTypeIII", UnivariateDistributionType.PearsonTypeIII, OptimizationMethod.NelderMead);
+        VerifyFamily("PearsonTypeIII", UnivariateDistributionType.PearsonTypeIII);
     }
 
     /// <summary>
@@ -130,8 +132,7 @@ public class ScipyDistributionFittingVerificationTests
     {
         VerifyFamily(
             "LogPearsonTypeIII",
-            UnivariateDistributionType.LogPearsonTypeIII,
-            OptimizationMethod.BFGS);
+            UnivariateDistributionType.LogPearsonTypeIII);
     }
 
     /// <summary>
@@ -140,7 +141,7 @@ public class ScipyDistributionFittingVerificationTests
     [TestMethod]
     public void KappaFour_MleAndDistributionFunctionsMatchScipy()
     {
-        VerifyFamily("KappaFour", UnivariateDistributionType.KappaFour, OptimizationMethod.NelderMead);
+        VerifyFamily("KappaFour", UnivariateDistributionType.KappaFour);
     }
 
     /// <summary>
@@ -148,11 +149,9 @@ public class ScipyDistributionFittingVerificationTests
     /// </summary>
     /// <param name="familyName">Artifact key for the family.</param>
     /// <param name="distributionType">BestFit distribution type.</param>
-    /// <param name="optimizationMethod">Deterministic local optimizer used for the C# fit.</param>
     private static void VerifyFamily(
         string familyName,
-        UnivariateDistributionType distributionType,
-        OptimizationMethod optimizationMethod)
+        UnivariateDistributionType distributionType)
     {
         JsonElement family = LoadFamily(familyName);
         double[] data = ReadArray(family.GetProperty("data"));
@@ -184,13 +183,11 @@ public class ScipyDistributionFittingVerificationTests
             model.DataLogLikelihood(expectedParameters),
             "data log likelihood at the SciPy optimum");
 
-        var mle = new MaximumLikelihood(model, optimizationMethod)
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = false,
             ReportFailure = true
         };
-        mle.Optimizer.AbsoluteTolerance = 1E-12d;
-        mle.Optimizer.RelativeTolerance = 1E-12d;
 
         bool estimated = mle.Estimate();
 
@@ -202,7 +199,8 @@ public class ScipyDistributionFittingVerificationTests
             "maximized data log likelihood");
         for (int i = 0; i < expectedParameters.Length; i++)
         {
-            double parameterTolerance = 1E-5d * Math.Max(1d, Math.Abs(expectedParameters[i]));
+            double parameterTolerance =
+                ParameterCrosswalkRelativeTolerance * Math.Max(1d, Math.Abs(expectedParameters[i]));
             Assert.AreEqual(
                 expectedParameters[i],
                 mle.BestParameterSet.Values[i],

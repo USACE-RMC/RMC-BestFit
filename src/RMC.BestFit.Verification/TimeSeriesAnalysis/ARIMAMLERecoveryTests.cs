@@ -1,4 +1,5 @@
 using Numerics.Data;
+using Numerics.Mathematics.Optimization;
 using Numerics.Distributions;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -36,7 +37,7 @@ public class ARIMAMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetARIMA11Data(10, 0.6, 0.3, 5, 10000);
         var model = new ARIMA(data.TimeSeries, pOrder: 1, qOrder: 1, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -67,7 +68,7 @@ public class ARIMAMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetARIMA21Data(10, 0.5, -0.3, 0.3, 5, 10000);
         var model = new ARIMA(data.TimeSeries, pOrder: 2, qOrder: 1, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -98,7 +99,7 @@ public class ARIMAMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetARIMA12Data(10, 0.5, 0.3, 0.5, 5, 10000);
         var model = new ARIMA(data.TimeSeries, pOrder: 1, qOrder: 2, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -129,7 +130,7 @@ public class ARIMAMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetARIMA22Data(10, 0.5, -0.3, 0.3, -0.2, 5, 10000);
         var model = new ARIMA(data.TimeSeries, pOrder: 2, qOrder: 2, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -159,7 +160,7 @@ public class ARIMAMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetARIMA_AR1Data(10, 0.6, 5, 10000);
         var model = new ARIMA(data.TimeSeries, pOrder: 1, qOrder: 0, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -189,7 +190,7 @@ public class ARIMAMLERecoveryTests
     {
         var data = SyntheticTimeSeriesData.GetARIMA_MA1Data(10, 0.5, 5, 10000);
         var model = new ARIMA(data.TimeSeries, pOrder: 0, qOrder: 1, includeIntercept: true);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -236,7 +237,7 @@ public class ARIMAMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "Model fitting failed.");

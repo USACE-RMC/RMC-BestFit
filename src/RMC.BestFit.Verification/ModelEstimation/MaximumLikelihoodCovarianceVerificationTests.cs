@@ -16,6 +16,7 @@ public sealed class MaximumLikelihoodCovarianceVerificationTests
 {
     private static readonly double[] Observations = [1.2, 0.7, 1.9, 1.1, 0.4, 1.6, 0.9, 1.3, 1.0, 1.5];
     private const double KnownScale = 0.5;
+    private const double ParameterCrosswalkTolerance = 1E-4d;
 
     /// <summary>
     /// For a normal mean with known scale the information is n / sigma^2, so the single-parameter
@@ -25,14 +26,17 @@ public sealed class MaximumLikelihoodCovarianceVerificationTests
     public void MLE_OneParameterModel_CovarianceMatchesClosedFormInformation()
     {
         var model = new KnownScaleNormalMeanModel(Observations, KnownScale);
-        var estimator = new MaximumLikelihood(model, OptimizationMethod.Brent)
+        var estimator = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution)
         {
             ComputeHessian = true,
             ReportFailure = true
         };
 
-        Assert.IsTrue(estimator.Estimate(), "Brent search on a concave quadratic log-likelihood must converge.");
-        Assert.AreEqual(Observations.Average(), estimator.BestParameterSet.Values[0], 1e-6);
+        Assert.IsTrue(estimator.Estimate(), "Differential Evolution on a concave quadratic log-likelihood must converge.");
+        Assert.AreEqual(
+            Observations.Average(),
+            estimator.BestParameterSet.Values[0],
+            ParameterCrosswalkTolerance);
 
         double expectedVariance = KnownScale * KnownScale / Observations.Length;
         Matrix covariance = estimator.GetCovarianceMatrix();
@@ -54,11 +58,11 @@ public sealed class MaximumLikelihoodCovarianceVerificationTests
     public void MLE_AndFlatPriorMAP_ReportTheSameCovariance()
     {
         // Interior optimum: exact unit curvature.
-        var interiorMle = new MaximumLikelihood(new BoundedQuadraticModel(0.3, -0.2, upperBoundOne: 5.0), OptimizationMethod.BFGS)
+        var interiorMle = new MaximumLikelihood(new BoundedQuadraticModel(0.3, -0.2, upperBoundOne: 5.0), OptimizationMethod.DifferentialEvolution)
         {
             ReportFailure = true
         };
-        var interiorMap = new MaximumAPosteriori(new BoundedQuadraticModel(0.3, -0.2, upperBoundOne: 5.0), OptimizationMethod.BFGS)
+        var interiorMap = new MaximumAPosteriori(new BoundedQuadraticModel(0.3, -0.2, upperBoundOne: 5.0), OptimizationMethod.DifferentialEvolution)
         {
             ReportFailure = true
         };

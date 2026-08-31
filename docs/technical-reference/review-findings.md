@@ -8,7 +8,7 @@ The active continuation and batching plan is maintained in the [Verification Fin
 
 This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
 
-Closeout reconciliation (updated 30 August 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest. Phase 3 is closed in its approved scope. The original Phase 4 findings are complete: TR-014 independently resamples the actual retained outputs used by Composite and coincident-frequency propagation, while `BivariateAnalysis` remains intentionally conditional on fixed marginals. Chunk 9 supersedes the oversized competing-risk recovery cross-product and arbitrary CDF-error gates with five BestFit cells over three N=1000 cause-balanced dog-leg fixtures. All five current identities pass. The independent maximum recovers under both BestFit and Numerics MLE and under BestFit Bayesian MCMC when the Verification fixture disables the optional Jeffreys scale multiplier while retaining its bounded parameter priors. Its separate default-prior diagnostic remains failure evidence for a disappeared-component boundary mode with rank-deficient information; the production prior default is unchanged. Chunk 10A has current exact passing evidence for all six mixture recovery identities plus the frozen scikit-learn oracle. Chunk 10B has current exact passing evidence for all ten renamed composite-oracle identities and four end-to-end predictive-recovery identities. No production or scientific contract was changed to clear a failed realization.
+Closeout reconciliation (updated 31 August 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All 16 associated oracle files match the manifest. Phase 3 is closed in its approved scope. The original Phase 4 findings are complete: TR-014 independently resamples the actual retained outputs used by Composite and coincident-frequency propagation, while `BivariateAnalysis` remains intentionally conditional on fixed marginals. Chunk 9 supersedes the oversized competing-risk recovery cross-product and arbitrary CDF-error gates with five BestFit cells over three N=1000 cause-balanced dog-leg fixtures. All five current identities pass. The independent maximum recovers under both BestFit and Numerics MLE and under BestFit Bayesian MCMC when the Verification fixture disables the optional Jeffreys scale multiplier while retaining its bounded parameter priors. Its separate default-prior diagnostic remains failure evidence for a disappeared-component boundary mode with rank-deficient information; the production prior default is unchanged. Chunk 10A has current exact passing evidence for all six mixture recovery identities plus the frozen scikit-learn oracle. Chunk 10B has current exact passing evidence for all ten renamed composite-oracle identities and four end-to-end predictive-recovery identities. Chunk 11 completes the seven-family copula matrix (Student-t MLE plus independent MPL/IFM targets) and the nonlinear coincident response. Chunk 12 retains five scientifically distinct fixtures per estimator; all ten exact recovery identities pass after parameter and declared log10-residual uncertainty are propagated into simultaneous 95% predictive bands, and TR-094 records the resolved design gap. The whole-library Verification audit places 144 non-profile MLE/MAP constructions on Differential Evolution with untouched defaults and retains BFGS only for five intentional Brent/BFGS profile constructions. Three source-affected methods are currently open under that rule: two analytical Log10-Normal MAP/GMM cells and AR(1) MLE recovery. No production or scientific contract was changed to clear a failed realization.
 
 Phase 5 closeout (20 August 2026): TR-035 through TR-041 and TR-046 are complete, and TR-042 retains
 its refreshed closed contract. Haden Smith approved 110 discarded stationary initialization steps
@@ -25,8 +25,9 @@ boundary solution despite same-point R/C# likelihood parity. No production optim
 prior, sampler, seed, tolerance, convergence rule, or Bayesian default changed. Earlier failures
 remain documented in full, and the complete Verification project was not run.
 
-Phase 6 opening and register completion (21 August 2026): the register now runs through TR-093 (TR-091 was
-found and fixed during Batch 6.3; TR-092 and TR-093 were found and fixed during Batch 6.5). TR-084
+Phase 6 opening and register completion (updated 31 August 2026): the register now runs through TR-094
+(TR-091 was found and fixed during Batch 6.3; TR-092 and TR-093 were found and fixed during Batch 6.5;
+TR-094 records the resolved Chunk 12 rating-curve recovery design). TR-084
 through TR-090 record the Verification results and one fast-suite race that the 21 August reruns left
 without dispositions; they were diagnosed and disposed in Phase 7 on 22 August 2026 (fixture defects in
 TR-084 and TR-087, production defects in TR-085, TR-086, and TR-087, a test race in TR-090, and decisions
@@ -133,6 +134,7 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-091](#tr-091) | Spatial clone drops copula/error parameter blocks | High | Confirmed defect - fixed | Fixed (21 August 2026): the clone rebuilds its parameter list from the cloned components and copies values, bounds, and priors | Passed - three fast clone contracts (failed before the fix: 3 parameters instead of 4 and 17); the guarded row/year criteria cell and the copula recovery cell complete after the fix | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
 | [TR-092](#tr-092) | Spatial likelihood throws on non-finite site parameters | High | Confirmed defect - fixed | Fixed (22 August 2026): non-finite site GEV parameters return negative-infinite likelihood in both paths | Passed - fast contract (overflowing latent error); the location-error network now samples under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 | [TR-093](#tr-093) | Latent-error default bounds ignore the log link | High | Confirmed defect - fixed | Fixed (22 August 2026): link-space spread × 3, floor 1.0, for log-link location and scale errors | Passed - fast bound-rule contract; the TR-054 guarded cell runs under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-094](#tr-094) | Rating-curve legacy recovery used arbitrary bands and omitted residual uncertainty from response recovery | High | Confirmed verification gap; resolved | Verification matrix normalized; parameter and log10-residual uncertainty feed simultaneous predictive bands; all non-profile MLE/MAP tests use Differential Evolution with untouched defaults | 10/10 retained recovery cells passed; exact segmented allocations reported | [Report](../verification/rating-curve.md#current-exact-outcomes) | 2026-08-31 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -1562,6 +1564,51 @@ RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so 
 **Impact.** Default latent-error models are usable; configured bounds in saved projects are restored verbatim.
 
 **Follow-up.** None.
+
+<a id="tr-094"></a>
+## TR-094 - Rating-Curve Recovery Bands and Activation-Stage Identification
+
+**Review disposition.** Confirmed Verification-design gap, resolved 31 August 2026. The former ten MLE and
+ten Bayesian identities used arbitrary 5-50% parameter bands with large absolute floors. The first Chunk
+12 response-space normalization then omitted the residual term from the declared log10 observation model
+and treated multiple pointwise 95% intervals as if they formed one grid-wide 95% statement.
+
+**Implementation status.** Verification-only normalization complete. All retained experiments use exactly
+1,000 aligned stage-discharge pairs and preserve their parents, generator seeds, prior flags, sampler
+defaults, response grids, and convergence rules. Every retained MLE uses Differential Evolution with
+untouched default tolerances, and Bayesian recovery publishes posterior MAP as its point estimator without
+changing posterior coordinate intervals or diagnostics. MLE parameter uncertainty comes from 20,000
+bounded multivariate-Normal draws from the unregularized observed-information covariance; Bayesian
+parameter uncertainty comes from retained posterior draws. Both paths separately add the draw-specific
+Normal residual on the log10-discharge scale and use the empirical 95th percentile of maximum absolute
+standardized deviation to create one simultaneous predictive band over the complete grid. Ten redundant
+declarations were removed before execution. No R `bdrc` parity is claimed because exact law,
+error-density, segmentation, and parameter-order equivalence is not established.
+
+**Verification status.** All ten current exact identities pass, and every latest TRX contains exactly one
+result. The exact two-control stage allocation is 495 below and 505 at/above `h2=6`; the exact
+three-control exclusive allocation is 270/406/324, so controls 1/2/3 are active for 1,000/730/324
+observations. At stage 6.5 the MLE/Bayesian simultaneous predictive bands are `[578.013, 950.262]` and
+`[576.299, 953.454]`, both containing parent 724.391. At stage 8.5 the three-control MLE/Bayesian bands are
+`[1695.479, 2851.016]` and `[1701.739, 2838.807]`, both containing parent 2144.093. See the
+[rating-curve verification chapter](../verification/rating-curve.md#current-exact-outcomes).
+
+**Evidence.** Both MLE likelihood comparisons rule out a generation error or inferior attained fit: each
+fitted objective exceeds the fixed generating parent's objective. Differential Evolution ignores the
+initial point, and the MLE path does not use Bayesian priors. `RatingCurve.DataLogLikelihood` evaluates
+Normal residuals as `log10(observed Q) - log10(predicted Q)`, and the observed-information Hessian is of
+that likelihood in native model coordinates. The superseded mean-curve bands propagated only parameter
+uncertainty and therefore answered a different question from the predictive response recovery declared by
+the rating-curve observation model. Adding the residual is not an arbitrary widening: low-noise `sigma=0.02`
+fixtures remain materially narrower than `sigma` near 0.05, and parameter versus residual uncertainty is
+reported separately. Exact regime counts diagnose identification; they are not manually substituted as
+effective sample sizes because the likelihood covariance and posterior already reflect activation.
+
+**Impact.** The current rating-curve inventory reports 22 verified declarations and no open rating-curve
+gaps. The independently generated likelihood and example-optimum evidence remains separate from recovery.
+
+**Follow-up.** The recovery matrix does not establish R `bdrc` compatibility, arbitrary control-matrix
+parity, or predictive coverage outside the generated stage ranges.
 
 ## Resolution Rule
 

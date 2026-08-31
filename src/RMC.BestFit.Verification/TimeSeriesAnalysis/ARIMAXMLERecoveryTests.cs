@@ -1,4 +1,5 @@
 using System.Linq;
+using Numerics.Mathematics.Optimization;
 using Numerics.Data;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -33,7 +34,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -61,7 +62,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -89,7 +90,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -117,7 +118,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -145,7 +146,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -173,7 +174,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -207,7 +208,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -237,7 +238,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -266,7 +267,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -295,7 +296,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -324,7 +325,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -359,7 +360,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -388,7 +389,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -417,7 +418,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -450,7 +451,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -479,7 +480,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -508,7 +509,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -537,7 +538,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -566,7 +567,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -601,7 +602,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -630,7 +631,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -659,7 +660,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -689,7 +690,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -728,7 +729,7 @@ public class ARIMAXMLERecoveryTests
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
         model.SetCovariates(new List<TimeSeries> { data.Covariate });
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -758,7 +759,7 @@ public class ARIMAXMLERecoveryTests
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
         model.SetCovariates(new List<TimeSeries> { data.Covariate });
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -788,7 +789,7 @@ public class ARIMAXMLERecoveryTests
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
         model.SetCovariates(new List<TimeSeries> { data.Covariate });
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -818,7 +819,7 @@ public class ARIMAXMLERecoveryTests
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
         model.SetCovariates(data.Covariates);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -853,7 +854,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -885,7 +886,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.MultilevelSingleLinkage);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         // Assert that the model was fitted successfully
@@ -934,7 +935,7 @@ public class ARIMAXMLERecoveryTests
             UseDefaultTrainingSteps = false
         };
         model.TrainingTimeSteps = data.TimeSeries.Count;
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "ARMA(1,1) model fitting failed.");
@@ -982,7 +983,7 @@ public class ARIMAXMLERecoveryTests
         };
         model.TrainingTimeSteps = data.Y.Count;
         model.SetCovariates(new List<TimeSeries> { data.X });
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "Simple regression model fitting failed.");
@@ -1032,7 +1033,7 @@ public class ARIMAXMLERecoveryTests
         };
         model.TrainingTimeSteps = data.Y.Count;
         model.SetCovariates(data.X);
-        var mle = new MaximumLikelihood(model, OptimizationMethod.NelderMead);
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
         Assert.AreEqual(true, mle.IsEstimated, "Multiple regression model fitting failed.");

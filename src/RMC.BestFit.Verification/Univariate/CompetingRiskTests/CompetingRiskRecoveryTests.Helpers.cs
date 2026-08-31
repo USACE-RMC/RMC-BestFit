@@ -35,7 +35,7 @@ public partial class CompetingRiskRecoveryTests
     private static void VerifyMaximumLikelihoodRecovery(RecoveryFixture fixture)
     {
         (_, CompetingRisksModel fittedModel) = PrepareRecovery(fixture);
-        var maximumLikelihood = new MaximumLikelihood(fittedModel);
+        var maximumLikelihood = new MaximumLikelihood(fittedModel, OptimizationMethod.DifferentialEvolution);
 
         Assert.AreEqual(
             OptimizationMethod.DifferentialEvolution,

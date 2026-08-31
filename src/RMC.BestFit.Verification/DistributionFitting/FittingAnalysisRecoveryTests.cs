@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Numerics.Mathematics.Optimization;
 using Numerics;
 using Numerics.Distributions;
 using RMC.BestFit.Analyses;
@@ -215,7 +216,7 @@ public class FittingAnalysisRecoveryTests
         DataFrame dataFrame = CreateGeneratedDataFrame(parentDistribution);
         FittedDistribution fitted = await RunDefaultFittingAsync(dataFrame, generatingFamily);
         var auxiliaryModel = new UnivariateDistribution(dataFrame, generatingFamily);
-        var auxiliaryMaximumLikelihood = new MaximumLikelihood(auxiliaryModel);
+        var auxiliaryMaximumLikelihood = new MaximumLikelihood(auxiliaryModel, OptimizationMethod.DifferentialEvolution);
         Assert.IsTrue(auxiliaryMaximumLikelihood.Estimate(), "The auxiliary maximum-likelihood profile fit failed.");
 
         double[] estimates = fitted.Distribution!.GetParameters;

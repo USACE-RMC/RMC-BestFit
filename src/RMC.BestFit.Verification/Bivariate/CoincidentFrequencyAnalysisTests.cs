@@ -1,15 +1,18 @@
 using Numerics.Distributions;
 using Numerics.Distributions.Copulas;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Verification.Datasets;
+using RMC.BestFit.Verification.Recovery;
 
 namespace RMC.BestFit.Verification.Bivariate;
 
 /// <summary>
-/// End-to-end Bayesian-MCMC verification of <see cref="CoincidentFrequencyAnalysis"/>
-/// against the closed-form distribution of the sum of two correlated standard normals.
+/// End-to-end verification of <see cref="CoincidentFrequencyAnalysis"/> against closed-form
+/// linear Normal-sum and nonlinear Lognormal response distributions.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,7 +20,7 @@ namespace RMC.BestFit.Verification.Bivariate;
 ///     Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil
 /// </para>
 /// <para>
-///     <b>Test setup:</b> simulate a paired sample with X ~ N(0, 1), Y ~ N(0, 1), and a
+///     <b>Linear setup:</b> simulate a paired sample with Normal marginals and a
 ///     Gaussian copula at correlation ρ ∈ {0.0, 0.5, -0.5}. Fit the marginals via MLE and
 ///     run the full BivariateAnalysis Bayesian MCMC workflow. Build a 5×5 input grid from
 ///     the posterior-mean fitted marginals at quantiles {0.05, 0.25, 0.5, 0.75, 0.95},
@@ -25,8 +28,8 @@ namespace RMC.BestFit.Verification.Bivariate;
 ///     <see cref="CoincidentFrequencyAnalysis"/>.
 /// </para>
 /// <para>
-///     <b>Truth:</b> X + Y ~ N(0, √(2(1+ρ))). The mode curve is asserted element-wise
-///     against 1 − Φ(z; 0, σ̂) where σ̂ = √(σ̂_X² + σ̂_Y² + 2 ρ̂ σ̂_X σ̂_Y) is computed
+///     <b>Linear truth:</b> X + Y is Normal. The mode curve is asserted element-wise
+///     against 1 − Φ(z; μ̂_X+μ̂_Y, σ̂) where σ̂ = √(σ̂_X² + σ̂_Y² + 2 ρ̂ σ̂_X σ̂_Y) is computed
 ///     from the posterior-mean marginal moments and the posterior-mean copula correlation.
 /// </para>
 /// <para>
@@ -55,6 +58,19 @@ public class CoincidentFrequencyAnalysisTests
     /// <summary>X / Y grid quantiles for the 5×5 response table.</summary>
     private static readonly double[] GridQuantiles = { 0.05, 0.25, 0.5, 0.75, 0.95 };
 
+    /// <summary>Predeclared input quantiles for the nonlinear response table.</summary>
+    private static readonly double[] NonlinearGridQuantiles =
+        { 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.2, 0.35, 0.5, 0.65, 0.8, 0.9, 0.95, 0.975, 0.99, 0.995, 0.999 };
+
+    /// <summary>Nonexceedance ordinates at which the nonlinear parent response must be covered.</summary>
+    private static readonly double[] NonlinearCoverageProbabilities = { 0.1, 0.25, 0.5, 0.75, 0.9 };
+
+    /// <summary>Predeclared maximum AEP error due to response-table numerical integration.</summary>
+    private const double NonlinearNumericalAepErrorBound = 0.015;
+
+    /// <summary>Independent asymptotic marginal-MLE draws used for uncertainty propagation.</summary>
+    private const int MarginalMleUncertaintyDraws = 2000;
+
     #endregion
 
     #region Helpers
@@ -66,10 +82,99 @@ public class CoincidentFrequencyAnalysisTests
     private static UnivariateDistribution FitNormalMarginal(DataFrame dataFrame)
     {
         var dist = new UnivariateDistribution(dataFrame, UnivariateDistributionType.Normal);
-        var mle = new MaximumLikelihood(dist);
+        var mle = new MaximumLikelihood(dist, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
         dist.SetParameterValues(mle.BestParameterSet.Values);
         return dist;
+    }
+
+    /// <summary>
+    /// Fits one Normal marginal and returns both the fitted model and its completed MLE.
+    /// </summary>
+    /// <param name="dataFrame">The generated marginal observations.</param>
+    /// <returns>The fitted distribution and estimator.</returns>
+    private static (UnivariateDistribution Distribution, MaximumLikelihood Estimator) FitNormalMarginalWithEstimator(
+        DataFrame dataFrame)
+    {
+        var distribution = new UnivariateDistribution(dataFrame, UnivariateDistributionType.Normal);
+        var estimator = new MaximumLikelihood(distribution, OptimizationMethod.DifferentialEvolution);
+        Assert.IsTrue(estimator.Estimate(), $"Normal marginal MLE failed with status {estimator.Status}.");
+        distribution.SetParameterValues(estimator.BestParameterSet.Values);
+        return (distribution, estimator);
+    }
+
+    /// <summary>
+    /// Builds independent asymptotic Normal-MLE uncertainty draws in physical `[mu, sigma]` order.
+    /// </summary>
+    /// <param name="fitted">The fitted Normal marginal.</param>
+    /// <param name="sampleSize">The observational sample size.</param>
+    /// <param name="seed">The predeclared uncertainty-draw seed.</param>
+    /// <returns>A transport container holding independent MLE-uncertainty draws, not posterior draws.</returns>
+    private static MCMCResults BuildNormalMleUncertaintyDraws(Normal fitted, int sampleSize, int seed)
+    {
+        var random = new Random(seed);
+        var standardNormal = new Normal(0d, 1d);
+        double muStandardError = fitted.Sigma / Math.Sqrt(sampleSize);
+        double sigmaStandardError = fitted.Sigma / Math.Sqrt(2d * sampleSize);
+        var draws = new List<ParameterSet>(MarginalMleUncertaintyDraws);
+        for (int index = 0; index < MarginalMleUncertaintyDraws; index++)
+        {
+            double muProbability = Math.Clamp(random.NextDouble(), 1E-12, 1d - 1E-12);
+            double sigmaProbability = Math.Clamp(random.NextDouble(), 1E-12, 1d - 1E-12);
+            double mu = fitted.Mu + muStandardError * standardNormal.InverseCDF(muProbability);
+            double sigma = fitted.Sigma + sigmaStandardError * standardNormal.InverseCDF(sigmaProbability);
+            Assert.IsTrue(sigma > 0d, "Asymptotic Normal-MLE scale draw must remain positive.");
+            draws.Add(new ParameterSet([mu, sigma], 0d));
+        }
+        return new MCMCResults(new ParameterSet([fitted.Mu, fitted.Sigma], 0d), draws, 0.05d);
+    }
+
+    /// <summary>
+    /// Applies observed-information recovery to a fitted Normal marginal.
+    /// </summary>
+    /// <param name="label">Marginal label.</param>
+    /// <param name="parents">Generating `[mu, sigma]` coordinates.</param>
+    /// <param name="distribution">Fitted Normal model.</param>
+    /// <param name="estimator">Completed maximum-likelihood fit.</param>
+    private static void AssertNormalMarginalRecovery(
+        string label,
+        IReadOnlyList<double> parents,
+        UnivariateDistribution distribution,
+        MaximumLikelihood estimator)
+    {
+        Assert.IsInstanceOfType<IStandardError>(distribution.Distribution);
+        double[,] covariance = ((IStandardError)distribution.Distribution).ParameterCovariance(
+            RecoveryDesign.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        for (int index = 0; index < parents.Count; index++)
+        {
+            RecoveryAcceptance.AssertFrequentistStandardizedError(
+                $"nonlinear marginal {label} {(index == 0 ? "mu" : "sigma")}",
+                estimator.BestParameterSet.Values[index],
+                parents[index],
+                Math.Sqrt(covariance[index, index]));
+        }
+    }
+
+    /// <summary>
+    /// Interpolates one column of a response-band matrix on an ascending response grid.
+    /// </summary>
+    /// <param name="grid">Ascending response ordinates.</param>
+    /// <param name="bands">Two-column lower/upper response bands.</param>
+    /// <param name="column">Band column to interpolate.</param>
+    /// <param name="ordinate">Response ordinate.</param>
+    /// <returns>The linearly interpolated band value.</returns>
+    private static double InterpolateBand(double[] grid, double[,] bands, int column, double ordinate)
+    {
+        Assert.IsTrue(grid[0] <= ordinate && ordinate <= grid[^1],
+            $"Response ordinate {ordinate:G17} lies outside the CFA output grid.");
+        int upper = Array.BinarySearch(grid, ordinate);
+        if (upper >= 0)
+            return bands[upper, column];
+        upper = ~upper;
+        int lower = upper - 1;
+        double fraction = (ordinate - grid[lower]) / (grid[upper] - grid[lower]);
+        return bands[lower, column] + fraction * (bands[upper, column] - bands[lower, column]);
     }
 
     /// <summary>
@@ -177,6 +282,122 @@ public class CoincidentFrequencyAnalysisTests
             $"Posterior-mean rho={rhoHat:F4} drifted too far from truth {rho:F4}.");
     }
 
+    /// <summary>
+    /// Fits an N=1000 Gaussian-copula parent and verifies the monotone nonlinear response
+    /// `Z=exp(0.01X+0.01Y)` against its exact Lognormal law.
+    /// </summary>
+    private static async Task RunExponentialLinearCombinationRecoveryAsync()
+    {
+        const double parentRho = 0.5d;
+        const double responseCoefficient = 0.01d;
+        SyntheticBivariateData.BivariateSample sample = SyntheticBivariateData.GenerateNormalCopulaData(
+            rho: parentRho,
+            n: RecoveryDesign.SampleSize,
+            seed: 13055);
+        Assert.AreEqual(RecoveryDesign.SampleSize, sample.DataFrameX.ExactSeries.Count);
+        Assert.AreEqual(RecoveryDesign.SampleSize, sample.DataFrameY.ExactSeries.Count);
+
+        var (marginalX, marginalXMle) = FitNormalMarginalWithEstimator(sample.DataFrameX);
+        var (marginalY, marginalYMle) = FitNormalMarginalWithEstimator(sample.DataFrameY);
+        var distribution = new BivariateDistribution(marginalX, marginalY, CopulaType.Normal);
+        Assert.IsTrue(distribution.Parameters[0].LowerBound <= parentRho &&
+            parentRho <= distribution.Parameters[0].UpperBound,
+            "The nonlinear parent rho must be inside copula prior support.");
+        Assert.IsTrue(distribution.DataLogLikelihood([parentRho]) > distribution.DataLogLikelihood([0d]),
+            "The nonlinear parent likelihood must discriminate rho=0.5 from independence.");
+
+        BivariateAnalysis bivariate = BuildAnalysis(distribution);
+        bivariate.BayesianAnalysis.CredibleIntervalWidth = 0.95d;
+        await bivariate.RunAsync();
+        Assert.IsTrue(bivariate.IsEstimated, "Nonlinear parent BivariateAnalysis did not complete.");
+        Assert.IsNotNull(bivariate.BayesianAnalysis.Results);
+
+        AssertNormalMarginalRecovery("X", sample.TrueMarginalXParameters, marginalX, marginalXMle);
+        AssertNormalMarginalRecovery("Y", sample.TrueMarginalYParameters, marginalY, marginalYMle);
+        var rhoSummary = bivariate.BayesianAnalysis.Results!.ParameterResults[0].SummaryStatistics;
+        RecoveryAcceptance.AssertBayesianRecovery(
+            "nonlinear Gaussian-copula rho",
+            parentRho,
+            rhoSummary.LowerCI,
+            rhoSummary.UpperCI,
+            rhoSummary.Rhat,
+            rhoSummary.ESS);
+
+        var fittedX = (Normal)marginalX.Distribution!;
+        var fittedY = (Normal)marginalY.Distribution!;
+        double rhoHat = bivariate.BayesianAnalysis.Results.PosteriorMean.Values[0];
+        double[] xValues = NonlinearGridQuantiles.Select(fittedX.InverseCDF).ToArray();
+        double[] yValues = NonlinearGridQuantiles.Select(fittedY.InverseCDF).ToArray();
+        var response = new double[xValues.Length, yValues.Length];
+        for (int row = 0; row < xValues.Length; row++)
+            for (int column = 0; column < yValues.Length; column++)
+                response[row, column] = Math.Exp(responseCoefficient * (xValues[row] + yValues[column]));
+
+        var cfa = new CoincidentFrequencyAnalysis(bivariate, xValues, yValues, response)
+        {
+            NumberOfBins = 61,
+            MarginalXChain = BuildNormalMleUncertaintyDraws(fittedX, RecoveryDesign.SampleSize, 24680),
+            MarginalYChain = BuildNormalMleUncertaintyDraws(fittedY, RecoveryDesign.SampleSize, 24681),
+        };
+        cfa.BayesianAnalysis.CredibleIntervalWidth = 0.95d;
+        await cfa.RunAsync();
+        Assert.IsTrue(cfa.IsEstimated, "Nonlinear CoincidentFrequencyAnalysis did not complete.");
+        Assert.IsNotNull(cfa.AnalysisResults);
+        Assert.IsNotNull(cfa.ZOutputValues);
+        Assert.IsNotNull(cfa.AnalysisResults!.ConfidenceIntervals);
+
+        int propagatedDraws = Math.Min(
+            bivariate.BayesianAnalysis.Results.Output.Count,
+            MarginalMleUncertaintyDraws);
+        Assert.IsTrue(propagatedDraws >= RecoveryAcceptance.MinimumEffectiveSampleSize,
+            $"The nonlinear response requires at least {RecoveryAcceptance.MinimumEffectiveSampleSize} propagated parameter draws.");
+
+        double fittedLogMean = responseCoefficient * (fittedX.Mu + fittedY.Mu);
+        double fittedLogSigma = responseCoefficient * Math.Sqrt(
+            fittedX.Sigma * fittedX.Sigma + fittedY.Sigma * fittedY.Sigma +
+            2d * rhoHat * fittedX.Sigma * fittedY.Sigma);
+        var fittedLogResponse = new Normal(fittedLogMean, fittedLogSigma);
+        double maximumNumericalError = 0d;
+        for (int index = 0; index < cfa.ZOutputValues!.Length; index++)
+        {
+            double exactAep = 1d - fittedLogResponse.CDF(Math.Log(cfa.ZOutputValues[index]));
+            maximumNumericalError = Math.Max(
+                maximumNumericalError,
+                Math.Abs(cfa.AnalysisResults.ModeCurve![index] - exactAep));
+        }
+        Assert.IsTrue(maximumNumericalError <= NonlinearNumericalAepErrorBound,
+            $"Nonlinear response-table maximum AEP error {maximumNumericalError:G17} exceeds " +
+            $"the predeclared bound {NonlinearNumericalAepErrorBound:G17}.");
+
+        double parentLogMean = responseCoefficient *
+            (sample.TrueMarginalXParameters[0] + sample.TrueMarginalYParameters[0]);
+        double parentLogSigma = responseCoefficient * Math.Sqrt(
+            sample.TrueMarginalXParameters[1] * sample.TrueMarginalXParameters[1] +
+            sample.TrueMarginalYParameters[1] * sample.TrueMarginalYParameters[1] +
+            2d * parentRho * sample.TrueMarginalXParameters[1] * sample.TrueMarginalYParameters[1]);
+        var parentLogResponse = new Normal(parentLogMean, parentLogSigma);
+        foreach (double probability in NonlinearCoverageProbabilities)
+        {
+            double responseOrdinate = Math.Exp(parentLogResponse.InverseCDF(probability));
+            double parentAep = 1d - probability;
+            double lower = InterpolateBand(
+                cfa.ZOutputValues,
+                cfa.AnalysisResults.ConfidenceIntervals!,
+                0,
+                responseOrdinate);
+            double upper = InterpolateBand(
+                cfa.ZOutputValues,
+                cfa.AnalysisResults.ConfidenceIntervals!,
+                1,
+                responseOrdinate);
+            RecoveryAcceptance.AssertIdentifiedResponseGrid(
+                $"nonlinear response AEP at nonexceedance {probability:F2}",
+                parentAep,
+                lower,
+                upper);
+        }
+    }
+
     #endregion
 
     #region Tests
@@ -206,6 +427,16 @@ public class CoincidentFrequencyAnalysisTests
     public async Task SumOfNormals_RhoNegative_MatchesClosedForm()
     {
         await RunSumOfNormalsAsync(-0.5);
+    }
+
+    /// <summary>
+    /// Verifies N=1000 recovery of a monotone nonlinear exponential response against its exact
+    /// Lognormal distribution and central 95% propagated response bands.
+    /// </summary>
+    [TestMethod]
+    public async Task ExponentialLinearCombination_ParentResponseInsidePredictiveBands()
+    {
+        await RunExponentialLinearCombinationRecoveryAsync();
     }
 
     #endregion
