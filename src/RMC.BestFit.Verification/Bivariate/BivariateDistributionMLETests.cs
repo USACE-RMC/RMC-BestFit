@@ -26,6 +26,11 @@ namespace RMC.BestFit.Verification.Bivariate;
 ///     <item>Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil</item>
 ///     </list>
 /// </para>
+/// <para>
+/// The historical methods remain as source provenance only. Their fixed 1E-3 coordinate bands are
+/// not statistically derived and have been consolidated into <see cref="CopulaEstimationOracleTests"/>,
+/// which independently reconstructs the likelihood and applies joint 95 percent likelihood-ratio acceptance.
+/// </para>
 /// </remarks>
 [TestClass]
 public class BivariateDistributionMLETests
@@ -51,7 +56,6 @@ public class BivariateDistributionMLETests
     /// MPL limitations: Less efficient than full MLE when marginals are correctly specified.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_AMH_MPL()
     {
         // Set up data
@@ -136,7 +140,6 @@ public class BivariateDistributionMLETests
     /// the efficiency gain from using parametric marginals rather than empirical CDFs.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_AMH_IFM()
     {
         // Set up data
@@ -207,7 +210,6 @@ public class BivariateDistributionMLETests
     /// MPL limitations: Less efficient than full MLE when marginals are correctly specified.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Clayton_MPL()
     {
         // Set up data
@@ -289,7 +291,6 @@ public class BivariateDistributionMLETests
     /// the efficiency gain from using parametric marginals rather than empirical CDFs.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Clayton_IFM()
     {
         // Set up data
@@ -360,7 +361,6 @@ public class BivariateDistributionMLETests
     /// MPL limitations: Less efficient than full MLE when marginals are correctly specified.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Frank_MPL()
     {
         // Set up data
@@ -442,7 +442,6 @@ public class BivariateDistributionMLETests
     /// the efficiency gain from using parametric marginals rather than empirical CDFs.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Frank_IFM()
     {
         // Set up data
@@ -513,7 +512,6 @@ public class BivariateDistributionMLETests
     /// MPL limitations: Less efficient than full MLE when marginals are correctly specified.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Gumbel_MPL()
     {
         // Set up data
@@ -595,7 +593,6 @@ public class BivariateDistributionMLETests
     /// the efficiency gain from using parametric marginals rather than empirical CDFs.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Gumbel_IFM()
     {
         // Set up data
@@ -666,7 +663,6 @@ public class BivariateDistributionMLETests
     /// MPL limitations: Less efficient than full MLE when marginals are correctly specified.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Joe_MPL()
     {
         // Set up data
@@ -748,7 +744,6 @@ public class BivariateDistributionMLETests
     /// the efficiency gain from using parametric marginals rather than empirical CDFs.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Joe_IFM()
     {
         // Set up data
@@ -819,7 +814,6 @@ public class BivariateDistributionMLETests
     /// MPL limitations: Less efficient than full MLE when marginals are correctly specified.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Normal_MPL()
     {
         // Set up data
@@ -901,7 +895,6 @@ public class BivariateDistributionMLETests
     /// the efficiency gain from using parametric marginals rather than empirical CDFs.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_Normal_IFM()
     {
         // Set up data

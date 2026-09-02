@@ -156,7 +156,7 @@ This is an additive ranking index, not classical hat-matrix leverage or a conser
 
 The deterministic Log10-Normal tests establish the intended interpretation. A wide centered Gaussian prior has negligible fit and variance influence; a narrow centered prior has negligible fit influence and strong variance influence; and a narrow prior shifted by $2SE_L$ has both. With the centered prior held fixed, variance influence decreases as the sample grows. Sigma is reestimated jointly in every fit.
 
-For the displaced narrow-prior fixture, replacing $\mathbf J_i^{\mathrm{diag}}$ in (INF.10) with the analytical full Log10-Normal observation Hessian changes every reported value by less than $0.003$ and preserves the leading three observations. That result supports the local approximation for this verified case, not for every model family.
+For the displaced narrow-prior fixture, the historical comparison replacing $\mathbf J_i^{\mathrm{diag}}$ in (INF.10) with the analytical full Log10-Normal observation Hessian changed every reported value by less than $0.003$ and preserved the leading three observations. Because $0.003$ was a qualitative materiality judgment rather than a statistically derived or exact numerical tolerance, the fixture is retained as design provenance rather than Verification evidence; it does not establish adequacy for every model family.
 
 Numerical differentiation can cross bounds or discontinuous model branches. Regularization or caught exceptions can return empty or zero diagnostics. Retain the raw values, fitted model, finite-difference configuration, and covariance status when using rankings in an engineering review.
 

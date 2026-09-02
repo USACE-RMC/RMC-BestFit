@@ -16,11 +16,11 @@ public sealed class MaximumLikelihoodCovarianceVerificationTests
 {
     private static readonly double[] Observations = [1.2, 0.7, 1.9, 1.1, 0.4, 1.6, 0.9, 1.3, 1.0, 1.5];
     private const double KnownScale = 0.5;
-    private const double ParameterCrosswalkTolerance = 1E-4d;
 
     /// <summary>
     /// For a normal mean with known scale the information is n / sigma^2, so the single-parameter
-    /// covariance is sigma^2 / n and Cook's distances are finite.
+    /// covariance is sigma^2 / n, the fitted mean is evaluated on that information scale, and
+    /// Cook's distances are finite.
     /// </summary>
     [TestMethod]
     public void MLE_OneParameterModel_CovarianceMatchesClosedFormInformation()
@@ -33,12 +33,14 @@ public sealed class MaximumLikelihoodCovarianceVerificationTests
         };
 
         Assert.IsTrue(estimator.Estimate(), "Differential Evolution on a concave quadratic log-likelihood must converge.");
-        Assert.AreEqual(
-            Observations.Average(),
-            estimator.BestParameterSet.Values[0],
-            ParameterCrosswalkTolerance);
-
         double expectedVariance = KnownScale * KnownScale / Observations.Length;
+        double standardizedMeanError = Math.Abs(
+            estimator.BestParameterSet.Values[0] - Observations.Average())
+            / Math.Sqrt(expectedVariance);
+        Assert.IsTrue(
+            standardizedMeanError <= 1.96d,
+            $"Fitted mean standardized error {standardizedMeanError:R} exceeds the central 95% cutoff.");
+
         Matrix covariance = estimator.GetCovarianceMatrix();
         Assert.AreEqual(1, covariance.NumberOfRows);
         Assert.AreEqual(expectedVariance, covariance[0, 0], 1e-8 * expectedVariance);

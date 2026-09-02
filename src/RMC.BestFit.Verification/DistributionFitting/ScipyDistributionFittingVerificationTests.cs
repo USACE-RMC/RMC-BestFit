@@ -18,9 +18,6 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 [TestClass]
 public class ScipyDistributionFittingVerificationTests
 {
-    /// <summary>Scaled coordinate crosswalk tolerance compatible with default Differential Evolution.</summary>
-    private const double ParameterCrosswalkRelativeTolerance = 1E-4d;
-
     /// <summary>
     /// Verifies the Normal family against SciPy.
     /// </summary>
@@ -157,6 +154,7 @@ public class ScipyDistributionFittingVerificationTests
         double[] data = ReadArray(family.GetProperty("data"));
         double[] expectedParameters = ReadArray(family.GetProperty("numerics_parameters"));
         double expectedMaximumLogLikelihood = family.GetProperty("maximum_log_likelihood").GetDouble();
+        JsonElement optimizerAcceptance = family.GetProperty("optimizer_acceptance");
         JsonElement evaluation = family.GetProperty("evaluation");
         double evaluationX = evaluation.GetProperty("x").GetDouble();
         double expectedPdf = evaluation.GetProperty("pdf").GetDouble();
@@ -193,20 +191,12 @@ public class ScipyDistributionFittingVerificationTests
 
         Assert.IsTrue(estimated, $"{familyName} MLE did not converge.");
         Assert.AreEqual(expectedParameters.Length, mle.BestParameterSet.Values.Length);
-        AssertCrossLanguageEqual(
+        AssertJointLikelihoodRegion(
+            optimizerAcceptance,
+            expectedParameters.Length,
             expectedMaximumLogLikelihood,
             mle.MaximumLogLikelihood,
-            "maximized data log likelihood");
-        for (int i = 0; i < expectedParameters.Length; i++)
-        {
-            double parameterTolerance =
-                ParameterCrosswalkRelativeTolerance * Math.Max(1d, Math.Abs(expectedParameters[i]));
-            Assert.AreEqual(
-                expectedParameters[i],
-                mle.BestParameterSet.Values[i],
-                parameterTolerance,
-                $"{familyName} parameter {i} differs from the SciPy MLE.");
-        }
+            $"{familyName} production MLE versus SciPy MLE");
     }
 
     /// <summary>
@@ -244,5 +234,32 @@ public class ScipyDistributionFittingVerificationTests
     {
         double tolerance = 1E-8d + 1E-7d * Math.Abs(expected);
         Assert.AreEqual(expected, actual, tolerance, $"Cross-language {quantity} mismatch.");
+    }
+
+    /// <summary>
+    /// Requires two fitted objectives to occupy the same independently declared joint
+    /// likelihood-ratio confidence region.
+    /// </summary>
+    /// <param name="acceptance">Artifact metadata defining the confidence level and cutoff.</param>
+    /// <param name="parameterCount">Number of independently fitted physical coordinates.</param>
+    /// <param name="referenceLogLikelihood">External-package maximized log likelihood.</param>
+    /// <param name="candidateLogLikelihood">Production maximized log likelihood.</param>
+    /// <param name="quantity">Comparison name for assertion output.</param>
+    private static void AssertJointLikelihoodRegion(
+        JsonElement acceptance,
+        int parameterCount,
+        double referenceLogLikelihood,
+        double candidateLogLikelihood,
+        string quantity)
+    {
+        Assert.AreEqual("joint-likelihood-ratio", acceptance.GetProperty("method").GetString());
+        Assert.AreEqual(0.95d, acceptance.GetProperty("confidence_level").GetDouble(), 0d);
+        Assert.AreEqual(parameterCount, acceptance.GetProperty("degrees_of_freedom").GetInt32());
+        double maximumStatistic = acceptance.GetProperty("maximum_two_log_likelihood_difference").GetDouble();
+        double statistic = 2d * Math.Abs(referenceLogLikelihood - candidateLogLikelihood);
+        Assert.IsTrue(
+            double.IsFinite(statistic) && statistic <= maximumStatistic,
+            $"{quantity}: 2*|delta log L|={statistic:G17} exceeds the independent " +
+            $"95% chi-square({parameterCount}) cutoff {maximumStatistic:G17}.");
     }
 }

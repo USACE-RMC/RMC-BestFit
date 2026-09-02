@@ -32,12 +32,30 @@ OUTPUT_PATH = (
 PROBABILITIES = np.linspace(0.025, 0.975, 39)
 CDF_EVALUATION_PROBABILITY = 0.35
 QUANTILE_EVALUATION_PROBABILITY = 0.90
+LIKELIHOOD_RATIO_CONFIDENCE_LEVEL = 0.95
 
 
 def as_floats(values: np.ndarray | tuple[float, ...] | list[float]) -> list[float]:
     """Convert NumPy or tuple values to JSON-safe Python floats."""
 
     return [float(value) for value in values]
+
+
+def joint_likelihood_ratio_acceptance(parameter_count: int) -> dict[str, Any]:
+    """Return the joint 95% profile-likelihood acceptance metadata."""
+
+    return {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": LIKELIHOOD_RATIO_CONFIDENCE_LEVEL,
+        "degrees_of_freedom": parameter_count,
+        "maximum_two_log_likelihood_difference": float(
+            stats.chi2.ppf(LIKELIHOOD_RATIO_CONFIDENCE_LEVEL, parameter_count)
+        ),
+        "rationale": (
+            "Wilks joint profile-likelihood region; replaces optimizer-coordinate "
+            "deltas that do not account for covariance or weak directions."
+        ),
+    }
 
 
 def add_scipy_family(
@@ -56,6 +74,7 @@ def add_scipy_family(
 
     data = np.asarray(source_distribution.ppf(PROBABILITIES), dtype=float)
     fitted = tuple(float(value) for value in fit(data))
+    numerics_parameters = as_floats(to_numerics(fitted))
     oracle_distribution = fitted_distribution(fitted)
     evaluation_x = float(source_distribution.ppf(CDF_EVALUATION_PROBABILITY))
     destination[name] = {
@@ -63,10 +82,13 @@ def add_scipy_family(
         "scipy_parameter_order": scipy_order,
         "scipy_parameters": as_floats(fitted),
         "numerics_parameter_order": numerics_order,
-        "numerics_parameters": as_floats(to_numerics(fitted)),
+        "numerics_parameters": numerics_parameters,
         "parameter_crosswalk": crosswalk,
         "fit_method": fit_method,
         "maximum_log_likelihood": float(np.sum(oracle_distribution.logpdf(data))),
+        "optimizer_acceptance": joint_likelihood_ratio_acceptance(
+            len(numerics_parameters)
+        ),
         "evaluation": {
             "x": evaluation_x,
             "pdf": float(oracle_distribution.pdf(evaluation_x)),
@@ -179,6 +201,7 @@ def add_log_pearson_family(destination: dict[str, Any]) -> None:
         "maximum_log_likelihood": float(
             np.sum(fitted_log_distribution.logpdf(log_data) - jacobian_log)
         ),
+        "optimizer_acceptance": joint_likelihood_ratio_acceptance(3),
         "evaluation": {
             "x": evaluation_x,
             "pdf": float(
@@ -219,6 +242,7 @@ def create_fitting_analysis_oracle() -> dict[str, Any]:
         candidates[name] = {
             "numerics_parameters": as_floats(parameters),
             "maximum_log_likelihood": log_likelihood,
+            "optimizer_acceptance": joint_likelihood_ratio_acceptance(parameter_count),
             "aic": float(-2.0 * log_likelihood + 2.0 * parameter_count),
             "bic": float(-2.0 * log_likelihood + parameter_count * np.log(len(data))),
             "rmse": rmse,
@@ -337,6 +361,11 @@ def main() -> None:
         "Numerics kappa is the negative of SciPy's common generalized-Pareto shape c.",
         fit_method="Seeded scipy.optimize.differential_evolution global MLE with explicit support bounds",
     )
+    families["GeneralizedPareto"]["optimizer_acceptance"]["regularity_note"] = (
+        "The free location optimum is on the sample-minimum support boundary. The "
+        "chi-square reference is retained as a conservative joint likelihood-region "
+        "screen rather than a coordinate-wise normal approximation."
+    )
     add_scipy_family(
         families,
         "Gumbel",
@@ -404,6 +433,10 @@ def main() -> None:
             "scipy": scipy.__version__,
             "dataset_design": "39 equally spaced nonexceedance probabilities from 0.025 through 0.975",
             "seed": "deterministic-no-random-sampling",
+            "optimizer_acceptance": (
+                "Joint 95% likelihood-ratio region from scipy.stats.chi2; deterministic "
+                "same-point formula comparisons retain numerical roundoff tolerances."
+            ),
         },
         "families": families,
         "fitting_analysis": create_fitting_analysis_oracle(),

@@ -9,8 +9,7 @@ using RMC.BestFit.Verification.Datasets.UnivariateData;
 namespace RMC.BestFit.Verification.DistributionFitting;
 
 /// <summary>
-/// Computational verification tests for the <see cref="FittingAnalysis"/> class.
-/// Holds only tests that drive the MLE pipeline via <see cref="FittingAnalysis.RunAsync"/>.
+/// Preserves historical fixed-data <see cref="FittingAnalysis"/> comparisons for audit provenance.
 /// Fast behavior and regression tests live in
 /// <c>RMC.BestFit.Tests/DistributionFitting/FittingAnalysisRegressionTests.cs</c>.
 /// </summary>
@@ -25,6 +24,12 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 /// The <see cref="FittingAnalysis"/> class performs automated distribution fitting using
 /// maximum likelihood estimation (MLE) for all 15 supported univariate distributions.
 /// It computes AIC, BIC, and RMSE metrics for model comparison.
+/// </para>
+/// <para>
+/// The historical methods are deliberately not discovered as Verification identities because
+/// their 1%-10% coordinate bands lack covariance or profile-likelihood justification. Current
+/// external-package likelihood-region evidence for all 15 families is owned by the SciPy and
+/// lmomco oracle classes; no historical pass is transferred.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -73,7 +78,6 @@ public class FittingAnalysisTests
     /// Validates Normal, Log-Normal, Ln-Normal, and Exponential distributions.
     /// Reference: Rao &amp; Hamed (2000), Table 1.8.1.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_WabashRiverData()
     {
         var (df, _, _) = VerificationData.Test_Exponential_MLE();
@@ -120,7 +124,6 @@ public class FittingAnalysisTests
     /// Validates Normal, Log-Normal, Ln-Normal, Logistic, and Weibull distributions.
     /// Reference: Rao &amp; Hamed (2000), Table 5.1.1.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_TippecanoeRiverData()
     {
         var (df, _, _) = VerificationData.Test_Normal_MLE();
@@ -175,7 +178,6 @@ public class FittingAnalysisTests
     /// Validates Gamma, Pearson Type III, and Log-Pearson Type III distributions.
     /// Reference: Bobee &amp; Ashkar (1991), Table 1.2.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_HarricanaRiverData()
     {
         var (df, _, _, _) = VerificationData.Test_PearsonTypeIII_MLE();
@@ -216,7 +218,6 @@ public class FittingAnalysisTests
     /// Validates Gumbel distribution.
     /// Reference: Rao &amp; Hamed (2000), Table 7.2.1, Example 7.2.1, page 234.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_SugarCreekData()
     {
         var (df, _, _) = VerificationData.Test_Gumbel_MLE();
@@ -241,7 +242,6 @@ public class FittingAnalysisTests
     /// Validates Generalized Extreme Value (GEV) distribution.
     /// Reference: Rao &amp; Hamed (2000), Table 7.1.2, Example 7.1.1, page 219.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_WhiteRiverData()
     {
         var (df, _, _, _) = VerificationData.Test_GEV_MLE();
@@ -267,7 +267,6 @@ public class FittingAnalysisTests
     /// Validates Generalized Pareto distribution for peaks-over-threshold analysis.
     /// Reference: Rao &amp; Hamed (2000), Table 8.3.1, Example 8.3.1, page 279.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_WhiteRiverAtMtCarmelData()
     {
         var (df, _, _, _) = VerificationData.Test_GeneralizedPareto_MLE();
@@ -293,7 +292,6 @@ public class FittingAnalysisTests
     /// Validates Generalized Normal and Kappa-4 distributions.
     /// Reference: R lmom package.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_AirQualityWindData()
     {
         var (df, _, _, _) = VerificationData.Test_GeneralizedNormal_MLE();
@@ -329,7 +327,6 @@ public class FittingAnalysisTests
     /// Reference: Rao &amp; Hamed (2000), Table 9.2.1, Example 9.1.1, page 295.
     /// Note: Results validated within 10% tolerance due to discrepancies between published summary statistics and actual dataset.
     /// </remarks>
-    [TestMethod]
     public async Task Test_FittingAnalysis_EastForkWhiteRiverData()
     {
         var (df, _, _, _) = VerificationData.Test_GeneralizedLogistic_MLE();

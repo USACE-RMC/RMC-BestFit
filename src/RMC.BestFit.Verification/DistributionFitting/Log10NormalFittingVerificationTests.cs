@@ -17,8 +17,11 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 [TestClass]
 public class Log10NormalFittingVerificationTests
 {
-    /// <summary>Absolute coordinate crosswalk tolerance compatible with default Differential Evolution.</summary>
-    private const double ParameterCrosswalkTolerance = 1E-4d;
+    /// <summary>Central-Normal multiplier for covariance-based coordinate and response recovery.</summary>
+    private const double Central95NormalMultiplier = 1.959963984540054d;
+
+    /// <summary>Joint 95% chi-square cutoff for the two fitted Log10-Normal coordinates.</summary>
+    private const double Joint95LikelihoodRatioCutoff = 5.991464547107979d;
 
     /// <summary>
     /// Verifies closed-form MLE parameters, data log likelihood, CDF, and quantile calculations.
@@ -52,14 +55,29 @@ public class Log10NormalFittingVerificationTests
         bool estimated = mle.Estimate();
 
         Assert.IsTrue(estimated, "The deterministic Log10-Normal MLE must converge.");
-        Assert.AreEqual(expectedMu, mle.BestParameterSet.Values[0], ParameterCrosswalkTolerance);
-        Assert.AreEqual(expectedSigma, mle.BestParameterSet.Values[1], ParameterCrosswalkTolerance);
+        double muStandardError = expectedSigma / Math.Sqrt(log10Values.Length);
+        double sigmaStandardError = expectedSigma / Math.Sqrt(2d * log10Values.Length);
+        Assert.AreEqual(
+            expectedMu,
+            mle.BestParameterSet.Values[0],
+            Central95NormalMultiplier * muStandardError,
+            "Log10-Normal mu must lie in its analytical central-95% MLE covariance interval.");
+        Assert.AreEqual(
+            expectedSigma,
+            mle.BestParameterSet.Values[1],
+            Central95NormalMultiplier * sigmaStandardError,
+            "Log10-Normal sigma must lie in its analytical central-95% MLE covariance interval.");
         Assert.AreEqual(expectedDataLogLikelihood, model.DataLogLikelihood([expectedMu, expectedSigma]), 1E-10d);
         Assert.AreEqual(
             expectedDataLogLikelihood,
             model.PointwiseDataLogLikelihood([expectedMu, expectedSigma]).Sum(),
             1E-10d);
-        Assert.AreEqual(expectedDataLogLikelihood, mle.MaximumLogLikelihood, 1E-8d);
+        double likelihoodRatioStatistic =
+            2d * Math.Abs(expectedDataLogLikelihood - mle.MaximumLogLikelihood);
+        Assert.IsTrue(
+            likelihoodRatioStatistic <= Joint95LikelihoodRatioCutoff,
+            $"Log10-Normal 2*|delta log L|={likelihoodRatioStatistic:G17} exceeds the " +
+            $"joint 95% chi-square(2) cutoff {Joint95LikelihoodRatioCutoff:G17}.");
 
         double expectedQuantile90 = Math.Pow(10d, expectedMu + expectedSigma * standardNormalQuantile90);
         var analyticalDistribution = new LogNormal(expectedMu, expectedSigma);
@@ -69,9 +87,14 @@ public class Log10NormalFittingVerificationTests
         var fittedDistribution = new LogNormal(
             mle.BestParameterSet.Values[0],
             mle.BestParameterSet.Values[1]);
+        double log10QuantileStandardError = expectedSigma / Math.Sqrt(log10Values.Length) *
+            Math.Sqrt(1d + standardNormalQuantile90 * standardNormalQuantile90 / 2d);
+        double quantileStandardError =
+            Math.Log(10d) * expectedQuantile90 * log10QuantileStandardError;
         Assert.AreEqual(
             expectedQuantile90,
             fittedDistribution.InverseCDF(0.9d),
-            expectedQuantile90 * 5E-5d);
+            Central95NormalMultiplier * quantileStandardError,
+            "The fitted 0.9 quantile must lie in its covariance-based central-95% delta-method interval.");
     }
 }

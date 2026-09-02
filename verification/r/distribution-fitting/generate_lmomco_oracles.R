@@ -18,6 +18,22 @@ output_path <- file.path(
 probabilities <- seq(0.025, 0.975, length.out = 39)
 cdf_evaluation_probability <- 0.35
 quantile_evaluation_probability <- 0.90
+likelihood_ratio_confidence_level <- 0.95
+
+joint_likelihood_ratio_acceptance <- function(parameter_count) {
+  list(
+    method = "joint-likelihood-ratio",
+    confidence_level = likelihood_ratio_confidence_level,
+    degrees_of_freedom = parameter_count,
+    maximum_two_log_likelihood_difference = unname(
+      stats::qchisq(likelihood_ratio_confidence_level, df = parameter_count)
+    ),
+    rationale = paste(
+      "Wilks joint profile-likelihood region; replaces optimizer-coordinate",
+      "deltas that do not account for covariance or weak directions."
+    )
+  )
+}
 
 git_revision <- function(repository) {
   result <- system2(
@@ -69,6 +85,7 @@ generate_family <- function(name, type, source_parameters) {
     ),
     convergence_code = unname(fitted$optim$convergence),
     maximum_log_likelihood = unname(sum(log(densities))),
+    optimizer_acceptance = joint_likelihood_ratio_acceptance(length(fitted$para)),
     evaluation = list(
       x = unname(evaluation_x),
       pdf = unname(lmomco::par2pdf(evaluation_x, fitted)),
@@ -98,7 +115,10 @@ artifact <- list(
     probabilities = "39 equally spaced nonexceedance probabilities from 0.025 through 0.975",
     absolute_tolerance = 1e-8,
     relative_tolerance = 1e-7,
-    scaled_parameter_tolerance = 1e-5
+    optimizer_acceptance = paste(
+      "Joint 95% likelihood-ratio region from stats::qchisq; deterministic",
+      "same-point formula comparisons retain numerical roundoff tolerances."
+    )
   ),
   families = list(
     GeneralizedLogistic = generate_family(

@@ -33,10 +33,10 @@ namespace RMC.BestFit.Verification.Bivariate;
 ///     from the posterior-mean marginal moments and the posterior-mean copula correlation.
 /// </para>
 /// <para>
-///     <b>Tolerance:</b> max abs error ≤ 0.05, mean abs error ≤ 0.01 across all
-///     <see cref="CoincidentFrequencyAnalysis.NumberOfBins"/> Z output bins. The bound is
-///     more permissive than the closed-form-input unit test because both the marginal fits
-///     and the copula correlation carry MCMC sampling noise.
+///     <b>Acceptance:</b> copula recovery uses central 95 percent parent inclusion, R-hat below
+///     1.10, and ESS at least 100. Separately, the fixed response-table discretization has maximum
+///     absolute AEP error no greater than 0.05 and mean absolute AEP error no greater than 0.01
+///     across all <see cref="CoincidentFrequencyAnalysis.NumberOfBins"/> Z output bins.
 /// </para>
 /// <para>
 ///     <b>Runtime:</b> ≈ 30–90 seconds per ρ. Long enough to belong in
@@ -179,13 +179,13 @@ public class CoincidentFrequencyAnalysisTests
 
     /// <summary>
     /// Builds the bivariate analysis with the default MCMC configuration (DEMCzs simulation
-    /// defaults, seed 12345, posterior-mean point estimator, 90% credible interval).
+    /// defaults, seed 12345, posterior-mean point estimator, 95% credible interval).
     /// </summary>
     private static BivariateAnalysis BuildAnalysis(BivariateDistribution dist)
     {
         var analysis = new BivariateAnalysis(dist);
         analysis.BayesianAnalysis.PRNGSeed = 12345;
-        analysis.BayesianAnalysis.CredibleIntervalWidth = 0.90;
+        analysis.BayesianAnalysis.CredibleIntervalWidth = 0.95;
         analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMean;
         return analysis;
     }
@@ -277,9 +277,14 @@ public class CoincidentFrequencyAnalysisTests
                 $"rho={rho}: AEP must be non-increasing; failed at z={cfa.ZOutputValues[k]:F3}, k={k}.");
         }
 
-        // Sanity: posterior-mean ρ̂ should be roughly within 0.1 of true ρ at n=1000.
-        Assert.AreEqual(rho, rhoHat, 0.1,
-            $"Posterior-mean rho={rhoHat:F4} drifted too far from truth {rho:F4}.");
+        var rhoSummary = bivariate.BayesianAnalysis.Results.ParameterResults[0].SummaryStatistics;
+        RecoveryAcceptance.AssertBayesianRecovery(
+            $"linear Normal-sum Gaussian-copula rho={rho:F1}",
+            rho,
+            rhoSummary.LowerCI,
+            rhoSummary.UpperCI,
+            rhoSummary.Rhat,
+            rhoSummary.ESS);
     }
 
     /// <summary>

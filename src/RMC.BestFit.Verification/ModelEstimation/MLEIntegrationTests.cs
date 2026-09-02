@@ -55,7 +55,9 @@ public class MLEIntegrationTests
     /// <remarks>
     /// This is an analytical identity over the seeded scalar Ln-Normal fixture (N=1000; seed=12345;
     /// parent=(μ=3.5, σ=0.4)). It compares fitted (μ, σ) to the sample log-scale MLE coordinates,
-    /// not to a parent interval; no response band, uncertainty interval, or secondary 5 percent rule applies.
+    /// not to a parent interval. Coordinate differences are standardized by the known Normal-MLE
+    /// covariance at the same-sample optimum, and the fitted objective must remain inside the joint
+    /// two-parameter 95 percent likelihood-ratio region. No secondary 5 percent rule applies.
     /// </remarks>
     [TestMethod]
     public void Test_MLE_LnNormal_MatchesClosedFormLogSampleMLE()
@@ -65,7 +67,7 @@ public class MLEIntegrationTests
         df.ExactSeries = new ExactSeries(TestData.LnNormalData);
         var model = new UnivariateDistribution(df, UnivariateDistributionType.LnNormal);
 
-        // Act - use MLSL for better global optimization on this distribution
+        // Act - use the production Differential Evolution MLE policy.
         var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution);
         mle.Estimate();
 
@@ -82,9 +84,19 @@ public class MLEIntegrationTests
         double sampleMeanLog = logData.Average();
         double sampleStdLog = Math.Sqrt(logData.Select(x => Math.Pow(x - sampleMeanLog, 2)).Average());
 
-        // MLE should find parameters close to sample statistics of log(data)
-        Assert.AreEqual(sampleMeanLog, dist.Mu, 0.5, "μ estimate should be close to mean of log(data).");
-        Assert.AreEqual(sampleStdLog, dist.Sigma, 0.1, "σ estimate should be close to std of log(data).");
+        double muStandardError = sampleStdLog / Math.Sqrt(logData.Length);
+        double sigmaStandardError = sampleStdLog / Math.Sqrt(2d * logData.Length);
+        RecoveryAcceptance.AssertFrequentistStandardizedError("mu", dist.Mu, sampleMeanLog, muStandardError);
+        RecoveryAcceptance.AssertFrequentistStandardizedError("sigma", dist.Sigma, sampleStdLog, sigmaStandardError);
+
+        double fittedLogLikelihood = LnNormalLogLikelihood(logData, dist.Mu, dist.Sigma);
+        double analyticalMaximumLogLikelihood = LnNormalLogLikelihood(logData, sampleMeanLog, sampleStdLog);
+        const double chiSquare95TwoDegreesOfFreedom = 5.991464547107979d;
+        double likelihoodRatioStatistic = 2d * (analyticalMaximumLogLikelihood - fittedLogLikelihood);
+        Assert.IsTrue(
+            likelihoodRatioStatistic <= chiSquare95TwoDegreesOfFreedom,
+            $"The fitted Ln-Normal objective must lie inside the joint 95% likelihood-ratio region: " +
+            $"2*(LL_exact-LL_fit)={likelihoodRatioStatistic:R}, cutoff={chiSquare95TwoDegreesOfFreedom:R}.");
     }
 
     /// <summary>Verifies Ln-Normal generated-parent recovery separately from the same-sample closed-form identity.</summary>
@@ -484,6 +496,33 @@ public class MLEIntegrationTests
         for (int index = 0; index < parents.Count; index++)
             RecoveryAcceptance.AssertFrequentistStandardizedError(
                 coordinateNames[index], mle.BestParameterSet.Values[index], parents[index], Math.Sqrt(parameterCovariance[index, index]));
+    }
+
+    /// <summary>Evaluates the independent log-scale Normal likelihood for a Ln-Normal sample.</summary>
+    /// <param name="logData">Natural logarithms of the positive observations.</param>
+    /// <param name="mu">Candidate Normal location on the log scale.</param>
+    /// <param name="sigma">Candidate positive Normal standard deviation on the log scale.</param>
+    /// <returns>The log-likelihood up to the data-only Ln-Normal Jacobian, which cancels in likelihood-ratio comparisons.</returns>
+    /// <remarks>
+    /// The omitted sum of negative log observations is constant in <paramref name="mu"/> and
+    /// <paramref name="sigma"/>. Keeping this construction independent of the production model
+    /// makes the joint likelihood-ratio acceptance an analytical same-sample oracle.
+    /// </remarks>
+    private static double LnNormalLogLikelihood(IReadOnlyList<double> logData, double mu, double sigma)
+    {
+        if (!(sigma > 0d) || !double.IsFinite(sigma))
+            return double.NegativeInfinity;
+
+        double sumSquaredResiduals = 0d;
+        for (int index = 0; index < logData.Count; index++)
+        {
+            double residual = logData[index] - mu;
+            sumSquaredResiduals += residual * residual;
+        }
+
+        return -logData.Count * Math.Log(sigma)
+            - 0.5d * logData.Count * Math.Log(2d * Math.PI)
+            - sumSquaredResiduals / (2d * sigma * sigma);
     }
 
     /// <summary>Applies the common MLE recovery rule in a distribution's native covariance coordinates.</summary>

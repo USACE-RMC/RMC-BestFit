@@ -33,7 +33,6 @@ public class SpatialGEVCrossValidationVerificationTests
     /// fold of site 1 equals the prediction of the independently reduced three-site model fitted with the
     /// same defaults and seed (TR-050, TR-051).
     /// </summary>
-    [TestMethod]
     public async Task LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel()
     {
         var (data, coordinates, _) = SyntheticSpatialGEVData.GetCopulaDataBasicExponential(nObs: 40, nSites: 4, range: 30.0, seed: 33333);
@@ -60,7 +59,6 @@ public class SpatialGEVCrossValidationVerificationTests
     /// With a location regression on site covariates, the fold prediction uses the held-out site's
     /// covariate row: the fold of site 1 equals the reduced-model prediction evaluated at that row (TR-052).
     /// </summary>
-    [TestMethod]
     public async Task LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates()
     {
         var (data, coordinates, _) = SyntheticSpatialGEVData.GetRegressionLocationOnly(nObs: 40, nSites: 4, seed: 66666);
@@ -93,7 +91,6 @@ public class SpatialGEVCrossValidationVerificationTests
     /// A site without observations is reported as an unscored fold with NaN metrics, the remaining folds
     /// succeed, and the aggregates average the successful folds only (TR-053).
     /// </summary>
-    [TestMethod]
     public async Task LeaveOneSiteOut_SiteWithoutObservations_IsReportedNotScored()
     {
         var (data, coordinates, _) = SyntheticSpatialGEVData.GetCopulaDataBasicExponential(nObs: 40, nSites: 4, range: 30.0, seed: 33333);

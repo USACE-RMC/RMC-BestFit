@@ -13,7 +13,7 @@ in the [bivariate](../technical-reference/analysis/bivariate.md) and
 
 | Claim | Evidence | State |
 |---|---|---|
-| Copula maximum pseudo-likelihood and inference-from-margins estimation (seven families) | `CopulaEstimationOracleTests` (14 exact methods) against the independent `copula-estimation-oracle.json` optimum; historical R `copula` targets retained for the original six families | Passed 14/14 (31 August 2026) |
+| Copula maximum pseudo-likelihood and inference-from-margins estimation (seven families) | `CopulaEstimationOracleTests` (14 exact methods) against the independent `copula-estimation-oracle.json` optimum; historical R `copula` targets retained for the original six families | Passed 14/14 fresh (1 September 2026) |
 | Generated-parent conditional copula recovery | Six `BivariateAnalysisParameterRecoveryTests` identities under production DEMCzs defaults, plus one Student-t MLE identity | Passed 7/7 (31 August 2026) |
 | Coincident-frequency response surface | Three analytical Normal-sum cells plus one N=1000 nonlinear Lognormal response recovery | Passed 4/4 (31 August 2026) |
 | Independent product-posterior propagation (TR-014) | `PosteriorResamplingVerificationTests.CoincidentFrequencyPosteriorResampling_MatchesIndependentClosedFormOracle` | Passed (3 August 2026) |
@@ -71,11 +71,11 @@ analytical and reproduced directly from the predeclared inputs.
 
 ## Copula estimation oracle
 
-`BivariateDistributionMLETests` fits the Ali-Mikhail-Haq, Clayton, Frank, Gumbel, Joe, and Gaussian
-copulas to twelve embedded fixtures (one hundred paired observations each) by maximum pseudo-likelihood
-(Weibull plotting-position complements `rank/(n + 1)`) and by inference from margins (Normal marginals
-fitted by maximum likelihood) and compares the dependence parameter with historical R `copula` values
-at `1e-3`. The package version behind those values was never recorded. The generator
+`BivariateDistributionMLETests` retains the twelve embedded fixture bodies (one hundred paired
+observations each) as provenance only. Their historical `1e-3` coordinate assertions were removed
+from discovery because the tolerance was not statistically derived and the R package version was
+never recorded. The retained evidence is `CopulaEstimationOracleTests`, which covers maximum
+pseudo-likelihood (Weibull complements `rank/(n + 1)`) and inference from margins. The generator
 `verification/python/bivariate/generate_copula_estimation_oracle.py` (SHA-256
 `358dca1910f1091e1f9f07978f38662444575f9a0373e39cd31189c37918307b`) transcribes those fixtures and
 adds a NumPy-PCG64 seed-20260830 Student-t sample of exactly 1,000 pairs with parent `[rho=0.8, nu=4]`,
@@ -105,15 +105,17 @@ has SHA-256 `28edfbd28e392df1ac540766f3ba5c3f1ce57d8a442facbcd6541866f683956e`.
 The pseudo-likelihood optima agree with the historical R values to `1e-7`-`1e-6`, which confirms that
 those values used Weibull pseudo-observations; the inference-from-margins optima differ by up to
 `3.4e-4`, consistent with a different marginal standard-deviation convention in the historical fits, and
-remain inside the historical `1e-3` tolerance. `CopulaEstimationOracleTests` rebuilds each fixture,
+remain close to the historical values as provenance only. `CopulaEstimationOracleTests` rebuilds each fixture,
 sets the Normal marginals to the closed-form maximum-likelihood estimates, fits with production
 Differential Evolution and untouched default tolerances, and requires same-point log-likelihood parity
-within `1e-8`, the fitted dependence parameter within `1e-3` relative (`1e-6` floor), the attained
-objective within the optimizer's actual default objective tolerance of the independent optimum, and
-the historical R value within `1e-3`. The two Student-t cells require
-same-point/optimality agreement within `1e-5`, `rho` within `5e-4`, and `nu` within `2e-2` of the
-independent two-dimensional optimum. The original twelve and both Student-t additions pass; the
-Student-t methods passed separately through the guarded runner on 31 August 2026.
+within `1e-8` as a deterministic parameterization check and the production optimum inside the joint
+95% likelihood-ratio region (`chi-square(1)=3.841458820694124`). The distance uses
+`2*abs(LL_independent-LL_production)` after both likelihoods are required finite, so a worse
+production optimum cannot pass through a negative statistic. The two Student-t cells use the
+artifact's same-point numerical tolerance and the joint two-coordinate cutoff
+`chi-square(2)=5.991464547107979`. All 14 retained methods passed fresh guarded one-result runs on
+1 September 2026 (`20260901-143648-...` through `20260901-143950-...`); the twelve historical
+identities were not rerun after consolidation.
 
 ## Bayesian recovery and coincident frequency
 
@@ -123,9 +125,10 @@ identities apply the common central-95%/R-hat/ESS rule; the renamed Student-t ML
 observed-information rules to `rho` and tail dependence. All seven current identities passed
 separately on 31 August 2026. The removed `RecoverStudentTCopulaParameters` MCMC attempt was interrupted
 at Haden Smith's direction and produced no TRX, so it is not evidence. `CoincidentFrequencyAnalysisTests` fits two Normal marginals and a
-Gaussian copula to simulated pairs and requires the mode curve of the coincident-frequency response
-surface to match the closed-form distribution of the sum of two correlated standard Normals within
-maximum absolute error 0.05 and mean absolute error 0.01 for rho = 0, positive, and negative. The
+Gaussian copula to simulated pairs and requires central-95% parent inclusion, R-hat below 1.10, and
+ESS at least 100 for rho. Separately, the mode curve of the coincident-frequency response surface must
+match the closed-form distribution of the sum of two correlated fitted Normals within the declared
+5x5 response-table discretization error for rho = 0, positive, and negative. The
 fourth cell uses `exp(0.01X+0.01Y)`, the exact Lognormal law, separate response-table error and parent-
 fit checks, and central-95% propagated parent-response bands at five predeclared ordinates. All four
 current cells passed separately on 31 August 2026. The TR-014 product-posterior oracle is

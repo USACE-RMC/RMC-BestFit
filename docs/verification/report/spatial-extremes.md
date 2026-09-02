@@ -46,6 +46,43 @@ The criteria cell used eleven nonempty row/year blocks. AIC and BIC were recompu
 
 Complete-data recovery added two MLE and seven Bayesian cells under production defaults. All nine passed. Bayesian durations ranged from 42 to 115 seconds.
 
+## Chunk 14 independent oracles
+
+The current completeness reconciliation separates scientific oracles from fast implementation contracts.
+The former three cross-validation methods compared two BestFit production paths or fold accounting and are
+retained only as non-executable design history; their historical passes are not current independent evidence.
+
+| Current identity | Independent construction | Result |
+|---|---|---:|
+| `BasicExponentialCorrelation_MatchesAnalyticalGrid` | `rho(h)=exp(-h/range)` on five predeclared distances | Passed |
+| `PoweredExponentialCorrelation_MatchesAnalyticalGrid` | `rho(h)=exp(-(h/range)^nu)`, `nu=1.6` | Passed |
+| `SphericalCorrelation_MatchesAnalyticalGridAndCompactSupport` | spherical cubic plus exact support boundary | Passed |
+| `HeldOutCopulaFold_MatchesIndependentFittedOracle` | independent SciPy three-site Gaussian-copula optimum, finite sign-safe four-coordinate joint 95% likelihood-ratio acceptance, and unregularized held-out quantile uncertainty | Passed fresh 1 September 2026 (`20260901-144228-...`) |
+| `HeldOutCovariateFold_MatchesIndependentRegressionOracle` | executable normal-equation two-covariate OLS prediction and uncertainty split | Passed |
+
+All five Chunk 14A identities passed individually with exactly one executed TRX result. The complete versus
+missing fold distinction is covered by the independent complete-fold targets above and the fast missing-fold
+status/accounting contract.
+
+Chunk 14B removes the two same-production posterior recomputations and the three dispatch/accounting cells
+from the current Verification declaration set. Their method bodies remain non-executable design history and
+their fast owners are unchanged. Five independent replacements passed individually:
+
+| Current identity | Independent construction | Result |
+|---|---|---:|
+| `UngaugedDrawSpecificPrediction_MatchesIndependentGeodesicGaussianOracle` | four draw-specific geodesic conditional-GP moments and physical log-link locations | Passed |
+| `RegionalFixedDrawAggregation_MatchesIndependentPosteriorOracle` | nine fixed draws, three site covariates, three ordinates, central 95% Type-7 summaries | Passed |
+| `GodambeSensitivityVariabilityAndSandwich_MatchIndependentOracle` | explicit finite-difference H, row-score J, and unregularized sandwich covariance | Passed |
+| `TemporalBlockBootstrap_MatchesIndependentWholeRowOracle` | independent MT19937 whole-row wrapping blocks, five bounded SciPy flat-prior MAP fits, and fitted physical-parameter/site/regional quantile intervals | Passed |
+| `VarianceInflation_UsesExactIndependentAnalyticalTransformation` | independent Pearson VIF and exact site/regional endpoint transformation | Passed |
+
+Every latest Chunk 14B TRX contains exactly one executed passing result.
+
 ## Conclusion
 
-Spatial likelihood, missing-data marginalization, kriging, distance, criteria, cross-validation, prediction, regional uncertainty, dependent simulation, method dispatch, and nine recovery cells passed all 30 reported cells. The evidence remains conditional on the tested network sizes, covariates, missingness patterns, and correlation structures.
+The historical phase report counted 30 passing cells. The completeness reconciliation supersedes the three
+same-production-path cross-validation cells with five independently targeted Chunk 14A identities, so that
+historical total is not a current declaration count. Spatial likelihood, missing-data marginalization,
+kriging, distance, criteria, cross-validation, prediction, regional uncertainty, dependent simulation, and
+method dispatch remain covered subject to the documented network sizes, covariates, missingness patterns,
+and correlation structures; spatial recovery is separately deferred to Chunk 15.

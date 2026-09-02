@@ -116,6 +116,16 @@ Fast tests cover construction, likelihood decomposition, transforms, prediction 
 algebra, and analysis lifecycle. The focused generator oracle verifies inverse-transform algebra
 and 1,000 model-scale moment values; the verification report records parameter-recovery results.
 
+Chunk 13 independently crosschecks the positive-$\phi$ centered recurrence, conditional likelihood,
+closed-form conditional-regression/profile optimum, and unregularized observed information on the
+frozen AR(1) fixture. A separate N=1,000 AR(2) fixture checks the complete recurrence, one-step
+conditional response, production stationarity diagnostic, and stationary response roots. The
+initial Differential Evolution AR(1) run remains failure history because its bound-clamped solution
+had an objective below the generating parent and independent optimum and invalid covariance. Haden
+Smith approved a reliability correction: infeasible DE trials are repaired halfway between the
+target and violated bound, BestFit uses a minimum population of 100, and the convergence tolerances
+remain unchanged. The final exact N=1,000 AR(1) recovery passes the observed-information 95% rule.
+
 ## References
 
 <a id="ref-1"></a>[1] P. J. Brockwell and R. A. Davis, *Introduction to Time Series and Forecasting*, 3rd ed., Springer, 2016.

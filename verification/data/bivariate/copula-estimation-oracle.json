@@ -1,13 +1,13 @@
 {
   "metadata": {
-    "generated": "2026-08-30",
+    "generated": "2026-09-01",
     "generator": "verification/python/bivariate/generate_copula_estimation_oracle.py",
-    "generator_sha256": "358dca1910f1091e1f9f07978f38662444575f9a0373e39cd31189c37918307b",
+    "generator_sha256": "7688e6d08227660d223e7614edac46264a4a691afb5443852ef53af2fe27407d",
     "python": "3.12.13",
     "numpy": "2.3.5",
     "scipy": "1.18.1",
     "fixture_source": "src/RMC.BestFit.Verification/Bivariate/BivariateDistributionMLETests.cs",
-    "fixture_source_sha256": "f16ace0d507b0ca88133219cb808fb3cb4a09d03349214f6151df176a7e098df",
+    "fixture_source_sha256": "a043923eb774b52e30723646dd5ce15fcb6fe0870c4d7089a21feb13f67e1175",
     "seed": "historical cells: deterministic-no-random-sampling; Student-t generator: 20260830",
     "density_self_check": "each closed-form density equals the numerical mixed partial derivative of its distribution function (Gaussian: bivariate-normal density ratio) at five points and three parameters; Student-t equals SciPy's bivariate-t over univariate-t density ratio",
     "density_self_check_max_relative_error": {
@@ -20,7 +20,9 @@
       "StudentT": 8.410013001480461e-16
     },
     "density_self_check_tolerance": 1e-05,
-    "r_copula_targets": "historical R copula package values embedded in the C# test source (package version not recorded)"
+    "r_copula_targets": "historical R copula package values embedded in the C# test source (package version not recorded)",
+    "scientific_acceptance": "same-point likelihood parity is a deterministic parameterization check; production optima must lie inside the joint 95% likelihood-ratio region (chi-square 3.841458820694124 for the one-coordinate families and 5.991464547107979 for Student-t [rho,nu])",
+    "historical_coordinate_tolerances": "retained in fixture records for provenance only and not used as scientific acceptance"
   },
   "fixtures": [
     {

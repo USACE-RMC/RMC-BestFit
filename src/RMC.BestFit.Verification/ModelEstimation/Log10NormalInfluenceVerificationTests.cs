@@ -22,18 +22,18 @@ public class Log10NormalInfluenceVerificationTests
         [1.1d, 1.4d, 1.7d, 2.0d, 2.3d, 2.6d, 2.9d];
 
     /// <summary>
-    /// Confirms that the full Log10-Normal observation curvature does not materially
-    /// change the current MAP variance-influence magnitudes or leading ranking.
+    /// Records the historical comparison between the full Log10-Normal observation
+    /// curvature and the current MAP variance-influence approximation.
     /// </summary>
     /// <remarks>
     /// A narrow Gaussian prior displaced from the likelihood center makes the posterior
     /// covariance between mu and sigma nonzero. The analytical full contribution is
     /// <c>|tr(Sigma J_i)| / p</c>. Absolute differences from the current diagonal curvature
-    /// approximation remain below <c>0.003</c>, and the three leading observations retain
-    /// their order. Relative errors are not used because they exaggerate harmless differences
-    /// for observations whose variance influence is near zero.
+    /// approximation happened to remain below <c>0.003</c> for this fixture, and the three
+    /// leading observations retained their order. The magnitude threshold was a qualitative
+    /// materiality judgment rather than a statistical or exact numerical acceptance rule, so
+    /// this method is retained as source provenance but is not executable Verification evidence.
     /// </remarks>
-    [TestMethod]
     public void MapVarianceInfluence_FullCurvaturePreservesMaterialMagnitudeAndLeadingRanking()
     {
         const int parameterCount = 2;

@@ -49,9 +49,22 @@ evaluated in response space. The class is marked `[DoNotParallelize]` because ea
 analysis internally fits 15 candidates in parallel; this avoids a method-level 15-by-15 estimator
 fan-out when an approved suite run eventually occurs.
 
-The retained `FittingAnalysisTests` are separate fixed-data published/real-source comparisons.
-Their historical results remain evidence for those sources only and are not recovery evidence for
-these new generated-parent cells.
+The eight historical `FittingAnalysisTests` fixed-data comparisons remain in source for provenance
+but are no longer discovered or cataloged. Their 1%-10% coordinate bands lacked covariance or
+profile-likelihood justification, while the generated-parent matrix and the SciPy/lmomco joint
+likelihood-region oracles provide stronger current evidence for all 15 families. Their final
+one-result passing runs under `20260831-195737-...` through `20260831-195840-...` are retained as
+historical executions; no pass was transferred.
+
+The separate 15-cell `UnivariateDistributionMLETests` real-data matrix remains current because its
+published hydrologic datasets and recorded reference points are scientifically distinct. On 1
+September 2026 its historical 1%-10% coordinate bands were replaced by joint 95%
+likelihood-ratio regions with chi-square degrees of freedom equal to the fitted coordinate count.
+Natural-log Normal references are explicitly converted from log-space location/scale to the
+physical mean/standard-deviation order used by the fitted `LnNormal` model. All 15 exact identities
+passed with one inspected TRX result each under `20260901-142634-...` through
+`20260901-142721-...`. The discarded `20260901-140711-...Test_LnNormal_MLE` run had exactly one
+failed result and exposed the missing parameter crosswalk; it is not evidence.
 
 ### Chunk 6A exact execution - 29 August 2026
 
@@ -182,14 +195,14 @@ The focused analytical method is:
 
 **Verification:** Passed for all 39 oracle observations at absolute tolerance `1e-12`. Fast regressions also prove that deliberately non-derived serialized positions survive a round trip and that non-finite transient input retains the previous non-throwing behavior. The normalized Debug regression gate records Core 3,116, UI 568, and App 428 passing tests with zero failures; the public API baseline and enforced XML-documentation build also passed. See the [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
 
-## TR-064 - distribution-fitting optimizer tolerance
+## TR-064 - distribution-fitting optimizer likelihood region
 
-The common-data external validation fits Gumbel, Normal, and Logistic to one deterministic sample. BestFit uses differential evolution, whose stopping rule detects convergence in objective values across the population. The SciPy oracle uses a local configuration that converges in parameter or gradient space. Minor coordinate differences are therefore expected even when the fitted likelihoods are effectively identical.
+The common-data external validation fits Gumbel, Normal, and Logistic to one deterministic sample. BestFit uses differential evolution, whose stopping rule detects convergence in objective values across the population. The SciPy oracle uses a local configuration that converges in parameter or gradient space. Coordinate differences are retained as diagnostics, but are not used as statistical acceptance thresholds.
 
-| Gumbel parameter | SciPy oracle | BestFit | Relative error | `1e-4` scaled acceptance |
-|---|---:|---:|---:|---|
-| Gumbel location | 93.11234799935337 | 93.1129321294911 | 6.27e-6 | Passed |
-| Gumbel scale | 13.157628567998076 | 13.157823249599968 | 1.4796e-5 | Passed |
+| Gumbel parameter | SciPy oracle | BestFit | Relative coordinate difference |
+|---|---:|---:|---:|
+| Gumbel location | 93.11234799935337 | 93.1129321294911 | 6.27e-6 |
+| Gumbel scale | 13.157628567998076 | 13.157823249599968 | 1.4796e-5 |
 
 The exact focused methods are:
 
@@ -198,9 +211,9 @@ The exact focused methods are:
 
 **Disposition:** Rejected non-defect. No production change was made.
 
-**Tolerance rationale:** Parameters use `1e-4` scaled tolerance for this global-versus-local optimizer comparison. Maximum log likelihood, AIC, and BIC retain the tighter cross-language tolerance of `1e-8` absolute plus `1e-7` relative. RMSE magnitudes are not compared at different optimizer-returned parameter vectors. Instead, the BestFit RMSE equation is checked directly to `1e-10`, inverse-RMSE weights are checked from the actual RMSE values to `1e-12`, and the cross-optimizer RMSE ranking must agree exactly.
+**Acceptance rationale:** The two fitted vectors must lie in the same joint 95% likelihood-ratio region, using \(2|\ell_{\mathrm{SciPy}}-\ell_{\mathrm{BestFit}}|\leq\chi^2_{0.95,k}\), where \(k\) is the candidate's fitted-coordinate count. This is a statistical objective-space comparison and replaces the former arbitrary scaled-coordinate tolerance. Maximum log likelihood, AIC, and BIC evaluated at the same parameter vector retain the tighter cross-language numerical tolerances of `1e-8` absolute plus `1e-7` relative. RMSE magnitudes are not compared at different optimizer-returned parameter vectors. Instead, the BestFit RMSE equation is checked directly to `1e-10`, inverse-RMSE weights are checked from the actual RMSE values to `1e-12`, and the cross-optimizer RMSE ranking must agree exactly.
 
-**Verification:** Both focused methods passed. The parameter run is recorded at `TestResults/VerificationFocused/20260725-081305-...`; the criteria, ranking, and weight run is recorded at `TestResults/VerificationFocused/20260725-081522-...`. See the [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json).
+**Verification:** Both focused methods passed the normalized contract in one-result guarded runs on 1 September 2026. The parameter run is recorded under `TestResults/VerificationFocused/20260901-111937-...`; the criteria, ranking, and weight run is recorded under `TestResults/VerificationFocused/20260901-111945-...`. See the [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json).
 
 ## Log10-Normal analytical verification
 
@@ -226,19 +239,19 @@ The focused method is:
 
 - `RMC.BestFit.Verification.DistributionFitting.Log10NormalFittingVerificationTests.ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle`
 
-**Verification:** Passed. Production Differential Evolution used untouched default tolerances. The compatible parameter crosswalk passed at absolute tolerance `1e-4`, maximum log likelihood at `1e-8`, the direct and pointwise analytical likelihood at `1e-10`, the median CDF at `1e-12`, and the analytical quantile at `1e-9`. The fitted quantile uses the declared optimizer-scale relative tolerance. See the [evidence artifact](../../verification/data/distribution-fitting/log10-normal-closed-form.json).
+**Verification:** Passed in a one-result guarded run under `20260901-111953-...`. Production Differential Evolution used untouched default tolerances. At \(n=7\), fitted \(\mu\) and \(\sigma\) are judged against central-95% intervals from the known Normal-MLE covariance, \(\operatorname{SE}(\widehat\mu)=\sigma/\sqrt n\) and \(\operatorname{SE}(\widehat\sigma)=\sigma/\sqrt{2n}\). The fitted point must also occupy the analytical optimum's joint 95% likelihood-ratio region with two degrees of freedom. The fitted 0.9 quantile uses a central-95% delta-method interval propagated through \(q=10^{\mu+z_{0.9}\sigma}\). Direct and pointwise likelihood, CDF, and analytical-quantile comparisons retain tight tolerances because they evaluate deterministic formulas at the same declared coordinates. See the [evidence artifact](../../verification/data/distribution-fitting/log10-normal-closed-form.json).
 
 ## External family-oracle execution
 
-Thirteen exact methods in `ScipyDistributionFittingVerificationTests` and two exact methods in `LmomcoDistributionFittingVerificationTests` were run separately through the guarded runner. Each method verifies the fitted parameter vector, maximized data log likelihood, representative CDF values, and representative quantiles. The C# tests consume only committed JSON and never invoke Python or R at runtime.
+Thirteen exact methods in `ScipyDistributionFittingVerificationTests` and two exact methods in `LmomcoDistributionFittingVerificationTests` were run separately through the guarded runner. Each method requires the production and external optima to occupy the same joint 95% likelihood-ratio region, then verifies data log likelihood, representative CDF values, and representative quantiles at common declared coordinates with tight numerical tolerances. The C# tests consume only committed JSON and never invoke Python or R at runtime.
 
-SciPy 1.16.1 supplies the overlapping family implementations. Generalized Pareto and Log-Pearson III use deterministic differential evolution in the generator because SciPy's default local start converged to an inferior stationary point for the declared fixtures. R 4.4.3 with `lmomco` 2.5.7 supplies Generalized Logistic and Generalized Normal. Parameter conversions, package versions, seeds, generator commands, and source hashes are recorded in:
+SciPy 1.18.1 supplies the overlapping family implementations. Generalized Pareto and Log-Pearson III use deterministic differential evolution in the generator because SciPy's default local start converged to an inferior stationary point for the declared fixtures. The Generalized Pareto free-location boundary is disclosed explicitly; its chi-square region is a conservative joint likelihood screen rather than a claim of regular coordinate-wise asymptotics. R 4.4.3 with `lmomco` 2.5.7 supplies Generalized Logistic and Generalized Normal. Parameter conversions, package versions, seeds, generator commands, and source hashes are recorded in:
 
 - [SciPy family oracles](../../verification/data/distribution-fitting/scipy-family-oracles.json)
 - [lmomco family oracles](../../verification/data/distribution-fitting/lmomco-family-oracles.json)
 - [Verification data manifest](../../verification/data/MANIFEST.md)
 
-All 15 historical family-specific methods and both historical multi-candidate `FittingAnalysis`
-methods passed in their recorded focused executions. Those results verify the individual-family
+All 15 current family-specific methods and both current multi-candidate `FittingAnalysis`
+methods passed their normalized contracts in serial one-result guarded executions on 1 September 2026. Those results verify the individual-family
 external/package claims and the declared common-data ranking, criteria, RMSE-formula, and weighting
 claims; they do not establish a pass result for the new Chunk 6A generated-parent recovery cells.

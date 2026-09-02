@@ -432,7 +432,43 @@ Implementation symbols:
 - `Models/TrendFunctions/GeneralLinearFunction.cs`; and
 - `Analyses/SpatialExtremes/SpatialGEVAnalysis.cs` plus its result DTOs.
 
-The formulas and parameter bounds in this chapter were checked against the current Numerics source checkpoint and the current BestFit source. Fast unit tests cover correlation values and validation, cached multivariate-normal behavior, Gaussian-copula density behavior including the observed-subset evaluation, spatial-error parameter round trips and prediction helpers, `SpatialGEV` construction/likelihood components and the data/prior identities, the row/year criteria helper, the Godambe status contract, result DTOs, serialization, and analysis lifecycle. Focused numerical tests verify the likelihood against the R `mvtnorm` observed-subset and location-error oracle (eight exact cells), the criteria against a guarded MCMC run, and nine spatial recovery cells. Leave-one-site-out cross-validation is checked against independently reduced training models fitted through the production path (three guarded cells). The conditional Gaussian-process predictor is checked against the R conditional-GP oracle; per-draw prediction and the regional posterior are independently recomputed from retained draws; dependent simulation uses a seeded 20,000-row check; and guarded tests exercise the three dispatched uncertainty methods. The geodesic metric is checked against an R haversine oracle and the Cartesian default against planar distances. See [Spatial-Extremes Analysis](../../verification/report/spatial-extremes.md#likelihood-oracle).
+The formulas and parameter bounds in this chapter were checked against the current Numerics source checkpoint and the current BestFit source. Fast unit tests cover correlation values and validation, cached multivariate-normal behavior, Gaussian-copula density behavior including the observed-subset evaluation, spatial-error parameter round trips and prediction helpers, `SpatialGEV` construction/likelihood components and the data/prior identities, the row/year criteria helper, the Godambe status contract, result DTOs, serialization, and analysis lifecycle. Focused numerical tests verify the likelihood against the R `mvtnorm` observed-subset and location-error oracle (eight exact cells), the criteria against a guarded MCMC run, and the current retained spatial recovery evidence. The current independent completeness matrix pins all three correlation laws, a fitted held-out Gaussian-copula fold, held-out covariate regression, draw-specific conditional-GP prediction, fixed-draw regional aggregation, both Godambe factors and their sandwich covariance, temporal whole-row block resampling, and the analytical VIF transformation. Historical production-versus-production fold, prediction, and uncertainty-dispatch cells are retained only as design history; the corresponding state and dispatch behavior remains fast-test owned. The geodesic metric is checked against an R haversine oracle and the Cartesian default against planar distances. See [Spatial-Extremes Analysis](../../verification/report/spatial-extremes.md#likelihood-oracle).
+
+### Current independent correlation and fold matrix
+
+The completeness audit now distinguishes historical same-production-path checks from independent numerical
+targets. Basic Exponential, Powered Exponential, and Spherical correlation functions are pinned on a common
+distance grid that includes zero, the Spherical range boundary, and a beyond-range point. Powered Exponential
+uses smoothness 1.6 so it is not merely the exponential special case. A fixed Cartesian held-out fold freezes
+the independently fitted SciPy optimum of a three-site marginal-GEV plus Gaussian-copula likelihood, then
+compares production Differential Evolution and the held-out quantiles with unregularized observed-information
+uncertainty. A separate two-covariate fold recomputes OLS coefficients, the held-out log-link mean, its physical location,
+and parameter and observation prediction variances by normal equations. Missing-site scoring and fold accounting remain fast contracts. The historical
+production-versus-production cross-validation cells are no longer current Verification declarations.
+
+### Current independent prediction and uncertainty matrix
+
+The fixed-draw conditional-GP cell uses a geodesic coordinate matrix and independently evaluates
+the conditional mean, conditional variance, and prediction for four parameter/error draws at one ungauged target.
+The regional cell independently transforms nine supplied link-space intercept/slope and log-scale draws, with physical shape, at three
+predeclared ordinates, averages each draw across sites, and only then computes the posterior mean
+and equal-tailed bounds. These cells isolate the prediction and aggregation formulas from MCMC and
+from production result aggregation.
+
+The Godambe generator independently differentiates the row/year objective to obtain `H` and row-score `J`;
+the executable test reconstructs the frozen `H^-1 J H^-1` target and compares the production sandwich.
+The bootstrap cell uses MT19937 seed 24681357 to draw five wrapping temporal block replicates from twelve
+complete row/year vectors with block size four; each selected row keeps its entire site vector. Bounded SciPy
+flat-prior MAP fits (optimizer seed 20260837 plus replicate) independently produce the physical-parameter,
+site-quantile, and regional-quantile interval targets checked against the five production default-DE refits.
+The variance-inflation cell applies the exact centre-plus-`sqrt(VIF)` analytical transformation to results
+derived from a fixed 10-by-3 observation matrix rather
+than accepting interval widening alone. Parameter uncertainty, conditional-GP residual uncertainty,
+bootstrap resampling uncertainty, and numerical tolerances are therefore recorded as distinct
+quantities. Generator/runtime versions, seeds, inputs, parameter order, tolerances, and SHA-256 hashes
+are frozen in the verification manifest and Chunk 14 artifact. The `1e-9` absolute tolerance covers
+cross-runtime arithmetic roundoff, `2e-5` relative covers independent Godambe finite-difference cancellation,
+and the bootstrap's 2% relative/0.02 near-zero tolerance is below every frozen fitted-output interval width.
 
 ## References
 

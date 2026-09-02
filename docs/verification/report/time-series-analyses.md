@@ -27,17 +27,30 @@ The ARIMA forecast oracle anchors the first prediction to the final observed tra
 
 | Model and estimator | Generating coordinates | Sample size | Acceptance | Result |
 |---|---|---:|---|---:|
-| AR(1), MLE | $\mu=10$, $\phi=0.6$, $\sigma=5$ | 1,000 | Existing coefficient and scale gates; required Differential Evolution with untouched defaults | Open - attained likelihood is below the parent likelihood and the estimate misses the gates |
+| AR(1), MLE | $\mu=10$, $\phi=0.6$, $\sigma=5$ | 1,000 | Observed-information absolute standardized error no greater than 1.96; BestFit Differential Evolution with minimum population 100, midpoint boundary repair, and unchanged Numerics tolerances | Passed, exactly one final guarded result |
 | AR(1), Bayesian | Same | 1,000 | Central interval, $\widehat R<1.1$, ESS greater than 100 | Passed |
-| MA(1), MLE | $\mu=10$, $\theta=0.6$, $\sigma=5$ | 1,000 | 5% parameter gate | Passed |
+| MA(1), MLE | $\mu=10$, $\theta=0.6$, $\sigma=5$ | 1,000 | Observed-information absolute standardized error no greater than 1.96 | Passed, exactly one guarded result |
 | MA(1), Bayesian | Same | 1,000 | Central interval, $\widehat R<1.1$, ESS greater than 100 | Passed |
-| ARIMA(1,1,1), MLE | log transform; $\phi=0.45$, $\theta=0.25$, $\sigma=0.04$ | 1,000 | Independent conditional optimum and forecast oracle | Passed |
+| ARIMA(1,1,1), MLE | log transform; $\phi=0.45$, $\theta=0.25$, $\sigma=0.04$ | 1,000 | Production/R optima in the joint 95% likelihood-ratio region; truth inside all three independent one-coordinate 95% profiles; same-point likelihood and forecast oracle | Passed |
 | ARIMA(1,1,1), Bayesian | Same | 1,000 | Independent posterior MAP, 95% interval, diagnostics | Passed |
-| ARIMAX(1,1,0), MLE | intercept 0.25, $\beta=1.5$, $\phi=0.4$, $\sigma=0.5$ | 1,000 | Date-indexed independent optimum | Passed |
+| ARIMAX(1,1,0), MLE | intercept 0.25, $\beta=1.5$, $\phi=0.4$, $\sigma=0.5$ | 1,000 | Production/R optima and generating truth inside the independent joint 95% likelihood-ratio region; same-point likelihood and date-indexed forecast oracle | Passed |
 | ARIMAX(1,1,0), Bayesian | Same | 1,000 | Independent posterior MAP, 95% interval, diagnostics | Passed |
 
-An additional matrix covers 29 AR, MA, ARIMA, and ARIMAX configurations with 1,000 observations. Seven MLE cells retained their parameter tolerances. Twenty-two Bayesian cells require every generating value inside the central 90% interval and $\widehat R<1.1$. All 29 passed. The independent eight-cell matrix above remains the primary oracle-backed recovery evidence.
+The historical 29-cell matrix is no longer current evidence. The completeness reconciliation removed its redundant
+Cartesian identities rather than transferring old passes. The retained eight recovery cells remain
+the estimator evidence and all now pass. Four new independent Python cells cover first-order conditional objectives, identified
+higher-order AR/MA responses, pure AR/MA behavior through ARIMA, and a date-discriminating combined
+ARIMAX trend-seasonality-two-covariate interaction.
+
+## Current time-series coverage
+
+| Family | Current distinct coverage | Disposition |
+|---|---|---|
+| AR | MLE/Bayesian AR(1) recovery; independent AR(1) objective/optimum; N=1000 AR(2) recurrence and root response | Passed after the approved DE reliability correction; two new oracle identities pass |
+| MA | MLE/Bayesian MA(1) recovery; independent MA(1) CSS objective/optimum; N=1000 MA(2) recurrence and invertibility response | Passed |
+| ARIMA | Direct independent ARIMA(2,0,0) and ARIMA(0,0,2) conditional cells; mixed ARMA, differencing, log transform, reintegration, conditional likelihood, and MLE/Bayesian ARIMA(1,1,1) recovery | Passed retained and new identities; redundant order grid removed |
+| ARIMAX | One dated level covariate with differenced-scale drift plus a separate ARMA(1,1), conditional/regression intercept, linear trend, monthly seasonality, and two offset-start covariates whose correct date alignment is discriminated from index alignment | Passed retained and new identities; Cartesian variants removed |
 
 ## Conclusion
 
-Transform, likelihood, recurrence, forecast-boundary, uncertainty, generation, and information-criterion calculations passed twelve independent oracle groups. The eight principal recovery cells and 29 supporting recovery cells passed within their declared scope.
+Transform, likelihood, recurrence, forecast-boundary, uncertainty, generation, and information-criterion calculations pass their independent oracle groups. All eight retained estimator-recovery identities are verified. The 29-cell historical support grid is deliberately not counted as current evidence.

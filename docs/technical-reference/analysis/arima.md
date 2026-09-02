@@ -137,6 +137,13 @@ recurrences, observed/zero initialization anchors, `sampleSize<=d`, and exact le
 Focused prediction and generator methods pass their algebraic and exactly 1,000-realization moment
 rules; the verification report records integrated parameter-recovery results.
 
+Chunk 13 retains the independently generated log-ARIMA(1,1,1) MLE/Bayesian recovery cells as the
+minimal mixed-ARMA, differencing, transformation, and raw-boundary evidence. The independent Python
+artifact separately exercises pure ARIMA(2,0,0) and pure ARIMA(0,0,2) behavior, including ARIMA-
+specific conditional initialization, likelihood contribution count, one-step response, and
+stationarity/invertibility diagnostics. The removed legacy ARIMA identities used redundant fixtures
+or unmatched R initialization/objective conventions and no historical pass was transferred.
+
 ## References
 
 <a id="ref-1"></a>[1] G. E. P. Box, G. M. Jenkins, G. C. Reinsel, and G. M. Ljung, *Time Series Analysis: Forecasting and Control*, 5th ed., Wiley, 2015.

@@ -23,7 +23,7 @@ public class AutoRegressiveMLERecoveryTests
     /// <summary>
     /// Tests MLE estimation of AR(1) parameters against known true values from synthetic data.
     /// Uses an independently generated 1,000-observation time series and validates that the optimizer recovers the generating
-    /// parameters within 5% tolerance.
+    /// parameters under the common absolute standardized-error-at-most-1.96 rule.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -31,7 +31,8 @@ public class AutoRegressiveMLERecoveryTests
     /// </para>
     /// <para>
     /// True parameters: μ = 10, φ₁ = 0.6, σ = 5.
-    /// The predeclared 5% large-sample tolerance is retained under the 1,000-step ceiling.
+    /// Coordinate uncertainty is the adaptive observed-information covariance from the unchanged
+    /// production MLE after the required default Differential Evolution fit.
     /// </para>
     /// </remarks>
     [TestMethod]
@@ -51,13 +52,19 @@ public class AutoRegressiveMLERecoveryTests
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "Model fitting failed.");
+        Assert.IsTrue(
+            mle.TryGetCovarianceMatrix(out _),
+            mle.CovarianceDiagnostic ?? "AR MLE observed-information covariance is unavailable.");
+        Assert.AreEqual(
+            CovarianceComputationStatus.Available,
+            mle.CovarianceStatus,
+            "AR recovery requires an unregularized observed-information covariance.");
         TimeSeriesIndependentRecoveryTests.AssertMleRecovery(
             "AR",
             model,
             truth,
             mle.BestParameterSet.Values,
-            coefficientTolerance: 0.05,
-            scaleTolerance: 0.05);
+            mle.GetStandardErrors());
         TimeSeriesIndependentRecoveryTests.AssertArPrediction(model, truth, fixture);
     }
 
@@ -75,7 +82,6 @@ public class AutoRegressiveMLERecoveryTests
     /// Higher-order AR models are more complex but MLE should still achieve 5% precision with large samples.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_AR2()
     {
         var data = SyntheticTimeSeriesData.GetAR2Data(-10, 0.75, -0.5, 2, 10000);
@@ -107,7 +113,6 @@ public class AutoRegressiveMLERecoveryTests
     /// AR(3) models have more parameters but MLE with large samples should still achieve 5% precision.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_AR3()
     {
         var data = SyntheticTimeSeriesData.GetAR3Data(25, 0.75, -0.5, 0.3, 2, 10000);
@@ -150,7 +155,6 @@ public class AutoRegressiveMLERecoveryTests
     /// for differences in optimization algorithms and likelihood formulations.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_AR1_RValidation()
     {
         var data = RealTimeSeriesData.GetAirlinePassengerData_AR1_RTest();
@@ -190,7 +194,6 @@ public class AutoRegressiveMLERecoveryTests
     /// RMC-BestFit can handle AR(5) complexity on real data.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_AR5_RValidation()
     {
         var data = RealTimeSeriesData.GetAirlinePassengerData_AR5_RTest();

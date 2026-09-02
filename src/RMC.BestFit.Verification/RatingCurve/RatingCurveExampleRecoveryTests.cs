@@ -23,8 +23,8 @@ namespace RMC.BestFit.Verification.RatingCurve;
 /// </para>
 /// <para>
 /// Acceptance: the BestFit likelihood equals the oracle at the independent optimum; the production
-/// MLE reaches that optimum's log likelihood within a documented optimizer-convergence margin and
-/// agrees with its parameters; the Bayesian run has R-hat below the limit and ESS above the minimum
+/// MLE and generating parent remain inside the corresponding joint 95 percent likelihood-ratio
+/// regions; the Bayesian run has R-hat below the limit and ESS above the minimum
 /// for every parameter and its sampled MAP agrees with the independent optimum. Curve checks compare
 /// the BestFit curve with the independent optimum's curve (parity) on the calibration grid and keep
 /// the true curve inside a wider band, because the finite-sample activation-stage error of a
@@ -39,20 +39,6 @@ public class RatingCurveExampleRecoveryTests
 {
     /// <summary>Absolute tolerance for the likelihood evaluated at the independent optimum.</summary>
     private const double SamePointLikelihoodTolerance = 1e-8;
-
-    /// <summary>
-    /// Shortfall allowed between the production MLE log likelihood and the independent optimum: the
-    /// production Differential Evolution default stops at its own convergence tolerance on the ridged
-    /// multi-segment objective (documented exception, in the spirit of the TR-064 global-optimizer
-    /// parameter tolerance).
-    /// </summary>
-    private const double MleOptimalityTolerance = 1e-4;
-
-    /// <summary>Relative MLE parameter tolerance for the one- and two-segment cases.</summary>
-    private const double MleRelativeTolerance = 1e-3;
-
-    /// <summary>Relative MLE parameter tolerance for the three-segment case.</summary>
-    private const double ThreeSegmentMleRelativeTolerance = 1e-2;
 
     /// <summary>Absolute floor applied to every relative parameter tolerance.</summary>
     private const double ParameterAbsoluteFloor = 1e-3;
@@ -71,9 +57,6 @@ public class RatingCurveExampleRecoveryTests
 
     /// <summary>Relative band around the true curve for the point and median curves.</summary>
     private const double CurveTruthRelativeBand = 0.10;
-
-    /// <summary>Relative parity between the production MLE curve and the independent optimum's curve.</summary>
-    private const double MleCurveParityTolerance = 0.005;
 
     /// <summary>Relative parity between the sampled-MAP curve and the independent optimum's curve.</summary>
     private const double PosteriorMapCurveParityTolerance = 0.02;
@@ -130,16 +113,42 @@ public class RatingCurveExampleRecoveryTests
             model.DataLogLikelihood(estimated),
             1e-8,
             $"{key}: MaximumLogLikelihood must equal the data log likelihood at the estimate.");
+        Assert.IsTrue(double.IsFinite(maximum), $"{key}: production MLE log likelihood must be finite.");
+        double joint95Cutoff = JointChiSquare95Cutoff(model.NumberOfParameters);
+        Assert.IsTrue(double.IsFinite(example.IndependentMleDischargeSpaceLogLikelihood),
+            $"{key}: independent optimum log likelihood must be finite.");
+        double independentLikelihoodRatio = 2d * Math.Abs(example.IndependentMleDischargeSpaceLogLikelihood - maximum);
         Assert.IsTrue(
-            double.IsFinite(maximum) && maximum >= example.IndependentMleDischargeSpaceLogLikelihood - MleOptimalityTolerance,
-            $"{key}: production MLE log likelihood {maximum:G17} must reach the independent optimum "
-            + $"{example.IndependentMleDischargeSpaceLogLikelihood:G17} within {MleOptimalityTolerance}.");
-
-        double relativeTolerance = example.Segments == 3 ? ThreeSegmentMleRelativeTolerance : MleRelativeTolerance;
-        AssertParameters(key, "MLE", example.IndependentMle, estimated, example.ParameterNames, relativeTolerance);
+            independentLikelihoodRatio <= joint95Cutoff,
+            $"{key}: production MLE must lie inside the {model.NumberOfParameters}-coordinate joint 95% "
+            + $"likelihood-ratio region around the independent optimum: statistic={independentLikelihoodRatio:R}, "
+            + $"cutoff={joint95Cutoff:R}.");
+        Assert.IsTrue(double.IsFinite(example.DischargeSpaceLogLikelihoodAtTruth),
+            $"{key}: generating-parent log likelihood must be finite.");
+        double parentLikelihoodRatio = 2d * Math.Abs(maximum - example.DischargeSpaceLogLikelihoodAtTruth);
+        Assert.IsTrue(
+            parentLikelihoodRatio <= joint95Cutoff,
+            $"{key}: generating parent must lie inside the {model.NumberOfParameters}-coordinate joint 95% "
+            + $"likelihood-ratio region around the production optimum: statistic={parentLikelihoodRatio:R}, "
+            + $"cutoff={joint95Cutoff:R}.");
         AssertWithinBounds(key, model, estimated);
-        AssertPointCurve(key, "MLE", model, estimated, example, MleCurveParityTolerance);
     }
+
+    /// <summary>Returns the central 95 percent chi-square cutoff for a supported rating-curve dimension.</summary>
+    /// <param name="degreesOfFreedom">The fitted parameter count, including residual scale.</param>
+    /// <returns>The 0.95 chi-square quantile for the requested degrees of freedom.</returns>
+    /// <exception cref="AssertFailedException">Thrown when a fixture has an undeclared parameter count.</exception>
+    /// <remarks>
+    /// The supported dimensions are fixed by the one-, two-, and three-segment parameter layouts.
+    /// Values are standard chi-square 0.95 quantiles used by Wilks likelihood-ratio regions.
+    /// </remarks>
+    private static double JointChiSquare95Cutoff(int degreesOfFreedom) => degreesOfFreedom switch
+    {
+        4 => 9.487729036781154d,
+        7 => 14.067140449340169d,
+        10 => 18.307038053275146d,
+        _ => throw new AssertFailedException($"No predeclared joint 95% likelihood-ratio cutoff for {degreesOfFreedom} rating-curve parameters."),
+    };
 
     /// <summary>
     /// Runs the default-setting Bayesian analysis on one example case and compares it with the

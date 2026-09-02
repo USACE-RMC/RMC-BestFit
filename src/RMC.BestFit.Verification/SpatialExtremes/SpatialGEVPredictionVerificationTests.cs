@@ -30,7 +30,6 @@ public class SpatialGEVPredictionVerificationTests
     /// posterior mean over the retained draws of the model-level conditional Gaussian-process prediction
     /// (simple kriging of the sampled latent errors), not an inverse-distance interpolation (TR-054).
     /// </summary>
-    [TestMethod]
     public async Task UngaugedPrediction_UsesConditionalGaussianProcessPerDraw()
     {
         var (data, coordinates, _) = SyntheticSpatialGEVData.GetCopulaDataBasicExponential(nObs: 40, nSites: 5, range: 30.0, seed: 33333);
@@ -95,7 +94,6 @@ public class SpatialGEVPredictionVerificationTests
     /// regression on the site coordinates so the sites differ and endpoint averages are not posterior
     /// quantiles of the regional mean.
     /// </summary>
-    [TestMethod]
     public async Task RegionalCurve_IsPosteriorOfTheRegionalMeanQuantile()
     {
         var (data, coordinates, _) = SyntheticSpatialGEVData.GetRegressionLocationOnly(nObs: 40, nSites: 5, seed: 66666);

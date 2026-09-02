@@ -1,13 +1,14 @@
 {
   "metadata": {
-    "generated": "2026-07-24",
+    "generated": "2026-09-01",
     "generator": "verification/python/distribution-fitting/generate_scipy_oracles.py",
-    "generator_sha256": "7379f1ffac29ca7d7bb41d44383526873857c12a6081c711eae07914a6edc75c",
+    "generator_sha256": "61ac8a1ff1182d44c3b5ff1c7cac40d05b447de532486b9da20fd0d8ed924257",
     "python": "3.12.13",
-    "numpy": "2.4.2",
-    "scipy": "1.17.1",
+    "numpy": "2.3.5",
+    "scipy": "1.18.1",
     "dataset_design": "39 equally spaced nonexceedance probabilities from 0.025 through 0.975",
-    "seed": "deterministic-no-random-sampling"
+    "seed": "deterministic-no-random-sampling",
+    "optimizer_acceptance": "Joint 95% likelihood-ratio region from scipy.stats.chi2; deterministic same-point formula comparisons retain numerical roundoff tolerances."
   },
   "families": {
     "Normal": {
@@ -71,6 +72,13 @@
       "parameter_crosswalk": "Direct location-scale mapping.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -157.66471218999655,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 94.22019300388648,
         "pdf": 0.02650147987974393,
@@ -142,6 +150,13 @@
       "parameter_crosswalk": "mu_log10=ln(scale)/ln(10); sigma_log10=shape/ln(10); SciPy loc is fixed at zero.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -223.2365941097678,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 73.30571545343084,
         "pdf": 0.006728834016469692,
@@ -213,6 +228,13 @@
       "parameter_crosswalk": "Numerics exposes natural-space moments derived from SciPy's log-space shape and scale; SciPy loc is fixed at zero.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -182.17072088147518,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 85.53849560699744,
         "pdf": 0.015830780866882256,
@@ -282,6 +304,13 @@
       "parameter_crosswalk": "Direct location-scale mapping.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -152.9787174908945,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 13.615658321849084,
         "pdf": 0.034777309881923166,
@@ -293,36 +322,36 @@
     "Gamma": {
       "data": [
         10.13921508406413,
-        13.004099455788348,
+        13.004099455788342,
         15.165950318303317,
         16.998641506892064,
         18.63764350035151,
-        20.149706275248846,
+        20.149706275248843,
         21.573508692207398,
-        22.933931446596826,
+        22.93393144659683,
         24.248233060939246,
         25.529113101279094,
-        26.786388395597633,
-        28.02798269388643,
+        26.786388395597648,
+        28.027982693886436,
         29.260548821428998,
         30.489882177817666,
-        31.7212106139731,
+        31.721210613973085,
         32.9594091607386,
         34.20916895168661,
         35.475139292739755,
-        36.76205612913745,
+        36.762056129137456,
         38.07486717312909,
         39.41886271841344,
-        40.79982125416573,
+        40.799821254165735,
         42.224180318307,
-        43.699245797041854,
-        45.233457615714144,
+        43.69924579704184,
+        45.233457615714116,
         46.83673749358086,
-        48.520957003677665,
-        50.30058497165035,
-        52.19360862297667,
-        54.22288528744883,
-        56.418196465180266,
+        48.520957003677644,
+        50.300584971650316,
+        52.193608622976654,
+        54.22288528744886,
+        56.41819646518026,
         58.819499401445015,
         61.48233344823101,
         64.48737199692212,
@@ -353,10 +382,17 @@
       "parameter_crosswalk": "Numerics reverses SciPy's shape/scale order; SciPy loc is fixed at zero.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -169.6834253671329,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 30.489882177817666,
         "pdf": 0.021813340059128987,
-        "cdf": 0.33737170338136446,
+        "cdf": 0.33737170338136463,
         "probability": 0.9,
         "quantile": 68.82146077153072
       }
@@ -426,6 +462,13 @@
       "parameter_crosswalk": "SciPy c equals Numerics kappa and is the negative of the Coles extreme-value shape.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -178.15439330008593,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 3,
+        "maximum_two_log_likelihood_difference": 7.814727903251179,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 99.0311224689384,
         "pdf": 0.020017785308994323,
@@ -499,6 +542,14 @@
       "parameter_crosswalk": "Numerics kappa is the negative of SciPy's common generalized-Pareto shape c.",
       "fit_method": "Seeded scipy.optimize.differential_evolution global MLE with explicit support bounds",
       "maximum_log_likelihood": -106.23554508271626,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 3,
+        "maximum_two_log_likelihood_difference": 7.814727903251179,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions.",
+        "regularity_note": "The free location optimum is on the sample-minimum support boundary. The chi-square reference is retained as a conservative joint likelihood-region screen rather than a coordinate-wise normal approximation."
+      },
       "evaluation": {
         "x": 12.249424676208633,
         "pdf": 0.12494314770160103,
@@ -568,6 +619,13 @@
       "parameter_crosswalk": "Direct location-scale mapping to SciPy gumbel_r.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -174.9831380914763,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 99.02758510841221,
         "pdf": 0.019990107627586996,
@@ -637,6 +695,13 @@
       "parameter_crosswalk": "Direct location-scale mapping.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -179.8947459363885,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 90.71441187390664,
         "pdf": 0.016203631963820523,
@@ -708,6 +773,13 @@
       "parameter_crosswalk": "Numerics reverses SciPy's shape/scale order; SciPy loc is fixed at zero.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -197.3751592432509,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 2,
+        "maximum_two_log_likelihood_difference": 5.991464547107979,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 68.19520681763427,
         "pdf": 0.009500916066144165,
@@ -733,13 +805,13 @@
         88.75950135907414,
         89.87644561649472,
         90.99284446311034,
-        92.11322780120958,
+        92.11322780120959,
         93.2419161977827,
-        94.38315533140558,
-        95.5412357163289,
+        94.38315533140559,
+        95.54123571632891,
         96.72060748850897,
         97.92599866816299,
-        99.16254519984759,
+        99.1625451998476,
         100.43594209770264,
         101.75262733876829,
         103.12001419483543,
@@ -747,8 +819,8 @@
         106.04334496654636,
         107.62229096535917,
         109.29930412054173,
-        111.09427485123379,
-        113.03309176063837,
+        111.0942748512338,
+        113.03309176063838,
         115.15045715151555,
         117.49456602939465,
         120.1353688106812,
@@ -781,10 +853,17 @@
       "parameter_crosswalk": "SciPy pearson3 loc and scale are the mean and standard deviation; reorder skew to the final Numerics coordinate.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -165.56043328906105,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 3,
+        "maximum_two_log_likelihood_difference": 7.814727903251179,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 89.87644561649472,
         "pdf": 0.024457113126763474,
-        "cdf": 0.351704487766142,
+        "cdf": 0.35170448776614205,
         "probability": 0.9,
         "quantile": 124.71944655731471
       }
@@ -796,30 +875,30 @@
         41.701078264865416,
         44.696843502705754,
         47.48727369651024,
-        50.16176095382165,
+        50.16176095382167,
         52.77345551692636,
         55.35799966634652,
-        57.94163040683931,
-        60.54522036204903,
+        57.94163040683934,
+        60.545220362049,
         63.18652318108832,
-        65.88154191542652,
+        65.88154191542657,
         68.6454397535953,
         71.493204172099,
         74.44018069118988,
         77.50254670140662,
         80.69777348244105,
         84.04511450569655,
-        87.56615553222134,
-        91.28546495711701,
-        95.23139103722539,
+        87.5661555322213,
+        91.28546495711691,
+        95.23139103722534,
         99.43706706124635,
         103.94170854746906,
         108.7923225103365,
         114.04600525836818,
         119.77309525438535,
-        126.06159488270383,
+        126.06159488270396,
         133.02352315772058,
-        140.80429434029026,
+        140.8042943402904,
         149.5970037846619,
         159.66499979137132,
         171.379135772133,
@@ -854,10 +933,17 @@
       "parameter_crosswalk": "Numerics=(SciPy loc, SciPy scale, SciPy skew) in log10 space; original-measure density divides by y*ln(10).",
       "fit_method": "SciPy differential_evolution bounded global maximum-likelihood search in log10 space",
       "maximum_log_likelihood": -214.5963745269761,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 3,
+        "maximum_two_log_likelihood_difference": 7.814727903251179,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 71.493204172099,
         "pdf": 0.009443406997344788,
-        "cdf": 0.3484791912558452,
+        "cdf": 0.3484791912558451,
         "probability": 0.9,
         "quantile": 233.8190153286163
       }
@@ -931,6 +1017,13 @@
       "parameter_crosswalk": "SciPy and Numerics use the same h and k signs; constructor ordering differs.",
       "fit_method": "SciPy distribution.fit default maximum-likelihood optimizer",
       "maximum_log_likelihood": -172.8518319209592,
+      "optimizer_acceptance": {
+        "method": "joint-likelihood-ratio",
+        "confidence_level": 0.95,
+        "degrees_of_freedom": 4,
+        "maximum_two_log_likelihood_difference": 9.487729036781154,
+        "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+      },
       "evaluation": {
         "x": 101.093483710009,
         "pdf": 0.018873055188433602,
@@ -1041,6 +1134,13 @@
           13.157628567998076
         ],
         "maximum_log_likelihood": -159.9184801865928,
+        "optimizer_acceptance": {
+          "method": "joint-likelihood-ratio",
+          "confidence_level": 0.95,
+          "degrees_of_freedom": 2,
+          "maximum_two_log_likelihood_difference": 5.991464547107979,
+          "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+        },
         "aic": 323.8369603731856,
         "bic": 327.1640836654449,
         "rmse": 3.10635330619202,
@@ -1052,6 +1152,13 @@
           13.787279541903327
         ],
         "maximum_log_likelihood": -157.66471218999655,
+        "optimizer_acceptance": {
+          "method": "joint-likelihood-ratio",
+          "confidence_level": 0.95,
+          "degrees_of_freedom": 2,
+          "maximum_two_log_likelihood_difference": 5.991464547107979,
+          "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+        },
         "aic": 319.3294243799931,
         "bic": 322.6565476722524,
         "rmse": 1.144404264732813,
@@ -1063,6 +1170,13 @@
           8.047395724940275
         ],
         "maximum_log_likelihood": -158.54966799000317,
+        "optimizer_acceptance": {
+          "method": "joint-likelihood-ratio",
+          "confidence_level": 0.95,
+          "degrees_of_freedom": 2,
+          "maximum_two_log_likelihood_difference": 5.991464547107979,
+          "rationale": "Wilks joint profile-likelihood region; replaces optimizer-coordinate deltas that do not account for covariance or weak directions."
+        },
         "aic": 321.09933598000634,
         "bic": 324.4264592722656,
         "rmse": 1.122088181365137,

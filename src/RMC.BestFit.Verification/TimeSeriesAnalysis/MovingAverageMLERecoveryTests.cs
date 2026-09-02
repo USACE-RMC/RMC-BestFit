@@ -21,7 +21,7 @@ public class MovingAverageMLERecoveryTests
     /// <summary>
     /// Tests MLE estimation of MA(1) parameters against known true values from synthetic data.
     /// Uses an independently generated 1,000-observation time series and validates that the optimizer recovers the generating
-    /// parameters within 5% tolerance.
+    /// parameters under the common absolute standardized-error-at-most-1.96 rule.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -29,7 +29,8 @@ public class MovingAverageMLERecoveryTests
     /// </para>
     /// <para>
     /// True parameters: μ = 10, θ₁ = 0.6, σ = 5.
-    /// The predeclared 5% large-sample tolerance is retained under the 1,000-step ceiling.
+    /// Coordinate uncertainty is the adaptive observed-information covariance from the unchanged
+    /// production MLE after the required default Differential Evolution fit.
     /// </para>
     /// </remarks>
     [TestMethod]
@@ -49,13 +50,19 @@ public class MovingAverageMLERecoveryTests
         mle.Estimate();
 
         Assert.IsTrue(mle.IsEstimated, "Model fitting failed.");
+        Assert.IsTrue(
+            mle.TryGetCovarianceMatrix(out _),
+            mle.CovarianceDiagnostic ?? "MA MLE observed-information covariance is unavailable.");
+        Assert.AreEqual(
+            CovarianceComputationStatus.Available,
+            mle.CovarianceStatus,
+            "MA recovery requires an unregularized observed-information covariance.");
         TimeSeriesIndependentRecoveryTests.AssertMleRecovery(
             "MA",
             model,
             truth,
             mle.BestParameterSet.Values,
-            coefficientTolerance: 0.05,
-            scaleTolerance: 0.05);
+            mle.GetStandardErrors());
         TimeSeriesIndependentRecoveryTests.AssertMaPrediction(model, truth, fixture);
     }
 
@@ -73,7 +80,6 @@ public class MovingAverageMLERecoveryTests
     /// Higher-order MA models are more complex but MLE should still achieve 5% precision with large samples.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_MA2()
     {
         var data = SyntheticTimeSeriesData.GetMA2Data(-10, 0.5, -0.3, 2, 10000);
@@ -108,7 +114,6 @@ public class MovingAverageMLERecoveryTests
     /// MA(3) models have more parameters but MLE with large samples should still achieve 5% precision.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_MA3()
     {
         var data = SyntheticTimeSeriesData.GetMA3Data(25, 0.6, 0.5, 0.7, 2, 10000);
@@ -154,7 +159,6 @@ public class MovingAverageMLERecoveryTests
     /// for differences in optimization algorithms and likelihood formulations.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_MA1_RValidation()
     {
         var data = RealTimeSeriesData.GetAirlinePassengerData_MA1_RTest();
@@ -194,7 +198,6 @@ public class MovingAverageMLERecoveryTests
     /// RMC-BestFit can handle MA(5) complexity on real data.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_MA5_RValidation()
     {
         var data = RealTimeSeriesData.GetAirlinePassengerData_MA5_RTest();

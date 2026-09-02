@@ -500,6 +500,14 @@ def main() -> None:
             "density_self_check_max_relative_error": self_checks,
             "density_self_check_tolerance": SELF_CHECK_TOLERANCE,
             "r_copula_targets": "historical R copula package values embedded in the C# test source (package version not recorded)",
+            "scientific_acceptance": (
+                "same-point likelihood parity is a deterministic parameterization check; production optima "
+                "must lie inside the joint 95% likelihood-ratio region (chi-square 3.841458820694124 "
+                "for the one-coordinate families and 5.991464547107979 for Student-t [rho,nu])"
+            ),
+            "historical_coordinate_tolerances": (
+                "retained in fixture records for provenance only and not used as scientific acceptance"
+            ),
         },
         "fixtures": records,
     }

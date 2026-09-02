@@ -178,13 +178,21 @@ artifact <- list(
     digest_version = as.character(utils::packageVersion("digest")),
     generated_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
     tolerances = list(
-      optimizer_coefficient_absolute = 1e-3,
-      optimizer_scale_absolute = 1e-5,
       log_likelihood_absolute = 1e-5,
       sampled_map_relative = 0.05,
       sampled_map_absolute_floor = 1e-3,
       posterior_log_likelihood_absolute = 1e-5,
       deterministic_recurrence_absolute = 1e-12
+    ),
+    optimizer_acceptance = list(
+      method = "joint-likelihood-ratio",
+      confidence_level = 0.95,
+      degrees_of_freedom = 4L,
+      maximum_two_log_likelihood_difference = unname(stats::qchisq(0.95, df = 4L)),
+      rationale = paste(
+        "Wilks joint profile-likelihood region for optimizer parity and",
+        "generating-point recovery; no coordinate-wise optimizer delta."
+      )
     )
   ),
   fixture = list(

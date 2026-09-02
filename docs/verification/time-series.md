@@ -766,8 +766,9 @@ exact stage/discharge pairs and MAP `[0.5,1.0,1.5,0.05]`. Active Jeffreys scale 
 posterior kernel numerically distinguishable from its data likelihood. A separate flat-prior
 order-zero Gaussian cell derives mean and maximum-likelihood scale from the 32-point training
 prefix, proves the same vector is a local optimum for data and posterior objectives, and runs the
-production MLE and MAP estimators from the model defaults, accepting the analytical optimum and
-MAP/MLE parity at `1E-3`. The four time-series criterion cells compare the production data
+production MLE and MAP estimators from the model defaults, accepting each fit against the known
+Normal information scales and joint two-coordinate 95% likelihood-ratio region. The four
+time-series criterion cells compare the production data
 log-likelihood with an independent iid Gaussian evaluation of the training window at `1E-10`
 before forming the criteria; the rating-curve cell is a routing check on the production
 likelihood. Criterion acceptance is `1E-10` absolute. No sampler, simulation, external package, or
@@ -845,7 +846,7 @@ retained draws. After the prediction-oracle correction, the recovery-source SHA-
 |---|---|---|
 | AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Open under required Differential Evolution/default tolerances; historical burn-in-corrected pass is superseded for the current source |
 | AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 with unchanged production DEMCzs defaults |
-| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 at the unchanged 5% gate |
+| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Retained; source now applies the common observed-information standardized-error rule and requires a new exact run |
 | MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 with unchanged production DEMCzs defaults |
 | ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and boundary-conditioned prediction oracle |
 | ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
@@ -944,7 +945,7 @@ error is `0.0448675484525076`, so the rejected fixed `±0.0375` gate has only ap
 `59.67%` asymptotic coverage for this fixture. R `stats::arima` independently gives theta
 `0.323065157866208` by CSS and `0.32246945930031` by exact ML.
 
-Before another C# result is inspected, the replacement acceptance contract is fixed as: absolute
+At that 20 August checkpoint, before another C# result was inspected, the replacement acceptance contract was fixed as: absolute
 C#-to-R differences no greater than `1E-3` for phi/theta, `1E-5` for sigma, and `1E-5` for total
 data log likelihood; all three generating values inside the independent 95% profile-likelihood
 intervals; deterministic recurrence tolerance `1E-12`; finite data and prior likelihoods; and the
@@ -1051,11 +1052,11 @@ passed with unchanged production DEMCzs defaults in 33.615 s
 
 The committed ARIMA and ARIMAX oracles use R 4.4.3, jsonlite 2.0.0, and digest 0.6.39. The ARIMA
 generator and artifact SHA-256 values are respectively
-`55DFBE0DA4641EBE83682845037FBDEF213119593DE8D7412A3A98315C1AF3D6` and
-`D4CA6E860A3A39A3F08C38973B9543B198050C9AA3EBDC6A61D235EDBD9BB43C`. The ARIMAX generator and
+`C4F5AA5AF561E2EA8B3A2B09EAFA52877FD9D001EAD63F95918074BD19105D18` and
+`E59487A29AB685ABBF1E315558C76B7CAD80D6E4702DEDE456C42B1779AA3580`. The ARIMAX generator and
 artifact SHA-256 values are respectively
-`4F94E214EF00B9A6B5E86DFBEE5C74144E14AF1AB6A44E5274A643606BC3D973` and
-`79E1034654393CD93BF7D29575BA8FDED565C6591C5A42BE4133EB20084EDD59`. The recovery fixture generator
+`BD50F4FC5766D22CDCB3CAFCD8DD9F3ABAB8AAE1CC14D3AF7DE5396431794065` and
+`90E77598A67FFBD76E381FEC3ECE62BE4B9BBA7D70E2042B1A1071BBE68A44FC`. The recovery fixture generator
 and artifact hashes are respectively
 `DD003691DEFDD3BD19FFCAB0C6E00C1B2F1D4404B478DDB342C954E027AE3125` and
 `EFC4C3EEAEF40AB162671F2CCCF34E19CFE19650F46CC8711EDD956C2F39ED9C`.
@@ -1148,6 +1149,53 @@ gaps), so by a second decision the 22 Bayesian cells assert central 90% credible
 through `LegacyRecoveryAssertions` while the 7 MLE cells keep their tolerances. Rerun one method per guarded
 invocation: all 29 cells pass with 1,000 observations (the 22 Bayesian cells under the central 90% credible-interval and R-hat rule, the 7 MLE cells under their unchanged tolerances). The Phase 5 independent matrix remains the oracle-backed recovery evidence. Per-cell
 outcomes: [Phase 7 closeout](test-inventory.md#phase-7-closeout---22-august-2026).
+
+## Chunk 13 completeness reconciliation - 31 August 2026
+
+Chunk 13 replaces the Phase 7 Cartesian recovery inventory as current evidence. The historical
+method bodies remain in source for provenance, but 76 redundant, smoke-only, N=10,000, weakly
+identified, or convention-mismatched methods no longer carry `TestMethod` identities and were
+removed from the catalog. Historical passes were not transferred to any new identity.
+
+The frozen Python oracle uses Python 3.12.13, NumPy 2.3.5, and SciPy 1.18.1. Its generator is
+`verification/python/time-series/generate_chunk13_oracles.py` (SHA-256
+`222f0a9f3d78a640bf4a438307cb6536716f92a778485503fe2e098606f17a27`); the artifact is
+`verification/data/time-series/chunk13-independent-oracle.json` (SHA-256
+`a8d8f30c76229b4ca4ee3749650112e46a9b34c3b31bd007b8c9b9998b1d2d24`). Each generated fixture
+discards 110 initialization steps and retains exactly 1,000 raw observations.
+
+| Scientific cell | Crosswalk and identified response | Contributions | Current evidence |
+|---|---|---:|---|
+| AR(1) / MA(1) conditional objectives | AR intercept is the unconditional mean; positive `phi` multiplies `y[t-1]-mu`. MA uses the production positive-theta recursive CSS convention. Sigma is the Gaussian innovation standard deviation. AR uses the exact conditional-regression/profile optimum; MA uses fixed-seed bounded differential evolution plus 26 bounded local starts. Both invert unregularized observed information. | AR 999; MA 1,000 | Python residual/likelihood, optimum, covariance, and standardized-parent-error oracle passed |
+| Higher-order AR(2) | `[mu, phi1, phi2, sigma]`, seed 20260831; the predeclared recurrence, one-step response, production stationarity diagnostic, and root moduli `2.1320, 2.1320` identify the dynamics. | 998 | Passed |
+| Higher-order MA(2) | `[mu, theta1, theta2, sigma]`, seed 20260832; recursive residual and one-step response, production invertibility diagnostic, and roots `2.9830, 1.1973`. | 1,000 | Passed |
+| Pure AR and pure MA through ARIMA | ARIMA(2,0,0) and ARIMA(0,0,2) reuse the independently generated N=1,000 AR2/MA2 fixtures but evaluate the ARIMA-specific conditional initialization, contribution count, likelihood, one-step response, and stationarity/invertibility diagnostics. | 998 each | New combined independent identity passed |
+| ARIMA(1,1,1), log transform | Existing Phase 5 fixture; no intercept; `[phi, theta, sigma]`; 1,000 retained raw values, 999 differences, 998 conditional terms; final raw observation anchors inverse reintegration. | 998 | MLE production/R optima in joint 95% LR region, truth inside all independent 95% profiles; Bayesian cell retained and verified |
+| ARIMAX(1,1,0), one level covariate | Existing Phase 5 fixture; `[drift, beta, phi, sigma]`; with `d=1`, the first coordinate is an intercept on the differenced model scale (drift), not a raw-level unconditional mean. The covariate matches the raw-response date and is not differenced. | 998 | MLE production/R optima and truth inside joint 95% LR region; Bayesian cell retained and verified |
+| ARIMAX(1,0,1) interaction | `[conditional/regression intercept, trend, seasonal-sin, seasonal-cos, beta1, beta2, phi, theta, sigma]`; monthly period 12; two current level covariates begin one and two months before the response and align by exact raw timestamp; deliberately wrong index alignment changes the oracle likelihood from `-1597.134695090` to `-939039.172443445`; seed 20260833. | 999 | New independent date-discriminating recurrence/likelihood cell passed |
+
+The four current Chunk 13 oracle identities each passed after final review hardening through the
+guarded runner with exactly one TRX result. The retained MA(1) MLE also passed exactly once under
+the normalized observed-information rule. The retained AR(1) MLE initially produced exactly one
+failed boundary result with non-finite/non-positive covariance. The authored-red
+first-order run also contained exactly one result and failed only
+because the artifact had not yet been generated or copied; it is not completion evidence. No
+zero-result run occurred.
+
+The initial Differential Evolution failure for
+`AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` remains diagnostic history. Its
+1,500-evaluation result `[1, 0.8761272668, 5.330319728]` has log likelihood `-3089.265435`, below
+both the parent (`-3013.536326`) and the independently optimized SciPy coordinate
+`[10.1275943147, 0.6107554539, 4.9398090392]` (`-3013.248942419`). Direct conditional regression
+supplies that AR optimum; its observed-information standardized parent errors are `0.318`, `0.429`,
+and `0.545`. The stored failed DE coordinate independently reproduces `-3089.265434969`, within
+`3.1e-8` of the runner report. The generator is valid. The approved resolution did not alter the
+likelihood, bounds, seed, covariance rule, or statistical acceptance. Numerics now repairs an
+infeasible trial halfway from the target coordinate toward the violated bound rather than clamping
+exactly to that bound, without consuming an additional random draw. BestFit MLE/MAP now use
+`max(100,10*k)` DE population members for `k` coordinates while retaining the Numerics convergence
+tolerances. Under that final configuration the exact guarded AR(1) rerun passed 1/1 under
+`20260831-192951-...`.
 
 ---
 

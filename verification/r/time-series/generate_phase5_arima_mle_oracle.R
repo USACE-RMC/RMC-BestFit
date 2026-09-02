@@ -229,13 +229,21 @@ artifact <- list(
     digest_version = as.character(utils::packageVersion("digest")),
     generated_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
     tolerances = list(
-      optimizer_coefficient_absolute = 1e-3,
-      optimizer_scale_absolute = 1e-5,
       log_likelihood_absolute = 1e-5,
       deterministic_recurrence_absolute = 1e-12,
       sampled_map_relative = 0.05,
       sampled_map_absolute_floor = 1e-3,
       posterior_log_likelihood_absolute = 1e-5
+    ),
+    optimizer_acceptance = list(
+      method = "joint-likelihood-ratio",
+      confidence_level = 0.95,
+      degrees_of_freedom = 3L,
+      maximum_two_log_likelihood_difference = unname(stats::qchisq(0.95, df = 3L)),
+      rationale = paste(
+        "Wilks joint profile-likelihood region; coordinate recovery remains",
+        "separately governed by the stored one-dimensional 95% profiles."
+      )
     ),
     profile_confidence_level = 0.95,
     profile_log_likelihood_cutoff = profile_cutoff_delta

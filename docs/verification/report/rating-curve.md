@@ -32,7 +32,13 @@ The publication recovery fixture uses 1,000 observations generated from the same
 | Two controls | `[1, 0.243897, 2.666667, 10, 2.946300, 1.67, 0.05]` | `[1.000989, 0.246160, 2.661335, 9.981416, 2.936743, 1.678032, 0.052240]` | Passed |
 | Three controls | `[1, 0.243897, 2.666667, 10, 2.946300, 1.67, 15, 3.609533, 1.67, 0.05]` | `[1.001032, 0.246300, 2.660905, 9.936705, 2.899111, 1.730227, 15.332091, 3.828382, 1.341175, 0.051935]` | Passed |
 
-MLE acceptance requires same-point likelihood agreement, optimizer optimality, coordinate tolerances, curve parity within 0.5%, and the fitted curve within 10% of the generating curve. Bayesian acceptance requires $\widehat R<1.1$, ESS greater than 100, sampled-MAP parity, and MAP-curve parity within 2%. Central 90% curve-band inclusion is reported for this independent-optimum replication evidence, not asserted as generated-parent recovery.
+MLE acceptance separates deterministic same-point likelihood agreement from scientific uncertainty:
+the production optimum must lie inside the joint 95% likelihood-ratio region around the independent
+optimum, and the generating parent must lie inside the corresponding region around the production
+optimum. The cutoffs use 4, 7, and 10 fitted coordinates for one, two, and three segments. Bayesian
+acceptance is unchanged: $\widehat R<1.1$, ESS greater than 100, sampled-MAP parity, and MAP-curve
+parity within 2%. Its curve-band inclusion is reported for this independent-optimum replication
+evidence, not asserted as repeated-realization coverage.
 
 | Bayesian model | Grid stages containing truth | Grid stages tested | Result |
 |---|---:|---:|---:|

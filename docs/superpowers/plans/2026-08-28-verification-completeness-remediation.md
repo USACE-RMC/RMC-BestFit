@@ -494,10 +494,10 @@ or remediation was begun.
 **Interfaces:**
 - Produces: canonical N=1000 recovery and external parity for `ARAnalysis` and `MAAnalysis`.
 
-- [ ] Preserve exactly 1000 post-burn-in observations in every AR/MA recovery fixture.
-- [ ] Apply central 95% posterior intervals, R-hat below 1.10, ESS at least 100, and the frequentist interval/standardized-error rule.
-- [ ] Document coefficient sign, intercept, and innovation-scale crosswalks for R comparisons.
-- [ ] Run approved exact methods and update the two analysis entries independently.
+- [x] Preserve exactly 1000 post-burn-in observations in every retained AR/MA recovery or independent recurrence fixture.
+- [x] Retain the verified central-95%/diagnostic recovery cells and replace weak higher-order coordinate claims with predeclared recurrence/root response evidence; preserve the initial AR(1) boundary failure as diagnostic history and record its final pass under the separately approved DE reliability configuration.
+- [x] Document coefficient sign, intercept, innovation-scale, conditional-likelihood, and SciPy objective crosswalks.
+- [x] Run the new AR/MA oracle plus both changed retained MLE identities individually and inspect exactly one result in every TRX; MA passed under the normalized observed-information rule, and AR passed in its final rerun after the approved DE boundary-repair and population correction.
 
 ### Chunk 13B: Normalize ARIMA and ARIMAX verification
 
@@ -508,10 +508,10 @@ or remediation was begun.
 **Interfaces:**
 - Produces: canonical N=1000 recovery and external parity for `ARIMAAnalysis` and `ARIMAXAnalysis`.
 
-- [ ] Preserve exactly 1000 post-burn-in observations in every ARIMA/ARIMAX recovery fixture.
-- [ ] Apply central 95% posterior intervals, R-hat below 1.10, ESS at least 100, and the frequentist interval/standardized-error rule.
-- [ ] Document differencing, coefficient sign, intercept/drift, innovation scale, transformed-scale anchoring, and xreg alignment.
-- [ ] Run approved exact methods and update the two analysis entries independently.
+- [x] Preserve exactly 1000 post-burn-in observations in every retained ARIMA/ARIMAX recovery or independent recurrence fixture.
+- [x] Retain the independently crosswalked central-95%/diagnostic recovery cells and remove the redundant legacy Cartesian identities rather than transfer historical bands.
+- [x] Document differencing, coefficient sign, intercept/drift, innovation scale, transformed-scale anchoring, seasonal period, and exact-date level-xreg alignment.
+- [x] Add and run a combined pure-AR/pure-MA ARIMA oracle; make the ARIMAX interaction date-discriminating; run all four source/artifact-affected identities individually and inspect one result in every TRX.
 
 ### Chunk 14A: Complete spatial correlation and cross-validation oracles
 
@@ -523,10 +523,10 @@ or remediation was begun.
 **Interfaces:**
 - Produces: explicit analytical evidence for Basic, Powered Exponential, and Spherical correlations plus independent held-out fold results.
 
-- [ ] Generate independent reduced-fold predictions without calling the production reduction path for expected values.
-- [ ] Add analytical covariance values for all three correlation functions and an external Gaussian-copula comparison where parameterizations overlap.
-- [ ] Predeclare held-out sites, training dimensions, coordinate metric, tolerance, and artifact hashes.
-- [ ] Run fast gates and only authorized exact spatial oracle methods.
+- [x] Generate independent reduced-fold predictions without calling the production reduction path for expected values.
+- [x] Add analytical covariance values for all three correlation functions and an external Gaussian-copula comparison where parameterizations overlap.
+- [x] Predeclare held-out sites, training dimensions, coordinate metric, tolerance, and artifact hashes.
+- [x] Run fast gates and only authorized exact spatial oracle methods.
 
 ### Chunk 14B: Complete spatial prediction and uncertainty oracles
 
@@ -538,10 +538,10 @@ or remediation was begun.
 **Interfaces:**
 - Produces: independent conditional-GP prediction, Godambe H/J covariance, temporal block-bootstrap quantiles, and analytic VIF transformation evidence.
 
-- [ ] Generate independent prediction and uncertainty targets without reusing production aggregation code.
-- [ ] Record package/runtime versions, input data, random seeds, block definition, formulas, tolerance rationale, and SHA-256 hashes.
-- [ ] Keep dispatch and result-state behavior in fast tests from Chunk 4C.
-- [ ] Run only authorized exact spatial oracle methods.
+- [x] Generate independent prediction and uncertainty targets without reusing production aggregation code.
+- [x] Record package/runtime versions, input data, random seeds, block definition, formulas, tolerance rationale, and SHA-256 hashes.
+- [x] Keep dispatch and result-state behavior in fast tests from Chunk 4C.
+- [x] Run only authorized exact spatial oracle methods.
 
 ### Chunk 15: Normalize spatial recovery
 
@@ -914,3 +914,32 @@ At the end of each session, check completed boxes only when code, oracle, artifa
 - **Final catalog:** default validation passes with 514 declarations / 514 execution units and 111 open gaps: 345 verified, 111 open, 56 execution-excluded, and two accepted limitations. JSON Schema validation is true; catalog-validator fixtures pass 22/22.
 - **Final gates:** Core, UI, and App pass 3,375/3,375, 581/581, and 443/443. Verification builds with zero warnings/errors. The first strict XML attempt was blocked by sandbox access to existing Windows SDK/NuGet profile directories; the identical elevated command passes across 936 source files. `git diff --check` and the direct untracked-file whitespace/final-newline scan pass.
 - **Boundary:** no Bulletin 17C confidence-interval coverage method or full Verification suite ran. Chunk 13A implementation/design did not start; the sole later-chunk execution was the AR(1) MLE audit run disclosed above. No file was staged, committed, pushed, reverted, discarded, moved, or renamed.
+
+### 31 August 2026 — Chunk 14A independent spatial oracles complete; proceed to Chunk 14B
+
+- **Coverage design:** the minimal matrix covers all three production correlation families on a shared Cartesian distance grid, including the Spherical support boundary and a Powered Exponential smoothness distinct from one. Independent complete held-out folds cover a fitted exponential Gaussian copula and two-covariate log-link evaluation with executable uncertainty reconstruction. Missing-site status and fold accounting remain fast-owned.
+- **Reconciliation:** the three historical `SpatialGEVCrossValidationVerificationTests` methods compare another production reduced-model path or result accounting, so their `TestMethod` attributes were removed deliberately and no historical pass was transferred. Five new sampler-free identities read the independently generated Chunk 14 artifact.
+- **Exact evidence:** all five Chunk 14A identities passed individually through the guarded runner, and every inspected TRX contains exactly one result. The authored-red missing-artifact run also contains exactly one failed result and is not accepted completion evidence; there were no zero-result runs.
+- **Scoped-review correction:** the first review found that the initial dependent-fold cell exercised latent-error kriging rather than copula-dependent fitting and compared its uncertainty numbers only inside the artifact. That one-result identity was superseded without transferring its pass. The retained replacement independently fits the three-site Gaussian-copula objective in SciPy and checks unchanged production Differential Evolution plus held-out quantiles; the OLS cell now reconstructs coefficients and both uncertainty components in executable test code.
+- **Artifact:** `verification/data/spatial-extremes/chunk14-independent-oracle.json` was generated by Python 3.12.13 / NumPy 2.3.5 / SciPy 1.18.1 from `verification/python/spatial-extremes/generate_chunk14_oracles.py`. After the Chunk 14B fitted-bootstrap review correction, artifact SHA-256 is `899c1e7f378f4a24204cd1e2e7467ca9e3e4e2df6b334ede7fbb83ff0a719c8c`; generator SHA-256 is `dc44c9308f234a88509b5df6e9980cb2968b65ccabdc4e807b9387b98bf6e813`.
+- **Boundary:** no production source or scientific contract changed. No spatial recovery or Bulletin 17C confidence-interval coverage method ran, and the full Verification project did not run. Chunk 14B was the next in-scope unit. During its scoped source audit, one broad optimizer search inadvertently surfaced limited snippets from `SpatialGEVMLERecoveryTests.cs`; the class was not opened directly, edited, or executed, and no Chunk 15 implementation began.
+
+### 31 August 2026 — Chunk 14B independent spatial prediction and uncertainty oracles complete
+
+- **Coverage design:** fixed independently supplied draws isolate geodesic conditional-GP mean, variance, and prediction for four parameter/error draws at one ungauged target and regional posterior aggregation from nine link-space intercept/slope and log-scale draws with physical shape at three ordinates. The generator independently differentiates the complete Godambe sensitivity matrix `H` and row-score variability matrix `J` and forms `H^-1 J H^-1`; the test reconstructs the frozen sandwich and compares production covariance. Five MT19937 temporal whole-row wrapping-block replicates from twelve row/year vectors at block size four are fitted independently by bounded SciPy flat-prior MAP and compared with the production default-DE fitted physical-parameter, site-quantile, and regional-quantile intervals. The VIF target comes from a fixed 10-by-3 observation matrix and pins the exact centre-plus-`sqrt(VIF)` result transformation.
+- **Reconciliation:** the two historical `SpatialGEVPredictionVerificationTests` and three historical `SpatialGEVUncertaintyMethodVerificationTests` declarations were declassified deliberately because they compare production output with another production path or own dispatch, completion, finiteness, widening, and accounting. Those behaviors remain fast-test owned; no historical pass was transferred. Five new current identities use independently frozen inputs and expected values.
+- **Exact evidence:** all five current Chunk 14B identities passed individually through the guarded runner, and every inspected TRX contains exactly one result. No zero-result Chunk 14B run occurred. The final review found that the first bootstrap replacement stopped at row construction and raw-data summaries; that pass was not transferred. The strengthened identity was authored red (missing fitted artifact fields), then exposed a test-only injected-seed lifecycle error, with exactly one failed result in each TRX. After fixing only the test/oracle construction, it passed 1/1 while running all five unchanged production default-DE MAP refits. Because the shared artifact changed, all ten current Chunk 14 identities were rerun individually; every final `141903`-`141932` TRX contains exactly one passing result.
+- **Artifact:** Chunk 14B shares `verification/data/spatial-extremes/chunk14-independent-oracle.json`, generated by Python 3.12.13 / NumPy 2.3.5 / SciPy 1.18.1 from `verification/python/spatial-extremes/generate_chunk14_oracles.py`. Artifact SHA-256 is `899c1e7f378f4a24204cd1e2e7467ca9e3e4e2df6b334ede7fbb83ff0a719c8c`; generator SHA-256 is `dc44c9308f234a88509b5df6e9980cb2968b65ccabdc4e807b9387b98bf6e813`.
+- **Final validation:** nine focused fast owners pass, followed by Core 3,375/3,375, UI 581/581, and App 443/443. The first Core pass exposed one publication-only `Phase 7` label; after removing that internal workflow label, its exact test and the complete Core project pass. Verification compiles without execution at zero warnings/errors. The first strict XML attempt was blocked by sandbox access to existing Windows SDK/NuGet profile directories; the identical elevated gate then exposed one missing `<param>` tag, and passes after that documentation-only correction across 938 source files. Catalog-validator fixtures pass 22/22, JSON Schema validation is true, and default catalog validation passes with 444 declarations / 444 execution units and 27 open gaps: 359 verified, 27 open, 56 execution-excluded, and two accepted limitations.
+- **Review:** the final scoped review first rejected the raw-row bootstrap summary as insufficient independent inference evidence. The corrected method runs all five production MAP refits and compares fitted physical-parameter, site-quantile, and regional-quantile intervals with independently fitted SciPy replicates. Re-review confirmed the scientific blocker and all terminology/tolerance findings resolved; the final catalog-only `executesEstimator` correction required no Verification rerun.
+- **Boundary:** no production source or scientific contract changed. No spatial recovery or Bulletin 17C confidence-interval coverage method ran, and the full Verification project did not run. Work stops after the Chunk 14B reconciliation. A broad optimizer search inadvertently surfaced limited snippets from `SpatialGEVMLERecoveryTests.cs`; no Chunk 15 source was directly opened or changed, no Chunk 15 implementation began, and no spatial recovery method ran.
+
+### 1 September 2026 — Differential Evolution reliability and statistical acceptance reconciliation
+
+- **Approved numerical change:** Numerics Differential Evolution now repairs each infeasible trial coordinate halfway between its target coordinate and the violated bound instead of clamping exactly to the bound; this preserves an interior trial and consumes no extra random draw. BestFit MLE and MAP use `max(100,10*k)` population members for `k` fitted coordinates. The DE convergence rule and absolute/relative tolerances remain unchanged.
+- **AR(1) resolution:** the former `[mu,phi,sigma]=[1,0.8761272668,5.330319728]` boundary result remains failure evidence. Under the final approved configuration, `AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` passed exactly once under `20260831-192951-...` using the existing N=1,000 fixture, seed, bounds, likelihood, covariance, and 95% observed-information rule.
+- **Statistical acceptance:** arbitrary optimizer-coordinate bands were removed from the 15 SciPy/lmomco family cells, all 15 published real-data `UnivariateDistributionMLETests` cells, two `FittingAnalysis` cells, both closed-form Log10-Normal fitting/estimation cells, ARIMA/ARIMAX MLE recovery, all 14 independent copula optima, and the three rating-curve MLE cells. Optimizer comparisons now use joint 95% likelihood-ratio regions; generated-parent coordinates use known covariance, independent profiles, or joint likelihood regions. The three linear coincident-frequency cells now use central-95%/R-hat/ESS recovery for rho and keep response-table discretization error separate. Tight tolerances remain only for deterministic formulas evaluated at common declared coordinates.
+- **Log10-Normal correction:** the former MAP score cutoff was replaced by an independently profiled joint 95% posterior-kernel region. The old MAP/GMM inverse-variance identity was renamed because joint scale reestimation makes fixed-variance inverse weighting a statistical reference rather than an exact coordinate identity; the reference must now lie inside each fitted central 95% interval. All five source-shared identities passed fresh one-result guarded runs under `20260901-115530-...` through `20260901-115544-...`. A one-result `115353` failure exposed and removed one leftover nonstatistical centered-coordinate assertion; no pass was transferred to the renamed method.
+- **Exact evidence:** the 23 distribution/time-series identities affected by the first normalization, the five final Log10-Normal identities, all 15 published real-data MLE identities, all 14 retained independent copula optima, all three rating-curve MLE cells, and all three linear coincident-frequency cells passed in serial one-result guarded runs. Together with the earlier 143-method MLE/MAP audit, all 120 current reconciled identities have exact passing evidence. The one-result Ln-Normal failure that exposed a missing log-space-to-physical parameter crosswalk was discarded; no zero-result run was accepted.
+- **Catalog reconciliation:** three qualitative prior/penalty influence methods, the qualitative Log10-Normal full-curvature materiality method, eight fixed-data `FittingAnalysisTests` methods, and twelve embedded-R `BivariateDistributionMLETests` methods were removed from discovery/catalog. The copula bodies remain only as fixture provenance; the 12 historical coordinate bands are superseded by 14 independent likelihood oracles with joint 95% likelihood-ratio acceptance. One Log10-Normal identity was renamed and received fresh evidence, as did both renamed supported-grid profile methods. Default validation resolves 420 declarations / 420 execution units: 351 verified, 11 open, 56 execution-excluded, and two accepted limitations.
+- **Boundary:** no production likelihood, prior, parameterization, seed, bound, sampler, scientific formula, or persisted/public contract changed. No Bulletin 17C confidence-interval coverage method, full Verification suite, spatial recovery method, or Chunk 15 implementation ran.

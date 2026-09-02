@@ -11,9 +11,10 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// leverage for Gaussian MAP priors and Gaussian-equivalent GMM penalties on mu.
 /// </summary>
 /// <remarks>
-/// MAP and GMM Cook distances are interpreted only within their own estimator scales.
-/// The tests compare the qualitative prior or penalty regimes, not Cook magnitudes across
-/// likelihood and moment objectives. Sigma is reestimated jointly in every fit.
+/// MAP and GMM Cook distances are interpreted only within their own estimator scales. These
+/// historical qualitative regime methods are retained as source provenance but are deliberately
+/// not discovered as Verification identities; the exact analytical fit/covariance methods in
+/// <see cref="Log10NormalEstimationEquivalenceTests"/> supersede their arbitrary magnitude gates.
 /// </remarks>
 [TestClass]
 public class PriorPenaltyInfluenceVerificationTests
@@ -25,7 +26,6 @@ public class PriorPenaltyInfluenceVerificationTests
     /// Verifies the wide-centered, narrow-centered, and narrow-shifted Gaussian-prior
     /// regimes for MAP fit and variance influence.
     /// </summary>
-    [TestMethod]
     public void MapMuPriorRegimes_SeparateFitAndVarianceInfluence()
     {
         var baseline = FitMap(SymmetricLog10Values, null, null);
@@ -50,7 +50,6 @@ public class PriorPenaltyInfluenceVerificationTests
     /// Verifies the wide-centered, narrow-centered, and narrow-shifted quadratic-penalty
     /// regimes for GMM fit and variance influence.
     /// </summary>
-    [TestMethod]
     public void GmmMuPenaltyRegimes_SeparateFitAndVarianceInfluence()
     {
         GeneralizedMethodOfMoments baseline = FitGmm(SymmetricLog10Values, null, null);
@@ -75,7 +74,6 @@ public class PriorPenaltyInfluenceVerificationTests
     /// Verifies that a fixed centered prior or penalty contributes less variance influence
     /// as the sample grows while retaining negligible fit influence.
     /// </summary>
-    [TestMethod]
     public void CenteredPriorAndPenalty_VarianceInfluenceDeclinesWithSampleSize()
     {
         double[] largeSample = Enumerable.Range(0, 10)

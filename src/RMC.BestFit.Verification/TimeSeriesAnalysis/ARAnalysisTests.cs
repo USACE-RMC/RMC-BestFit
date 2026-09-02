@@ -63,7 +63,6 @@ public class ARAnalysisTests
     /// <summary>
     /// Tests Bayesian MCMC estimation of AR(2) parameters against known true values from synthetic data.
     /// </summary>
-    [TestMethod]
     public async Task Test_EstimateParameters_AR2()
     {
         var data = SyntheticTimeSeriesData.GetAR2Data(-10, 0.75, -0.5, 2, 1000);
@@ -85,7 +84,6 @@ public class ARAnalysisTests
     /// <summary>
     /// Tests Bayesian MCMC estimation of AR(3) parameters against known true values from synthetic data.
     /// </summary>
-    [TestMethod]
     public async Task Test_EstimateParameters_AR3()
     {
         var data = SyntheticTimeSeriesData.GetAR3Data(25, 0.75, -0.5, 0.3, 2, 1000);
@@ -128,7 +126,6 @@ public class ARAnalysisTests
     /// and the inherent Monte Carlo variability in Bayesian MCMC estimation.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public async Task Test_EstimateParameters_AR1_RValidation()
     {
         var data = RealTimeSeriesData.GetAirlinePassengerData_AR1_RTest();

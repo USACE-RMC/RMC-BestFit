@@ -3,22 +3,27 @@
     "artifact_id": "TS-PHASE5-ARIMAX-MLE-001",
     "finding": "PHASE5-RECOVERY-ARIMAX-MLE",
     "generator": "verification/r/time-series/generate_phase5_arimax_mle_oracle.R",
-    "generator_sha256": "4f94e214ef00b9a6b5e86dfbee5c74144e14af1ab6a44e5274a643606bc3d973",
+    "generator_sha256": "bd50f4fc5766d22cdcb3cafcd8dd9f3abab8aae1cc14d3af7de5396431794065",
     "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
-    "input_fixture_sha256": "d1a1c4f1b519bf8fce438164fb0e3dcc8669f6704ac7fbee3375d5188661e228",
-    "source_commit": "cd8f6b33c87d4b7247ba480f3312a481aa041775",
+    "input_fixture_sha256": "efc4c3eeaef40ab162671f2cccf34e19cfe19650f46cc8711edd956c2f39ed9c",
+    "source_commit": "503fd9cddce02d40d0bb3206a0db68238528c550",
     "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
     "jsonlite_version": "2.0.0",
     "digest_version": "0.6.39",
-    "generated_utc": "2026-08-20 22:24:05 UTC",
+    "generated_utc": "2026-09-01 17:16:06 UTC",
     "tolerances": {
-      "optimizer_coefficient_absolute": 0.001,
-      "optimizer_scale_absolute": 1e-05,
       "log_likelihood_absolute": 1e-05,
       "sampled_map_relative": 0.05,
       "sampled_map_absolute_floor": 0.001,
       "posterior_log_likelihood_absolute": 1e-05,
       "deterministic_recurrence_absolute": 1e-12
+    },
+    "optimizer_acceptance": {
+      "method": "joint-likelihood-ratio",
+      "confidence_level": 0.95,
+      "degrees_of_freedom": 4,
+      "maximum_two_log_likelihood_difference": 9.48772903678115,
+      "rationale": "Wilks joint profile-likelihood region for optimizer parity and generating-point recovery; no coordinate-wise optimizer delta."
     }
   },
   "fixture": {

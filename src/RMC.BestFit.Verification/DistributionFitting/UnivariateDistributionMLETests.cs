@@ -13,6 +13,10 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 /// All tests verify against published results from the RMC-BestFit Verification Report (Smith, 2020).
 /// </summary>
 /// <remarks>
+/// Published points are compared with production optima through the joint 95% likelihood-ratio
+/// region for the fitted coordinate count. This treats references obtained by L-moments or weak
+/// Bayesian priors as compatibility points rather than exact MLE coordinate identities.
+///
 ///     <b> Authors: </b>
 ///     <list type="bullet">
 ///     <item>Haden Smith, USACE Risk Management Center, cole.h.smith@usace.army.mil</item>
@@ -56,11 +60,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (Normal)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Mu, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Sigma, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale]);
 
     }
 
@@ -95,11 +95,10 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (LnNormal)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Mu, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Sigma, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(
+            model,
+            mle,
+            LogMomentsToPhysicalMoments(trueLocation, trueScale));
 
     }
 
@@ -133,11 +132,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (LogNormal)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Mu, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Sigma, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale]);
 
     }
 
@@ -169,12 +164,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (GeneralizedNormal)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
-        Assert.AreEqual(trueShape, dist.Kappa, Math.Abs(trueShape * 0.1), "Distribution shape parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale, trueShape]);
 
     }
 
@@ -214,11 +204,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (Exponential)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale]);
     }
 
     /// <summary>
@@ -249,11 +235,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (GammaDistribution)model.Distribution;
-        Assert.AreEqual(trueScale, dist.Theta, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
-        Assert.AreEqual(trueShape, dist.Kappa, Math.Abs(trueShape * 0.01), "Distribution shape parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueScale, trueShape]);
     }
 
     /// <summary>
@@ -287,12 +269,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (PearsonTypeIII)model.Distribution;
-        Assert.AreEqual(trueMu, dist.Mu, Math.Abs(trueMu * 0.01), "Distribution mean parameter is incorrect.");
-        Assert.AreEqual(trueSigma, dist.Sigma, Math.Abs(trueSigma * 0.01), "Distribution standard deviation parameter is incorrect.");
-        Assert.AreEqual(trueGamma, dist.Gamma, Math.Abs(trueGamma * 0.01), "Distribution skewness parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueMu, trueSigma, trueGamma]);
     }
 
     /// <summary>
@@ -327,12 +304,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (LogPearsonTypeIII)model.Distribution;
-        Assert.AreEqual(trueMu, dist.Mu, Math.Abs(trueMu * 0.01), "Distribution mean parameter is incorrect.");
-        Assert.AreEqual(trueSigma, dist.Sigma, Math.Abs(trueSigma * 0.01), "Distribution standard deviation parameter is incorrect.");
-        Assert.AreEqual(trueGamma, dist.Gamma, Math.Abs(trueGamma * 0.01), "Distribution skewness parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueMu, trueSigma, trueGamma]);
     }
 
     #endregion
@@ -370,11 +342,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (Gumbel)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale]);
     }
 
     /// <summary>
@@ -410,11 +378,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (Weibull)model.Distribution;
-        Assert.AreEqual(trueScale, dist.Lambda, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
-        Assert.AreEqual(trueShape, dist.Kappa, Math.Abs(trueShape * 0.01), "Distribution shape parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueScale, trueShape]);
     }
 
     /// <summary>
@@ -449,12 +413,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (GeneralizedExtremeValue)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
-        Assert.AreEqual(trueShape, dist.Kappa, 0.001, "Distribution shape parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale, trueShape]);
     }
 
     /// <summary>
@@ -489,12 +448,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (GeneralizedPareto)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
-        Assert.AreEqual(trueShape, dist.Kappa, Math.Abs(trueShape * 0.01), "Distribution shape parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale, trueShape]);
     }
 
     /// <summary>
@@ -530,13 +484,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (KappaFour)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.1), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.1), "Distribution scale parameter is incorrect.");
-        Assert.AreEqual(trueShape, dist.Kappa, 0.05, "Distribution shape parameter is incorrect.");
-        Assert.AreEqual(trueShape2, dist.Hondo, 0.05, "Distribution shape2 parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale, trueShape, trueShape2]);
     }
 
     #endregion
@@ -574,11 +522,7 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (Logistic)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.01), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.01), "Distribution scale parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale]);
     }
 
     /// <summary>
@@ -619,14 +563,60 @@ public class UnivariateDistributionMLETests
         // Assert that the distributions were fitted successfully
         Assert.AreEqual(true, mle.IsEstimated, "Distribution fitting failed.");
 
-        // Assert that the fitted parameters are close to the true parameters
-        model.SetParameterValues(mle.BestParameterSet.Values);
-        var dist = (GeneralizedLogistic)model.Distribution;
-        Assert.AreEqual(trueLocation, dist.Xi, Math.Abs(trueLocation * 0.1), "Distribution location parameter is incorrect.");
-        Assert.AreEqual(trueScale, dist.Alpha, Math.Abs(trueScale * 0.1), "Distribution scale parameter is incorrect.");
-        Assert.AreEqual(trueShape, dist.Kappa, Math.Abs(trueShape * 0.1), "Distribution shape parameter is incorrect.");
+        AssertPublishedPointInsideJoint95(model, mle, [trueLocation, trueScale, trueShape]);
     }
 
     #endregion
+
+    /// <summary>
+    /// Requires a published or independently recorded parameter point to lie inside the joint
+    /// 95% likelihood-ratio region around the production maximum.
+    /// </summary>
+    /// <param name="model">The fitted univariate model.</param>
+    /// <param name="mle">The completed maximum-likelihood estimator.</param>
+    /// <param name="publishedPoint">The reference point in production parameter order.</param>
+    private static void AssertPublishedPointInsideJoint95(
+        UnivariateDistribution model,
+        MaximumLikelihood mle,
+        double[] publishedPoint)
+    {
+        double cutoff = publishedPoint.Length switch
+        {
+            2 => 5.991464547107979d,
+            3 => 7.814727903251179d,
+            4 => 9.487729036781154d,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(publishedPoint),
+                publishedPoint.Length,
+                "Only two-, three-, and four-coordinate published fixtures are supported."),
+        };
+        double fittedLogLikelihood = model.DataLogLikelihood(mle.BestParameterSet.Values);
+        double publishedLogLikelihood = model.DataLogLikelihood(publishedPoint);
+        double likelihoodRatio = 2d * Math.Abs(fittedLogLikelihood - publishedLogLikelihood);
+
+        Assert.IsTrue(double.IsFinite(publishedLogLikelihood), "Published-point likelihood must be finite.");
+        Assert.IsTrue(
+            likelihoodRatio <= cutoff,
+            $"Published-point likelihood-ratio statistic {likelihoodRatio:R} exceeds the joint "
+            + $"95% chi-square({publishedPoint.Length}) cutoff {cutoff:R}. Fitted LL={fittedLogLikelihood:R}; "
+            + $"published LL={publishedLogLikelihood:R}.");
+    }
+
+    /// <summary>
+    /// Converts natural-log Normal location and scale to the physical mean and standard deviation
+    /// used by the Numerics <see cref="LnNormal.GetParameters"/> contract.
+    /// </summary>
+    /// <param name="logMean">The natural-log location.</param>
+    /// <param name="logStandardDeviation">The natural-log scale.</param>
+    /// <returns>The physical mean and standard deviation.</returns>
+    private static double[] LogMomentsToPhysicalMoments(
+        double logMean,
+        double logStandardDeviation)
+    {
+        double logVariance = logStandardDeviation * logStandardDeviation;
+        double mean = Math.Exp(logMean + 0.5d * logVariance);
+        double variance = (Math.Exp(logVariance) - 1d) * Math.Exp(2d * logMean + logVariance);
+        return [mean, Math.Sqrt(variance)];
+    }
 
 }

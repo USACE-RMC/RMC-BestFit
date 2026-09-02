@@ -145,22 +145,22 @@ DEMCzs defaults are asserted before and after sampling) on the 1,000-observation
 with the independent optimum and the generating curve. Acceptance rule as approved and amended on
 21 August 2026:
 
-- MLE cells: data log likelihood at the independent optimum within `1e-8`; the production MLE
-  (default Differential Evolution) reaches the optimum's log likelihood within `1e-4` (documented
-  convergence margin); parameters within `1e-3` relative (one and two segments) or `1e-2` (three
-  segments) with a `1e-3` floor; the estimate lies inside the model bounds; the fitted curve lies within
-  0.5% of the independent optimum's curve and within 10% of the true curve at every grid stage from 2.0.
+- MLE cells: data log likelihood at the independent optimum within `1e-8` as a deterministic
+  parameterization check; the production optimum must lie inside the joint 95% likelihood-ratio
+  region around the independent optimum, and the generating parent must lie inside the corresponding
+  joint 95% region around the production optimum. The cutoffs use 4, 7, and 10 fitted coordinates for
+  one, two, and three segments. The estimate must remain inside the declared model bounds.
 - Bayesian cells: R-hat below 1.1 and ESS above 100 for every parameter; the sampled MAP from
   `MCMCResults` within 5% (one and two segments) or 10% (three segments) of the independent optimum
   with a `1e-3` floor; the sampled-MAP curve within 2% of the optimum's curve and within 10% of the
   true curve; the fraction of grid stages at which the true curve lies inside the 90% posterior band is
   reported, not asserted.
 
-| Exact method | Outcome (21 August 2026) | Wall-clock per guarded invocation |
+| Exact method | Latest outcome | Wall-clock per guarded invocation |
 |---|---|---|
-| `Mle_OneSegment_RecoversExampleCurve` | Passed | 6.4 s |
-| `Mle_TwoSegment_RecoversExampleCurve` | Passed | 6.5 s |
-| `Mle_ThreeSegment_RecoversExampleCurve` | Passed | 15.9 s |
+| `Mle_OneSegment_RecoversExampleCurve` | Passed fresh 1 September 2026 (`20260901-144204-...`) | 1.3 s |
+| `Mle_TwoSegment_RecoversExampleCurve` | Passed fresh 1 September 2026 (`20260901-144208-...`) | 4.0 s |
+| `Mle_ThreeSegment_RecoversExampleCurve` | Passed fresh 1 September 2026 (`20260901-144215-...`) | 9.6 s |
 | `Bayesian_OneSegment_RecoversExampleCurve` | Passed; true curve inside the 90% band at 36 of 36 grid stages | 37.4 s |
 | `Bayesian_TwoSegment_RecoversExampleCurve` | Passed; 36 of 36 | 71.5 s |
 | `Bayesian_ThreeSegment_RecoversExampleCurve` | Passed; 34 of 36 | 122.9 s |

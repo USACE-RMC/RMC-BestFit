@@ -32,7 +32,6 @@ public class ARIMAMLERecoveryTests
     /// pure AR or MA models due to parameter interaction and identification issues.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_ARIMA11()
     {
         var data = SyntheticTimeSeriesData.GetARIMA11Data(10, 0.6, 0.3, 5, 10000);
@@ -63,7 +62,6 @@ public class ARIMAMLERecoveryTests
     /// Higher-order AR components add complexity to estimation.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_ARIMA21()
     {
         var data = SyntheticTimeSeriesData.GetARIMA21Data(10, 0.5, -0.3, 0.3, 5, 10000);
@@ -94,7 +92,6 @@ public class ARIMAMLERecoveryTests
     /// Higher-order MA components add complexity to estimation.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_ARIMA12()
     {
         var data = SyntheticTimeSeriesData.GetARIMA12Data(10, 0.5, 0.3, 0.5, 5, 10000);
@@ -125,7 +122,6 @@ public class ARIMAMLERecoveryTests
     /// This is the most complex ARMA model tested, with both higher-order AR and MA components.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_ARIMA22()
     {
         var data = SyntheticTimeSeriesData.GetARIMA22Data(10, 0.5, -0.3, 0.3, -0.2, 5, 10000);
@@ -155,7 +151,6 @@ public class ARIMAMLERecoveryTests
     /// Pure AR models are easier to estimate than mixed ARMA models, allowing tighter 5% tolerance.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_ARIMA_FitsAR1()
     {
         var data = SyntheticTimeSeriesData.GetARIMA_AR1Data(10, 0.6, 5, 10000);
@@ -185,7 +180,6 @@ public class ARIMAMLERecoveryTests
     /// Pure MA models are easier to estimate than mixed ARMA models, allowing tighter 5% tolerance.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_ARIMA_FitsMA1()
     {
         var data = SyntheticTimeSeriesData.GetARIMA_MA1Data(10, 0.5, 5, 10000);
@@ -228,7 +222,6 @@ public class ARIMAMLERecoveryTests
     /// of mixed ARMA models with parameter interactions.
     /// </para>
     /// </remarks>
-    [TestMethod]
     public void Test_EstimateParameters_ARMA11_RValidation()
     {
         var data = RealTimeSeriesData.GetAirlinePassengerData_ARMA11_RTest();

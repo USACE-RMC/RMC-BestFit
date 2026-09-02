@@ -112,7 +112,7 @@ The tests use three predeclared regimes relative to each estimator's own $SE_L=\
 | Narrow centered | $\tau=0.1SE_L$, $m=\widehat\mu_L$ | No material shift | Approximately 99% contraction |
 | Narrow shifted | $\tau=0.1SE_L$, $m=\widehat\mu_L+2SE_L$ | Material shift toward prior | Large contraction |
 
-Sigma is reestimated in every MAP and GMM fit. Both posterior $\mu$ and posterior $\operatorname{Var}(\mu)$ match equation (ME.6); no fixed-sigma shortcut is used.
+Sigma is reestimated in every MAP and GMM fit. Equation (ME.6) is therefore an independently calculated statistical location reference, not an exact coordinate identity for the joint unknown-scale fit. The current verification requires that reference to lie inside each fitted central 95% interval. Separate analytical score, moment, Hessian, and bread constructions verify the exact joint equations.
 
 ## GMM objective, gradient, and covariance scaling
 
@@ -130,7 +130,7 @@ $$
 Q_{n,P}=\frac12\mathbf g_n^{\mathsf T}\mathbf W\mathbf g_n+P,
 $$
 
-and the supplied gradient exactly matches an independent central difference. For efficient $\mathbf W=\mathbf S^{-1}$ and the default Bulletin 17C Gaussian-information covariance path, the penalty Hessian is included consistently so the sandwich covariance reduces to inverse total precision. The focused equation-(ME.6) result verifies both the point estimate and covariance consequence. No production-code change is required for this scaling convention.
+and the supplied gradient exactly matches an independent central difference. For efficient $\mathbf W=\mathbf S^{-1}$ and the default Bulletin 17C Gaussian-information covariance path, the penalty Hessian is included consistently so the sandwich covariance reduces to inverse total precision. The exact bread construction verifies the covariance consequence; equation (ME.6) supplies a central-95% location reference after accounting for joint scale reestimation. No production-code change is required for this scaling convention.
 
 The corresponding timeless implementation treatment is in [Generalized Method of Moments](../technical-reference/estimation/generalized-method-of-moments.md#gaussian-parameter-penalties).
 
@@ -138,22 +138,25 @@ The corresponding timeless implementation treatment is in [Generalized Method of
 
 | Exact verification method | Independent oracle | Acceptance tolerance | Result |
 |---|---|---|---|
-| `FlatPriorMap_MatchesClosedFormLog10NormalMle` | Equations (ME.1)-(ME.2) and direct likelihood | $10^{-5}$ parameters; $10^{-8}$ likelihood | Passed |
+| `FlatPriorMap_MatchesClosedFormLog10NormalMle` | Equations (ME.1)-(ME.2) and direct likelihood | Known Normal-MLE central 95% coordinate intervals; joint 95% likelihood-ratio region; same-point likelihood $10^{-8}$ | Passed, one-result guarded rerun |
 | `UnpenalizedB17CGmm_MatchesExactSampleMoments` | Equations (ME.1) and (ME.3) | $10^{-5}$ parameters; $10^{-10}$ objective | Passed |
-| `MapMuPriorRegimes_MatchAnalyticalFitAndVarianceInfluence` | Normal score and full analytical Hessian | $2\times10^{-5}$ to $2\times10^{-3}$ scaled | Open - required DE/default run gives flat-prior mu score $-3.6205\times10^{-4}$ versus the $2\times10^{-4}$ gate |
-| `GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence` | Moment equations and analytical GMM bread | $2\times10^{-5}$ to $2\times10^{-3}$ scaled | Passed |
-| `MapAndGmmMuPosterior_MatchesInverseVarianceWeighting` | Equation (ME.6), mean and variance | $10^{-4}$ centered means; shifted mean $0.01SE_L$; variance 0.2%-1.5% | Open - unchanged GMM shifted-prior mean misses its $0.01SE_L$ gate |
+| `MapMuPriorRegimes_MatchAnalyticalFitAndVarianceInfluence` | Independently profiled Normal-plus-prior kernel and full analytical Hessian | Joint 95% likelihood-ratio region; deterministic covariance identity | Passed, one-result guarded rerun |
+| `GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence` | Moment equations, independently solved penalized location, and analytical GMM bread | Absolute standardized location error no greater than 1.96; deterministic same-point moment/bread identities | Passed, one-result guarded rerun |
+| `MapAndGmmMuPosterior_InverseVarianceReferenceInsideCentral95Intervals` | Equation (ME.6) as a finite-sample location reference | Reference inside each fitted central 95% interval | Passed under the new identity; no old pass transferred |
 | `PenalizedObjectiveGradient_MatchesIndependentCentralDifference` | Independently coded central difference | $10^{-8}$ absolute | Passed |
 | `UnpenalizedEstimatingGradient_IsHalfConventionalObjectiveDerivative` | Independently coded central difference and exact factor $1/2$ | $10^{-8}$ absolute | Passed |
 | `Log10NormalObservationInfluence_MatchesRGmmOracle` | R `gmm` 1.9.1 score and bread | $10^{-5}$ absolute | Passed |
 | `VanishingCenteredPenalty_PreservesObservationInfluenceScale` | Objective-scale invariance | $10^{-4}$ absolute for finite wide penalty | Passed |
-| `MapMuPriorRegimes_SeparateFitAndVarianceInfluence` | Gaussian score and generalized variance | Predeclared qualitative separations | Passed |
-| `GmmMuPenaltyRegimes_SeparateFitAndVarianceInfluence` | Gaussian-equivalent penalty score and generalized variance | Predeclared qualitative separations | Passed |
-| `CenteredPriorAndPenalty_VarianceInfluenceDeclinesWithSampleSize` | Information scaling from $n=7$ to $n=70$ | Strict ordering and negligible centered Cook influence | Passed |
-| `MapVarianceInfluence_FullCurvaturePreservesMaterialMagnitudeAndLeadingRanking` | Analytical Log10-Normal observation Hessian | $0.003$ absolute; exact leading-three order | Passed |
 | `MLE_ProfileLikelihood_MatchesRTrueProfile` | R `bbmle` plus closed-form nuisance optimum | $10^{-8}$ parameters/interval; $10^{-10}$ log likelihood | Passed - TR-023 MLE correction |
 | `MAP_ProfileLikelihood_WithFlatPriors_MatchesRTrueProfile` | R `bbmle` plus constant flat-prior shift | $10^{-8}$ parameters/interval; $10^{-10}$ log likelihood | Passed - TR-023 MAP correction |
 | `MAP_ProfileLikelihood_WithInformativePrior_ProfilesFullPosteriorKernel` | Closed-form informative-prior nuisance optimum | $10^{-8}$ parameters; $10^{-10}$ log posterior | Passed - full posterior profiling |
+
+The three historical qualitative `PriorPenaltyInfluenceVerificationTests` methods and
+`MapVarianceInfluence_FullCurvaturePreservesMaterialMagnitudeAndLeadingRanking` are retained as
+source provenance but were removed from Verification discovery and the catalog on 1 September 2026.
+Their arbitrary influence-magnitude or materiality gates were redundant with the stronger
+analytical MAP/GMM fit, covariance, moment, and Hessian identities above; no historical pass was
+transferred.
 | `SampleFromPriors_SoftJointPrior_CurrentlyDrawsIndependentMarginals` | Analytical independent Uniform marginals and coupled-prior density | Predeclared correlation, separation, and density checks | Passed - TR-028 characterized |
 
 Each method was run separately through `scripts/run-verification-test.ps1`; the complete Verification project was not executed. All focused builds used the local Numerics project and .NET 10, with zero build warnings and errors.
@@ -269,7 +272,7 @@ $$
 
 It is not classical hat-matrix leverage and is not expected to sum to $p$. Plot percentages are each component's share of total combined influence. The same definitions are used for observations and prior or penalty components, while the variance calculation remains appropriate to the component size: a first-order trace for one observation and a finite log-determinant change for a prior or penalty that can supply substantial curvature.
 
-For the displaced narrow-prior Log10-Normal fixture, replacing the current observation diagonal-curvature trace with the analytical full Hessian changes every variance-influence value by less than $0.003$ and preserves the three leading observations exactly. This establishes that cross-curvature does not materially alter the scoped ranking; it is not a universal claim for other models.
+For the displaced narrow-prior Log10-Normal fixture, the historical calculation found that replacing the current observation diagonal-curvature trace with the analytical full Hessian changed every variance-influence value by less than $0.003$ and preserved the three leading observations exactly. Because $0.003$ was a qualitative materiality threshold rather than a sampling-based or exact numerical tolerance, that fixture is retained only as design provenance and is not counted as Verification evidence.
 
 ### GMM calibration against R
 

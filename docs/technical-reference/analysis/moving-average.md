@@ -116,6 +116,13 @@ generation transform algebra, and exact seed compatibility. The focused numerica
 independent inverse formulas and 1,000 model-scale Gaussian moment values; the verification report
 records parameter-recovery results.
 
+Chunk 13 fixes the sign convention as $y_t=\mu+\epsilon_t+\sum_j\theta_j\epsilon_{t-j}$,
+with recursively initialized conditional-sum-of-squares residuals and all N observations scored.
+Independent Python/SciPy targets cover the MA(1) objective, fixed-seed bounded global-plus-multistart
+optimum, and unregularized observed information. An N=1,000 MA(2) recurrence also checks its one-step
+conditional response, production invertibility diagnostic, and characteristic roots outside the
+unit circle. The old order grid is not current evidence.
+
 ## References
 
 <a id="ref-1"></a>[1] G. E. P. Box, G. M. Jenkins, G. C. Reinsel, and G. M. Ljung, *Time Series Analysis: Forecasting and Control*, 5th ed., Wiley, 2015.

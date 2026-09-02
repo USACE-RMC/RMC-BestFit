@@ -337,12 +337,59 @@ Behavior changes for users: none for existing projects (Cartesian default); lati
 can select the geodesic metric; `ComputeEffectiveSampleSizeWeights` is obsolete in favor of
 `ComputeCorrelationHeuristicSiteWeights`.
 
+## Verification completeness Chunk 14 independent-oracle reconciliation (31 August 2026)
+
+The historical three cross-validation cells remain useful implementation history, but they compare a full
+production cross-validation run with another production reduced-model fit or assert fold accounting. Their
+`TestMethod` attributes were removed deliberately: reduced-network construction, missing-site status,
+held-out-row removal, result publication, and no-success behavior remain covered by fast tests. No historical
+pass was transferred to a new identity.
+
+The current Chunk 14A matrix is minimal and independently targeted:
+
+| Area | Metric/design | Independent target | Current outcome |
+|---|---|---|---|
+| Basic Exponential | Cartesian; `h={0,5,10,20,30}`, range 20 | `exp(-h/range)` | Passed |
+| Powered Exponential | Cartesian; same grid, range 20, smoothness 1.6 | `exp(-(h/range)^1.6)` | Passed |
+| Spherical | Cartesian; same grid, range 20 | cubic inside support; zero at and beyond range | Passed |
+| Copula held-out fold | 120 row/year vectors at three training sites, one target, exponential Gaussian copula | independent SciPy reduced-fold optimum plus unregularized observed-information held-out quantile bands | Passed fresh (`20260901-144228-...`) |
+| Covariate held-out fold | Four training sites, two covariates, one target row | executable normal-equation OLS link mean, physical log-link value, and distinct parameter/residual variances | Passed |
+| Missing held-out site | No finite response | fast-owned unscored-fold/status contract | Consolidated to fast ownership |
+
+Every retained Chunk 14A method is sampler-free and reads
+`verification/data/spatial-extremes/chunk14-independent-oracle.json`; all five exact guarded runs passed with
+one result in each latest inspected TRX. The artifact uses Python 3.12.13, NumPy 2.3.5, and SciPy 1.18.1 and
+records Cartesian and geodesic metrics, physical parameter order, training dimensions, held-out sites,
+uncertainty sources, fixed draws, seeds, and tolerances. The first review superseded the initial latent-error
+fold identity with the fitted copula fold; its earlier one-result pass was not transferred.
+
+Chunk 14B replaces two same-production posterior recomputations and three estimator/dispatch/accounting
+cells with five sampler-free independent targets. The historical method bodies remain for design provenance,
+but their `TestMethod` attributes and catalog entries were removed; fast tests retain dispatch, validation,
+row-construction, and result-state ownership.
+
+| Area | Fixed design and uncertainty source | Current outcome |
+|---|---|---|
+| Draw-specific ungauged GP | Four fixed parameter/error draws; three geodesic training sites; one target; conditional mean/variance and physical log-link value | Passed |
+| Regional posterior | Nine link-space intercept/slope and log-scale draws with physical shape; three nonexchangeable covariate sites; exceedance probabilities 0.5, 0.1, 0.02; equal-tailed 95% Type-7 summaries | Passed |
+| Godambe | 24 complete row/year blocks; artifact independently differentiates H and row-score J and forms unregularized `H^-1 J H^-1`; executable test reconstructs the frozen sandwich and compares production covariance | Passed |
+| Temporal bootstrap | 12 complete three-site row vectors; wrapping block size 4; MT19937 seed 24681357; five independently fitted bounded SciPy flat-prior MAP replicates (optimizer seed 20260837 plus replicate); production default-DE fitted-output intervals agree within 2% relative/0.02 near zero with 5/5 success | Passed |
+| VIF | Ten complete three-site rows; independently computed Pearson matrix and `1+2*rho-bar`; exact midpoint/half-width site and regional transform | Passed |
+
+All five exact Chunk 14B invocations passed, with exactly one result in every inspected TRX. No end-to-end
+MCMC was used as an independent oracle. The bootstrap target instead fits the five frozen row replicates in
+SciPy and compares production MAP-refit physical-parameter, site-quantile, and regional-quantile intervals.
+Parameter uncertainty, GP residual variance, bootstrap resampling, independent optimization, and numerical
+finite-difference error remain separate in the artifact. The deterministic 1E-9 tolerance covers only
+cross-runtime arithmetic roundoff; the 2E-5 Godambe tolerance covers independent finite-difference cancellation,
+and the 2% fitted-bootstrap tolerance is smaller than every frozen bootstrap interval width.
+
 ## Next steps
 
 Phase 6 is complete for the spatial family. Phase 7 (closeout) disposes TR-084 through TR-090 and
-reconciles the plan, README, and chapter status markers; the regression set for later spatial changes is the
-eight `mvtnorm` oracle cells, the kriging and geodesic oracle cells, the criteria cell, the three
-cross-validation cells, the prediction/regional/simulation cells, the three dispatch cells, and the nine
-recovery cells.
+reconciles the plan, README, and chapter status markers. The current regression set for later spatial changes
+is the eight `mvtnorm` oracle cells; kriging, geodesic, criteria, simulation, and the ten independent Chunk 14
+cells. Historical cross-validation/prediction/dispatch cells are design history, and spatial recovery remains
+separate Chunk 15 scope.
 
 [Verification index](README.md) | [Technical treatment](../technical-reference/spatial/spatial-extremes.md) | [Scientific findings](../technical-reference/review-findings.md#tr-048)

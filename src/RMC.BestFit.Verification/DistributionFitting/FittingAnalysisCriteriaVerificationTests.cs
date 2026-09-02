@@ -75,25 +75,24 @@ public class FittingAnalysisCriteriaVerificationTests
         foreach (FittedDistribution result in analysis.FittedDistributions)
         {
             string name = ResultName(result);
-            double[] expectedParameters = ReadArray(
-                candidates.GetProperty(name).GetProperty("numerics_parameters"));
+            JsonElement expected = candidates.GetProperty(name);
+            double[] expectedParameters = ReadArray(expected.GetProperty("numerics_parameters"));
             double[] actualParameters = result.Distribution!.GetParameters;
+            var model = new UnivariateDistribution(dataFrame, result.Distribution.Type);
+            double expectedMaximumLogLikelihood =
+                expected.GetProperty("maximum_log_likelihood").GetDouble();
 
             Assert.AreEqual(expectedParameters.Length, actualParameters.Length);
-            for (int i = 0; i < expectedParameters.Length; i++)
-            {
-                // Differential evolution converges on objective dispersion, whereas SciPy's local
-                // BFGS-style configuration converges on parameter changes. Nearby parameter vectors
-                // can therefore have effectively identical likelihoods. Allow 1E-4 scaled coordinate
-                // parity while retaining the separate, tighter likelihood comparison below.
-                double tolerance = 1E-4d * Math.Max(1d, Math.Abs(expectedParameters[i]));
-                Assert.AreEqual(
-                    expectedParameters[i],
-                    actualParameters[i],
-                    tolerance,
-                    $"{name} parameter {i} differs from the SciPy common-data MLE; " +
-                    $"all actual parameters=[{string.Join(", ", actualParameters)}].");
-            }
+            AssertCrossLanguageEqual(
+                expectedMaximumLogLikelihood,
+                model.DataLogLikelihood(expectedParameters),
+                $"{name} data log likelihood at the SciPy parameter vector");
+            AssertJointLikelihoodRegion(
+                expected.GetProperty("optimizer_acceptance"),
+                expectedParameters.Length,
+                expectedMaximumLogLikelihood,
+                model.DataLogLikelihood(actualParameters),
+                $"{name} common-data production MLE versus SciPy MLE");
         }
     }
 
@@ -144,11 +143,18 @@ public class FittingAnalysisCriteriaVerificationTests
             string name = ResultName(result);
             JsonElement expected = candidates.GetProperty(name);
             double[] actualParameters = result.Distribution!.GetParameters;
+            double[] expectedParameters = ReadArray(expected.GetProperty("numerics_parameters"));
             var model = new UnivariateDistribution(dataFrame, result.Distribution.Type);
             double logLikelihood = model.DataLogLikelihood(actualParameters);
+            double expectedMaximumLogLikelihood =
+                expected.GetProperty("maximum_log_likelihood").GetDouble();
+            double oraclePointLogLikelihood = model.DataLogLikelihood(expectedParameters);
             int parameterCount = result.Distribution.NumberOfParameters;
             double handAic = -2d * logLikelihood + 2d * parameterCount;
             double handBic = -2d * logLikelihood + parameterCount * Math.Log(values.Length);
+            double oraclePointAic = -2d * oraclePointLogLikelihood + 2d * parameterCount;
+            double oraclePointBic =
+                -2d * oraclePointLogLikelihood + parameterCount * Math.Log(values.Length);
             double handRmse = HandRmse(
                 values,
                 actualPlottingPositions,
@@ -159,11 +165,17 @@ public class FittingAnalysisCriteriaVerificationTests
             Assert.AreEqual(handBic, result.BIC, 1E-10d, $"{name} BIC formula mismatch.");
             Assert.AreEqual(handRmse, result.RMSE, 1E-10d, $"{name} RMSE formula mismatch.");
             AssertCrossLanguageEqual(
-                expected.GetProperty("maximum_log_likelihood").GetDouble(),
+                expectedMaximumLogLikelihood,
+                oraclePointLogLikelihood,
+                $"{name} data log likelihood at the SciPy parameter vector");
+            AssertCrossLanguageEqual(expected.GetProperty("aic").GetDouble(), oraclePointAic, $"{name} AIC at the SciPy parameter vector");
+            AssertCrossLanguageEqual(expected.GetProperty("bic").GetDouble(), oraclePointBic, $"{name} BIC at the SciPy parameter vector");
+            AssertJointLikelihoodRegion(
+                expected.GetProperty("optimizer_acceptance"),
+                parameterCount,
+                expectedMaximumLogLikelihood,
                 logLikelihood,
-                $"{name} maximum log likelihood");
-            AssertCrossLanguageEqual(expected.GetProperty("aic").GetDouble(), result.AIC, $"{name} AIC");
-            AssertCrossLanguageEqual(expected.GetProperty("bic").GetDouble(), result.BIC, $"{name} BIC");
+                $"{name} common-data production MLE versus SciPy MLE");
         }
 
         string[] actualAicRanking = analysis.FittedDistributions
@@ -296,5 +308,32 @@ public class FittingAnalysisCriteriaVerificationTests
     {
         double tolerance = 1E-8d + 1E-7d * Math.Abs(expected);
         Assert.AreEqual(expected, actual, tolerance, $"Cross-language {quantity} differs.");
+    }
+
+    /// <summary>
+    /// Requires two fitted objectives to occupy the same independently declared joint
+    /// likelihood-ratio confidence region.
+    /// </summary>
+    /// <param name="acceptance">Artifact metadata defining the confidence level and cutoff.</param>
+    /// <param name="parameterCount">Number of independently fitted physical coordinates.</param>
+    /// <param name="referenceLogLikelihood">External-package maximized log likelihood.</param>
+    /// <param name="candidateLogLikelihood">Production maximized log likelihood.</param>
+    /// <param name="quantity">Comparison name for assertion output.</param>
+    private static void AssertJointLikelihoodRegion(
+        JsonElement acceptance,
+        int parameterCount,
+        double referenceLogLikelihood,
+        double candidateLogLikelihood,
+        string quantity)
+    {
+        Assert.AreEqual("joint-likelihood-ratio", acceptance.GetProperty("method").GetString());
+        Assert.AreEqual(0.95d, acceptance.GetProperty("confidence_level").GetDouble(), 0d);
+        Assert.AreEqual(parameterCount, acceptance.GetProperty("degrees_of_freedom").GetInt32());
+        double maximumStatistic = acceptance.GetProperty("maximum_two_log_likelihood_difference").GetDouble();
+        double statistic = 2d * Math.Abs(referenceLogLikelihood - candidateLogLikelihood);
+        Assert.IsTrue(
+            double.IsFinite(statistic) && statistic <= maximumStatistic,
+            $"{quantity}: 2*|delta log L|={statistic:G17} exceeds the independent " +
+            $"95% chi-square({parameterCount}) cutoff {maximumStatistic:G17}.");
     }
 }

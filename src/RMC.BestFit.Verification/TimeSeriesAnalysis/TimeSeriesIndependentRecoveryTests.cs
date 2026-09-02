@@ -5,6 +5,7 @@ using Numerics.Data.Statistics;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using RMC.BestFit.Verification.Recovery;
 using NumericTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
@@ -266,25 +267,23 @@ public class TimeSeriesIndependentRecoveryTests
     /// <param name="model">The fitted model.</param>
     /// <param name="truth">The generating parameters.</param>
     /// <param name="estimated">The fitted parameters.</param>
-    /// <param name="coefficientTolerance">Relative tolerance for non-scale parameters.</param>
-    /// <param name="scaleTolerance">Relative tolerance for the final scale parameter.</param>
+    /// <param name="standardErrors">Observed-information standard errors in fitted coordinate order.</param>
     internal static void AssertMleRecovery(
         string label,
         ModelBase model,
         double[] truth,
         double[] estimated,
-        double coefficientTolerance,
-        double scaleTolerance)
+        double[] standardErrors)
     {
         Assert.AreEqual(truth.Length, estimated.Length, $"{label} parameter count.");
+        Assert.AreEqual(truth.Length, standardErrors.Length, $"{label} standard-error count.");
         for (int index = 0; index < truth.Length; index++)
         {
-            double relativeTolerance = index == truth.Length - 1 ? scaleTolerance : coefficientTolerance;
-            Assert.AreEqual(
-                truth[index],
+            RecoveryAcceptance.AssertFrequentistStandardizedError(
+                $"{label} MLE {model.Parameters[index].Name}",
                 estimated[index],
-                Math.Abs(truth[index]) * relativeTolerance,
-                $"{label} MLE parameter {model.Parameters[index].Name}.");
+                truth[index],
+                standardErrors[index]);
         }
         double recoveredLogLikelihood = model.DataLogLikelihood(estimated);
         double truthLogLikelihood = model.DataLogLikelihood(truth);
@@ -313,11 +312,7 @@ public class TimeSeriesIndependentRecoveryTests
         Assert.AreEqual(0.95, metadata.GetProperty("profile_confidence_level").GetDouble(), 0.0);
 
         JsonElement tolerances = metadata.GetProperty("tolerances");
-        double coefficientTolerance = tolerances.GetProperty("optimizer_coefficient_absolute").GetDouble();
-        double scaleTolerance = tolerances.GetProperty("optimizer_scale_absolute").GetDouble();
         double likelihoodTolerance = tolerances.GetProperty("log_likelihood_absolute").GetDouble();
-        Assert.AreEqual(1E-3, coefficientTolerance, 0.0, "Predeclared coefficient tolerance.");
-        Assert.AreEqual(1E-5, scaleTolerance, 0.0, "Predeclared scale tolerance.");
         Assert.AreEqual(1E-5, likelihoodTolerance, 0.0, "Predeclared likelihood tolerance.");
         Assert.AreEqual(
             1E-12,
@@ -354,24 +349,22 @@ public class TimeSeriesIndependentRecoveryTests
             conditionalMle.GetProperty("sigma").GetDouble(),
         ];
         Assert.AreEqual(expected.Length, estimated.Length, "ARIMA parameter count.");
-        for (int index = 0; index < expected.Length; index++)
-        {
-            double tolerance = index == expected.Length - 1 ? scaleTolerance : coefficientTolerance;
-            Assert.AreEqual(
-                expected[index],
-                estimated[index],
-                tolerance,
-                $"ARIMA MLE parameter {model.Parameters[index].Name} versus independent R optimum.");
-        }
 
         // Formula parity must evaluate both implementations at the same parameter vector.
-        // Optimizer recovery is already checked independently by the parameter comparisons above.
+        // Optimizer recovery is checked separately by the joint likelihood-ratio region.
         double oraclePointDataLogLikelihood = model.DataLogLikelihood(expected);
         Assert.AreEqual(
             conditionalMle.GetProperty("data_log_likelihood").GetDouble(),
             oraclePointDataLogLikelihood,
             likelihoodTolerance,
             "ARIMA data log likelihood at the independent R parameter vector.");
+        double estimatedDataLogLikelihood = model.DataLogLikelihood(estimated);
+        AssertJointLikelihoodRegion(
+            metadata.GetProperty("optimizer_acceptance"),
+            expected.Length,
+            oraclePointDataLogLikelihood,
+            estimatedDataLogLikelihood,
+            "ARIMA production MLE versus independent R MLE");
 
         JsonElement profileIntervals = oracle.GetProperty("profile_likelihood_95");
         string[] parameterKeys = ["phi", "theta", "sigma"];
@@ -386,7 +379,6 @@ public class TimeSeriesIndependentRecoveryTests
                 $"[{lower:G17}, {upper:G17}].");
         }
 
-        double estimatedDataLogLikelihood = model.DataLogLikelihood(estimated);
         double truthDataLogLikelihood = model.DataLogLikelihood(truth);
         Assert.IsTrue(double.IsFinite(oraclePointDataLogLikelihood), "ARIMA oracle-point data likelihood.");
         Assert.IsTrue(
@@ -457,12 +449,9 @@ public class TimeSeriesIndependentRecoveryTests
         double[] estimated,
         JsonElement oracle)
     {
-        JsonElement tolerances = oracle.GetProperty("metadata").GetProperty("tolerances");
-        double coefficientTolerance = tolerances.GetProperty("optimizer_coefficient_absolute").GetDouble();
-        double scaleTolerance = tolerances.GetProperty("optimizer_scale_absolute").GetDouble();
+        JsonElement metadata = oracle.GetProperty("metadata");
+        JsonElement tolerances = metadata.GetProperty("tolerances");
         double likelihoodTolerance = tolerances.GetProperty("log_likelihood_absolute").GetDouble();
-        Assert.AreEqual(1E-3, coefficientTolerance, 0.0, "ARIMAX coefficient tolerance.");
-        Assert.AreEqual(1E-5, scaleTolerance, 0.0, "ARIMAX scale tolerance.");
 
         JsonElement conditionalMle = oracle.GetProperty("conditional_mle");
         double[] expected =
@@ -479,31 +468,85 @@ public class TimeSeriesIndependentRecoveryTests
             likelihoodTolerance,
             "ARIMAX data likelihood at the independent conditional optimum.");
 
-        var failures = new List<string>();
-        for (int index = 0; index < expected.Length; index++)
-        {
-            double tolerance = index == expected.Length - 1 ? scaleTolerance : coefficientTolerance;
-            if (Math.Abs(expected[index] - estimated[index]) > tolerance)
-            {
-                failures.Add(
-                    $"{model.Parameters[index].Name}: expected {expected[index]:G17}, " +
-                    $"actual {estimated[index]:G17}, tolerance {tolerance:G17}");
-            }
-        }
-
-        if (failures.Count > 0)
-        {
-            Assert.Fail(
-                "ARIMAX C# optimizer differs from the independent conditional optimum. " +
-                string.Join("; ", failures));
-        }
-
         double arimaxRecoveredLogLikelihood = model.DataLogLikelihood(estimated);
         double arimaxOracleLogLikelihood = model.DataLogLikelihood(expected);
-        Assert.IsTrue(
-            double.IsFinite(arimaxRecoveredLogLikelihood) && arimaxRecoveredLogLikelihood >= arimaxOracleLogLikelihood - likelihoodTolerance,
-            $"ARIMAX recovered likelihood {arimaxRecoveredLogLikelihood:G17} must reach the independent optimum likelihood {arimaxOracleLogLikelihood:G17} within {likelihoodTolerance:G3}.");
+        JsonElement optimizerAcceptance = metadata.GetProperty("optimizer_acceptance");
+        AssertJointLikelihoodRegion(
+            optimizerAcceptance,
+            expected.Length,
+            arimaxOracleLogLikelihood,
+            arimaxRecoveredLogLikelihood,
+            "ARIMAX production MLE versus independent R MLE");
+
+        JsonElement samePointTruth = oracle.GetProperty("same_point_truth");
+        double[] truth =
+        [
+            samePointTruth.GetProperty("intercept").GetDouble(),
+            samePointTruth.GetProperty("beta").GetDouble(),
+            samePointTruth.GetProperty("phi").GetDouble(),
+            samePointTruth.GetProperty("sigma").GetDouble(),
+        ];
+        AssertInsideReferenceLikelihoodRegion(
+            optimizerAcceptance,
+            expected.Length,
+            arimaxOracleLogLikelihood,
+            model.DataLogLikelihood(truth),
+            "ARIMAX generating truth versus independent R MLE");
         Assert.IsTrue(double.IsFinite(model.PriorLogLikelihood(estimated)), "ARIMAX recovered prior.");
+    }
+
+    /// <summary>
+    /// Requires two fitted objectives to occupy the same independently declared joint
+    /// likelihood-ratio confidence region.
+    /// </summary>
+    /// <param name="acceptance">Artifact metadata defining the confidence level and cutoff.</param>
+    /// <param name="parameterCount">Number of fitted coordinates.</param>
+    /// <param name="referenceLogLikelihood">Independent maximized log likelihood.</param>
+    /// <param name="candidateLogLikelihood">Production maximized log likelihood.</param>
+    /// <param name="quantity">Comparison name for assertion output.</param>
+    private static void AssertJointLikelihoodRegion(
+        JsonElement acceptance,
+        int parameterCount,
+        double referenceLogLikelihood,
+        double candidateLogLikelihood,
+        string quantity)
+    {
+        Assert.AreEqual("joint-likelihood-ratio", acceptance.GetProperty("method").GetString());
+        Assert.AreEqual(0.95d, acceptance.GetProperty("confidence_level").GetDouble(), 0d);
+        Assert.AreEqual(parameterCount, acceptance.GetProperty("degrees_of_freedom").GetInt32());
+        double maximumStatistic = acceptance.GetProperty("maximum_two_log_likelihood_difference").GetDouble();
+        double statistic = 2d * Math.Abs(referenceLogLikelihood - candidateLogLikelihood);
+        Assert.IsTrue(
+            double.IsFinite(statistic) && statistic <= maximumStatistic,
+            $"{quantity}: 2*|delta log L|={statistic:G17} exceeds the independent " +
+            $"95% chi-square({parameterCount}) cutoff {maximumStatistic:G17}.");
+    }
+
+    /// <summary>
+    /// Requires a generating point to remain inside the independently declared likelihood-ratio
+    /// confidence region about a reference maximum.
+    /// </summary>
+    /// <param name="acceptance">Artifact metadata defining the confidence level and cutoff.</param>
+    /// <param name="parameterCount">Number of fitted coordinates.</param>
+    /// <param name="referenceLogLikelihood">Independent maximized log likelihood.</param>
+    /// <param name="candidateLogLikelihood">Generating-point log likelihood.</param>
+    /// <param name="quantity">Comparison name for assertion output.</param>
+    private static void AssertInsideReferenceLikelihoodRegion(
+        JsonElement acceptance,
+        int parameterCount,
+        double referenceLogLikelihood,
+        double candidateLogLikelihood,
+        string quantity)
+    {
+        Assert.AreEqual("joint-likelihood-ratio", acceptance.GetProperty("method").GetString());
+        Assert.AreEqual(0.95d, acceptance.GetProperty("confidence_level").GetDouble(), 0d);
+        Assert.AreEqual(parameterCount, acceptance.GetProperty("degrees_of_freedom").GetInt32());
+        double maximumStatistic = acceptance.GetProperty("maximum_two_log_likelihood_difference").GetDouble();
+        double statistic = 2d * (referenceLogLikelihood - candidateLogLikelihood);
+        Assert.IsTrue(
+            double.IsFinite(statistic) && statistic >= 0d && statistic <= maximumStatistic,
+            $"{quantity}: 2*delta log L={statistic:G17} is outside [0, {maximumStatistic:G17}], " +
+            $"the independent 95% chi-square({parameterCount}) likelihood-ratio region.");
     }
 
     /// <summary>

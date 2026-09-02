@@ -28,7 +28,10 @@ The family tests use deterministic data committed with the report. Each test com
 | Pearson Type III | SciPy | Parameters, likelihood, CDF, quantiles | Passed |
 | Weibull | SciPy | Parameters, likelihood, CDF, quantiles | Passed |
 
-The acceptance tolerances are stored with each oracle. Optimizer coordinates generally use scaled tolerances because BestFit differential evolution and external local optimizers stop by different criteria. Same-point likelihood, CDF, and quantile comparisons retain tighter absolute tolerances.
+The acceptance rules are stored with each oracle. External optimizer points and the 15 published
+real-data reference points are evaluated through joint 95% likelihood-ratio regions with
+chi-square degrees of freedom equal to the fitted coordinate count. Same-point likelihood, CDF,
+and quantile comparisons retain only tight numerical round-off tolerances.
 
 ### Log10-Normal closed-form test
 
@@ -40,20 +43,19 @@ The original-scale likelihood includes $-\sum_i\log(y_i\ln 10)$. The analytical 
 
 | Quantity | Independent value | BestFit acceptance | Result |
 |---|---:|---:|---:|
-| $\widehat\mu$ | 2.0000000000 | absolute error at most `1e-5` | Passed |
-| $\widehat\sigma$ | 0.6000000000 | absolute error at most `1e-5` | Passed |
-| Log likelihood | -44.431208784723104 | absolute error at most `1e-8` | Passed |
+| $\widehat\mu$ | 2.0000000000 | absolute standardized error at most 1.96 using $\widehat\sigma/\sqrt{N}$ | Passed |
+| $\widehat\sigma$ | 0.6000000000 | absolute standardized error at most 1.96 using $\widehat\sigma/\sqrt{2N}$ | Passed |
+| Joint fitted point | analytical MLE | two-coordinate 95% likelihood-ratio statistic at most 5.991464547107979 | Passed |
+| Log likelihood at the analytical point | -44.431208784723104 | absolute error at most `1e-8` | Passed |
 | Median CDF | 0.5 | absolute error at most `1e-12` | Passed |
 | 0.9 quantile | 587.3959385303014 | absolute error at most `1e-9` | Passed |
 
 ### Common-data fitting test
 
-Gumbel, Normal, and Logistic were fitted to the same deterministic sample by BestFit and SciPy. The optimum coordinates and information criteria were compared, and the fitted ranking had to agree exactly.
-
-| Gumbel coordinate | SciPy optimum | BestFit | Relative error | Limit | Result |
-|---|---:|---:|---:|---:|---:|
-| Location | 93.11234799935337 | 93.11293212949110 | `6.27e-6` | `1e-4` | Passed |
-| Scale | 13.157628567998076 | 13.157823249599968 | `1.48e-5` | `1e-4` | Passed |
+Gumbel, Normal, and Logistic were fitted to the same deterministic sample by BestFit and SciPy.
+For each family, the two fitted optima must occupy the same two-coordinate joint 95%
+likelihood-ratio region; no fixed coordinate-percentage tolerance is used. The fitted AIC and
+RMSE rankings must agree exactly.
 
 Maximum log likelihood, AIC, and BIC agreed under `1e-8` absolute plus `1e-7` relative tolerance. The RMSE equation and inverse-RMSE weights were independently recomputed from BestFit's fitted coordinates at `1e-10` and `1e-12`, respectively.
 

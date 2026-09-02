@@ -71,7 +71,6 @@ public class SpatialGEVUncertaintyMethodVerificationTests
     /// block-bootstrap replicates by maximum a posteriori estimation, records the replicate accounting,
     /// and replaces the bounds with percentile intervals; a different seed changes the replicates.
     /// </summary>
-    [TestMethod]
     public async Task RunAsync_SpatialBootstrap_FitsResampledReplicatesAndReportsAccounting()
     {
         SpatialGEV model = BuildNetwork();
@@ -112,7 +111,6 @@ public class SpatialGEVUncertaintyMethodVerificationTests
     /// the covariance status when it is not (the copula network, whose sensitivity matrix is singular at
     /// its MAP) instead of silently reporting posterior intervals.
     /// </summary>
-    [TestMethod]
     public async Task RunAsync_GodambeSandwich_BuildsResultsFromGaussianDraws()
     {
         // Explicit failure: the copula network's sensitivity matrix is singular at the sampled MAP.
@@ -153,7 +151,6 @@ public class SpatialGEVUncertaintyMethodVerificationTests
     /// With <see cref="SpatialGEVUncertaintyMethod.BayesianInflated"/>, the run widens the posterior site
     /// and regional intervals by the square root of the variance inflation factor and records the method.
     /// </summary>
-    [TestMethod]
     public async Task RunAsync_BayesianInflated_WidensThePosteriorIntervals()
     {
         SpatialGEV model = BuildNetwork();

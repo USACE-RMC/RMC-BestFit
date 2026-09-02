@@ -17,19 +17,24 @@
     "log_likelihood": "-n*log(sigma*sqrt(2*pi))-SSE/(2*sigma^2)-sum(log(y*ln(10)))"
   },
   "tolerances": {
-    "optimizer_parameters_absolute": 1E-5,
-    "optimizer_log_likelihood_absolute": 1E-8,
+    "coordinate_acceptance": "Analytical Normal-MLE covariance with central 95% multiplier",
+    "central_95_normal_multiplier": 1.959963984540054,
+    "mu_standard_error": "sigma/sqrt(n)",
+    "sigma_standard_error": "sigma/sqrt(2*n)",
+    "optimizer_joint_likelihood_ratio_confidence": 0.95,
+    "optimizer_joint_likelihood_ratio_degrees_of_freedom": 2,
+    "optimizer_maximum_two_log_likelihood_difference": 5.991464547107979,
     "analytical_log_likelihood_absolute": 1E-10,
     "cdf_absolute": 1E-12,
     "analytical_quantile_absolute": 1E-9,
-    "fitted_quantile_relative": 5E-5
+    "fitted_quantile_acceptance": "Central 95% delta-method interval using independent Normal-MLE covariance"
   },
   "provenance": {
     "bestfit_base_commit": "25f7b3c32f8a27b4a6877342fa777c05313aef8e",
     "numerics_commit": "bc11849c762d7b87d06aa64a3f3706ecf118fc13",
-    "test_source_sha256": "a51d45c76ea7abf16386754c78f4e1645aa9c39a581d5a902a0e486e953a4309",
+    "test_source_sha256": "cf981a023b3409e26fdf3e580992ee899539747e44c585b7c00dc076154b89c1",
     "test": "RMC.BestFit.Verification.DistributionFitting.Log10NormalFittingVerificationTests.ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle",
-    "trx": "TestResults/VerificationFocused/20260724-142251-RMC_BestFit_Verification_DistributionFitting_Log10NormalFittingVerificationTests_ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle/haden_HADEN_2026-07-24_20_22_57.860.trx"
+    "trx": "TestResults/VerificationFocused/20260901-111953-RMC_BestFit_Verification_DistributionFitting_Log10NormalFittingVerificationTests_ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle/haden_HADEN_2026-09-01_17_19_56.167.trx"
   },
   "outcome": {
     "passed": 1,
