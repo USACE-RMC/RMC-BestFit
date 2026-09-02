@@ -470,6 +470,44 @@ are frozen in the verification manifest and Chunk 14 artifact. The `1e-9` absolu
 cross-runtime arithmetic roundoff, `2e-5` relative covers independent Godambe finite-difference cancellation,
 and the bootstrap's 2% relative/0.02 near-zero tolerance is below every frozen fitted-output interval width.
 
+### Current N=1000 recovery matrix
+
+The approved Chunk 15 recovery N is the site-by-time cross-product: ten sites with 100 observations each,
+for total scalar N=1,000. Each retained fixture contains 100 complete ten-site row/year vectors, so the
+likelihood contribution count is 100 multivariate rows. Posterior draws, warmup iterations, and numerical
+quadrature points are not counted. All recovery coordinates use the Cartesian distance metric.
+The ten-site independent grid is the partial 25 km grid `(0,0)`, `(25,0)`, `(50,0)`, `(75,0)`,
+`(0,25)`, `(25,25)`, `(50,25)`, `(75,25)`, `(0,50)`, `(25,50)`. Copula and regression fixtures use
+the same ten-site partial-grid pattern at spacing `100/3`.
+
+The homogeneous flat order is `[log(location), log(scale), shape]`. Copula models prepend physical range,
+and the location-regression order is `[beta0, betaX, betaY, log(scale), shape]` with X and Y taken from the
+coordinate matrix. An independent row contributes one marginal GEV density per site; a dependent row also
+contributes one full-network Gaussian-copula density. All fitted coordinates in the retained designs are
+monitored as identified scalar parameters. No retained model contains a latent spatial-error field, so no weak
+latent coordinate is substituted by a site-quantile or regional-curve interval and no conditional-GP residual
+uncertainty is mixed with parameter uncertainty.
+
+The two MLE cells use unchanged default Differential Evolution and require an unregularized
+observed-information covariance. Each parent coordinate must have absolute standardized error no greater than
+1.96; singular or regularized information is explicit failure. The six Bayesian cells retain DEMCzs and seed
+12345. Three-, four-, and five-coordinate models use 6/8/10 chains, thinning 30/40/50, and initial populations
+300/400/500; all use 3,500 iterations, 1,750 warmup iterations, and output length 10,000. The tests assert these
+dimension-dependent settings at the default 90% interval width before changing only the reported interval to
+95%. Every parent must lie in that central 95% interval, every coordinate must have R-hat below 1.10
+and ESS at least 100, and the secondary 5% point rule applies only to an already resolved interval. The
+production range support Uniform `(epsilon, 500)`, shape bounds `[-0.5, 0.5]`, data-derived trend bounds,
+priors, initial values, and sampler defaults are unchanged and contain every generating parent.
+
+The eight retained distinctions are independent homogeneous MLE and Bayesian baselines, exponential-copula
+MLE and Bayesian fits, one X/Y location-regression Bayesian fit, and positive, zero, and strongly negative
+shape regimes. `Bayesian_LargeSample_HasTighterEstimates` was consolidated because a narrower interval alone
+is not a predeclared inverse-sample-size or other statistical precision-scaling oracle. All current exact
+identities pass in fresh one-result guarded TRXs under the approved 10-by-100 design; the earlier 1,000-row
+passes are superseded rather than transferred. The result supports recovery only for these network dimensions,
+parents, seeds, supports, and model structures; it does not establish latent-error recovery, large-network
+performance, conditional spatial prediction, or repeated-realization coverage.
+
 ## References
 
 <a id="ref-1"></a>[1] S. Coles, *An Introduction to Statistical Modeling of Extreme Values*. London, U.K.: Springer, 2001.

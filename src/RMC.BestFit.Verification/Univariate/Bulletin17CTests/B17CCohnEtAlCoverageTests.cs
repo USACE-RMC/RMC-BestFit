@@ -14,6 +14,11 @@ namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 /// </summary>
 /// <remarks>
 /// <para>
+/// Every method in this class is execution-excluded historical evidence and is rerun only on Haden's
+/// explicit request. The methods do not reproduce the published Table 3 targets and therefore are
+/// not claimed as current external-package or published-result parity.
+/// </para>
+/// <para>
 /// The test grid covers 30 scenarios:
 /// <list type="bullet">
 /// <item><description>Skewness (gamma): -1.0, -0.5, 0.0, 0.5, 1.0</description></item>

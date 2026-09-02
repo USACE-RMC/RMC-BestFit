@@ -835,23 +835,36 @@ defaults without assigning any sampler or analysis setting. For the three-parame
 ARIMA cells these are DEMCzs, six chains, thinning 30, 3,500 iterations, 1,750 warmup iterations,
 300 initialization iterations, 10,000 retained rows, seed 12345, posterior mean, and the standard
 dimension-scaled jump, jump-threshold, snooker, and noise defaults. The tests assert these values
-before sampling and again after results are returned. The production 90% reporting interval remains
-unchanged; the predeclared central 95% recovery interval is calculated independently from the 10,000
-retained draws. After the prediction-oracle correction, the recovery-source SHA-256 is
+before sampling and again after results are returned. The predeclared central 95% recovery interval is
+calculated independently from the 10,000 retained draws without changing production reporting defaults.
+After the prediction-oracle correction, the recovery-source SHA-256 is
 `DD003691DEFDD3BD19FFCAB0C6E00C1B2F1D4404B478DDB342C954E027AE3125`.
 
 **Predeclared matrix.** The exact methods and current dispositions are:
 
 | Cell | Fully qualified method | Disposition |
 |---|---|---|
-| AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Open under required Differential Evolution/default tolerances; historical burn-in-corrected pass is superseded for the current source |
-| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 with unchanged production DEMCzs defaults |
-| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Retained; source now applies the common observed-information standardized-error rule and requires a new exact run |
-| MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 with unchanged production DEMCzs defaults |
+| AR MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Passed 1/1 under production Differential Evolution and the common observed-information rule |
+| AR Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.ARAnalysisTests.Test_EstimateParameters_AR1` | Passed 1/1 fresh on 2 September 2026 with unchanged production DEMCzs defaults |
+| MA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Passed 1/1 under the common observed-information rule |
+| MA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.MAAnalysisTests.Test_EstimateParameters_MA1` | Passed 1/1 fresh on 2 September 2026 with unchanged production DEMCzs defaults |
 | ARIMA MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Passed 1/1 against the direct conditional-likelihood optimum, profiles, same-point likelihood, and boundary-conditioned prediction oracle |
-| ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
+| ARIMA Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Passed 1/1 fresh on 2 September 2026; truth lies in every central 95% interval with R-hat/ESS diagnostics |
 | ARIMAX MLE | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 against the date-indexed conditional optimum using the unchanged production Differential Evolution default |
-| ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 with unchanged production DEMCzs defaults; sampled MAP agrees with the independent default-prior posterior MAP |
+| ARIMAX Bayesian | `RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 fresh on 2 September 2026; truth lies in every central 95% interval with R-hat/ESS diagnostics |
+
+**Chunk 16 artifact reconciliation.** Sampled-MAP percentage fields and their generator metadata were
+removed because they were not a statistically justified recovery rule. Same-point posterior-kernel parity
+remains deterministic parameterization evidence; scientific Bayesian acceptance is central-95% parent
+inclusion with R-hat and ESS diagnostics. The current frozen files are:
+
+| Artifact | Generator SHA-256 | Artifact SHA-256 |
+|---|---|---|
+| `phase5-arima-mle-recovery-oracle.json` | `7cf62b8db7217af3304e3cc4f5aa43dd36f9b9af8e4321d305d747d64a041ef3` | `ee478fed7953fdf9f1291028fef15bc34045e459612b010540226a7417b12f49` |
+| `phase5-arimax-mle-recovery-oracle.json` | `f1feb2f94691f7b8cac8f7587f10b2a145a42de336a526c6e2d1cba1e87118fd` | `f7eb5970670cf6ebf2e6ec35cfb4cd6aff4a0473ebb07088bbcd636ff2c28b44` |
+
+The fresh ARIMA MLE/Bayesian runs passed in 0.661/32.295 seconds and the fresh ARIMAX MLE/Bayesian runs
+passed in 1.612/48.718 seconds. Each TRX contained exactly one matching result.
 
 **Recovery checkpoint.** The exact guarded AR MLE command was:
 
@@ -1005,6 +1018,10 @@ removed, the original independent `next_raw_zero_innovation` boundary oracle was
 production prediction was corrected. This failure history is retained explicitly rather than
 rewritten as a fixture defect.
 
+**Superseded sampled-MAP history.** The following 20-21 August sequence explains why a default-prior
+posterior MAP was added to the artifact at that time. Chunk 16 no longer uses a sampled-MAP percentage
+comparison as recovery acceptance; the current rule and hashes are stated above.
+
 The first unchanged-default ARIMA Bayesian run correctly placed every generating value inside its
 central 95% interval, but the test then compared sampled posterior MAP theta
 `0.32337201602419413` with generating theta `0.25`. That is not an apples-to-apples MAP oracle. The
@@ -1050,11 +1067,12 @@ with unchanged production DEMCzs defaults in 31.124 s
 passed with unchanged production DEMCzs defaults in 33.615 s
 (`37BB4DC19D139A43DD57075EA37A911AAF9D061850C2D8FEACA11EC074384560`).
 
-The committed ARIMA and ARIMAX oracles use R 4.4.3, jsonlite 2.0.0, and digest 0.6.39. The ARIMA
-generator and artifact SHA-256 values are respectively
+At the historical 21 August checkpoint, the committed ARIMA and ARIMAX oracles used R 4.4.3,
+jsonlite 2.0.0, and digest 0.6.39. The then-current ARIMA generator and artifact SHA-256 values were
+respectively
 `C4F5AA5AF561E2EA8B3A2B09EAFA52877FD9D001EAD63F95918074BD19105D18` and
-`E59487A29AB685ABBF1E315558C76B7CAD80D6E4702DEDE456C42B1779AA3580`. The ARIMAX generator and
-artifact SHA-256 values are respectively
+`E59487A29AB685ABBF1E315558C76B7CAD80D6E4702DEDE456C42B1779AA3580`. The then-current ARIMAX generator and
+artifact SHA-256 values were respectively
 `BD50F4FC5766D22CDCB3CAFCD8DD9F3ABAB8AAE1CC14D3AF7DE5396431794065` and
 `90E77598A67FFBD76E381FEC3ECE62BE4B9BBA7D70E2042B1A1071BBE68A44FC`. The recovery fixture generator
 and artifact hashes are respectively

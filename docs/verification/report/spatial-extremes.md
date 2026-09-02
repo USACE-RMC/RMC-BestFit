@@ -40,11 +40,42 @@ The criteria cell used eleven nonempty row/year blocks. AIC and BIC were recompu
 | Ungauged prediction | Posterior mean of per-draw conditional GP prediction | Passed |
 | Regional curve | Posterior of the per-draw regional mean quantile | Passed |
 | Dependent simulation | 20,000 rows; correlations within 0.02; quantiles within 3% | Passed |
-| Bayesian interval inflation | Width increased by the square root of the variance inflation factor | Passed |
-| Godambe path | Explicit unavailable status for singular sensitivity; finite draws when available | Passed |
-| Temporal block bootstrap | 20 fitted replicates with complete accounting | Passed |
+| Bayesian interval inflation | Exact centre-plus-`sqrt(VIF)` analytical transformation | Passed |
+| Godambe path | Independently differentiated sensitivity H, row-score J, and sandwich covariance | Passed |
+| Temporal block bootstrap | Independent whole-row MT19937 resamples and five SciPy bounded MAP fits | Passed |
 
-Complete-data recovery added two MLE and seven Bayesian cells under production defaults. All nine passed. Bayesian durations ranged from 42 to 115 seconds.
+### N=1000 recovery
+
+The approved recovery design uses ten sites with 100 observations each, so total scalar N is 1,000. The
+estimator sees 100 complete ten-site row/year vectors and therefore 100 multivariate likelihood contributions;
+MCMC draws are not counted as N. Location and scale use log links, shape is physical, and copula range is
+physical. All partial Cartesian grids contain ten sites. The location-regression design uses the X and Y coordinate columns in
+`log(location)=beta0+betaX X+betaY Y`. The copula cells use exponential Gaussian dependence
+`rho(h)=exp(-h/range)`.
+
+| Retained recovery design | Coordinate order | Generator seed | Acceptance | Result |
+|---|---|---:|---|---:|
+| MLE homogeneous, 10 sites | `[log(location), log(scale), shape]` | 54321 | Unregularized observed-information absolute standardized error at most 1.96 for every coordinate | Passed, 1.716 s |
+| MLE copula, 10 sites | `[range, log(location), log(scale), shape]` | 66666 | Same; singular or regularized information is failure | Passed, 4.931 s |
+| Bayesian homogeneous, 10 sites | `[log(location), log(scale), shape]` | 12345 | Central 95% parent inclusion, R-hat below 1.10, ESS at least 100 for every coordinate | Passed, 68.472 s |
+| Bayesian copula, 10 sites | `[range, log(location), log(scale), shape]` | 33333 | Same | Passed, 165.125 s |
+| Bayesian location regression, 10 sites | `[beta0, betaX, betaY, log(scale), shape]` | 66666 | Same | Passed, 130.429 s |
+| Bayesian positive shape 0.1, 10 sites | `[log(location), log(scale), shape]` | 11111 | Same | Passed, 71.070 s |
+| Bayesian zero shape, 10 sites | `[log(location), log(scale), shape]` | 22222 | Same | Passed, 68.439 s |
+| Bayesian negative shape -0.2, 10 sites | `[log(location), log(scale), shape]` | 33333 | Same | Passed, 78.168 s |
+
+Every latest run produced exactly one executed passing TRX. MLE retains default Differential Evolution and
+seed 12345. Bayesian recovery retains dimension-dependent production DEMCzs defaults and estimator seed
+12345. Three-, four-, and five-coordinate models use 6/8/10 chains, thinning 30/40/50, and initial populations
+300/400/500; all use 3,500 iterations, 1,750 warmup iterations, and output length 10,000. Recovery is
+reported through central 95% parameter intervals with the declared R-hat and ESS diagnostics.
+Priors, parameter bounds, initialization, and production defaults were not changed. These fixtures have no latent spatial-error field, so their intervals
+represent parameter uncertainty rather than conditional-GP residual or predictive uncertainty.
+
+The former `Bayesian_LargeSample_HasTighterEstimates` identity was consolidated without execution. Under the
+approved 10-by-100 design it duplicated the homogeneous cell, and interval tightening by itself supplied no
+predeclared precision-scaling oracle. No historical pass was transferred. The eight passes from the superseded
+1,000-row design are not evidence for this design; all eight revised identities received fresh one-result TRXs.
 
 ## Chunk 14 independent oracles
 
@@ -80,9 +111,11 @@ Every latest Chunk 14B TRX contains exactly one executed passing result.
 
 ## Conclusion
 
-The historical phase report counted 30 passing cells. The completeness reconciliation supersedes the three
-same-production-path cross-validation cells with five independently targeted Chunk 14A identities, so that
-historical total is not a current declaration count. Spatial likelihood, missing-data marginalization,
-kriging, distance, criteria, cross-validation, prediction, regional uncertainty, dependent simulation, and
-method dispatch remain covered subject to the documented network sizes, covariates, missingness patterns,
-and correlation structures; spatial recovery is separately deferred to Chunk 15.
+The historical phase report counted 30 passing cells, but that number is not a current declaration count.
+The completeness reconciliation replaces same-production-path cross-validation, prediction, and uncertainty
+claims with ten independently targeted Chunk 14 cells and reconciles recovery to the eight current N=1000
+experiments above. Spatial likelihood, missing-data marginalization, kriging, distance, criteria,
+cross-validation, prediction, regional uncertainty, dependent simulation, and recovery remain bounded by the
+documented network sizes, covariates, missingness patterns, correlation structures, and uncertainty sources.
+Large-network performance, latent-error recovery, and simultaneous predictive coverage are not established by
+the recovery matrix.

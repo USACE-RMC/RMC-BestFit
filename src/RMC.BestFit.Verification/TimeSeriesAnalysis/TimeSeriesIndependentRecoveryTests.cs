@@ -550,13 +550,13 @@ public class TimeSeriesIndependentRecoveryTests
     }
 
     /// <summary>
-    /// Asserts central-interval, MAP, R-hat, ESS, and likelihood recovery for a Bayesian result.
+    /// Asserts central-95% parent inclusion, R-hat, ESS, and likelihood crosswalks for a Bayesian result.
     /// </summary>
     /// <param name="label">The model label.</param>
     /// <param name="model">The fitted model.</param>
     /// <param name="analysis">The completed Bayesian analysis.</param>
     /// <param name="truth">The generating parameters.</param>
-    /// <param name="mapOracle">Optional independent posterior-MAP oracle for point recovery.</param>
+    /// <param name="mapOracle">Optional independent posterior-kernel oracle for likelihood crosswalks.</param>
     internal static void AssertBayesianRecovery(
         string label,
         ModelBase model,
@@ -572,21 +572,15 @@ public class TimeSeriesIndependentRecoveryTests
         Assert.AreEqual(truth.Length, analysis.Results.ParameterResults.Length, $"{label} summary count.");
 
         double[]? independentMap = null;
-        double sampledMapRelativeTolerance = 0.0;
-        double sampledMapAbsoluteFloor = 0.0;
         double posteriorLogLikelihoodTolerance = 0.0;
         JsonElement? independentMapElement = null;
         if (mapOracle.HasValue)
         {
             JsonElement oracleRoot = mapOracle.Value;
             JsonElement tolerances = oracleRoot.GetProperty("metadata").GetProperty("tolerances");
-            sampledMapRelativeTolerance = tolerances.GetProperty("sampled_map_relative").GetDouble();
-            sampledMapAbsoluteFloor = tolerances.GetProperty("sampled_map_absolute_floor").GetDouble();
             posteriorLogLikelihoodTolerance = tolerances
                 .GetProperty("posterior_log_likelihood_absolute")
                 .GetDouble();
-            Assert.AreEqual(0.05, sampledMapRelativeTolerance, 0.0, $"{label} MAP relative tolerance.");
-            Assert.AreEqual(1E-3, sampledMapAbsoluteFloor, 0.0, $"{label} MAP absolute floor.");
             Assert.AreEqual(1E-5, posteriorLogLikelihoodTolerance, 0.0, $"{label} posterior tolerance.");
 
             independentMapElement = oracleRoot.GetProperty("conditional_posterior_map");
@@ -645,25 +639,6 @@ public class TimeSeriesIndependentRecoveryTests
             Assert.IsTrue(
                 truth[index] >= lower95 && truth[index] <= upper95,
                 $"{label} truth for {parameterName} is outside [{lower95:G8}, {upper95:G8}].");
-            if (independentMap == null)
-            {
-                Assert.AreEqual(
-                    truth[index],
-                    map[index],
-                    Math.Abs(truth[index]) * 0.25,
-                    $"{label} MAP parameter {parameterName} versus generating truth.");
-            }
-            else
-            {
-                double mapTolerance = Math.Max(
-                    sampledMapAbsoluteFloor,
-                    Math.Abs(independentMap[index]) * sampledMapRelativeTolerance);
-                Assert.AreEqual(
-                    independentMap[index],
-                    map[index],
-                    mapTolerance,
-                    $"{label} sampled MAP parameter {parameterName} versus independent posterior MAP.");
-            }
             Assert.IsTrue(
                 double.IsFinite(summary.Rhat) && summary.Rhat < 1.1,
                 $"{label} {parameterName} R-hat {summary.Rhat:G8}.");

@@ -30,7 +30,7 @@ public class MAAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of MA(1) parameters against known true values from synthetic data.
-    /// Uses the independent 1,000-observation fixture and validates central-interval, MAP,
+    /// Uses the independent 1,000-observation fixture and validates central-95% parent inclusion,
     /// R-hat, ESS, finite-likelihood, and one-step-prediction recovery.
     /// </summary>
     /// <remarks>

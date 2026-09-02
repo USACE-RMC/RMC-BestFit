@@ -35,16 +35,15 @@ The publication recovery fixture uses 1,000 observations generated from the same
 MLE acceptance separates deterministic same-point likelihood agreement from scientific uncertainty:
 the production optimum must lie inside the joint 95% likelihood-ratio region around the independent
 optimum, and the generating parent must lie inside the corresponding region around the production
-optimum. The cutoffs use 4, 7, and 10 fitted coordinates for one, two, and three segments. Bayesian
-acceptance is unchanged: $\widehat R<1.1$, ESS greater than 100, sampled-MAP parity, and MAP-curve
-parity within 2%. Its curve-band inclusion is reported for this independent-optimum replication
-evidence, not asserted as repeated-realization coverage.
+optimum. The cutoffs use 4, 7, and 10 fitted coordinates for one, two, and three segments. All three
+retained MLE example identities produced fresh exact one-result passing TRXs on 2 September 2026.
 
-| Bayesian model | Grid stages containing truth | Grid stages tested | Result |
-|---|---:|---:|---:|
-| One control | 36 | 36 | Passed |
-| Two controls | 36 | 36 | Passed |
-| Three controls | 34 | 36 | Passed |
+The three former Bayesian example calculations are retained only as non-discovered historical methods.
+Their sampled-MAP 5-10% coordinate bands, 2% MAP-curve parity, and reported pointwise curve fractions
+did not constitute an independent posterior recovery oracle. Current Bayesian scientific evidence is
+owned by the five `RatingCurveBayesianRecoveryTests` designs below, which require central-95% parent
+inclusion, convergence diagnostics, and predeclared response-space recovery. No historical example pass
+was transferred.
 
 ## Reconciled recovery
 
@@ -65,7 +64,8 @@ residuals supply observation uncertainty (seed 20260901). A max-|t| critical val
 complete response grid gives one simultaneous 95% predictive band rather than several pointwise bands.
 
 Bayesian cells require R-hat below 1.10 and ESS at least 100 for every coordinate; identifiable coordinate
-truths must lie inside central 95% posterior intervals. Posterior MAP is the recovery point estimator.
+truths must lie inside central 95% posterior intervals. Posterior MAP is used only as the centre for the
+declared response-band construction, not as a separate percentage-based recovery rule.
 Retained posterior draws propagate parameter uncertainty, independent draw-specific log10 residuals
 (seed 20260902) propagate observation uncertainty, and the same max-|t| construction gives a MAP-centered
 simultaneous 95% posterior-predictive band over the complete grid. The point estimator does not replace
@@ -95,7 +95,8 @@ as identical.
 
 ## Conclusion
 
-Rating-curve discharge-space likelihood, activation continuity, all six example-replication cells, and
-all ten current reconciled recovery identities are verified. The current rating-curve inventory therefore
-has 22 verified declarations and no open rating-curve gaps. The evidence does not establish `bdrc` parity,
-arbitrary control-matrix parity, or predictive coverage in extrapolation.
+Rating-curve discharge-space likelihood, activation continuity, all three retained MLE example-replication
+cells, and all ten current reconciled recovery identities are verified. The three historical Bayesian
+example calculations are not current declarations. The evidence does not establish `bdrc` parity,
+arbitrary control-matrix parity, repeated-realization simultaneous coverage, or predictive coverage in
+extrapolation.

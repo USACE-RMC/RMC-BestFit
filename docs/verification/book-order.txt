@@ -9,6 +9,9 @@ report/time-series-data.md
 # 2. Input Data
 report/input-data.md
 
+# Estimation, model comparison, and diagnostics
+report/estimation-diagnostics.md
+
 # 3. Distribution Fitting
 # 4. Univariate Analyses: univariate, Bulletin 17C, point process,
 #    competing risk, mixture, and composite

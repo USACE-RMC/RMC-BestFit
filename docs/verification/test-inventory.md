@@ -1,6 +1,31 @@
 <!-- verification-status: finalized -->
 # Verification Test Inventory
 
+## Chunk 15-16 final reconciliation - 2 September 2026
+
+The current catalog reconciles 384 discovered method declarations to 384 execution units with zero open
+gaps. Of these, 326 are verified, 56 are execution-excluded Bulletin 17C confidence-interval coverage
+studies, and 2 are accepted limitations. These current-source totals supersede historical counts elsewhere
+in this chronology.
+
+Spatial recovery now uses the approved total scalar N=1000 design: ten Cartesian sites and 100 complete
+ten-site row/year observations, hence 100 multivariate likelihood contributions. Eight retained spatial
+identities passed fresh exact one-result runs. `MLE_WithCopula_RecoversRangeParameter` was renamed
+`MLE_WithCopula_RecoversParameters`; `Bayesian_LargeSample_HasTighterEstimates` was consolidated because
+interval narrowing alone was not a predeclared precision-scaling oracle.
+
+The PSIS legacy identity now owns only external R `loo` 2.10.0 Pareto-$k$ and diagnostic-threshold parity;
+XML restoration, reliability classification, and summary contracts are fast-test owned. The nonstationary
+constant-trend identity retains N=1000 response/covariate rows and now requires central-95% parent inclusion,
+R-hat below 1.10, and ESS at least 100. Both passed fresh exact one-result runs.
+
+Twenty historical report calculations were removed from current discovery: fifteen univariate MAP methods,
+two altered-law Bulletin 17C uncertain-data examples, and three rating-curve Bayesian example methods.
+Their old percentage bands were not independent scientific oracles. Four diagnostic MAP rewrites passed and
+the Exponential case failed because parent 13100 lay outside `[11528.7492, 13089.7937]`; that failure was
+preserved, the remaining ten MAP calculations were not run, and no sampler, seed, prior, parent, or
+acceptance rule was tuned.
+
 ## Chunk 13 time-series reconciliation - 31 August 2026
 
 Chunk 13 retains the eight Phase 5 estimator identities and the twelve independent Phase 5 oracle
@@ -389,7 +414,7 @@ The fast additions use small inline fixtures and do not reference `TestData.cs` 
 | `ModelEstimation/PsisLooOracleVerificationTests.cs::RlooOracle_InternalIdentitiesAreConsistent` | R `loo::psis` and `loo::loo` 2.10.0 | Passed - exact focused method |
 | `ModelEstimation/PsisLooOracleVerificationTests.cs::PSISLOO_MatchesRLooOracle` | R `loo::loo` 2.10.0 | Passed - aggregate, pointwise, Pareto-k, and smoothed-weight parity |
 | `ModelEstimation/PsisLooOracleVerificationTests.cs::PsisTailRegimes_MatchRLooOracle` | R `loo::psis` 2.10.0, including bounded through nonfinite-mean and degenerate tails | Passed - every weight, Pareto k, and effective sample size |
-| `ModelEstimation/PsisLooOracleVerificationTests.cs::ParetoInfluence_UsesRloo210DiagnosticThreshold` | R `loo` 2.10.0 sample-size diagnostic threshold | Passed - classification and XML round-trip |
+| `ModelEstimation/PsisLooOracleVerificationTests.cs::ParetoInfluence_UsesRloo210DiagnosticThreshold` | R `loo` 2.10.0 sample-size diagnostic threshold and Pareto-k parity | Passed - exact external diagnostic evidence; classification/XML contracts are fast-test owned |
 | `ModelEstimation/PsisCachingContractTests.cs::DefaultInformationCriteria_EvaluatePointwiseLikelihoodOnce` | Deterministic call-count model in the fast core project | Passed - one evaluation per retained draw |
 | `ModelEstimation/PsisCachingContractTests.cs::InfluenceDiagnostics_ReuseCachedPointwiseLikelihood` | Deterministic call-count model in the fast core project | Passed - influence reuses pointwise LOO cache |
 
@@ -830,21 +855,22 @@ is retained in the time-series report. No full Verification run occurred.
 | Method | Oracle or recovery contract | Status |
 |---|---|---|
 | `AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | Independent R AR(1), 110-step burn-in, 1,000 retained observations, seed 12345, observed-information standardized errors, finite likelihood/prior, one-step recurrence | **Passed** - final approved DE configuration, 1/1 under `20260831-192951-...`; earlier boundary failures retained |
-| `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; unchanged production DEMCzs defaults asserted before/after; independently calculated central 95%, MAP 25%, R-hat/ESS, one-step recurrence | **Passed** - 1/1 in 24.611 s |
+| `ARAnalysisTests.Test_EstimateParameters_AR1` | Same fixture; unchanged production DEMCzs defaults asserted before/after; truth in central 95%, R-hat/ESS, finite likelihood, and one-step recurrence | **Passed** - fresh exact 1/1 in 28.046 s |
 | `MovingAverageMLERecoveryTests.Test_EstimateParameters_MA1` | Independent R MA(1), 110-step burn-in, 1,000 retained observations, seed 12345, unchanged 5% gate | **Passed** - 1/1 in 0.198 s |
-| `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and unchanged production-default Bayesian recovery contract | **Passed** - 1/1 in 24.097 s |
+| `MAAnalysisTests.Test_EstimateParameters_MA1` | Same fixture and unchanged production-default Bayesian recovery contract | **Passed** - fresh exact 1/1 in 19.855 s |
 | `TimeSeriesIndependentRecoveryTests.MleArima111LogD1RecoversGeneratingParameters` | Independent R conditional ARIMA(1,1,1) optimum, profile intervals, logarithmic Jacobian, 1,000 observations, seed 51037; same-point likelihood and forecast level conditioned on the final observed training state | **Passed** - 1/1 against the direct conditional oracle |
-| `TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 30.642 s |
+| `TimeSeriesIndependentRecoveryTests.BayesianArima111LogD1RecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; independent posterior-kernel likelihood crosswalk; R-hat/ESS and prediction | **Passed** - fresh exact 1/1 in 32.295 s |
 | `TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Independent R conditional ARIMAX(1,1,0), dated level covariate, 1,000 observations, seed 51038, same-point likelihood; unchanged production Differential Evolution default | **Passed** - 1/1 in 0.516 s |
-| `TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; sampled MAP versus independent default-prior posterior MAP; R-hat/ESS and prediction | **Passed** - 1/1 in 37.241 s |
+| `TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Same fixture; unchanged DEMCzs defaults; truth in central 95%; independent posterior-kernel likelihood crosswalk; R-hat/ESS and prediction | **Passed** - fresh exact 1/1 in 48.718 s |
 
 The artifact was committed before C# recovery evaluation. The mistakenly changed AR/MA seeds,
 corrected-seed fixture without stationary burn-in, and artificially capped AR Bayesian run remain
 failure history. Commit `ccd5842` removed the cap and all time-series Verification assignments to
 `BayesianAnalysis` settings. The independent ARIMA/ARIMAX conditional MLE and posterior-MAP oracles
 were committed before their final C# evaluations. Formula comparisons use common parameter vectors;
-sampled Bayesian point recovery uses `Results.MAP`, while generating truth remains a central-95%
-coverage criterion. The forced bounded-Nelder-Mead ARIMAX failure is retained; the passing cell uses
+the posterior-MAP coordinates remain same-point posterior-kernel crosswalks, not sampled-coordinate
+acceptance rules, while generating truth remains a central-95% coverage criterion. The forced
+bounded-Nelder-Mead ARIMAX failure is retained; the passing cell uses
 the unchanged production Differential Evolution default and changes no optimizer implementation or
 default. All eight cells pass. No alternate seed, tolerance, sampler setting, or full Verification
 run was attempted. See the time-series report for hashes, exact commands, runtimes, and history.
@@ -872,7 +898,7 @@ run was attempted. See the time-series report for hashes, exact commands, runtim
 | `Univariate/Bulletin17CTests/B17CBootstrapRefitReliabilityTests.cs` | Verification | Zero retries asserted through `AttemptedRealizations`; optimizer status counts cover every realization; no substituted replicates | Passed 14/14 |
 | `Univariate/Bulletin17CTests/B17CSyntheticDataTests.cs` | Verification | Methods renamed `*_MatchesProductMomentParameters` (GMM versus sample product-moment parameters) | Passed 6/6 |
 | `Univariate/Bulletin17CTests/B17CCovarianceTests.cs` | Verification | Absolute tolerance floor applies to off-diagonal entries only | Passed except the pre-existing `PearsonTypeIII_Covariance_N25/N100` diagonal mismatches, which fail identically at the pre-review commit |
-| `Univariate/Bulletin17CTests/B17CExampleTests.cs` | Verification | Example 4/7 uncertain-data messages and tolerance rationale corrected | Passed 13/13; the three `HirschStedingerPlottingPositionVerificationTests` peakFQ cells pass |
+| `Univariate/Bulletin17CTests/B17CExampleTests.cs` | Verification | Historical Phase 7 worked-example and uncertain-data set | Historical 13/13 result is superseded: the seven retained published worked examples have fresh exact evidence, the two uncertain-data substitutions are declassified for lack of an independent oracle, and the three `HirschStedingerPlottingPositionVerificationTests` peakFQ cells retain focused evidence. |
 | `Univariate/Bulletin17CTests/B17CCohnEtAlCoverageTests.cs` | Verification | Documented as completion-rate checks; Table 3 coverage values are not asserted | Unchanged contract |
 
 ## Default MCMC settings in Verification recovery tests - 21 August 2026
@@ -911,7 +937,7 @@ Passing groups: `PsisLooOracleVerificationTests` 4/4, `McmcNumericalVerification
 `Log10NormalInfluenceVerificationTests` 2/2, `Log10NormalEstimationEquivalenceTests` 5/5,
 `UnivariateDistributionMLETests` 15/15, `GoodnessOfFitRmseVerificationTests` 1/1,
 `B17CSyntheticDataTests` 6/6, `B17CCovarianceTests` (all other cells), `B17CPenalityTests`,
-`B17CExampleTests` 13/13, `UncertainDataBootstrapVerificationTests` (other cells),
+`B17CExampleTests` historical 13/13 (current retained worked examples 7/7; two uncertain-data substitutions declassified), `UncertainDataBootstrapVerificationTests` (other cells),
 `B17CBootstrapRefitReliabilityTests` 14/14, `PointProcessRecoveryTests` 8/8,
 `ProfileLikelihoodGridPointFailureTests` 2/2, `MaximumLikelihoodCovarianceVerificationTests` 2/2.
 
@@ -966,7 +992,7 @@ synthetic cases of `examples/6-rating-curve-analysis`.
 | `RatingCurveContinuityVerificationTests.DefaultExponentLowerBounds_AreStrictlyPositive_{One,Two,Three}Segment` | Verification | Default exponent bounds and prior supports exclude zero | Failed - confirms TR-044 (lower bound 0) |
 | `RatingCurveContinuityVerificationTests.ExponentsAtDefaultLowerBound_AddedControlIncrementsVanishAtActivation` | Verification | Added increments vanish as the offset shrinks when exponents sit at their lower bound | Failed - confirms TR-044 (constant increment `1.7534628349561987`) |
 | `RatingCurveTests.Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported` | Fast core | An unmatched nonpositive discharge record does not invalidate a model with enough valid aligned pairs and is reported | Failed - confirms TR-045 (`Error: All discharge values must be positive`); kept in the working tree until the approved fix lands |
-| `RatingCurveExampleRecoveryTests` (6 methods) | Verification | Example replication recovery against the independent SciPy optimum and the true curve | Ready - acceptance rule pending approval; not run |
+| `RatingCurveExampleRecoveryTests` | Verification/history | Three MLE example replications retained against the independent SciPy optimum and joint 95% likelihood-ratio regions; three Bayesian percentage-band calculations declassified | MLE 3/3 passed fresh; Bayesian methods non-discovered |
 
 ## Phase 6 Batch 6.2 bivariate evidence consolidation - 21 August 2026
 
@@ -1025,7 +1051,7 @@ amendments and the first-run failures are recorded in the chapter.
 | `RatingCurveTests.DefaultFlatPriors_BetaBounds_ArePositiveForAllSegments`, `Validate_LegacyZeroExponentBound_WarnsButRemainsValid` | Fast core | Default exponent bound 0.1; legacy bound verbatim with warning | Passed |
 | `RatingCurveTests.Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported`, `Validate_ReportsUnmatchedRecordCounts`, `Validate_NonPositiveDischarge_IsInvalid` | Fast core | Aligned-pair error; unmatched-record warning with counts | Passed |
 | `RatingCurveExampleRecoveryTests.Mle_{One,Two,Three}Segment_RecoversExampleCurve` | Verification | Production MLE versus independent SciPy optimum and generating parent: deterministic same-point likelihood plus joint 95% LR regions with 4, 7, and 10 fitted coordinates, N=1000 | Passed 3/3 fresh on 1 September 2026 |
-| `RatingCurveExampleRecoveryTests.Bayesian_{One,Two,Three}Segment_RecoversExampleCurve` | Verification | Production defaults; R-hat < 1.1, ESS > 100; sampled MAP versus the optimum (5%/10%); MAP-curve parity 2%; 10% truth band; in-band fraction reported (36/36, 36/36, 34/36) | Passed 3/3 (37.4 s, 71.5 s, 122.9 s) |
+| `RatingCurveExampleRecoveryTests.Bayesian_{One,Two,Three}Segment_RecoversExampleCurve` | Historical, non-discovered | Former sampled-MAP and curve percentage bands were not an independent posterior oracle; stronger Bayesian recovery cells own central-95% and response-space evidence | Historical passes not transferred |
 | `RatingCurveMLERecoveryTests` (10 methods, now 1,000 observations) | Verification | Self-generated truth recovery, unchanged tolerances | Passed 10/10 (3.4-4.0 s) |
 | `RatingCurveBayesianRecoveryTests` (10 methods, now 1,000 observations) | Verification | Self-generated truth recovery under production defaults, unchanged tolerances | Passed 10/10 (34-148 s) |
 
@@ -1143,8 +1169,8 @@ Core 3,337, UI 579, App 438, API 498, 0 failures; strict Debug XML builds 0 warn
 | GMM regression set: `GmmSpecificationVerificationTests` (4), `GmmObjectiveGradientVerificationTests` (2), `GmmInfluenceDiagnosticsVerificationTests` (2), `GeneralizedMethodOfMomentsRecoveryTests` (4), `B17CPenalityTests` (12), `B17CExampleTests` (10) | Verification | Unchanged contracts after the cap removal (TR-085) | Passed 34/34 |
 | `UncertainDataBootstrapVerificationTests` (2 cells) | Verification | Finite delivery, failure rate < 1%, optimizer fallback rate < 1%, centred means (TR-086) | Passed 2/2 |
 | `B17CBootstrapRefitReliabilityTests` (14 cells) | Verification | Ordinary/pivotal refits: zero retries, substitutions, and exceptions (TR-086 regression) | Passed 14/14 |
-| `NonstationaryValidationTests` (16 cells) | Verification | Gross-error gate on trend-carrying fixtures under the production defaults: posterior mode within four posterior SD of the truth, R-hat < 1.1, ESS > 100 (TR-084; under the earlier 1% rule 2/16 and under 90% interval coverage 9/16 passed, see the register) | Passed 16/16 |
-| Legacy time-series recovery cells (29) | Verification | 1,000 observations; the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat < 1.1, the 7 MLE cells keep their tolerances (TR-089; 27/29 under the former bands) | Passed 29/29 |
+| `NonstationaryValidationTests` historical 16-cell matrix | Historical | Former four-posterior-SD gate; superseded by the retained constant-trend central-95% cell, five-cell covering array, response-space evidence, and fast assignment matrix | Historical passes not transferred |
+| Legacy time-series recovery cells (29) | Historical | Former Cartesian matrix and central-90% language; superseded by eight retained AR/MA/ARIMA/ARIMAX recovery cells and independent interaction oracles | Historical passes not transferred |
 | `B17CCensoredCoverageTests`, `B17CCoverageTests` | Verification | Coverage cells | Not rerun by decision (TR-087, TR-088) |
 
 Per-cell outcomes (wall-clock per guarded invocation):
@@ -1350,3 +1376,37 @@ and LP3 Q(0.99) Profile-Q. TRXs are retained in the isolated `20260829-165839` t
 coordinate mismatch; the same correction was applied to Log-Pearson III, and all three final exact reruns
 passed without changing N, seed, generating parent, covariance method, or the 1.96 rule. The 22 catalog
 identities are now verified.
+
+## Verification completeness Chunk 15 spatial recovery - 2 September 2026
+
+Chunk 15 retains two MLE and six Bayesian recovery experiments. Every method uses ten sites with 100
+observations per site: total scalar N=1,000, represented to the estimator as 100 complete ten-site row/year
+vectors and 100 multivariate likelihood contributions. The two MLE cells require unregularized observed-information
+uncertainty and absolute standardized parent error at most 1.96 for every fitted coordinate. The six Bayesian
+cells require central-95% parent inclusion, R-hat below 1.10, and ESS at least 100 for every coordinate.
+Priors, bounds, seeds, initialization, Differential Evolution policy, and DEMCzs settings are unchanged.
+The Bayesian cells assert the dimension-dependent defaults before execution: 3/4/5 coordinates resolve to
+6/8/10 chains, thinning 30/40/50, and initial populations 300/400/500; all use 3,500 iterations, 1,750 warmup
+iterations, output length 10,000, and seed 12345. These fixtures contain no latent spatial-error field, so
+parameter and conditional-GP uncertainty are not mixed.
+
+| Current exact identity | Network and distinction | Outcome and exact result directory |
+|---|---|---|
+| `SpatialGEVMLERecoveryTests.MLE_BasicHomogeneous_RecoversParameters` | 10 sites; independent homogeneous GEV | Passed 1/1, 1.716 s; `20260902-074615-...` |
+| `SpatialGEVMLERecoveryTests.MLE_WithCopula_RecoversParameters` | 10 sites; exponential Gaussian copula | Passed 1/1, 4.931 s; `20260902-074645-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_BasicHomogeneous_RecoversParameters` | 10 sites; mildly negative shape baseline | Passed 1/1, 68.472 s; `20260902-075604-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversParameters` | 10 sites; exponential Gaussian copula | Passed 1/1, 165.125 s; `20260902-075735-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithLocationRegression_RecoversParameters` | 10 sites; X/Y location regression | Passed 1/1, 130.429 s; `20260902-080047-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithPositiveShape_RecoversParameters` | 10 sites; shape 0.1 | Passed 1/1, 71.070 s; `20260902-080322-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithZeroShape_RecoversParameters` | 10 sites; Gumbel limit | Passed 1/1, 68.439 s; `20260902-080456-...` |
+| `SpatialGEVBayesianRecoveryTests.Bayesian_WithNegativeShape_RecoversParameters` | 10 sites; shape -0.2 | Passed 1/1, 78.168 s; `20260902-080630-...` |
+
+`MLE_WithCopula_RecoversRangeParameter`, `Bayesian_WithCopula_RecoversRangeParameter`,
+`Bayesian_WithLocationRegression_RecoversIntercept`, and the three `...Shape_Converges` names are historical;
+their old results were not transferred. The current renamed identities were each run and inspected. The
+`Bayesian_LargeSample_HasTighterEstimates` declaration was removed as redundant: under the approved 10-by-100
+design it duplicates the homogeneous cell, and interval tightening alone is not a predeclared precision-scaling
+oracle. It was not executed. The eight `20260901-202329-...` through `20260901-220241-...` one-result passes
+used the superseded 1,000-row design and were not transferred. No zero-result Chunk 15 TRX exists; the only
+discarded revised invocation was the initial sandbox-blocked runner attempt, which produced no TRX and no
+executed test.

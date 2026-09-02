@@ -12,32 +12,35 @@ The report follows the application's project-tree order: time-series data; input
 
 At the stated software checkpoint, the independently supported cells summarized below satisfy their declared acceptance criteria. The strongest evidence is exact analytical or external-package parity. Recovery evidence is conditional on its generating model, sample size, seed, estimator configuration, and acceptance rule. Simulation coverage is claimed only where a predeclared repetition design and Monte Carlo acceptance interval were executed for the stated checkpoint.
 
+The final source catalog contains 384 declarations and 384 execution units: 326 verified, 56 governed
+execution exclusions for the three Bulletin 17C confidence-interval coverage classes, 2 accepted
+limitations, and no open gaps.
+
 Time-series-data and input-data persistence, validation, and processing contracts passed the fast regression gate. Those two collection-level results control the handoff to the scientific models but are not counted as independent numerical verification.
 
 | Capability | Verification basis | Result at the accepted checkpoint |
 |---|---|---:|
-| Fifteen univariate families and multi-candidate fitting | SciPy, R `lmomco`, analytical identities, and independent fitting oracles | 17 of 17 fitting cells passed |
+| Fifteen univariate families and multi-candidate fitting | N=1000 recovery, SciPy, R `lmomco`, analytical identities, and independent fitting oracles | Passed under current exact identities |
 | Model comparison and convergence diagnostics | R `loo`, R `posterior`, R `gmm`, R `bbmle`, and analytical covariance results | All reported oracle comparisons passed |
-| Bulletin 17C worked examples | Published example parameters and PeakFQ plotting positions | 7 of 7 parameter examples and 3 of 3 plotting-position comparisons passed |
-| Bulletin 17C refit reliability | Ordinary and pivotal resampling of seven published examples | 14 of 14 cells; 13,000 finite outputs; zero retries, substitutions, or exceptions |
-| Point-process models | Analytical Poisson/GPA calculations, likelihood identities, and recovery | 10 of 10 cells passed |
-| Competing risks | Analytical dependence identities and generating-model recovery | 4 of 4 analytical, 10 of 10 MLE, and 4 of 4 supported Bayesian cells passed |
-| Finite mixtures | Independent Numerics parity and Bayesian generation-recovery | 6 of 6 cells passed |
-| Composite analyses | Closed forms, R `mistr`, Gaussian orthants, and complete Cartesian posterior enumeration | 12 of 12 reported cells passed |
-| Bivariate and coincident frequency | Independent copula optimum, Bayesian recovery, and closed-form Normal sums | 23 of 23 reported cells passed |
-| Rating curves | SciPy likelihood and optimum, analytical continuity, and curve recovery | 36 of 36 reported cells passed |
-| Time-series models | Independent recurrence/transform oracles and generating-model recovery | 12 oracle, 8 independent recovery, and 29 supporting recovery cells passed |
-| Spatial extremes | R `mvtnorm`, conditional-GP and haversine oracles, model recovery, and analysis-level checks | 30 of 30 reported cells passed |
+| Bulletin 17C worked examples | Published example parameters and PeakFQ plotting positions | Seven parameter examples and three plotting-position comparisons passed |
+| Point-process models | Analytical Poisson/GPA calculations, likelihood identities, and N=1000 recovery | Passed under current exact identities |
+| Competing risks | Analytical dependence identities and five identified N=1000 recoveries | Passed within the declared fixture scope |
+| Finite mixtures | External-package overlap, identified EM uncertainty, and Bayesian generation-recovery | Six retained identities passed |
+| Composite analyses | Closed forms, R `mistr`, Gaussian orthants, Cartesian posterior enumeration, and four predictive recoveries | Passed under current exact identities |
+| Bivariate and coincident frequency | Independent copula optima, recovery, and closed-form/Lognormal response oracles | Passed under current exact identities |
+| Rating curves | SciPy likelihood and MLE optima, analytical continuity, and ten reconciled recovery designs | Passed; historical Bayesian example percentage bands excluded |
+| Time-series models | Separate AR, MA, ARIMA, and ARIMAX recurrence, transform, likelihood, forecast, and recovery evidence | Eight retained recovery identities and independent oracle groups passed |
+| Spatial extremes | R `mvtnorm`, correlation, cross-validation, prediction, uncertainty, simulation, and 10-site by 100-row recovery | Eight revised recovery identities and independent oracle groups passed |
 
-![Passed verification cells by analysis area](figures/verification-cell-summary.svg)
-
-*Figure 1. Passed cells in the principal recovery and oracle matrices. Counts are evidence cells, not a measure of scientific importance or code coverage. Model-estimation diagnostics and Bulletin 17C reliability are tabulated separately because their evidence units differ.*
+Bootstrap delivery and accounting results remain engineering evidence and are not counted as scientific
+accuracy or interval-coverage claims. The three Bulletin 17C confidence-interval coverage classes remain
+execution-excluded historical evidence.
 
 ## Interpretation
 
 A passing cell supports the claim stated for that cell. It does not establish universal accuracy outside the tested support, asymptotic regime, sample size, dependence structure, or prior configuration. In particular:
 
-- The six difficult competing-risk Bayesian designs not included in the supported matrix are research-grade identifiability and convergence cases and are not claimed as verified.
+- Competing-risk recovery is limited to the five identified retained fixtures; removed boundary, local-mode, and correlated-Bayesian designs are not claimed as verified.
 - Current Bulletin 17C Cohn-value and broad coverage claims are excluded because the corresponding numerical comparisons were not executed at this checkpoint.
 - Bivariate copula fitting conditions on fixed fitted marginals; joint marginal-copula posterior estimation is not claimed.
 - Spatial weighting is a heuristic influence weighting and not a composite pairwise likelihood or effective-sample-size correction.

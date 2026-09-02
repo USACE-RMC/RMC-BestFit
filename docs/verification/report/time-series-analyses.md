@@ -25,16 +25,39 @@ The ARIMA forecast oracle anchors the first prediction to the final observed tra
 
 ## Recovery
 
-| Model and estimator | Generating coordinates | Sample size | Acceptance | Result |
-|---|---|---:|---|---:|
-| AR(1), MLE | $\mu=10$, $\phi=0.6$, $\sigma=5$ | 1,000 | Observed-information absolute standardized error no greater than 1.96; BestFit Differential Evolution with minimum population 100, midpoint boundary repair, and unchanged Numerics tolerances | Passed, exactly one final guarded result |
-| AR(1), Bayesian | Same | 1,000 | Central interval, $\widehat R<1.1$, ESS greater than 100 | Passed |
-| MA(1), MLE | $\mu=10$, $\theta=0.6$, $\sigma=5$ | 1,000 | Observed-information absolute standardized error no greater than 1.96 | Passed, exactly one guarded result |
-| MA(1), Bayesian | Same | 1,000 | Central interval, $\widehat R<1.1$, ESS greater than 100 | Passed |
-| ARIMA(1,1,1), MLE | log transform; $\phi=0.45$, $\theta=0.25$, $\sigma=0.04$ | 1,000 | Production/R optima in the joint 95% likelihood-ratio region; truth inside all three independent one-coordinate 95% profiles; same-point likelihood and forecast oracle | Passed |
-| ARIMA(1,1,1), Bayesian | Same | 1,000 | Independent posterior MAP, 95% interval, diagnostics | Passed |
-| ARIMAX(1,1,0), MLE | intercept 0.25, $\beta=1.5$, $\phi=0.4$, $\sigma=0.5$ | 1,000 | Production/R optima and generating truth inside the independent joint 95% likelihood-ratio region; same-point likelihood and date-indexed forecast oracle | Passed |
-| ARIMAX(1,1,0), Bayesian | Same | 1,000 | Independent posterior MAP, 95% interval, diagnostics | Passed |
+### Autoregressive model
+
+The AR(1) fixture retains 1,000 observations after 110 discarded initialization values and uses physical
+order `[intercept, phi, sigma] = [10, 0.6, 5]`. MLE requires absolute standardized error no greater than
+1.96 from unregularized observed information. Bayesian recovery requires every parent inside its central
+95% interval, $\widehat R<1.10$, and ESS at least 100. The Bayesian identity passed a fresh exact
+one-result run in 28.046 seconds; the MLE identity retains its final guarded evidence from Chunk 13.
+
+### Moving-average model
+
+The MA(1) fixture uses physical order `[intercept, theta, sigma] = [10, 0.6, 5]` and the same retained
+N=1000/initialization design. MLE uses the observed-information 1.96-standard-error rule; Bayesian recovery
+uses central-95% parent inclusion plus $\widehat R$ and ESS diagnostics. The source-affected Bayesian
+identity passed a fresh exact one-result run in 19.855 seconds.
+
+### ARIMA model
+
+The ARIMA(1,1,1) fixture applies a log transform, one difference, and physical order
+`[phi, theta, sigma] = [0.45, 0.25, 0.04]`; no separate intercept or drift is fitted. MLE requires the
+production and R optima to occupy the four-dimensional joint 95% likelihood-ratio region, generating
+truth inside each independently generated one-coordinate 95% profile, and same-point likelihood and
+forecast recurrence parity. Bayesian recovery requires generating truth inside every central 95% posterior
+interval, $\widehat R<1.10$, and ESS at least 100; sampled-MAP percentage bands are not used. The fresh
+MLE and Bayesian identities passed in 0.661 and 32.295 seconds.
+
+### ARIMAX model
+
+The ARIMAX(1,1,0) fixture uses level-space covariate dates, one difference, regression/innovation order
+`[intercept, beta, phi, sigma] = [0.25, 1.5, 0.4, 0.5]`, and no MA coordinate. MLE requires the production
+and R optima and generating truth inside the independent four-coordinate joint 95% likelihood-ratio
+region, plus same-point likelihood and date-indexed forecast parity. Bayesian recovery requires central-95%
+truth inclusion, $\widehat R<1.10$, and ESS at least 100 without a sampled-MAP percentage rule. The fresh
+MLE and Bayesian identities passed in 1.612 and 48.718 seconds.
 
 The historical 29-cell matrix is no longer current evidence. The completeness reconciliation removed its redundant
 Cartesian identities rather than transferring old passes. The retained eight recovery cells remain

@@ -11,6 +11,15 @@ namespace RMC.BestFit.Verification.Univariate.MixtureTests;
 /// <summary>
 /// Generated-parent recovery verification for finite Normal mixtures.
 /// </summary>
+/// <remarks>
+/// Every fixture contains 1,000 scalar observations generated with seed 12345. Continuous
+/// components are identified by ascending mean; Bayesian draws reconstruct full-K physical weights
+/// from the sampled K-1 coordinates before ordering. Frequentist cells use responsibility-count
+/// weight variance and observed-likelihood component covariance with absolute standardized error
+/// no greater than 1.96. Bayesian cells use sampler seeds 22345, 32345, or 42345 and require central
+/// 95% inclusion, R-hat below 1.10, and ESS of at least 100. The zero-inflated cells treat the atom
+/// and positive-conditioned continuous simplex as distinct identified components.
+/// </remarks>
 [TestClass]
 public class MixtureRecoveryTests
 {

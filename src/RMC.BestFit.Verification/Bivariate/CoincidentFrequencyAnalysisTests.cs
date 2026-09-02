@@ -408,7 +408,7 @@ public class CoincidentFrequencyAnalysisTests
     #region Tests
 
     /// <summary>
-    /// Verifies <c>SumOfNormals_RhoZero_MatchesClosedForm</c>.
+    /// Verifies the independent Normal-sum response against its closed-form AEP curve.
     /// </summary>
     [TestMethod]
     public async Task SumOfNormals_RhoZero_MatchesClosedForm()
@@ -417,7 +417,7 @@ public class CoincidentFrequencyAnalysisTests
     }
 
     /// <summary>
-    /// Verifies <c>SumOfNormals_RhoPositive_MatchesClosedForm</c>.
+    /// Verifies the positively correlated Normal-sum response against its closed-form AEP curve.
     /// </summary>
     [TestMethod]
     public async Task SumOfNormals_RhoPositive_MatchesClosedForm()
@@ -426,7 +426,7 @@ public class CoincidentFrequencyAnalysisTests
     }
 
     /// <summary>
-    /// Verifies <c>SumOfNormals_RhoNegative_MatchesClosedForm</c>.
+    /// Verifies the negatively correlated Normal-sum response against its closed-form AEP curve.
     /// </summary>
     [TestMethod]
     public async Task SumOfNormals_RhoNegative_MatchesClosedForm()

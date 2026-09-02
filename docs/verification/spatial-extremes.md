@@ -20,7 +20,7 @@ the findings are TR-048 through TR-062 in the [review register](../technical-ref
 | TR-057 Godambe estimating equations | Corrected (approved and implemented 21 August 2026) | Sensitivity and variability matrices derive from the same row/year estimating equations (gradient cell passes); a singular or non-finite computation returns `null` with `GodambeCovarianceStatus = Failed` and a diagnostic instead of the variability matrix; fast contracts cover failure, success, validation, and reset |
 | TR-055 spatial criteria | Closed (21 August 2026) | Guarded criteria cell after an MCMC run with production defaults: AIC/BIC from the observation log likelihood at the sampled MAP with the eleven nonempty row/year blocks, WAIC/PSIS-LOO from the row/year pointwise terms; fast contracts on `SpatialGEVAnalysis.ComputeInformationCriteria` and on injected-draw WAIC |
 | GEV, copula, and kernel conventions | Verified | Complete-row copula likelihood, marginal-only likelihood, and the posterior-kernel invariance guard pass against the `mvtnorm` oracle before and after the corrections |
-| Nine existing spatial recovery cells | Passed after the corrections | Complete-data MLE (2) and Bayesian (7) recovery cells pass under production defaults (the copula cell only after the TR-091 clone fix) |
+| Current spatial recovery matrix | Reconciled 2 September 2026 | Two MLE and six Bayesian cells use ten sites with 100 observations each (total scalar N=1,000 and 100 complete multivariate rows), current statistical uncertainty rules, and one-result focused TRXs; the former large-sample cell was consolidated because interval tightening alone was not a precision-scaling oracle |
 | TR-091 spatial clone structure (found by these runs) | Corrected (approved and implemented 21 August 2026) | `SpatialGEV.Clone()` dropped the copula/error parameter blocks and reset the trend intercepts, so every copula or latent-error Bayesian run failed in post-processing; the clone now rebuilds its list from the cloned components and copies values, bounds, and priors; three fast contracts and the two blocked cells pass |
 | TR-050 through TR-053 leave-one-site-out cross-validation | Corrected (approved and implemented 22 August 2026) | Reduced training model per fold (`SpatialGEV.CreateReducedModel`), fold analyses with the main settings and seed, held-out covariate rows, explicit fold accounting; three guarded cells and the fast contracts pass; see [Batch 6.4](#batch-64-leave-one-site-out-cross-validation-22-august-2026) |
 | TR-054, TR-056, TR-058, TR-061, TR-062 prediction, bootstrap, regional bounds, simulation, dispatch | Corrected (approved and implemented 22 August 2026) | Conditional Gaussian-process prediction per draw, temporal block bootstrap with MAP refits, per-draw regional posterior, Cholesky-dependent simulation, method dispatch with recorded applied method; R conditional-GP oracle, seven guarded cells, and fast contracts pass; see [Batch 6.5](#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) |
@@ -384,12 +384,55 @@ finite-difference error remain separate in the artifact. The deterministic 1E-9 
 cross-runtime arithmetic roundoff; the 2E-5 Godambe tolerance covers independent finite-difference cancellation,
 and the 2% fitted-bootstrap tolerance is smaller than every frozen bootstrap interval width.
 
-## Next steps
+## Verification completeness Chunk 15 recovery reconciliation (2 September 2026)
 
-Phase 6 is complete for the spatial family. Phase 7 (closeout) disposes TR-084 through TR-090 and
-reconciles the plan, README, and chapter status markers. The current regression set for later spatial changes
-is the eight `mvtnorm` oracle cells; kriging, geodesic, criteria, simulation, and the ten independent Chunk 14
-cells. Historical cross-validation/prediction/dispatch cells are design history, and spatial recovery remains
-separate Chunk 15 scope.
+The approved recovery design defines total scalar N as the site-by-time cross-product: ten sites with 100
+observations per site, or 1,000 finite scalar values. The estimator nevertheless receives 100 complete
+ten-site row/year vectors, so the likelihood contribution count is 100 multivariate rows rather than 1,000.
+Posterior draws, warmup iterations, and integration points are not counted in either quantity. All coordinates
+use Cartesian projected distances. The independent ten-site grid is `(0,0)`, `(25,0)`, `(50,0)`, `(75,0)`,
+`(0,25)`, `(25,25)`, `(50,25)`, `(75,25)`, `(0,50)`, `(25,50)`. Copula and regression fixtures use the
+same ten-site partial-grid construction at spacing `100/3`. Every retained row is complete and finite.
+
+| Experiment | Scientific distinction and likelihood | Parent order and seed | Identification and acceptance | Focused result |
+|---|---|---|---|---|
+| MLE homogeneous, 10 sites | Independent marginal GEVs; each of 100 rows contributes 10 marginal densities | `[log(location=10000), log(scale=3000), shape=-0.1]`; generator 54321 | All three estimator-owned coordinates are identified. Default Differential Evolution seed 12345; unregularized observed-information covariance required; absolute standardized error at most 1.96 | Passed, 1.716 s; `20260902-074615-...` |
+| MLE copula, 10 sites | Exponential Gaussian copula `rho(h)=exp(-h/40)` plus 10 margins per row | `[range=40, log(location), log(scale), shape]`; generator 66666 | All four coordinates monitored. Same MLE rule; singular or regularized information is explicit failure | Passed, 4.931 s; `20260902-074645-...` |
+| Bayesian homogeneous, 10 sites | Independent mildly bounded-tail baseline; 10 margins per row | `[log(location=10000), log(scale=3000), shape=-0.1]`; generator 12345 | Every parent in central 95% interval, R-hat below 1.10, ESS at least 100 | Passed, 68.472 s; `20260902-075604-...` |
+| Bayesian copula, 10 sites | Exponential Gaussian copula `rho(h)=exp(-h/40)` plus 10 margins per row | `[range=40, log(location), log(scale), shape]`; generator 33333 | All four coordinates monitored under the common Bayesian rule | Passed, 165.125 s; `20260902-075735-...` |
+| Bayesian location regression, 10 sites | `log(location)=beta0+betaX X+betaY Y`; X and Y are the two coordinate columns; independent margins | `[beta0=8.987, betaX=0.005, betaY=0.008, log(scale), shape]`; generator 66666 | The full-rank two-covariate design identifies all five estimator-owned coordinates | Passed, 130.429 s; `20260902-080047-...` |
+| Bayesian positive shape, 10 sites | Independent heavy-tail support regime, shape 0.1 | `[log(location), log(scale), shape]`; generator 11111 | Common Bayesian coordinate rule | Passed, 71.070 s; `20260902-080322-...` |
+| Bayesian zero shape, 10 sites | Independent Gumbel-limit regime, shape 0 | `[log(location), log(scale), shape]`; generator 22222 | Common Bayesian coordinate rule | Passed, 68.439 s; `20260902-080456-...` |
+| Bayesian negative shape, 10 sites | Independent strongly bounded-tail regime, shape -0.2 | `[log(location), log(scale), shape]`; generator 33333 | Common Bayesian coordinate rule | Passed, 78.168 s; `20260902-080630-...` |
+
+Location and scale use log links; shape and correlation range are physical coordinates. The exponential
+range retains its production Uniform `(epsilon, 500)` support, shape retains `[-0.5, 0.5]`, and the
+data-derived trend bounds and priors are unchanged; every generating parent is asserted inside its bound
+and prior support before acceptance. MLE uses the unchanged default Differential Evolution policy. Bayesian
+cells retain the dimension-dependent production DEMCzs configuration and estimator seed 12345. Three-,
+four-, and five-coordinate models use 6, 8, and 10 chains; thinning 30, 40, and 50; and initial populations
+300, 400, and 500, respectively. All use 3,500 iterations, 1,750 warmup iterations, and output length 10,000.
+These settings are resolved at the default 90% interval width and asserted before the test changes only the
+reported interval width to 95%; initialization, priors, bounds, sampler, seeds, and production defaults are unchanged.
+
+These fixtures contain no latent spatial-error field. No coordinate is therefore replaced by a conditional-GP
+residual or predictive interval, and no site-quantile response grid is needed for a weak latent component.
+Frequentist statistical uncertainty is the unregularized observed-information covariance; Bayesian statistical
+uncertainty is the retained-draw posterior. Conditional spatial uncertainty is absent. Numerical error is
+separated through the MLE covariance-status gate and the Bayesian R-hat/ESS gates. The conditional 5% point
+criterion is secondary and applies only when an existing 95% interval is already narrower than 5% of a
+nonzero parent.
+
+`Bayesian_LargeSample_HasTighterEstimates` was removed rather than run. Under the approved 10-by-100 design it
+would duplicate the homogeneous cell, and “narrower is better” supplied neither a predeclared rate such as inverse-square-root
+precision scaling nor a distinct scientific interaction. No old result was transferred. The current regression
+set for later spatial changes is the eight `mvtnorm` likelihood cells; kriging, geodesic, criteria, simulation,
+the ten independent Chunk 14 cells, and the eight recovery cells above. Historical cross-validation,
+prediction, and dispatch cells remain design history with fast-test ownership.
+
+The eight earlier one-result passes under the superseded 1,000-row design (`20260901-202329-...` through
+`20260901-220241-...`) are not evidence for the revised identities. The first revised guarded invocation was
+blocked before test execution because the sandbox could not read the existing NuGet profile; it produced no
+TRX. No zero-result Chunk 15 TRX was accepted.
 
 [Verification index](README.md) | [Technical treatment](../technical-reference/spatial/spatial-extremes.md) | [Scientific findings](../technical-reference/review-findings.md#tr-048)

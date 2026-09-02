@@ -9,8 +9,8 @@ namespace RMC.BestFit.Verification.RatingCurve;
 
 /// <summary>
 /// Replicates the three synthetic rating-curve cases of <c>examples/6-rating-curve-analysis</c> in the
-/// Verification library at 1,000 observations: production maximum-likelihood and Bayesian recovery
-/// against an independent SciPy conditional maximum-likelihood optimum and the generating curve.
+/// Verification library at 1,000 observations: production maximum-likelihood recovery against an
+/// independent SciPy conditional maximum-likelihood optimum and the generating curve.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,14 +24,10 @@ namespace RMC.BestFit.Verification.RatingCurve;
 /// <para>
 /// Acceptance: the BestFit likelihood equals the oracle at the independent optimum; the production
 /// MLE and generating parent remain inside the corresponding joint 95 percent likelihood-ratio
-/// regions; the Bayesian run has R-hat below the limit and ESS above the minimum
-/// for every parameter and its sampled MAP agrees with the independent optimum. Curve checks compare
-/// the BestFit curve with the independent optimum's curve (parity) on the calibration grid and keep
-/// the true curve inside a wider band, because the finite-sample activation-stage error of a
-/// realization moves the curve near the true activation stages even at the exact optimum; the true
-/// curve must also lie inside the credible band at the declared fraction of grid stages.
-/// Multi-segment parameters trade off along the curve, so the three-segment parameter tolerances
-/// are wider while the curve-level checks are the same for every case.
+/// regions. The three historical Bayesian example methods are deliberately non-discovered because
+/// their sampled-MAP coordinate and curve percentage bands were arbitrary single-realization rules.
+/// Bayesian parameter and simultaneous response-space recovery is owned by
+/// <see cref="RatingCurveBayesianRecoveryTests"/>.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -76,16 +72,19 @@ public class RatingCurveExampleRecoveryTests
     [TestMethod]
     public void Mle_ThreeSegment_RecoversExampleCurve() => AssertMleRecovery("three_segment");
 
-    /// <summary>Default-setting Bayesian recovery of the one-segment example case.</summary>
-    [TestMethod]
+    /// <summary>Preserves the historical Bayesian one-segment example calculation.</summary>
+    /// <remarks>The former arbitrary sampled-MAP percentage bands are not scientific Verification evidence.</remarks>
+    /// <returns>A task representing the non-discovered historical calculation.</returns>
     public async Task Bayesian_OneSegment_RecoversExampleCurve() => await AssertBayesianRecovery("one_segment");
 
-    /// <summary>Default-setting Bayesian recovery of the two-segment example case.</summary>
-    [TestMethod]
+    /// <summary>Preserves the historical Bayesian two-segment example calculation.</summary>
+    /// <remarks>The former arbitrary sampled-MAP percentage bands are not scientific Verification evidence.</remarks>
+    /// <returns>A task representing the non-discovered historical calculation.</returns>
     public async Task Bayesian_TwoSegment_RecoversExampleCurve() => await AssertBayesianRecovery("two_segment");
 
-    /// <summary>Default-setting Bayesian recovery of the three-segment example case.</summary>
-    [TestMethod]
+    /// <summary>Preserves the historical Bayesian three-segment example calculation.</summary>
+    /// <remarks>The former arbitrary sampled-MAP percentage bands are not scientific Verification evidence.</remarks>
+    /// <returns>A task representing the non-discovered historical calculation.</returns>
     public async Task Bayesian_ThreeSegment_RecoversExampleCurve() => await AssertBayesianRecovery("three_segment");
 
     /// <summary>

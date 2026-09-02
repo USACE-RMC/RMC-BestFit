@@ -15,7 +15,9 @@ namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 /// <para>
 /// Each test creates a <see cref="Bulletin17CDistribution"/> with a Log-Pearson Type III distribution,
 /// fits parameters using <see cref="GeneralizedMethodOfMoments"/>, and verifies that the estimated
-/// log-space parameters (mean, standard deviation, skew) match the published values.
+/// log-space parameters (mean, standard deviation, skew) match the published values. The worked
+/// examples report those coordinates to three decimals, so each retained comparison uses an
+/// absolute 1e-3 rounding tolerance; successful estimation is only a prerequisite.
 /// </para>
 /// <para>
 /// Reference: England, J.F., Cohn, T.A., Faber, B.A., et al. (2019). Guidelines for Determining
@@ -225,16 +227,14 @@ public class B17CExampleTests
 
 
     /// <summary>
-    /// Example 4 with uncertain data instead of intervals.
+    /// Preserves the historical Example 4 uncertain-data substitution fixture.
     /// </summary>
     /// <remarks>
-    /// Replacing the interval-censored historical floods with uniform uncertain observations
-    /// changes the likelihood contribution of those records, so only approximate agreement with
-    /// the published interval-based parameters is expected. The 10% relative tolerance is an
-    /// acceptance band for that approximation; it is not derived from a published uncertain-data
-    /// result.
+    /// Replacing interval-censored floods with uniform uncertain observations changes the scientific
+    /// problem, and no independent uncertain-data result exists. The former 10% comparison with the
+    /// interval-based publication was arbitrary, so this method is retained as non-discovered
+    /// historical setup and is not scientific Verification evidence.
     /// </remarks>
-    [TestMethod]
     public void Test_Example4_UncertainData()
     {
         var (df, trueParameters) = Bulletin17CData.GetExample4_Uncertain();
@@ -254,15 +254,14 @@ public class B17CExampleTests
     }
 
     /// <summary>
-    /// Example 7 with uncertain data instead of intervals.
+    /// Preserves the historical Example 7 uncertain-data substitution fixture.
     /// </summary>
     /// <remarks>
-    /// Replacing the interval-censored records with uniform uncertain observations changes their
-    /// likelihood contribution, so only approximate agreement with the published interval-based
-    /// parameters is expected. The 20% relative tolerance is an acceptance band for that
-    /// approximation; it is not derived from a published uncertain-data result.
+    /// Replacing interval-censored records with uniform uncertain observations changes the scientific
+    /// problem, and no independent uncertain-data result exists. The former 20% comparison with the
+    /// interval-based publication was arbitrary, so this method is retained as non-discovered
+    /// historical setup and is not scientific Verification evidence.
     /// </remarks>
-    [TestMethod]
     public void Test_Example7_UncertainData()
     {
         var (df, trueParameters) = Bulletin17CData.GetExample7_Uncertain();

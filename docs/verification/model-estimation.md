@@ -408,20 +408,24 @@ $$
 k_{\mathrm{threshold}}=\min\left(1-\frac{1}{\log_{10}S},0.7\right)=0.375803649418215. \tag{ME.18}
 $$
 
-The third observation has $k=0.411627035764065$ and is therefore flagged. BestFit applies this draw-count threshold to Bayesian reliability and category summaries and preserves it through XML round-trip. Historical public constructors retain their earlier fixed categories for API and serialization compatibility.
+The third observation has $k=0.411627035764065$ and is therefore flagged. The retained Verification
+method compares this Pareto value and the draw-count threshold directly with R `loo` 2.10.0. Reliability
+classification, summary text, XML round-trip, and historical-constructor compatibility are deterministic
+contracts owned by fast `InfluenceDiagnosticsTests`; they are not part of this scientific method.
 
 The runtime checks are structural rather than timing-dependent. Default Bayesian completion evaluates `PointwiseDataLogLikelihood` exactly once for each of the $S$ retained draws, shares the transient $n\times S$ matrix between WAIC and PSIS, then releases it. A later influence request reuses the retained $O(n)$ pointwise ELPD and Pareto-$k$ arrays and performs no additional pointwise likelihood evaluations. The generalized-Pareto fit uses the pinned bounded fixed grid rather than an iterative optimizer for every observation. No exact leave-one-out refits are run by default.
 
 This verification matches the pinned reference with `r_eff = 1`. The current implementation does not estimate chain-relative efficiency for the PSIS tail length and does not implement exact or moment-matched refits for observations above the reliability limit.
 
-Focused methods:
+Verification methods:
 
 - `RlooOracle_InternalIdentitiesAreConsistent`
 - `PSISLOO_MatchesRLooOracle`
 - `PsisTailRegimes_MatchRLooOracle`
 - `ParetoInfluence_UsesRloo210DiagnosticThreshold`
-- `DefaultInformationCriteria_EvaluatePointwiseLikelihoodOnce`
-- `InfluenceDiagnostics_ReuseCachedPointwiseLikelihood`
+
+Fast engineering owners include `DefaultInformationCriteria_EvaluatePointwiseLikelihoodOnce`,
+`InfluenceDiagnostics_ReuseCachedPointwiseLikelihood`, and the XML/reliability/summary contracts.
 
 ## GMM Specification, Covariance, and Legacy Influence Verification
 
@@ -481,6 +485,11 @@ The deterministic fast test `AllSupportedParentAndTemporalTrendAssignments_HaveF
 
 Five Bayesian covering-array cells add nonredundant statistical evidence under the shared central-95% rule: Normal reciprocal scale (`20260829-183018-*`), Normal sinusoidal scale (`183058-*`), GEV linear shape (`183143-*`), GPD linear location with exponential scale (`183323-*`), and Log-Pearson III linear log-mean with exponential log-scale (`183534-*`). All five exact runs passed their predeclared response grids, directly identified constant coordinates, R-hat, ESS, and conditional secondary criteria. Together with the earlier 15 passes and the two repaired reruns, the current Chunk 6B matrix is 22 of 22 passed identities.
 
-The older sixteen Normal trend-recovery methods still use their documented four-posterior-standard-deviation gross-error rule. They remain legitimate legacy recovery evidence but are not counted as satisfying the shared central-95% policy until migrated and individually rerun. Exhaustively running 380 Bayesian cells is neither necessary nor a calibrated substitute for a multi-seed coverage study; the deterministic matrix plus the targeted family/parameter-role covering array is the current bounded verification design.
+The older sixteen Normal-only trend methods were consolidated rather than migrated. Fifteen are now
+non-discovered historical calculations; the retained constant-trend identity uses exactly 1,000
+response/covariate rows and the common central-95%, R-hat, and ESS rule. It passed its exact one-result run
+under `20260902-082205-...`. Exhaustively running 380 Bayesian cells is neither necessary nor a calibrated
+substitute for a multi-seed coverage study; the deterministic matrix plus the targeted family/parameter-role
+covering array is the current bounded verification design.
 
 The scoped DIC, WAIC, PSIS-LOO, Pareto-k, and GMM covariance artifacts are committed and consumed without an R or Python runtime. ArviZ would be a redundant secondary WAIC/LOO implementation, not missing verification evidence or a Phase 2 exit requirement.

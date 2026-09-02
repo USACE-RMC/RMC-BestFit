@@ -29,7 +29,7 @@ public class UnivariateDistributionMLETests
     #region Normal and Related Distributions
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Normal distribution.
+    /// Places the closed-form Tippecanoe River Normal reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -65,7 +65,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Log-Normal (natural log) distribution.
+    /// Places the natural-log Wabash River reference inside the fitted Ln-Normal joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -103,7 +103,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Log-Normal (base-10 log) distribution.
+    /// Places the base-10-log Wabash River reference inside the fitted Log-Normal joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -137,7 +137,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Generalized Normal distribution.
+    /// Places the AirQuality <c>lmom</c> Generalized Normal reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -173,7 +173,7 @@ public class UnivariateDistributionMLETests
     #region The Gamma Family of Distributions
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Exponential distribution.
+    /// Places the published Wabash River Exponential reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -208,7 +208,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Gamma distribution.
+    /// Places the published Harricana River Gamma reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -239,7 +239,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Pearson Type III distribution.
+    /// Places the published Harricana River Pearson Type III reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -273,7 +273,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Log-Pearson Type III distribution.
+    /// Places the published Harricana River Log-Pearson Type III reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -312,7 +312,7 @@ public class UnivariateDistributionMLETests
     #region Extreme Value Distributions
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Gumbel (Extreme Value Type I) distribution.
+    /// Places the published Sugar Creek Gumbel reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -346,7 +346,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Weibull distribution.
+    /// Places the recorded weak-prior R-Stan Weibull reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -382,7 +382,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Generalized Extreme Value (GEV) distribution.
+    /// Places the published White River GEV reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -417,7 +417,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Generalized Pareto distribution.
+    /// Places the recorded White River peaks-over-threshold GPA reference inside the fitted joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -452,7 +452,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Kappa-4 distribution.
+    /// Places the recorded Kappa Four reference inside the fitted four-coordinate joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -492,7 +492,7 @@ public class UnivariateDistributionMLETests
     #region Logistic Distributions
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Logistic distribution.
+    /// Places the recorded Logistic reference inside the fitted two-coordinate joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -526,7 +526,7 @@ public class UnivariateDistributionMLETests
     }
 
     /// <summary>
-    /// Tests Maximum Likelihood Estimation for the Generalized Logistic distribution.
+    /// Places the recorded Generalized Logistic reference inside the fitted three-coordinate joint 95% likelihood region.
     /// </summary>
     /// <remarks>
     /// <para>

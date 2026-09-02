@@ -20,7 +20,7 @@ public class MLEIntegrationTests
     #region Normal Family
 
     /// <summary>
-    /// Verifies <c>Test_MLE_Normal_RecoversTrueParameters</c>.
+    /// Verifies Normal location and scale recovery on their observed-information scales.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(μ=100, σ=15); fitted
@@ -126,7 +126,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_GeneralizedNormal_RecoversTrueParameters</c>.
+    /// Verifies Generalized Normal location, scale, and shape recovery with true profiling.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(ξ=50, α=10, κ=-0.3); fitted
@@ -154,7 +154,7 @@ public class MLEIntegrationTests
     #region Gamma Family
 
     /// <summary>
-    /// Verifies <c>Test_MLE_Exponential_RecoversTrueParameters</c>.
+    /// Verifies Exponential location and scale recovery on their observed-information scales.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(ξ=10, α=25); fitted
@@ -183,7 +183,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_Gamma_RecoversTrueParameters</c>.
+    /// Verifies Gamma scale and shape recovery on their observed-information scales.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(θ=5, κ=3); fitted
@@ -212,7 +212,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_PearsonTypeIII_RecoversTrueParameters</c>.
+    /// Verifies Pearson Type III mean, standard deviation, and skew recovery.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent moment coordinates=(μ=100,
@@ -249,7 +249,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_LogPearsonTypeIII_RecoversTrueParameters</c>.
+    /// Verifies Log-Pearson Type III log-mean, log-standard-deviation, and skew recovery.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent moment coordinates=(μ=2,
@@ -290,7 +290,7 @@ public class MLEIntegrationTests
     #region Extreme Value Distributions
 
     /// <summary>
-    /// Verifies <c>Test_MLE_Gumbel_RecoversTrueParameters</c>.
+    /// Verifies Gumbel location and scale recovery on their observed-information scales.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(ξ=50, α=15); fitted
@@ -319,7 +319,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_Weibull_RecoversTrueParameters</c>.
+    /// Verifies Weibull scale and shape recovery on their observed-information scales.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(λ=100, κ=2.5); fitted
@@ -348,7 +348,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_GEV_RecoversTrueParameters</c>.
+    /// Verifies generalized-extreme-value location, scale, and shape recovery.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(ξ=50, α=15, κ=0.1); fitted
@@ -378,7 +378,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_GeneralizedPareto_RecoversTrueParameters</c>.
+    /// Verifies generalized-Pareto location, scale, and shape recovery.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(ξ=0, α=20, κ=0.15). The
@@ -419,7 +419,7 @@ public class MLEIntegrationTests
     #region Logistic Distributions
 
     /// <summary>
-    /// Verifies <c>Test_MLE_Logistic_RecoversTrueParameters</c>.
+    /// Verifies Logistic location and scale recovery on their observed-information scales.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(ξ=75, α=10); fitted
@@ -448,7 +448,7 @@ public class MLEIntegrationTests
     }
 
     /// <summary>
-    /// Verifies <c>Test_MLE_GeneralizedLogistic_RecoversTrueParameters</c>.
+    /// Verifies Generalized Logistic location, scale, and shape recovery with true profiling.
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(ξ=75, α=10, κ=0.15); fitted

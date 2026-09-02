@@ -313,9 +313,14 @@ public class PsisLooOracleVerificationTests
         }
     }
     /// <summary>
-    /// Verifies Bayesian influence categories and reliability use the R <c>loo</c>
-    /// sample-size-dependent Pareto-k threshold and preserve it through XML.
+    /// Verifies BestFit Pareto-k summaries, categories, and problematic-observation selection against
+    /// the R <c>loo</c> 2.10.0 values and sample-size-dependent diagnostic threshold.
     /// </summary>
+    /// <remarks>
+    /// The independent artifact supplies five Pareto-k values from 40 fixed posterior draws and the
+    /// threshold <c>min(1 - 1/log10(S), 0.7)</c>. XML persistence, restored-state reliability, and
+    /// user-facing summary text are deterministic contracts owned by <c>InfluenceDiagnosticsTests</c>.
+    /// </remarks>
     [TestMethod]
     public void ParetoInfluence_UsesRloo210DiagnosticThreshold()
     {
@@ -332,25 +337,11 @@ public class PsisLooOracleVerificationTests
         Assert.AreEqual(0, diagnostics.CountParetoKAbove07);
         Assert.AreEqual(0, diagnostics.CountParetoKAbove10);
         Assert.AreEqual(ParetoKCategory.OK, diagnostics[2].Category);
-        Assert.IsFalse(diagnostics.IsReliable);
         CollectionAssert.AreEqual(
             new[] { 2 },
             diagnostics.GetProblematicObservations(threshold)
                 .Select(observation => observation.Index)
                 .ToArray());
-        StringAssert.StartsWith(diagnostics.GetReliabilitySummary(), "CAUTION:");
-
-        XElement xml = diagnostics.ToXElement();
-        Assert.AreEqual(
-            threshold,
-            double.Parse(
-                xml.Attribute("ParetoKDiagnosticThreshold")?.Value ?? string.Empty,
-                System.Globalization.CultureInfo.InvariantCulture),
-            1e-12);
-        var restored = new InfluenceDiagnostics(xml);
-        Assert.AreEqual(ParetoKCategory.OK, restored[2].Category);
-        Assert.IsFalse(restored.IsReliable);
-        StringAssert.StartsWith(restored.GetReliabilitySummary(), "CAUTION:");
     }
 
     /// <summary>

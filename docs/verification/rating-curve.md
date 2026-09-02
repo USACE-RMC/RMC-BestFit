@@ -139,40 +139,24 @@ counts and `Validate_NonPositiveDischarge_IsInvalid` keeps the aligned-pair erro
 
 ## Example replication recovery cells
 
-`RatingCurveExampleRecoveryTests` builds each case exactly as the example project does (default flat
-priors, Jeffreys' rule for the scale, no `BayesianAnalysis` setting assigned; the resolved production
-DEMCzs defaults are asserted before and after sampling) on the 1,000-observation block and compares
-with the independent optimum and the generating curve. Acceptance rule as approved and amended on
-21 August 2026:
+`RatingCurveExampleRecoveryTests` builds each MLE case exactly as the example project does on the
+1,000-observation block and compares with the independent SciPy optimum and generating parent.
 
 - MLE cells: data log likelihood at the independent optimum within `1e-8` as a deterministic
   parameterization check; the production optimum must lie inside the joint 95% likelihood-ratio
   region around the independent optimum, and the generating parent must lie inside the corresponding
   joint 95% region around the production optimum. The cutoffs use 4, 7, and 10 fitted coordinates for
   one, two, and three segments. The estimate must remain inside the declared model bounds.
-- Bayesian cells: R-hat below 1.1 and ESS above 100 for every parameter; the sampled MAP from
-  `MCMCResults` within 5% (one and two segments) or 10% (three segments) of the independent optimum
-  with a `1e-3` floor; the sampled-MAP curve within 2% of the optimum's curve and within 10% of the
-  true curve; the fraction of grid stages at which the true curve lies inside the 90% posterior band is
-  reported, not asserted.
-
 | Exact method | Latest outcome | Wall-clock per guarded invocation |
 |---|---|---|
-| `Mle_OneSegment_RecoversExampleCurve` | Passed fresh 1 September 2026 (`20260901-144204-...`) | 1.3 s |
-| `Mle_TwoSegment_RecoversExampleCurve` | Passed fresh 1 September 2026 (`20260901-144208-...`) | 4.0 s |
-| `Mle_ThreeSegment_RecoversExampleCurve` | Passed fresh 1 September 2026 (`20260901-144215-...`) | 9.6 s |
-| `Bayesian_OneSegment_RecoversExampleCurve` | Passed; true curve inside the 90% band at 36 of 36 grid stages | 37.4 s |
-| `Bayesian_TwoSegment_RecoversExampleCurve` | Passed; 36 of 36 | 71.5 s |
-| `Bayesian_ThreeSegment_RecoversExampleCurve` | Passed; 34 of 36 | 122.9 s |
+| `Mle_OneSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141102-...`) | 1.452 s |
+| `Mle_TwoSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141123-...`) | 4.375 s |
+| `Mle_ThreeSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141108-...`) | 10.461 s |
 
-Failure history against the rule as first declared (shipped 300-observation data): the two-segment MLE
-curve exceeded a 5% true-curve band at stage 10 (+5.2%), the three-segment production optimum fell
-`1.6e-5` short of a `1e-5` optimality tolerance, the one- and two-segment Bayesian cells placed the true
-curve inside the 90% band at only 21/36 and 28/36 grid stages (the realization's curve sits 2-4% from the
-truth at the upper stages, an offset the independent optimum shares), and the three-segment sampled MAP's
-`beta3` differed from the optimum by 10.9% along the ridge (posterior kernel 0.65 log-units below the
-optimum's). Each amendment above was approved before the cells were rerun, and the fixtures moved to
-1,000 observations under the recovery sample-size policy.
+The three former Bayesian example calculations are now non-discovered historical methods. Their sampled-MAP
+5-10% coordinate bands, 2% curve band, and reported pointwise fractions did not provide an independent
+posterior recovery oracle. Stronger `RatingCurveBayesianRecoveryTests` cells own the current central-95%,
+diagnostic, and simultaneous response-space claims. Historical Bayesian passes were not transferred.
 
 ## Reconciled recovery coverage and identification matrix
 

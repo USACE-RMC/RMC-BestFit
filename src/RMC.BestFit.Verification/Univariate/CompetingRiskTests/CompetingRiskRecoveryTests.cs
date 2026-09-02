@@ -7,7 +7,10 @@ namespace RMC.BestFit.Verification.Univariate.CompetingRiskTests;
 /// <remarks>
 /// Each public method is intentionally independent so it can be authorized, run, and
 /// reported through the guarded exact-method runner. Every fixture predeclares and verifies
-/// balanced cause shares and visible dog-leg behavior before fitting. Bayesian recovery keeps
+/// balanced cause shares and visible dog-leg behavior before fitting. Each contains 1,000 scalar
+/// minimum/maximum observations generated with seed 12345. Component labels are fixed by the
+/// fixture's declared ordering after cause-share, responsibility, dominance-mass, and crossover
+/// identification checks. Bayesian recovery keeps
 /// the production DEMCzs configuration. The independent maximum disables only the optional
 /// Jeffreys scale multiplier because a component can disappear at its scale boundary while the
 /// maximum likelihood remains finite; its bounded parameter priors remain active. The

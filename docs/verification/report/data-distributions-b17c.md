@@ -8,6 +8,35 @@ This chapter verifies that supported univariate families use the documented para
 
 ## Distribution-family oracles
 
+### Nonstationary univariate recovery
+
+The retained constant-trend Normal baseline generates exactly 1,000 response/covariate rows from physical
+parents `[mean=100, scale=15]` with MT19937 seed 12345. Both directly identified coordinates must contain
+their generating parent in the central 95% posterior interval, have R-hat below 1.10, and have ESS at least
+100. The exact guarded method passed 1/1 in 17.849 s under `20260902-082205-...`.
+
+Fifteen legacy Normal-only Cartesian trend combinations were consolidated rather than transferred. Their
+former four-posterior-standard-deviation rule is superseded by the five-cell multi-family parent/trend
+covering array, response-space recovery for correlated trend coefficients, and the fast 380-assignment
+default matrix.
+
+### Stationary Bayesian family recovery
+
+Each of the fifteen supported univariate families also has a generating-parent recovery cell with exactly
+1,000 scalar observations. The generator, physical parameter order, seed, priors, parameter bounds, and
+production DEMCzs settings are fixed in the source and catalog. Every identifiable generating coordinate
+must lie inside its central 95% posterior interval, with $\widehat R<1.10$ and ESS at least 100. All fifteen
+retained identities produced one exact passing TRX during the 2 September 2026 refresh; this is recovery
+evidence, distinct from the deterministic distribution-function and external fitted-optimum comparisons
+below.
+
+The fifteen `UnivariateAnalysisMAPTests` report calculations are retained only as non-discovered historical
+methods. Their reference points mix fitted real-data summaries, MLE or L-moment estimates, and weak-prior
+Bayesian results, so the former 5-10% point bands were not an independent posterior oracle. A diagnostic
+central-95% rewrite produced four passes and then an Exponential miss: parent `13100` lay just outside
+`[11528.7492, 13089.7937]`. That failure was preserved, no sampler or fixture was tuned, the remaining ten
+historical methods were not executed, and none of the fifteen identities is cataloged as current evidence.
+
 The family tests use deterministic data committed with the report. Each test compares the fitted parameter vector, maximized data log likelihood, representative CDF values, and representative quantiles with an independent implementation. SciPy 1.17.1 supplies thirteen overlapping families. R 4.4.3 with `lmomco` 2.5.7 supplies Generalized Logistic and Generalized Normal. Closed-form calculations supplement Normal, Log10-Normal, Exponential, and Logistic, and analytical branch identities supplement Kappa Four.
 
 | Family | Primary independent reference | Quantities compared | Result |
@@ -83,6 +112,12 @@ The seven official examples exercise systematic records, low outliers, zero-flow
 
 Aggregate result: 21 of 21 parameter comparisons passed. Three additional plotting-position cells reproduced PeakFQ results for Examples 4, 5, and 7.
 
+The former `Test_Example4_UncertainData` and `Test_Example7_UncertainData` calculations are non-discovered
+historical methods. They altered the published data law and compared fitted coordinates through arbitrary
+percentage bands without an independent uncertain-data oracle. The seven exact published examples above
+remain the current Bulletin 17C parameter evidence; deterministic uncertain-data behavior remains fast-test
+owned.
+
 ## Bootstrap refit reliability
 
 Ordinary and pivotal resampling were applied to each of the seven examples. Examples 1 through 6 used 1,000 refits for each method; Example 7 used 500 for each method, for 13,000 requested outputs overall. The test requires a finite result for every requested output and records retries, substitutions, bound repairs, and numerical clips.
@@ -97,4 +132,4 @@ This result verifies numerical completion and accounting for the published examp
 
 ## Conclusion
 
-All fifteen univariate families passed the declared analytical or external-package comparisons, both multi-candidate fitting cells passed, the seven Bulletin 17C example parameter vectors reproduced the published values, and all fourteen refit-reliability cells completed without substitution or retry. Cohn interval values and broad Bulletin 17C interval coverage remain outside the claims supported by this checkpoint.
+All fifteen univariate families passed the declared generating-parent recovery and analytical or external-package comparisons, both multi-candidate fitting cells passed, and the seven Bulletin 17C example parameter vectors reproduced the published values. The bootstrap table is a delivery and accounting record rather than scientific accuracy evidence. Cohn interval values and broad Bulletin 17C interval coverage remain outside the claims supported by this checkpoint; all three governed coverage classes remain execution-excluded historical evidence.

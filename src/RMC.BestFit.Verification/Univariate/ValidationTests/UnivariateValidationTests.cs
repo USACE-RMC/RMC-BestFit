@@ -61,7 +61,7 @@ public class UnivariateValidationTests
     #region Exponential Family
 
     /// <summary>
-    /// Tests parameter recovery for the Exponential distribution.
+    /// Verifies central-95% Exponential parameter/response recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Exponential distribution has 2 parameters: location (Xi) and scale (Alpha). This cell uses
@@ -88,7 +88,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Gamma distribution.
+    /// Verifies central-95% Gamma parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Gamma distribution uses Numerics scale (Theta) and shape (Kappa) parameters with parent
@@ -114,7 +114,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Weibull distribution.
+    /// Verifies central-95% Weibull parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Weibull distribution (2-parameter reliability version) has 2 parameters: scale (Lambda) and shape
@@ -144,7 +144,7 @@ public class UnivariateValidationTests
     #region Normal Family
 
     /// <summary>
-    /// Tests parameter recovery for the Normal distribution.
+    /// Verifies central-95% Normal parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Normal distribution has 2 parameters: mean (Mu) and standard deviation (Sigma), with parent
@@ -171,7 +171,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Generalized Normal distribution.
+    /// Verifies central-95% Generalized Normal parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Generalized Normal distribution has 3 parameters: location (Xi), scale (Alpha), and shape (Kappa), with parent [Xi=100, Alpha=15, Kappa=0.1].
@@ -197,7 +197,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Logistic distribution.
+    /// Verifies central-95% Logistic parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Logistic distribution has 2 parameters: location (Xi) and scale (Alpha), with parent [Xi=100, Alpha=10]. This cell uses 1,000 scalar
@@ -223,7 +223,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Generalized Logistic distribution.
+    /// Verifies central-95% Generalized Logistic parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Generalized Logistic distribution has 3 parameters: location (Xi), scale (Alpha), and shape (Kappa), with parent [Xi=100, Alpha=15, Kappa=0.1].
@@ -253,7 +253,7 @@ public class UnivariateValidationTests
     #region Extreme Value Family
 
     /// <summary>
-    /// Tests parameter recovery for the Gumbel (Type I Extreme Value) distribution.
+    /// Verifies central-95% Gumbel parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Gumbel distribution has 2 parameters: location (Xi) and scale (Alpha), with parent [Xi=100, Alpha=20]. This cell uses 1,000 scalar
@@ -279,7 +279,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Generalized Extreme Value (GEV) distribution.
+    /// Verifies central-95% GEV parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The GEV distribution has 3 parameters: location (Xi), scale (Alpha), and shape (Kappa), with parent [Xi=100, Alpha=20, Kappa=-0.1]. This cell uses
@@ -306,7 +306,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Generalized Pareto distribution.
+    /// Verifies central-95% Generalized Pareto parameter/response recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Generalized Pareto distribution has 3 parameters: location (Xi), scale (Alpha), and shape (Kappa), with parent [Xi=0, Alpha=50, Kappa=0.1].
@@ -334,7 +334,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Kappa Four-parameter distribution.
+    /// Verifies central-95% Kappa Four parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Kappa Four distribution has 4 parameters: location (Xi), scale (Alpha),
@@ -366,7 +366,7 @@ public class UnivariateValidationTests
     #region Pearson Family
 
     /// <summary>
-    /// Tests parameter recovery for the Pearson Type III distribution.
+    /// Verifies central-95% Pearson Type III parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Pearson Type III distribution has 3 parameters: mean (Mu), standard deviation (Sigma), and skewness
@@ -392,7 +392,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Log-Pearson Type III distribution.
+    /// Verifies central-95% Log-Pearson Type III parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Log-Pearson Type III distribution has 3 parameters: mean of log-transformed data (Mu),
@@ -425,7 +425,7 @@ public class UnivariateValidationTests
     #region Log-Transformed Distributions
 
     /// <summary>
-    /// Tests parameter recovery for the Log-Normal distribution.
+    /// Verifies central-95% base-10 Log-Normal parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Log-Normal distribution has 2 parameters: mean of log-transformed data (Mu)
@@ -452,7 +452,7 @@ public class UnivariateValidationTests
     }
 
     /// <summary>
-    /// Tests parameter recovery for the Ln-Normal (base-e Log-Normal) distribution.
+    /// Verifies central-95% physical-space Ln-Normal parent recovery with R-hat and ESS diagnostics.
     /// </summary>
     /// <remarks>
     /// The Ln-Normal distribution has public real-space parameters mean and standard deviation,

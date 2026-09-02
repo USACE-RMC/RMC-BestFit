@@ -12,9 +12,14 @@ namespace RMC.BestFit.Verification.Univariate.PointProcessTests;
 /// Poisson and generalized-Pareto constructions.
 /// </summary>
 /// <remarks>
-/// Recovery methods run Bayesian MCMC and exercise the production fixed-size Poisson-GPA
-/// generators. References: Stedinger et al. (1993), Madsen et al. (1997), Coles (2001),
-/// chapters 5 and 7, and Coles and Pericchi (2003).
+/// Recovery methods use exactly 1,000 generated POT events with fixture seeds declared in each
+/// method and unchanged production Bayesian seed 12345. The observational exposure is derived from
+/// the event count and annual threshold intensity. Continuous coordinates and predeclared intensity
+/// or conditional-tail responses use central-95% or standardized-error acceptance with R-hat below
+/// 1.10 and ESS of at least 100 where sampled. Simulation cells separately compare replicated event
+/// counts and conditional tails with analytical Poisson and binomial uncertainty; they are not
+/// described as parameter recovery. References: Stedinger et al. (1993), Madsen et al. (1997),
+/// Coles (2001), chapters 5 and 7, and Coles and Pericchi (2003).
 /// </remarks>
 [TestClass]
 public partial class PointProcessRecoveryTests

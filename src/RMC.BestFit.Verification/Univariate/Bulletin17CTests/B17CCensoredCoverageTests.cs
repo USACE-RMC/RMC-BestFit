@@ -14,6 +14,12 @@ namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 /// </summary>
 /// <remarks>
 /// <para>
+/// Every method in this class is execution-excluded historical evidence and must not be run during
+/// ordinary remediation or report generation. The diagnostic grid has no quantitative scientific
+/// acceptance oracle; catalog language records that limitation without converting completion into
+/// verification.
+/// </para>
+/// <para>
 /// Motivated by Cohn's EMA CI paper which shows that censoring modifies the Fisher
 /// information matrix, potentially changing the parameter covariance structure in ways
 /// not captured by the uncensored BCa calibration experiments.

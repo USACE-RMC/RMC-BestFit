@@ -23,11 +23,12 @@ public class BayesianAnalysisRecoveryTests
 #region Test Data
 
     /// <summary>
-    /// Creates normal Test Data.
+    /// Creates the seeded N=1000 Normal sample used by both posterior-recovery cells.
     /// </summary>
     /// <returns>The created test object.</returns>
     /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
+    /// The scalar observational unit, parent distribution, and seed are fixed by the class-level
+    /// recovery design; the helper does not alter production sampler settings.
     /// </remarks>
     private static DataFrame CreateNormalTestData()
     {

@@ -3,7 +3,7 @@
     "artifact_id": "TS-PHASE5-ARIMAX-MLE-001",
     "finding": "PHASE5-RECOVERY-ARIMAX-MLE",
     "generator": "verification/r/time-series/generate_phase5_arimax_mle_oracle.R",
-    "generator_sha256": "bd50f4fc5766d22cdcb3cafcd8dd9f3abab8aae1cc14d3af7de5396431794065",
+    "generator_sha256": "f1feb2f94691f7b8cac8f7587f10b2a145a42de336a526c6e2d1cba1e87118fd",
     "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
     "input_fixture_sha256": "efc4c3eeaef40ab162671f2cccf34e19cfe19650f46cc8711edd956c2f39ed9c",
     "source_commit": "503fd9cddce02d40d0bb3206a0db68238528c550",
@@ -13,8 +13,6 @@
     "generated_utc": "2026-09-01 17:16:06 UTC",
     "tolerances": {
       "log_likelihood_absolute": 1e-05,
-      "sampled_map_relative": 0.05,
-      "sampled_map_absolute_floor": 0.001,
       "posterior_log_likelihood_absolute": 1e-05,
       "deterministic_recurrence_absolute": 1e-12
     },

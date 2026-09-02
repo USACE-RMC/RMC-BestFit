@@ -12,8 +12,11 @@ namespace RMC.BestFit.Verification.DistributionFitting;
 /// Verifies distribution functions and maximum-likelihood fits against committed SciPy 1.17.1 oracles.
 /// </summary>
 /// <remarks>
-/// Each public test is intentionally family-specific so it can be executed alone through the guarded
-/// verification runner. Python is used only to generate the committed JSON artifact.
+/// Each family uses the same 39 fixed scalar observations from
+/// <c>verification/data/distribution-fitting/scipy-family-oracles.json</c>. SciPy independently
+/// supplies the parameter crosswalk, fitted optimum, maximum log likelihood, PDF, CDF, and quantile.
+/// Function values use 1e-8 absolute plus 1e-7 relative tolerance; the production and SciPy optima
+/// must occupy the same joint 95% likelihood-ratio region. Python is not required at test runtime.
 /// </remarks>
 [TestClass]
 public class ScipyDistributionFittingVerificationTests

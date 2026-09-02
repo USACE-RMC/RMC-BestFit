@@ -2,6 +2,8 @@
 
 # Competing-Risk Analysis
 
+## Dependence theory and independent simulation oracle
+
 For a Gaussian copula with latent correlation $\rho$, the independent oracle uses
 
 $$\rho_S=\frac{6}{\pi}\arcsin(\rho/2),\qquad
@@ -15,6 +17,8 @@ Each dependence mode generated 40,000 observations with seed 24681357. Empirical
 | Perfect positive | $\rho_S=1$, maximum CDF 0.5 | Passed |
 | Perfect negative limit | Equation (C.1) at the implemented numerical limit | Passed |
 | User correlation matrix | Equation (C.1) at the configured correlation | Passed |
+
+## Identified recovery designs
 
 The historical 20-cell estimator cross-product was thinned to five BestFit recovery cells
 over three predeclared, clearly identified dog-leg fixtures. Each uses seed 12345 and exactly
@@ -32,7 +36,7 @@ MLE uncertainty comes from the full competing-risk observed-information matrix w
 with every generating coordinate required to have absolute standardized error at most 1.96.
 Bayesian recovery requires every ordered generating coordinate inside its central 95 percent
 posterior interval, $\widehat R<1.10$, and ESS at least 100. All five retained exact BestFit
-identities produced one-result passing TRXs.
+identities produced fresh one-result passing TRXs on 2 September 2026.
 
 The redesigned maximum has one interior responsibility crossover at composite probability 0.474
 and the expected Gumbel extreme-tail re-entry at 0.987. BestFit and Numerics MLE each recover it
@@ -49,3 +53,11 @@ acceptance setting, the exact Bayesian maximum identity passed. The production p
 not changed. A balanced three-Weibull candidate was separately removed after MLE
 boundary/observed-information failures and a Bayesian parent-interval miss showed that cause
 balance alone did not identify its coordinates.
+
+## Limitations and provenance
+
+Cause labeling, component order, dependence mode, and every estimator-owned coordinate are fixed before
+execution. Recovery is not claimed for the former local-mode fixture, the removed balanced three-component
+candidate, or the correlated Bayesian case. The default-prior boundary diagnostic is retained as a
+limitation, not counted as a passing recovery result. Generator seed 12345, N=1000, parameter ordering,
+priors, and covariance source are recorded in the source and catalog.

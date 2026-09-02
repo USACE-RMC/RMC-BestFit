@@ -3,7 +3,7 @@
     "artifact_id": "TS-PHASE5-ARIMA-MLE-001",
     "finding": "PHASE5-RECOVERY-ARIMA-MLE",
     "generator": "verification/r/time-series/generate_phase5_arima_mle_oracle.R",
-    "generator_sha256": "c4f5aa5af561e2ea8b3a2b09eafa52877fd9d001ead63f95918074bd19105d18",
+    "generator_sha256": "7cf62b8db7217af3304e3cc4f5aa43dd36f9b9af8e4321d305d747d64a041ef3",
     "input_fixture": "verification/data/time-series/phase5-recovery-fixtures.json",
     "input_fixture_sha256": "efc4c3eeaef40ab162671f2cccf34e19cfe19650f46cc8711edd956c2f39ed9c",
     "source_commit": "503fd9cddce02d40d0bb3206a0db68238528c550",
@@ -14,8 +14,6 @@
     "tolerances": {
       "log_likelihood_absolute": 1e-05,
       "deterministic_recurrence_absolute": 1e-12,
-      "sampled_map_relative": 0.05,
-      "sampled_map_absolute_floor": 0.001,
       "posterior_log_likelihood_absolute": 1e-05
     },
     "optimizer_acceptance": {

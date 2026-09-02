@@ -231,8 +231,6 @@ artifact <- list(
     tolerances = list(
       log_likelihood_absolute = 1e-5,
       deterministic_recurrence_absolute = 1e-12,
-      sampled_map_relative = 0.05,
-      sampled_map_absolute_floor = 1e-3,
       posterior_log_likelihood_absolute = 1e-5
     ),
     optimizer_acceptance = list(

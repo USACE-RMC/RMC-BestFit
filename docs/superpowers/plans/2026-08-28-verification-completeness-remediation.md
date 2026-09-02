@@ -15,7 +15,7 @@
 - Haden Smith is the final technical and numerical authority; do not change an established algorithm, likelihood, formula, prior, sampler, convergence rule, seed behavior, default tolerance, serialization shape, or public contract without explicit prior approval.
 - `RMC.BestFit.Verification` contains only analytical, independent, external-package, published/real-source, recovery, or coverage evidence with a declared oracle and acceptance rule.
 - Deterministic state, validation, exception, serialization, dispatch, caching, and regression contracts belong in the fast test projects and may not run optimizers or MCMC.
-- Every genuine recovery design uses exactly N=1000 observational units as defined in the audit specification.
+- Every genuine recovery design uses exactly N=1000 observational units as defined in the audit specification, except the later explicitly approved Chunk 15 spatial cross-product design: 10 sites by 100 complete row/year vectors, total scalar N=1000 and 100 multivariate likelihood contributions.
 - Recovery acceptance follows the common 95% interval/standardized-error rule and the conditional 5% secondary rule in the audit specification; source-specific external parity tolerances remain separate.
 - Verification methods are run only when Haden Smith explicitly authorizes the exact method, using `scripts/run-verification-test.ps1 -Test <fully-qualified-method>`; never run the full Verification suite.
 - Do not execute Bulletin 17C confidence-interval coverage methods in `B17CCoverageTests`, `B17CCensoredCoverageTests`, or `B17CCohnEtAlCoverageTests`. Inventory and ownership-review those sources and preserve historical results as reruns-on-request; other Verification methods still require exact explicit authorization.
@@ -57,7 +57,7 @@
 | 13B | ARIMA and ARIMAX normalization | Two dedicated evidence/report rows; R crosswalk explicit |
 | 14A | Spatial correlation and cross-validation oracles | Three correlation models and independent fold results |
 | 14B | Spatial prediction and uncertainty oracles | Independent GP, Godambe, bootstrap, and VIF evidence |
-| 15 | Spatial N=1000 recovery completion | All spatial recovery uses 1000 row/year vectors |
+| 15 | Spatial N=1000 recovery completion | Approved total scalar N=1000: 10 sites by 100 complete row/year vectors |
 | 16A1 | XML/comments: ModelEstimation | Professional scientific documentation in 65 current declarations |
 | 16A2 | XML/comments: DistributionFitting | Professional scientific documentation in 45 current declarations |
 | 16A3 | XML/comments: Univariate validation/report | Professional scientific documentation in 60 current declarations |
@@ -551,13 +551,13 @@ or remediation was begun.
 - Modify spatial synthetic data helpers, catalog, and report sections.
 
 **Interfaces:**
-- Produces: every spatial recovery fixture with 1000 row/year vectors across the complete site network.
+- Produces: every spatial recovery fixture with 10 sites by 100 complete row/year vectors, total scalar N=1000 and 100 multivariate likelihood contributions.
 
-- [ ] Change only the generated observation count and test acceptance first; do not alter production sampler defaults or parameter bounds.
-- [ ] Apply scalar recovery only to identified trend/correlation coordinates and use site quantiles/regional curves for weak latent components.
-- [ ] Require the common Bayesian diagnostics on every monitored coordinate.
-- [ ] If runtime or convergence exposes a finding, preserve the failing fixture and request technical direction rather than reducing N or loosening the rule.
-- [ ] Run each authorized exact recovery method separately and record elapsed time and TRX provenance.
+- [x] Change only the generated observation count and test acceptance first; do not alter production sampler defaults or parameter bounds.
+- [x] Apply scalar recovery only to identified trend/correlation coordinates and use site quantiles/regional curves for weak latent components.
+- [x] Require the common Bayesian diagnostics on every monitored coordinate.
+- [x] If runtime or convergence exposes a finding, preserve the failing fixture and request technical direction rather than reducing N or loosening the rule.
+- [x] Run each authorized exact recovery method separately and record elapsed time and TRX provenance.
 
 ### Chunk 16A1: Rewrite ModelEstimation XML/comments
 
@@ -943,3 +943,14 @@ At the end of each session, check completed boxes only when code, oracle, artifa
 - **Exact evidence:** the 23 distribution/time-series identities affected by the first normalization, the five final Log10-Normal identities, all 15 published real-data MLE identities, all 14 retained independent copula optima, all three rating-curve MLE cells, and all three linear coincident-frequency cells passed in serial one-result guarded runs. Together with the earlier 143-method MLE/MAP audit, all 120 current reconciled identities have exact passing evidence. The one-result Ln-Normal failure that exposed a missing log-space-to-physical parameter crosswalk was discarded; no zero-result run was accepted.
 - **Catalog reconciliation:** three qualitative prior/penalty influence methods, the qualitative Log10-Normal full-curvature materiality method, eight fixed-data `FittingAnalysisTests` methods, and twelve embedded-R `BivariateDistributionMLETests` methods were removed from discovery/catalog. The copula bodies remain only as fixture provenance; the 12 historical coordinate bands are superseded by 14 independent likelihood oracles with joint 95% likelihood-ratio acceptance. One Log10-Normal identity was renamed and received fresh evidence, as did both renamed supported-grid profile methods. Default validation resolves 420 declarations / 420 execution units: 351 verified, 11 open, 56 execution-excluded, and two accepted limitations.
 - **Boundary:** no production likelihood, prior, parameterization, seed, bound, sampler, scientific formula, or persisted/public contract changed. No Bulletin 17C confidence-interval coverage method, full Verification suite, spatial recovery method, or Chunk 15 implementation ran.
+
+### 2 September 2026 — Chunk 15 spatial recovery complete
+
+- **Approved design:** every retained fixture has ten Cartesian sites and 100 complete row/year vectors, for total scalar N=1,000 and 100 multivariate likelihood contributions. The test asserts the 100-by-10 finite matrix explicitly. The independent grid uses 25 km spacing; copula and regression grids use spacing `100/3`.
+- **Identification and acceptance:** two MLE cells monitor every fitted coordinate using unregularized observed-information standard errors and absolute standardized error at most 1.96; singular or regularized information is failure. Six Bayesian cells require generating-parent inclusion in every central 95% interval, R-hat below 1.10, and ESS at least 100. Parents are asserted inside unchanged bounds and prior support. No fixture contains a latent spatial-error field, so no conditional-GP uncertainty is mixed with parameter uncertainty.
+- **Sampler crosswalk:** Bayesian cells retain dimension-dependent production DEMCzs defaults. Three-, four-, and five-coordinate models assert 6/8/10 chains, thinning 30/40/50, initial populations 300/400/500, 3,500 iterations, 1,750 warmup iterations, output length 10,000, and seed 12345 before changing only the reported interval width from 90% to 95%.
+- **Reconciliation:** `Bayesian_LargeSample_HasTighterEstimates` was removed because interval narrowing alone is not a distinct precision-scaling oracle. Copula, location-regression, and three shape-regime identities were renamed to describe full recovery; no historical result was transferred.
+- **Exact evidence:** the final MLE result directories are `20260902-074615-...` and `20260902-074645-...`; the final Bayesian directories are `20260902-075604-...`, `20260902-075735-...`, `20260902-080047-...`, `20260902-080322-...`, `20260902-080456-...`, and `20260902-080630-...`. Every inspected TRX contains exactly one passing result for its exact current identity. Earlier 1,000-row and interim 10-by-100 passes are superseded. The initial sandbox-blocked guarded invocation produced no TRX; no zero-result TRX was accepted.
+- **Scoped review:** the first review found stale fixed sampler-setting documentation. Source, verification/report/technical-reference prose, and executable sampler assertions were reconciled, and all six affected Bayesian identities received fresh evidence.
+- **Catalog checkpoint:** JSON Schema validation is true and default validation resolves 419 declarations / 419 execution units with only the two intended Chunk 16 legacy gaps.
+- **Boundary:** no production source, algorithm, likelihood, parameterization, prior, bound, sampler, seed, optimizer, tolerance, convergence rule, default, initialization policy, or public/persisted-data contract changed. No independent artifact or generator changed. No Bulletin 17C confidence-interval coverage method or full Verification suite ran. Numerics remained read-only and unchanged.

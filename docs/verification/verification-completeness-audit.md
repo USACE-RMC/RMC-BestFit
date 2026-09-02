@@ -10,25 +10,30 @@ Haden Smith remains the final technical and numerical authority. This program do
 
 ## Audit checkpoint
 
-The current static checkpoint is commit `df8ccf4` on branch `documentation-verification-updates`, reviewed 28 August 2026.
+The final reconciliation is based on commit `808be5c52bef86927b939b2b2c54fa2282c1ccba` on branch
+`documentation-verification-updates`, with task-scoped uncommitted Chunk 15-16 changes reviewed on
+2 September 2026.
 
 | Measure | Current value |
 |---|---:|
-| Verification C# source files | 99 |
-| Files containing `[TestMethod]` or `[DataTestMethod]` | 79 |
-| Ordinary `[TestMethod]` declarations | 505 |
-| Data-driven method declarations | 1 |
-| `[DataRow]` execution units | 30 |
-| Total current MSTest execution units | 535 |
+| Discovered Verification method declarations | 384 |
+| Verification execution units | 384 |
+| Verified | 326 |
+| Execution-excluded Bulletin 17C coverage studies | 56 |
+| Accepted limitations | 2 |
+| Open gaps | 0 |
 | Scientific analysis types in scope | 15 |
 
-No Verification test was executed for this audit. The lightweight namespace/private-XML scan passed. The worktree was clean when the checkpoint was recorded.
+The catalog and source inventory reconcile one-to-one. Twenty historical report calculations were removed
+from discovery because their arbitrary percentage bands were not independent scientific evidence: fifteen
+univariate MAP methods, two altered-law Bulletin 17C uncertain-data examples, and three rating-curve
+Bayesian example methods. The PSIS legacy method was split from fast XML/reliability contracts, and the
+nonstationary constant-trend method was normalized to the common central-95% rule.
 
-The data-driven method is `B17CCohnEtAlCoverageTests.CohnEtAl_LP3_Coverage` with 30 named rows. The current guarded runner resolves only `[TestMethod]` and requires one TRX result, so it cannot execute this method under the exact-method rule. The catalog will record this as an open focused-execution gap. The Bulletin 17C ownership work will convert the historical coverage rows into separately named exact methods that share a private scientific helper solely so the source inventory is unambiguous; those coverage methods remain execution-excluded. The runner will not be broadened to accept multi-result filters.
-
-The 4 August ownership cleanup remains the historical baseline: 1,196 methods were reduced to 435 and 35 deterministic contracts were added to the fast tests. The current count is higher because approved verification and regression work continued after that checkpoint. Consequently, the earlier statement that no mixed-file ownership backlog remained must be re-audited against the present 506 declared methods and 535 execution units.
-
-The Bulletin 17C confidence-interval coverage methods in `B17CCoverageTests`, `B17CCensoredCoverageTests`, and `B17CCohnEtAlCoverageTests` are execution-excluded for this program. Their sources and historical results may be inventoried, ownership-reviewed, and reported as reruns-on-request, but Codex will not execute them. This restriction does not prohibit ordinary fast-test validation or explicitly authorized non-B17C Verification methods.
+The 56 methods in `B17CCoverageTests`, `B17CCensoredCoverageTests`, and `B17CCohnEtAlCoverageTests` are
+preserved as execution-excluded historical coverage evidence. None was executed during this remediation,
+and the guarded runner was not broadened. Every retained source-affected non-coverage identity was run
+individually and required one exact TRX result. The full Verification project was not executed.
 
 ## Binding verification boundary
 
@@ -38,7 +43,10 @@ Deterministic engineering contracts belong in `RMC.BestFit.Tests`. Fast tests ma
 
 ## Scientific analysis coverage matrix
 
-The following 15 user-facing analyses and their accompanying models are in scope. Support infrastructure such as `WeightedUnivariateAnalysis`, `BatchAnalysisRunner`, base classes, interfaces, event arguments, and DTOs is fast-test-only and will be recorded as not applicable in the final traceability matrix.
+The following matrix records the 28 August start-state backlog and is retained as historical planning
+context. Its “Open verification work” column is superseded by the current catalog, report chapters, and
+Chunk 15-16 disposition recorded above. Support infrastructure such as `WeightedUnivariateAnalysis`,
+`BatchAnalysisRunner`, base classes, interfaces, event arguments, and DTOs remains fast-test-only.
 
 | Analysis | Accompanying model or model family | Existing evidence | Open verification work |
 |---|---|---|---|
@@ -56,7 +64,7 @@ The following 15 user-facing analyses and their accompanying models are in scope
 | `MAAnalysis` | `MovingAverage` | R parity and N=1000 recovery | Consolidate legacy acceptance and add a dedicated report section |
 | `ARIMAAnalysis` | `ARIMA` | R parity and N=1000 recovery | Consolidate acceptance and document the differencing/parameter-order crosswalk |
 | `ARIMAXAnalysis` | `ARIMAX` | R/xreg parity and N=1000 recovery | Consolidate acceptance and document covariate alignment |
-| `SpatialGEVAnalysis` | `SpatialGEV`, `BasicExponential`, `PoweredExponential`, and `Spherical` | Likelihood, GP, simulation, recovery, and external artifacts | Use N=1000 row/year vectors; complete all correlation families; replace same-path cross-validation, prediction, and uncertainty contracts with independent evidence |
+| `SpatialGEVAnalysis` | `SpatialGEV`, `BasicExponential`, `PoweredExponential`, and `Spherical` | Likelihood, GP, simulation, recovery, and external artifacts | Use total scalar N=1000 as 10 sites by 100 complete row/year vectors; complete all correlation families; replace same-path cross-validation, prediction, and uncertainty contracts with independent evidence |
 
 ## Recovery design rule
 
@@ -67,7 +75,7 @@ Every genuine synthetic recovery method will use exactly 1,000 generated observa
 - 1,000 stage-discharge pairs for rating curves;
 - 1,000 post-burn-in observations for time-series models;
 - 1,000 response/covariate rows for nonstationary models; and
-- 1,000 row/year vectors across the full site network for spatial models.
+- total scalar N=1,000 for the approved Chunk 15 spatial recovery design: 10 sites by 100 complete row/year vectors. The corresponding likelihood contribution count is 100 multivariate rows, not 1,000.
 
 Coverage-study record lengths, bootstrap replicate counts, quadrature grids, and high-volume simulation-calibration draws are not recovery sample sizes. They retain their separately justified designs and must not be labeled recovery.
 
@@ -97,16 +105,18 @@ These are the current method groups requiring move, removal, split, or replaceme
 | `Univariate/PointProcessTests/PointProcessRecoveryTests.OrderInvariance.cs` | Retain its independent annual-maximum likelihood oracle but relocate it to a likelihood-oracle class because its N=300 permutation is not recovery |
 | `extract_tests.py` | Remove or replace with the maintained catalog validator under `scripts/` |
 
-## Documentation and report gaps
+## Documentation and report reconciliation
 
-- The Verification report checkpoint and method totals are stale relative to this audit.
-- `test-inventory.md` contains stale counts and still labels some Verification groups as regression sets.
-- `book-order.txt` omits the existing `report/estimation-diagnostics.md` chapter.
-- Fitting, Univariate, Bulletin 17C, AR, MA, ARIMA, and ARIMAX do not each have a consistently structured analysis section.
-- Several report statements equate numerical completion with verification.
-- The codebase contains 185 generic XML/comment patterns identified by `rg -n "Verifies <c>|This helper keeps fixture setup local|Tests Bayesian|Tests MLE" src/RMC.BestFit.Verification -g "*.cs"`, including tautological method summaries and repeated fixture boilerplate. Separate Arrange/Act/Assert comments also require a qualitative why-versus-what review.
+The report book now includes `report/estimation-diagnostics.md` and separates AR, MA, ARIMA, and ARIMAX
+recovery claims. Analysis chapters distinguish theory, external or published evidence, recovery, results,
+limitations, and provenance. Completion, finiteness, dispatch, accounting, serialization, and
+same-production-path agreement are explicitly excluded from scientific claims unless paired with an
+independent oracle. Historical counts and percentage-band results are retained only where labeled as
+superseded context.
 
-The final report section for each analysis will state the scientific claim, model and parameterization, theoretical oracle, external or published oracle, N=1000 recovery design, seed, acceptance rule, result, limitations, and artifact provenance.
+Spatial reporting uses the approved 10-site by 100-row design and distinguishes correlation, likelihood,
+cross-validation, prediction, uncertainty, simulation, and recovery. The source XML and catalog state the
+same model, N, parameter order, seeds, oracle, uncertainty source, and executable acceptance rule.
 
 ## Completion conditions
 

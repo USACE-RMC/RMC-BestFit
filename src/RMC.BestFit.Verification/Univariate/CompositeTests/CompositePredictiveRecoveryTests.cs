@@ -10,6 +10,13 @@ namespace RMC.BestFit.Verification.Univariate.CompositeTests;
 /// <summary>
 /// Verifies end-to-end composite predictive recovery from independently fitted child analyses.
 /// </summary>
+/// <remarks>
+/// Two independent N=1000 Normal child samples use generator seeds 51001 and 51002; child and
+/// composite samplers retain production seed 12345 and all other defaults. Each child must recover
+/// its generating coordinates in central 95% intervals with R-hat below 1.10 and ESS of at least
+/// 100. The scientific composite oracle is the analytical parent response at predeclared
+/// nonexceedance probabilities 0.10, 0.25, 0.50, 0.75, and 0.90, not completion or finiteness.
+/// </remarks>
 [TestClass]
 public class CompositePredictiveRecoveryTests
 {

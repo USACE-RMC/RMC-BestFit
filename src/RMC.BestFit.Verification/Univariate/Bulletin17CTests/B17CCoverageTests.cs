@@ -14,6 +14,11 @@ namespace RMC.BestFit.Verification.Univariate.Bulletin17CTests;
 /// </summary>
 /// <remarks>
 /// <para>
+/// Every method in this class is execution-excluded historical coverage evidence and must not be
+/// run during ordinary remediation or report generation. Catalog entries preserve the predeclared
+/// Monte Carlo rules and limitations; no current focused TRX is claimed.
+/// </para>
+/// <para>
 /// Each test generates B independent random samples from a known distribution, fits the B17C
 /// model via GMM, computes confidence intervals using the multivariate normal approximation,
 /// and checks whether the true quantiles fall within the intervals. The empirical coverage rate

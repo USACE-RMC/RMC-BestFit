@@ -22,7 +22,7 @@ Wide-centered, narrow-centered, and narrow-shifted regimes verified negligible i
 
 ## Profile likelihood and covariance
 
-The MLE and flat-prior MAP profile calculations were compared with R `bbmle` and a closed-form nuisance optimum for a correlated quadratic objective. Every profile ordinate and the central 90% interval passed. A one-parameter Normal-mean covariance test reproduced the closed form $\sigma^2/n$, and an interior flat-prior MAP reported the same covariance within the declared `1e-4` numerical-Hessian tolerance.
+The MLE and flat-prior MAP profile calculations were compared with R `bbmle` and a closed-form nuisance optimum for a correlated quadratic objective. Every profile ordinate and the fixed 90% profile-cutoff interval in that external parity artifact passed. That interval level is retained only to reproduce the frozen R fixture; it is not a recovery rule or a Bayesian credible-interval claim. A one-parameter Normal-mean covariance test reproduced the closed form $\sigma^2/n$, and an interior flat-prior MAP reported the same covariance within the declared `1e-4` numerical-Hessian tolerance.
 
 ## DIC and WAIC
 
@@ -52,6 +52,8 @@ The same fixture was passed through R `loo`. BestFit compared every pointwise EL
 | SE(LOOIC) | 1.95756902272540 | `1e-10` absolute | Passed |
 
 The five Pareto values were `(0.0682, -0.0302, 0.4116, 0.3062, 0.3209)`. For 40 retained draws the package threshold is `0.375803649418215`, so the third observation is correctly flagged. Six additional 256-ratio fixtures covered bounded, light, moderate, high, nonfinite-mean, and degenerate tails. Smoothed weights, Pareto $k$, and effective sample sizes agreed within `1e-8`; the degenerate fixture correctly returned positive infinity.
+
+The retained `ParetoInfluence_UsesRloo210DiagnosticThreshold` method now contains only the independent R `loo` 2.10.0 Pareto-$k$ and threshold comparison. XML restoration, reliability classification, summary text, and related round-trip behavior are deterministic contracts owned by the fast `InfluenceDiagnosticsTests`; they are not counted here as scientific Verification evidence. The retained method passed its fresh exact one-result run under `20260902-082134-...`.
 
 ## GMM specification and covariance
 
