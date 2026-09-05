@@ -92,8 +92,11 @@ namespace RMC.BestFit.Models
         /// Pairs with <see cref="ToXElement"/>. The data frame and the
         /// <see cref="CompetingRisks"/> distribution are passed in by the caller (the
         /// data is the single source of truth, and the distribution carries its own
-        /// serialization schema). Scalar configuration (flags, parameter values,
-        /// quantile priors) is read from the XElement.
+        /// serialization schema). Flags, complete parameter metadata and priors, and quantile
+        /// priors are read from the XElement without regenerating present serialized sections.
+        /// Missing optional sections retain the established constructor/default behavior when the
+        /// distribution is ready for that evaluation; a missing active correlation matrix is left
+        /// for validation instead of forcing quantile-default evaluation during import.
         /// </remarks>
         /// <param name="dataFrame">The censored data frame.</param>
         /// <param name="distribution">The competing risks distribution (already deserialized).</param>
@@ -105,44 +108,43 @@ namespace RMC.BestFit.Models
 
             var useDefaultFlatPriorsAttr = xElement.Attribute(nameof(UseDefaultFlatPriors));
             if (useDefaultFlatPriorsAttr != null && bool.TryParse(useDefaultFlatPriorsAttr.Value, out var udfp))
-                UseDefaultFlatPriors = udfp;
+                _useDefaultFlatPriors = udfp;
 
             var useJeffreysAttr = xElement.Attribute(nameof(UseJeffreysRuleForScale));
             if (useJeffreysAttr != null && bool.TryParse(useJeffreysAttr.Value, out var ujr))
-                UseJeffreysRuleForScale = ujr;
+                _useJeffreysRuleForScale = ujr;
 
             var enableQpAttr = xElement.Attribute(nameof(EnableQuantilePriors));
             if (enableQpAttr != null && bool.TryParse(enableQpAttr.Value, out var eqp))
-                EnableQuantilePriors = eqp;
+                _enableQuantilePriors = eqp;
 
             var useSingleQAttr = xElement.Attribute(nameof(UseSingleQuantile));
             if (useSingleQAttr != null && bool.TryParse(useSingleQAttr.Value, out var usq))
                 _useSingleQuantile = usq;
 
-            // Restore parameter values (bounds and priors are set by SetDefaultParameters
-            // via the chained ctor; only Value needs to be reapplied from XML).
+            // Restore complete parameter objects. Keeping every serialized entry permits
+            // validation to diagnose schema/count mismatches instead of silently discarding data.
             var parmsElem = xElement.Element(nameof(Parameters));
             if (parmsElem != null)
             {
-                var paramElems = parmsElem.Elements().ToList();
-                int n = Math.Min(paramElems.Count, Parameters.Count);
-                for (int i = 0; i < n; i++)
-                {
-                    var valueAttr = paramElems[i].Attribute(nameof(ModelParameter.Value));
-                    if (valueAttr != null && double.TryParse(valueAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var v))
-                        Parameters[i].Value = v;
-                }
+                Parameters = parmsElem.Elements(nameof(ModelParameter))
+                    .Select(parameter => new ModelParameter(parameter))
+                    .ToList();
             }
 
-            // Restore quantile priors
+            // Restore through the collection setter so item handlers and processed priors are rebuilt.
             var quantsElem = xElement.Element(nameof(QuantilePriors));
             if (quantsElem != null)
             {
-                QuantilePriors.Clear();
-                foreach (var qp in quantsElem.Elements())
-                {
-                    QuantilePriors.Add(new QuantilePrior(qp));
-                }
+                QuantilePriors = quantsElem.Elements(nameof(QuantilePrior))
+                    .Select(quantile => new QuantilePrior(quantile))
+                    .ToList();
+            }
+            else if (_enableQuantilePriors &&
+                (CompetingRisks!.Dependency != Numerics.Data.Statistics.Probability.DependencyType.CorrelationMatrix ||
+                 CompetingRisks.CorrelationMatrix != null))
+            {
+                SetDefaultQuantilePriors();
             }
         }
 
@@ -851,6 +853,12 @@ namespace RMC.BestFit.Models
             {
                 isValid = false;
                 messages.Add("Error: Competing risks model currently supports at most 3 component distributions.");
+            }
+
+            if (Parameters.Count != CompetingRisks.NumberOfParameters)
+            {
+                isValid = false;
+                messages.Add($"Error: Model parameter count ({Parameters.Count}) does not match the competing risks distribution parameter count ({CompetingRisks.NumberOfParameters}).");
             }
 
             bool matrixRequired = CompetingRisks.Dependency == Numerics.Data.Statistics.Probability.DependencyType.CorrelationMatrix;

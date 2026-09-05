@@ -1068,7 +1068,7 @@ namespace RMC.BestFit.UI
                     if (!string.IsNullOrEmpty(probOrdinatesStr))
                         innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
 
-                    if (!string.IsNullOrEmpty(correlationMatrixXml))
+                    if (!string.IsNullOrWhiteSpace(correlationMatrixXml))
                         innerXElement.Add(XElement.Parse(correlationMatrixXml));
 
                     // Add Bayesian analysis

@@ -318,6 +318,58 @@ public class CompositeWeightingAndResamplingTests
     }
 
     /// <summary>
+    /// Verifies empty and complete square all-zero legacy matrix placeholders remain unconfigured
+    /// without replacing the saved composite dependency or other configuration.
+    /// </summary>
+    [TestMethod]
+    public void CorrelationMatrix_LegacyXmlPlaceholders_PreserveDependencyAndConfiguration()
+    {
+        string[] matrices =
+        {
+            "<CorrelationMatrix />",
+            "<CorrelationMatrix><Correlation_Row>0</Correlation_Row></CorrelationMatrix>",
+            "<CorrelationMatrix><Correlation_Row>0|0</Correlation_Row><Correlation_Row>0|0</Correlation_Row></CorrelationMatrix>"
+        };
+        foreach (string dependency in new[] { "Independent", "CorrelationMatrix" })
+        {
+            foreach (string matrix in matrices)
+            {
+                var xml = System.Xml.Linq.XElement.Parse(
+                    $"<CompositeAnalysis CompositeDistributionType=\"CompetingRisks\" Dependency=\"{dependency}\" IsMaximum=\"False\">{matrix}<ProbabilityOrdinates>0.5|0.9|0.99</ProbabilityOrdinates></CompositeAnalysis>");
+
+                var restored = new CompositeAnalysis(xml);
+
+                Assert.IsNull(restored.CorrelationMatrix);
+                Assert.AreEqual(Enum.Parse<Probability.DependencyType>(dependency), restored.Dependency);
+                Assert.IsFalse(restored.IsMaximum);
+                CollectionAssert.AreEqual(new[] { 0.5d, 0.9d, 0.99d }, restored.ProbabilityOrdinates.ToArray());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Verifies malformed populated XML cannot be mistaken for an empty or all-zero legacy matrix.
+    /// </summary>
+    [TestMethod]
+    public void CorrelationMatrix_LegacyXmlMalformedContent_RemainsRejected()
+    {
+        string[] matrices =
+        {
+            "<CorrelationMatrix><Correlation_Row>0|0</Correlation_Row></CorrelationMatrix>",
+            "<CorrelationMatrix><Correlation_Row>1|0.2</Correlation_Row><Correlation_Row>0.3|1</Correlation_Row></CorrelationMatrix>",
+            "<CorrelationMatrix><Correlation_Row>0.9|0</Correlation_Row><Correlation_Row>0|1</Correlation_Row></CorrelationMatrix>",
+            "<CorrelationMatrix><Correlation_Row>1|NaN</Correlation_Row><Correlation_Row>NaN|1</Correlation_Row></CorrelationMatrix>",
+            "<CorrelationMatrix>not a matrix</CorrelationMatrix>",
+            "<CorrelationMatrix><Correlation_Row><Unexpected>0|0</Unexpected></Correlation_Row><Correlation_Row>0|0</Correlation_Row></CorrelationMatrix>"
+        };
+        foreach (string matrix in matrices)
+        {
+            var xml = System.Xml.Linq.XElement.Parse($"<CompositeAnalysis>{matrix}</CompositeAnalysis>");
+            Assert.ThrowsException<ArgumentException>(() => new CompositeAnalysis(xml));
+        }
+    }
+
+    /// <summary>
     /// Verifies active correlation dependency requires a dimensionally compatible matrix.
     /// </summary>
     [TestMethod]

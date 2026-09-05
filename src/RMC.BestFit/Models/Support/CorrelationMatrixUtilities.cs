@@ -153,16 +153,31 @@ namespace RMC.BestFit.Models
         /// Deserializes and validates a correlation matrix from the established Numerics row format.
         /// </summary>
         /// <param name="element">The correlation-matrix XML element.</param>
-        /// <returns>The validated matrix.</returns>
+        /// <returns>
+        /// The validated matrix, or <see langword="null"/> when the element is empty or contains
+        /// a complete square all-zero placeholder written by an earlier application version.
+        /// </returns>
         /// <exception cref="ArgumentException">Thrown when the serialized matrix is malformed or invalid.</exception>
-        internal static double[,] FromXElement(XElement element)
+        /// <remarks>
+        /// A null result represents imported but unconfigured correlation data. Callers retain the
+        /// saved dependency mode and use <see cref="TryValidate"/>
+        /// to decide whether the model is ready for correlation-dependent evaluation.
+        /// </remarks>
+        internal static double[,]? FromXElement(XElement element)
         {
             ArgumentNullException.ThrowIfNull(element);
             XElement[] rows = element.Elements("Correlation_Row").ToArray();
+            bool containsUnsupportedContent = element.Elements().Count() != rows.Length
+                || rows.Any(row => row.HasElements)
+                || element.Nodes().OfType<XText>().Any(text => !string.IsNullOrWhiteSpace(text.Value));
+            if (containsUnsupportedContent)
+                throw new ArgumentException("The serialized correlation matrix contains unsupported content.", nameof(element));
+
             if (rows.Length == 0)
-                throw new ArgumentException("The serialized correlation matrix must contain at least one row.", nameof(element));
+                return null;
 
             var matrix = new double[rows.Length, rows.Length];
+            bool allZero = true;
             for (int row = 0; row < rows.Length; row++)
             {
                 string[] entries = rows[row].Value.Split('|');
@@ -173,8 +188,13 @@ namespace RMC.BestFit.Models
                 {
                     if (!double.TryParse(entries[column], NumberStyles.Any, CultureInfo.InvariantCulture, out matrix[row, column]))
                         throw new ArgumentException("The serialized correlation matrix contains an invalid value.", nameof(element));
+                    if (matrix[row, column] != 0d)
+                        allZero = false;
                 }
             }
+
+            if (allZero)
+                return null;
 
             if (!TryValidate(matrix, null, true, out string? error))
                 throw new ArgumentException(error, nameof(element));

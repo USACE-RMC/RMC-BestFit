@@ -3,6 +3,7 @@ using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using Numerics.Mathematics.Integration;
 using RMC.BestFit.Models;
+using System.Xml.Linq;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 using BestFitThresholdData = RMC.BestFit.Models.ThresholdData;
 
@@ -27,6 +28,91 @@ namespace RMC.BestFit.Tests.Univariate;
 [TestClass]
 public class PointProcessModelTests
 {
+    private const string LegacyNonSeasonalModelOneXml = """
+        <PointProcessModel Threshold="1" TotalYears="67" UseDefaults="True" IsSeasonal="False" TimeBlock="WaterYear" StartMonth="10" UseDefaultFlatPriors="True" UseJeffreysRuleForScale="True" EnableQuantilePriors="False" UseSingleQuantile="False">
+          <Distribution Type="CompetingRisks" XTransform="None" ProbabilityTransform="NormalZ" MinimumOfRandomVariables="False" Dependency="Independent" Distributions="GeneralizedExtremeValue" Parameters="2.3644550019225599|1.121097254316378|-0.13265584377843442">
+            <CorrelationMatrix><Correlation_Row>0</Correlation_Row></CorrelationMatrix>
+          </Distribution>
+          <Parameters>
+            <ModelParameter OwnerName="" Name="Location (ξ)" Value="2.3644550019225599" LowerBound="-100" UpperBound="100" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-100" Max="100" /></ModelParameter>
+            <ModelParameter OwnerName="" Name="Scale (α)" Value="1.121097254316378" LowerBound="1.11022302462516E-16" UpperBound="10" IsPositive="True" IsFixed="False"><Distribution Type="Uniform" Min="1.11022302462516E-16" Max="10" /></ModelParameter>
+            <ModelParameter OwnerName="" Name="Shape (κ)" Value="-0.13265584377843442" LowerBound="-10" UpperBound="10" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-10" Max="10" /></ModelParameter>
+          </Parameters>
+          <QuantilePriors />
+        </PointProcessModel>
+        """;
+
+    private const string LegacyNonSeasonalModelTwoXml = """
+        <PointProcessModel Threshold="2.5" TotalYears="120" UseDefaults="True" IsSeasonal="False" TimeBlock="WaterYear" StartMonth="10" UseDefaultFlatPriors="True" UseJeffreysRuleForScale="True" EnableQuantilePriors="False" UseSingleQuantile="False">
+          <Distribution Type="CompetingRisks" XTransform="None" ProbabilityTransform="NormalZ" MinimumOfRandomVariables="False" Dependency="Independent" Distributions="GeneralizedExtremeValue" Parameters="4.1213947212458111|1.2415235462679908|0.011257812595646314">
+            <CorrelationMatrix><Correlation_Row>0</Correlation_Row></CorrelationMatrix>
+          </Distribution>
+          <Parameters>
+            <ModelParameter OwnerName="" Name="Location (ξ)" Value="4.1213947212458111" LowerBound="-100" UpperBound="100" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-100" Max="100" /></ModelParameter>
+            <ModelParameter OwnerName="" Name="Scale (α)" Value="1.2415235462679908" LowerBound="1.11022302462516E-16" UpperBound="100" IsPositive="True" IsFixed="False"><Distribution Type="Uniform" Min="1.11022302462516E-16" Max="100" /></ModelParameter>
+            <ModelParameter OwnerName="" Name="Shape (κ)" Value="0.011257812595646314" LowerBound="-10" UpperBound="10" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-10" Max="10" /></ModelParameter>
+          </Parameters>
+          <QuantilePriors />
+        </PointProcessModel>
+        """;
+
+    private const string LegacySeasonalModelXml = """
+        <PointProcessModel Threshold="1" TotalYears="67" UseDefaults="True" IsSeasonal="True" TimeBlock="WaterYear" StartMonth="10" UseDefaultFlatPriors="True" UseJeffreysRuleForScale="True" EnableQuantilePriors="False" UseSingleQuantile="False">
+          <Distribution Type="CompetingRisks" XTransform="None" ProbabilityTransform="NormalZ" MinimumOfRandomVariables="False" Dependency="Independent" Distributions="GeneralizedExtremeValue|GeneralizedExtremeValue" Parameters="0.83239669505553948|0.49154571155648163|-0.071581521122795908|2.3051567157222745|1.2342205082290942|-0.088774763219693922">
+            <CorrelationMatrix><Correlation_Row>0|0</Correlation_Row><Correlation_Row>0|0</Correlation_Row></CorrelationMatrix>
+          </Distribution>
+          <Parameters>
+            <ModelParameter OwnerName="" Name="Change Point K₁" Value="37.626459493381702" LowerBound="10" UpperBound="170" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="10" Max="170" /></ModelParameter>
+            <ModelParameter OwnerName="" Name="Change Point K₂" Value="183.82714289463422" LowerBound="171" UpperBound="330" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="171" Max="330" /></ModelParameter>
+            <ModelParameter OwnerName="D1" Name="Location (ξ)" Value="1.0876754881124837" LowerBound="-100" UpperBound="100" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-100" Max="100" /></ModelParameter>
+            <ModelParameter OwnerName="D1" Name="Scale (α)" Value="0.50981895587388915" LowerBound="1.11022302462516E-16" UpperBound="10" IsPositive="True" IsFixed="False"><Distribution Type="Uniform" Min="1.11022302462516E-16" Max="10" /></ModelParameter>
+            <ModelParameter OwnerName="D1" Name="Shape (κ)" Value="-0.071581521122795908" LowerBound="-10" UpperBound="10" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-10" Max="10" /></ModelParameter>
+            <ModelParameter OwnerName="D2" Name="Location (ξ)" Value="3.4851544190178108" LowerBound="-100" UpperBound="100" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-100" Max="100" /></ModelParameter>
+            <ModelParameter OwnerName="D2" Name="Scale (α)" Value="1.3389745249389382" LowerBound="1.11022302462516E-16" UpperBound="10" IsPositive="True" IsFixed="False"><Distribution Type="Uniform" Min="1.11022302462516E-16" Max="10" /></ModelParameter>
+            <ModelParameter OwnerName="D2" Name="Shape (κ)" Value="-0.088774763219693922" LowerBound="-10" UpperBound="10" IsPositive="False" IsFixed="False"><Distribution Type="Uniform" Min="-10" Max="10" /></ModelParameter>
+          </Parameters>
+          <QuantilePriors />
+        </PointProcessModel>
+        """;
+
+    /// <summary>
+    /// Point-process model that records default-generation calls made during XML restoration.
+    /// </summary>
+    private sealed class DeserializationTrackingPointProcessModel : PointProcessModel
+    {
+        /// <summary>
+        /// Constructs the tracking model from serialized state.
+        /// </summary>
+        /// <param name="dataFrame">The data frame associated with the serialized model.</param>
+        /// <param name="xElement">The serialized model state.</param>
+        internal DeserializationTrackingPointProcessModel(BestFitDataFrame dataFrame, XElement xElement)
+            : base(dataFrame, xElement)
+        {
+        }
+
+        /// <summary>
+        /// Gets the number of parameter-default generations requested during construction.
+        /// </summary>
+        internal int DefaultParameterCallCount { get; private set; }
+
+        /// <summary>
+        /// Gets the number of quantile-default generations requested during construction.
+        /// </summary>
+        internal int DefaultQuantilePriorCallCount { get; private set; }
+
+        /// <inheritdoc/>
+        public override void SetDefaultParameters()
+        {
+            DefaultParameterCallCount++;
+        }
+
+        /// <inheritdoc/>
+        public override void SetDefaultQuantilePriors()
+        {
+            DefaultQuantilePriorCallCount++;
+        }
+    }
+
     #region Test Data Helper
 
     /// <summary>
@@ -1074,6 +1160,124 @@ public class PointProcessModelTests
     #endregion
 
     #region Serialization Tests
+
+    /// <summary>
+    /// Verifies both nonseasonal version-2 records import their stored values and all-zero matrix
+    /// placeholders without substituting values inferred from the current data frame.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_LoadsBothSuppliedNonSeasonalVersion2Records()
+    {
+        string[] fixtures = { LegacyNonSeasonalModelOneXml, LegacyNonSeasonalModelTwoXml };
+        double[] expectedThresholds = { 1d, 2.5d };
+        double[] expectedYears = { 67d, 120d };
+        double[][] expectedParameters =
+        {
+            new[] { 2.3644550019225599d, 1.121097254316378d, -0.13265584377843442d },
+            new[] { 4.1213947212458111d, 1.2415235462679908d, 0.011257812595646314d }
+        };
+
+        for (int index = 0; index < fixtures.Length; index++)
+        {
+            var model = new DeserializationTrackingPointProcessModel(CreatePOTDataFrame(), XElement.Parse(fixtures[index]));
+
+            Assert.AreEqual(expectedThresholds[index], model.Threshold, 0d);
+            Assert.AreEqual(expectedYears[index], model.TotalYears, 0d);
+            Assert.IsTrue(model.UseDefaults);
+            Assert.IsFalse(model.IsSeasonal);
+            Assert.AreEqual(Probability.DependencyType.Independent, model.Distribution!.Dependency);
+            Assert.IsNull(model.Distribution.CorrelationMatrix);
+            CollectionAssert.AreEqual(expectedParameters[index], model.Distribution.GetParameters);
+            CollectionAssert.AreEqual(expectedParameters[index], model.Parameters.Select(parameter => parameter.Value).ToArray());
+            Assert.AreEqual(0, model.DefaultParameterCallCount);
+            Assert.AreEqual(0, model.DefaultQuantilePriorCallCount);
+        }
+    }
+
+    /// <summary>
+    /// Verifies the supplied seasonal version-2 record retains separate serialized vectors for
+    /// the annualized competing-risks distribution and the seasonal model parameters.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_LoadsSuppliedSeasonalVersion2RecordWithoutConflatingParameterVectors()
+    {
+        var model = new DeserializationTrackingPointProcessModel(
+            CreateSeasonalPOTDataFrame(),
+            XElement.Parse(LegacySeasonalModelXml));
+        double[] expectedDistribution =
+        {
+            0.83239669505553948d, 0.49154571155648163d, -0.071581521122795908d,
+            2.3051567157222745d, 1.2342205082290942d, -0.088774763219693922d
+        };
+        double[] expectedModel =
+        {
+            37.626459493381702d, 183.82714289463422d,
+            1.0876754881124837d, 0.50981895587388915d, -0.071581521122795908d,
+            3.4851544190178108d, 1.3389745249389382d, -0.088774763219693922d
+        };
+
+        Assert.IsTrue(model.IsSeasonal);
+        Assert.AreEqual(TimeBlockWindow.WaterYear, model.TimeBlock);
+        Assert.AreEqual(10, model.StartMonth);
+        Assert.AreEqual(Probability.DependencyType.Independent, model.Distribution!.Dependency);
+        Assert.IsNull(model.Distribution.CorrelationMatrix);
+        CollectionAssert.AreEqual(expectedDistribution, model.Distribution.GetParameters);
+        CollectionAssert.AreEqual(expectedModel, model.Parameters.Select(parameter => parameter.Value).ToArray());
+        Assert.AreEqual("D1", model.Parameters[2].OwnerName);
+        Assert.AreEqual("Location (ξ)", model.Parameters[2].Name);
+        Assert.AreEqual(-100d, model.Parameters[2].LowerBound, 0d);
+        Assert.AreEqual(100d, model.Parameters[2].UpperBound, 0d);
+        Assert.IsInstanceOfType<Uniform>(model.Parameters[2].PriorDistribution);
+        Assert.AreEqual(0, model.DefaultParameterCallCount);
+        Assert.AreEqual(0, model.DefaultQuantilePriorCallCount);
+    }
+
+    /// <summary>
+    /// Verifies a point-process model with correlation dependency and no configured matrix imports
+    /// successfully but reports a validation error before correlation-dependent evaluation.
+    /// </summary>
+    [TestMethod]
+    public void Validate_CorrelationDependencyWithoutMatrix_ReturnsDiagnosticInsteadOfThrowing()
+    {
+        XElement xml = XElement.Parse(LegacyNonSeasonalModelOneXml);
+        xml.Element("Distribution")!.SetAttributeValue("Dependency", "CorrelationMatrix");
+        xml.Element("Distribution")!.Element("CorrelationMatrix")!.RemoveNodes();
+        var model = new DeserializationTrackingPointProcessModel(CreatePOTDataFrame(), xml);
+
+        var validation = model.Validate();
+
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message =>
+            message.Contains("requires a correlation matrix", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// Verifies point-process quantile priors supplied by XML are retained and event-wired after
+    /// direct state hydration.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_RestoresAndWiresSerializedQuantilePriors()
+    {
+        XElement xml = XElement.Parse(LegacyNonSeasonalModelOneXml);
+        xml.SetAttributeValue(nameof(PointProcessModel.EnableQuantilePriors), true);
+        xml.Element(nameof(PointProcessModel.QuantilePriors))!.Add(
+            new XElement(nameof(QuantilePrior),
+                new XAttribute(nameof(QuantilePrior.Alpha), "0.05"),
+                new XElement("Distribution",
+                    new XAttribute("Type", "Normal"),
+                    new XAttribute("Mu", "12"),
+                    new XAttribute("Sigma", "1.5"))));
+        var model = new DeserializationTrackingPointProcessModel(CreatePOTDataFrame(), xml);
+        var changedProperties = new List<string>();
+        model.PropertyChanged += (_, args) => changedProperties.Add(args.PropertyName ?? string.Empty);
+
+        model.QuantilePriors[0].Alpha = 0.04d;
+
+        Assert.IsTrue(model.EnableQuantilePriors);
+        Assert.AreEqual(1, model.QuantilePriors.Count);
+        Assert.AreEqual(12d, ((Normal)model.QuantilePriors[0].Distribution).Mu, 0d);
+        CollectionAssert.Contains(changedProperties, nameof(PointProcessModel.QuantilePriors));
+    }
 
     /// <summary>Verifies that to X element contains point process model element.</summary>
     [TestMethod]

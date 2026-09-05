@@ -68,15 +68,16 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="dataFrame">The data frame to fit to.</param>
         /// <param name="xElement">The XML element to deserialize.</param>
+        /// <remarks>
+        /// Saved distribution parameters and model parameters are restored independently; seasonal
+        /// files may contain annualized distribution values alongside unadjusted seasonal model
+        /// values. Default-generation setters are reserved for subsequent user edits.
+        /// </remarks>
         public PointProcessModel(DataFrame dataFrame, XElement xElement)
         {
-            // Set data frame
-            if (_dataFrame != null)
-                _dataFrame.PropertyChanged -= DataFrame_PropertyChanged;
+            // Hydrate serialized state through backing fields before rebuilding derived data.
+            // Public setters intentionally generate defaults for user edits and must not run here.
             _dataFrame = dataFrame;
-            _dataFrame.PropertyChanged += DataFrame_PropertyChanged;
-            _dataFrame.ProcessThresholdSeries();
-            _dataFrame.CreateFullTimeSeries();
 
             // Inputs
             var thresholdAttr = xElement.Attribute(nameof(Threshold));
@@ -95,19 +96,17 @@ namespace RMC.BestFit.Models
                 _isTotalYearsInferred = _useDefaults && !HasStoredSourceExposure();
             }
             _totalYearsExplicit = !_useDefaults;
-            CalculateLambda();
             var isSeasonalAttr = xElement.Attribute(nameof(IsSeasonal));
             if (isSeasonalAttr != null) bool.TryParse(isSeasonalAttr.Value, out _isSeasonal);
             var timeBlockAttr = xElement.Attribute(nameof(TimeBlock));
             if (timeBlockAttr != null) Enum.TryParse(timeBlockAttr.Value, out _timeBlock);
             var startMonthAttr = xElement.Attribute(nameof(StartMonth));
             if (startMonthAttr != null) int.TryParse(startMonthAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _startMonth);
-            SetAMSData();
 
             // Distribution
             var distElement = xElement.Element("Distribution");
             if (distElement != null)
-                Distribution = CompetingRisks.FromXElement(distElement);
+                _distribution = CompetingRisks.FromXElement(distElement);
 
             // Parameters
             var flatPriorsAttr = xElement.Attribute(nameof(UseDefaultFlatPriors));
@@ -129,6 +128,13 @@ namespace RMC.BestFit.Models
                 quants.Add(new QuantilePrior(q));
             QuantilePriors = quants;
 
+            // Rebuild derived state only after every persisted field has been restored, then
+            // subscribe for the normal edit-time default refresh behavior.
+            _dataFrame.ProcessThresholdSeries();
+            _dataFrame.CreateFullTimeSeries();
+            SetAMSData();
+            CalculateLambda();
+            _dataFrame.PropertyChanged += DataFrame_PropertyChanged;
         }
 
         #endregion
@@ -2166,6 +2172,7 @@ namespace RMC.BestFit.Models
             }
 
             // Distribution checks
+            bool correlationConfigurationValid = true;
             if (Distribution is null)
             {
                 isValid = false;
@@ -2175,6 +2182,21 @@ namespace RMC.BestFit.Models
             {
                 isValid = false;
                 messages.Add("Error: Competing risks distribution has no component distributions.");
+            }
+
+            if (Distribution is not null && Distribution.Distributions is not null && Distribution.Distributions.Any())
+            {
+                bool matrixRequired = Distribution.Dependency == Numerics.Data.Statistics.Probability.DependencyType.CorrelationMatrix;
+                if (!CorrelationMatrixUtilities.TryValidate(
+                    Distribution.CorrelationMatrix,
+                    Distribution.Distributions.Count,
+                    matrixRequired,
+                    out string? matrixError))
+                {
+                    correlationConfigurationValid = false;
+                    isValid = false;
+                    messages.Add($"Error: {matrixError}");
+                }
             }
 
             // Validate uncertain-data ME bounds before likelihood evaluation. The point-process
@@ -2237,11 +2259,14 @@ namespace RMC.BestFit.Models
                 messages.Add("Error: Lambda (average events per year) must be positive and finite.");
             }
 
-            double fittedIntensity = FittedThresholdIntensity;
-            if (!Tools.IsFinite(fittedIntensity) || fittedIntensity <= 0.0)
+            if (correlationConfigurationValid)
             {
-                isValid = false;
-                messages.Add("Error: The fitted threshold intensity must be positive and finite.");
+                double fittedIntensity = FittedThresholdIntensity;
+                if (!Tools.IsFinite(fittedIntensity) || fittedIntensity <= 0.0)
+                {
+                    isValid = false;
+                    messages.Add("Error: The fitted threshold intensity must be positive and finite.");
+                }
             }
 
             // Seasonal-specific checks

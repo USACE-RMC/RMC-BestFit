@@ -507,6 +507,57 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
+        /// Fills absent legacy point-process input fields on a working XML copy before restoration.
+        /// </summary>
+        /// <param name="serializedModel">The persisted point-process model XML.</param>
+        /// <returns>A working copy with only absent default-enabled input fields inferred.</returns>
+        /// <remarks>
+        /// Present threshold, exposure, and exposure-origin values are authoritative during import,
+        /// even when defaults are enabled. Normal default refresh after a later user edit is unchanged.
+        /// The temporary model disables parameter-default generation and is detached from the input
+        /// data after deriving the existing threshold/exposure defaults.
+        /// </remarks>
+        private XElement HydrateMissingPointProcessDefaults(XElement serializedModel)
+        {
+            var workingModel = new XElement(serializedModel);
+            bool useDefaults = true;
+            XAttribute useDefaultsAttribute = workingModel.Attribute(nameof(PointProcessModel.UseDefaults));
+            if (useDefaultsAttribute != null)
+                bool.TryParse(useDefaultsAttribute.Value, out useDefaults);
+            if (!useDefaults)
+                return workingModel;
+
+            bool missingThreshold = workingModel.Attribute(nameof(PointProcessModel.Threshold)) == null;
+            bool missingTotalYears = workingModel.Attribute(nameof(PointProcessModel.TotalYears)) == null;
+            bool missingOrigin = workingModel.Attribute(nameof(PointProcessModel.IsTotalYearsInferred)) == null;
+            if (!missingThreshold && !missingTotalYears && !missingOrigin)
+                return workingModel;
+
+            var defaults = new PointProcessModel
+            {
+                UseDefaultFlatPriors = false,
+                UseDefaults = false,
+                DataFrame = InputData.DataFrame
+            };
+            try
+            {
+                defaults.SetDefaultThresholdAndTotalYears(GetPeaksOverThresholdDefaultThreshold(), forceTotalYears: true);
+                if (missingThreshold)
+                    workingModel.SetAttributeValue(nameof(PointProcessModel.Threshold), defaults.Threshold.ToString("G17", CultureInfo.InvariantCulture));
+                if (missingTotalYears)
+                    workingModel.SetAttributeValue(nameof(PointProcessModel.TotalYears), defaults.TotalYears.ToString("G17", CultureInfo.InvariantCulture));
+                if (missingOrigin)
+                    workingModel.SetAttributeValue(nameof(PointProcessModel.IsTotalYearsInferred), defaults.IsTotalYearsInferred);
+            }
+            finally
+            {
+                defaults.DataFrame = null;
+            }
+
+            return workingModel;
+        }
+
+        /// <summary>
         /// Handles changes to the input data, updates threshold values, and validates the data.
         /// </summary>
         /// <param name="sender">The object that raised the event.</param>
@@ -841,15 +892,9 @@ namespace RMC.BestFit.UI
                 // Get model and reconstruct the inner analysis
                 if (dtView.ColumnNames.Contains(nameof(PointProcess)) && InputData != null && InputData.DataFrame != null)
                 {
-                    var modelXElement = XElement.Parse(dtView.GetCell(nameof(PointProcess), rowIndex).ToString());
+                    var modelXElement = HydrateMissingPointProcessDefaults(
+                        XElement.Parse(dtView.GetCell(nameof(PointProcess), rowIndex).ToString()));
                     var pointProcess = new PointProcessModel(InputData.DataFrame, modelXElement);
-
-                    // Refresh default inputs from the selected InputData. Persisted manual
-                    // values are preserved while UseDefaults is false.
-                    if (pointProcess.UseDefaults && InputData != null && InputData.DataFrame != null)
-                        pointProcess.SetDefaultThresholdAndTotalYears(GetPeaksOverThresholdDefaultThreshold(), forceTotalYears: true);
-                    else if (pointProcess.UseDefaults)
-                        pointProcess.Threshold = double.NaN;
 
                     MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
                     XElement innerXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);

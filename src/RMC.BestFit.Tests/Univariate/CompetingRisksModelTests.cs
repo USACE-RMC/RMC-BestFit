@@ -1,5 +1,6 @@
 using Numerics.Distributions;
 using RMC.BestFit.Models;
+using System.Xml.Linq;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
@@ -24,6 +25,25 @@ namespace RMC.BestFit.Tests.Univariate;
 [TestClass]
 public class CompetingRisksModelTests
 {
+    private const string LegacyConfiguredModelXml = """
+        <CompetingRisksModel UseDefaultFlatPriors="False" UseJeffreysRuleForScale="False" EnableQuantilePriors="True" UseSingleQuantile="True">
+          <Distribution Type="CompetingRisks" XTransform="None" ProbabilityTransform="NormalZ" MinimumOfRandomVariables="False" Dependency="Independent" Distributions="Normal" Parameters="5|2">
+            <CorrelationMatrix><Correlation_Row>0</Correlation_Row></CorrelationMatrix>
+          </Distribution>
+          <Parameters>
+            <ModelParameter OwnerName="Legacy D1" Name="Legacy Mean" Value="5" LowerBound="-7" UpperBound="9" IsPositive="False" IsFixed="True">
+              <Distribution Type="Normal" Mu="4" Sigma="0.75" />
+            </ModelParameter>
+            <ModelParameter OwnerName="Legacy D1" Name="Legacy Scale" Value="2" LowerBound="0.25" UpperBound="8" IsPositive="True" IsFixed="False">
+              <Distribution Type="Uniform" Min="0.25" Max="8" />
+            </ModelParameter>
+          </Parameters>
+          <QuantilePriors>
+            <QuantilePrior Alpha="0.05"><Distribution Type="Normal" Mu="12" Sigma="1.5" /></QuantilePrior>
+          </QuantilePriors>
+        </CompetingRisksModel>
+        """;
+
     #region Test Data Helper
 
     /// <summary>
@@ -667,6 +687,137 @@ public class CompetingRisksModelTests
     #endregion
 
     #region Serialization Tests
+
+    /// <summary>
+    /// Verifies legacy model XML restores complete parameter metadata and prior distributions,
+    /// rather than applying only the saved scalar values to regenerated defaults.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_RestoresCompleteParameterAndQuantilePriorConfiguration()
+    {
+        var distribution = new CompetingRisks(new UnivariateDistributionBase[] { new Normal(6d, 3d) });
+        var model = new CompetingRisksModel(CreateSampleDataFrame(), distribution, XElement.Parse(LegacyConfiguredModelXml));
+
+        Assert.IsFalse(model.UseDefaultFlatPriors);
+        Assert.IsFalse(model.UseJeffreysRuleForScale);
+        Assert.IsTrue(model.EnableQuantilePriors);
+        Assert.AreEqual(2, model.Parameters.Count);
+        Assert.AreEqual("Legacy D1", model.Parameters[0].OwnerName);
+        Assert.AreEqual("Legacy Mean", model.Parameters[0].Name);
+        Assert.AreEqual(5d, model.Parameters[0].Value, 0d);
+        Assert.AreEqual(-7d, model.Parameters[0].LowerBound, 0d);
+        Assert.AreEqual(9d, model.Parameters[0].UpperBound, 0d);
+        Assert.IsFalse(model.Parameters[0].IsPositive);
+        Assert.IsTrue(model.Parameters[0].IsFixed);
+        Assert.IsInstanceOfType<Normal>(model.Parameters[0].PriorDistribution);
+        Assert.AreEqual(4d, ((Normal)model.Parameters[0].PriorDistribution).Mu, 0d);
+        Assert.AreEqual(0.75d, ((Normal)model.Parameters[0].PriorDistribution).Sigma, 0d);
+        Assert.IsTrue(model.Parameters[1].IsPositive);
+        Assert.IsFalse(model.Parameters[1].IsFixed);
+        Assert.AreEqual(0.25d, model.Parameters[1].LowerBound, 0d);
+        Assert.AreEqual(8d, model.Parameters[1].UpperBound, 0d);
+        Assert.IsInstanceOfType<Uniform>(model.Parameters[1].PriorDistribution);
+        Assert.AreNotSame(distribution, model.CompetingRisks);
+        CollectionAssert.AreEqual(new[] { 6d, 3d }, model.CompetingRisks!.GetParameters);
+        CollectionAssert.AreEqual(new[] { 6d, 3d }, distribution.GetParameters);
+        Assert.AreEqual(1, model.QuantilePriors.Count);
+        Assert.AreEqual(0.05d, model.QuantilePriors[0].Alpha, 0d);
+        Assert.IsInstanceOfType<Normal>(model.QuantilePriors[0].Distribution);
+    }
+
+    /// <summary>
+    /// Verifies quantile priors restored from XML remain subscribed to the model so edits rebuild
+    /// processed prior state and notify consumers.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_RestoredQuantilePrior_RemainsEventWired()
+    {
+        var distribution = new CompetingRisks(new UnivariateDistributionBase[] { new Normal(5d, 2d) });
+        var model = new CompetingRisksModel(CreateSampleDataFrame(), distribution, XElement.Parse(LegacyConfiguredModelXml));
+        var changedProperties = new List<string>();
+        model.PropertyChanged += (_, args) => changedProperties.Add(args.PropertyName ?? string.Empty);
+        double priorBefore = model.PriorLogLikelihood(new[] { 5d, 2d });
+
+        model.QuantilePriors[0].Alpha = 0.04d;
+
+        CollectionAssert.Contains(changedProperties, nameof(CompetingRisksModel.QuantilePriors));
+        Assert.AreNotEqual(priorBefore, model.PriorLogLikelihood(new[] { 5d, 2d }));
+    }
+
+    /// <summary>
+    /// Verifies an enabled but absent quantile-prior section cannot force correlation-dependent
+    /// default evaluation while importing a model whose optional matrix is missing.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_MissingMatrixAndQuantileSection_ImportsForValidation()
+    {
+        var distribution = new CompetingRisks(new UnivariateDistributionBase[] { new Normal(5d, 2d), new Normal(8d, 3d) })
+        {
+            Dependency = Numerics.Data.Statistics.Probability.DependencyType.CorrelationMatrix
+        };
+
+        var model = new CompetingRisksModel(CreateSampleDataFrame(), distribution,
+            XElement.Parse("<CompetingRisksModel EnableQuantilePriors=\"True\" />"));
+
+        Assert.IsTrue(model.EnableQuantilePriors);
+        Assert.IsNull(model.CompetingRisks!.CorrelationMatrix);
+        Assert.AreEqual(Numerics.Data.Statistics.Probability.DependencyType.CorrelationMatrix, model.CompetingRisks.Dependency);
+        Assert.IsFalse(model.Validate().IsValid);
+        Assert.IsTrue(model.Validate().ValidationMessages.Any(message =>
+            message.Contains("requires a correlation matrix", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// Verifies absent optional sections retain established defaults when the supplied distribution
+    /// is ready for default-prior evaluation.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_AbsentOptionalSections_PreservesEstablishedDefaultBehavior()
+    {
+        var distribution = new CompetingRisks(new UnivariateDistributionBase[] { new Normal(5d, 2d) });
+
+        var model = new CompetingRisksModel(CreateSampleDataFrame(), distribution,
+            XElement.Parse("<CompetingRisksModel EnableQuantilePriors=\"True\" />"));
+
+        Assert.AreEqual(2, model.Parameters.Count);
+        Assert.AreEqual(1, model.QuantilePriors.Count);
+        Assert.IsTrue(model.EnableQuantilePriors);
+        Assert.IsTrue(model.UseDefaultFlatPriors);
+        CollectionAssert.AreEqual(new[] { 5d, 2d }, model.CompetingRisks!.GetParameters);
+    }
+
+    /// <summary>
+    /// Verifies surplus serialized parameters are retained for diagnosis instead of being silently
+    /// truncated to the current distribution parameter count.
+    /// </summary>
+    [TestMethod]
+    public void XmlConstructor_ParameterCountMismatch_IsRetainedAndReportedByValidation()
+    {
+        XElement xml = XElement.Parse(LegacyConfiguredModelXml);
+        xml.Element(nameof(CompetingRisksModel.Parameters))!.Add(
+            new XElement(nameof(ModelParameter),
+                new XAttribute(nameof(ModelParameter.OwnerName), "Legacy extra"),
+                new XAttribute(nameof(ModelParameter.Name), "Unexpected parameter"),
+                new XAttribute(nameof(ModelParameter.Value), "3"),
+                new XAttribute(nameof(ModelParameter.LowerBound), "0"),
+                new XAttribute(nameof(ModelParameter.UpperBound), "10"),
+                new XAttribute(nameof(ModelParameter.IsPositive), "False"),
+                new XAttribute(nameof(ModelParameter.IsFixed), "False"),
+                new XElement("Distribution",
+                    new XAttribute("Type", "Uniform"),
+                    new XAttribute("Min", "0"),
+                    new XAttribute("Max", "10"))));
+        var distribution = new CompetingRisks(new UnivariateDistributionBase[] { new Normal(5d, 2d) });
+
+        var model = new CompetingRisksModel(CreateSampleDataFrame(), distribution, xml);
+        var validation = model.Validate();
+
+        Assert.AreEqual(3, model.Parameters.Count);
+        Assert.AreEqual("Unexpected parameter", model.Parameters[2].Name);
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message =>
+            message.Contains("parameter count", StringComparison.OrdinalIgnoreCase)));
+    }
 
     /// <summary>Verifies that to X element contains competing risks model element.</summary>
     [TestMethod]
