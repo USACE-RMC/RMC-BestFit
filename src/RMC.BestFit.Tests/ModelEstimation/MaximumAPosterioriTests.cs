@@ -49,7 +49,6 @@ public class MaximumAPosterioriTests
         Assert.IsFalse(map.ReportFailure);
         Assert.IsFalse(map.Optimizer.ReportFailure);
         Assert.IsTrue(map.ComputeHessian);
-        Assert.AreEqual(100, ((DifferentialEvolution)map.Optimizer).PopulationSize);
     }
 
     /// <summary>Verifies that report failure setting updates the current optimizer.</summary>

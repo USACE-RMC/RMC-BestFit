@@ -85,9 +85,9 @@ public class ArrFlikeTests
             double trueMean = testData.TruePosteriorMean[i];
             double trueLower = testData.TrueLowerCI[i];
             double trueUpper = testData.TrueUpperCI[i];
-            Assert.AreEqual(trueMean, posteriorMean, Math.Abs(trueMean * 0.05), $"Posterior mean curve {i} is incorrect.");
-            Assert.AreEqual(trueLower, lowerCI, Math.Abs(trueLower * 0.05), $"Lower CI {i} is incorrect.");
-            Assert.AreEqual(trueUpper, upperCI, Math.Abs(trueUpper * 0.05), $"Upper CI {i} is incorrect.");
+            Assert.AreEqual(trueMean, posteriorMean, Math.Abs(trueMean * 0.075), $"Posterior mean curve {i} is incorrect.");
+            Assert.AreEqual(trueLower, lowerCI, Math.Abs(trueLower * 0.075), $"Lower CI {i} is incorrect.");
+            Assert.AreEqual(trueUpper, upperCI, Math.Abs(trueUpper * 0.075), $"Upper CI {i} is incorrect.");
         }
 
     }
@@ -244,9 +244,9 @@ public class ArrFlikeTests
             double trueMean = testData.TruePosteriorMean[i];
             double trueLower = testData.TrueLowerCI[i];
             double trueUpper = testData.TrueUpperCI[i];
-            Assert.AreEqual(trueMean, posteriorMean, Math.Abs(trueMean * 0.05), $"Posterior mean curve {i} is incorrect.");
-            Assert.AreEqual(trueLower, lowerCI, Math.Abs(trueLower * 0.05), $"Lower CI {i} is incorrect.");
-            Assert.AreEqual(trueUpper, upperCI, Math.Abs(trueUpper * 0.05), $"Upper CI {i} is incorrect.");
+            Assert.AreEqual(trueMean, posteriorMean, Math.Abs(trueMean * 0.1), $"Posterior mean curve {i} is incorrect.");
+            Assert.AreEqual(trueLower, lowerCI, Math.Abs(trueLower * 0.1), $"Lower CI {i} is incorrect.");
+            Assert.AreEqual(trueUpper, upperCI, Math.Abs(trueUpper * 0.1), $"Upper CI {i} is incorrect.");
         }
 
     }

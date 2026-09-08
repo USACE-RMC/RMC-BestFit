@@ -111,3 +111,4 @@ CLAUDE.md
 *.bestfit-shm
 *.bestfit-wal
 *.bestfit-journal
+/docs/superpowers/plans

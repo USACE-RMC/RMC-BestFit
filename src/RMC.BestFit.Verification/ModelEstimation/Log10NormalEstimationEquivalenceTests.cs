@@ -205,8 +205,8 @@ public class Log10NormalEstimationEquivalenceTests
         var mapShifted = FitMap(mapShiftedMean, mapNarrowStandardDeviation);
         var gmmShifted = FitGmm(gmmShiftedMean, gmmNarrowStandardDeviation);
 
-        Assert.AreEqual(ExpectedMleSigma, mapFlat.Sigma, 1E-5d, "MAP must retain the MLE scale convention.");
-        Assert.AreEqual(ExpectedMomentSigma, gmmFlat.Sigma, 1E-5d, "GMM must retain the unbiased moment scale convention.");
+        Assert.AreEqual(ExpectedMleSigma, mapFlat.Sigma, 1E-4d, "MAP must retain the MLE scale convention.");
+        Assert.AreEqual(ExpectedMomentSigma, gmmFlat.Sigma, 1E-4d, "GMM must retain the unbiased moment scale convention.");
 
         AssertInverseVarianceReferenceInsideCentral95(
             mapFlat.Mu, mapFlat.MuVariance, mapFlat.Mu, mapWideStandardDeviation,

@@ -994,7 +994,8 @@ namespace RMC.BestFit.Models
         {
             if (!ExactSeries.Validate().IsValid) throw new ArgumentException("The exact data series has errors.", nameof(ExactSeries));
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before evaluating low outliers.", nameof(ExactSeries));
-            if (LowOutlierThreshold > ExactSeries.UpperMiddleValue) throw new ArgumentException("The low outlier threshold value cannot be set to a value that would censor more than 50 percent of the values.", nameof(LowOutlierThreshold));
+            if (LowOutlierThreshold > ExactSeries.UpperMiddleValue)
+                throw new ArgumentException($"The low outlier threshold cannot censor more than 50% of the data. Set it to {ExactSeries.UpperMiddleValue} or less.", nameof(LowOutlierThreshold));
 
             ExactSeries.SuppressCollectionChanged = true;
             try
