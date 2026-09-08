@@ -226,6 +226,37 @@ namespace RMC.BestFit.App.Tests.GUI.TimeSeriesData.TimeSeries
         }
 
         /// <summary>
+        /// Verifies that the production selector reader displays observations beyond absent yearly blocks.
+        /// </summary>
+        [TestMethod]
+        public void Resolve_MissingYearBlocks_DisplaysCompleteRange()
+        {
+            string filename = Path.Combine(Path.GetTempPath(), $"BestFit_DssSelectorGap_{Guid.NewGuid():N}.dss");
+            const string pathname = "/TEST/SELECTOR/FLOW//1Day/GAPS/";
+            try
+            {
+                using (var writer = new DssWriter(filename, 0))
+                {
+                    Assert.AreEqual(0, writer.Write(new Hec.Dss.TimeSeries(pathname,
+                        new[] { 10.0, 11.0 }, new DateTime(2000, 3, 1), "CFS", "PER-AVER")));
+                    Assert.AreEqual(0, writer.Write(new Hec.Dss.TimeSeries(pathname,
+                        new[] { 20.0, 21.0 }, new DateTime(2040, 3, 1), "CFS", "PER-AVER")));
+                }
+
+                using var reader = new DssReader(filename, 0);
+                var catalogPath = reader.GetCatalog().Single();
+                var resolver = new DssPathRangeResolver(filename);
+                var row = new DssPathSelectorRow(catalogPath).WithRangeResult(resolver.Resolve(catalogPath));
+                Assert.AreEqual("01Mar2000-02Mar2040", row.DisplayDpart);
+                Assert.AreEqual(pathname, row.DatelessPath);
+            }
+            finally
+            {
+                if (File.Exists(filename)) File.Delete(filename);
+            }
+        }
+
+        /// <summary>
         /// Verifies selector range display against a real DSS catalog/read round trip.
         /// </summary>
         [TestMethod]
@@ -262,7 +293,7 @@ namespace RMC.BestFit.App.Tests.GUI.TimeSeriesData.TimeSeries
                     Assert.AreEqual(1, matches.Count);
 
                     catalogPath = matches[0];
-                    var resolver = new DssPathRangeResolver(readPath => reader.GetTimeSeries(readPath));
+                    var resolver = new DssPathRangeResolver(dssFileName);
                     result = resolver.Resolve(catalogPath);
                 }
 

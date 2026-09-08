@@ -40,6 +40,7 @@
     <Reference Include="Hec.Dss">
       <HintPath>$(HecDssAssemblyPath)</HintPath>
     </Reference>
+    <None Include="$(HecDssNativeWin)" Link="hecdss.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
