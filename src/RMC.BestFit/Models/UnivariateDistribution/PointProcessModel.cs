@@ -175,6 +175,9 @@ namespace RMC.BestFit.Models
         private double _lambda = double.NaN;
         private bool _isTotalYearsInferred = true;
 
+        /// <summary>The latest automatic-initialization sample error, reported through model validation.</summary>
+        private string? _defaultParameterInitializationError;
+
         /// <summary>
         /// Tracks whether automatic exposure updates may replace <see cref="TotalYears"/>.
         /// Explicit values remain protected while defaults are disabled; enabling defaults
@@ -692,8 +695,34 @@ namespace RMC.BestFit.Models
         }
 
         /// <inheritdoc/>
+        /// <remarks>Expected block-sample validation failures retain editable parameters and are reported
+        /// by Validate while automatic priors are enabled. A new seasonal model can still expose its
+        /// existing structural changepoint defaults without inventing GEV priors from an insufficient sample.</remarks>
         public override void SetDefaultParameters()
         {
+            _defaultParameterInitializationError = null;
+            var initializationConstraints = new List<Tuple<double[], double[], double[]>>();
+            if (Distribution is not null && DataFrame is not null && DataFrame.Validate().IsValid &&
+                Distribution.Distributions is not null && Distribution.Distributions.Count > 0)
+            {
+                List<double> initializationSample = AMSDataFrame.ExactSeries.Select(x => x.Value).ToList();
+                foreach (UnivariateDistributionBase component in Distribution.Distributions)
+                {
+                    if (!UnivariateDistribution.TryGetDefaultParameterConstraints(
+                        component, initializationSample, out var constraints, out _defaultParameterInitializationError))
+                    {
+                        if (Parameters.Count == 0 && Distribution.Distributions.Count > 1)
+                        {
+                            AddDefaultChangePointParameters();
+                            foreach (ModelParameter parameter in Parameters)
+                                parameter.PropertyChanged += Parameter_PropertyChanged;
+                        }
+                        RaisePropertyChange(nameof(SetDefaultParameters));
+                        return;
+                    }
+                    initializationConstraints.Add(constraints!);
+                }
+            }
 
             // Remove old handlers
             if (Parameters.Count > 0)
@@ -715,35 +744,14 @@ namespace RMC.BestFit.Models
             }
 
             if (Distribution.Distributions.Count() > 1)
-            {
-                var changePointDefaults = GetDefaultChangePointParameters();
-
-                Parameters.Add(new ModelParameter
-                {
-                    Name = "Change Point K₁",
-                    Value = changePointDefaults[0].Value,
-                    LowerBound = changePointDefaults[0].Lower,
-                    UpperBound = changePointDefaults[0].Upper,
-                    PriorDistribution = new Uniform(changePointDefaults[0].Lower, changePointDefaults[0].Upper)
-                });
-
-                Parameters.Add(new ModelParameter
-                {
-                    Name = "Change Point K₂",
-                    Value = changePointDefaults[1].Value,
-                    LowerBound = changePointDefaults[1].Lower,
-                    UpperBound = changePointDefaults[1].Upper,
-                    PriorDistribution = new Uniform(changePointDefaults[1].Lower, changePointDefaults[1].Upper)
-                });
-            }
+                AddDefaultChangePointParameters();
 
             // Priors for GEV distribution parameters.
             for (int i = 0; i < Distribution.Distributions.Count(); i++)
             {
                 var gev = Distribution.Distributions[i];
 
-                var tuple = ((IMaximumLikelihoodEstimation)gev)
-                    .GetParameterConstraints(AMSDataFrame.ExactSeries.Select(x => x.Value).ToList());
+                var tuple = initializationConstraints[i];
 
                 var initials = tuple.Item1;
                 var lowers = tuple.Item2;
@@ -770,6 +778,28 @@ namespace RMC.BestFit.Models
                 Parameters[i].PropertyChanged += Parameter_PropertyChanged;
 
             RaisePropertyChange(nameof(SetDefaultParameters));
+        }
+
+        /// <summary>Adds the existing seasonal changepoint defaults independently of GEV magnitude initialization.</summary>
+        private void AddDefaultChangePointParameters()
+        {
+            var changePointDefaults = GetDefaultChangePointParameters();
+            Parameters.Add(new ModelParameter
+            {
+                Name = "Change Point K₁",
+                Value = changePointDefaults[0].Value,
+                LowerBound = changePointDefaults[0].Lower,
+                UpperBound = changePointDefaults[0].Upper,
+                PriorDistribution = new Uniform(changePointDefaults[0].Lower, changePointDefaults[0].Upper)
+            });
+            Parameters.Add(new ModelParameter
+            {
+                Name = "Change Point K₂",
+                Value = changePointDefaults[1].Value,
+                LowerBound = changePointDefaults[1].Lower,
+                UpperBound = changePointDefaults[1].Upper,
+                PriorDistribution = new Uniform(changePointDefaults[1].Lower, changePointDefaults[1].Upper)
+            });
         }
 
         /// <summary>
@@ -1786,8 +1816,7 @@ namespace RMC.BestFit.Models
                 }
 
                 // Jacobian determinant for transformation from parameters to quantiles.
-                ((IStandardError)model.Distributions[0]).QuantileJacobian(pVals, out var D);
-                logLH += D != 0 ? Math.Log(Math.Abs(D)) : double.NegativeInfinity;
+                logLH += ((IStandardError)model.Distributions[0]).LogAbsQuantileJacobian(pVals);
             }
 
             return logLH;
@@ -1873,8 +1902,7 @@ namespace RMC.BestFit.Models
                 }
 
                 // Jacobian determinant for transformation from parameters to quantiles
-                ((IStandardError)model.Distributions[0]).QuantileJacobian(pVals, out var D);
-                double jacobianLL = D != 0 ? Math.Log(Math.Abs(D)) : double.NegativeInfinity;
+                double jacobianLL = ((IStandardError)model.Distributions[0]).LogAbsQuantileJacobian(pVals);
                 result.Add(new PriorComponent("Quantile Jacobian", jacobianLL, PriorComponentType.Jacobian));
             }
 
@@ -2154,6 +2182,12 @@ namespace RMC.BestFit.Models
         {
             bool isValid = true;
             var messages = new List<string>();
+
+            if (UseDefaultFlatPriors && _defaultParameterInitializationError is not null)
+            {
+                isValid = false;
+                messages.Add(_defaultParameterInitializationError);
+            }
 
             // Data frame checks
             if (DataFrame == null)

@@ -267,6 +267,8 @@ namespace RMC.BestFit.Models
 
         private bool _isDeserializing = false;
         private UnivariateDistributionBase _distribution = null!;
+        /// <summary>The latest automatic-initialization sample error, reported through model validation.</summary>
+        private string? _defaultParameterInitializationError;
         private bool _isNonstationary = false;
         private int _parameterTimeIndex = 0;
         private double _alpha = 0.5;
@@ -567,9 +569,38 @@ namespace RMC.BestFit.Models
                 throw new ArgumentOutOfRangeException(nameof(distributionType), distributionType, "Unsupported distribution type.");
         }
 
+        /// <summary>
+        /// Attempts automatic parameter constraints while deferring expected sample-validation failures to the model.
+        /// </summary>
+        /// <param name="distribution">The distribution whose existing initialization method supplies the constraints.</param>
+        /// <param name="sample">The actual initialization observations, without padding or replacement.</param>
+        /// <param name="constraints">The existing initializer's values and bounds when available.</param>
+        /// <param name="validationError">The sample error to report through model validation, or null on success.</param>
+        /// <returns>True when the existing initializer accepts the sample.</returns>
+        /// <remarks>Only argument failures explicitly identifying the initialization sample are deferred.
+        /// Other numerical and programming failures retain their existing exception behavior.</remarks>
+        internal static bool TryGetDefaultParameterConstraints(
+            UnivariateDistributionBase distribution, IList<double> sample,
+            out Tuple<double[], double[], double[]>? constraints, out string? validationError)
+        {
+            validationError = null;
+            try
+            {
+                constraints = ((IMaximumLikelihoodEstimation)distribution).GetParameterConstraints(sample);
+                return true;
+            }
+            catch (ArgumentException exception) when (exception.ParamName == nameof(sample))
+            {
+                constraints = null;
+                validationError = $"Error: Automatic parameter initialization for {distribution.DisplayName} failed. {exception.Message}";
+                return false;
+            }
+        }
+
         /// <inheritdoc/>
         public override void SetDefaultParameters()
         {
+            _defaultParameterInitializationError = null;
             if (Distribution is null)
                 return;
 
@@ -597,11 +628,12 @@ namespace RMC.BestFit.Models
             try
             {
                 // Get default parameter values
-                if (DataFrame != null && DataFrame.Validate().IsValid && DataFrame.ExactSeries != null && DataFrame.ExactSeries.Count > 0)
+                if (DataFrame != null && DataFrame.Validate().IsValid && DataFrame.ExactSeries != null && DataFrame.ExactSeries.Count > 0 &&
+                    TryGetDefaultParameterConstraints(Distribution, DataFrame.ExactSeries.Select(x => x.Value).ToList(),
+                        out var tuple, out _defaultParameterInitializationError))
                 {
                     // Get typical parameter constraints
-                    var tuple = ((IMaximumLikelihoodEstimation)Distribution).GetParameterConstraints(DataFrame.ExactSeries.Select(x => x.Value).ToList());
-                    var initials = tuple.Item1;
+                    var initials = tuple!.Item1;
                     var lowers = tuple.Item2;
                     var uppers = tuple.Item3;
 
@@ -1992,8 +2024,7 @@ namespace RMC.BestFit.Models
                     logLH += _quantilePriorsTrue[i].Distribution.LogPDF(qCurr - qPrev);
                 }
 
-                ((IStandardError)model).QuantileJacobian(pVals, out var D);
-                logLH += D != 0 ? Math.Log(Math.Abs(D)) : double.NegativeInfinity;
+                logLH += ((IStandardError)model).LogAbsQuantileJacobian(pVals);
             }
 
             if (!Tools.IsFinite(logLH)) return double.NegativeInfinity;
@@ -2075,8 +2106,7 @@ namespace RMC.BestFit.Models
                     }
 
                     // Jacobian term
-                    ((IStandardError)model).QuantileJacobian(pVals, out var D);
-                    double jacobianLL = D != 0 ? Math.Log(Math.Abs(D)) : double.NegativeInfinity;
+                    double jacobianLL = ((IStandardError)model).LogAbsQuantileJacobian(pVals);
                     result.Add(new PriorComponent("Quantile Jacobian", jacobianLL, PriorComponentType.Jacobian));
                 }
             }
@@ -2238,6 +2268,12 @@ namespace RMC.BestFit.Models
         {
             bool isValid = true;
             var messages = new List<string>();
+
+            if (UseDefaultFlatPriors && _defaultParameterInitializationError is not null)
+            {
+                isValid = false;
+                messages.Add(_defaultParameterInitializationError);
+            }
 
             // DataFrame checks
             if (DataFrame is null)

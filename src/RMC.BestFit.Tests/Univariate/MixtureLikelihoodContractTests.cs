@@ -370,18 +370,18 @@ public class MixtureLikelihoodContractTests
     }
 
     /// <summary>
-    /// Verifies a hurdle component with no numerically positive mass is rejected.
+    /// Verifies a hurdle component whose support excludes every positive value is rejected.
     /// </summary>
     [TestMethod]
     public void ZeroInflatedModel_RejectsComponentWithoutPositiveMass()
     {
         var model = new MixtureModel(
-            CreateExactDataFrame(0.0, 1.0, 2.0),
-            new List<UnivariateDistributionType> { UnivariateDistributionType.Normal },
+            CreateExactDataFrame(0.0, 1.0, 2.0, 3.0, 4.0),
+            new List<UnivariateDistributionType> { UnivariateDistributionType.GeneralizedExtremeValue },
             isZeroInflated: true);
         model.Mixture!.SetParameters(
-            new[] { 2.0 / 3.0 },
-            new[] { -1000.0, 1.0 });
+            new[] { 0.8 },
+            new[] { -3.0, 1.0, 1.0 });
 
         var validation = model.Validate();
         Assert.IsFalse(validation.IsValid);

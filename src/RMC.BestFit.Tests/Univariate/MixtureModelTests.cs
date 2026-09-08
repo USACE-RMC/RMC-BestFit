@@ -1178,22 +1178,13 @@ public class MixtureModelTests
     }
 
     /// <summary>
-    /// When input data is constant (zero-width sample range), the MixtureModel's
-    /// auto-fit Uniform prior collapses to <c>Uniform(a, a)</c>, which
-    /// <c>Numerics.Distributions.Uniform</c> correctly rejects with
-    /// <c>ArgumentOutOfRangeException</c> during PDF evaluation. This is the
-    /// intended contract: degenerate data surfaces as an exception rather than a
-    /// silent NaN / −∞, so the caller cannot mistakenly proceed with meaningless
-    /// posterior inference.
+    /// Verifies constant data are reported as invalid initialization inputs without failing construction.
     /// </summary>
     /// <remarks>
-    /// The test pins down the throw contract. If the contract changes (e.g., future
-    /// work adds an upstream degeneracy guard in MixtureModel that returns
-    /// <c>double.NegativeInfinity</c> instead), this test should be updated with the
-    /// new expected behavior.
+    /// The diagnostic identifies the constant sample directly rather than relying on a degenerate fitted prior.
     /// </remarks>
     [TestMethod]
-    public void Test_MixtureModel_AllSameValue_ThrowsOnDegenerateData()
+    public void Test_MixtureModel_AllSameValue_ReportsInvalidInitialization()
     {
         var df = new BestFitDataFrame();
         var data = new List<ExactData>();
@@ -1206,12 +1197,10 @@ public class MixtureModelTests
         var types = new List<UnivariateDistributionType> { UnivariateDistributionType.Normal };
         var model = new MixtureModel(df, types);
 
-        var parameters = model.Parameters.Select(p => p.Value).ToArray();
-
-        // All-same data → auto-fit Uniform prior has min == max → Uniform.PDF throws.
-        // This surfaces the data degeneracy instead of silently returning NaN / −∞.
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.LogLikelihood(parameters),
-            "LogLikelihood should throw ArgumentOutOfRangeException on constant-value data.");
+        var validation = model.Validate();
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message =>
+            message.Contains("constant sample", StringComparison.OrdinalIgnoreCase)));
     }
 
     /// <summary>Verifies that mixture model large values.</summary>

@@ -185,6 +185,8 @@ namespace RMC.BestFit.Models
         }
 
         private CompetingRisks? _competingRisks = null;
+        /// <summary>The latest automatic-initialization sample error, reported through model validation.</summary>
+        private string? _defaultParameterInitializationError;
 
         /// <inheritdoc/>
         public override DataFrame DataFrame
@@ -277,6 +279,24 @@ namespace RMC.BestFit.Models
         /// <inheritdoc/>
         public override void SetDefaultParameters()
         {
+            _defaultParameterInitializationError = null;
+            var initializationConstraints = new List<Tuple<double[], double[], double[]>>();
+            if (CompetingRisks is not null && DataFrame is not null && DataFrame.Validate().IsValid &&
+                CompetingRisks.Distributions is not null && CompetingRisks.Distributions.Count > 0)
+            {
+                List<double> initializationSample = DataFrame.ExactSeries.Select(x => x.Value).ToList();
+                foreach (UnivariateDistributionBase component in CompetingRisks.Distributions)
+                {
+                    if (!UnivariateDistribution.TryGetDefaultParameterConstraints(
+                        component, initializationSample, out var constraints, out _defaultParameterInitializationError))
+                    {
+                        RaisePropertyChange(nameof(SetDefaultParameters));
+                        return;
+                    }
+                    initializationConstraints.Add(constraints!);
+                }
+            }
+
             // Remove old handlers
             if (Parameters.Count > 0)
             {
@@ -300,7 +320,7 @@ namespace RMC.BestFit.Models
             for (int i = 0; i < CompetingRisks.Distributions.Count; i++)
             {
                 // Get constraints
-                var tuple = ((IMaximumLikelihoodEstimation)CompetingRisks.Distributions[i]).GetParameterConstraints(DataFrame.ExactSeries.Select(x => x.Value).ToList());
+                var tuple = initializationConstraints[i];
                 var initials = tuple.Item1;
                 var lowers = tuple.Item2;
                 var uppers = tuple.Item3;
@@ -818,6 +838,12 @@ namespace RMC.BestFit.Models
         {
             bool isValid = true;
             var messages = new List<string>();
+
+            if (UseDefaultFlatPriors && _defaultParameterInitializationError is not null)
+            {
+                isValid = false;
+                messages.Add(_defaultParameterInitializationError);
+            }
 
             // Data frame
             if (DataFrame is null)
