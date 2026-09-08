@@ -1342,9 +1342,9 @@ namespace RMC.BestFit.Models
         /// </para>
         /// <para>
         /// The implementation is a documented port of peakFQ's ARRANGE2, PPLOT2, and PLPOS
-        /// sequence. Each explicit observation is classified against the perception threshold
-        /// covering its own index; this classification changes plotting ranks only and never
-        /// changes the observation type or value.
+        /// sequence. An explicit exact, uncertain, or interval representative below its covering
+        /// perception threshold receives an unbounded preparation threshold so its magnitude remains
+        /// observed. Actual threshold rows and counts, observation types, and values are preserved.
         /// </para>
         /// <para>
         /// After threshold counts are processed, observations and distinct levels are arranged
@@ -1441,6 +1441,9 @@ namespace RMC.BestFit.Models
                     occupiedIndexes.Add(source.Index);
                     ThresholdData? threshold = FindThresholdForPlotting(thresholdsByIndex, source.Index);
                     double thresholdValue = threshold?.Value ?? double.NegativeInfinity;
+                    // An explicit magnitude is observed even below its covering perception threshold.
+                    if (source.Value < thresholdValue)
+                        thresholdValue = double.NegativeInfinity;
                     thresholdLevels.Add(thresholdValue);
                     observations.Add((source, thresholdValue, i, source.Value >= thresholdValue));
                 }

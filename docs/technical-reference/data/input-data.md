@@ -22,6 +22,12 @@ The resulting `DataFrame` is the scientific handoff to the model library. Its ch
 - `IsProcessed` distinguishes a configured source from a completed derived data frame.
 - Changes to the source time series or processing controls clear dependent results and require reprocessing.
 
+## Opening saved input data
+
+Opening a saved project repairs HS plotting positions in valid frames containing explicitly recorded values below their covering perception thresholds ([issue #19](https://github.com/USACE-RMC/RMC-BestFit/issues/19)). These recorded values are ranked by magnitude while threshold-only years retain their censored weighting. Changed positions mark the element dirty and are persisted by normal saving; source observations, perception thresholds, and plot settings are preserved. Invalid frames remain loadable for correction through the usual validation workflow.
+
+The repair updates the input frame. Saved analyses are not automatically re-estimated. Reprocess affected analyses to refresh empirical moments, regression-on-order-statistics initialization, and fit diagnostics that depend on the corrected positions. See [plotting positions and derived state](../data-frame/index.md#plotting-positions-and-derived-state) for the calculation and direct XML serialization contracts.
+
 ## Validation and limitations
 
 The element validates its source reference, processing window, threshold/separation controls, data-frame contents, and series-specific requirements. Processing does not establish stationarity, independence, representativeness, perception-threshold correctness, or fitness for a particular frequency model; those remain model and application assumptions.
