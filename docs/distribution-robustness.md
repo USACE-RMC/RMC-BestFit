@@ -9,7 +9,7 @@ This implements the approved September 8, 2026 distribution repair plan, based o
 - Automatic initialization reports unusable samples through model validation while preserving editable parameters and priors. The PointProcess path still refreshes AMS/exposure structure and supplies its existing seasonal changepoint defaults. A later valid sample clears the initialization diagnostic. This does not pad data, invent GEV prior bounds, change optimizers or alter seeds.
 - The corrected Numerics LnNormal physical-parameter cache preserves exact serialized mean/SD values through clone and round-trip operations. Existing persisted coordinates and logarithmic bases remain unchanged.
 
-The integration requires Numerics repair commit `b8bf912c11f3dc0a770bd9e54d0ae40d2bccb319`; the existing released package does not contain the new extension. Validation explicitly selects the intended source project with `UseLocalRmcNumerics=true` and `RmcNumericsProjectPath`. No package version or release metadata was changed in this work.
+The integration requires Numerics local merge commit `a3bd2afd64286e1b8df3ada8be711d55180cbb11`, which includes repair commit `b8bf912c11f3dc0a770bd9e54d0ae40d2bccb319`; the existing released package does not contain the new extension. Validation explicitly selects the intended source project with `UseLocalRmcNumerics=true` and `RmcNumericsProjectPath`. No package version or release metadata was changed in this work.
 
 Numerics documents all 15 individual families, CompetingRisks and Mixture, the new GNO/GLO/Kappa local-MLE uncertainty methods, parameter coordinates, regularity domains, independent R/Python fixtures and retained limitations in `docs/distributions/bestfit-robustness-evidence.md`. New covariance methods do not establish global MLE existence or finite-sample coverage. L-moment and product-moment covariance for those three families remain unsupported.
 
@@ -19,15 +19,17 @@ All tests use small deterministic contracts; the new fast tests do not run an op
 
 | Release gate | Final result |
 |---|---|
-| Core fast tests | 3,406 passed; one test worker |
-| UI fast tests | 593 passed |
+| Core fast tests | 3,410 passed; one test worker |
+| UI fast tests | 599 passed |
 | App fast tests | 443 passed |
 | XML documentation and namespace scan | Passed, 941 C# source files |
 | Numerics Release/XML build | Zero warnings/errors, all four supported frameworks |
-| Numerics complete Release tests | 2,675 passed per framework, all four frameworks; 10,700 passes |
+| Numerics complete Release tests | 2,690 passed per framework, all four frameworks; 10,760 passes |
 | BestFit Verification | Not executed |
 
 The isolated Numerics project used here is `C:/GIT/numerics/artifacts/worktrees/distribution-robustness/Numerics/Numerics.csproj`. Each BestFit test command uses `-c Release -p:EnforceXmlDocumentation=true -p:UseLocalRmcNumerics=true -p:RmcNumericsProjectPath=<that path>`. UI and App builds additionally point `HecDssRoot` at the existing `C:/GIT/hec-dss/dotnet/Hec.Dss/` dependency. These are command-line worktree references; project configuration and dependencies were not replaced.
+
+After merging to the named local branches and removing the temporary worktrees, use `C:/GIT/numerics/Numerics/Numerics.csproj` for `RmcNumericsProjectPath`. Original test reports and implementation records are retained locally under `C:/GIT/numerics/artifacts/distribution-robustness-evidence/`.
 
 The MSTest.Sdk 3.6.4 host uses Microsoft.Testing.Platform. Targeted arguments belong after `--`, for example `-- --filter 'FullyQualifiedName~DistributionRobustnessIntegrationTests' --report-trx`; ordinary legacy filter syntax is ignored by this host. Reported counts were checked against the output/TRX. Full gates name each of the three fast projects explicitly and do not invoke the Verification project.
 
@@ -35,8 +37,10 @@ The default core gate twice hit the unrelated `RunAsync_MultipleAnalyses_Paralle
 
 [Machine-readable evidence](validation/distribution-robustness.json) records final counts and TRX hashes. Every BestFit test output's Numerics.dll SHA-256 matches the intended Numerics build.
 
+These final gates combine the repair with Numerics destination commits through `d80bfa8` and BestFit destination commits through `fbe0989`. The merge preserves shared Numerics helper reuse, serial Numerics test settings, the existing Normal NaN quantile contracts, and both BestFit progress entries. It adds no changes to the destination's estimation defaults or plotting-position repair. The initial isolated repair passed Numerics 2,675 per framework and BestFit 3,406/593/443 before the later destination commits were incorporated.
+
 ## Numerical limits
 
 The existing dependence backend and GL20 measurement-error rule are retained. This work does not add arbitrary-precision multivariate tails or change the full uncertain-observation integration policy outside the repaired EM path. Generic positive conditioning can still lose a correction if two separately returned component logs have already rounded to the same enormous magnitude, for example a Normal mean of -1e100 conditioned above zero. Numerics records these limits and explicit unresolved numerical domains rather than claiming arbitrary-precision accuracy.
 
-Changes are prepared for reviewed local commits. No push or publication is included.
+The reviewed implementation is committed locally for integration into `documentation-verification-updates`, paired with Numerics `bug-fixes-and-enhancements`. No push or publication is included.

@@ -994,7 +994,8 @@ namespace RMC.BestFit.Models
         {
             if (!ExactSeries.Validate().IsValid) throw new ArgumentException("The exact data series has errors.", nameof(ExactSeries));
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before evaluating low outliers.", nameof(ExactSeries));
-            if (LowOutlierThreshold > ExactSeries.UpperMiddleValue) throw new ArgumentException("The low outlier threshold value cannot be set to a value that would censor more than 50 percent of the values.", nameof(LowOutlierThreshold));
+            if (LowOutlierThreshold > ExactSeries.UpperMiddleValue)
+                throw new ArgumentException($"The low outlier threshold cannot censor more than 50% of the data. Set it to {ExactSeries.UpperMiddleValue} or less.", nameof(LowOutlierThreshold));
 
             ExactSeries.SuppressCollectionChanged = true;
             try
@@ -1342,9 +1343,9 @@ namespace RMC.BestFit.Models
         /// </para>
         /// <para>
         /// The implementation is a documented port of peakFQ's ARRANGE2, PPLOT2, and PLPOS
-        /// sequence. Each explicit observation is classified against the perception threshold
-        /// covering its own index; this classification changes plotting ranks only and never
-        /// changes the observation type or value.
+        /// sequence. An explicit exact, uncertain, or interval representative below its covering
+        /// perception threshold receives an unbounded preparation threshold so its magnitude remains
+        /// observed. Actual threshold rows and counts, observation types, and values are preserved.
         /// </para>
         /// <para>
         /// After threshold counts are processed, observations and distinct levels are arranged
@@ -1441,6 +1442,9 @@ namespace RMC.BestFit.Models
                     occupiedIndexes.Add(source.Index);
                     ThresholdData? threshold = FindThresholdForPlotting(thresholdsByIndex, source.Index);
                     double thresholdValue = threshold?.Value ?? double.NegativeInfinity;
+                    // An explicit magnitude is observed even below its covering perception threshold.
+                    if (source.Value < thresholdValue)
+                        thresholdValue = double.NegativeInfinity;
                     thresholdLevels.Add(thresholdValue);
                     observations.Add((source, thresholdValue, i, source.Value >= thresholdValue));
                 }

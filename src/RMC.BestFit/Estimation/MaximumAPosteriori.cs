@@ -249,10 +249,7 @@ namespace RMC.BestFit.Estimation
             }
             else if (OptimizerMethod == OptimizationMethod.DifferentialEvolution)
             {
-                Optimizer = new DifferentialEvolution(Model.LogLikelihood, NumberOfParameters, LowerBounds, UpperBounds)
-                {
-                    PopulationSize = Math.Max(100, 10 * NumberOfParameters)
-                };
+                Optimizer = new DifferentialEvolution(Model.LogLikelihood, NumberOfParameters, LowerBounds, UpperBounds);
             }
             else if (OptimizerMethod == OptimizationMethod.MultilevelSingleLinkage)
             {

@@ -52,7 +52,6 @@ public class MaximumLikelihoodTests
         Assert.IsFalse(mle.ReportFailure);
         Assert.IsFalse(mle.Optimizer.ReportFailure);
         Assert.IsTrue(mle.ComputeHessian);
-        Assert.AreEqual(100, ((DifferentialEvolution)mle.Optimizer).PopulationSize);
     }
 
     /// <summary>Verifies that report failure setting updates the current optimizer.</summary>
