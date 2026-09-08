@@ -7,6 +7,16 @@ development.
 
 ## RMC.BestFit (since 2.0.0)
 
+- HS plotting positions (issue #19): restores magnitude ordering for explicitly recorded exact,
+  uncertain, and interval values below their covering perception thresholds, fixing a regression
+  introduced after v2-beta.5. Threshold-only years retain their censored HS weighting, and the
+  current recurrence, tie handling, and strict probability bounds are preserved. Valid affected
+  input frames are repaired automatically when a project opens and marked dirty only if positions
+  change, so normal saving persists the correction. Source data and plot settings are preserved;
+  direct `DataFrame(XElement)` construction continues to retain supplied positions exactly.
+  Corrected positions can change empirical moments, regression-on-order-statistics initialization,
+  and fit diagnostics. Saved analyses are not automatically re-estimated; reprocess affected
+  analyses to refresh results that depend on those positions.
 - Time series: ARIMAX conditions the likelihood, residuals, generation, and prediction on
   `max(p, q, b)`; an empty conditional sum is an invalid fit (negative-infinite likelihood)
   rather than a zero log-likelihood; ARIMA/AR order setters rebuild the training state; the

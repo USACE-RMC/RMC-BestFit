@@ -103,7 +103,8 @@ namespace RMC.BestFit.UI
 
                 _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "ID");
                 SetIsValid();
-                SetIsDirty(openedFromV1);
+                // Open establishes whether persisted data needs saving after migration or repair.
+                if (!openFromFile) SetIsDirty(false);
             }
             finally
             {
@@ -1244,6 +1245,7 @@ namespace RMC.BestFit.UI
             try
             {
             openedFromV1 = false;
+            bool repairedPlottingPositions = false;
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
@@ -1381,6 +1383,7 @@ namespace RMC.BestFit.UI
                                 _dataFrame.PropertyChanged -= DataFramePropertyChanged;
                             _dataFrame = new DataFrame(XElement.Parse(dtView.GetCell(nameof(DataFrame), rowIndex).ToString()));
                             _dataFrame.ProcessThresholdSeries();
+                            repairedPlottingPositions = RepairSavedPlottingPositions(_dataFrame);
                             _dataFrame.PropertyChanged += DataFramePropertyChanged;
                         }
                         catch (Exception ex)
@@ -1402,13 +1405,39 @@ namespace RMC.BestFit.UI
 
             SetupBridges();
             SetIsValid();
-            SetIsDirty(openedFromV1);
+            SetIsDirty(openedFromV1 || repairedPlottingPositions);
             }
             finally
             {
                 IsUndoEnabled = wasUndoEnabled;
                 if (wasUndoEnabled) ClearUndoHistory();
             }
+        }
+
+        /// <summary>
+        /// Recalculates saved positions affected by explicit observations below perception thresholds.
+        /// </summary>
+        /// <param name="dataFrame">The deserialized frame before normal input-data listeners are attached.</param>
+        /// <returns>Whether at least one saved plotting position changed.</returns>
+        /// <remarks>
+        /// Invalid frames retain their supplied positions for the existing validation path. Direct model
+        /// XML construction continues to preserve positions; this migration belongs to project opening.
+        /// </remarks>
+        private static bool RepairSavedPlottingPositions(DataFrame dataFrame)
+        {
+            if (!dataFrame.Validate().IsValid) return false;
+
+            var observations = dataFrame.ExactSeries
+                .Concat(dataFrame.UncertainSeries).Concat(dataFrame.IntervalSeries).ToArray();
+            bool affected = observations.Any(observation => dataFrame.ThresholdSeries.Cast<ThresholdData>().Any(threshold =>
+                observation.Index >= threshold.StartIndex && observation.Index <= threshold.EndIndex &&
+                observation.Value < threshold.Value));
+            if (!affected) return false;
+
+            var savedPositions = observations.Select(observation => observation.PlottingPosition).ToArray();
+            dataFrame.CalculatePlottingPositions();
+            return observations.Where((observation, index) =>
+                !observation.PlottingPosition.Equals(savedPositions[index])).Any();
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
-﻿using Numerics;
+using System.Xml.Linq;
+using Numerics;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
@@ -457,6 +458,7 @@ public class PlottingPositionTests
                     data.PlottingPosition > 0d &&
                     data.PlottingPosition < 1d));
         Assert.IsTrue(dataFrame.ExactSeries.Any(data => data.PlottingPosition > 0.98d));
+        AssertMagnitudeOrdered(dataFrame);
         Assert.IsTrue(dataFrame.ExactSeries.SuppressCollectionChanged,
             "CalculatePlottingPositions must restore the caller's prior suppression state.");
         Assert.IsTrue(dataFrame.ThresholdSeries.SuppressCollectionChanged,
@@ -523,7 +525,7 @@ public class PlottingPositionTests
 
         const int higherValueIndex = 1975;
         const int lowerValueIndex = 1998;
-        const double expectedCenter = 0.97714285714285709d;
+        // Independent, unmodified Fortran ARRANGE2/PPLOT2 with explicit values observed.
         Data higherValueEvent = source.ExactSeries.Single(data => data.Index == higherValueIndex);
         Data lowerValueEvent = source.ExactSeries.Single(data => data.Index == lowerValueIndex);
 
@@ -531,11 +533,9 @@ public class PlottingPositionTests
         Assert.IsTrue(
             higherValueEvent.PlottingPosition < lowerValueEvent.PlottingPosition,
             $"Higher event {higherValueEvent.PlottingPosition:G17}; lower event {lowerValueEvent.PlottingPosition:G17}.");
-        Assert.AreEqual(
-            expectedCenter,
-            (higherValueEvent.PlottingPosition + lowerValueEvent.PlottingPosition) / 2d,
-            1E-15,
-            "Separating a tie must preserve its original H-S probability center.");
+        Assert.AreEqual(0.97d, higherValueEvent.PlottingPosition, 1E-15);
+        Assert.AreEqual(0.99d, lowerValueEvent.PlottingPosition, 1E-15);
+        AssertMagnitudeOrdered(source);
 
         for (int i = 1; i < positions.Length; i++)
         {
@@ -551,14 +551,14 @@ public class PlottingPositionTests
     }
 
     /// <summary>
-    /// Verifies explicit values below their own thresholds use the ARRANGE2 censored branch.
+    /// Verifies explicit values below their own thresholds remain observed.
     /// </summary>
     /// <remarks>
-    /// With one detection and one censored observation at a common threshold, Weibull
+    /// With two explicit observations at a common threshold, Weibull
     /// plotting positions are 0.25 and 0.75 exceedance probability, respectively.
     /// </remarks>
     [TestMethod]
-    public void Test_PlottingPositions_ValueBelowOwnThreshold_UsesCensoredBranch()
+    public void Test_PlottingPositions_ValueBelowOwnThreshold_RemainsObserved()
     {
         var dataFrame = new BestFitDataFrame();
         dataFrame.ExactSeries.SuppressCollectionChanged = true;
@@ -804,4 +804,151 @@ public class PlottingPositionTests
             "A suppressed clear must not compute plotting positions; the caller owns the refresh.");
     }
 
+
+    /// <summary>Checks the analytical five-year example for exact and mixed observations.</summary>
+    /// <remarks>One exceedance in five years gives pe=1/5; two observed lower values divide the remaining mass into thirds.</remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_BelowThreshold_AnalyticalMixedAndExact()
+    {
+        foreach (bool mixed in new[] { false, true })
+        {
+            var frame = CreateSuppressedFrame();
+            frame.ExactSeries.Add(new ExactData(0, 80) { IsLowOutlier = true });
+            if (mixed)
+            {
+                frame.UncertainSeries.Add(new UncertainData(3, new Normal(50, 2)));
+                frame.IntervalSeries.Add(new IntervalData(4, 190, 200, 210));
+            }
+            else
+            {
+                frame.ExactSeries.Add(new ExactData(3, 50));
+                frame.ExactSeries.Add(new ExactData(4, 200));
+            }
+            frame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100));
+            frame.ProcessThresholdSeries();
+            var before = SourceXml(frame);
+            frame.CalculatePlottingPositions();
+            var observations = frame.ExactSeries.Concat(frame.UncertainSeries).Concat(frame.IntervalSeries).ToDictionary(d => d.Index);
+            Assert.AreEqual(7d / 15, observations[0].PlottingPosition, 1E-15);
+            Assert.AreEqual(11d / 15, observations[3].PlottingPosition, 1E-15);
+            Assert.AreEqual(1d / 10, observations[4].PlottingPosition, 1E-15);
+            Assert.AreEqual(before, SourceXml(frame));
+            AssertMagnitudeOrdered(frame);
+        }
+    }
+
+    /// <summary>Checks threshold equality, ties, multiple levels and row-order independence.</summary>
+    /// <remarks>Equality remains detected; lower explicit values use their magnitude ranks.</remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_ThresholdEqualityTiesAndReorderedRows()
+    {
+        var frame = CreateSuppressedFrame();
+        frame.ExactSeries.Add(new ExactData(0, 80));
+        frame.ExactSeries.Add(new ExactData(3, 80));
+        frame.ExactSeries.Add(new ExactData(4, 100));
+        frame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100));
+        frame.CalculatePlottingPositions();
+        Assert.AreEqual(0.1, frame.ExactSeries[2].PlottingPosition, 1E-15);
+        var tied = frame.ExactSeries.Take(2).Select(d => d.PlottingPosition).Order().ToArray();
+        Assert.AreEqual(7d / 15, tied[0], 1E-15);
+        Assert.AreEqual(11d / 15, tied[1], 1E-15);
+        frame.ExactSeries.Add(new ExactData(6, 250));
+        frame.ExactSeries.Add(new ExactData(8, 120));
+        frame.ThresholdSeries.Add(new BestFitThresholdData(5, 9, 200));
+        frame.CalculatePlottingPositions();
+        var reversed = CreateSuppressedFrame();
+        foreach (var observation in frame.ExactSeries.Reverse())
+            reversed.ExactSeries.Add(new ExactData(observation.Index, observation.Value));
+        foreach (BestFitThresholdData threshold in frame.ThresholdSeries.Reverse())
+            reversed.ThresholdSeries.Add(new BestFitThresholdData(threshold.StartIndex, threshold.EndIndex, threshold.Value));
+        reversed.CalculatePlottingPositions();
+        foreach (var group in frame.ExactSeries.GroupBy(d => d.Value))
+            CollectionAssert.AreEqual(group.Select(d => d.PlottingPosition).Order().ToArray(),
+                reversed.ExactSeries.Where(d => d.Value == group.Key).Select(d => d.PlottingPosition).Order().ToArray());
+        AssertMagnitudeOrdered(frame);
+    }
+
+    /// <summary>Checks the saved Chatfield RainOnSnow observations against independent conditional ranks.</summary>
+    /// <remarks>There are 27 exceedances in 84 years and 20 observed values below 1000. Broad and segmented windows represent the same record.</remarks>
+    [TestMethod]
+    public void Test_PlottingPositions_Chatfield_BroadAndSegmentedAgree()
+    {
+        int[] years = [1942,1943,1944,1946,1947,1948,1949,1952,1956,1957,1958,1959,1960,1962,1964,1969,1970,1972,1973,1974,1979,1980,1981,1983,1985,1986,1987,1991,1992,1993,1994,1996,1997,1998,1999,2003,2005,2007,2010,2014,2015,2016,2018,2021,2023,2024,2025];
+        double[] values = [7940,520,1750,663,2910,2930,5590,772,712,2080,2140,690,1190,1060,740,4910,4610,736,6550,765,1610,3155,375,3370,2270,870,2800,602,561,594,865,703,1365,1467,2191,580,873,2122,1099,1123,3896,1520,242,419,2163,1072,342];
+        (int Start, int End)[] windows = [(1945,1946),(1950,1952),(1953,1956),(1961,1962),(1963,1964),(1965,1969),(1971,1972),(1975,1979),(1982,1983),(1984,1985),(1988,1991),(1995,1996),(2000,2003),(2004,2005),(2006,2007),(2008,2010),(2011,2014),(2017,2018),(2019,2021),(2022,2023)];
+        var broad = CreateSuppressedFrame();
+        var segmented = CreateSuppressedFrame();
+        for (int i = 0; i < years.Length; i++)
+        {
+            broad.ExactSeries.Add(new ExactData(years[i], values[i]));
+            segmented.ExactSeries.Add(new ExactData(years[i], values[i]));
+        }
+        broad.ThresholdSeries.Add(new BestFitThresholdData(1942, 2025, 1000));
+        foreach (var window in windows)
+            segmented.ThresholdSeries.Add(new BestFitThresholdData(window.Start, window.End, 1000));
+        broad.CalculatePlottingPositions();
+        segmented.CalculatePlottingPositions();
+        double pe = 27d / 84;
+        int aboveRank = 0, belowRank = 0;
+        foreach (var observation in broad.ExactSeries.OrderByDescending(d => d.Value))
+        {
+            double expected = observation.Value > 1000 ? pe * ++aboveRank / 28 : pe + (1 - pe) * ++belowRank / 21;
+            Assert.AreEqual(expected, observation.PlottingPosition, 1E-15, $"Year {observation.Index}");
+            Assert.AreEqual(observation.PlottingPosition, segmented.ExactSeries.Single(d => d.Index == observation.Index).PlottingPosition, 1E-15);
+        }
+        Assert.AreEqual(27, aboveRank);
+        Assert.AreEqual(20, belowRank);
+        AssertMagnitudeOrdered(broad);
+        AssertMagnitudeOrdered(segmented);
+    }
+
+    /// <summary>Preserves supplied positions when constructing directly from XML.</summary>
+    [TestMethod]
+    public void Test_PlottingPositions_DirectXml_PreservesSuppliedPositions()
+    {
+        var frame = CreateSuppressedFrame();
+        frame.ExactSeries.Add(new ExactData(0, 80, 0.123));
+        frame.UncertainSeries.Add(new UncertainData(3, new Normal(50, 2), 0.456));
+        frame.IntervalSeries.Add(new IntervalData(4, 190, 200, 210, 0.789));
+        frame.ThresholdSeries.Add(new BestFitThresholdData(0, 4, 100));
+        frame.ProcessThresholdSeries();
+        var xml = frame.ToXElement();
+        var restored = new BestFitDataFrame(xml);
+        Assert.AreEqual(xml.ToString(), restored.ToXElement().ToString());
+    }
+
+    /// <summary>Creates an inline fixture without automatic recalculation while adding rows.</summary>
+    /// <returns>A frame with all collection notifications suppressed.</returns>
+    private static BestFitDataFrame CreateSuppressedFrame()
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        frame.UncertainSeries.SuppressCollectionChanged = true;
+        frame.IntervalSeries.SuppressCollectionChanged = true;
+        frame.ThresholdSeries.SuppressCollectionChanged = true;
+        return frame;
+    }
+
+    /// <summary>Serializes source attributes excluding derived plotting positions.</summary>
+    /// <param name="frame">The source frame.</param>
+    /// <returns>XML containing all other source and processed threshold attributes.</returns>
+    private static string SourceXml(BestFitDataFrame frame)
+    {
+        var xml = frame.ToXElement();
+        foreach (var attribute in xml.Descendants().Attributes("PlottingPosition").ToArray())
+            attribute.Remove();
+        return xml.ToString();
+    }
+
+    /// <summary>Checks finite, distinct, interior probabilities and descending-magnitude ordering.</summary>
+    /// <param name="frame">The frame to check.</param>
+    private static void AssertMagnitudeOrdered(BestFitDataFrame frame)
+    {
+        var observations = frame.ExactSeries.Concat(frame.UncertainSeries).Concat(frame.IntervalSeries)
+            .OrderByDescending(d => d.Value).ThenBy(d => d.PlottingPosition).ToArray();
+        Assert.IsTrue(observations.All(d => double.IsFinite(d.PlottingPosition) && d.PlottingPosition > 0 && d.PlottingPosition < 1));
+        for (int i = 1; i < observations.Length; i++)
+            Assert.IsTrue(observations[i - 1].PlottingPosition < observations[i].PlottingPosition,
+                $"Values {observations[i - 1].Value}, {observations[i].Value} have reversed or duplicate probabilities.");
+    }
 }
