@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
     <DotNetReproducibleBuildsVersion>1.2.39</DotNetReproducibleBuildsVersion>
-    <MicrosoftSourceLinkGitHubVersion>10.0.102</MicrosoftSourceLinkGitHubVersion>
+    <MicrosoftSourceLinkGitHubVersion>10.0.111</MicrosoftSourceLinkGitHubVersion>
     <RmcNumericsVersion>[2.1.4,3.0.0)</RmcNumericsVersion>
   </PropertyGroup>
   <ItemGroup>

@@ -13,7 +13,10 @@ namespace RMC.BestFit.UI.Tests.Elements.TimeSeriesData;
 /// <summary>
 /// Exercises complete DSS retrieval across absent storage blocks using temporary native files.
 /// </summary>
+/// <remarks>Native DSS initialization and message configuration use process-wide state, so these
+/// file integration tests must not run concurrently with other test methods.</remarks>
 [TestClass]
+[DoNotParallelize]
 public class DssTimeSeriesReaderTests
 {
     /// <summary>

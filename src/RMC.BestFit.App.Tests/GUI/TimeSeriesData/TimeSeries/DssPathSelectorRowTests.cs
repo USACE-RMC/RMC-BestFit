@@ -11,7 +11,10 @@ namespace RMC.BestFit.App.Tests.GUI.TimeSeriesData.TimeSeries
     /// <summary>
     /// Unit and DSS round-trip tests for DSS pathname selector display-range helpers.
     /// </summary>
+    /// <remarks>Native DSS initialization and message configuration use process-wide state, so these
+    /// file integration tests must not run concurrently with other test methods.</remarks>
     [TestClass]
+    [DoNotParallelize]
     public class DssPathSelectorRowTests
     {
         /// <summary>

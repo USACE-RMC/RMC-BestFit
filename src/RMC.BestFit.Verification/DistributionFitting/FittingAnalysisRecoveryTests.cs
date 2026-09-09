@@ -5,6 +5,7 @@ using Numerics.Distributions;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
+using RMC.BestFit.TestCommon;
 using RMC.BestFit.Verification.Recovery;
 
 namespace RMC.BestFit.Verification.DistributionFitting;
@@ -127,8 +128,11 @@ public class FittingAnalysisRecoveryTests
         Assert.AreEqual(parents.Count, estimates.Length, "The declared parent vector must match the recovered parameter order.");
         Assert.AreEqual(parents.Count, coordinateNames.Count, "Every recovered coordinate must have a declared label.");
 
+        double[,] covariance = ((IStandardError)fitted.Distribution!).ParameterCovariance(
+            RecoveryDesign.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
         AssertCovarianceCoordinateRecovery(
-            (IStandardError)fitted.Distribution!,
+            covariance,
             estimates,
             parents,
             coordinateNames);
@@ -136,14 +140,21 @@ public class FittingAnalysisRecoveryTests
 
     /// <summary>Runs default-list fitting and compares LnNormal distributions in their covariance coordinates.</summary>
     /// <returns>A task that completes after LnNormal covariance-coordinate acceptance.</returns>
-    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345; parent LnNormal(real-space mean=3.5, real-space standard deviation=0.4). The parent and fitted distributions use Numerics covariance coordinates (Mu, Sigma^2), not the real-space Mean/StandardDeviation values returned by GetParameters. The 1.96 and conditional secondary-five-percent rules remain unchanged.</remarks>
+    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345; parent LnNormal(real-space mean=3.5, real-space standard deviation=0.4). The parent and fitted distributions use logarithmic coordinates (Mu, Sigma^2), while Numerics supplies covariance in physical (Mean, StandardDeviation) coordinates. The complete fitted-parameter Jacobian transformation, including cross terms, precedes the unchanged 1.96 and conditional secondary-five-percent rules.</remarks>
     private static async Task AssertLnNormalCovarianceRecoveryAsync()
     {
         var parentDistribution = new LnNormal(3.5d, 0.4d);
         FittedDistribution fitted = await RunDefaultFittingAsync(parentDistribution, UnivariateDistributionType.LnNormal);
         var actualDistribution = (LnNormal)fitted.Distribution!;
+        double[,] covariance = actualDistribution.ParameterCovariance(
+            RecoveryDesign.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        covariance = CovarianceCoordinateTransforms.LnNormalPhysicalToLog(
+            covariance,
+            actualDistribution.Mean,
+            actualDistribution.StandardDeviation);
         AssertCovarianceCoordinateRecovery(
-            actualDistribution,
+            covariance,
             [actualDistribution.Mu, actualDistribution.Sigma * actualDistribution.Sigma],
             [parentDistribution.Mu, parentDistribution.Sigma * parentDistribution.Sigma],
             ["Mu", "SigmaSquared"]);
@@ -151,14 +162,21 @@ public class FittingAnalysisRecoveryTests
 
     /// <summary>Runs default-list fitting and compares Pearson Type III distributions in their MLE covariance coordinates.</summary>
     /// <returns>A task that completes after Pearson Type III covariance-coordinate acceptance.</returns>
-    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345; parent PearsonTypeIII moment coordinates=(mu=100, sigma=20, gamma=0.8). The parent and fitted distributions use Numerics MLE covariance coordinates (Mu, 1/Beta, Alpha), without transforming the covariance. The 1.96 and conditional secondary-five-percent rules remain unchanged.</remarks>
+    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345; parent PearsonTypeIII moment coordinates=(mu=100, sigma=20, gamma=0.8). Numerics supplies covariance in public (Mu, Sigma, Gamma) coordinates; the complete fitted-parameter Jacobian transformation, including cross terms, maps it to (Mu, 1/Beta, Alpha) before the unchanged 1.96 and conditional secondary-five-percent rules.</remarks>
     private static async Task AssertPearsonTypeIIICovarianceRecoveryAsync()
     {
         var parentDistribution = new PearsonTypeIII(100d, 20d, 0.8d);
         FittedDistribution fitted = await RunDefaultFittingAsync(parentDistribution, UnivariateDistributionType.PearsonTypeIII);
         var actualDistribution = (PearsonTypeIII)fitted.Distribution!;
+        double[,] covariance = actualDistribution.ParameterCovariance(
+            RecoveryDesign.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        covariance = CovarianceCoordinateTransforms.PearsonMomentToMle(
+            covariance,
+            actualDistribution.Sigma,
+            actualDistribution.Gamma);
         AssertCovarianceCoordinateRecovery(
-            actualDistribution,
+            covariance,
             [actualDistribution.Mu, 1d / actualDistribution.Beta, actualDistribution.Alpha],
             [parentDistribution.Mu, 1d / parentDistribution.Beta, parentDistribution.Alpha],
             ["Mu", "OneOverBeta", "Alpha"]);
@@ -166,32 +184,36 @@ public class FittingAnalysisRecoveryTests
 
     /// <summary>Runs default-list fitting and compares Log-Pearson Type III distributions in their MLE covariance coordinates.</summary>
     /// <returns>A task that completes after Log-Pearson Type III covariance-coordinate acceptance.</returns>
-    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345; parent LogPearsonTypeIII moment coordinates=(mu=2, sigma=0.3, gamma=0.5). The parent and fitted distributions use Numerics MLE covariance coordinates (Mu, 1/Beta, Alpha), without transforming the covariance. The 1.96 and conditional secondary-five-percent rules remain unchanged.</remarks>
+    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345; parent LogPearsonTypeIII moment coordinates=(mu=2, sigma=0.3, gamma=0.5). Numerics supplies covariance in public (Mu, Sigma, Gamma) coordinates; the complete fitted-parameter Jacobian transformation, including cross terms, maps it to (Mu, 1/Beta, Alpha) before the unchanged 1.96 and conditional secondary-five-percent rules.</remarks>
     private static async Task AssertLogPearsonTypeIIICovarianceRecoveryAsync()
     {
         var parentDistribution = new LogPearsonTypeIII(2d, 0.3d, 0.5d);
         FittedDistribution fitted = await RunDefaultFittingAsync(parentDistribution, UnivariateDistributionType.LogPearsonTypeIII);
         var actualDistribution = (LogPearsonTypeIII)fitted.Distribution!;
+        double[,] covariance = actualDistribution.ParameterCovariance(
+            RecoveryDesign.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        covariance = CovarianceCoordinateTransforms.PearsonMomentToMle(
+            covariance,
+            actualDistribution.Sigma,
+            actualDistribution.Gamma);
         AssertCovarianceCoordinateRecovery(
-            actualDistribution,
+            covariance,
             [actualDistribution.Mu, 1d / actualDistribution.Beta, actualDistribution.Alpha],
             [parentDistribution.Mu, 1d / parentDistribution.Beta, parentDistribution.Alpha],
             ["Mu", "OneOverBeta", "Alpha"]);
     }
 
     /// <summary>Applies the common covariance-coordinate recovery acceptance rules.</summary>
-    /// <param name="standardErrorDistribution">Fitted distribution supplying a covariance in the provided coordinate system.</param>
+    /// <param name="covariance">Covariance in the provided coordinate system.</param>
     /// <param name="estimates">Actual FittingAnalysis coordinates in the covariance parameterization.</param>
     /// <param name="parents">Generating-parent coordinates in the same covariance parameterization.</param>
     /// <param name="coordinateNames">Labels for the covariance coordinates.</param>
-    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345. This helper consumes covariance diagonals without transformation. It applies absolute standardized parent error no greater than 1.96 and invokes the secondary five-percent rule only when the resulting 95% band is narrower than five percent of a nonzero parent.</remarks>
-    private static void AssertCovarianceCoordinateRecovery(IStandardError standardErrorDistribution, IReadOnlyList<double> estimates, IReadOnlyList<double> parents, IReadOnlyList<string> coordinateNames)
+    /// <remarks>Sample unit: scalar observation; N=1000; seed=12345. This helper consumes a covariance already expressed in the declared coordinates. It applies absolute standardized parent error no greater than 1.96 and invokes the secondary five-percent rule only when the resulting 95% band is narrower than five percent of a nonzero parent.</remarks>
+    private static void AssertCovarianceCoordinateRecovery(double[,] covariance, IReadOnlyList<double> estimates, IReadOnlyList<double> parents, IReadOnlyList<string> coordinateNames)
     {
         Assert.AreEqual(parents.Count, estimates.Count, "The declared parent vector must match the recovered covariance-coordinate order.");
         Assert.AreEqual(parents.Count, coordinateNames.Count, "Every recovered covariance coordinate must have a declared label.");
-        double[,] covariance = standardErrorDistribution.ParameterCovariance(
-            RecoveryDesign.SampleSize,
-            ParameterEstimationMethod.MaximumLikelihood);
         Assert.AreEqual(parents.Count, covariance.GetLength(0), "The covariance rows must match the declared coordinate order.");
         Assert.AreEqual(parents.Count, covariance.GetLength(1), "The covariance columns must match the declared coordinate order.");
         for (int index = 0; index < parents.Count; index++)
