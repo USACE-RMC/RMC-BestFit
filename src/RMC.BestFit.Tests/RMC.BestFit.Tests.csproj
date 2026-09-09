@@ -24,6 +24,7 @@
     <!-- Link shared MSTest parallelization settings for public unit tests.
          Applies [assembly: Parallelize(...)] to this assembly too. -->
     <Compile Include="..\TestCommon\MSTestSettings.cs" Link="MSTestSettings.cs" />
+    <Compile Include="..\TestCommon\CovarianceCoordinateTransforms.cs" Link="TestCommon\CovarianceCoordinateTransforms.cs" />
   </ItemGroup>
 
   <ItemGroup>

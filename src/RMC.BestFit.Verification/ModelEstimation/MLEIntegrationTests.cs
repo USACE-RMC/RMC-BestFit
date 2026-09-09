@@ -4,6 +4,7 @@ using Numerics.Data.Statistics;
 using Numerics.Distributions;
 using RMC.BestFit.Models;
 using RMC.BestFit.Estimation;
+using RMC.BestFit.TestCommon;
 using RMC.BestFit.Verification.Recovery;
 
 namespace RMC.BestFit.Verification.ModelEstimation;
@@ -103,8 +104,8 @@ public class MLEIntegrationTests
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent=(real-space mean=3.5,
     /// real-space standard deviation=0.4). The fitted and parent distributions are compared in the
-    /// Numerics maximum-likelihood covariance coordinates (Mu, SigmaSquared), without transforming
-    /// the covariance. No
+    /// logarithmic coordinates (Mu, SigmaSquared). Numerics supplies physical-coordinate covariance,
+    /// which is transformed with the complete fitted-parameter Jacobian before recovery. No
     /// conditional secondary 5% criterion applies because this cell has no identified response grid.
     /// </remarks>
     [TestMethod]
@@ -118,8 +119,15 @@ public class MLEIntegrationTests
         model.SetParameterValues(mle.BestParameterSet.Values);
         var actualDistribution = (LnNormal)model.Distribution;
         var parentDistribution = new LnNormal(TestData.LnNormalTrueParams[0], TestData.LnNormalTrueParams[1]);
+        double[,] covariance = actualDistribution.ParameterCovariance(
+            TestData.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        covariance = CovarianceCoordinateTransforms.LnNormalPhysicalToLog(
+            covariance,
+            actualDistribution.Mean,
+            actualDistribution.StandardDeviation);
         AssertMleCovarianceCoordinateRecovery(
-            actualDistribution,
+            covariance,
             [actualDistribution.Mu, actualDistribution.Sigma * actualDistribution.Sigma],
             [parentDistribution.Mu, parentDistribution.Sigma * parentDistribution.Sigma],
             ["Mu", "SigmaSquared"]);
@@ -216,8 +224,9 @@ public class MLEIntegrationTests
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent moment coordinates=(μ=100,
-    /// σ=20, γ=0.8). The fitted and parent distributions are compared in Numerics maximum-likelihood
-    /// covariance coordinates (Mu, OneOverBeta, Alpha), without transforming the covariance. No
+    /// σ=20, γ=0.8). The fitted and parent distributions are compared in predeclared recovery
+    /// coordinates (Mu, OneOverBeta, Alpha). Numerics supplies public moment-coordinate
+    /// covariance, which is transformed with the complete fitted-parameter Jacobian. No
     /// identified response or secondary 5 percent rule applies.
     /// </remarks>
     [TestMethod]
@@ -241,8 +250,15 @@ public class MLEIntegrationTests
             TestData.PearsonTypeIIITrueParams[0],
             TestData.PearsonTypeIIITrueParams[1],
             TestData.PearsonTypeIIITrueParams[2]);
+        double[,] covariance = actualDistribution.ParameterCovariance(
+            TestData.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        covariance = CovarianceCoordinateTransforms.PearsonMomentToMle(
+            covariance,
+            actualDistribution.Sigma,
+            actualDistribution.Gamma);
         AssertMleCovarianceCoordinateRecovery(
-            actualDistribution,
+            covariance,
             [actualDistribution.Mu, 1d / actualDistribution.Beta, actualDistribution.Alpha],
             [parentDistribution.Mu, 1d / parentDistribution.Beta, parentDistribution.Alpha],
             ["Mu", "OneOverBeta", "Alpha"]);
@@ -253,8 +269,9 @@ public class MLEIntegrationTests
     /// </summary>
     /// <remarks>
     /// Sample unit: scalar observation; N=1000; seed=12345; parent moment coordinates=(μ=2,
-    /// σ=0.3, γ=0.5). The fitted and parent distributions are compared in Numerics maximum-likelihood
-    /// covariance coordinates (Mu, OneOverBeta, Alpha), without transforming the covariance. No
+    /// σ=0.3, γ=0.5). The fitted and parent distributions are compared in predeclared recovery
+    /// coordinates (Mu, OneOverBeta, Alpha). Numerics supplies public moment-coordinate
+    /// covariance, which is transformed with the complete fitted-parameter Jacobian. No
     /// identified response or secondary 5 percent rule applies.
     /// </remarks>
     [TestMethod]
@@ -278,8 +295,15 @@ public class MLEIntegrationTests
             TestData.LogPearsonTypeIIITrueParams[0],
             TestData.LogPearsonTypeIIITrueParams[1],
             TestData.LogPearsonTypeIIITrueParams[2]);
+        double[,] covariance = actualDistribution.ParameterCovariance(
+            TestData.SampleSize,
+            ParameterEstimationMethod.MaximumLikelihood);
+        covariance = CovarianceCoordinateTransforms.PearsonMomentToMle(
+            covariance,
+            actualDistribution.Sigma,
+            actualDistribution.Gamma);
         AssertMleCovarianceCoordinateRecovery(
-            actualDistribution,
+            covariance,
             [actualDistribution.Mu, 1d / actualDistribution.Beta, actualDistribution.Alpha],
             [parentDistribution.Mu, 1d / parentDistribution.Beta, parentDistribution.Alpha],
             ["Mu", "OneOverBeta", "Alpha"]);
@@ -525,27 +549,24 @@ public class MLEIntegrationTests
             - sumSquaredResiduals / (2d * sigma * sigma);
     }
 
-    /// <summary>Applies the common MLE recovery rule in a distribution's native covariance coordinates.</summary>
-    /// <param name="standardErrorDistribution">Fitted distribution supplying the native-coordinate covariance.</param>
+    /// <summary>Applies the common MLE recovery rule in the caller's declared covariance coordinates.</summary>
+    /// <param name="covariance">Fitted covariance expressed in the declared recovery coordinates.</param>
     /// <param name="estimates">Recovered values in the covariance coordinate system.</param>
     /// <param name="parents">Generating-parent values in the same covariance coordinate system.</param>
     /// <param name="coordinateNames">Predeclared labels for the covariance coordinates.</param>
     /// <remarks>
-    /// Sample unit: scalar observation; N=1000; seed=12345. The helper consumes the Numerics
-    /// maximum-likelihood covariance diagonal without transformation and applies the unchanged
+    /// Sample unit: scalar observation; N=1000; seed=12345. The helper consumes a maximum-likelihood
+    /// covariance already expressed in the declared coordinates and applies the unchanged
     /// absolute standardized parent error limit of 1.96. It does not apply a secondary 5 percent rule.
     /// </remarks>
     private static void AssertMleCovarianceCoordinateRecovery(
-        IStandardError standardErrorDistribution,
+        double[,] covariance,
         IReadOnlyList<double> estimates,
         IReadOnlyList<double> parents,
         IReadOnlyList<string> coordinateNames)
     {
         Assert.AreEqual(parents.Count, estimates.Count, "Parent and estimate vectors must share the covariance-coordinate order.");
         Assert.AreEqual(parents.Count, coordinateNames.Count, "Every covariance coordinate must have a predeclared label.");
-        double[,] covariance = standardErrorDistribution.ParameterCovariance(
-            TestData.SampleSize,
-            ParameterEstimationMethod.MaximumLikelihood);
         for (int index = 0; index < parents.Count; index++)
         {
             RecoveryAcceptance.AssertFrequentistStandardizedError(

@@ -696,8 +696,9 @@ namespace RMC.BestFit.Models
 
         /// <inheritdoc/>
         /// <remarks>Expected block-sample validation failures retain editable parameters and are reported
-        /// by Validate while automatic priors are enabled. A new seasonal model can still expose its
-        /// existing structural changepoint defaults without inventing GEV priors from an insufficient sample.</remarks>
+        /// by Validate while automatic priors are enabled. A new model exposes editable component parameters using
+        /// existing component values and ModelParameter defaults, plus seasonal changepoint defaults where applicable.
+        /// The initialization error prevents these placeholders from being treated as automatic GEV priors.</remarks>
         public override void SetDefaultParameters()
         {
             _defaultParameterInitializationError = null;
@@ -711,9 +712,25 @@ namespace RMC.BestFit.Models
                     if (!UnivariateDistribution.TryGetDefaultParameterConstraints(
                         component, initializationSample, out var constraints, out _defaultParameterInitializationError))
                     {
-                        if (Parameters.Count == 0 && Distribution.Distributions.Count > 1)
+                        if (Parameters.Count == 0)
                         {
-                            AddDefaultChangePointParameters();
+                            if (Distribution.Distributions.Count > 1)
+                                AddDefaultChangePointParameters();
+                            for (int i = 0; i < Distribution.Distributions.Count; i++)
+                            {
+                                var distribution = Distribution.Distributions[i];
+                                var names = distribution.ParametersToString;
+                                var values = distribution.GetParameters;
+                                for (int j = 0; j < distribution.NumberOfParameters; j++)
+                                {
+                                    Parameters.Add(new ModelParameter
+                                    {
+                                        OwnerName = IsSeasonal ? "D" + (i + 1).ToString(CultureInfo.InvariantCulture) : string.Empty,
+                                        Name = names[j, 0],
+                                        Value = values[j]
+                                    });
+                                }
+                            }
                             foreach (ModelParameter parameter in Parameters)
                                 parameter.PropertyChanged += Parameter_PropertyChanged;
                         }
