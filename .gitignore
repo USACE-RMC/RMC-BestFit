@@ -106,9 +106,13 @@ CLAUDE.md
 .claude/
 .codex/
 .codex-tmp/
+.superpowers
+
+/artifacts/
+/docs/superpowers/
 
 # SQLite sidecar files created while a .bestfit project is open
 *.bestfit-shm
 *.bestfit-wal
 *.bestfit-journal
-/docs/superpowers/plans
+
