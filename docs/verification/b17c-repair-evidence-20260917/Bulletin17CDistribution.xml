@@ -1,0 +1,27 @@
+<Bulletin17CDistribution>
+  <Distribution Type="LogPearsonTypeIII" Mu="3.3285869512471149" Sigma="0.1405905789240367" Gamma="0.42234322445218325" />
+  <Parameters>
+    <ModelParameter OwnerName="B17C" Name="Mean (of log) (µ)" Value="3.3285869512471149" LowerBound="1.11022302462516E-16" UpperBound="5" IsPositive="False" IsFixed="False">
+      <Distribution Type="Uniform" Min="1.11022302462516E-16" Max="5" />
+    </ModelParameter>
+    <ModelParameter OwnerName="B17C" Name="Std Dev (of log) (σ)" Value="0.1405905789240367" LowerBound="1.11022302462516E-16" UpperBound="2" IsPositive="False" IsFixed="False">
+      <Distribution Type="Uniform" Min="1.11022302462516E-16" Max="2" />
+    </ModelParameter>
+    <ModelParameter OwnerName="B17C" Name="Skew (of log) (γ)" Value="0.42234322445218325" LowerBound="-6" UpperBound="6" IsPositive="False" IsFixed="False">
+      <Distribution Type="Uniform" Min="-6" Max="6" />
+    </ModelParameter>
+  </Parameters>
+  <ParameterPenalties>
+    <ParameterPenalty Enabled="False" Name="B17C Mean (of log) (µ)" UseLog="False" Mean="NaN" MSE="NaN" />
+    <ParameterPenalty Enabled="False" Name="B17C Std Dev (of log) (σ)" UseLog="False" Mean="NaN" MSE="NaN" />
+    <ParameterPenalty Enabled="True" Name="B17C Skew (of log) (γ)" UseLog="False" Mean="0.44" MSE="0.078" />
+  </ParameterPenalties>
+  <QuantilePenalties>
+    <QuantilePenalty Enabled="False" UseLog10="False" AEP="0.01" Mean="NaN" MSE="NaN" />
+  </QuantilePenalties>
+  <LinkController>
+    <Link Index="0" />
+    <Link Index="1" />
+    <Link Index="2" />
+  </LinkController>
+</Bulletin17CDistribution>

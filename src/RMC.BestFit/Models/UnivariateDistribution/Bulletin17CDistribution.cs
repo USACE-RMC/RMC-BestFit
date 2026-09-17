@@ -490,7 +490,55 @@ namespace RMC.BestFit.Models
         public MomentConditionFunction MomentConditionFunction => MomentConditions;
 
         /// <inheritdoc/>
-        public JacobianFunction? JacobianFunction => null;
+        public JacobianFunction? JacobianFunction => HasSystematicDataOnly &&
+            (DistributionType == UnivariateDistributionType.PearsonTypeIII ||
+             DistributionType == UnivariateDistributionType.LogPearsonTypeIII)
+            ? SystematicMomentJacobian : null;
+
+        /// <summary>Whether every contributing observation is exact and is not a low outlier.</summary>
+        private bool HasSystematicDataOnly => DataFrame != null && DataFrame.ExactSeries.Count > 0 &&
+            DataFrame.NumberOfLowOutliers == 0 && DataFrame.UncertainSeries.Count == 0 &&
+            DataFrame.IntervalSeries.Count == 0 && DataFrame.ThresholdSeries.Count == 0;
+
+        /// <summary>Differentiates the systematic Pearson III moment conditions in optimizer coordinates.</summary>
+        /// <param name="parameters">The linked location, scale and skewness parameters.</param>
+        /// <returns>The three-by-three Jacobian of the sample mean moment conditions.</returns>
+        /// <remarks>
+        /// Differentiates the same Bessel-corrected centered powers as <see cref="MomentConditions"/>.
+        /// Log-Pearson III uses the base-10 observations; inverse-link derivatives multiply the columns.
+        /// Censored and uncertain observations and other families retain numerical differentiation.
+        /// </remarks>
+        private double[,] SystematicMomentJacobian(double[] parameters)
+        {
+            var theta = _linkController.InverseLink(parameters);
+            int n = DataFrame.ExactSeries.Count;
+            double c2 = n >= 2 ? n / (double)(n - 1) : 1;
+            double c3 = n >= 3 ? (double)(n * n) / ((n - 1) * (n - 2)) : 1;
+            bool isLog10 = DistributionType == UnivariateDistributionType.LogPearsonTypeIII;
+            double first = 0, second = 0;
+            foreach (ExactData data in DataFrame.ExactSeries)
+            {
+                double delta = (isLog10 ? data.Log10Value : data.Value) - theta[0];
+                first += delta;
+                second += delta * delta;
+            }
+            double sigma = theta[1], skewness = theta[2];
+            var jacobian = new double[3, 3];
+            jacobian[0, 0] = -1;
+            jacobian[1, 0] = -2 * c2 * first / n;
+            jacobian[1, 1] = -2 * sigma;
+            jacobian[2, 0] = -3 * c3 * second / n;
+            jacobian[2, 1] = -3 * skewness * sigma * sigma;
+            jacobian[2, 2] = -sigma * sigma * sigma;
+            for (int j = 0; j < 3; j++)
+            {
+                var link = _linkController[j];
+                if (link == null) continue;
+                double derivative = 1 / link.DLink(theta[j]);
+                for (int i = 0; i < 3; i++) jacobian[i, j] *= derivative;
+            }
+            return jacobian;
+        }
 
         /// <inheritdoc/>
         public PenaltyFunction? PenaltyFunction => _penaltyFunction;
@@ -1408,9 +1456,10 @@ namespace RMC.BestFit.Models
             }
             model.SetParameters(parameters);
 
-            // Integration bounds from distribution support
-            double min = model.InverseCDF(Tools.DoubleMachineEpsilon);
-            double max = model.InverseCDF(1 - Tools.DoubleMachineEpsilon);
+            // Exact systematic observations never use integration bounds.
+            bool needsIntegrationBounds = !HasSystematicDataOnly;
+            double min = needsIntegrationBounds ? model.InverseCDF(Tools.DoubleMachineEpsilon) : double.NegativeInfinity;
+            double max = needsIntegrationBounds ? model.InverseCDF(1 - Tools.DoubleMachineEpsilon) : double.PositiveInfinity;
 
             // Unconditional central moments of the fitted distribution
             double mu = model.Mean;

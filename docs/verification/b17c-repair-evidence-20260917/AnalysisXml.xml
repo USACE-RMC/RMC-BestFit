@@ -1,0 +1,24 @@
+<Bulletin17CAnalysis IsEstimated="True" UncertaintyMethod="BiasCorrectedBootstrap">
+  <ProbabilityOrdinates>9.9999999999999995E-07|1.9999999999999999E-06|5.0000000000000004E-06|1.0000000000000001E-05|2.0000000000000002E-05|5.0000000000000002E-05|0.0001|0.00020000000000000001|0.00050000000000000001|0.001|0.002|0.0050000000000000001|0.01|0.02|0.050000000000000003|0.10000000000000001|0.20000000000000001|0.29999999999999999|0.5|0.69999999999999996|0.80000000000000004|0.90000000000000002|0.94999999999999996|0.97999999999999998|0.98999999999999999</ProbabilityOrdinates>
+  <BayesianAnalysis Type="DEMCzs" NumberOfChains="4" ThinningInterval="20" WarmupIterations="1500" Iterations="3000" UseSimulationDefaults="True" PRNGSeed="12345" InitialIterations="300" Jump="1" JumpThreshold="0.10000000000000001" SnookerThreshold="0.10000000000000001" Noise="9.9999999999999998E-13" Scale="5.6643999999999997" Beta="0.050000000000000003" MaxTreeDepth="10" UseAdvancedSimulationDefaults="True" CredibleIntervalWidth="0.90000000000000002" OutputLength="1000" PointEstimator="PosteriorMode" DIC="NaN" WAIC="NaN" WAIC_pD="NaN" LOOIC="NaN" LOO_pD="NaN" LOOIC_SE="NaN" IsEstimated="True" />
+  <GeneralizedMethodOfMoments EstimationStrategy="Iterative" OptimizerMethod="BFGS" SampleSize="68" MaxGMMIterations="100" AbsoluteTolerance="1E-08" RelativeTolerance="1E-08" GMMIterations="100" JStat="NaN" ConvergedWithinTolerance="False" JStatPval="NaN" Status="Success">
+    <BestParameterSet>
+      <ParameterSet Values="3.3285869512471149|0.1405905789240367|0.42234322445218325" Fitness="7.1937896533458908E-05" Weight="0" />
+    </BestParameterSet>
+    <S>
+      <Matrix NumberOfRows="3" NumberOfColumns="3">
+        <row>0.019765709571224477|0.0011736411487670061|0.0012765842488608519</row>
+        <row>0.0011736411487670061|0.00088589093427361753|0.00022118726149611176</row>
+        <row>0.0012765842488608519|0.00022118726149611176|0.00016105782882010327</row>
+      </Matrix>
+    </S>
+    <W>
+      <Matrix NumberOfRows="3" NumberOfColumns="3">
+        <row>110.25099594214443|109.76205665571294|-1024.6173984696318</row>
+        <row>109.76205665571295|1827.117976940674|-3379.2566209680899</row>
+        <row>-1024.6173984696318|-3379.2566209680895|18971.191728236361</row>
+      </Matrix>
+    </W>
+  </GeneralizedMethodOfMoments>
+  <BootstrapDiagnostics TotalReplicates="1000" AttemptedReplicates="1000" AttemptedRealizations="1000" FailedReplicates="0" BoundRepairs="0" TotalRetries="0" TotalFunctionEvaluations="960828" PivotRejections="1" MahalanobisRejections="0" RetainedReplicates="1000" TransformFailures="0" StatusSuccessCount="1000" StatusMaximumIterationsCount="0" StatusMaximumFunctionEvaluationsCount="0" StatusFailureCount="0" StatusNoneCount="0" OptimizerFallbacks="165" Phase1Time="342866150" Phase2Time="83779" Phase3Time="30858" />
+</Bulletin17CAnalysis>
