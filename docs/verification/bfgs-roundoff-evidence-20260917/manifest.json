@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-17",
+  "numericsCommit": "c949397023556f8f70582128deb9b7596bb15532",
+  "numericsBaseline": "189a5973559cade7725f33cef4ded8fce4e16ccc",
+  "bestfitBaseline": "cc5931cb9f069a0a879def64a4d248f742d1f3fb",
+  "model": "Frozen Example #1 - BCB XML snapshots",
+  "seed": 12345,
+  "bootstrapRealizations": 1000,
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "baselineOracleScipy": "1.16.2",
+  "modelXmlHashes": {
+    "AnalysisXml.xml": "b2e14088df41fab775a3cacf0c8222f5886fd30935a816624e3c308da8543f24",
+    "Bulletin17CDistribution.xml": "f56c2a94e9e3f6d9ec00e25a5f885303a0e39c8eaaac383753c1fcdab2b1841b",
+    "DataFrame.xml": "4f5da582c74b142720bdcd2f35cd8c7458667685f96e47d8b99888ad8861acd4"
+  },
+  "previousPortableFixtureHash": "7f760991c688e2f51469e5c8f790ae95309d828b6585d17c2af9df9793c2d65d",
+  "localDeferredDesign": {
+    "path": "C:\\GIT\\RMC-BestFit\\docs\\superpowers\\specs\\2026-09-17-gmm-outer-iteration-damping-design.md",
+    "sha256": "e2113291710de0c319796bae23637d7c18268b9187eb31be1b2d4d1175608b45",
+    "note": "Saved in the requested superpowers folder, which is ignored by the repository; not implemented."
+  },
+  "files": {
+    "analyze.py": "6505ce731a198352696bb5214b97288f6e0320454fb5a2a1b152ebb2b80c8bef",
+    "benchmark-debug.jsonl": "31890f41c740225a0bb1bf672a5308d47d62fdcd8a618bdfdee0922403747fc5",
+    "benchmark-release.jsonl": "2e36887af4208de32b8b48edf34e6304bdc4529b33a86ad543415ac750ac9530",
+    "full-trace-audit.json": "07eafc53573ce062903a3347a3196686252cfc8e3bd224c76f9b987b67c2839c",
+    "README.md": "bb16a6c41d471273e81515a37064e1bf886488232e7caf4a807b728a0eff5fe5",
+    "results.json": "ebbbde82e808ed9b7875bb8f346afb7550cf3091b9ccc151a4e828b116662c60",
+    "trace-extract.jsonl.gz": "b9d3ada7dd3d3bd40e92d9507009e7b933993fcb71db9c040e863915e65fb761",
+    "validation.json": "b45ab415f000435b3205d5f80774f2f7d4004c882630b98c587734743188b4bf"
+  }
+}
