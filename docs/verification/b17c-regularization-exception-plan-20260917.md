@@ -1,6 +1,6 @@
 # B17C regularization exception removal plan
 
-Status: proposed only. No changes to Cholesky, matrix regularization, GMM, or bootstrap policy are included in the BFGS repair.
+Status: both parts approved and implemented on 2026-09-17 in Numerics commit `189a5973559cade7725f33cef4ded8fce4e16ccc`. See the [implementation results and remaining BFGS/GMM diagnosis](b17c-cholesky-and-bfgs-diagnosis-20260917.md). GMM and bootstrap policy were not changed.
 
 ## Observed cause
 
@@ -10,12 +10,12 @@ The original seeded Example #1 run threw 429 caught Cholesky exceptions: 420 whi
 
 The reproducible inputs are in [residual-reproductions.json](b17c-repair-evidence-20260917/residual-reproductions.json), with all optimizer passes and the first nine rejected matrices for the affected realizations. Indices are zero based. In the repaired run:
 
-| Realization | Caught exceptions | First raw S minimum eigenvalue | Minimum eigenvalue after terminal fallback |
+| Realization | Caught exceptions | First raw S minimum eigenvalue | Minimum eigenvalue with old terminal ridge applied to that raw S |
 |---|---:|---:|---:|
 | 213 | 36: 27 weighting, 9 covariance | -9.0923310711e-6 | -8.5296228985e-6 |
 | 402 | 384 weighting | -1.3360061875e-6 | -9.3860075849e-7 |
 
-These matrices are indefinite, not just borderline positive definite. NumPy's independent symmetric eigensolver was used to diagnose them; it is not a proposed production dependency.
+These raw matrices are indefinite, not just borderline positive definite. NumPy's independent symmetric eigensolver was used to diagnose them; it is not a production dependency. The last column is a calculation on the first raw S, not proof that the terminal branch was reached: realization 213 actually returned unchecked indefinite matrices, whereas realization 402's existing ladder accepted a positive-definite candidate before the terminal branch. This distinction was established by tracing every candidate and return during implementation.
 
 ## Part 1: remove expected exceptions while preserving numerical behavior
 
@@ -27,15 +27,23 @@ These matrices are indefinite, not just borderline positive definite. NumPy's in
 
 Acceptance for Part 1: zero exceptions from expected regularization probes and exact numerical parity. This removes repeated exception construction/unwinding; it does not establish the one-second bootstrap target or repair the GMM cycles.
 
-## Part 2: terminal ridge defect requiring a separate numerical decision
+## Part 2: approved terminal ridge repair
 
-There is a separate correctness gap in `MakeSymmetricPositiveDefinite`: after the eight rejected ridges, it returns a final matrix **without checking it**. With a positive trace, the last attempted ridge is `1e-3 * trace(S)/p`, whereas the unchecked terminal ridge is only `1e-4 * trace(S)/p`. The terminal candidate is therefore smaller than one that already failed.
+Before the Part 2 repair, `MakeSymmetricPositiveDefinite` had a separate correctness gap: after the eight rejected ridges, it returned a final matrix **without checking it**. With a positive trace, the last attempted ridge was `1e-3 * trace(S)/p`, whereas the unchecked terminal ridge was only `1e-4 * trace(S)/p`. The terminal candidate was therefore smaller than one that already failed.
 
-For realization 213's captured matrix, that terminal ridge is 5.6270817266e-7 and leaves a negative eigenvalue. The fit later obtains a negative GMM quadratic and accepts location and scale at their lower bounds. This is present in the reproducible trace; it must not be described as a sound converged statistical fit merely because the optimizer and existing GMM convergence flags report success. Realization 402 also enters indefinite weighting and reaches 100 outer passes. Realization 8 cycles with positive-definite weights, so fixing this defect alone cannot be assumed to eliminate every stall.
+For realization 213's captured matrix, that terminal ridge is 5.6270817266e-7 and leaves a negative eigenvalue. The fit later obtains a negative GMM quadratic and accepts location and scale at their lower bounds. This is present in the reproducible trace; it must not be described as a sound converged statistical fit merely because the optimizer and existing GMM convergence flags report success. Realization 402 needs regularization of indefinite raw S but receives accepted positive-definite matrices and reaches 100 outer passes. Realization 8 also cycles with positive-definite weights, so fixing this defect alone cannot eliminate every stall.
 
-The proposed follow-up is to continue the **existing trace-scaled ridge escalation monotonically**, verify the final candidate with the shared non-throwing Cholesky core, and use an explicit failure result if no permitted candidate is acceptable. Define the maximum permitted ridge and exhausted-regularization behavior before implementation. Do not silently choose an eigenvalue floor, nearest-positive-definite projection, larger default tolerance, or altered moment covariance formula.
+The implemented repair continues the **existing trace-scaled ridge escalation monotonically** and verifies every candidate with the shared non-throwing Cholesky core. The first eight candidates retain their exact arithmetic. Subsequent candidates multiply the last ridge by ten. The maximum permitted ridge is the last finite decade value for which the candidate diagonals remain finite; exhaustion throws an explicit `InvalidOperationException`. Non-finite input, symmetrization overflow, and unrepresentable ridge scales fail explicitly. No eigenvalue floor, nearest-positive-definite projection, larger default tolerance, or altered moment covariance formula was introduced.
 
-This second part changes the matrices supplied to GMM and can change estimates, covariance, and realization acceptance. It needs Haden Smith's explicit numerical approval under the repository's algorithm-change rule. It is deliberately not bundled into the approved BFGS/Jacobian repair or Part 1's behavior-preserving exception removal.
+This second part changes the matrices supplied to GMM and can change estimates, covariance, and realization acceptance. Haden Smith authorized it with "Ok proceed with the Cholesky an ridge fixes." Part 1 was validated separately before applying this numerical correction.
+
+## Completed validation and remaining limitation
+
+Part 1 removed all 429 original-run exceptions and all 420 post-BFGS-repair exceptions with exact numerical parity. The latter comparison covered 22,180 candidate decisions/factors, 21,764 returned matrices, and all 1,000 fits and covariances.
+
+The final ridge repair changed only realization 213's fit and covariance; the other 999 were unchanged. All 21,857 returned matrices had positive independently computed eigenvalues, all accepted objectives were nonnegative, and the run threw zero exceptions. The newly corrected realization now exposes a 100-pass stall instead of the previous invalid apparent convergence: 51 of 1,000 fits reach the limit. The [diagnosis](b17c-cholesky-and-bfgs-diagnosis-20260917.md) separates those outer-loop failures from BFGS line-search roundoff and verifies the penalty derivative independently.
+
+Numerics' 11,537 tests across four frameworks, BestFit's 5,021 mandatory fast tests, 13 scoped B17C covariance checks, seven scoped example checks, and the exact one-result Example #1 verification all passed. The full B17C convergence target remains unmet.
 
 ## Source locations
 

@@ -1,0 +1,87 @@
+{
+  "date": "2026-09-17",
+  "numericsCommit": "189a5973559cade7725f33cef4ded8fce4e16ccc",
+  "bestfitCommit": "4732d5cc72a34946ccdbc6851a28f2a18831351b",
+  "numericsBuild": {
+    "command": "dotnet build -c Release --no-restore",
+    "warnings": 0,
+    "errors": 0
+  },
+  "numericsTests": {
+    "command": "dotnet test -c Release --no-build --no-restore --logger \"trx;LogFilePrefix=cholesky-ridge-reviewed\"",
+    "totalPassed": 11537,
+    "frameworks": {
+      "net481": {
+        "passed": 2873,
+        "failed": 0,
+        "trx": "C:\\GIT\\Numerics\\Test_Numerics\\TestResults\\cholesky-ridge-reviewed_net481_20260917125738.trx"
+      },
+      "net8.0": {
+        "passed": 2888,
+        "failed": 0,
+        "trx": "C:\\GIT\\Numerics\\Test_Numerics\\TestResults\\cholesky-ridge-reviewed_net8.0_20260917125717.trx"
+      },
+      "net9.0": {
+        "passed": 2888,
+        "failed": 0,
+        "trx": "C:\\GIT\\Numerics\\Test_Numerics\\TestResults\\cholesky-ridge-reviewed_net9.0_20260917125717.trx"
+      },
+      "net10.0": {
+        "passed": 2888,
+        "failed": 0,
+        "trx": "C:\\GIT\\Numerics\\Test_Numerics\\TestResults\\cholesky-ridge-reviewed_net10.0_20260917125717.trx"
+      }
+    }
+  },
+  "bestfitBuild": {
+    "command": "dotnet build RMC.BestFit.sln -c Debug --artifacts-path \"C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation\"",
+    "warnings": 0,
+    "errors": 0,
+    "note": "Isolated output avoids the executable locked by the user's open application."
+  },
+  "bestfitFastSuites": {
+    "commandPattern": "dotnet test src/<project> -c Debug --no-build --no-restore --artifacts-path \"C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation\" -- --report-trx",
+    "passed": {
+      "RMC.BestFit.Tests": 3434,
+      "RMC.BestFit.UI.Tests": 645,
+      "RMC.BestFit.App.Tests": 444,
+      "RMC.BestFit.Api.Tests": 498
+    },
+    "failed": 0
+  },
+  "scopedVerification": {
+    "commandPattern": "dotnet test src/RMC.BestFit.Verification -c Debug --no-build --no-restore --artifacts-path \"C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917\\validation\" -- --filter \"FullyQualifiedName~<class>\" --report-trx",
+    "passed": {
+      "B17CCovarianceTests": 13,
+      "B17CExampleTests": 7
+    },
+    "failed": 0
+  },
+  "exactVerification": {
+    "command": ".\\scripts\\run-verification-test.ps1 -Test RMC.BestFit.Verification.Univariate.Bulletin17CTests.B17CExampleTests.Test_Example1",
+    "trx": "C:\\GIT\\RMC-BestFit\\TestResults\\VerificationFocused\\20260917-125853-RMC_BestFit_Verification_Univariate_Bulletin17CTests_B17CExampleTests_Test_Example1\\haden_HADEN_2026-09-17_18_58_57.837.trx",
+    "results": 1,
+    "outcome": "Passed"
+  },
+  "xmlScan": {
+    "command": ".\\scripts\\validate-code-xml-docs.ps1 -SkipBuild",
+    "sourceFiles": 945,
+    "outcome": "Passed"
+  },
+  "independentDiagnostics": {
+    "commands": [
+      "python analyze-bfgs-cause.py",
+      "python outer-map-diagnosis.py",
+      "python confirm-outer-map.py"
+    ],
+    "outcome": "All saved summary fields and cases, plus complete confirmation output, reproduced exactly.",
+    "localMinimizingBranchChecks": {
+      "points": 1001,
+      "minimumRawCovarianceEigenvalue": 6.681479047871258e-06,
+      "minimumFixedWeightHessianEigenvalue": 0.13199932405161127,
+      "minimumCholeskyPivotToDiagonalRatio": 0.1711339667704832,
+      "defaultRelativePivotTolerance": 1.3322676295501878e-15
+    }
+  },
+  "localLogs": "C:\\GIT\\RMC-BestFit\\src\\RMC.BestFit\\obj\\b17c-regression-diagnostic-20260917"
+}

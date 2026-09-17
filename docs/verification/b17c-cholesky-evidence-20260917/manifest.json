@@ -1,0 +1,53 @@
+{
+  "seed": 12345,
+  "replicates": 1000,
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "scipy": "1.16.2",
+  "numericsBase": "156204fa2e6257616cca197175b95c363939f100",
+  "numericsRepair": "189a5973559cade7725f33cef4ded8fce4e16ccc",
+  "bestfitBase": "4732d5cc72a34946ccdbc6851a28f2a18831351b",
+  "frozenModelSnapshot": "../b17c-repair-evidence-20260917/",
+  "diagnosticInputsUncompressedBytes": 4055035,
+  "diagnosticInputsSHA256": "551fea1f7685e0ce4607f3ff1953ce76652c08be9a212446d028aacf80b3da1e",
+  "fixtureCount": 1001,
+  "failedBfgsCount": 203,
+  "notes": [
+    "Production GMM and B17C classes were not changed in the Cholesky repair.",
+    "Public-constructor argument validation was restored after the factorization parity run; finite-input arithmetic is unchanged.",
+    "Performance measurements use the separate uninstrumented Benchmark.csproj, not the diagnostic trace harness.",
+    "The live example database was open and changed during this session; these replays use the preserved Example1 XML snapshots."
+  ],
+  "releaseColdMilliseconds": 1735.8082,
+  "releaseWarmMilliseconds": [
+    712.8611,
+    686.9388,
+    845.7474
+  ],
+  "releaseWarmMedianMilliseconds": 712.8611,
+  "debugColdMilliseconds": 2001.7906,
+  "debugWarmMilliseconds": [
+    1855.5317,
+    1861.5304,
+    2001.3635
+  ],
+  "debugWarmMedianMilliseconds": 1861.5304,
+  "files": {
+    ".gitignore": "7e223ac0cbcc4db687c3e70ee5d97124ca02e1cb74bc8ebf9a8a534b3c20c27d",
+    "analyze-bfgs-cause.py": "aaaaaa44059e901e5e31e71db05d67af031e013f1017d4c53a0d19b965155264",
+    "benchmark-debug.jsonl": "e6c77167f00ec75535c2a150f6a0e89e75e0202503f8d440df5938d9b5eafd15",
+    "benchmark-release.jsonl": "9ab128366097d264742c72bf4d389bdb610349f87fea88e2551bc6ad0d4bb692",
+    "bfgs-diagnosis.json": "4eb18c41f660930fc23a259c8d1a9c3f9e4910a4cfe41eb6dbff46f890a17a75",
+    "confirm-outer-map.py": "2f71c14b34648d1aab5c93995635001709da59f595b26c12e92ad7a4eddec806",
+    "diagnostic-inputs.jsonl.gz": "7f760991c688e2f51469e5c8f790ae95309d828b6585d17c2af9df9793c2d65d",
+    "outer-diagnosis.json": "4220fbe6d544df89af319cbf91f4849fd78257e48aff4abd2441eda8cc9c9d2a",
+    "outer-map-confirmation.json": "0319a20f88d2b4f166853298a58942a244fe9cb370803338a1dfa6aa771a2867",
+    "outer-map-diagnosis.py": "108b6c1857f6f8e2ae11ada9342bf412f81f0baf4f3b733d948641d1e9692f6c",
+    "part1-current-parity.json": "b5e7768129e1a397cfcb66b4564fa641be081b46681b51733eb2ef95cc99c30a",
+    "part1-original-parity.json": "6ab10c7a2c3f41d31345879eb01be1d574e5cc9f9e2934afebecee0a71af3362",
+    "README.md": "b8d8de85b8abafd588c0d7d041d7c3bd0221779993f888bd4b7b5d08c8b7b0f1",
+    "repair-results.json": "bf886028eac9cd7eb57a20d7dc2884602999cdf88fd6240b89c0e4c230deb88b",
+    "validation.json": "ff50f5ecc638a9a41b9017aef2fa8468e8c5a52fe51a9f46fba2fb30324b8359"
+  },
+  "fileHashConvention": "SHA-256 of raw bytes for .gz; UTF-8 text bytes with CRLF normalized to LF for all other listed files."
+}
