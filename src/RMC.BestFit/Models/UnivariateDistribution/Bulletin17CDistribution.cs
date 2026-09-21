@@ -729,15 +729,12 @@ namespace RMC.BestFit.Models
         /// </remarks>
         private Tuple<double[], double[], double[]> GetGmmParameterConstraints(IList<double> data)
         {
-            var constraints =
-                ((IMaximumLikelihoodEstimation)Distribution).GetParameterConstraints(data);
+            var constraints = ((IMaximumLikelihoodEstimation)Distribution).GetParameterConstraints(data);
 
             if (DistributionType == UnivariateDistributionType.Exponential)
             {
                 double initialLocationMagnitude = Math.Abs(constraints.Item1[0]);
-                constraints.Item3[0] = Math.Pow(
-                    10d,
-                    Math.Ceiling(Math.Log10(initialLocationMagnitude) + 1d));
+                constraints.Item3[0] = Math.Pow( 10d, Math.Ceiling(Math.Log10(initialLocationMagnitude) + 1d));
             }
 
             return constraints;

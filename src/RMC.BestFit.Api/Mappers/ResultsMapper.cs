@@ -63,7 +63,7 @@ namespace RMC.BestFit.Api.Mappers
         {
             var analysis = resource.Univariate!;
             var distribution = analysis.UnivariateDistribution;
-            return ToMcmcFrequencyResults(
+            var response = ToMcmcFrequencyResults(
                 resource,
                 analysis.AnalysisResults,
                 analysis.BayesianAnalysis,
@@ -71,6 +71,17 @@ namespace RMC.BestFit.Api.Mappers
                 distribution.Parameters,
                 EnumHelper.ToCamelCase(distribution.DistributionType.ToString()),
                 MetadataMapper.ToDisplayName(distribution.DistributionType));
+            if (distribution.EnableQuantilePriors)
+            {
+                response.QuantileAnnotations = distribution.QuantilePriors.Select(prior => new QuantileAnnotationDto
+                {
+                    Aep = prior.Alpha,
+                    Value = prior.MeanValue,
+                    LowerBound = prior.LowerValue,
+                    UpperBound = prior.UpperValue
+                }).ToList();
+            }
+            return response;
         }
 
         /// <summary>
@@ -276,6 +287,14 @@ namespace RMC.BestFit.Api.Mappers
                         .ToList()
                 },
                 FrequencyCurve = BuildFrequencyCurve(results, analysis.ProbabilityOrdinates.ToList(), analysis.BayesianAnalysis.CredibleIntervalWidth),
+                QuantileAnnotations = distribution.QuantilePenalties.Where(penalty => penalty.Enabled)
+                    .Select(penalty => new QuantileAnnotationDto
+                    {
+                        Aep = penalty.AEP,
+                        Value = penalty.MeanValue,
+                        LowerBound = penalty.LowerValue,
+                        UpperBound = penalty.UpperValue
+                    }).ToList(),
                 ParameterSummaries = BuildParameterSummaries(parameterNames, analysis.BayesianAnalysis.Results, includeChainDiagnostics: false),
                 InformationCriteria = BuildInformationCriteria(results, bayesianAnalysis: null),
                 Diagnostics = new DiagnosticsDto

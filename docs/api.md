@@ -18,6 +18,9 @@ dotnet run --project src/RMC.BestFit.Api          # http://localhost:5210 (Devel
 
 ## Concepts
 
+For a terminal-capable Claude or Codex workflow with matplotlib exports and chat
+display, use the [portable frequency-curve skill](bestfit-frequency-skill.md).
+
 - **Stateful resource store.** Creation endpoints store resources in memory keyed by GUID; later
   calls reference the ids. Resources are immutable after creation; analyses clone their inputs at
   creation, so deleting or replacing upstream resources never corrupts an existing fit. State is
@@ -118,6 +121,48 @@ steps so the workflow can be resumed manually through the granular endpoints.
 ordinates and server limits), `GET api/resources` (cross-cutting id overview).
 
 ## MCP server
+
+### Optional Multiple Grubbs-Beck screening
+
+Manual input creation, USGS-peak input creation, and the USGS B17C workflow accept
+`useMultipleGrubbsBeckTest` (default **false**, preserving existing requests).
+For example, POST `/api/workflows/usgs-bulletin17c`:
+
+```json
+{"siteNumber":"01646500","useMultipleGrubbsBeckTest":true}
+```
+
+Or POST `/api/inputdata/manual` with all supplied observations and the same flag,
+then create a B17C analysis linked to its returned id. Screening delegates to
+`DataFrame.SetLowOutliersFromMGBT()` after all series are populated and before an
+analysis clones the data. It requires at least ten exact observations. It flags
+low outliers, sets the threshold, and refreshes plotting positions; it does not
+delete the observations. The model's existing strict threshold comparison is
+preserved. When true, a manual `lowOutlierThreshold` (including zero) or any
+`isLowOutlier:true` observation is rejected to avoid overwriting the caller's
+screening choice. Omitted/false retains existing manual behavior.
+For manual screening, provide the intended `isLowOutlier` flags explicitly: the
+current API stores `lowOutlierThreshold` but does not derive flags from it.
+
+The MCP tools `create_inputdata_manual`, `create_inputdata_usgs_peaks`, and
+`run_usgs_bulletin17c_workflow` expose the same optional boolean. For example:
+`run_usgs_bulletin17c_workflow(siteNumber="01646500", useMultipleGrubbsBeckTest=true)`.
+Input summaries return `lowOutlierThreshold` and `lowOutlierCount`; GET input data
+with `includeData=true` to save flags and the model's computed plotting positions.
+MGBT failures store no new input resource; workflow failures identify
+`failedStep:"createInputData"` before analysis creation.
+
+### Display coordinates
+
+Uncertain observations now include response-only `lowerBound`/`upperBound` from
+the model's display properties. Frequency results add `quantileAnnotations`, an
+array of `{aep,value,lowerBound,upperBound}` for enabled univariate priors or B17C
+quantile penalties, in physical units. These additions preserve existing fields.
+Plotters should use these values directly, including input `plottingPosition`,
+instead of recomputing them from ranks or distribution parameters. The default
+matplotlib renderer is `skills/bestfit-frequency/scripts/plot_frequency.py`.
+
+### Transport
 
 The same host serves MCP over the streamable HTTP transport at **`/mcp`** (stateless mode — all
 state lives in the app-singleton resource store, so ids remain valid across MCP sessions and the

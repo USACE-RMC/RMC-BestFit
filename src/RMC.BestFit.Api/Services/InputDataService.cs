@@ -46,6 +46,14 @@ namespace RMC.BestFit.Api.Services
                 throw new ArgumentException("At least one exact observation is required.", nameof(request));
             }
 
+            if (request.UseMultipleGrubbsBeckTest &&
+                (request.LowOutlierThreshold.HasValue || request.ExactData.Any(observation => observation.IsLowOutlier)))
+            {
+                throw new ArgumentException(
+                    "useMultipleGrubbsBeckTest cannot be combined with lowOutlierThreshold or preflagged exact observations.",
+                    nameof(request));
+            }
+
             var dataFrame = new DataFrame();
             if (request.PlottingParameter.HasValue) dataFrame.PlottingParameter = request.PlottingParameter.Value;
             if (request.LowOutlierThreshold.HasValue) dataFrame.LowOutlierThreshold = request.LowOutlierThreshold.Value;
@@ -110,6 +118,7 @@ namespace RMC.BestFit.Api.Services
             if (request.Lambda.HasValue) dataFrame.SetLambda(request.Lambda.Value);
 
             ThrowIfInvalid(dataFrame);
+            if (request.UseMultipleGrubbsBeckTest) dataFrame.SetLowOutliersFromMGBT();
 
             var resource = new InputDataResource
             {
@@ -223,6 +232,7 @@ namespace RMC.BestFit.Api.Services
             dataFrame.ExactSeries.RaiseCollectionChangedReset();
 
             ThrowIfInvalid(dataFrame);
+            if (request.UseMultipleGrubbsBeckTest) dataFrame.SetLowOutliersFromMGBT();
 
             var resource = new InputDataResource
             {

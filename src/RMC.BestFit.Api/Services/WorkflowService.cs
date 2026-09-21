@@ -153,6 +153,7 @@ namespace RMC.BestFit.Api.Services
                 {
                     SiteNumber = request.SiteNumber,
                     SeriesType = request.SeriesType,
+                    UseMultipleGrubbsBeckTest = request.UseMultipleGrubbsBeckTest,
                     Name = request.Name == null ? null : $"{request.Name} - input data"
                 }, cancellationToken);
                 response.InputDataId = inputData.Id;

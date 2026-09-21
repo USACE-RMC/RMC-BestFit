@@ -123,6 +123,8 @@ namespace RMC.BestFit.Api.Mappers
                     Index = data.Index,
                     Distribution = DistributionSpecMapper.ToSpec(data.Distribution),
                     Value = data.Value,
+                    LowerBound = data.LowerValue,
+                    UpperBound = data.UpperValue,
                     PlottingPosition = data.PlottingPosition
                 });
             }

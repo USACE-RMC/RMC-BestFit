@@ -1,0 +1,6 @@
+interface:
+  display_name: "BestFit Frequency Curves"
+  short_description: "Run BestFit analyses and plot curves in chat"
+  default_prompt: "Use $bestfit-frequency to run a flow frequency analysis and display a BestFit-style matplotlib plot."
+policy:
+  allow_implicit_invocation: true

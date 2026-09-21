@@ -11,6 +11,13 @@ namespace RMC.BestFit.Api.DTOs
     public class CreateUsgsPeaksInputDataRequest
     {
         /// <summary>
+        /// Runs the model's Multiple Grubbs-Beck Test on the downloaded exact observations
+        /// before storing the input. Defaults to false; requires at least ten observations.
+        /// </summary>
+        [JsonPropertyName("useMultipleGrubbsBeckTest")]
+        public bool UseMultipleGrubbsBeckTest { get; set; }
+
+        /// <summary>
         /// The 8-digit USGS surface-water site number (e.g., "01646500").
         /// </summary>
         [Required]
