@@ -2,10 +2,12 @@
 import importlib.util
 from pathlib import Path
 import tempfile
+import sys
 import unittest
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[2] / "skills/bestfit-frequency/scripts/run_frequency.py"
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location("run_frequency", SCRIPT)
 run = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(run)
@@ -28,6 +30,8 @@ class RunFrequencyTests(unittest.TestCase):
                 return {"success": True, "inputData": {"id": "input-id"}}
             if "includeData" in path:
                 return {"success": True, "exactData": []}
+            if path.endswith("/chronology"):
+                return {"success": True, "schemaVersion": 1, "inputData": {"id": "input-id"}, "exactData": []}
             if path == "/api/analyses/bulletin17c":
                 return {"success": True, "analysis": {"id": "analysis-id"}}
             return {"success": True}
@@ -39,6 +43,24 @@ class RunFrequencyTests(unittest.TestCase):
             self.assertEqual(create, {"inputDataId": "input-id", "uncertaintyMethod": "bootstrap"})
             for name in ["input-request.json", "analysis-request.json", "input.json", "results.json", "defaults.json", "client-version.json"]:
                 self.assertTrue((output / name).is_file(), name)
+            for name in ["chronology.json", "chronology.png", "chronology.svg", "source.json"]:
+                self.assertTrue((output / name).is_file(), name)
+            paths = [path for path, _ in calls]
+            self.assertLess(paths.index("/api/inputdata/input-id/chronology"), paths.index("/api/analyses/bulletin17c"))
+
+    def test_prepare_only_never_creates_or_runs_an_analysis(self):
+        calls = []
+        def request(base, path, body=None, timeout=1800):
+            calls.append(path)
+            if path.endswith("/manual"):
+                return {"inputData": {"id": "input-id"}}
+            if path.endswith("/chronology"):
+                return {"schemaVersion": 1, "inputData": {"id": "input-id"}, "exactData": []}
+            return {"success": True}
+        with tempfile.TemporaryDirectory() as temp, patch.object(run, "request_json", side_effect=request):
+            run.run_frequency("http://127.0.0.1:5210", "univariate", {"exactData": []}, "manual", {}, "off",
+                              Path(temp) / "input", prepare_only=True)
+            self.assertFalse(any("/analyses/" in path for path in calls))
 
     def test_failure_stops_before_analysis_and_is_saved(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(run, "request_json", return_value={"success": False, "errorMessage": "screening failed"}):

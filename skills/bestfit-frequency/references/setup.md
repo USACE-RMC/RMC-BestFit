@@ -88,7 +88,9 @@ existing listener or all `dotnet` processes. Do not expose this development host
 on a public network; this workflow has no account/authentication setup.
 
 Verify `GET /health` and `GET /api/info`. In Development, the OpenAPI schema is
-`/openapi/v1.json`; confirm `useMultipleGrubbsBeckTest` exists. The API store is in
+`/openapi/v1.json`; confirm input `/chronology` and `/source` paths,
+`useMultipleGrubbsBeckTest`, `useJeffreysRuleForScale`, and analysis `configuration`
+exist. The source revision must include these contracts. The API store is in
 memory and disappears on restart. Keep it alive until input and results are saved.
 
 Retain server-side provenance beside each run: BestFit commit/dirty state,

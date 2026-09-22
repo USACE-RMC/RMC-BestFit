@@ -180,5 +180,25 @@ namespace RMC.BestFit.Api.Mcp
             var resource = _service.Get(id);
             return McpJson.Serialize(InputDataMapper.ToResourceResponse(resource, includeData));
         }
+
+        /// <summary>Returns model-derived input chronology data before an analysis is created.</summary>
+        /// <param name="id">The input resource identifier.</param>
+        /// <returns>JSON with dated observations, uncertainty bounds and inclusive threshold windows.</returns>
+        [McpServerTool(Name = "get_inputdata_chronology")]
+        [Description("Get input chronology before fitting: exact/uncertain/interval observations and inclusive perception windows with effective censored counts. No event dates are inferred from aggregate counts.")]
+        public string GetInputDataChronology(Guid id)
+        {
+            return McpJson.Serialize(InputDataMapper.ToChronologyResponse(_service.Get(id)));
+        }
+
+        /// <summary>Returns original input requests and available raw USGS evidence.</summary>
+        /// <param name="id">The input resource identifier.</param>
+        /// <returns>JSON with the original request, raw decoded source and its UTF-8 checksum.</returns>
+        [McpServerTool(Name = "get_inputdata_source")]
+        [Description("Get the original input request and available raw USGS peak text for provenance, dates and qualifier review. A raw download is evidence, not automatic approval to treat all peaks as exact.")]
+        public string GetInputDataSource(Guid id)
+        {
+            return McpJson.Serialize(InputDataMapper.ToSourceResponse(_service.Get(id)));
+        }
     }
 }

@@ -55,7 +55,8 @@ def checked(payload, path):
     return payload
 
 
-def run_frequency(base, kind, source, source_kind, options, mgbt, output, timeout=1800):
+def run_frequency(base, kind, source, source_kind, options, mgbt, output, timeout=1800,
+                  *, prepare_only=False, ylabel="Value (units not supplied)", index_label="Year / declared index", zoom=None):
     """Create, validate and run an analysis, saving every request and response in a new folder."""
     parsed = urlparse(base)
     if parsed.scheme != "http" or parsed.hostname not in ("localhost", "127.0.0.1", "::1") or parsed.username or parsed.password:
@@ -79,8 +80,12 @@ def run_frequency(base, kind, source, source_kind, options, mgbt, output, timeou
 
     def step(path, name, body=None):
         """Persist a response before checking whether the operation succeeded."""
-        payload = request_json(base, path, body, timeout)
         artifact = output / name
+        try:
+            payload = request_json(base, path, body, timeout)
+        except OSError as error:
+            write_json(artifact, {"success": False, "errorMessage": str(error), "path": path})
+            raise
         write_json(artifact, payload)
         return checked(payload, artifact)
 
@@ -91,13 +96,25 @@ def run_frequency(base, kind, source, source_kind, options, mgbt, output, timeou
     resource = step(f"/api/inputdata/{source_kind}", "input-created.json", body)
     input_id = resource["inputData"]["id"]
     step(f"/api/inputdata/{input_id}?includeData=true", "input.json")
+    step(f"/api/inputdata/{input_id}/source", "source.json")
+    chronology = step(f"/api/inputdata/{input_id}/chronology", "chronology.json")
+    from plot_chronology import render
+    render(chronology, output / "chronology", ylabel=ylabel, index_label=index_label, zoom=zoom)
+    if prepare_only:
+        return output / "chronology.json"
     analysis_body = {**options, "inputDataId": input_id}
     write_json(output / "analysis-request.json", analysis_body)
     analysis = step(f"/api/analyses/{kind}", "analysis-created.json", analysis_body)
     analysis_id = analysis["analysis"]["id"]
     step(f"/api/analyses/{kind}/{analysis_id}/validate", "validation.json")
-    step(f"/api/analyses/{kind}/{analysis_id}/run", "results.json", {})
-    step(f"/api/analyses/{kind}/{analysis_id}", "analysis.json")
+    try:
+        step(f"/api/analyses/{kind}/{analysis_id}/run", "results.json", {})
+    finally:
+        # A failed run still has useful state/diagnostics. Do not mask its original error.
+        try:
+            step(f"/api/analyses/{kind}/{analysis_id}", "analysis.json")
+        except (OSError, RuntimeError) as error:
+            write_json(output / "state-capture-error.json", {"errorMessage": str(error)})
     return output / "results.json"
 
 
@@ -113,12 +130,17 @@ def main():
     parser.add_argument("--mgbt", choices=("auto", "on", "off"), default="auto")
     parser.add_argument("--output", required=True, type=Path, help="New artifact directory; existing folders are rejected")
     parser.add_argument("--timeout", type=float, default=1800, help="Per-request wait in seconds, not an estimator budget")
+    parser.add_argument("--prepare-only", action="store_true", help="Create input, preserve sources and render chronology without creating or running an analysis")
+    parser.add_argument("--ylabel", default="Value (units not supplied)")
+    parser.add_argument("--index-label", default="Year / declared index")
+    parser.add_argument("--zoom", nargs=2, type=float, metavar=("START", "END"))
     args = parser.parse_args()
     try:
         source_body = json.loads(args.manual.read_text(encoding="utf-8-sig")) if args.manual else {"siteNumber": args.usgs}
         options = json.loads(args.analysis_options.read_text(encoding="utf-8-sig")) if args.analysis_options else {}
         path = run_frequency(args.base_url, args.kind, source_body, "manual" if args.manual else "usgs-peaks",
-                             options, args.mgbt, args.output, args.timeout)
+                             options, args.mgbt, args.output, args.timeout, prepare_only=args.prepare_only,
+                             ylabel=args.ylabel, index_label=args.index_label, zoom=args.zoom)
         print(path.resolve())
     except (RuntimeError, ValueError, KeyError, TypeError, OSError) as error:
         parser.exit(1, f"Frequency workflow stopped: {error}\n")

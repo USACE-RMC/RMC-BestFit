@@ -1,74 +1,105 @@
-# Install the portable BestFit skill
+# Link BestFit to OpenAI and Anthropic chat platforms
 
-The ZIP contains one top-level `bestfit-frequency/` folder with `SKILL.md`, scripts,
-references, requirements, and a synthetic example. Keep the folder intact. It
-teaches a workflow; it does not include .NET, Python packages, or BestFit binaries.
+One maintained skill is distributed two ways. From the repository root run:
 
-| Client | Installation |
-|---|---|
-| Codex local/terminal | Extract `bestfit-frequency/` into `~/.agents/skills/`, or a repository's `.agents/skills/`. Invoke `$bestfit-frequency` or choose it in the skill selector. |
-| Claude Code | Extract the folder into `~/.claude/skills/`, or a repository's `.claude/skills/`. Invoke `/bestfit-frequency`. |
-| Claude with custom skill upload | Upload the ZIP in the account's Skills interface and enable it, where available. Runtime/network capabilities still determine whether that session can build and run BestFit. |
-| ChatGPT or Claude web with an execution workspace | Provide the repository link and explicitly request the repository workflow below. The session clones the source and runs the API internally; this is explicit use of repository instructions, not proof of native skill installation/discovery. |
+```sh
+python scripts/package-bestfit-skill.py
+```
 
-## Web session: clone and run from the repository
+This creates `artifacts/bestfit-frequency-skill.zip` (Claude/standalone skill) and
+`artifacts/bestfit-frequency-marketplace.zip` (OpenAI skills-only plugin), each
+with a SHA-256 sidecar. No profile is modified, connector registered or plugin
+published. The plugin uses the supported `.codex-plugin/plugin.json` compatibility
+layout. Both archives contain identical skill files, with no binaries or runtimes.
 
-Use this prompt in the chosen web session:
+## Runtime requirement for every platform
 
-> Use https://github.com/USACE-RMC/RMC-BestFit. Clone it into this session's execution
-> workspace and read skills/bestfit-frequency/SKILL.md and its setup/workflow
-> references. Build only the headless API using RMC.Numerics 2.2.0 in package mode,
-> run it on loopback in this same environment, and use the skill for my requested
-> frequency analysis. Preserve numerical settings and show the PNG with downloadable
-> SVG and results JSON. Report missing runtime capabilities or unavailable source
-> features before attempting the analysis.
+Provide a reachable compatible repository revision or matching source snapshot.
+The session needs a terminal, writable workspace, .NET 10 SDK, Python dependencies,
+network access for sources/packages, a persistent child process, loopback HTTP and
+artifact delivery. Follow [setup.md](setup.md) to clone/build/run the headless API
+in that execution environment. A skill upload or repository URL alone establishes
+none of these capabilities. No separate public service is needed when API and
+agent run in the same environment. Localhost on your computer is not localhost
+inside a web session. Report missing capabilities; do not claim another host's
+validation applies. Saved responses can still be plotted in a capable Python session.
 
-Supply the observations or USGS site and analysis choice with that prompt. The
-session acquires code from the repository and runs it on its own runtime; a
-separately hosted service, public API URL, or MCP connector is unnecessary.
-Follow [setup.md](setup.md) for the actual commands and source-compatibility check.
-This route requires a terminal, .NET 10 SDK, Python, dependency downloads, and an
-API process that survives long enough for local HTTP calls. Reading a GitHub link
-alone does not establish those capabilities. Report an unavailable environment
-honestly rather than treating another client's successful run as evidence.
+## OpenAI desktop / Codex
 
-Before this implementation is available in a repository revision, supply the
-matching development source snapshot to the session. The skill ZIP alone cannot
-make the current uncommitted API changes cloneable. Publishing is a separate owner
-action.
+1. Extract `bestfit-frequency-marketplace.zip` to a chosen local directory, keeping
+   its top-level `bestfit-frequency-marketplace` folder and hidden `.agents` folder.
+2. Register that extracted marketplace root:
+   `codex plugin marketplace add ABSOLUTE_PATH/bestfit-frequency-marketplace`.
+3. Restart the desktop client. Open **Plugins Directory**, select **BestFit Local**,
+   and install **BestFit Flood Frequency**. Installation is a separate user action;
+   creating the ZIP does not install it.
+4. Start a fresh task with access to the matching BestFit checkout. Select the skill
+   with `@` where available, or invoke `$bestfit-frequency` in Codex CLI/IDE.
+5. Run the synthetic preparation/chronology workflow first. Confirm the agent reads
+   the skill, uses the matching API, retains sources/settings and displays the plot.
 
-## Native skill discovery
+For standalone installation instead, extract `bestfit-frequency/` from the skill
+ZIP into `~/.agents/skills/` or the target repository's `.agents/skills/`. Restart
+if it is not discovered. Choose one installation route to avoid duplicate copies.
+Do not overwrite an existing edited skill without reviewing its contents.
 
-Codex supports discovery from local skill folders and matching prompts to the
-description; restart if the installed skill does not appear. Folder installation
-is sufficient for this package. A marketplace plugin is a separate distribution
-option. [Official Codex skills documentation](https://developers.openai.com/codex/skills).
+Official instructions: [skills](https://developers.openai.com/codex/skills),
+[plugins and local marketplaces](https://developers.openai.com/plugins/build/plugins).
+Local/repository marketplace availability varies by surface; it does not imply
+installation or synchronization into a separate web/mobile account.
 
-Claude Code supports personal and repository skill folders and explicit or
-automatic invocation. [Official Claude Code skills documentation](https://code.claude.com/docs/en/skills).
-Claude's custom upload format uses a ZIP with the skill folder at its root.
-[Official custom-skill packaging instructions](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills).
+## ChatGPT web
 
-These instructions were checked on 2026-09-19. Client settings and organization
-policies can affect availability. Local installation does not guarantee discovery
-in a separate cloud environment; install or include the skill there too.
+If your workspace exposes an agent builder with **Add skill**, upload the standard
+skill package there, provide the compatible source revision and execution
+capabilities, and test with **Preview / Try in ChatGPT** before creating/sharing
+that agent. Admin permissions and product availability apply.
+[Official workspace-agent example](https://developers.openai.com/cookbook/articles/chatgpt-agents-sales-meeting-prep).
 
-Once installed, ask for example:
+Otherwise use the repository workflow below in a terminal-capable ChatGPT session.
+For broader native distribution across web/mobile, publication to OpenAI's universal
+plugin directory is a later owner action under its current submission process;
+this repository package is not a published plugin. A skills-only package does not
+need developer-mode MCP registration. Do not expose the unauthenticated local API
+as a public connector to work around missing execution capabilities.
 
-> Use bestfit-frequency to run Bulletin 17C on my annual-flow observations with
-> MGBT enabled, then display the BestFit-style matplotlib plot and link the results.
+## Claude chat
 
-The agent should read the skill and its setup/workflow references. Automatic
-selection is supported, but explicit invocation is the reliable way to select it.
-The skill does not change the agent's tool permissions or guarantee that every
-chat product can install .NET. When a session lacks execution support, use a
-terminal-capable session or provide saved API results for plotting.
+1. Enable **Code execution and file creation** under **Settings → Capabilities**.
+   Team/Enterprise administrators may control skills and execution availability.
+2. Open **Customize → Skills → + → Create skill → Upload a skill**.
+3. Upload `bestfit-frequency-skill.zip`. It has one top-level `bestfit-frequency/`
+   folder containing `SKILL.md`; do not upload the marketplace ZIP instead.
+4. Enable the skill, start a fresh chat, and explicitly request `bestfit-frequency`.
+5. Supply the compatible repository revision and study location/data. Test the
+   synthetic input chronology and runtime prerequisites before an engineering fit.
 
-To install from this source checkout, copy only `skills/bestfit-frequency/` into
-the chosen skill directory. Existing unrelated skills need not be changed. To
-create the ZIP, run `python scripts/package-bestfit-skill.py` from the repository
-root; it writes `artifacts/bestfit-frequency-skill.zip` and a SHA-256 sidecar.
+[Official Claude skill use](https://support.claude.com/en/articles/12512180-use-skills-in-claude)
+and [ZIP structure](https://support.claude.com/en/articles/12512198-how-to-create-custom-skills).
+Installing a skill does not guarantee .NET installation or persistent processes in
+that chat environment. Keep runtime acceptance distinct from successful upload.
 
-Before these API changes are published, use the matching development checkout.
-Downloading this ZIP alone does not make unpublished API changes available in
-the upstream repository. Follow `setup.md` for the numerical dependency check.
+## Claude Code
+
+Extract the skill folder into `~/.claude/skills/` or the repository's `.claude/skills/`.
+Open the compatible checkout, invoke `/bestfit-frequency`, and test preparation and
+chronology before fitting. [Official instructions](https://code.claude.com/docs/en/skills).
+
+## Repository workflow and starter prompt
+
+Supply the revision that actually contains these API and skill changes. An upstream
+URL cannot clone uncommitted work or unpublished local commits; use a matching
+snapshot until the owner publishes a reachable revision.
+
+> Use bestfit-frequency from https://github.com/USACE-RMC/RMC-BestFit at [compatible
+> revision]. Clone it into this session, read skills/bestfit-frequency/SKILL.md and
+> its references, and verify the .NET/Python/loopback capabilities. Investigate flood
+> frequency at [location/site]. Use official Bulletin 17C to guide data collection
+> and entry, establish flow definition and year convention, research and justify
+> historical and regional inputs, show input chronology, and compare supported
+> candidate analyses. Retain sources, requests, applied settings, diagnostics and
+> plots. Identify unresolved judgments before final engineering adoption.
+
+Installation instructions checked against official documentation on 2026-09-22.
+Named client/account installation and Linux/web runtime execution must be validated
+separately; package checks and Windows tests do not prove those environments work.

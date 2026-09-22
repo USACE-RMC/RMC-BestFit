@@ -1,5 +1,27 @@
 # Default BestFit frequency plot contract
 
+## Input chronology before fitting
+
+`GET /api/inputdata/{id}/chronology` (MCP `get_inputdata_chronology`) returns
+`schemaVersion:1`, input identity and model-derived observation DTOs. It works
+before creating any analysis. `plot_chronology.py` renders these coordinates on
+linear axes so zeros and negative paleoflood year indexes remain visible.
+
+Exact observations are black circles, low outliers red crosses, uncertain data
+green diamonds with model bounds, intervals cyan circles with bounds, and
+perception windows salmon shading from zero to the threshold. Window endpoints
+are inclusive; one-year rectangles expand by half a year for visibility only.
+Labels show effective aggregate above/below counts. No annual dates are invented
+for aggregate censored floods. Gaps remain unknown, not zeros.
+
+Supply known units and the declared index convention explicitly. Save full-range
+PNG/SVG and optional `--zoom START END` systematic-period views. Nonfinite bounds
+are reported in display notes, never silently clipped or statistically recomputed.
+Use `/source` to compare original submitted counts and evidence with processed
+chronology. Inspect and display the PNG before running a fit.
+
+## Frequency curve after fitting
+
 The renderer targets one standard B17C or stationary Bayesian univariate analysis.
 It matches default desktop semantics and styling, not saved project customizations,
 WPF font rasterization, interactive tooltips, alternative overlays, or other plot

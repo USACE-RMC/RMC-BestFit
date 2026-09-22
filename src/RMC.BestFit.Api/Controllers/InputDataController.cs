@@ -159,6 +159,28 @@ namespace RMC.BestFit.Api.Controllers
             }, _logger, "inputdata.get");
         }
 
+        /// <summary>Returns model-derived chronology data before fitting.</summary>
+        /// <param name="id">The input resource identifier.</param>
+        /// <returns>Explicit observations and aggregate threshold windows, without invented event dates.</returns>
+        [HttpGet("{id:guid}/chronology")]
+        [ProducesResponseType(typeof(InputDataChronologyResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(InputDataChronologyResponse), StatusCodes.Status404NotFound)]
+        public Task<ActionResult<InputDataChronologyResponse>> GetChronology(Guid id)
+        {
+            return ExecuteAsync(() => InputDataMapper.ToChronologyResponse(_service.Get(id)), _logger, "inputdata.chronology");
+        }
+
+        /// <summary>Returns the retained creation request and raw source evidence.</summary>
+        /// <param name="id">The input resource identifier.</param>
+        /// <returns>Original request and optional USGS payload with a text checksum.</returns>
+        [HttpGet("{id:guid}/source")]
+        [ProducesResponseType(typeof(InputDataSourceResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(InputDataSourceResponse), StatusCodes.Status404NotFound)]
+        public Task<ActionResult<InputDataSourceResponse>> GetSource(Guid id)
+        {
+            return ExecuteAsync(() => InputDataMapper.ToSourceResponse(_service.Get(id)), _logger, "inputdata.source");
+        }
+
         /// <summary>
         /// Computes the sample summary statistics of an input-data resource over all observations.
         /// </summary>

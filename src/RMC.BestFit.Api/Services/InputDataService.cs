@@ -1,4 +1,6 @@
 using Numerics.Data;
+using System.Text.Json;
+using RMC.BestFit.Api.Mcp;
 using RMC.BestFit.Api.DTOs;
 using RMC.BestFit.Api.Mappers;
 using RMC.BestFit.Api.Services.Exceptions;
@@ -125,7 +127,8 @@ namespace RMC.BestFit.Api.Services
                 Name = string.IsNullOrWhiteSpace(request.Name) ? "Manual input data" : request.Name,
                 Description = request.Description,
                 DataFrame = dataFrame,
-                Method = InputDataMethod.Manual
+                Method = InputDataMethod.Manual,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request))
             };
             return _store.AddInputData(resource);
         }
@@ -155,6 +158,7 @@ namespace RMC.BestFit.Api.Services
                 Description = request.Description,
                 DataFrame = dataFrame,
                 Method = InputDataMethod.BlockMaxima,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request)),
                 SourceTimeSeriesId = source.Id,
                 TimeBlock = request.TimeBlock,
                 BlockFunction = request.BlockFunction,
@@ -195,6 +199,7 @@ namespace RMC.BestFit.Api.Services
                 Description = request.Description,
                 DataFrame = dataFrame,
                 Method = InputDataMethod.PeaksOverThreshold,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request)),
                 SourceTimeSeriesId = source.Id,
                 Threshold = request.Threshold,
                 MinStepsBetweenPeaks = request.MinStepsBetweenPeaks,
@@ -219,7 +224,7 @@ namespace RMC.BestFit.Api.Services
             // Download through the adapter seam (rather than DataFrame.CreateFromUSGS, which calls
             // the static downloader directly) so tests can fake the network; the series population
             // below mirrors DataFrame.CreateFromUSGS exactly.
-            var (timeSeries, _) = await _usgs.DownloadAsync(request.SiteNumber, request.SeriesType, cancellationToken);
+            var (timeSeries, rawText) = await _usgs.DownloadAsync(request.SiteNumber, request.SeriesType, cancellationToken);
 
             var dataFrame = new DataFrame();
             dataFrame.ExactSeries.SuppressCollectionChanged = true;
@@ -242,7 +247,9 @@ namespace RMC.BestFit.Api.Services
                 Method = request.SeriesType == TimeSeriesDownload.TimeSeriesType.PeakStage
                     ? InputDataMethod.UsgsPeakStage
                     : InputDataMethod.UsgsPeakDischarge,
-                UsgsSiteNumber = request.SiteNumber
+                UsgsSiteNumber = request.SiteNumber,
+                SourceRequest = JsonSerializer.Deserialize<JsonElement>(McpJson.Serialize(request)),
+                SourceRawText = rawText
             };
             return _store.AddInputData(resource);
         }

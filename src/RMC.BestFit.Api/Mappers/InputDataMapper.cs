@@ -2,6 +2,8 @@ using RMC.BestFit.Api.DTOs;
 using RMC.BestFit.Api.Helpers;
 using RMC.BestFit.Api.Store;
 using RMC.BestFit.Models;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace RMC.BestFit.Api.Mappers
 {
@@ -10,6 +12,39 @@ namespace RMC.BestFit.Api.Mappers
     /// </summary>
     public static class InputDataMapper
     {
+        /// <summary>Builds a chronology from the immutable input without creating or running an analysis.</summary>
+        /// <param name="resource">The input resource.</param>
+        /// <returns>Observations with model-derived uncertainty and inclusive censoring windows.</returns>
+        public static InputDataChronologyResponse ToChronologyResponse(InputDataResource resource)
+        {
+            ArgumentNullException.ThrowIfNull(resource);
+            return new InputDataChronologyResponse
+            {
+                InputData = ToSummary(resource),
+                ExactData = ToExactObservations(resource.DataFrame),
+                UncertainData = ToUncertainObservations(resource.DataFrame),
+                IntervalData = ToIntervalObservations(resource.DataFrame),
+                ThresholdData = ToThresholdObservations(resource.DataFrame)
+            };
+        }
+
+        /// <summary>Returns retained evidence without attempting to reconstruct source dates or qualifiers.</summary>
+        /// <param name="resource">The input resource.</param>
+        /// <returns>The original request and optional raw source text.</returns>
+        public static InputDataSourceResponse ToSourceResponse(InputDataResource resource)
+        {
+            ArgumentNullException.ThrowIfNull(resource);
+            return new InputDataSourceResponse
+            {
+                InputDataId = resource.Id,
+                CapturedUtc = resource.CreatedUtc,
+                Request = resource.SourceRequest,
+                RawText = resource.SourceRawText,
+                Sha256 = resource.SourceRawText is null ? null :
+                    Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(resource.SourceRawText)))
+            };
+        }
+
         /// <summary>
         /// Maps a resource to its summary DTO.
         /// </summary>

@@ -4,12 +4,15 @@ The examples assume the API setup in `setup.md` and commands executed from the
 installed skill directory. Use absolute script paths when working elsewhere.
 `run_frequency.py` speaks ordinary local HTTP; MCP is optional.
 
-For supplied annual peaks, write a UTF-8 input request JSON. Indices are water
-years. Preserve all supplied values, including zeros; confirm the data's meaning
+For supplied annual peaks, write a UTF-8 input request JSON with explicit annual
+indexes under the declared convention. Date-only API inputs use calendar years.
+Preserve all supplied values, including zeros; confirm the data's meaning
 and units with the user. For a purely illustrative test, the bundle includes
 `assets/synthetic-annual-flows.json`, explicitly labeled synthetic.
 
 ```sh
+python scripts/run_frequency.py --kind bulletin17c --manual assets/synthetic-annual-flows.json --prepare-only --output PREVIEW
+# Inspect and show PREVIEW/chronology.png before the fitting command below.
 python scripts/run_frequency.py --kind bulletin17c --manual assets/synthetic-annual-flows.json --output RUN
 python scripts/plot_frequency.py --results RUN/results.json --input RUN/input.json --output RUN/frequency --title "Synthetic annual flows - Bulletin 17C" --ylabel "Flow (illustrative units)"
 ```
@@ -25,6 +28,8 @@ after all input series are populated and before analysis creation/cloning.
 For a USGS site supplied by the user:
 
 ```sh
+python scripts/run_frequency.py --kind bulletin17c --usgs SITE_NUMBER --prepare-only --output USGS_REVIEW
+# Inspect source.json (dates and qualifiers) and chronology.png before fitting.
 python scripts/run_frequency.py --kind bulletin17c --usgs SITE_NUMBER --output RUN
 ```
 
@@ -55,7 +60,9 @@ Omitting options preserves the 25 model-default ordinates and the default
 distribution/uncertainty/simulation settings. B17C uses GMM/EMA with default
 `linkedMultivariateNormal` uncertainty. Bayesian univariate analysis uses the
 existing automatic MCMC configuration. For advanced priors, historical/interval
-records, measurement error, or uncertainty choices, consult the checkout's
+records, measurement error, or uncertainty choices, first read
+[historical-data.md](historical-data.md), [information-recipes.md](information-recipes.md)
+and [study-workflow.md](study-workflow.md), then consult the checkout's
 `docs/api.md`, request DTOs, and `/api/metadata/distributions`, `/api/metadata/enums`,
 `/api/metadata/defaults` rather than guessing parameter names or orders.
 
@@ -65,6 +72,8 @@ records, measurement error, or uncertainty choices, consult the checkout's
 |---|---|
 | Create input | POST `/api/inputdata/manual` with `exactData:[{index,value}]`, optional `uncertainData`, `intervalData`, `thresholdData`, and `useMultipleGrubbsBeckTest`; or POST `/api/inputdata/usgs-peaks` with `siteNumber` and screening option |
 | Save observations | GET `/api/inputdata/{inputData.id}?includeData=true` |
+| Retain evidence | GET `/api/inputdata/{inputData.id}/source` |
+| Inspect chronology before fitting | GET `/api/inputdata/{inputData.id}/chronology`; render PNG/SVG using `plot_chronology.py` |
 | Create analysis | POST `/api/analyses/bulletin17c` or `/api/analyses/univariate` with `inputDataId` and explicit options |
 | Validate | GET `/api/analyses/{kind}/{analysis.id}/validate`; require `isValid:true` |
 | Run and save | POST `/api/analyses/{kind}/{analysis.id}/run` with `{}`; require `success:true` |
@@ -75,11 +84,18 @@ The one-shot POST `/api/workflows/usgs-bulletin17c` accepts
 workflow envelope with `inputDataId`, `analysisId`, and `results`; check outer
 `success`/`failedStep` as well as nested success, even with HTTP 200. Fetch the
 input separately with `includeData=true`. The renderer also accepts this envelope.
+This one-shot endpoint cannot pause for input inspection. Use the granular preview
+sequence for newly collected data; only use the shortcut for an already reviewed
+input source, and compare the new download with the reviewed source before adoption.
 
 The optional MCP endpoint is `/mcp` on the same host. Equivalent tools:
 `create_inputdata_manual`, `create_inputdata_usgs_peaks`,
 `run_usgs_bulletin17c_workflow`, each with `useMultipleGrubbsBeckTest:true` when
 appropriate; `get_inputdata(id,includeData:true)` supplies plotting coordinates.
+`get_inputdata_source` and `get_inputdata_chronology` provide the same pre-fit
+evidence as REST. Prefer this granular sequence over one-shot workflows when
+collecting/reviewing historical information. Use `--prepare-only` to stop before
+analysis creation; the client still saves sources and renders chronology.
 REST and MCP share the same services/store. A locally running server is enough
 for a client capable of connecting to it; this skill does not register an MCP
 server in either application's configuration.
@@ -88,6 +104,7 @@ server in either application's configuration.
 
 Keep `input-request.json`, `analysis-request.json`, `input.json`, `results.json`,
 `analysis.json`, `validation.json`, API defaults/info and version/build provenance
+along with `source.json`, `chronology.json` and chronology PNG/SVG
 in the same run folder. Keep diagnostic warnings with the figure. A timeout is a
 client wait limit, not permission to reduce iteration counts. Do not automatically
 retry a failed fitting workflow or duplicate a run without inspecting its status.

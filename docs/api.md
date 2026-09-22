@@ -1,5 +1,42 @@
 # RMC-BestFit REST API + MCP Server
 
+## Agentic FFA data review and provenance
+
+The portable [FFA skill](../skills/bestfit-frequency/SKILL.md) now covers collection,
+justification, preparation and comparison of historical, regional and causal
+information. Official [Bulletin 17C](https://pubs.usgs.gov/publication/tm4B5) is its
+primary data-collection/entry resource for both Bayesian and B17C analyses.
+
+| Contract | Purpose |
+|---|---|
+| `GET /api/inputdata/{id}/chronology` / MCP `get_inputdata_chronology` | Before fitting, returns `schemaVersion:1`, `inputData`, exact/uncertain/interval observations and inclusive threshold windows; bounds/counts come from the model |
+| `GET /api/inputdata/{id}/source` / MCP `get_inputdata_source` | Returns detached original creation `request`, `capturedUtc`, optional USGS `rawText`, and SHA-256 of its UTF-8 text. Raw dates/qualifiers remain available for review |
+| Univariate `useJeffreysRuleForScale` | Nullable request/MCP option exposing the existing switch; omission preserves its model default |
+| Univariate/B17C resource `configuration` | Effective parent distribution, AEP ordinates, priors/penalties, exposed sampler settings and relevant switches; save before and after running |
+
+These are additive contracts. Univariate requests now reject a quantile-prior count
+the model cannot apply: one with `useSingleQuantile=true`, otherwise one per parent
+distribution parameter. Priors, estimators, formulas and defaults are unchanged.
+
+`thresholdData.numberAbove` means additional aggregate exceedances not already
+entered as explicit exact/uncertain/interval observations. Responses contain
+processed counts; the source endpoint preserves submitted counts. An explicit
+1882 event inside 1870–1922 with aggregate above count zero leaves 52 censored years.
+Do not copy processed responses back as original scientific evidence. Date-only
+exact/uncertain observations use calendar year in the API; clients must supply
+explicit indexes for a declared water-year convention. Raw USGS preservation does
+not change the downloader's classification or interpret peak qualifiers.
+
+See [study workflow](../skills/bestfit-frequency/references/study-workflow.md) and
+[chronology contract](../skills/bestfit-frequency/references/plot-contract.md).
+The source/chronology endpoints never run an estimator. Their resources share the
+existing in-memory lifetime; save artifacts before stopping the host. Original
+requests are retained for manual, USGS, block-maxima and POT inputs; raw downloads
+are retained here for direct USGS peaks. Older programmatically built resources
+without a stored request return only the available provenance.
+
+## Overview
+
 `src/RMC.BestFit.Api` hosts a headless REST API and an MCP (Model Context Protocol) server over
 the RMC-BestFit model library (`RMC.BestFit.dll`), enabling programmatic and agentic AI
 flood-frequency workflows: download USGS data, build input data, fit distributions with Bayesian

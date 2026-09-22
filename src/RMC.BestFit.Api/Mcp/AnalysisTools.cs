@@ -48,6 +48,7 @@ namespace RMC.BestFit.Api.Mcp
         /// <param name="parameterPriors">Optional informative parameter priors.</param>
         /// <param name="quantilePriors">Optional quantile priors.</param>
         /// <param name="useSingleQuantile">Optional single-quantile-prior formulation flag.</param>
+        /// <param name="useJeffreysRuleForScale">Optional override of the existing scale rule; omission preserves the model default.</param>
         /// <param name="name">Optional display name.</param>
         /// <returns>JSON with the created analysis summary including its id.</returns>
         [McpServerTool(Name = "create_univariate_analysis")]
@@ -66,7 +67,8 @@ namespace RMC.BestFit.Api.Mcp
             [Description("Optional informative parameter priors: array of { parameterName, distribution: { type, parameters }, isFixed? }. Parameter names per distribution come from get_metadata. Unnamed parameters keep flat priors.")] List<ParameterPriorDto>? parameterPriors = null,
             [Description("Optional quantile priors (engineering judgment about flood magnitudes): array of { alpha (AEP), distribution: { type, parameters } }. Supply one per distribution parameter, or one total with useSingleQuantile=true.")] List<QuantilePriorDto>? quantilePriors = null,
             [Description("True for the single-quantile-prior formulation (Viglione et al. 2013); false/omit for one prior per parameter (Coles and Tawn 1996).")] bool? useSingleQuantile = null,
-            [Description("Optional display name for the analysis.")] string? name = null)
+            [Description("Optional display name for the analysis.")] string? name = null,
+            [Description("Optional Jeffreys scale-rule override. Omit to preserve the model default.")] bool? useJeffreysRuleForScale = null)
         {
             var resource = _service.CreateUnivariate(new CreateUnivariateAnalysisRequest
             {
@@ -77,6 +79,7 @@ namespace RMC.BestFit.Api.Mcp
                 ParameterPriors = parameterPriors,
                 QuantilePriors = quantilePriors,
                 UseSingleQuantile = useSingleQuantile,
+                UseJeffreysRuleForScale = useJeffreysRuleForScale,
                 Name = name
             });
             return McpJson.Serialize(AnalysisMapper.ToResourceResponse(resource));
