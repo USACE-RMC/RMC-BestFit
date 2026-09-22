@@ -17,7 +17,7 @@ $$
 
 ## Distribution and Jacobian
 
-Let $f_Y,F_Y$ be the Pearson III density and CDF from the preceding chapter. For $x>0$,
+Let $f_Y,F_Y$ be the density and CDF in the [Pearson Type III chapter](pearson-type-iii.md). For $x>0$,
 
 $$
 f_X(x)=\frac{f_Y(\log_{10}x)}{x\ln10},\qquad
@@ -33,7 +33,7 @@ $$
 E[X]=\exp\{\xi_Y\ln10-a\log(1-\beta\ln10)\}, \tag{LP3.3}
 $$
 
-which requires $1-\beta\ln10>0`; the variance additionally requires $1-2\beta\ln10>0$. Quantiles remain the safer summary when these moments do not exist.
+which requires $1-\beta\ln10>0$; the variance additionally requires $1-2\beta\ln10>0$. Quantiles remain the safer summary when these moments do not exist.
 
 ## Full Likelihood and Posterior
 
@@ -65,6 +65,8 @@ Parameters are moments of $\log_{10}$ discharge. This direct distribution call d
 ## Validation and Limitations
 
 Required evidence includes the transformation Jacobian, both skew signs, zero-skew Log-Normal limit, CDF/quantile inversion, support endpoints, and parity with official Bulletin 17C examples under the specialized analysis. The compile fixture supplies API evidence only. LP3 selection does not itself implement regional skew, EMA censoring, or Multiple Grubbs-Beck procedures.
+
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
 
 ## References
 

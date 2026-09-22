@@ -36,7 +36,7 @@ $$
 -\frac{1}{2\sigma^2}\sum_{t=p}^{T-1}e_t^2+J_g. \tag{AR.4}
 $$
 
-`DataLogLikelihood` implements (AR.4), rejects nonpositive or nonfinite $\sigma$, and returns negative infinity when the training series is unavailable. `PointwiseDataLogLikelihood` applies the same scale guard, returns $T-p$ terms, and distributes the scalar transformation Jacobian $J_g$ equally among them.
+`DataLogLikelihood` implements (AR.4), rejects nonpositive or nonfinite $\sigma$, and returns negative infinity when the training series is unavailable. `PointwiseDataLogLikelihood` applies the same scale guard, returns $T-p$ terms, and assigns each evaluated observation its own $\log|g'(y_t)|$ contribution. These terms sum to $J_g$; if stored terms are unavailable or have an inconsistent length, the compatibility fallback distributes the scalar total equally.
 
 The available transforms are none, Box-Cox logarithmic ($\lambda=0$), fitted Box-Cox, and fitted Yeo-Johnson. The change-of-variables term is evaluated over the same raw observations represented by (AR.4). Transformation parameters are plug-in preprocessing estimates, not coordinates in $\theta$ and not propagated through posterior uncertainty. They are fitted using only the training prefix and then applied to the complete response. `SetTransformParameters` atomically rebuilds transformed state, residuals, and dependent likelihood quantities. Holdout scoring therefore uses a transform estimated without the holdout values.
 
@@ -116,15 +116,7 @@ Fast tests cover construction, likelihood decomposition, transforms, prediction 
 algebra, and analysis lifecycle. The focused generator oracle verifies inverse-transform algebra
 and 1,000 model-scale moment values; the verification report records parameter-recovery results.
 
-Chunk 13 independently crosschecks the positive-$\phi$ centered recurrence, conditional likelihood,
-closed-form conditional-regression/profile optimum, and unregularized observed information on the
-frozen AR(1) fixture. A separate N=1,000 AR(2) fixture checks the complete recurrence, one-step
-conditional response, production stationarity diagnostic, and stationary response roots. The
-initial Differential Evolution AR(1) run remains failure history because its bound-clamped solution
-had an objective below the generating parent and independent optimum and invalid covariance. Haden
-Smith approved a reliability correction: infeasible DE trials are repaired halfway between the
-target and violated bound, BestFit uses a minimum population of 100, and the convergence tolerances
-remain unchanged. The final exact N=1,000 AR(1) recovery passes the observed-information 95% rule.
+The [time-series verification report](../../verification/report/time-series-analyses.md) records independent conditional likelihood and optimum comparisons, transformed forecast/generation identities, and retained 1,000-observation recovery designs. Acceptance is tied to the exact recurrence, conditioning window, identified parameters, and forecast quantities; it is not a claim for every order, transformation, or covariate design.
 
 ## References
 

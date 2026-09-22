@@ -65,6 +65,8 @@ All but skew use observation units. Positive 0.50 skew creates a finite lower en
 
 Required evidence includes moment recovery, density normalization for both skew signs, CDF/quantile inversion, reflected-tail support, and continuity to Normal at zero skew. The compiled example guards the public parameter order. The shifted support can include negative values depending on the moments; physical plausibility and rare-tail leverage must be checked.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] K. Pearson, “Contributions to the mathematical theory of evolution. II. Skew variation in homogeneous material,” *Philosophical Transactions of the Royal Society A*, vol. 186, pp. 343–414, 1895.

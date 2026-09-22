@@ -181,14 +181,7 @@ Fast irregular conditional, logarithmic, and fixed-seed tests plus the focused a
 exactly 1,000-realization variance oracles verify the prediction boundary and generation-scale
 identities.
 
-Chunk 13 retains the N=1,000 differenced ARIMAX(1,1,0) one-covariate recovery fixture. Its first
-coordinate is a differenced-scale intercept (drift), not a raw-level unconditional mean. The
-separate N=1,000 ARIMAX(1,0,1) interaction fixture uses a level-scale conditional/regression
-intercept, linear trend, monthly Fourier seasonality, and two exact-date current level covariates.
-The covariate series begin one and two months before the response, so an index-aligned implementation
-cannot reproduce the frozen likelihood. Parameter order is `[intercept, trend, sin, cos, beta1,
-beta2, phi, theta, sigma]`; covariates remain on the raw level and are not differenced. This pair
-replaces the redundant trend/seasonality/covariate order grid.
+The [time-series verification report](../../verification/report/time-series-analyses.md) records independent conditional likelihood and optimum comparisons, transformed forecast/generation identities, and retained 1,000-observation recovery designs. Acceptance is tied to the exact recurrence, conditioning window, identified parameters, and forecast quantities; it is not a claim for every order, transformation, or covariate design.
 
 ## References
 

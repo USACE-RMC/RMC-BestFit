@@ -4,7 +4,7 @@
 
 [Back to Documentation Index](../index.md)
 
-This contract defines the minimum scientific and software evidence required before a chapter is classified as complete. It applies to the public model library and to the RMC.Numerics 2.1.4 algorithms on which that library depends.
+This contract defines the minimum scientific and software evidence required before a chapter is classified as complete. It applies to the public model library and to the RMC.Numerics 2.2.0 algorithms on which that library depends.
 
 ## Required Chapter Structure
 
@@ -58,7 +58,7 @@ Conceptual algorithms and incomplete fragments use `text` or `pseudocode`, never
 | Draft | Rewritten formulation, still awaiting API or evidence reconciliation |
 | Complete | Formulation, API, citations, links, and traceability pass automated and manual review |
 
-Only complete pages carry the marker `technical-reference-status: complete`. Automated tests apply the strictest snippet and citation checks to those pages while the reference is upgraded incrementally.
+Only complete pages carry the marker `technical-reference-status: complete`. Automated tests apply the strictest snippet and citation checks to those pages for every chapter in the publication manifest. “Complete” describes editorial and engineering review, not scientific approval or a public-release decision.
 
 ## Review Standard
 

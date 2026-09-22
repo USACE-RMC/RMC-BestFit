@@ -26,30 +26,30 @@ Composite pairwise likelihood is a future enhancement. The current code always u
 
 | Symbol | Meaning |
 |---|---|
-| \(Y_{ij}\) | maximum in row \(i=1,\ldots,n\) at site \(j=1,\ldots,S\), in the response unit |
-| \(\mathbf s_j=(s_{j1},s_{j2})\) | site coordinates: projected (X, Y) in a common linear unit (Cartesian metric) or (latitude, longitude) in decimal degrees (geodesic metric) |
-| \(\mathbf x_j\) | row of standardized or otherwise scaled site covariates |
-| \(\xi_j,\alpha_j,\kappa_j\) | Numerics GEV location, scale, and shape at site \(j\) |
-| \(\boldsymbol\beta_a\) | regression coefficients for GEV parameter \(a\) |
-| \(\boldsymbol\epsilon_a\) | optional spatial-error vector for parameter \(a\) |
-| \(\sigma_a,r_a,p_a\) | spatial-error standard deviation, range, and optional powered-exponential exponent |
-| \(R(h)\) | spatial correlation at separation \(h\) (planar Euclidean or great-circle kilometres by metric) |
-| \(\mathbf R_C\) | Gaussian-copula correlation matrix |
-| \(w_j\) | site weight multiplying the marginal log density |
-| \(p_E\) | exceedance probability; the nonexceedance probability is \(q=1-p_E\) |
+| $Y_{ij}$ | maximum in row $i=1,\ldots,n$ at site $j=1,\ldots,S$, in the response unit |
+| $\mathbf s_j=(s_{j1},s_{j2})$ | site coordinates: projected (X, Y) in a common linear unit (Cartesian metric) or (latitude, longitude) in decimal degrees (geodesic metric) |
+| $\mathbf x_j$ | row of standardized or otherwise scaled site covariates |
+| $\xi_j,\alpha_j,\kappa_j$ | Numerics GEV location, scale, and shape at site $j$ |
+| $\boldsymbol\beta_a$ | regression coefficients for GEV parameter $a$ |
+| $\boldsymbol\epsilon_a$ | optional spatial-error vector for parameter $a$ |
+| $\sigma_a,r_a,p_a$ | spatial-error standard deviation, range, and optional powered-exponential exponent |
+| $R(h)$ | spatial correlation at separation $h$ (planar Euclidean or great-circle kilometres by metric) |
+| $\mathbf R_C$ | Gaussian-copula correlation matrix |
+| $w_j$ | site weight multiplying the marginal log density |
+| $p_E$ | exceedance probability; the nonexceedance probability is $q=1-p_E$ |
 
-Location, scale, quantiles, and location/scale spatial errors have response units unless a log link is used. Regression-coefficient units depend on the link and covariate scaling. Shape, copula probabilities, correlations, and powered-exponential exponents are dimensionless. Range parameters have exactly the unit of the coordinate columns.
+Location, scale, quantiles, and location/scale spatial errors have response units unless a log link is used. Regression-coefficient units depend on the link and covariate scaling. Shape, copula probabilities, correlations, and powered-exponential exponents are dimensionless. Range parameters use the projected coordinate unit for Cartesian distance and kilometres for geodesic distance.
 
 ## Site-Level GEV Model
 
-RMC.Numerics 2.1.4 uses the shape sign convention documented in the [GEV chapter](../distributions/generalized-extreme-value.md). For
+RMC.Numerics 2.2.0 uses the shape sign convention documented in the [GEV chapter](../distributions/generalized-extreme-value.md). For
 
 $$
 z_{ij}=\frac{y_{ij}-\xi_j}{\alpha_j},
 \qquad t_{ij}=1-\kappa_j z_{ij}>0, \tag{1}
 $$
 
-the CDF and density for \(\kappa_j\ne0\) are
+the CDF and density for $\kappa_j\ne0$ are
 
 $$
 F_j(y_{ij})=\exp\!\left[-t_{ij}^{1/\kappa_j}\right], \tag{2}
@@ -62,7 +62,7 @@ t_{ij}^{1/\kappa_j-1}
 \exp\!\left[-t_{ij}^{1/\kappa_j}\right]. \tag{3}
 $$
 
-The \(\kappa_j\to0\) limit is Gumbel:
+The $\kappa_j\to0$ limit is Gumbel:
 
 $$
 F_j(y)=\exp\{-\exp[-(y-\xi_j)/\alpha_j]\}, \tag{4}
@@ -74,7 +74,7 @@ f_j(y)=\alpha_j^{-1}
 -\exp\!\left(-\frac{y-\xi_j}{\alpha_j}\right)\right]. \tag{5}
 $$
 
-Thus \(\kappa_j<0\) gives an unbounded heavy upper tail, \(\kappa_j=0\) an exponential-type upper tail, and \(\kappa_j>0\) an upper endpoint \(\xi_j+\alpha_j/\kappa_j\). The nonexceedance quantile is
+Thus $\kappa_j<0$ gives an unbounded heavy upper tail, $\kappa_j=0$ an exponential-type upper tail, and $\kappa_j>0$ an upper endpoint $\xi_j+\alpha_j/\kappa_j$. The nonexceedance quantile is
 
 $$
 Q_j(q)=
@@ -85,7 +85,7 @@ Q_j(q)=
 \end{cases} \tag{6}
 $$
 
-`SpatialGEVAnalysis` evaluates (6) at \(q=1-p_E\). A return period \(T=1/p_E\) is meaningful only when rows are comparable independent annual trials after accounting for the modeled within-row spatial dependence.
+`SpatialGEVAnalysis` evaluates (6) at $q=1-p_E$. A return period $T=1/p_E$ is meaningful only when rows are comparable independent annual trials after accounting for the modeled within-row spatial dependence.
 
 ## Covariate Regression and Links
 
@@ -96,7 +96,7 @@ $$
 \qquad a\in\{\xi,\alpha,\kappa\}. \tag{7}
 $$
 
-The constructor creates one intercept followed by one coefficient per covariate column. Site \(j\) selects row \(j\) of that function's stored covariate matrix. All matrices used for a given parameter must therefore contain \(S\) rows in the same site order as the data and coordinates.
+The constructor creates one intercept followed by one coefficient per covariate column. Site $j$ selects row $j$ of that function's stored covariate matrix. All matrices used for a given parameter must therefore contain $S$ rows in the same site order as the data and coordinates.
 
 With optional error terms, the implemented parameter maps are
 
@@ -122,7 +122,7 @@ $$
 
 Log links for location and scale are enabled by default. A log location link is appropriate only for a strictly positive response on the modeled scale. The identity-scale path clamps nonpositive predictions rather than rejecting them; the log scale is preferable for smooth inference.
 
-Covariates should be centered and scaled before model construction. This makes the intercept interpretable at a typical site and makes the default slope bounds \([-1,1]\) meaningful. Do not combine raw drainage area in square kilometres, elevation in metres, and precipitation in millimetres under the same default coefficient bounds without intentional rescaling and prior review.
+Covariates should be centered and scaled before model construction. This makes the intercept interpretable at a typical site and makes the default slope bounds $[-1,1]$ meaningful. Do not combine raw drainage area in square kilometres, elevation in metres, and precipitation in millimetres under the same default coefficient bounds without intentional rescaling and prior review.
 
 ## Spatial Regression Errors
 
@@ -169,9 +169,9 @@ $$
 
 `CorrelationFunctionType` names these `Exponential`, `PoweredExponential`, and `Spherical`. Every enabled component has its own correlation parameters: the observation copula, location errors, scale errors, and shape errors do not share a range automatically.
 
-Both Gaussian-process and copula covariance evaluators use `CachedMultivariateNormal`. Setting a covariance matrix invalidates its Cholesky/log-determinant cache; repeated density calls at unchanged parameters reuse that factorization. Updating a range or exponent requires a new dense \(S\times S\) factorization, with \(O(S^3)\) time and \(O(S^2)\) storage. Highly colocated sites and very long fitted ranges can make the matrix nearly singular because no nugget is estimated.
+Both Gaussian-process and copula covariance evaluators use `CachedMultivariateNormal`. Setting a covariance matrix invalidates its Cholesky/log-determinant cache; repeated density calls at unchanged parameters reuse that factorization. Updating a range or exponent requires a new dense $S\times S$ factorization, with $O(S^3)$ time and $O(S^2)$ storage. Highly colocated sites and very long fitted ranges can make the matrix nearly singular because no nugget is estimated.
 
-`SpatialDistanceMetric` selects the separation in (12) for the copula, the latent-error covariances, kriging, and the inverse-distance fallback. `Cartesian` (default) is the pinned Numerics `Tools.Distance` planar calculation: use a defensible projected coordinate reference system, pass both columns in the same linear unit, and interpret the range values in that unit. `Geodesic` interprets each row as (latitude, longitude) in decimal degrees (validated to |lat| ≤ 90, |lon| ≤ 180) and returns great-circle kilometres, so the range values are kilometres. The default range prior Uniform(\(\epsilon_{\rm mach}\), 500) is the same number in both metrics and should be reviewed for the network at hand. Components created by `ConfigureForProperCoverage` adopt the model's metric; components assigned directly must be built with the same metric, which `Validate` checks.
+`SpatialDistanceMetric` selects the separation in (12) for the copula, the latent-error covariances, kriging, and the inverse-distance fallback. `Cartesian` (default) is the pinned Numerics `Tools.Distance` planar calculation: use a defensible projected coordinate reference system, pass both columns in the same linear unit, and interpret the range values in that unit. `Geodesic` interprets each row as (latitude, longitude) in decimal degrees (validated to |lat| ≤ 90, |lon| ≤ 180) and returns great-circle kilometres, so the range values are kilometres. The default range prior Uniform($\epsilon_{\rm mach}$, 500) is the same number in both metrics and should be reviewed for the network at hand. Components created by `ConfigureForProperCoverage` adopt the model's metric; components assigned directly must be built with the same metric, which `Validate` checks.
 
 ## Gaussian-Copula Observation Dependence
 
@@ -207,11 +207,11 @@ The copula requires meaningful row alignment. If site records refer to different
 
 ### Missing observations
 
-Without copula dependence, `double.NaN` values are skipped and the available marginal contributions remain. With copula dependence, a row whose observed-site set is \(O_i\) contributes the Gaussian-copula density of the observed coordinates with the correlation submatrix \(\mathbf R_{C,O_i}\), that is, (18) restricted to \(O_i\); the unobserved coordinates are integrated out exactly because the Gaussian copula family is closed under marginalization (the copula interprets a missing site as missing at random given the observed sites). A row with a single observed site has no dependence term and a fully missing row contributes nothing. The implementation is `GaussianCopula.LogPDF(z, observedSites)`, which caches the Cholesky factorization of each missingness pattern until the correlation parameters change.
+Without copula dependence, `double.NaN` values are skipped and the available marginal contributions remain. With copula dependence, a row whose observed-site set is $O_i$ contributes the Gaussian-copula density of the observed coordinates with the correlation submatrix $\mathbf R_{C,O_i}$, that is, (18) restricted to $O_i$; the unobserved coordinates are integrated out exactly because the Gaussian copula family is closed under marginalization (the copula interprets a missing site as missing at random given the observed sites). A row with a single observed site has no dependence term and a fully missing row contributes nothing. The implementation is `GaussianCopula.LogPDF(z, observedSites)`, which caches the Cholesky factorization of each missingness pattern until the correlation parameters change.
 
 ## Full Implemented Kernel
 
-With enabled copula dependence, the contribution of row \(i\) with observed-site set \(O_i\) is
+With enabled copula dependence, the contribution of row $i$ with observed-site set $O_i$ is
 
 $$
 L_i(\Theta)=
@@ -219,7 +219,7 @@ c_{\mathbf R_{C,O_i}}(\mathbf u_{i,O_i})
 \prod_{j\in O_i} f_j(y_{ij})^{w_j}, \tag{19}
 $$
 
-with \(c_{\mathbf R_{C,O_i}}\equiv 1\) when \(|O_i|<2\). Without the copula, remove \(c\). With equal weights, \(w_j=1\). The scalar `DataLogLikelihood` is the observation log likelihood
+with $c_{\mathbf R_{C,O_i}}\equiv 1$ when $|O_i|<2$. Without the copula, remove $c$. With equal weights, $w_j=1$. The scalar `DataLogLikelihood` is the observation log likelihood
 
 $$
 \ell_D(\Theta)=
@@ -238,7 +238,7 @@ $$
 \log\phi_S(\boldsymbol\epsilon_a;\mathbf0,\sigma_a^2\mathbf R_a), \tag{20a}
 $$
 
-where \(\mathcal E\) is the set of enabled spatial-error fields. The Gaussian-process terms are prior structure on the latent errors (Level 2 of the hierarchy), so they live in `PriorLogLikelihood` and not in `DataLogLikelihood`; the posterior kernel `LogLikelihood` is \(\ell_D+\ell_P\).
+where $\mathcal E$ is the set of enabled spatial-error fields. The Gaussian-process terms are prior structure on the latent errors (Level 2 of the hierarchy), so they live in `PriorLogLikelihood` and not in `DataLogLikelihood`; the posterior kernel `LogLikelihood` is $\ell_D+\ell_P$.
 
 The flat parameter order is:
 
@@ -258,16 +258,16 @@ $$
 
 ### Priors and bounds
 
-`SetDefaultParameters` derives intercept starting values and bounds from sitewise sample means and standard deviations, and sizes the latent-error bounds from three times the spread of those site statistics in the space in which the error acts (log space under a log link, raw units under an identity link; ceiling, floor 1.0). A proposal whose site location, scale, or shape is not finite has negative-infinite likelihood. Shape intercept is initialized at zero with Uniform\((-0.5,0.5)\). `GeneralLinearFunction` assigns each covariate coefficient Uniform\((-1,1)\). Correlation ranges have Uniform\((\epsilon_{\rm mach},500)\) priors, and the powered-exponential exponent has Uniform\((0.1,2)\).
+`SetDefaultParameters` derives intercept starting values and bounds from sitewise sample means and standard deviations, and sizes the latent-error bounds from three times the spread of those site statistics in the space in which the error acts (log space under a log link, raw units under an identity link; ceiling, floor 1.0). A proposal whose site location, scale, or shape is not finite has negative-infinite likelihood. Shape intercept is initialized at zero with Uniform$(-0.5,0.5)$. `GeneralLinearFunction` assigns each covariate coefficient Uniform$(-1,1)$. Correlation ranges have Uniform$(\epsilon_{\rm mach},500)$ priors, and the powered-exponential exponent has Uniform$(0.1,2)$.
 
-For an error field with data-derived bound \(M_a\), the implementation assigns
+For an error field with data-derived bound $M_a$, the implementation assigns
 
 $$
 \sigma_a\sim{\rm Uniform}(\epsilon_{\rm mach},M_a),\qquad
 \epsilon_{a,j}\sim{\rm Uniform}(-M_a,M_a), \tag{22}
 $$
 
-and also multiplies by the joint Gaussian density in (11), which enters \(\ell_P\) in (20a). The Uniform latent-error priors therefore act as truncation constraints in addition to the Gaussian process. The posterior kernel is
+and also multiplies by the joint Gaussian density in (11), which enters $\ell_P$ in (20a). The Uniform latent-error priors therefore act as truncation constraints in addition to the Gaussian process. The posterior kernel is
 
 $$
 \pi(\Theta\mid\mathbf Y)\propto
@@ -284,7 +284,7 @@ Because the range bound 500 is fixed rather than derived from the network, coord
 
 `SpatialGEVAnalysis.RunAsync` validates the model, raises a cancellable start event, clears stale results, runs `BayesianAnalysis`, and post-processes only when MCMC reports an estimated result. Cancellation is forwarded to the sampler. The analysis constructs:
 
-- `SpatialGEVSiteResults` for each site, containing posterior means and equal-tailed credible limits for \(\xi_j,\alpha_j,\kappa_j\) and \(Q_j(1-p_E)\);
+- `SpatialGEVSiteResults` for each site, containing posterior means and equal-tailed credible limits for $\xi_j,\alpha_j,\kappa_j$ and $Q_j(1-p_E)$;
 - a point curve from the selected posterior mean or MAP parameter vector; and
 - an aggregate `AnalysisResults` curve based on arithmetic averages across sites.
 
@@ -292,7 +292,7 @@ Changing probability ordinates or credible-interval width reprocesses saved post
 
 ### Leave-one-site-out cross-validation
 
-`RunCrossValidationAsync` builds, for every site \(j\), the training network without that site (`SpatialGEV.CreateReducedModel`: the data column, coordinate row, covariate rows of every trend, copula coordinate, and latent error of site \(j\) are removed; flags, links, the remaining site weights, and every remaining parameter's value, bounds, and prior are copied), validates it, fits it with a fold `BayesianAnalysis` that carries the main analysis's sampler type, defaults policy (resolved against the fold's own parameter count), seed, interval width, output length, and point estimator (and its explicit iteration, chain, thinning, and tuning settings when the defaults are off), and predicts site \(j\) from the fold posterior at its coordinates with its own covariate rows. The T = 100 posterior-mean quantile minus the site's at-site maximum-likelihood GEV quantile is the site prediction error; the RMSE spans T = 2, 5, 10, 25, 50, and 100. The analysis model and posterior are never modified, so `CrossValidationResults` survives the run. `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, and `TotalFolds` record folds without observations, with invalid or unfittable reduced models, or with non-finite predictions; such folds hold NaN metrics and are excluded from the aggregates, and a run with no successful fold throws. CRPS is not computed (zero-filled, documented). The per-fold latent-error interpolation uses inverse-distance weighting.
+`RunCrossValidationAsync` builds, for every site $j$, the training network without that site (`SpatialGEV.CreateReducedModel`: the data column, coordinate row, covariate rows of every trend, copula coordinate, and latent error of site $j$ are removed; flags, links, the remaining site weights, and every remaining parameter's value, bounds, and prior are copied), validates it, fits it with a fold `BayesianAnalysis` that carries the main analysis's sampler type, defaults policy (resolved against the fold's own parameter count), seed, interval width, output length, and point estimator (and its explicit iteration, chain, thinning, and tuning settings when the defaults are off), and predicts site $j$ from the fold posterior at its coordinates with its own covariate rows. The T = 100 posterior-mean quantile minus the site's at-site maximum-likelihood GEV quantile is the site prediction error; the RMSE spans T = 2, 5, 10, 25, 50, and 100. The analysis model and posterior are never modified, so `CrossValidationResults` survives the run. `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, and `TotalFolds` record folds without observations, with invalid or unfittable reduced models, or with non-finite predictions; such folds hold NaN metrics and are excluded from the aggregates, and a run with no successful fold throws. CRPS is not computed (zero-filled, documented). The per-fold latent-error interpolation uses inverse-distance weighting.
 
 The regional curve reports, for every probability, the posterior summaries of the regional mean quantile computed within each retained draw: the mean curve is its posterior mean (equal to the regional mean of the site posterior means) and the bounds are its equal-tailed posterior quantiles, so cross-site posterior dependence is retained; the mode curve is the regional mean of the point-estimate site curves. The regional growth curve keeps its descriptive site-average definition. Spatial AIC/BIC use the observation log likelihood `SpatialGEV.DataLogLikelihood` in (20) at the stored MAP (parameter priors and latent-error process densities excluded, missing sites marginalized), and BIC treats each nonempty row/year as one multivariate observation block rather than counting site cells (`SpatialGEVAnalysis.ComputeInformationCriteria`), so fully missing rows are excluded and contemporaneously dependent sites are not counted as independent replicates. They remain qualified diagnostics: the MAP is not an MLE when priors are nonconstant, and weighted or dependent spatial likelihoods do not automatically satisfy ordinary AIC/BIC regularity assumptions. WAIC and PSIS-LOO at the row/year unit are the preferred comparison tools.
 
@@ -300,7 +300,7 @@ The regional curve reports, for every probability, the posterior summaries of th
 
 ## Ungauged Prediction
 
-At a new projected location \(\mathbf s_*\) with matching covariates, the model-level `PredictAtUngauged` computes the regression trend and, for each enabled error field, simple-Gaussian-process conditioning:
+At a new location in the selected coordinate metric $\mathbf s_*$ with matching covariates, the model-level `PredictAtUngauged` computes the regression trend and, for each enabled error field, simple-Gaussian-process conditioning:
 
 $$
 E(\epsilon_{a,*}\mid\boldsymbol\epsilon_a)
@@ -326,7 +326,7 @@ w_j^\star=\frac{1}{1+(S-1)\bar\rho_j},
 \bar\rho_j=\frac{1}{S-1}\sum_{k\ne j}|\hat\rho_{jk}|, \tag{26}
 $$
 
-then rescales them so \(\sum_jw_j=S\). They modify only the marginal part of (20); the copula contribution of each row remains unweighted. This is a relative correlation-based down-weighting heuristic, not an effective-sample-size reduction or a pairwise composite likelihood, and no composite-likelihood (Godambe) uncertainty adjustment follows from it; `ConfigureForProperCoverage(useWeightedLikelihood: true)` applies it and its remarks say so.
+then rescales them so $\sum_jw_j=S$. They modify only the marginal part of (20); the copula contribution of each row remains unweighted. This is a relative correlation-based down-weighting heuristic, not an effective-sample-size reduction or a pairwise composite likelihood, and no composite-likelihood (Godambe) uncertainty adjustment follows from it; `ConfigureForProperCoverage(useWeightedLikelihood: true)` applies it and its remarks say so.
 
 No method evaluates
 
@@ -407,15 +407,15 @@ Before estimation, inspect every `model.Parameters` entry, set scientifically ju
 ## Assumptions, Identifiability, and Failure Modes
 
 - **Block definition.** Rows are comparable maxima from aligned blocks; asynchronous event pairing is not repaired by the model.
-- **Marginal adequacy.** Every site follows the Numerics-sign GEV with parameter surfaces in (8)–(10). Physical upper bounds implied by \(\kappa>0\) must be checked.
+- **Marginal adequacy.** Every site follows the Numerics-sign GEV with parameter surfaces in (8)–(10). Physical upper bounds implied by $\kappa>0$ must be checked.
 - **Conditional structure.** The copula describes within-row dependence; Gaussian-process errors describe persistent spatial deviations of parameter surfaces. With few sites, the two layers and their ranges can be weakly separated.
 - **No nugget.** Colocated or near-colocated sites and long ranges can produce ill-conditioned covariance matrices.
 - **Covariate design.** Collinearity, incompatible scaling, or more regression terms than the network can support produces weak identification and prior sensitivity.
-- **Shape complexity.** Site-specific shape errors add \(S\) latent tail parameters plus covariance hyperparameters. Rare-quantile inference can become prior-dominated.
+- **Shape complexity.** Site-specific shape errors add $S$ latent tail parameters plus covariance hyperparameters. Rare-quantile inference can become prior-dominated.
 - **Stationarity.** There is no time trend in the spatial model. Changes in climate, regulation, land use, or measurement practice violate a stationary block-maxima interpretation unless encoded outside this class.
 - **Missingness.** Rows with missing sites are marginalized exactly under the Gaussian copula, which treats a missing site as missing at random given the observed sites; informative missingness is outside the model.
 - **Extrapolation.** Predictions outside observed coordinate or covariate support are not validated by an in-sample fit.
-- **Simulation.** With copula dependence enabled, `GenerateRandomValues` simulates rows through the Cholesky factor of the fitted correlation matrix (sample \(i\) of every site is one event; values grouped by site); without it the sites are independent.
+- **Simulation.** With copula dependence enabled, `GenerateRandomValues` simulates rows through the Cholesky factor of the fitted correlation matrix (sample $i$ of every site is one event; values grouped by site); without it the sites are independent.
 - **Computational scaling.** Full covariance factorization is cubic in site count for each changed spatial-parameter vector, plus one factorization per distinct missingness pattern.
 
 For life-safety applications, report posterior sensitivity to correlation family, covariate set, shape structure, priors, influential years, network definition, and coordinate system. Do not publish a regional return level without stating whether it is a site value, arithmetic site average, normalized growth factor, simultaneous-event quantity, or an areal aggregate.
@@ -436,8 +436,7 @@ The formulas and parameter bounds in this chapter were checked against the curre
 
 ### Current independent correlation and fold matrix
 
-The completeness audit now distinguishes historical same-production-path checks from independent numerical
-targets. Basic Exponential, Powered Exponential, and Spherical correlation functions are pinned on a common
+Independent numerical targets distinguish correlation laws, fitted folds, and held-out prediction. Basic Exponential, Powered Exponential, and Spherical correlation functions are pinned on a common
 distance grid that includes zero, the Spherical range boundary, and a beyond-range point. Powered Exponential
 uses smoothness 1.6 so it is not merely the exponential special case. A fixed Cartesian held-out fold freezes
 the independently fitted SciPy optimum of a three-site marginal-GEV plus Gaussian-copula likelihood, then
@@ -466,13 +465,13 @@ derived from a fixed 10-by-3 observation matrix rather
 than accepting interval widening alone. Parameter uncertainty, conditional-GP residual uncertainty,
 bootstrap resampling uncertainty, and numerical tolerances are therefore recorded as distinct
 quantities. Generator/runtime versions, seeds, inputs, parameter order, tolerances, and SHA-256 hashes
-are frozen in the verification manifest and Chunk 14 artifact. The `1e-9` absolute tolerance covers
+are frozen in the verification manifest and the associated independent artifact. The `1e-9` absolute tolerance covers
 cross-runtime arithmetic roundoff, `2e-5` relative covers independent Godambe finite-difference cancellation,
 and the bootstrap's 2% relative/0.02 near-zero tolerance is below every frozen fitted-output interval width.
 
 ### Current N=1000 recovery matrix
 
-The approved Chunk 15 recovery N is the site-by-time cross-product: ten sites with 100 observations each,
+The retained recovery sample size $N$ is the site-by-time cross-product: ten sites with 100 observations each,
 for total scalar N=1,000. Each retained fixture contains 100 complete ten-site row/year vectors, so the
 likelihood contribution count is 100 multivariate rows. Posterior draws, warmup iterations, and numerical
 quadrature points are not counted. All recovery coordinates use the Cartesian distance metric.
@@ -501,10 +500,8 @@ priors, initial values, and sampler defaults are unchanged and contain every gen
 
 The eight retained distinctions are independent homogeneous MLE and Bayesian baselines, exponential-copula
 MLE and Bayesian fits, one X/Y location-regression Bayesian fit, and positive, zero, and strongly negative
-shape regimes. `Bayesian_LargeSample_HasTighterEstimates` was consolidated because a narrower interval alone
-is not a predeclared inverse-sample-size or other statistical precision-scaling oracle. All current exact
-identities pass in fresh one-result guarded TRXs under the approved 10-by-100 design; the earlier 1,000-row
-passes are superseded rather than transferred. The result supports recovery only for these network dimensions,
+shape regimes. These comparisons support recovery for the stated ten-site by 100-row design. They do not
+test inverse-sample-size precision scaling merely by comparing interval widths. Recovery is supported only for these network dimensions,
 parents, seeds, supports, and model structures; it does not establish latent-error recovery, large-network
 performance, conditional spatial prediction, or repeated-realization coverage.
 

@@ -29,7 +29,7 @@ Q(p)=\begin{cases}
 \end{cases} \tag{GPD.2}
 $$
 
-In this sign convention the mean exists for $\kappa>-1$ and the variance for $\kappa>-1/2$. Some current Numerics moment-property guards are more conservative; non-finite or unavailable displayed moments do not change the distribution formulas. `Lambda` stores the average number of peaks per block and is cloned with the distribution; it is exposure metadata for frequency conversion, not a fourth GPD shape parameter.
+In this sign convention the mean exists for $\kappa>-1$ and the variance for $\kappa>-1/2$. Numerics uses these existence conditions, with $\kappa>-1/3$ for skewness and $\kappa>-1/4$ for kurtosis. The mode is the lower endpoint for $\kappa<1$, is nonunique (reported as `NaN`) at the uniform case $\kappa=1$, and is the upper endpoint for $\kappa>1$. `Lambda` stores the average number of peaks per block and is cloned with the distribution; it is exposure metadata for frequency conversion, not a fourth GPD shape parameter.
 
 ## Conditional and Point-Process Likelihoods
 
@@ -60,6 +60,8 @@ The example uses a threshold of 1,000 discharge units and heavy-upper-tail Numer
 ## Validation and Limitations
 
 Required evidence includes normalization, endpoint behavior, CDF/quantile inversion, the exponential limit, moment checks where finite, and GPD/GEV shape-sign parity. Point-process verification must separately validate count/exposure contributions. Tail estimates are highly threshold-sensitive: too low a threshold biases the asymptotic approximation; too high a threshold leaves too few exceedances.
+
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
 
 ## References
 

@@ -4,36 +4,36 @@
 
 [<- Previous: Bivariate Analysis](bivariate.md) | [Back to Index](../index.md) | [Next: Rating Curve ->](rating-curve.md)
 
-`CoincidentFrequencyAnalysis` propagates a fitted bivariate probability model through a deterministic tabulated response \(Z=g(X,Y)\). A typical use is converting joint flood peak and volume into maximum reservoir elevation obtained from routing simulations. The analysis performs numerical integration and posterior post-processing; it does not fit a new stochastic model to observations of \(Z\).
+`CoincidentFrequencyAnalysis` propagates a fitted bivariate probability model through a deterministic tabulated response $Z=g(X,Y)$. A typical use is converting joint flood peak and volume into maximum reservoir elevation obtained from routing simulations. The analysis performs numerical integration and posterior post-processing; it does not fit a new stochastic model to observations of $Z$.
 
 ## Applicability and Workflow Boundary
 
 The upstream `BivariateAnalysis` supplies two continuous marginal distributions and a fitted copula. The user supplies:
 
-- strictly ascending primary ordinates \(x_0,\ldots,x_{M-1}\);
-- strictly ascending secondary ordinates \(y_0,\ldots,y_{N-1}\);
-- an \(M\times N\) response matrix \(r_{ij}=g(x_i,y_j)\); and
-- the number \(K\) of output response bins.
+- strictly ascending primary ordinates $x_0,\ldots,x_{M-1}$;
+- strictly ascending secondary ordinates $y_0,\ldots,y_{N-1}$;
+- an $M\times N$ response matrix $r_{ij}=g(x_i,y_j)$; and
+- the number $K$ of output response bins.
 
-BestFit requires \(M,N\ge2\), \(5\le K\le1000\), finite response values, and strict increase of \(r_{ij}\) along both grid axes. A warning is returned when \(K>100\). The bivariate analysis must already be estimated. These checks establish numerical invertibility; they do not establish that the hydraulic or hydrologic response surface is physically valid.
+BestFit requires $M,N\ge2$, $5\le K\le1000$, finite response values, and strict increase of $r_{ij}$ along both grid axes. A warning is returned when $K>100$. The bivariate analysis must already be estimated. These checks establish numerical invertibility; they do not establish that the hydraulic or hydrologic response surface is physically valid.
 
 ## Notation
 
 | Symbol | Meaning |
 |---|---|
-| \(X,Y\) | random forcing variables with fixed or posterior-varying marginals |
-| \(Z=g(X,Y)\) | deterministic response of interest |
-| \(F_X,F_Y\) | marginal CDFs |
-| \(C\) | fitted bivariate copula CDF |
-| \(r_{ij}\) | supplied response at \((x_i,y_j)\) |
-| \(e_j\) | real-space boundary of the \(j\)-th \(Y\) integration bin |
-| \(v_j=F_Y(e_j)\) | boundary in copula space |
-| \(\zeta_i=\Phi^{-1}[F_X(x_i)]\) | Normal probability-paper coordinate for the primary grid |
-| \(u^*_{kj}\) | \(F_X\) value obtained by inverting response column \(j\) at output \(z_k\) |
-| \(F_Z(z)\) | CDF of the derived response |
-| \(A_Z(z)=1-F_Z(z)\) | response annual exceedance probability when the inputs represent annual events |
+| $X,Y$ | random forcing variables with fixed or posterior-varying marginals |
+| $Z=g(X,Y)$ | deterministic response of interest |
+| $F_X,F_Y$ | marginal CDFs |
+| $C$ | fitted bivariate copula CDF |
+| $r_{ij}$ | supplied response at $(x_i,y_j)$ |
+| $e_j$ | real-space boundary of the $j$-th $Y$ integration bin |
+| $v_j=F_Y(e_j)$ | boundary in copula space |
+| $\zeta_i=\Phi^{-1}[F_X(x_i)]$ | Normal probability-paper coordinate for the primary grid |
+| $u^*_{kj}$ | $F_X$ value obtained by inverting response column $j$ at output $z_k$ |
+| $F_Z(z)$ | CDF of the derived response |
+| $A_Z(z)=1-F_Z(z)$ | response annual exceedance probability when the inputs represent annual events |
 
-The units of \(Z\) are the units of the supplied response matrix. The analysis never infers or converts those units.
+The units of $Z$ are the units of the supplied response matrix. The analysis never infers or converts those units.
 
 ## Continuous Target and Implemented Approximation
 
@@ -44,7 +44,7 @@ F_Z(z)=P[g(X,Y)\le z]
 =\int P[X\le x^*(z,y)\mid Y=y]\,dF_Y(y), \tag{1}
 $$
 
-where \(x^*(z,y)\) solves \(g(x^*,y)=z\). BestFit approximates (1) by partitioning the \(Y\) axis into \(N\) bins represented by the response-surface columns.
+where $x^*(z,y)$ solves $g(x^*,y)=z$. BestFit approximates (1) by partitioning the $Y$ axis into $N$ bins represented by the response-surface columns.
 
 ### Output grid
 
@@ -55,7 +55,7 @@ z_{\min}=\min_{i,j}r_{ij},
 \qquad z_{\max}=\max_{i,j}r_{ij}, \tag{2}
 $$
 
-and creates \(K\) endpoint-inclusive, evenly spaced values between them. `SetZOutputValues` supports deserialization and restoration; a new `CreateFrequencyAnalysisResultsAsync` call rebuilds this grid from (2).
+and creates $K$ endpoint-inclusive, evenly spaced values between them. `SetZOutputValues` supports deserialization and restoration; a new `CreateFrequencyAnalysisResultsAsync` call rebuilds this grid from (2).
 
 ### Secondary-variable bins
 
@@ -73,11 +73,11 @@ $$
 v_0=0,\qquad v_j=F_Y(e_j),\qquad v_N=1. \tag{4}
 $$
 
-Thus all lower-tail \(Y\) probability is assigned to the first response column and all upper-tail probability to the last. This is a modeling approximation, not response-surface extrapolation in the \(Y\) direction.
+Thus all lower-tail $Y$ probability is assigned to the first response column and all upper-tail probability to the last. This is a modeling approximation, not response-surface extrapolation in the $Y$ direction.
 
 ### Primary-axis inversion
 
-For posterior realization \(s\), BestFit calculates
+For posterior realization $s$, BestFit calculates
 
 $$
 \zeta_i^{(s)}=
@@ -86,7 +86,7 @@ F_X(x_i;\eta_X^{(s)})
 \right], \tag{5}
 $$
 
-after clamping the probability to \([10^{-12},1-10^{-12}]\). Within response column \(j\), the pairs \((r_{ij},\zeta_i^{(s)})\) define a piecewise-linear function. At each \(z_k\), linear interpolation gives \(\zeta^*_{kj}\); values below or above the column range use the first or last segment for linear extrapolation. The copula-scale threshold is
+after clamping the probability to $[10^{-12},1-10^{-12}]$. Within response column $j$, the pairs $(r_{ij},\zeta_i^{(s)})$ define a piecewise-linear function. At each $z_k$, linear interpolation gives $\zeta^*_{kj}$; values below or above the column range use the first or last segment for linear extrapolation. The copula-scale threshold is
 
 $$
 u^*_{kj}=\Phi(\zeta^*_{kj}), \tag{6}
@@ -94,11 +94,11 @@ $$
 
 again clamped to the same open interval.
 
-Interpolation in Normal-score space is exactly what the implementation does. It coincides with linear interpolation in \(x\) for a Normal marginal but not for GEV, Log-Pearson III, or other nonlinear marginals.
+Interpolation in Normal-score space is exactly what the implementation does. It coincides with linear interpolation in $x$ for a Normal marginal but not for GEV, Log-Pearson III, or other nonlinear marginals.
 
 ### Copula integration
 
-For output \(z_k\), the implemented approximation is
+For output $z_k$, the implemented approximation is
 
 $$
 \widehat F_Z(z_k)=
@@ -109,25 +109,25 @@ C(u^*_{kj},v_{j+1})
 \right]. \tag{7}
 $$
 
-The boundary identities \(C(u,0)=0\) and \(C(u,1)=u\) are applied analytically, avoiding inverse-Normal calls at exact probability boundaries. Each negative column contribution caused by numerical error is replaced by zero, and the final sum is clamped to \([0,1]\). The reported curve is
+The boundary identities $C(u,0)=0$ and $C(u,1)=u$ are applied analytically, avoiding inverse-Normal calls at exact probability boundaries. Each negative column contribution caused by numerical error is replaced by zero, and the final sum is clamped to $[0,1]$. The reported curve is
 
 $$
 \widehat A_Z(z_k)=1-\widehat F_Z(z_k). \tag{8}
 $$
 
-Equation (7) is a column-bin quadrature. Accuracy depends on response smoothness, grid density, tail coverage, and the suitability of assigning the entire \(Y\)-bin probability to its representative response column.
+Equation (7) is a column-bin quadrature. Accuracy depends on response smoothness, grid density, tail coverage, and the suitability of assigning the entire $Y$-bin probability to its representative response column.
 
 ## Uncertainty Propagation
 
 The copula posterior from the upstream `BivariateAnalysis` is the required draw source.
-`MarginalXChain` and `MarginalYChain` are optional. Let \(\mathcal S\) contain the copula
+`MarginalXChain` and `MarginalYChain` are optional. Let $\mathcal S$ contain the copula
 source and each supplied marginal source. Using their actual retained counts,
 
 $$
 R=\min_{q\in\mathcal S}R_q. \tag{9}
 $$
 
-An absent marginal chain is excluded from \(\mathcal S\) and its configured point-estimate
+An absent marginal chain is excluded from $\mathcal S$ and its configured point-estimate
 distribution is reused. Before parallel processing, a Mersenne Twister initialized from CFA's
 `BayesianAnalysis.PRNGSeed` generates one without-replacement index row for every source:
 
@@ -138,7 +138,7 @@ k_{q,1},\ldots,k_{q,R}
 $$
 
 Rows are generated in fixed semantic order: copula, X marginal when present, then Y marginal
-when present. Realization \(s\) is therefore
+when present. Realization $s$ is therefore
 
 $$
 \widehat A_Z^{(s)}(z_k)=
@@ -150,9 +150,9 @@ $$
 
 with absent marginal parameter blocks replaced by their point estimates. This is independent
 product-posterior propagation across separately fitted stages, not a joint MCMC fit. Longer
-chains contribute from their complete retained range rather than only their first \(R\) draws.
+chains contribute from their complete retained range rather than only their first $R$ draws.
 
-For every \(z_k\), BestFit stores the posterior mean of \(\widehat A_Z^{(s)}(z_k)\) and
+For every $z_k$, BestFit stores the posterior mean of $\widehat A_Z^{(s)}(z_k)$ and
 equal-tail credible limits at the configured width. The point curve uses MAP or posterior-mean
 parameters according to `BayesianAnalysis.PointEstimator`. CFA's `BayesianAnalysis` does not
 run a chain; its nonnegative `PRNGSeed` controls result-generation pairing. A fixed seed,
@@ -204,10 +204,10 @@ After configuration, call `Validate()`, examine every error and warning, and onl
 ## Numerical and Engineering Cautions
 
 - **Monotonicity is mandatory.** Small response noise that reverses a column or row causes validation failure. Smooth only with a physically defensible method that preserves the governing model.
-- **The tails are collapsed in \(Y\).** All \(Y<e_1\) mass uses column 0 and all \(Y>e_{N-1}\) mass uses column \(N-1\). Extend the response grid when these regions matter.
-- **The primary axis is extrapolated.** Sparse end segments can dominate rare-response probabilities. Plot \((r_{ij},\zeta_i)\) by column and inspect the extrapolated slopes.
-- **The output domain is finite.** The generated \(z_k\) values cover only the supplied response minimum and maximum, even though column inversion extrapolates internally.
-- **AEP semantics are inherited.** Calling (8) an annual exceedance probability requires the fitted \((X,Y)\) pairs to represent annual trials. Event-based or peaks-over-threshold inputs require an exposure/rate conversion outside this analysis.
+- **The tails are collapsed in $Y$.** All $Y<e_1$ mass uses column 0 and all $Y>e_{N-1}$ mass uses column $N-1$. Extend the response grid when these regions matter.
+- **The primary axis is extrapolated.** Sparse end segments can dominate rare-response probabilities. Plot $(r_{ij},\zeta_i)$ by column and inspect the extrapolated slopes.
+- **The output domain is finite.** The generated $z_k$ values cover only the supplied response minimum and maximum, even though column inversion extrapolates internally.
+- **AEP semantics are inherited.** Calling (8) an annual exceedance probability requires the fitted $(X,Y)$ pairs to represent annual trials. Event-based or peaks-over-threshold inputs require an exposure/rate conversion outside this analysis.
 - **No response error model is present.** The surface is deterministic and exactly known to the algorithm.
 - **Grid refinement is not an uncertainty interval.** Compare successively refined surfaces and treat numerical convergence separately from statistical posterior uncertainty.
 - **Probability clipping is numerical protection.** It prevents infinite Normal scores; it also imposes a finite effective tail boundary.

@@ -158,7 +158,7 @@ Model fitting ends when parameter or posterior results have been obtained. Quant
 | Analysis lifecycle | `src/RMC.BestFit/Analyses/Support/IAnalysis.cs`, `AnalysisRunCompletedEventArgs.cs` | analysis-specific unit tests |
 | Compile-checked example | `src/RMC.BestFit.Tests/Documentation/Examples/FoundationExamples.cs` | `TechnicalReferenceDocumentationTests` |
 
-The verification project is intentionally long-running and is not part of the normal documentation gate. A validation claim in a later chapter names the exact test or published result on which it relies.
+The numerical verification project supplies claim-specific independent comparisons. A passing construction, serialization, or compiled-example test establishes its software contract; it does not establish estimation accuracy. The later chapters and the verification-evidence appendix identify the independent results that support scientific claims.
 
 ## References
 

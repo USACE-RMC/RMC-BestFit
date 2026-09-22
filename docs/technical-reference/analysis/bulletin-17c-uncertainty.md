@@ -32,7 +32,7 @@ $$
 with
 
 $$
-\mathbf M=mathbf D^\mathsf T\mathbf W\mathbf S\mathbf W\mathbf D
+\mathbf M=\mathbf D^\mathsf T\mathbf W\mathbf S\mathbf W\mathbf D
 +I_R\mathbf H. \tag{4}
 $$
 
@@ -148,7 +148,7 @@ Report the following with every result: parent family, data units, low-outlier r
 
 `ComputeCohnStyleConfidenceIntervals()` is a separate public diagnostic and does not supply the main `AnalysisResults`. It uses two-node-per-dimension nested quadrature around the GMM estimate. At each outer point it recomputes covariance, constructs an inner grid, estimates the covariance of quantile and quantile standard error, and applies a Cohn-style adjusted Student-$t$ formula with regression coefficient $\beta_1$ and effective degrees of freedom $\nu$ [2]. It enforces monotone lower and upper curves afterward.
 
-The quantile helper instantiates Pearson III in base-10 logarithmic space and exponentiates interval bounds by $10$, so the diagnostic is mathematically limited to LP3. `ComputeCohnStyleConfidenceIntervals()` now checks that scope before using the helper: it throws `NotSupportedException` for the five non-LP3 parents and for LP3 data containing low outliers, uncertain observations, interval censoring, or threshold censoring. The report-side asymptotic-quantile-variance calculation uses the same guard and prints an unavailable reason instead of applying LP3 formulas. Cohn value/parity verification remains deferred.
+The quantile helper instantiates Pearson III in base-10 logarithmic space and exponentiates interval bounds by $10$, so the diagnostic is mathematically limited to LP3. `ComputeCohnStyleConfidenceIntervals()` checks that scope before using the helper: it throws `NotSupportedException` for the five non-LP3 parents and for LP3 data containing low outliers, uncertain observations, interval censoring, or threshold censoring. The report-side asymptotic-quantile-variance calculation uses the same guard and prints an unavailable reason instead of applying LP3 formulas. Cohn value/parity verification remains deferred.
 
 ## Lifecycle, Cancellation, and Failure Semantics
 
@@ -158,13 +158,15 @@ Changing `UncertaintyMethod` clears results. `CancelAnalysis()` cancels the oute
 
 ## Validation Evidence and Required Calibration
 
-Fast unit tests cover configuration, serialization, linked-function behavior, WEDS direction, Yeo-Johnson fallback, pivotal bounds repair, result DTOs, report diagnostics, midpoint-moment construction, ranked candidate validity/order, and the Cohn scope guard for all unsupported parents and data conditions. Fourteen seeded reliability cells for ordinary and pivotal bootstrap across Examples 1 through 7 were executed independently: 1,000 outputs per method for Examples 1-6 and 500 per method for highly censored Example 7. The final unguarded sweep produced 13,000 finite outputs from exactly 13,000 realizations with zero retries, Mahalanobis rejections, optimizer fallbacks, parent substitutions, failed GMM candidates, and final first-chance exceptions from Numerics or RMC.BestFit.
+Fast tests cover configuration, serialization, linked-function behavior, WEDS direction, fallback state, pivotal bound repair, result accounting, ranked initialization, and the Cohn scope guard. The [verification report](../../verification/report/data-distributions-b17c.md) records current moment, covariance, published-example, interval, and refit-reliability comparisons. Their acceptance rules remain distinct: matching a published parameter tuple, producing finite refits, and demonstrating nominal interval coverage are not interchangeable.
 
 The formal current-path parameter-parity source is `B17CExampleTests.Test_Example1` through `Test_Example7`. Each compares LP3 GMM mean, standard deviation, and skewness with the published Bulletin 17C worked-example values at absolute tolerance `1E-3`. All seven exact methods passed on 28 July 2026 with zero failures or skips. Parent-family covariance checks, uncertain-data variants, pointwise/aggregate moment consistency, coverage experiments, and Cohn interval-value verification are separate claims.
 
 Before peer-review release, compare the bare pivotal construction conditionally with its paired objective/generalized-posterior target, with seeds, parent parameters, sample sizes, censoring designs, interval levels, replicate counts, and tolerances archived. Linked-MVN tuning, failed-replicate replacement, pivotal smoothing/clipping, and the model-bound repair require separate sensitivity evidence. Existing repeated-sampling coverage experiments may characterize deployed interval behavior, but coverage alone is not proof of the pivotal bias correction described in [6].
 
 Implementation symbols: `Bulletin17CAnalysis.RunAsync`, `RunUncertaintyQuantificationAsync`, `GetParameterSetsFromMultivariateNormal`, `GetParameterSetsFromLinkedMultivariateNormal`, `GetParameterSetsFromParametricBootstrap`, `GetParameterSetsFromPivotalBootstrap`, `ComputeCohnStyleConfidenceIntervals`, and `GeneralizedMethodOfMoments.GetCovariance`.
+
+The current [B17C evidence](../../verification/report/data-distributions-b17c.md) reports 1,000 accepted refits: 947 reached outer GMM convergence and 53 reached the outer cap. Finite accepted outputs are numerical reliability evidence, not coverage calibration. The Kamp/Viglione systematic-only $Q_{1000}$ lower endpoint also needs a source qualification: the retained test target is 163 m³/s, whereas Skahill et al. (2016), Table 2, reports 183 m³/s. Passing the retained target does not demonstrate agreement with that published endpoint. Neither target nor the numerical contract is changed by this reference.
 
 ## References
 

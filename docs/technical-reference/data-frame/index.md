@@ -212,13 +212,13 @@ Do not use informal minimum-sample-size rules as proof of adequacy. Identifiabil
 
 ## Plotting positions and derived state
 
-For an uncensored exact sample of size \(n\), let \(r=1\) denote the largest observation. With plotting parameter \(\alpha\), the stored exceedance plotting position is
+For an uncensored exact sample of size $n$, let $r=1$ denote the largest observation. With plotting parameter $\alpha$, the stored exceedance plotting position is
 
 $$
 p_{E,r}=\frac{r-\alpha}{n+1-2\alpha}. \tag{10}
 $$
 
-The default \(\alpha=0\) is the Weibull convention, \(p_{E,r}=r/(n+1)\). Distribution fitting evaluates quantiles at the nonexceedance complement \(1-p_{E,r}\). Threshold, interval, uncertain, and low-outlier records use the grouped historical-data arrangement implemented by `CalculatePlottingPositions()` rather than the uncensored shortcut in Equation (10).
+The default $\alpha=0$ is the Weibull convention, $p_{E,r}=r/(n+1)$. Distribution fitting evaluates quantiles at the nonexceedance complement $1-p_{E,r}$. Threshold, interval, uncertain, and low-outlier records use the grouped historical-data arrangement implemented by `CalculatePlottingPositions()` rather than the uncensored shortcut in Equation (10).
 
 Explicit observations are ranked by their representative magnitude, including exact, uncertain, and interval observations whose `Value` is below a covering perception threshold. For HS input preparation, such an observation uses an effective plotting threshold of negative infinity. Its recorded value, index, uncertainty distribution or interval bounds, low-outlier flag, and actual perception threshold are retained. The threshold-only years remain censored evidence and retain their HS weighting. This distinction follows the separation of recorded observations from unobserved censored years in Bulletin 17C, Appendix 5 [3]. Input order may assign positions to unobserved censored years in the reference algorithm; it does not rank BestFit's recorded magnitudes.
 

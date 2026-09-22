@@ -27,7 +27,7 @@ This glossary fixes the vocabulary used across statistical, hydrologic, and API 
 | Maximum a posteriori (MAP) | Parameter vector maximizing the implemented posterior kernel, or the highest-target saved draw when that is the documented API convention. |
 | Maximum likelihood estimate (MLE) | Parameter vector maximizing the implemented data likelihood within its bounds. |
 | Measurement-error model | Probability distribution for an uncertain observation whose convolution with the parent distribution defines its likelihood contribution. |
-| Nonexceedance probability | \(F(x)=P(X\le x)\). For AEP \(p_E\), the corresponding quantile probability is \(1-p_E\). |
+| Nonexceedance probability | $F(x)=P(X\le x)$. For AEP $p_E$, the corresponding quantile probability is $1-p_E$. |
 | Nonstationarity | Explicit dependence of one or more model parameters on time or covariates. It does not arise merely because a sample contains a trend. |
 | Parameter prior | Density assigned directly to a fitted coordinate. Quantile priors and penalties are derived terms and are documented separately. |
 | Perception threshold | Time-varying magnitude above or below which an event would have been observed or recorded during a historical period. |
@@ -36,7 +36,7 @@ This glossary fixes the vocabulary used across statistical, hydrologic, and API 
 | Prior predictive distribution | Distribution implied by the sampling model averaged over the prior before conditioning on the observed sample. |
 | Pseudo-likelihood | Objective assembled from transformed observations or component densities that is not the full joint-data likelihood. Its uncertainty interpretation must be stated. |
 | Quantile prior | Prior information expressed on one or more distribution quantiles and transformed into the fitted parameter coordinates with the implemented Jacobian convention. |
-| Return period | \(T=1/p_E\) under the applicable stationary annual-trial convention. It is an average recurrence measure, not a deterministic schedule. |
+| Return period | $T=1/p_E$ under the applicable stationary annual-trial convention. It is an average recurrence measure, not a deterministic schedule. |
 | Systematic record | Period during which observations were collected under a regular measurement program with documented completeness. |
 | Tail dependence | Limiting probability of one variable being extreme conditional on another being extreme. Central correlation is not a substitute. |
 | Threshold observation | Count or record summarized relative to perception bounds; not the same as a single interval-censored observation. |

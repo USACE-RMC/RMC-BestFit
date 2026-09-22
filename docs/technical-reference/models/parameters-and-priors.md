@@ -151,7 +151,7 @@ $$
 \tag{7}
 $$
 
-where $I_J$ and $I_Q$ indicate enabled and structurally valid options. The scalar and named pointwise-prior paths contain the same parameter, Jeffreys-scale, quantile, and quantile-Jacobian contributions. This reconciles the earlier consistency concern: in the current source, summing `PriorComponent.LogLikelihood` values agrees with `PriorLogLikelihood` for a valid finite state.
+where $I_J$ and $I_Q$ indicate enabled and structurally valid options. The scalar and named pointwise-prior paths contain the same parameter, Jeffreys-scale, quantile, and quantile-Jacobian contributions. Summing `PriorComponent.LogLikelihood` values agrees with `PriorLogLikelihood` for a valid finite state.
 
 For a nonstationary univariate model, the candidate vector contains trend coefficients, and the parameter priors in Equation (1) apply directly to those coefficients. Distribution-dependent prior terms (the optional Jeffreys scale term, quantile-prior densities, and the quantile Jacobian) are evaluated using distribution parameters predicted at the last, most-recent index in `DataFrame.FullTimeSeries`. They are evaluated once at that reference time, not once per historical observation; `ParameterTimeIndex` remains reserved for prediction and display. This present-condition convention is consistent with the published quantile-prior workflow of Viglione et al. [2](#ref-2). It anchors an expert quantile statement to the final observed time step, so analysts must document that reference time when the distribution changes through time.
 
@@ -171,8 +171,22 @@ For a nonstationary univariate model, the candidate vector contains trend coeffi
 | Parameter state and validation | `src/RMC.BestFit/Models/Support/ModelParameter.cs` | `src/RMC.BestFit.Tests/Models/Support/ModelParameterTests.cs` |
 | Quantile-prior representation | `src/RMC.BestFit/Models/Support/QuantilePrior.cs` | serialization and validation unit tests |
 | Processing and full prior | `src/RMC.BestFit/Models/UnivariateDistribution/UnivariateDistribution.cs` | `src/RMC.BestFit.Verification/ModelEstimation/PointwiseLogLikelihoodTests.cs` and univariate verification tests |
-| Published quantile-prior workflow | Viglione et al. data and `ViglioneEtAlTests.cs` | long-running verification project; not part of the fast gate |
+| Published quantile-prior workflow | Viglione et al. data and `ViglioneEtAlTests.cs` | published-workflow comparison with the endpoint qualification below |
 | Compile-checked API | `src/RMC.BestFit.Tests/Documentation/Examples/ParameterPriorExamples.cs` | `TechnicalReferenceDocumentationTests` |
+
+### A worked information-combination model
+
+For independent $y_i\sim N(\mu,\sigma^2)$ with known $\sigma$ and prior $\mu\sim N(m_0,\tau^2)$, completing the square in the log posterior gives
+
+$$
+v_n=\left(\frac{n}{\sigma^2}+\frac{1}{\tau^2}\right)^{-1},\qquad
+m_n=v_n\left(\frac{n\overline y}{\sigma^2}+\frac{m_0}{\tau^2}\right),\qquad
+\mu\mid y\sim N(m_n,v_n).\tag{PR.20}
+$$
+
+The data and prior contribute precisions $n/\sigma^2$ and $1/\tau^2$. A narrow prior contributes more precision; as $n$ grows, the data generally dominate a fixed prior. This conjugate example is an independent oracle for Bayesian estimation, not a substitute for the nonlinear posterior in a general flood model. A future observation additionally has variance $\sigma^2$, so its predictive variance is $v_n+\sigma^2$. This separates parameter uncertainty from observation variability without conflating either with model-form uncertainty.
+
+Generic prior-predictive sampling draws marginal parameter priors independently. It does not sample additional soft coupled-prior terms in the complete joint target; models with quantile, ordering, or spatial-process coupling therefore require the limitation in [Predictive Checks](../estimation/predictive-checks.md). The Kamp/Viglione published-workflow comparison also retains the systematic-only $Q_{1000}$ lower target 163 m³/s, while Skahill et al. (2016), Table 2, gives 183 m³/s. See the [qualified source comparison](../../verification/report/data-distributions-b17c.md); agreement with that retained target is not full published-endpoint parity.
 
 ## References
 

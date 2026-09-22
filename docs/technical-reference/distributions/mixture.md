@@ -108,7 +108,7 @@ m=
 \end{cases} \tag{9}
 $$
 
-Every sampler-target evaluation performs this affine expansion inside BestFit before invoking the established full-$K$ likelihood and prior methods. A proposal is feasible only when all sampled weights are finite and nonnegative and the derived $w_K$ is finite and nonnegative. An infeasible proposal has log target $-\infty$; BestFit does not clamp, renormalize, or mutate the proposal. Numerics receives only the expanded full-$K$ physical vector and retains its existing copy-and-normalize boundary.
+Every sampler-target evaluation performs this affine expansion inside BestFit before invoking the established full-$K$ likelihood and prior methods. Sampled weights must be finite and nonnegative. A residual weight below $-10^{-12}\max(1,m)$ is rejected; a negative residual within that roundoff tolerance is set to zero in the expanded vector. Other infeasible proposals have log target $-\infty$. This narrow boundary repair does not renormalize the sampled coordinates or mutate the caller's proposal. Numerics receives only the expanded full-$K$ physical vector and retains its existing copy-and-normalize boundary.
 
 All $K$ configured weight-prior factors remain active even though only $K-1$ weights are sampled:
 
@@ -210,23 +210,11 @@ The public model and project configuration remain full $K$, while new posterior 
 
 ## Validation
 
-Fast tests cover full-$K$ public counts and XML prior round trips; $K-1$ sampler dimensions, ordering, persistence, residual reconstruction, and infeasible rejection; enforcement of the derived weight's configured prior; scalar/pointwise prior identity; analytical EM covariance; sampled-coordinate diagnostics; physical parameter-set display without stored-array mutation; legacy full-$K$ results; frequency-curve processing; exact-only atom derivation; analytical hurdle identities; simulation; invalid positive mass; negative exact values; mixed likelihoods; and impossible rows.
+Fast contracts cover the full-$K$ public boundary, $K-1$ sampled representation, derived-weight priors, residual roundoff, likelihood decomposition, covariance, diagnostics, persistence, and frequency-curve processing.
 
-Six focused **RMC.BestFit.Verification** fixtures generate $n=1000$ observations with seed 12345
-through `MixtureModel.GenerateRandomValues`, jointly verifying the production generator and
-recovery paths. The three EM parity results remain current because public EM is unchanged. The
-three Bayesian results predate identified $K-1$ sampling and require separately authorized focused reruns.
+The [mixture verification report](../../verification/report/mixture-analysis.md) separates the independent scikit-learn two-Normal mixture optimum from the retained six generation/recovery cells. A production-path comparison can protect a representation contract, but it is not an independent optimum oracle. The external comparison uses the same observations, orders components by mean, reconciles all physical weights and scales, and checks the common likelihood as well as the fitted result.
 
-Three parity fixtures compare BestFit with Numerics using pre-fit tolerance $10^{-10}$, fitted parity tolerance $10^{-8}$, and recovery tolerance 0.1:
-
-1. two-component Normal, weights 0.3/0.7;
-2. positive-hurdle two-component Normal, $\pi_0=0.1$, weights 0.3/0.6; and
-3. three-component Normal, weights 0.2/0.3/0.5.
-
-Three corresponding `MixtureAnalysis` fixtures retain their declared Bayesian recovery settings and
-acceptance gates, but require explicitly authorized reruns after the parameterization change.
-
-See the [mixture verification report](../../verification/mixture.md).
+Bayesian recovery assesses identified component parameters and weights under the declared sample and prior settings, with central 95% posterior inclusion and explicit R-hat/ESS gates. Label switching and poorly separated components remain limitations: a smooth fitted mixture density can coexist with weakly identified component parameters. The evidence does not justify interpreting every fitted component as a distinct physical flood mechanism.
 
 ## Implementation and Verification Traceability
 

@@ -54,9 +54,9 @@ $$
 f(x)=\frac{1}{\alpha}u^{1/\kappa-1}F(x)^{1-h}. \tag{K4.5}
 $$
 
-For $\kappa=0$, the continuous density limit is $f(x)=\exp(-z)F(x)^{1-h}/\alpha$. The implementation evaluates this branch directly. Distribution support changes with $(\kappa,h)$, and all finite shape pairs define a Kappa distribution when $\alpha>0$; moment existence is a separate condition.
+For $\kappa=0$, the continuous density limit is $f(x)=\exp(-z)F(x)^{1-h}/\alpha$. The implementation evaluates this branch directly. Support depends on $(\kappa,h)$. Every finite shape pair defines a Kappa distribution for $\alpha>0$; moment existence is separate.
 
-Numerics computes mean, standard deviation, skewness, and kurtosis by a cached 1,000-interval numerical central-moment calculation, and finds the mode by Brent maximization between the 0.001 and 0.999 quantiles. Tail-dominated moments and boundary modes require independent checks.
+Numerics checks moment existence before integration. It integrates the standardized quantile over probability space, centers before higher powers, and applies location and scale afterward. Nonexistent or numerically unresolved moments return `NaN`. Mode evaluation includes support boundaries and limiting branches; it is not restricted to the central 99.8% of the distribution. Tail-dominated moments still require interpretation in light of their existence conditions and finite numerical precision.
 
 ## Likelihood and Inference
 
@@ -79,6 +79,8 @@ The example uses nonzero shapes to illustrate the general branch. It demonstrate
 ## Validation
 
 Analytical tests verify the zero-$\kappa$ density as the derivative of the CDF, CDF/quantile inversion, support, normalization, and two-sided continuity at the limiting branch. A finite-shape regression spans all four sign combinations of $(\kappa,h)$ and verifies admissibility, monotone quantiles, CDF/quantile round trips, positive interior density, and support endpoints. Independent full-family comparisons cover nonzero-shape behavior, zero-$h$ branches, special-family identities, and tail support against Hosking's formulation.
+
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
 
 ## References
 

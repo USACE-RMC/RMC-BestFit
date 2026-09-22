@@ -33,7 +33,7 @@ $$
 
 After success, `MaximumLogLikelihood` equals the maximum value of (MAP.3), despite the property's likelihood-only name. It is a full log-posterior kernel. `BestParameterSet.Fitness` stores its negative under the Numerics optimizer convention.
 
-MAP depends on parameterization: the mode of $p(\theta\mid y)$ does not generally transform into the mode of $p(g(\theta)\mid y)$. The Jacobian of a scientifically intended reparameterization therefore matters. Quantile-prior Jacobians documented in the priors chapter are part of the implemented target, whereas an arbitrary display transformation is not.
+MAP depends on coordinates: transforming the mode of $p(\theta\mid y)$ need not give the mode of $p(g(\theta)\mid y)$. The Jacobian of a scientifically intended reparameterization therefore matters. Quantile-prior Jacobians documented in the priors chapter are part of the implemented target, whereas an arbitrary display transformation is not.
 
 ## Optimization and Failure States
 
@@ -109,7 +109,7 @@ private static double[] EstimateByMaximumAPosteriori(IModel model)
 }
 ```
 
-In practice, validate prior support and units before fitting, retain the decomposition into data and prior log contributions, compare multiple starts, and use the MAP primarily as an initializer or representative mode. For design quantiles, run the Bayesian analysis and propagate every retained posterior draw through the quantile function.
+Validate prior support and units, retain separate data and prior log contributions, and compare starting points. MAP supplies an initializer or representative mode; design-quantile uncertainty requires propagating retained posterior draws through the quantile function.
 
 ## Assumptions, Limitations, and Verification
 
@@ -117,9 +117,9 @@ In practice, validate prior support and units before fitting, retain the decompo
 - Improper priors can yield a usable posterior, but their arbitrary normalizing constants prevent marginal-likelihood interpretation and complicate model comparison.
 - Modes on bounds and singular curvature require scientific review.
 - A local Gaussian approximation can be seriously misleading for skewed, heavy-tailed, truncated, weakly identified, or multimodal posteriors.
-- Compile checking verifies the API example. Numerical parameter-recovery and posterior-comparison tests reside in the prohibited long-running Verification project and were not executed here.
+- Compile checking verifies the API example. The [estimation verification report](../../verification/report/estimation-diagnostics.md) separately records numerical parameter-recovery, posterior, profile, and information-criterion comparisons.
 
-Implementation symbols: `MaximumAPosteriori`, `CovarianceComputationStatus`, `IModel.LogLikelihood`, `IModel.DataLogLikelihood`, `IModel.PriorLogLikelihood`, `NumericalDiff.ComputeHessian`, `TryGetCovarianceMatrix`, `GetCovarianceMatrix`, `ProfileLikelihood`, `ParameterConfidenceIntervals`, `GetAIC`, and `GetBIC`.
+Source and API mapping: [implementation-source index](../appendices/implementation-source-index.md) and [API traceability matrix](../api-traceability.md).
 
 ## References
 

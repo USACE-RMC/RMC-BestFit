@@ -8,7 +8,7 @@
 
 ## Independent Maximum and Minimum
 
-Let \(X_1,\ldots,X_K\) have CDFs \(F_k\), densities \(f_k\), and survival functions \(S_k=1-F_k\). If the components are independent, the maximum \(M=\max_k X_k\) has
+Let $X_1,\ldots,X_K$ have CDFs $F_k$, densities $f_k$, and survival functions $S_k=1-F_k$. If the components are independent, the maximum $M=\max_k X_k$ has
 
 $$
 F_M(x)=P(X_1\le x,\ldots,X_K\le x)
@@ -20,7 +20,7 @@ f_M(x)=\sum_{k=1}^{K}
 f_k(x)\prod_{j\ne k}F_j(x). \tag{2}
 $$
 
-The minimum \(m=\min_k X_k\) has
+The minimum $m=\min_k X_k$ has
 
 $$
 S_m(x)=P(X_1>x,\ldots,X_K>x)
@@ -36,7 +36,7 @@ f_m(x)=\sum_{k=1}^{K}
 f_k(x)\prod_{j\ne k}S_j(x). \tag{5}
 $$
 
-Numerics evaluates the independent log densities in log space. Its ordinary **PDF** also applies a floor of \(10^{-300}\) to prevent a zero density from entering downstream log-likelihood calculations. This floor is a numerical convention, not physical tail probability.
+Numerics evaluates the independent log densities in log space. Its ordinary **PDF** also applies a floor of $10^{-300}$ to prevent a zero density from entering downstream log-likelihood calculations. This floor is a numerical convention, not physical tail probability.
 
 ## Dependence Models
 
@@ -46,10 +46,10 @@ The underlying Numerics distribution exposes four **Probability.DependencyType**
 |---|---|---|
 | **Independent** | products/unions in equations (1) and (4) | independent component block values |
 | **PerfectlyPositive** | comonotonic joint/union probability | all components share a probability rank |
-| **PerfectlyNegative** | Gaussian-copula calculation using equicorrelation just above \(-1/(K-1)\) | limiting negative association approximation |
+| **PerfectlyNegative** | Gaussian-copula calculation using equicorrelation just above $-1/(K-1)$ | limiting negative association approximation |
 | **CorrelationMatrix** | Gaussian copula with supplied matrix | user-specified latent-normal correlation |
 
-For a maximum under a Gaussian copula \(C_R\),
+For a maximum under a Gaussian copula $C_R$,
 
 $$
 F_M(x)=C_R\!\left(F_1(x),\ldots,F_K(x)\right). \tag{6}
@@ -57,27 +57,27 @@ $$
 
 For a minimum, the implementation obtains the corresponding union probability. For non-independent settings, Numerics computes the scalar density by numerical differentiation of the composite CDF. Accuracy can therefore deteriorate in very flat tails or near support boundaries.
 
-The correlation matrix describes dependence among latent normal scores, not Pearson correlation among flood magnitudes. It must be finite, symmetric, bounded in \([-1,1]\), have unit diagonal, have dimension \(K\times K\), and be strictly positive definite for the multivariate-normal implementation. Dependence is not estimated by **CompetingRisksModel**; it is fixed configuration supplied through the underlying Numerics distribution or through a parent **CompositeAnalysis**.
+The correlation matrix describes dependence among latent normal scores, not Pearson correlation among flood magnitudes. It must be finite, symmetric, bounded in $[-1,1]$, have unit diagonal, have dimension $K\times K$, and be strictly positive definite for the multivariate-normal implementation. Dependence is not estimated by **CompetingRisksModel**; it is fixed configuration supplied through the underlying Numerics distribution or through a parent **CompositeAnalysis**.
 
 ## Observation Likelihood
 
-Let \(\boldsymbol\theta=(\boldsymbol\theta_1^\mathsf T,\ldots,\boldsymbol\theta_K^\mathsf T)^\mathsf T\) be the concatenated component parameter vector. There are no mixture weights. For exact independent block outcomes \(y_i\),
+Let $\boldsymbol\theta=(\boldsymbol\theta_1^\mathsf T,\ldots,\boldsymbol\theta_K^\mathsf T)^\mathsf T$ be the concatenated component parameter vector. There are no mixture weights. For exact independent block outcomes $y_i$,
 
 $$
 \ell_D(\boldsymbol\theta)
 =\sum_{i=1}^{n}\log f_C(y_i\mid\boldsymbol\theta), \tag{7}
 $$
 
-where \(f_C\) is equation (2), equation (5), or the numerically differentiated dependent composite density. Low outliers, uncertain records, intervals, and perception-threshold counts use the same CDF/survival decomposition as [Data Frame and Observation Likelihood](../data-frame/index.md), but all probabilities are evaluated on the composite distribution.
+where $f_C$ is equation (2), equation (5), or the numerically differentiated dependent composite density. Low outliers, uncertain records, intervals, and perception-threshold counts use the same CDF/survival decomposition as [Data Frame and Observation Likelihood](../data-frame/index.md), but all probabilities are evaluated on the composite distribution.
 
-For example, an interval \((a_i,b_i]\) contributes
+For example, an interval $(a_i,b_i]$ contributes
 
 $$
 \log\left[F_C(b_i\mid\boldsymbol\theta)
 -F_C(a_i\mid\boldsymbol\theta)\right], \tag{8}
 $$
 
-and an uncertain observation with error density \(g_i\) contributes the normalized numerical approximation to
+and an uncertain observation with error density $g_i$ contributes the normalized numerical approximation to
 
 $$
 \log\int g_i(x)f_C(x\mid\boldsymbol\theta)\,dx. \tag{9}
@@ -87,7 +87,7 @@ The pointwise method returns one contribution per exact, uncertain, interval, or
 
 ## Priors and Posterior
 
-Each component parameter receives its configured scalar prior. Optional scale terms add \(-\log s_k\) for recognized positive component scales. The model forces a single quantile prior; if enabled, it is evaluated on the quantile of the composite maximum or minimum:
+Each component parameter receives its configured scalar prior. Optional scale terms add $-\log s_k$ for recognized positive component scales. The model forces a single quantile prior; if enabled, it is evaluated on the quantile of the composite maximum or minimum:
 
 $$
 \ell_Q(\boldsymbol\theta)
@@ -96,7 +96,7 @@ F_C^{-1}(1-\alpha_Q\mid\boldsymbol\theta)
 \right]. \tag{10}
 $$
 
-The complete posterior log target is \(\ell_D+\ell_P\). Since the components are not observed separately, their parameters may be weakly identified when their distributions overlap or one component dominates the composite tail.
+The complete posterior log target is $\ell_D+\ell_P$. Since the components are not observed separately, their parameters may be weakly identified when their distributions overlap or one component dominates the composite tail.
 
 ## Compile-Checked Maximum Configuration
 
@@ -144,27 +144,13 @@ The same seed reproduces the same sample within each mode. Invalid user matrices
 
 ## Recovery Verification
 
-The recovery supplement reproduces eight min/max fixtures from pinned RMC.Numerics
-commit `c361f2864428a98a33d6072ffa9bc11ac360839d` and adds correlated minimum and maximum
-fixtures at latent correlation 0.6. Each population is generated through the BestFit model,
-then fitted by both the production Differential Evolution MLE and `CompetingRiskAnalysis`.
+The [current verification report](../../verification/report/competing-risk-analysis.md) uses three 1,000-observation designs: an independent minimum of two Weibulls, an independent maximum of a Weibull and Gumbel, and a correlated two-Weibull minimum with fixed Gaussian correlation 0.6. Three MLE cells and the two independent Bayesian cells form the retained recovery matrix.
 
-Bayesian recovery deliberately leaves every DEMCzs sampling setting at its production default.
-`CompetingRiskAnalysis` initializes the sampler separately by estimating the posterior mode with
-default Differential Evolution, computing a bounded posterior Hessian, inflating its covariance
-by 1.5, and drawing the complete initial population with the sampler seed. Singular information
-uses a regularized Moore-Penrose covariance only for initialization; it does not convert an
-unavailable public MAP covariance into reportable posterior uncertainty. The best feasible draws
-seed the chains, and initialization failure resets the sampler to its randomized policy. The
-verification asserts both the resolved DEMCzs defaults and retained `UserDefined` initialization,
-making the recovery family secondary evidence for default sampler configuration as well as for
-the combined distribution. Acceptance is based primarily on parent-CDF recovery because aggregate
-minima and maxima do not generally identify every child parameter. Direct parameter gates are
-limited to the contrasting two-Weibull shapes and the separated two-Normal means. All ten MLE
-methods and four Default-DEMCzs methods are included in the accepted evidence set. Six additional
-Bayesian fixtures are excluded from the supported recovery claim. See
-[Competing-Risk Analysis](../../verification/report/competing-risk-analysis.md) for
-fixtures, seeds, diagnostics, predeclared tolerances, and the explicit evidence boundary.
+The Bayesian maximum experiment uses a Weibull with scale 100 and shape 3, a Gumbel with location 80 and scale 20, bounded parameter priors, and `UseJeffreysRuleForScale = false`. Its DEMCzs sampler settings remain the defaults. This prior choice is material: as a subordinate Weibull scale approaches zero, the maximum likelihood can remain finite because the Gumbel explains the observations. Multiplying that likelihood by the optional reciprocal-scale term can then favor the collapsing component. The passing experiment therefore supports the stated prior configuration; it does not establish recovery for this maximum model with the optional Jeffreys multiplier enabled. Inspect both component identification and prior behavior near boundaries when interpreting aggregate maxima.
+
+Each component must contribute appreciably before recovery is assessed: theoretical control probability at least 15%, at least 100 known synthetic winners, at least 100 fractional likelihood memberships, dominance over at least 10% of the probability range, and an interior change of dominance. These conditions make the bend in the combined frequency curve informative about both populations. Winning labels are retained only for checking the experiment; estimation receives scalar minima or maxima.
+
+MLE parents must be within 1.96 unregularized standard errors, with additional combined-CDF checks. The independent Bayesian designs require central 95% parent inclusion, R-hat below 1.10, and ESS at least 100. These acceptance limits do not establish recovery for arbitrary overlaps, fixed correlations, or maximum models. In particular, correlated Bayesian recovery remains outside the supported claim.
 
 ## Assumptions and Limitations
 
@@ -188,7 +174,7 @@ fixtures, seeds, diagnostics, predeclared tolerances, and the explicit evidence 
 | Composite CDF/PDF and dependence | pinned **Numerics/Distributions/Univariate/CompetingRisks.cs** |
 | Probability bounds/copula helpers | pinned **Numerics/Data/Statistics/Probability.cs** |
 | Dependency simulation evidence | **Verification/Univariate/CompetingRiskTests/CompetingRiskDependencyVerificationTests.cs** |
-| MLE/default-DEMCzs recovery evidence | **Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs** and helper partial |
+| MLE and DEMCzs recovery evidence, with the stated maximum-model prior | **Verification/Univariate/CompetingRiskTests/CompetingRiskRecoveryTests.cs** and helper partial |
 
 ## References
 

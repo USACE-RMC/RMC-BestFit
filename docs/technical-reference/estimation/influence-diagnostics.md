@@ -51,7 +51,7 @@ D_i^{\mathrm{API}}=
 \frac{\mathbf s_i^{\mathsf T}\mathbf J^{-1}\mathbf s_i}{p}. \tag{INF.5}
 $$
 
-MLE uses the data-likelihood Hessian; MAP uses the full posterior Hessian but still uses a data score in (INF.3). These are local approximations and do not refit after deletion. The familiar linear-model suggestions $D_i>1$ or $4/n$ have no universal calibration for censored nonlinear flood-frequency models. Hessian inversion failure returns arrays of zeros, so “no influence” can also mean “diagnostic unavailable.”
+MLE uses the data-likelihood Hessian; MAP uses the full posterior Hessian but still uses a data score in (INF.3). These are local approximations and do not refit after deletion. The familiar linear-model suggestions $D_i>1$ or $4/n$ have no universal calibration for censored nonlinear flood-frequency models. These methods use the validated covariance path and throw when covariance is unavailable. Inspect `CovarianceStatus`; unavailable uncertainty must not be interpreted as zero influence.
 
 Grouped threshold contributions require care. A pointwise unit with count $m$ represents a group, not one interchangeable exact observation. Its score and any deletion approximation correspond to removing that entire contribution as implemented.
 
@@ -121,7 +121,7 @@ $$
 
 clamped to $[0,1]$, with zero assigned when analytical prior variance is unavailable. This is invariant to a separate linear rescaling of one parameter, but not to general reparameterization or posterior correlation. It uses only `ModelParameter.PriorDistribution`; quantile, Jeffreys, coupled, and spatial prior components in (INF.7) are absent from (INF.9). The name “precision share” should therefore be read as a marginal heuristic, not a formal fraction of posterior information.
 
-Time-series `AutoRegressive`, `MovingAverage`, and `ARIMA` pointwise methods currently classify their Jeffreys scale component as `ParameterPrior` rather than `JeffreysScalePrior`; type-filtered summaries undercount Jeffreys contributions for those models.
+The `AutoRegressive`, `MovingAverage`, and `ARIMA` pointwise prior methods classify the optional Jeffreys scale term as `JeffreysScalePrior`, separately from the marginal `ParameterPrior` components. Type-filtered summaries can therefore distinguish those contributions.
 
 ## MAP Fit, Variance, and Combined Influence
 
@@ -158,7 +158,9 @@ The deterministic Log10-Normal tests establish the intended interpretation. A wi
 
 For the displaced narrow-prior fixture, the historical comparison replacing $\mathbf J_i^{\mathrm{diag}}$ in (INF.10) with the analytical full Log10-Normal observation Hessian changed every reported value by less than $0.003$ and preserved the leading three observations. Because $0.003$ was a qualitative materiality judgment rather than a statistically derived or exact numerical tolerance, the fixture is retained as design provenance rather than Verification evidence; it does not establish adequacy for every model family.
 
-Numerical differentiation can cross bounds or discontinuous model branches. Regularization or caught exceptions can return empty or zero diagnostics. Retain the raw values, fitted model, finite-difference configuration, and covariance status when using rankings in an engineering review.
+Numerical differentiation can encounter bounds or discontinuous branches. MLE/MAP covariance failures are explicit; other diagnostic containers can be empty when their prerequisites are unavailable. A regularized covariance remains an approximation. Retain the raw values, fitted model, finite-difference configuration, and covariance status when using rankings in an engineering review.
+
+The retained GMM deletion-magnitude comparison is an accepted limitation: one-step influence is not calibrated to exact case deletion. The supported outlier fixture establishes ranking of a deliberately influential observation. A large score is a reason to investigate the record and refit a scientifically meaningful alternative, not a numerical estimate of the exact deletion effect.
 
 ## Compile-Checked API Workflow
 

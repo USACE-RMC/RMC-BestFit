@@ -75,42 +75,54 @@ def _load_chapter_titles(repository_root: Path, source_directory: str) -> list[s
     return titles
 
 
-def _find_chapter_pages(reader: PdfReader, titles: list[str]) -> list[tuple[str, int]]:
-    """Locate chapter openings in the rendered PDF in manifest order."""
-    page_text = [_normalize_text(page.extract_text() or "") for page in reader.pages]
-    matches: list[tuple[str, int]] = []
-    cursor = 2
-    for title in titles:
-        normalized_title = _normalize_text(title)
-        for page_index in range(cursor, len(page_text)):
-            if normalized_title in page_text[page_index]:
-                matches.append((title, page_index))
-                cursor = page_index + 1
-                break
-        else:
-            raise ValueError(f"Could not locate rendered chapter title in PDF: {title}")
+def _load_chapter_destinations(repository_root: Path, source_directory: str) -> list[str]:
+    """Match the builders' chapter IDs, independent of title text and TOC length."""
+    manifest = repository_root / 'docs' / source_directory / 'book-order.txt'
+    return ['doc-' + re.sub(r'[^a-z0-9]+', '-', entry[:-3].lower()).strip('-')
+            for line in manifest.read_text(encoding='utf-8').splitlines()
+            if (entry := line.strip()) and not entry.startswith('#')]
+
+
+def _find_chapter_pages(reader: PdfReader, titles: list[str], names: list[str]) -> list[tuple[str, int]]:
+    """Resolve chapter openings from named destinations, never title mentions."""
+    if len(titles) != len(names):
+        raise ValueError('Chapter title and destination counts differ.')
+    matches = []
+    previous = 1
+    destinations = {str(key).lstrip('/'): value for key, value in reader.named_destinations.items()}
+    for title, name in zip(titles, names):
+        if name not in destinations:
+            raise ValueError(f'Missing chapter destination: {name}')
+        page_index = reader.get_destination_page_number(destinations[name])
+        if page_index <= previous:
+            raise ValueError(f'Chapter destinations are not in publication order: {name}')
+        matches.append((title, page_index))
+        previous = page_index
     return matches
 
 
-def _add_contents_page_numbers(reader: PdfReader, writer: PdfWriter) -> None:
-    """Print destination page numbers in the space reserved by the contents CSS."""
-    page = writer.pages[1]
-    packet = BytesIO()
-    overlay = canvas.Canvas(packet, pagesize=(float(page.mediabox.width), float(page.mediabox.height)))
-    overlay.setFont("Helvetica", 9)
-    overlay.setFillColor(HexColor("#15324b"))
+def _add_contents_page_numbers(reader: PdfReader, writer: PdfWriter, contents_pages: range) -> None:
+    """Number every contents page, deduplicating wrapped link rectangles."""
     destinations = {str(name).lstrip("/"): value for name, value in reader.named_destinations.items()}
-    for reference in reader.pages[1].get("/Annots", []):
-        annotation = reference.get_object()
-        name = str(annotation.get("/Dest", "")).lstrip("/")
-        if name not in destinations:
-            continue
-        destination_page = reader.get_destination_page_number(destinations[name])
-        _, _, right, top = [float(value) for value in annotation["/Rect"]]
-        overlay.drawRightString(right - 1, top - 10, str(destination_page + 1))
-    overlay.save()
-    packet.seek(0)
-    page.merge_page(PdfReader(packet).pages[0], over=True)
+    for index in contents_pages:
+        page = writer.pages[index]
+        packet = BytesIO()
+        overlay = canvas.Canvas(packet, pagesize=(float(page.mediabox.width), float(page.mediabox.height)))
+        overlay.setFont("Helvetica", 9)
+        overlay.setFillColor(HexColor("#15324b"))
+        seen = set()
+        for reference in reader.pages[index].get("/Annots", []):
+            annotation = reference.get_object()
+            name = str(annotation.get("/Dest", "")).lstrip("/")
+            if name not in destinations or name in seen:
+                continue
+            seen.add(name)
+            destination_page = reader.get_destination_page_number(destinations[name])
+            _, _, right, top = [float(value) for value in annotation["/Rect"]]
+            overlay.drawRightString(right - 1, top - 10, str(destination_page + 1))
+        overlay.save()
+        packet.seek(0)
+        page.merge_page(PdfReader(packet).pages[0], over=True)
 
 
 def finalize_report_pdf(
@@ -133,13 +145,14 @@ def finalize_report_pdf(
     chapter_pages = _find_chapter_pages(
         reader,
         _load_chapter_titles(repository_root, source_directory),
+        _load_chapter_destinations(repository_root, source_directory),
     )
     writer = PdfWriter()
     writer.clone_document_from_reader(reader)
     page_count = len(writer.pages)
 
+    _add_contents_page_numbers(reader, writer, range(1, chapter_pages[0][1]))
     if report_key == "verification_report":
-        _add_contents_page_numbers(reader, writer)
         # Keep the complete current acceptance/provenance record with the PDF,
         # including before the editorial workspace changes are committed.
         for name, relative in (

@@ -34,7 +34,15 @@ Q(p)=\begin{cases}
 \end{cases} \tag{GNO.3}
 $$
 
-The zero-shape limit is Normal. The transformed-Normal construction has finite moments on its valid support, but closed forms are not exposed by the current implementation. Numerics computes central moments by numerical integration with 1,000 intervals and caches them; it locates the mode with Brent optimization between the 0.001 and 0.999 quantiles. Those truncated numerical domains matter when the distribution is strongly skewed.
+The zero-shape limit is Normal. Writing $Z\sim N(0,1)$ gives the useful generative identity $X=\xi+\alpha(1-e^{-\kappa Z})/\kappa$. The Normal moment-generating function, $E(e^{sZ})=e^{s^2/2}$, therefore gives
+
+$$
+E(X)=\xi+\frac{\alpha}{\kappa}(1-e^{\kappa^2/2}),\qquad
+\operatorname{Var}(X)=\frac{\alpha^2}{\kappa^2}e^{\kappa^2}(e^{\kappa^2}-1).
+\tag{GNO.6}
+$$
+
+These limits are $\xi$ and $\alpha^2$ at zero shape. Numerics evaluates analytical moments using stable exponential differences and logarithmic products; a nonrepresentable result can still overflow binary64. Differentiating the log density with respect to the latent Normal coordinate puts its maximum at $Z=\kappa$, so the mode is $\xi+\alpha(1-e^{-\kappa^2})/\kappa$, with limit $\xi$. This is an analytical mode, not a truncated numerical search.
 
 ## Likelihood, Posterior, and Estimation
 
@@ -64,7 +72,9 @@ The negative shape gives an unbounded upper tail under the implemented conventio
 
 ## Validation and Limitations
 
-Required tests include normalization, CDF/quantile inversion, support endpoints, the Normal limit, and independent checks on numerically integrated moments. Strong-skew cases should specifically quantify error from the 1,000-interval moment calculation and the restricted mode-search interval. The documentation fixture only proves that the shown API calls compile.
+The independent distribution-family evidence covers PDF, CDF, quantile, likelihood, and fitted-objective comparisons after reconciling the Hosking parameterization. The analytical identities above explain the moment and mode behavior; the compiled example separately checks API compatibility. See the [verification matrix](verification-matrix.md) for the current evidence and its acceptance rules.
+
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
 
 ## References
 

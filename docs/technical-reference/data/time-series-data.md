@@ -27,7 +27,7 @@ The collection persists metadata, source settings, values, and plot settings in 
 
 ## Implementation and verification
 
-Implementation is in `RMC.BestFit.UI/Elements/TimeSeriesData/TimeSeriesElement.cs` and `TimeSeriesCollection.cs`. Fast UI tests cover construction, property/state behavior, validation, persistence, copy behavior, and HEC-DSS import contracts. Numerical time-series verification begins only after the data have entered the model layer; see [Time-Series Analyses](../../verification/report/time-series-analyses.md).
+`TimeSeriesElement.cs` and `TimeSeriesCollection.cs` in the UI's `Elements/TimeSeriesData` folder implement this collection. Fast UI tests cover state, validation, persistence, copying, and HEC-DSS imports. Numerical estimation evidence is in [Time-Series Analyses](../../verification/report/time-series-analyses.md).
 
 ---
 

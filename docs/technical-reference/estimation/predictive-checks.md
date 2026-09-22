@@ -96,7 +96,7 @@ private static (
 }
 ```
 
-The code is appropriate only when the model's simulator generates the same scientific quantity represented by `observedData`. For censored or uncertain flood records, build an observation-process-specific check instead of passing reconstructed point values. Always report requested and valid replicate counts, seed, posterior-draw source, statistic definitions, units, and any simulation failures.
+The simulator must generate the quantity represented by `observedData`. Censored or uncertain records require an explicit observation-process check. Report requested and valid replicates, seed, posterior-draw source, statistic definitions, units, and simulation failures.
 
 ## Interpretation and Failure Modes
 
@@ -109,9 +109,9 @@ The code is appropriate only when the model's simulator generates the same scien
 
 ## Verification and Traceability
 
-Fast tests cover constructors, deterministic seeding, validation, output shapes, p-value arithmetic, summary quantiles, and failed-replicate filtering. They do not establish calibration for each scientific model. Model-specific simulation-based calibration and predictive coverage belong in the Verification project; it was not run during this pass.
+Fast tests cover configuration, deterministic seeds, p-value arithmetic, summary quantiles, and failed-replicate filtering. Model-specific calibration and predictive coverage require separate numerical evidence; a predictive diagnostic proves neither.
 
-Implementation symbols: `PriorPredictiveCheck`, `PosteriorPredictiveCheck`, `PredictiveCheckResults`, `PredictiveSummary`, `ISimulatable<double[]>`, `IModel.Clone`, and `IModel.SetParameterValues`.
+The [API traceability matrix](../api-traceability.md) maps predictive-check classes to their implementations and tests.
 
 ## References
 

@@ -4,11 +4,13 @@
 
 [Documentation home](../index.md) | [API traceability](api-traceability.md) | [Documentation contract](documentation-contract.md)
 
+A useful reading sequence is the model and observation likelihood, the estimator, the derived quantity of interest, and finally its evidence and limitations. Keep three objects distinct: a fitted parameter vector, a posterior distribution over parameters, and a predictive distribution over future observations. A frequency-curve credible interval describes uncertainty about a population quantile; it is not an interval expected to contain 95% of future floods. The notation and parameterization appendices provide a common reference when moving between model families.
+
 ## Scope
 
-This reference documents the scientific formulations, likelihoods, priors, estimation algorithms, uncertainty propagation, numerical behavior, verification evidence, and C# API for RMC.BestFit 2.0. The peer-review source checkpoint uses RMC.Numerics commit `90a63a46394db9ef95e72b0fcbba943408110636`; RMC.Numerics 2.1.4 remains the published-package compatibility baseline. It is written for statistical reviewers, hydrologic practitioners, and programmatic users.
+This reference explains the scientific formulations, likelihoods, priors, estimation algorithms, uncertainty propagation, numerical behavior, verification evidence, and C# API for RMC.BestFit 2.0. It is written for statistical reviewers, hydrologic practitioners, and programmatic users. The [document-control page](front-matter.md) identifies the reviewed BestFit source and RMC.Numerics 2.2.0 dependency checkpoint.
 
-Implementation behavior is the authority for API and numerical claims. Primary literature and official standards establish theoretical context. Pages that have not yet passed the contract are labeled in progress and must not be treated as final peer-review chapters.
+Implementation behavior is the authority for API and numerical claims. Primary literature and official standards establish theoretical context. The chapters distinguish verified results from the assumptions and evidence boundaries that govern their interpretation.
 
 ## Foundations
 

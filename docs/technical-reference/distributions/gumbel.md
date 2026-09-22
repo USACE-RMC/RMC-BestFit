@@ -63,6 +63,8 @@ For annual maxima, the example's 0.99 nonexceedance quantile corresponds to a 0.
 
 The implementation is traced to `Numerics.Distributions.Gumbel`. Required numerical evidence includes $F(Q(p))=p$, density normalization, known moments, and convergence of GEV calculations as shape approaches zero. The current compile gate covers only API conformance. Block maxima must be approximately independent and represent comparable exposure; serial dependence, changing regulation, and mixture-generating mechanisms violate the simplest interpretation.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] E. J. Gumbel, *Statistics of Extremes*. Columbia University Press, 1958.

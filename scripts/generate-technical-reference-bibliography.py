@@ -110,16 +110,8 @@ def render_bibliography(
 
     lines.extend(
         [
-            "## Generation",
-            "",
-            "Regenerate this file from chapter reference sections with:",
-            "",
-            "```powershell",
-            "python scripts/generate-technical-reference-bibliography.py",
-            "```",
-            "",
-            f"The current file contains {len(ordered)} unique sources after "
-            "DOI/title de-duplication.",
+            "<!-- Regenerate with: python scripts/generate-technical-reference-bibliography.py",
+            f"{len(ordered)} unique sources after DOI/title de-duplication. -->",
             "",
             "---",
             "",

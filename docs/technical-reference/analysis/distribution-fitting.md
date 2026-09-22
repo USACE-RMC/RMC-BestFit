@@ -14,7 +14,7 @@ The input is a complete `DataFrame`. Exact, uncertain, interval-censored, and pe
 
 ## Likelihood and Estimator
 
-Let candidate family (m) have parameter vector (oldsymbol\theta_m\in\Theta_m), and let (ell_{D,m}) denote its full data log-likelihood, including every supported observation type. The fitted parameter vector is
+Let candidate family $m$ have parameter vector $\boldsymbol\theta_m\in\Theta_m$, and let $\ell_{D,m}$ denote its full data log-likelihood, including every supported observation type. The fitted parameter vector is
 
 $$
 \widehat{\boldsymbol\theta}_m
@@ -22,13 +22,13 @@ $$
 \ell_{D,m}(\boldsymbol\theta_m). \tag{1}
 $$
 
-`FittingAnalysis` constructs a `UnivariateDistribution`, applies its data-derived defaults and bounds, disables the optional Jeffreys scale term, and invokes `MaximumLikelihood` with `OptimizationMethod.DifferentialEvolution`. The optimizer receives `DataLogLikelihood`, not `LogLikelihood`, so parameter and quantile priors are excluded. For this workflow, Hessian computation is disabled, the iteration limit is 10,000, and the function-evaluation limit is 100,000. A successful optimizer status is necessary but not sufficient for a published result: AIC, BIC, and RMSE must all also be finite.
+`FittingAnalysis` constructs a `UnivariateDistribution`, applies its data-derived defaults and bounds, disables the optional Jeffreys scale term, and invokes `MaximumLikelihood` with `OptimizationMethod.DifferentialEvolution`. The optimizer receives `DataLogLikelihood`, not `LogLikelihood`, so parameter and quantile priors are excluded. For this workflow, Hessian computation is disabled, the iteration limit is 10,000, and the function-evaluation limit is 100,000. A successful optimizer status is necessary but not sufficient for a published result: AIC and BIC must be finite. RMSE is unavailable (`NaN`) when the number of plotted observations does not exceed the fitted parameter count; this does not discard an otherwise successful fit.
 
 Each candidate is fitted in a separate `Parallel.For` iteration. A failure in one family is caught and stored in that candidate's `ErrorMessage`; it does not abort the remaining fits. `IsEstimated` is true when at least one candidate has `FitSucceeded == true`. Partial success therefore produces a usable screening result, while an all-failed run leaves `IsEstimated` false and reports an unsuccessful completion event. Reviewers should inspect each candidate because the outer flag does not imply that every family fitted successfully.
 
 ## Comparison Statistics
 
-For (k_m) fitted parameters and maximized data log-likelihood (widehat\ell_{D,m}), the implementation reports
+For $k_m$ fitted parameters and maximized data log-likelihood $\widehat\ell_{D,m}$, the implementation reports
 
 $$
 \operatorname{AIC}_m=-2\widehat\ell_{D,m}+2k_m, \tag{2}
@@ -40,9 +40,9 @@ $$
 \operatorname{BIC}_m=-2\widehat\ell_{D,m}+k_m\log n_{\mathrm{eff}}, \tag{3}
 $$
 
-where `DataFrame.TotalRecordLength()` supplies (n_{\mathrm{eff}}). The meaning of that effective length for grouped perception-threshold records is defined in the data-frame chapter. Criterion values are comparable only across fits to the same observational information and likelihood convention.
+where `DataFrame.TotalRecordLength()` supplies $n_{\mathrm{eff}}$. The meaning of that effective length for grouped perception-threshold records is defined in the data-frame chapter. Criterion values are comparable only across fits to the same observational information and likelihood convention.
 
-For exact, uncertain, and interval records, `FittingAnalysis` pairs each stored representative value (y_i) with its plotting-position complement (p_i), evaluates (q_i=F_m^{-1}(p_i\mid\widehat{\boldsymbol\theta}_m)), and calls the Numerics RMSE helper. The intended degrees-of-freedom form is
+For exact, uncertain, and interval records, `FittingAnalysis` pairs each stored representative value $y_i$ with its plotting-position complement $p_i$, evaluates $q_i=F_m^{-1}(p_i\mid\widehat{\boldsymbol\theta}_m)$, and calls the Numerics RMSE helper. For $n>k_m$, the reported degrees-of-freedom form is
 
 $$
 \operatorname{RMSE}_m
@@ -50,7 +50,7 @@ $$
 \left(y_i-q_i\right)^2\right]^{1/2}. \tag{4}
 $$
 
-The Numerics helper includes all \(n\) residuals in the numerator and applies the parameter adjustment only through the \(n-k_m\) denominator. It rejects parameter counts that are negative or do not leave positive residual degrees of freedom. Because paired row permutations leave the complete squared-residual sum unchanged, the reported RMSE is invariant to storage order when values and probabilities are permuted together.
+The Numerics helper includes all $n$ residuals in the numerator and applies the parameter adjustment only through the $n-k_m$ denominator. It rejects parameter counts that are negative or do not leave positive residual degrees of freedom. Because paired row permutations leave the complete squared-residual sum unchanged, the reported RMSE is invariant to storage order when values and probabilities are permuted together.
 
 Neither AIC nor BIC measures tail plausibility, structural adequacy, or compliance with a regulatory method. RMSE is in the units of the modeled variable and therefore cannot be compared across differently scaled datasets.
 
@@ -95,7 +95,7 @@ Changing the data frame clears fits. Changing `ProbabilityOrdinates` does not re
 - Representative values for uncertain and interval observations are used only in the RMSE display statistic; the likelihood itself integrates or intervals over those observations.
 - Perception-threshold counts affect the likelihood and effective record length but do not enter the plotting-position RMSE vector.
 - The family list includes highly flexible models. Information criteria penalize parameter count but do not protect against scientifically implausible tail extrapolation.
-- No numerical table in this chapter is hand-authored. Verification claims must point to a deterministic assertion or an approved long-running verification result.
+- The [verification report](../../verification/report/data-distributions-b17c.md) distinguishes analytical formula checks, independent fitted optima, synthetic recovery, and published examples. These are different forms of evidence.
 
 ## Implementation and Verification Traceability
 

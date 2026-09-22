@@ -75,7 +75,7 @@ P_\mu(\mu)=\frac{1}{2n}\frac{(\mu-m)^2}{\tau^2},
 H_\mu=\frac{1}{n\tau^2}. \tag{GMM.5a}
 $$
 
-Therefore `ParameterPenalty.MSE` is the Gaussian variance $\tau^2$ itself. The division by $n$ already occurs inside the penalty; callers must not divide the prior variance by $n$ again. Multiplying the complete objective (GMM.4) by $n$ gives the usual negative-log-posterior kernel,
+Therefore `ParameterPenalty.MSE` is the Gaussian variance $\tau^2$ itself. The division by $n$ already occurs inside the penalty; callers must not divide the prior variance by $n$ again. Multiplying the complete objective (GMM.4) by $n$ expresses the data-moment quadratic and external-information penalty on a common scale:
 
 $$
 nQ_{n,P}
@@ -83,7 +83,7 @@ nQ_{n,P}
 +\frac12\frac{(\mu-m)^2}{\tau^2}. \tag{GMM.5b}
 $$
 
-Bulletin 17C parameter penalties use this Gaussian information interpretation. Quantile penalties apply the same half-quadratic construction after mapping parameters to the selected quantile.
+In general, (GMM.5b) is a penalized moment objective, not the negative log of the data posterior. A Gaussian or quasi-likelihood interpretation requires assumptions about the estimating functions, their covariance, and the treatment of changing weights. Exact Bayesian equivalence holds in the stated Gaussian mean/information-combination example, where the quadratic is the actual likelihood kernel. Bulletin 17C parameter penalties use this external-information interpretation without turning its general moment equations into a complete likelihood. Quantile penalties apply the same half-quadratic construction after mapping parameters to the selected quantile.
 
 ## Weighting Strategies and Optimization
 
@@ -91,11 +91,25 @@ The API implements:
 
 1. `OneStep`: minimize using the initial identity or supplied $\mathbf W$;
 2. `TwoStep`: fit once, set $\mathbf W=\widehat{\mathbf S}^{-1}$, and refit;
-3. `Iterative`: repeatedly update $\mathbf W=\widehat{\mathbf S}^{-1}$ and refit until absolute parameter distance or relative objective change meets tolerance.
+3. `Iterative`: repeatedly update $\mathbf W=\widehat{\mathbf S}^{-1}$ and refit until one of the parameter-distance, relative-objective, or scaled-coordinate change rules below meets tolerance.
 
 The default is iterative GMM with BFGS, at most 100 GMM passes, 2,000 function evaluations per pass, and absolute/relative tolerances of $10^{-8}$. If BFGS fails and `UseFallbackOptimizer` is true, the estimator tries Nelder-Mead and uses it for later passes. Other `OptimizationMethod` values are also supported. `IsEstimated` means a finite best parameter vector was retained after a nonfailure optimizer termination; it can be true even when `ConvergedWithinTolerance` is false. Always report `Status`, `GMMIterations`, `ConvergenceHistory`, `TotalFunctionEvaluations`, and the strict-convergence flag.
 
-`GetS()` regularizes the moment covariance to be symmetric positive definite, and the same floor is the only conditioning applied to the moment covariance inside the sandwich covariance (GMM.2) and to the post-estimate $\mathbf S$ and $\mathbf W$ used by Hansen's $J$ and the influence diagnostics; no eigenvalue cap is applied, so a real-space three-parameter family whose moment-covariance eigenvalues scale like $\sigma^2$, $\sigma^4$, and $\sigma^6$ keeps its exact moment covariance and the exactly identified sandwich reproduces the closed-form variances (the Pearson Type III covariance cells of `B17CCovarianceTests`). Numerical Jacobians and penalty Hessians use boundary-aware finite differences when analytic delegates are absent.
+For successive outer estimates $\theta^{(k-1)}$ and $\theta^{(k)}$, convergence is the logical **OR** of
+
+$$
+\begin{aligned}
+\|\theta^{(k)}-\theta^{(k-1)}\|_2 &<\varepsilon_{\rm abs},\\
+\frac{|Q_k-Q_{k-1}|}{|Q_{k-1}|+10^{-15}} &<\varepsilon_{\rm rel},\\
+\max_j\frac{|\theta_j^{(k)}-\theta_j^{(k-1)}|}{\max(1,|\theta_j^{(k-1)}|)} &<\varepsilon_{\rm rel}.
+\end{aligned}\tag{GMM.17}
+$$
+
+An inner BFGS line-search failure triggers the configured fallback; it is distinct from reaching the outer GMM iteration cap. Numerics BFGS also recognizes a terminal roundoff case only when a supplied gradient independently satisfies the requested projected-gradient tolerance and the objective difference is within eight machine epsilons times the initial objective magnitude. This does not relax the continuing Wolfe line search or establish outer fixed-point convergence.
+
+The sandwich formula follows by linearizing the estimating equation: a perturbation of its sample average changes the estimate by the inverse bread times that perturbation. The meat describes variation in those random estimating functions; the two bread factors map that variation into parameter units. Adding a penalty changes the curvature and, under the external-information convention, the information variation. It is therefore essential to state whether a penalty represents independently uncertain information or a fixed regularizer.
+
+`GetS()` regularizes the moment covariance to be symmetric positive definite, and the same floor is the only conditioning applied to the moment covariance inside the sandwich covariance (GMM.8) and to the post-estimate $\mathbf S$ and $\mathbf W$ used by Hansen's $J$ and the influence diagnostics; no eigenvalue cap is applied, so a real-space three-parameter family whose moment-covariance eigenvalues scale like $\sigma^2$, $\sigma^4$, and $\sigma^6$ keeps its exact moment covariance and the exactly identified sandwich reproduces the closed-form variances (the Pearson Type III covariance cells of `B17CCovarianceTests`). Numerical Jacobians and penalty Hessians use boundary-aware finite differences when analytic delegates are absent.
 
 ## Asymptotic Covariance
 
@@ -129,7 +143,7 @@ $$
 \widehat{\mathbf V}_S=\frac1n\mathbf B^{-1}. \tag{GMM.8a}
 $$
 
-This is also the inverse posterior curvature for the Gaussian penalty in (GMM.5a). For an independent location block with unpenalized estimate $\widehat\mu_L$ and variance $V_L$, the prior and data precisions add:
+In the Gaussian mean model, this also equals the inverse posterior curvature. For an independent location block with unpenalized estimate $\widehat\mu_L$ and variance $V_L$, the prior and data precisions add:
 
 $$
 V_{\mathrm{post}}
@@ -194,7 +208,9 @@ $$
 
 ## Profile-Q Products
 
-`ProfileQ(trueProfile: true)` fixes one parameter and reoptimizes the remainder using Brent for one nuisance dimension or Nelder-Mead otherwise. Like the corrected MLE and MAP methods, this is structurally a profile objective; nuisance parameters are not held at their joint fit. `trueProfile: false` evaluates a fixed-nuisance slice. `ProfileConfidenceIntervals` and `ProfilePercentiles` inherit the GMM quadratic/chi-squared approximation and remain asymptotic; boundaries, penalties, weak identification, and regularization can invalidate nominal coverage.
+`ProfileQ(trueProfile: true)` fixes one parameter and reoptimizes the remainder using Brent for one nuisance dimension or Nelder-Mead otherwise. Like the MLE and MAP methods, this is structurally a profile objective; nuisance parameters are not held at their joint fit. `trueProfile: false` evaluates a fixed-nuisance slice. `ProfileConfidenceIntervals` and `ProfilePercentiles` inherit the GMM quadratic/chi-squared approximation and remain asymptotic; boundaries, penalties, weak identification, and regularization can invalidate nominal coverage.
+
+The one-step GMM influence magnitude has not been calibrated to exact case-deletion refits. Its retained evidence supports ranking a deliberately influential observation; it does not establish that the numerical magnitude equals the change after deleting and refitting a case. Use exact refits for a consequential deletion assessment.
 
 ## Compile-Checked API Workflow
 
@@ -227,7 +243,7 @@ After configuration, call `IsValid(out errors)`, `Estimate()`, inspect both `Sta
 - Optimal weighting is asymptotic and estimated; small-sample behavior can be poor.
 - Strongly collinear moments make $\mathbf S$ and $\mathbf B$ ill-conditioned, so regularization can materially affect estimates and intervals.
 - Penalized estimates require a declared fixed-versus-random interpretation.
-- Focused analytical verification confirms the unpenalized estimating-gradient factor, exact penalized objective gradient, unbiased Log10-Normal moment solution, and Gaussian inverse-variance posterior mean and variance. Verification is performed one exact method at a time; no conclusion depends on executing the complete long-running suite.
+- Focused analytical verification confirms the unpenalized estimating-gradient factor, exact penalized objective gradient, unbiased Log10-Normal moment solution, and Gaussian inverse-variance posterior mean and variance. The linked verification report states each comparison and its acceptance rule.
 
 Implementation symbols: `IGMMModel`, `GeneralizedMethodOfMoments`, `CovarianceComputationStatus`, `MomentConditionFunction`, `PointwiseMomentConditionFunction`, `Q`, `GetS`, `GetJacobian`, `TryGetCovariance`, `GetCovariance`, `ProfileQ`, `Estimate`, and `PostProcess`.
 Verification evidence: [GMM objective and covariance scaling](../../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) and [GMM specification/covariance tests](../../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification).

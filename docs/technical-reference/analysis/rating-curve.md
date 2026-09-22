@@ -145,6 +145,17 @@ Call `initialFit.Estimate()` for a data-likelihood starting solution; then run `
 
 Implementation: `Models/RatingCurve/RatingCurve.cs`; orchestration: `Analyses/RatingCurve/RatingCurveAnalysis.cs`. Fast tests cover parameter order, addition behavior, date alignment, the discharge-space likelihood and its pointwise/component identities, the positive exponent bounds and legacy-bound warning, unmatched-record reporting, serialization, validation, and deterministic simulation. The [rating-curve verification chapter](../../verification/report/rating-curve.md#discharge-space-likelihood) records the executed evidence: the discharge-space likelihood against a SciPy and Numerics base-10 lognormal oracle, analytical two-sided continuity at activation stages, and maximum-likelihood and default-setting Bayesian replication of the three synthetic cases of `examples/6-rating-curve-analysis` against an independent SciPy optimum. The separately [generating-model recovery matrix](../../verification/report/rating-curve.md#generating-model-recovery) applies N=1000 to five scientifically distinct fixtures per estimator. All ten exact recovery identities pass after parameter uncertainty and the declared log10 residual uncertainty are propagated separately into a simultaneous 95% predictive band over each predeclared stage grid; Bayesian bands are centered on posterior MAP, and all coordinate R-hat/ESS and central-95% requirements remain. Exact stage allocation is 495/505 in the two-control fixture and 270/406/324 in the three-control fixture, so those counts are reported instead of assigning every control nominal N=1000. The evidence does not validate R `bdrc` parity, BaRatin parity for arbitrary control matrices, or predictive coverage in extrapolation.
 
+### Pointwise output and simultaneous verification bands
+
+A pointwise 95% band gives 95% probability separately at each specified stage; it does not assign 95% probability to the entire curve being inside the band. The recovery study uses a separate simultaneous construction on a declared finite stage grid. For simulated log-discharge curves $z_b(h_j)$, reference centre $m_j$, and stagewise scale $s_j$, it forms
+
+$$
+M_b=\max_j\left|\frac{z_b(h_j)-m_j}{s_j}\right|,\qquad
+c=Q_{0.95}(M_b).\tag{RC.S1}
+$$
+
+The grid band is obtained from $m_j\pm c s_j$ and transformed to discharge. The maximum couples all stages within each simulated curve; its 95th percentile controls the declared grid jointly. The [verification report](../../verification/report/rating-curve.md) specifies the MLE covariance draws, Bayesian posterior draws, independent observation errors, centres, and seeds. This is a verification acceptance procedure, not a claim that every displayed analysis band is simultaneous or that coverage extends beyond the grid.
+
 ## References
 
 <a id="ref-1"></a>[1] J. Le Coz, B. Renard, L. Bonnifait, F. Branger, and R. Le Boursicaud, “Combining hydraulic knowledge and uncertain gaugings in the estimation of hydrometric rating curves: A Bayesian approach,” *J. Hydrol.*, vol. 509, pp. 573–587, 2014.

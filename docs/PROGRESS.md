@@ -1,5 +1,13 @@
 # Progress
 
+## 2026-09-22
+
+- Completed Session 2 technical-reference finalization: the [finished PDF](../output/pdf/rmc-bestfit-technical-reference.pdf) has 249 pages, 66 chapters, 68 bookmarks, and 1,256 unique vector equations. The [publication-quality record](technical-reference/publication-quality.md) records the full chapter audit, final hash, visual review and evidence boundaries. The manual adds worked explanations of prior/data precision, transformed moments, GMM covariance, B17C Jacobians, and predictive uncertainty, with current source/API traceability throughout.
+- Separate MathJax 3.2.2 and offline LaTeX/SVG checks account for all 1,940 equation occurrences. Page-by-page review and enlarged inspection of dense equations/tables are complete. The shared finalizer now resolves chapter anchors and numbers multiple contents pages; three focused navigation tests pass. The final PDF has no unresolved link, glyph, text-overflow, metadata, or navigation findings.
+- Validation passed Core 3,434 / UI 645 / App 444 / API 515 (5,038 total, zero failures/skips), 10 documentation contracts, strict Debug XML/build checks across 949 source files, the 328-method catalog and complete index, and the 84-source bibliography. Dependency mode was local Numerics 2.2.0 at `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02`; the reviewed BestFit source is `3fa55a0f75bbd583e2fb7fce42180faa376f007c`. No numerical Verification test or production C# change was made.
+- Preserved the verification PDF at SHA-256 `8c842772cafdcd60952a836dc2a8da2c65c4a03d597571a9383e313edc8e354c`; a temporary shared-finalizer regression retained its text, destinations, bookmarks, tagging and catalog attachment. Numerical contracts and the unrelated Numerics workflow edit remain unchanged. The Kamp/Viglione retained 163 versus published 183 m3/s endpoint remains explicitly qualified pending Haden's decision.
+- Session 2 is delivered in the scoped local documentation commit. [Session 3](verification/v2.0.1-closeout-plan.md#session-3---v201-release-candidate-and-publication-handoff) remains open for version changes, package-only validation and release assets. No push, merge, tag or publication was performed.
+
 ## 2026-09-08
 
 - Implemented the approved [distribution robustness integration](distribution-robustness.md): stable logarithmic quantile Jacobians and mixture EM observation/responsibility arithmetic, effective support for inactive components, and validation of unusable automatic initialization while preserving editable parameters and seasonal defaults. The paired Numerics worktree contains the 15-family plus composite probability, moment, derivative, support and uncertainty repairs, including new GNO/GLO/Kappa local-MLE covariance.

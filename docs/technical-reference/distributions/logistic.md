@@ -56,6 +56,8 @@ The location and scale are in the same discharge units as the evaluation value. 
 
 Stable evaluation in very large $|z|$ requires avoiding avoidable overflow in exponential expressions. Review evidence should include symmetry, $F(\xi)=1/2$, $Q(1-p)=2\xi-Q(p)$, moment checks, density normalization, and the generalized-logistic zero-shape limit. The compiled documentation test guards the constructor and member calls but does not replace those numerical tests.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2, 2nd ed. Wiley, 1995.

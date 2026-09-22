@@ -58,8 +58,8 @@ All logarithms are natural logarithms unless `log10`, $\log_{10}$, or a distribu
 | $\widehat{\theta}_{\mathrm{MLE}}$ | maximizer of data log likelihood over the implemented bounded parameter space |
 | $\widehat{\theta}_{\mathrm{MAP}}$ | maximizer of the implemented data-plus-prior log target |
 | $Q(\theta)$ | GMM objective under the weighting and penalty convention stated locally |
-| $\widehat R$ | implemented unsplit between/within-chain potential scale reduction factor |
-| $N_{\mathrm{eff}}$ | implemented autocorrelation effective sample-size estimate |
+| $\widehat R$ | maximum of split rank-normalized and folded rank-normalized R-hat |
+| $N_{\mathrm{eff}}$ | rank-normalized bulk effective sample size; tail ESS is reported separately |
 | $\mathrm{lppd}$ | log pointwise posterior predictive density |
 | $p_{\mathrm{WAIC}}$ | sum of posterior variances of pointwise log likelihoods |
 | $\mathrm{WAIC}$ | $-2(\mathrm{lppd}-p_{\mathrm{WAIC}})$ |
@@ -90,24 +90,24 @@ All logarithms are natural logarithms unless `log10`, $\log_{10}$, or a distribu
 
 | Symbol | Definition |
 |---|---|
-| \(U=F_X(X),V=F_Y(Y)\) | probability-integral transforms of bivariate marginals |
-| \(C_\psi(u,v)\), \(c_\psi(u,v)\) | copula CDF and density with dependence parameters \(\psi\) |
-| \(\lambda_L,\lambda_U\) | lower- and upper-tail dependence coefficients |
-| \(S\) | number of sites in a spatial analysis |
-| \(\mathbf s_j\) | projected two-dimensional coordinate of site \(j\) |
-| \(\mathbf x_j\) | site-covariate vector in the order supplied to `GeneralLinearFunction` |
-| \(\xi_j,\alpha_j,\kappa_j\) | Numerics GEV location, scale, and shape at site \(j\) |
-| \(\boldsymbol\epsilon_a\) | latent spatial regression-error vector for parameter field \(a\) |
-| \(\sigma_a,r_a,p_a\) | spatial-error SD, correlation range, and powered-exponential exponent |
-| \(\mathbf R_C\) | Gaussian-copula correlation matrix for within-row site dependence |
-| \(w_j\) | multiplier on site \(j\)'s marginal spatial log density |
-| \(h_{jk}\) | implemented Euclidean separation between sites \(j\) and \(k\) |
+| $U=F_X(X),V=F_Y(Y)$ | probability-integral transforms of bivariate marginals |
+| $C_\psi(u,v)$, $c_\psi(u,v)$ | copula CDF and density with dependence parameters $\psi$ |
+| $\lambda_L,\lambda_U$ | lower- and upper-tail dependence coefficients |
+| $S$ | number of sites in a spatial analysis |
+| $\mathbf s_j$ | site coordinate: projected Cartesian pair or latitude/longitude pair, according to the selected metric |
+| $\mathbf x_j$ | site-covariate vector in the order supplied to `GeneralLinearFunction` |
+| $\xi_j,\alpha_j,\kappa_j$ | Numerics GEV location, scale, and shape at site $j$ |
+| $\boldsymbol\epsilon_a$ | latent spatial regression-error vector for parameter field $a$ |
+| $\sigma_a,r_a,p_a$ | spatial-error SD, correlation range, and powered-exponential exponent |
+| $\mathbf R_C$ | Gaussian-copula correlation matrix for within-row site dependence |
+| $w_j$ | multiplier on site $j$'s marginal spatial log density |
+| $h_{jk}$ | Cartesian separation in projected units or great-circle separation in kilometres |
 
 Copula dependence describes association among observations within the same row. Spatial regression errors describe persistent spatial departures of GEV parameter surfaces. These two structures are not interchangeable.
 
 ## Probability convention
 
-Frequency-analysis chapters use annual exceedance probability (AEP) $\alpha$ and nonexceedance probability $p=1-\alpha$. Thus
+In frequency analysis, $\alpha$ denotes annual exceedance probability (AEP) and $p=1-\alpha$ denotes nonexceedance probability. Thus
 
 $$
 q_\alpha=F^{-1}(1-\alpha).
@@ -175,9 +175,5 @@ An API `double[] parameters` uses implementation order, not alphabetical order. 
 | R-hat | Between/within-chain convergence diagnostic |
 | WAIC | Widely applicable information criterion |
 | WEDS | Weighted error-direction score |
-
-## Source and maintenance rule
-
-Local chapters may reuse a symbol with a clearly stated definition, but must not silently reverse the AEP/nonexceedance, GEV/GPD shape-sign, logarithm-base, or parameter-order conventions. When an implementation uses a legacy name, the chapter gives both the API name and mathematical meaning. The [parameterization crosswalk](parameterization-crosswalk.md) is the controlling index for those translations.
 
 [Technical reference index](../index.md) | [Parameterization crosswalk](parameterization-crosswalk.md) | [Documentation contract](../documentation-contract.md)

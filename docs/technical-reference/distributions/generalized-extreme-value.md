@@ -35,7 +35,7 @@ Q(p)=\begin{cases}
 \end{cases} \tag{GEV.3}
 $$
 
-In this sign convention the $r$th upper-tail moment exists when $\kappa>-1/r$. In particular, the mathematical mean exists for $\kappa>-1$ and variance for $\kappa>-1/2$. The current Numerics moment properties use more conservative shape checks in some regions; analysts should treat non-finite returned moments as an implementation limitation and use quantiles for tail interpretation.
+In this sign convention the $r$th upper-tail moment exists when $\kappa>-1/r$. In particular, the mathematical mean exists for $\kappa>-1$ and variance for $\kappa>-1/2$. Numerics applies these existence conditions to the mean and variance and requires $\kappa>-1/3$ and $\kappa>-1/4$ for skewness and kurtosis. Positive shapes have bounded upper tails and are not excluded by a symmetric shape cutoff. Near zero shape, stable series evaluate the Gumbel limit without subtracting nearly equal gamma-function values.
 
 ## Full Likelihood and Posterior
 
@@ -70,7 +70,9 @@ The negative Numerics shape in this example denotes a heavy, unbounded upper tai
 
 ## Validation and Limitations
 
-Evidence required for release includes density normalization, CDF/quantile inversion across all three support regimes, continuity at $\kappa=0$, endpoint behavior, theoretical moments where they exist, and parity with an independently parameterized implementation after applying the sign crosswalk. The compiled fixture guards the public API only. The asymptotic GEV argument does not guarantee that a particular block size is adequate or that maxima are independent and stationary.
+The relevant checks include density normalization, CDF/quantile inversion across all three support regimes, continuity at $\kappa=0$, endpoint behavior, theoretical moments where they exist, and parity with an independently parameterized implementation after applying the sign crosswalk. The asymptotic GEV argument does not guarantee that a particular block size is adequate or that maxima are independent and stationary.
+
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
 
 ## References
 

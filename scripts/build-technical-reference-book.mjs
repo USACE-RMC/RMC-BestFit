@@ -8,10 +8,11 @@ const repositoryRoot = path.resolve(scriptDirectory, "..");
 const referenceRoot = path.join(repositoryRoot, "docs", "technical-reference");
 const manifestPath = path.join(referenceRoot, "book-order.txt");
 const metadataPath = path.join(repositoryRoot, "docs", "report-metadata.json");
-const htmlOutputPath = path.resolve(process.argv[2] || path.join(repositoryRoot, "tmp", "pdfs", "rmc-bestfit-technical-reference.html"));
-const equationOutputPath = path.resolve(process.argv[3] || path.join(repositoryRoot, "tmp", "pdfs", "technical-reference-equations.tex"));
-const reportMetadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
-const report = reportMetadata.technical_reference;
+const htmlOutputPath = path.resolve(process.argv[2] || path.join(repositoryRoot, "tmp", "pdfs", "technical-reference", "rmc-bestfit-technical-reference.html"));
+const equationOutputPath = path.resolve(process.argv[3] || path.join(repositoryRoot, "tmp", "pdfs", "technical-reference", "technical-reference-equations.tex"));
+const sharedMetadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+const report = sharedMetadata.technical_reference;
+const reportMetadata = { ...sharedMetadata, ...report.checkpoint };
 
 function loadMarked() {
     const searchRoots = [
@@ -110,7 +111,7 @@ function replaceEquationTokens(html) {
 function buildEquationDocument() {
     const lines = [
         "\\documentclass[10pt]{article}",
-        "\\usepackage[T1]{fontenc}",
+        "\\usepackage[OT1]{fontenc}",
         "\\usepackage{amsmath,amssymb,mathtools,bm}",
         "\\usepackage[active,tightpage]{preview}",
         "\\PreviewBorder=1pt",
@@ -178,6 +179,7 @@ function cleanSource(document) {
     let inFence = false;
     let source = document.source
         .replace(/<!--\s*technical-reference-status:[\s\S]*?-->\s*/gi, "")
+        .replace(/^\[[^\]\n]+\]\([^)\n]+\)(?:[ \t]*[|·][ \t]*\[[^\]\n]+\]\([^)\n]+\))+[ \t]*$/gm, "")
         .replace(/^\[(Documentation home|Technical reference|API traceability|Documentation contract)[^\n]*\]\([^)]+\)(?:\s*\|\s*\[[^\n]+\]\([^)]+\))*\s*$/gmi, "")
         .replace(/^\s*\[Back to [^\]]+\]\([^)]+\)\s*$/gmi, "");
 
@@ -238,15 +240,39 @@ function cleanSource(document) {
         return "](#" + document.documentSlug + "-" + slugify(decodeURIComponent(fragment)) + ")";
     });
 
-    return source.trim();
+    // Local bibliography anchors need the same chapter prefix as their links.
+    source = source.replace(/<a id="([^"]+)"/g, (match, id) =>
+        '<a id="' + document.documentSlug + '-' + slugify(id) + '"');
+    // A distributed PDF must never point into the author's checkout. In-book
+    // references stay internal; all other repository links pin the reviewed source.
+    source = source.replace(/(?<!!)\]\(([^)\s]+)\)/g, (match, target) => {
+        if (/^(?:[a-z]+:|#)/i.test(target)) return match;
+        const [relative, fragment] = target.split('#');
+        const absolute = path.resolve(path.dirname(document.absolutePath), decodeURIComponent(relative));
+        if (!absolute.startsWith(repositoryRoot + path.sep) || !fs.existsSync(absolute)) {
+            throw new Error('Unresolved publication link: ' + document.entry + ' -> ' + target);
+        }
+        const relativePath = normalizeRelativePath(path.relative(repositoryRoot, absolute));
+        const kind = fs.statSync(absolute).isDirectory() ? 'tree' : 'blob';
+        return '](https://github.com/USACE-RMC/RMC-BestFit/' + kind + '/' +
+            reportMetadata.bestfit_commit + '/' + relativePath.split('/').map(encodeURIComponent).join('/') +
+            (fragment ? '#' + fragment : '') + ')';
+    });
+    return source.trim().replace(/(?:\n---\s*)+$/, '');
 }
 
 marked.use({
     gfm: true,
     pedantic: false,
     renderer: {
-        heading({ tokens, depth, text }) {
-            const rawText = text || this.parser.parseInline(tokens);
+        code({ text, lang }) {
+            // Keep short examples intact while allowing full workflows to span pages.
+            const shortClass = text.trimEnd().split('\n').length <= 12 ? ' class="short-code"' : '';
+            const languageClass = lang ? ' class="language-' + escapeHtml(lang.split(/\s+/)[0]) + '"' : '';
+            return '<pre' + shortClass + '><code' + languageClass + '>' + escapeHtml(text) + '\n</code></pre>\n';
+        },
+        heading({ tokens, depth }) {
+            const rawText = this.parser.parseInline(tokens);
             const explicitIdMatch = rawText.match(/\s*\{#([^}]+)\}\s*$/);
             const headingText = rawText.replace(/\s*\{#[^}]+\}\s*$/, "");
             const headingId = explicitIdMatch ? explicitIdMatch[1] : slugify(headingText.replace(/<[^>]+>/g, ""));
@@ -257,7 +283,13 @@ marked.use({
 
 const renderedDocuments = documents.map((document, index) => {
     const markdown = extractEquations(cleanSource(document));
-    const renderedHtml = replaceEquationTokens(marked.parse(markdown));
+    let renderedHtml = replaceEquationTokens(marked.parse(markdown));
+    renderedHtml = renderedHtml.replace(
+        /(<h2 id="[^"]*-references">References<\/h2>)([\s\S]*)$/,
+        '<div class="chapter-references">$1$2</div>');
+    renderedHtml = renderedHtml.replace(
+        /(<p>(?:(?!<\/p>)[\s\S])*<\/p>\s*)(<p><span class="display-equation"[\s\S]*?<\/span><\/p>)/g,
+        context => '<div class="equation-context">' + context + '</div>\n');
     const chapterLabel = String(index + 1).padStart(2, "0");
     return [
         "<section class=\"book-document\" id=\"" + document.documentSlug + "\">",
@@ -278,10 +310,10 @@ const style = [
     "@page:first { margin: 0; }",
     ":root { --navy: #15324b; --blue: #1e6594; --pale: #edf4f8; --ink: #1f2a33; --muted: #60717f; --line: #c8d4dd; }",
     "* { box-sizing: border-box; }",
-    "html { font-size: 9.6pt; }",
+    "html { font-size: 10.25pt; }",
     "body { margin: 0; color: var(--ink); font-family: Aptos, 'Segoe UI', Arial, sans-serif; line-height: 1.42; }",
     "a { color: #145f8f; text-decoration: none; }",
-    ".cover { page-break-after: always; height: 11in; padding: 1.04in 0.94in 0.86in; color: white; background: linear-gradient(148deg, #10283c 0%, #174c70 62%, #2c779f 100%); position: relative; }",
+    ".cover { page-break-after: always; height: 11in; padding: 1.04in 0.94in 0.86in; color: white; background: linear-gradient(148deg, #10283c 0%, #174c70 62%, #2c779f 100%); position: relative; overflow: hidden; }",
     ".cover:after { content: ''; position: absolute; right: -1.05in; bottom: -0.80in; width: 4.4in; height: 4.4in; border: 0.19in solid rgba(255,255,255,.13); border-radius: 50%; }",
     ".cover-rule { width: 0.76in; height: 0.08in; background: #84c6e6; margin-bottom: 0.52in; }",
     ".cover h1 { color: white; font-size: 31pt; line-height: 1.08; letter-spacing: -0.4pt; margin: 0 0 0.22in; max-width: 7.0in; }",
@@ -292,28 +324,54 @@ const style = [
     ".front-matter h1 { color: var(--navy); border-bottom: 2px solid var(--blue); padding-bottom: 0.10in; }",
     ".toc { columns: 2; column-gap: 0.34in; padding: 0; list-style: none; }",
     ".toc li { break-inside: avoid; margin: 0 0 0.08in; border-bottom: 0.5px dotted #bac6ce; padding-bottom: 0.045in; }",
-    ".toc a { display: flex; gap: 0.08in; color: var(--ink); }",
+    ".toc a { display: flex; gap: 0.08in; color: var(--ink); padding-right: 0.30in; }",
     ".toc-number { color: var(--blue); font-variant-numeric: tabular-nums; min-width: 0.23in; }",
     ".book-document { page-break-before: always; }",
     ".chapter-kicker { color: var(--blue); font-size: 8.5pt; font-weight: 700; letter-spacing: 1.1pt; text-transform: uppercase; margin-bottom: 0.06in; }",
     "h1, h2, h3, h4 { color: var(--navy); page-break-after: avoid; break-after: avoid-page; }",
     "h1 { font-size: 23pt; line-height: 1.12; margin: 0 0 0.22in; padding-bottom: 0.09in; border-bottom: 2px solid var(--blue); }",
-    "h2 { font-size: 15.5pt; margin: 0.28in 0 0.10in; padding-bottom: 0.035in; border-bottom: 0.6px solid var(--line); }",
+    "h2 { font-size: 15.5pt; margin: 0.22in 0 0.10in; padding-bottom: 0.035in; border-bottom: 0.6px solid var(--line); }",
     "h3 { font-size: 12.2pt; margin: 0.20in 0 0.07in; }",
     "h4 { font-size: 10.4pt; margin: 0.16in 0 0.05in; }",
     "p { margin: 0.07in 0 0.10in; orphans: 3; widows: 3; }",
+    ".equation-context { break-inside: avoid-page; }",
+    ".chapter-references h2 { margin-top: 0.12in; margin-bottom: 0.06in; }",
+    ".chapter-references p { font-size: 9pt; line-height: 1.35; margin: 0.035in 0 0.055in; }",
     "ul, ol { margin-top: 0.06in; padding-left: 0.25in; }",
     "li { margin-bottom: 0.035in; }",
     "blockquote { margin: 0.12in 0; padding: 0.04in 0.16in; border-left: 3px solid var(--blue); background: var(--pale); color: #334956; }",
-    "table { width: 100%; border-collapse: collapse; margin: 0.12in 0 0.16in; font-size: 8.1pt; page-break-inside: auto; }",
+    "table { width: 100%; border-collapse: collapse; margin: 0.12in 0 0.16in; font-size: 8.7pt; page-break-inside: auto; }",
     "thead { display: table-header-group; }",
     "tr { page-break-inside: avoid; }",
-    "th { background: var(--navy); color: white; font-weight: 650; text-align: left; }",
+    "th { background: #dceaf3; color: var(--navy); font-weight: 650; text-align: left; }",
     "th, td { border: 0.6px solid #b9c6cf; padding: 0.045in 0.055in; vertical-align: top; overflow-wrap: anywhere; }",
     "tbody tr:nth-child(even) { background: #f5f8fa; }",
     "code { font-family: 'Cascadia Mono', Consolas, monospace; font-size: 0.88em; background: #eef2f5; padding: 0.01in 0.025in; border-radius: 2px; overflow-wrap: anywhere; }",
-    "pre { margin: 0.12in 0 0.16in; padding: 0.11in 0.13in; color: #edf5f8; background: #172936; border-left: 3px solid #4f9fc5; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 7.9pt; line-height: 1.34; page-break-inside: avoid; }",
-    "pre code { color: inherit; background: transparent; padding: 0; }",
+    "pre { margin: 0.12in 0 0.16in; padding: 0.11in 0.13in; color: #edf5f8; background: #172936; border-left: 3px solid #4f9fc5; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 8.7pt; line-height: 1.34; page-break-inside: auto; orphans: 4; widows: 4; }",
+    "pre.short-code { break-inside: avoid-page; page-break-inside: avoid; }",
+    "#doc-front-matter-review-and-release-notice { break-before: page; }",
+    // Balance the short reference tails in these dense API chapters without reducing text size.
+    "#doc-estimation-maximum-a-posteriori h2, #doc-estimation-predictive-checks h2, #doc-analysis-overview h2 { margin-top: 0.14in; }",
+    "#doc-analysis-overview h2 { margin-top: 0.10in; }",
+    "#doc-analysis-overview p { margin-bottom: 0.08in; }",
+    // Allocate readable label columns explicitly in dense comparison tables.
+    "#doc-analysis-bivariate table:has(th:nth-child(4)) { table-layout: fixed; }",
+    "#doc-analysis-bivariate table:has(th:nth-child(4)) th:nth-child(1) { width: 15%; }",
+    "#doc-analysis-bivariate table:has(th:nth-child(4)) th:nth-child(2) { width: 39%; }",
+    "#doc-analysis-bivariate table:has(th:nth-child(4)) th:nth-child(3) { width: 28%; }",
+    "#doc-analysis-bivariate table:has(th:nth-child(4)) th:nth-child(4) { width: 18%; }",
+    "#doc-api-traceability table { table-layout: fixed; }",
+    "#doc-api-traceability th:nth-child(1) { width: 26%; }",
+    "#doc-api-traceability th:nth-child(2) { width: 16%; }",
+    "#doc-api-traceability th:nth-child(3) { width: 17%; }",
+    "#doc-api-traceability th:nth-child(4) { width: 23%; }",
+    "#doc-api-traceability th:nth-child(5) { width: 18%; }",
+    "#doc-appendices-parameterization-crosswalk table:not(:first-of-type):not(:has(th:nth-child(4))) { table-layout: fixed; }",
+    "#doc-appendices-parameterization-crosswalk table:not(:first-of-type):not(:has(th:nth-child(4))) th:nth-child(1) { width: 21%; }",
+    "#doc-appendices-parameterization-crosswalk table:not(:first-of-type):not(:has(th:nth-child(4))) th:nth-child(2) { width: 54%; }",
+    "#doc-appendices-parameterization-crosswalk table:not(:first-of-type):not(:has(th:nth-child(4))) th:nth-child(3) { width: 25%; }",
+    "#doc-appendices-bibliography p:has(strong) { break-after: avoid-page; page-break-after: avoid; }",
+    "pre code { color: inherit; background: transparent; padding: 0; font-size: inherit; }",
     ".inline-equation { display: inline-block; width: auto; max-width: none; vertical-align: -0.24em; margin: 0 0.025em; }",
     ".display-equation { display: block; text-align: center; margin: 0.13in auto; page-break-inside: avoid; break-inside: avoid; }",
     ".display-equation img { display: inline-block; max-width: 100%; width: auto; height: auto; }",
@@ -355,5 +413,6 @@ fs.mkdirSync(path.dirname(htmlOutputPath), { recursive: true });
 fs.mkdirSync(path.dirname(equationOutputPath), { recursive: true });
 fs.writeFileSync(htmlOutputPath, html, "utf8");
 fs.writeFileSync(equationOutputPath, buildEquationDocument(), "utf8");
+fs.writeFileSync(equationOutputPath.replace(/\.tex$/i, '.json'), JSON.stringify(equations, null, 2) + '\n', 'utf8');
 console.log("Generated " + htmlOutputPath + " from " + documents.length + " canonical chapters.");
 console.log("Prepared " + equations.length + " unique equations in " + equationOutputPath + ".");

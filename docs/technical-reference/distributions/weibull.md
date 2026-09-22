@@ -64,6 +64,8 @@ The scale and evaluated quantile carry the observation units. Shape 2 implies an
 
 Required checks include density normalization, CDF/quantile inversion, theoretical moments, boundary values for shapes below/equal/above one, and the $k=1$ exponential identity. The compile gate verifies API conformance only. The zero lower endpoint and monotone-hazard shape may be implausible for regulated or mixed flood populations.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] W. Weibull, “A statistical distribution function of wide applicability,” *Journal of Applied Mechanics*, vol. 18, pp. 293–297, 1951.

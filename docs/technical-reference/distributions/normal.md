@@ -56,6 +56,8 @@ All magnitudes use the same units. If the modeled quantity is annual maximum dis
 
 CDF and inverse-CDF calculations use the corresponding Numerics special-function paths. Required checks include $F(Q(p))\approx p$, symmetry, known moments, normalized density, and convergence of Pearson III and generalized Normal calculations as skew/shape approaches zero. The API example is compile-checked but intentionally reports no hand-written numerical output.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed. Wiley, 1994.

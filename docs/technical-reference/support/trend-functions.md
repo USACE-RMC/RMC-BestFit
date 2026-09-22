@@ -79,7 +79,7 @@ $$
 
 Its parameter order is intercept followed by covariate coefficients in matrix-column order. `Predict(i)` treats `i` as a zero-based row of the stored `double[,] Covariates`; unlike the time functions, it does not subtract `StartIndex`. An out-of-range row throws `ArgumentOutOfRangeException`.
 
-`PredictWithCovariates(x)` supports prediction at an ungauged site. It returns the intercept if the model contains no covariates. For a configured covariate model, null or empty input also returns the intercept; a nonempty array with the wrong length throws `ArgumentException`. Because silent intercept-only prediction is possible, callers should validate the feature vector explicitly before regional extrapolation.
+At an ungauged site, `PredictWithCovariates(x)` returns the intercept only for a model without covariates. Otherwise, it requires exactly `NumberOfCovariates` values; null, empty, or wrong-length inputs throw `ArgumentException`, preventing silent replacement of the fitted trend.
 
 Covariates should be centered and scaled before fitting when magnitudes differ substantially. Coefficients then have interpretable units: if $h$ is a location parameter in cubic feet per second and $x_j$ is elevation in feet, $\beta_j$ has units of discharge per foot. Collinearity, extrapolation beyond the calibration cloud, and omitted spatial structure can dominate uncertainty even when the algebraic prediction is finite.
 

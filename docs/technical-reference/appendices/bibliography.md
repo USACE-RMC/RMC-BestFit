@@ -62,7 +62,7 @@ Used by: [analysis/overview.md](../analysis/overview.md), [distributions/composi
 Used by: [estimation/influence-diagnostics.md](../estimation/influence-diagnostics.md), [estimation/model-comparison.md](../estimation/model-comparison.md).
 
 <a id="b012"></a>
-**[B012]** A. Vehtari et al., “Rank-normalization, folding, and localization: An improved \(\widehat R\) for assessing convergence of MCMC,” *Bayesian Analysis*, vol. 16, no. 2, pp. 667–718, 2021.
+**[B012]** A. Vehtari et al., “Rank-normalization, folding, and localization: An improved $\widehat R$ for assessing convergence of MCMC,” *Bayesian Analysis*, vol. 16, no. 2, pp. 667–718, 2021.
 
 Used by: [analysis/univariate.md](../analysis/univariate.md), [estimation/bayesian-mcmc.md](../estimation/bayesian-mcmc.md), [estimation/diagnostics.md](../estimation/diagnostics.md).
 
@@ -426,15 +426,8 @@ Used by: [distributions/weibull.md](../distributions/weibull.md).
 
 Used by: [distributions/composite.md](../distributions/composite.md).
 
-## Generation
-
-Regenerate this file from chapter reference sections with:
-
-```powershell
-python scripts/generate-technical-reference-bibliography.py
-```
-
-The current file contains 84 unique sources after DOI/title de-duplication.
+<!-- Regenerate with: python scripts/generate-technical-reference-bibliography.py
+84 unique sources after DOI/title de-duplication. -->
 
 ---
 

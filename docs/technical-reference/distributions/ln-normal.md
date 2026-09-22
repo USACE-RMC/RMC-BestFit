@@ -65,6 +65,8 @@ Here 1,500 and 500 are the arithmetic mean and standard deviation in discharge u
 
 Required evidence includes round-trip recovery of $(m,s)$ after conversion, density normalization, CDF/quantile inversion, theoretical natural-space moments, and comparison with a natural-lognormal reference. The compiled fixture guards current constructor semantics. Positive support can be appropriate for discharge, but lognormal tail extrapolation remains a substantive assumption and may underrepresent heavy flood-generating mechanisms.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] E. L. Crow and K. Shimizu, eds., *Lognormal Distributions: Theory and Applications*. Marcel Dekker, 1988.

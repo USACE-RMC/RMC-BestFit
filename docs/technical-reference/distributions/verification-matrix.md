@@ -2,40 +2,40 @@
 
 # Distribution Verification Matrix
 
-[Distribution index](index.md) | [API traceability](../api-traceability.md) | [Verification report](../../verification/report/executive-summary.md)
-
-This matrix records the independent basis for distribution-level claims. A fast contract protects deterministic behavior; a verification cell adds an analytical, independently implemented, external-package, published, recovery, or coverage reference.
-
-| Model or family | Independent evidence | Acceptance basis | Current result |
-|---|---|---|---:|
-| Normal | Closed-form MLE and SciPy | Parameters, likelihood, CDF, and quantiles | Passed |
-| Log10-Normal | Closed-form transformed MLE | Parameters, original-scale likelihood, CDF, and quantiles | Passed |
-| Ln-Normal | SciPy with moment-to-log conversion | Parameters, likelihood, CDF, and quantiles | Passed |
-| Exponential | Closed form and SciPy | Parameters, likelihood, CDF, and quantiles | Passed |
-| Gamma | SciPy | Parameters, likelihood, CDF, and quantiles | Passed |
-| Generalized Extreme Value | SciPy with explicit shape-sign conversion | Parameters, likelihood, CDF, and quantiles | Passed |
-| Generalized Logistic | R `lmomco` | Parameters, likelihood, CDF, and quantiles | Passed |
-| Generalized Normal | R `lmomco` | Parameters, likelihood, CDF, and quantiles | Passed |
-| Generalized Pareto | SciPy global optimum | Parameters, likelihood, CDF, and quantiles | Passed |
-| Gumbel | SciPy | Parameters, likelihood, CDF, and quantiles | Passed |
-| Kappa Four | Analytical zero-shape identities and SciPy finite-shape cases | PDF derivative, support, CDF-quantile inversion | Passed |
-| Logistic | Closed form and SciPy | Parameters, likelihood, CDF, and quantiles | Passed |
-| Log-Pearson Type III | Transformed SciPy Pearson III | Parameters, likelihood, CDF, and quantiles | Passed |
-| Pearson Type III | SciPy | Parameters, likelihood, CDF, and quantiles | Passed |
-| Weibull | SciPy | Parameters, likelihood, CDF, and quantiles | Passed |
-| Point process | Independent Poisson clocks, GPA inverse marks, analytical likelihood, and recovery | Ten declared cells; 1,000-observation recovery under production defaults | Passed 10 of 10 |
-| Finite mixture | Numerics parity and Bayesian generation-recovery | Pre-fit likelihood, EM optimum, parent parameters, posterior diagnostics | Passed 6 of 6 |
-| Competing risks | Gaussian-copula rank/CDF identities and recovery | Four analytical, ten MLE, and four supported Bayesian cells | Passed 18 of 18 reported cells |
-| Composite/model average | Closed forms, published R `mistr`, Gaussian orthants, and Cartesian posterior enumeration | Ten composite and two posterior-resampling cells | Passed 12 of 12 |
-
-## Artifact controls
-
-External generators record package versions, seeds, conversions, commands, and source hashes. The C# verification methods consume committed JSON or published values and do not invoke R or Python at test time. SHA-256 values are maintained in `verification/data/MANIFEST.md`.
-
-## Interpretation
-
-Passing family cells verify the stated parameter regions and numerical quantities, not every possible tail probability or optimizer start. Passing recovery cells are conditional on the generating model, sample size, seed, production configuration, and acceptance rule. The competing-risk Bayesian claim excludes six maximum or correlated designs that did not satisfy their predeclared diagnostic or recovery gates.
-
----
-
 [Distribution index](index.md) | [Verification report](../../verification/report/data-distributions-b17c.md)
+
+Distribution verification separates formula evaluation at a common parameter point from the result of fitting an optimizer or sampler. The first isolates parameterization and numerical functions; the second also tests estimation under its declared design.
+
+| Family | Independent formula and fitted-objective reference |
+|---|---|
+| Exponential | Analytical solution and SciPy shifted exponential |
+| Gamma | SciPy Gamma, converting shape/scale order |
+| Generalized Extreme Value | SciPy GEV, whose shape agrees with Numerics and is opposite the Coles convention |
+| Generalized Logistic | R `lmomco`, Hosking parameterization |
+| Generalized Normal | R `lmomco`, Hosking transformed Normal |
+| Generalized Pareto | SciPy GPD, reversing shape sign and retaining the location boundary |
+| Gumbel | SciPy Gumbel |
+| Kappa Four | SciPy four-parameter Kappa and analytical limiting-family identities |
+| Ln-Normal | SciPy lognormal, converting latent log parameters into response mean and SD |
+| Logistic | SciPy Logistic |
+| Log-Normal | Analytical base-10 transformed Normal and SciPy |
+| Log-Pearson Type III | SciPy Pearson III on base-10 logs with the original-measure Jacobian |
+| Normal | Analytical Normal MLE and SciPy |
+| Pearson Type III | SciPy Pearson III with mean/SD/skew mapping |
+| Weibull | SciPy Weibull, converting shape/scale order |
+
+## Formula and optimum acceptance
+
+At common external parameters, PDF, CDF, quantile, and likelihood values must agree within $10^{-8}$ absolute plus $10^{-7}$ relative tolerance. Separately fitted optima are compared through twice the absolute log-likelihood difference and the declared joint 95% chi-square threshold for two, three, or four parameters. This measures the loss of fit for the parameter combination rather than demanding identical optimizer coordinates. For the free-location Pareto boundary, it is a declared comparison screen, not proof that ordinary likelihood-ratio asymptotics apply.
+
+The executable sources are [SciPy comparisons](../../../src/RMC.BestFit.Verification/DistributionFitting/ScipyDistributionFittingVerificationTests.cs), [R comparisons](../../../src/RMC.BestFit.Verification/DistributionFitting/LmomcoDistributionFittingVerificationTests.cs), and the [Kappa limits](../../../src/RMC.BestFit.Verification/DistributionFitting/KappaFourZeroShapeVerificationTests.cs). The [artifact manifest](../../../verification/data/MANIFEST.md) records package versions, input conversions, seeds, generators, and hashes. The [catalog](../../verification/verification-catalog.json) names exact methods and acceptance rules; the report records their results.
+
+## Recovery and published examples
+
+The fifteen-family Bayesian designs use 1,000 observations and unchanged production sampler settings. Generating coordinates must lie in central 95% posterior intervals, with R-hat below 1.10 and ESS at least 100. Exponential and Pareto zero-location boundaries are checked through an identified quantile rather than pretending an interior parameter interval applies. These are verification acceptance limits; the MCMC chapter gives the stricter diagnostic guidance for an applied analysis. A single retained realization does not demonstrate repeated-sampling coverage.
+
+The [MLE family sources](../../../src/RMC.BestFit.Verification/DistributionFitting/UnivariateDistributionMLETests.cs), [Bayesian family sources](../../../src/RMC.BestFit.Verification/Univariate/ValidationTests/UnivariateValidationTests.cs), and [fitting recovery sources](../../../src/RMC.BestFit.Verification/DistributionFitting/FittingAnalysisRecoveryTests.cs) define the individual designs. The report also reconciles fifteen real-source comparisons, including differences in estimation method and textbook versus tabulated sample statistics. Their scope must not be extended to arbitrary tails or sample sizes.
+
+## Combined distributions
+
+Point-process occurrence/exposure, mixture memberships, competing-risk dominance, and composite uncertainty each introduce contracts beyond the component families. Their chapters and the [verification-evidence map](../appendices/verification-evidence.md) identify those independent comparisons. Agreement of component PDFs alone does not establish correctness of a combined likelihood or uncertainty calculation.

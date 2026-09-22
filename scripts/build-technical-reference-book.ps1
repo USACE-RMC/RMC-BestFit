@@ -12,7 +12,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$temporaryDirectory = Join-Path $repositoryRoot "tmp\pdfs"
+$temporaryDirectory = Join-Path $repositoryRoot "tmp\pdfs\technical-reference"
 $outputDirectory = Join-Path $repositoryRoot "output\pdf"
 $htmlPath = Join-Path $temporaryDirectory "rmc-bestfit-technical-reference.html"
 $equationTexPath = Join-Path $temporaryDirectory "technical-reference-equations.tex"
@@ -115,6 +115,8 @@ if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath $equationDviPath -PathType 
     throw "LaTeX did not produce the equation DVI."
 }
 
+Get-ChildItem -LiteralPath $equationDirectory -Filter "eq-*.svg" -File | Remove-Item -Force
+
 $dvisvgmArguments = @(
     "--no-fonts",
     "--verbosity=2",
@@ -124,8 +126,23 @@ $dvisvgmArguments = @(
     $equationDviPath
 )
 & $dvisvgmExecutable $dvisvgmArguments
-if ($LASTEXITCODE -ne 0 -or !(Test-Path -LiteralPath (Join-Path $equationDirectory "eq-0001.svg") -PathType Leaf)) {
+if ($LASTEXITCODE -ne 0) {
     throw "dvisvgm did not produce the offline equation assets."
+}
+
+foreach ($asset in @(Get-ChildItem -LiteralPath $equationDirectory -Filter "eq-*.svg" -File)) {
+    if ($asset.BaseName -notmatch '^eq-(\d+)$') {
+        throw "Unexpected equation asset name: $($asset.Name)"
+    }
+    $canonicalPath = Join-Path $equationDirectory ("eq-{0:D4}.svg" -f [int]$Matches[1])
+    if ($asset.FullName -ne $canonicalPath) {
+        Move-Item -LiteralPath $asset.FullName -Destination $canonicalPath
+    }
+}
+
+& $pythonExecutable (Join-Path $PSScriptRoot "validate-equation-assets.py") $equationDirectory --tex-source $equationTexPath
+if ($LASTEXITCODE -ne 0) {
+    throw "The offline equation assets contain missing glyphs or incomplete output."
 }
 
 $htmlUri = ([Uri](Resolve-Path -LiteralPath $htmlPath).Path).AbsoluteUri

@@ -4,7 +4,7 @@
 
 [Back to Technical Reference](../index.md) · [Common univariate model](univariate.md) · [Parameterization crosswalk](../appendices/parameterization-crosswalk.md)
 
-RMC.BestFit wraps RMC.Numerics probability distributions with mixed-observation likelihoods, parameter trends, priors, posterior inference, diagnostics, and hydrologic analysis outputs. The family chapters define the exact Numerics 2.1.4 constructor order and sign/log conventions; those definitions control the likelihood used by BestFit.
+RMC.BestFit wraps RMC.Numerics probability distributions with mixed-observation likelihoods, parameter trends, priors, posterior inference, diagnostics, and hydrologic analysis outputs. The family chapters define the exact Numerics 2.2.0 constructor order and sign/log conventions; those definitions control the likelihood used by BestFit.
 
 ## Supported Univariate Families
 
@@ -17,7 +17,7 @@ RMC.BestFit wraps RMC.Numerics probability distributions with mixed-observation 
 | Generalized Normal | $(\xi,\alpha,\kappa)$ | Hosking GNO, not exponential-power family | [GNO](generalized-normal.md) |
 | Generalized Pareto | $(\xi,\alpha,\kappa)$ | Negative Numerics shape is heavy upper tail | [GPD](generalized-pareto.md) |
 | Gumbel | $(\xi,\alpha)$ | Zero-shape GEV | [Gumbel](gumbel.md) |
-| Kappa Four | $(\xi,\alpha,\kappa,h)$ | Two shape parameters; open limiting-case finding | [Kappa Four](kappa-four.md) |
+| Kappa Four | $(\xi,\alpha,\kappa,h)$ | Two shape parameters with explicit zero-shape limits | [Kappa Four](kappa-four.md) |
 | Ln-Normal | $(m,s)$ | Natural-space arithmetic mean and SD | [Ln-Normal](ln-normal.md) |
 | Logistic | $(\xi,\alpha)$ | Symmetric exponential tails | [Logistic](logistic.md) |
 | Log-Normal | $(\mu_Y,\sigma_Y)$ | Moments of $Y=\log_{10}X$ | [Log-Normal](log-normal.md) |

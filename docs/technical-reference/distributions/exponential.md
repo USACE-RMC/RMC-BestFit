@@ -60,6 +60,8 @@ private static (double Density, double Cdf, double Quantile) EvaluateExponential
 
 The chapter formula is traced to `Numerics.Distributions.Exponential`; API compatibility is guarded by the compiled documentation fixture. Numerical validation should additionally test normalization, $F(Q(p))=p$, the memoryless identity, and the $\kappa\to0$ generalized-Pareto limit. No claim of hydrologic adequacy follows from those programmatic checks. Threshold choice, independence of excesses, exposure, and temporal stationarity must be assessed in the analysis using this family.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] S. Coles, *An Introduction to Statistical Modeling of Extreme Values*. Springer, 2001.

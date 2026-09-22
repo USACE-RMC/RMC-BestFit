@@ -31,8 +31,10 @@ where $\mathcal I$ is the model-specific conditional-likelihood index set. None 
 For ARIMA and ARIMAX with raw training length $T$ and differencing order $d$, model step $k$
 maps to raw response index $k+d$, and the training model series has $T-d$ values. ARIMAX uses
 level covariates matched by exact timestamp at that raw index; covariates are never differenced.
-Conditional evaluation starts at $k=\max(p,q)$ for AR, MA and ARIMA and at $k=\max(p,q,b)$ for
-ARIMAX, so the transform Jacobian uses raw indices $d+k$ through $T-1$. The pointwise data
+AR conditions on its first $p$ observations. Standalone MA initializes presample innovations
+to zero and includes every residual, starting at index zero. ARIMA starts at $k=\max(p,q)$
+and ARIMAX at $k=\max(p,q,b)$ in the differenced series; their transform Jacobian uses raw
+indices $d+k$ through $T-1$. The pointwise data
 log-likelihood attributes each observation's own change-of-variables term $\log|g'(y_{k+d})|$ to
 the model step that evaluates that observation, so the pointwise terms sum to the scalar
 data log-likelihood and WAIC/PSIS-LOO see the actual per-observation contributions. Required
@@ -117,8 +119,7 @@ Choose orders using scientific plausibility, ACF/PACF as exploratory tools, resi
 AR, MA, ARIMA, and ARIMAX analyses compute AIC/BIC from each model's data log likelihood evaluated at the stored MAP; prior-density terms are excluded. The values agree with MLE criteria only when every active prior is constant and MAP coincides with the constrained MLE. The default Jeffreys scale option is nonconstant, so analyses using it—or any informative prior—should use DIC, WAIC, or verified PSIS-LOO for Bayesian comparison rather than treating the MAP-evaluated fields as conventional AIC/BIC.
 
 The verification suite checks this routing independently for AR, MA, ARIMA, ARIMAX, and rating
-curve, with an analytical flat-prior order-zero Gaussian parity cell. It changes no production,
-UI/App/API, or persistence contract.
+curve, with an analytical flat-prior order-zero Gaussian comparison.
 
 ## Current Scientific Availability
 
@@ -132,7 +133,7 @@ UI/App/API, or persistence contract.
 | ARIMA transformed/differenced simulation | — | Available; full model-scale recursion, integration, then one inverse transform |
 | ARIMAX transformed/differenced simulation | — | Available; all components on model scale, exact-date level covariates, integration, then one inverse transform |
 
-This table is deliberately conservative because the software supports life-safety work. A finite result is not evidence that a defective path is safe to publish.
+These capabilities remain conditional on the likelihood, transformation, initialization, and covariate assumptions described above. Ordinary pointwise LOO for a conditional time-series likelihood is not leave-future-out validation: neighboring observations can retain information about an omitted time. Assess forecasting with a chronological holdout or rolling-origin experiment.
 
 ## Hydrologic Reporting Checklist
 

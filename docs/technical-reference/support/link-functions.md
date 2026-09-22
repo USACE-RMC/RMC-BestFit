@@ -6,7 +6,7 @@
 
 ## Purpose and contract
 
-A link function maps a natural-space value $x$ to a working value $\eta=h(x)$; `InverseLink` evaluates $h^{-1}(\eta)`. RMC.Numerics defines the `ILinkFunction` contract used by RMC.BestFit:
+A link function maps a natural-space value $x$ to a working value $\eta=h(x)$; `InverseLink` evaluates $h^{-1}(\eta)$. RMC.Numerics defines the `ILinkFunction` contract used by RMC.BestFit:
 
 | Member | Meaning |
 |---|---|
@@ -19,7 +19,7 @@ The direction is important: `DLink` is not $dx/d\eta$. The link object exposes t
 
 ## Standard Numerics links
 
-The following implementations come from RMC.Numerics 2.1.4 at commit `828664650c9327b309ee8332e707ccca73588e93`.
+The following implementations come from RMC.Numerics 2.2.0 at commit `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02`.
 
 | Class | Natural domain | $h(x)$ | $h^{-1}(\eta)$ | $h'(x)$ |
 |---|---|---|---|---|
@@ -34,7 +34,7 @@ The following implementations come from RMC.Numerics 2.1.4 at commit `828664650c
 
 ## Yeo-Johnson link
 
-`YeoJohnsonLink(lambda)` supports all real $x$ and requires finite $\lambda\in[-5,5]`. Its default is $\lambda=1$, the identity transformation. The forward transformation is [1](#ref-1)
+`YeoJohnsonLink(lambda)` supports all real $x$ and requires finite $\lambda\in[-5,5]$. Its default is $\lambda=1$, the identity transformation. The forward transformation is [1](#ref-1)
 
 $$
 h_\lambda(x)=
@@ -130,7 +130,7 @@ $$
 The implementation floors $s$ and $\delta$ at $10^{-12}$. With `UseAdaptiveEpsilon`, it replaces the fixed skew parameter by
 
 $$
-\epsilon_{\mathrm{eff}}=epsilon_{\max}
+\epsilon_{\mathrm{eff}}=\epsilon_{\max}
 \tanh(k_\epsilon I),
 \tag{9}
 $$
@@ -147,21 +147,21 @@ x=\gamma(\eta)=\frac{\exp(\lambda\eta)\sinh(a\eta)}{a},
 $$
 
 $$
-\frac{d\gamma}{d\eta}=exp(\lambda\eta)
+\frac{d\gamma}{d\eta}=\exp(\lambda\eta)
 \left[\frac{\lambda}{a}\sinh(a\eta)+\cosh(a\eta)\right],
 \qquad
 h'(x)=\left.\left(\frac{d\gamma}{d\eta}\right)^{-1}\right|_{\eta=h(x)}.
 \tag{11}
 $$
 
-`A` is floored at $10^{-12}$. Effective $\lambda$ is clamped to $[-0.999,0.999]$ to preserve global monotonicity. In adaptive mode,
+`A` is floored at $10^{-12}$ and effective $\lambda$ is clamped to $[-0.999,0.999]$. The derivative in (11) is positive for every finite $\eta$ when $|\lambda|\le a$; a strictly two-sided unbounded map requires $|\lambda|<a$. The default $a=1$ satisfies this condition after clamping. A custom $a<|\lambda|$ can make the map nonmonotone: the clamp does not scale with `A`. Such settings do not define a globally invertible link, and Newton's returned value must not be interpreted as a unique inverse. This is an implementation limitation; the reference does not change the mapping. In adaptive mode,
 
 $$
 \lambda_{\mathrm{eff}}=\lambda_{\max}\tanh(k_\lambda I)
 \tag{12}
 $$
 
-before the monotonicity clamp.
+before the effective-parameter clamp.
 
 `Link(x)` solves Equation (10) by Newton iteration. Derivatives are floored at $10^{-16}$; non-finite updates are halved; steps with magnitude above 4 are damped to magnitude 4 after the convergence check. `MaxIterations` and `Tolerance` are configurable and serialized. The method returns its last iterate even if convergence fails, records `LastInverseConverged` and `LastInverseResidual`, and writes a debug diagnostic. Consumers must inspect convergence state when the transform is used in consequential calculations.
 
@@ -232,7 +232,7 @@ Both positive-scale links floor non-positive inputs internally to an epsilon. Th
 
 | Concern | Source of truth | Evidence |
 |---|---|---|
-| Standard links | `C:/GIT/Numerics/Numerics/Functions/Link Functions/` at the pinned commit | Numerics link-function tests |
+| Standard links | [Numerics link-function source](https://github.com/USACE-RMC/Numerics/tree/7e8e8d1c5f26e045a35ec9fc09367de95ed05b02/Numerics/Functions/Link%20Functions) at the pinned commit | Numerics link-function tests |
 | ASinH, centered, SES variants | `src/RMC.BestFit/Models/LinkFunctions/` | `src/RMC.BestFit.Tests/Models/LinkFunctions/` |
 | XML compatibility | `BestFitLinkFunctionFactory.cs` | factory and serialization unit tests |
 | Compile-checked example | `src/RMC.BestFit.Tests/Documentation/Examples/FoundationExamples.cs` | `TechnicalReferenceDocumentationTests` |

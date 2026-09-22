@@ -18,17 +18,17 @@ The implemented data path accepts only index-matched `ExactData` observations fo
 
 | Symbol | Meaning |
 |---|---|
-| \(X,Y\) | continuous hydrologic variables |
-| \(F_X,F_Y\) | fitted marginal CDFs, treated as fixed by `BivariateDistribution` |
-| \(f_X,f_Y\) | corresponding marginal densities |
-| \(U=F_X(X),V=F_Y(Y)\) | probability-integral transforms |
-| \(C_\psi(u,v)\) | copula CDF with dependence parameter vector \(\psi\) |
-| \(c_\psi(u,v)=\partial^2 C_\psi/(\partial u\partial v)\) | copula density |
-| \(n_p\) | number of eligible, index-matched exact pairs |
-| \(\lambda_L,\lambda_U\) | lower- and upper-tail dependence coefficients |
-| \(p_E\) | annual exceedance probability; return period \(T=1/p_E\) only under the usual annual-trial interpretation |
+| $X,Y$ | continuous hydrologic variables |
+| $F_X,F_Y$ | fitted marginal CDFs, treated as fixed by `BivariateDistribution` |
+| $f_X,f_Y$ | corresponding marginal densities |
+| $U=F_X(X),V=F_Y(Y)$ | probability-integral transforms |
+| $C_\psi(u,v)$ | copula CDF with dependence parameter vector $\psi$ |
+| $c_\psi(u,v)=\partial^2 C_\psi/(\partial u\partial v)$ | copula density |
+| $n_p$ | number of eligible, index-matched exact pairs |
+| $\lambda_L,\lambda_U$ | lower- and upper-tail dependence coefficients |
+| $p_E$ | annual exceedance probability; return period $T=1/p_E$ only under the usual annual-trial interpretation |
 
-The variables retain their own units; \(u,v,\psi,\lambda_L,\lambda_U\), probabilities, and rank measures are dimensionless.
+The variables retain their own units; $u,v,\psi,\lambda_L,\lambda_U$, probabilities, and rank measures are dimensionless.
 
 ## Joint Model
 
@@ -45,9 +45,9 @@ h(x,y)=c_\psi(u,v)f_X(x)f_Y(y),
 \qquad u=F_X(x),\quad v=F_Y(y). \tag{2}
 $$
 
-Equation (2) defines the full probability model, but the BestFit bivariate estimator uses only \(\log c_\psi\). Marginal fitting is an upstream responsibility.
+Equation (2) defines the full probability model, but the BestFit bivariate estimator uses only $\log c_\psi$. Marginal fitting is an upstream responsibility.
 
-For thresholds \(x,y\), Numerics defines
+For thresholds $x,y$, Numerics defines
 
 $$
 P(X>x\ \text{and}\ Y>y)=1-u-v+C_\psi(u,v), \tag{3}
@@ -61,30 +61,30 @@ $$
 
 ## Implemented Copula Families
 
-The table follows RMC.Numerics 2.1.4 at commit `828664650c9327b309ee8332e707ccca73588e93`. Let \(\Phi_\rho\) and \(t_{\rho,\nu}\) denote standardized bivariate Normal and Student-\(t\) CDFs.
+The table follows RMC.Numerics 2.2.0 at commit `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02`. Let $\Phi_\rho$ and $t_{\rho,\nu}$ denote standardized bivariate Normal and Student-$t$ CDFs. In the Joe row, write $a=(1-u)^\theta$ and $b=(1-v)^\theta$.
 
-| `CopulaType` | \(C_\psi(u,v)\) | BestFit parameter bounds | Tail dependence |
+| `CopulaType` | $C_\psi(u,v)$ | BestFit parameter bounds | Tail dependence |
 |---|---|---|---|
-| `AliMikhailHaq` | \(uv/[1-\theta(1-u)(1-v)]\) | \(-1+\epsilon<\theta<1-\epsilon\) | \(\lambda_L=\lambda_U=0\) |
-| `Clayton` | \((u^{-\theta}+v^{-\theta}-1)^{-1/\theta}\), with the independence limit at \(\theta=0\) | \(-1\le\theta\le100\) | \(\lambda_L=2^{-1/\theta}\) for \(\theta>0\); \(\lambda_U=0\) |
-| `Frank` | \(-\theta^{-1}\log[1+(e^{-\theta u}-1)(e^{-\theta v}-1)/(e^{-\theta}-1)]\) | \([0.001,100]\) when sample Kendall \(\tau>0\), otherwise \([-100,-0.001]\) | \(\lambda_L=\lambda_U=0\) |
-| `Normal` | \(\Phi_\rho(\Phi^{-1}u,\Phi^{-1}v)\) | \(-1+\epsilon<\rho<1-\epsilon\) | \(\lambda_L=\lambda_U=0\) for \(|\rho|<1\) |
-| `Gumbel` | \(\exp\{-[( -\log u)^\theta+(-\log v)^\theta]^{1/\theta}\}\) | \(1\le\theta\le100\) | \(\lambda_U=2-2^{1/\theta}\), \(\lambda_L=0\) |
-| `Joe` | \(1-[(1-u)^\theta+(1-v)^\theta-(1-u)^\theta(1-v)^\theta]^{1/\theta}\) | \(1\le\theta\le100\) | \(\lambda_U=2-2^{1/\theta}\), \(\lambda_L=0\) |
-| `StudentT` | \(t_{\rho,\nu}(t_\nu^{-1}u,t_\nu^{-1}v)\) | \(-1+\epsilon<\rho<1-\epsilon,\ 2+10^{-10}\le\nu\le30\) | symmetric nonzero tails except at limiting cases; see (5) |
+| `AliMikhailHaq` | $uv/[1-\theta(1-u)(1-v)]$ | $-1+\epsilon<\theta<1-\epsilon$ | $\lambda_L=\lambda_U=0$ |
+| `Clayton` | $[\max(u^{-\theta}+v^{-\theta}-1,0)]^{-1/\theta}$ for $\theta\ne0$ | $-1\le\theta\le100$ | $\lambda_L=2^{-1/\theta}$ for $\theta>0$; $\lambda_U=0$ |
+| `Frank` | $-\frac{1}{\theta}\log\!\left[1+\frac{(e^{-\theta u}-1)(e^{-\theta v}-1)}{e^{-\theta}-1}\right]$ | $[0.001,100]$ when sample Kendall $\tau>0$, otherwise $[-100,-0.001]$ | $\lambda_L=\lambda_U=0$ |
+| `Normal` | $\Phi_\rho(\Phi^{-1}u,\Phi^{-1}v)$ | $-1+\epsilon<\rho<1-\epsilon$ | $\lambda_L=\lambda_U=0$ for $\vert \rho\vert <1$ |
+| `Gumbel` | $\exp\{-[( -\log u)^\theta+(-\log v)^\theta]^{1/\theta}\}$ | $1\le\theta\le100$ | $\lambda_U=2-2^{1/\theta}$, $\lambda_L=0$ |
+| `Joe` | $1-(a+b-ab)^{1/\theta}$ | $1\le\theta\le100$ | $\lambda_U=2-2^{1/\theta}$, $\lambda_L=0$ |
+| `StudentT` | $t_{\rho,\nu}(t_\nu^{-1}u,t_\nu^{-1}v)$ | $-1+\epsilon<\rho<1-\epsilon$;<br>$2+10^{-10}\le\nu\le30$ | symmetric nonzero tails except at limiting cases; see (5) |
 
-Here \(\epsilon\) is `Tools.DoubleMachineEpsilon`. The Gumbel and Joe families represent positive association only. Clayton emphasizes lower-tail co-occurrence, while Gumbel and Joe emphasize the upper tail. For maxima such as peak and volume, upper-tail behavior is often the engineering focus. The Student-\(t\) copula has
+Here $\epsilon$ is `Tools.DoubleMachineEpsilon`. The Gumbel and Joe families represent positive association only. Clayton emphasizes lower-tail co-occurrence, while Gumbel and Joe emphasize the upper tail. For maxima such as peak and volume, upper-tail behavior is often the engineering focus. The Student-$t$ copula has
 
 $$
 \lambda_L=\lambda_U=
 2t_{\nu+1}\!\left[-\sqrt{\frac{(\nu+1)(1-\rho)}{1+\rho}}\right]. \tag{5}
 $$
 
-The Gaussian copula is asymptotically tail independent even when \(\rho\) is large. A good central fit therefore does not establish adequate joint-tail behavior.
+The Gaussian copula is asymptotically tail independent even when $\rho$ is large. A good central fit therefore does not establish adequate joint-tail behavior.
 
 ### Copula densities
 
-For the five implemented Archimedean families, let \(g\) be the generator such that
+For the five implemented Archimedean families, let $g$ be the generator such that
 
 $$
 C(u,v)=g^{-1}\!\left(g(u)+g(v)\right).
@@ -97,9 +97,9 @@ c(u,v)=
 -\frac{g''(C(u,v))g'(u)g'(v)}{[g'(C(u,v))]^3}. \tag{6}
 $$
 
-The generators are \(g(t)=\log[(1-\theta(1-t))/t]\) for AMH, \(g(t)=(t^{-\theta}-1)/\theta\) for Clayton, \(g(t)=-\log[(e^{-\theta t}-1)/(e^{-\theta}-1)]\) for Frank, \(g(t)=(-\log t)^\theta\) for Gumbel, and \(g(t)=-\log[1-(1-t)^\theta]\) for Joe. Equation (6), together with the explicit CDFs above, fully specifies their densities.
+The generators are $g(t)=\log[(1-\theta(1-t))/t]$ for AMH, $g(t)=(t^{-\theta}-1)/\theta$ for Clayton, $g(t)=-\log[(e^{-\theta t}-1)/(e^{-\theta}-1)]$ for Frank, $g(t)=(-\log t)^\theta$ for Gumbel, and $g(t)=-\log[1-(1-t)^\theta]$ for Joe. Equation (6) applies on the differentiable interior of the copula support. Negative Clayton dependence requires the truncated CDF above; its zero-probability region is not described by an unqualified interior density formula. At $\theta=-1$ the copula is a singular limiting distribution. The mathematical limit as $\theta\to0$ is independence, but the reviewed Clayton CDF implementation does not supply a separate exact-zero branch; a mathematical limit must not be mistaken for a supported direct evaluation at that parameter.
 
-For the Normal copula, with \(z_1=\Phi^{-1}(u)\) and \(z_2=\Phi^{-1}(v)\),
+For the Normal copula, with $z_1=\Phi^{-1}(u)$ and $z_2=\Phi^{-1}(v)$,
 
 $$
 c_\rho(u,v)=\frac{1}{\sqrt{1-\rho^2}}
@@ -109,7 +109,7 @@ c_\rho(u,v)=\frac{1}{\sqrt{1-\rho^2}}
 \right]. \tag{7}
 $$
 
-For Student-\(t\), \(c_{\rho,\nu}\) is the standardized bivariate-\(t\) density divided by the two univariate-\(t\) densities. Numerics evaluates its logarithm directly with gamma functions and quadratic form \(z_1^2-2\rho z_1z_2+z_2^2\) to avoid underflow [5].
+For Student-$t$, $c_{\rho,\nu}$ is the standardized bivariate-$t$ density divided by the two univariate-$t$ densities. Numerics evaluates its logarithm directly with gamma functions and quadratic form $z_1^2-2\rho z_1z_2+z_2^2$ to avoid underflow [5].
 
 ## Pair Construction
 
@@ -122,9 +122,9 @@ $$
 (1-p_{X,i},1-p_{Y,i}), \tag{8}
 $$
 
-where `PlottingPosition` stores exceedance probability and `PlottingPositionComplement` is the nonexceedance pseudo-observation. If either data frame has stale or invalid pseudo-observations, BestFit calls its plotting-position routine before rebuilding the pair set. Pseudo-observations must lie strictly inside \((0,1)\).
+where `PlottingPosition` stores exceedance probability and `PlottingPositionComplement` is the nonexceedance pseudo-observation. If either data frame has stale or invalid pseudo-observations, BestFit calls its plotting-position routine before rebuilding the pair set. Pseudo-observations must lie strictly inside $(0,1)$.
 
-For inference from margins (IFM), the stored pair is the raw \((x_i,y_i)\), and probability transforms are recomputed from the fixed marginal distributions during every likelihood evaluation [6].
+For inference from margins (IFM), the stored pair is the raw $(x_i,y_i)$, and probability transforms are recomputed from the fixed marginal distributions during every likelihood evaluation [6].
 
 ## Likelihood, Prior, and Posterior
 
@@ -149,7 +149,7 @@ F_X(x_i;\hat\eta_X),F_Y(y_i;\hat\eta_Y)
 \right]. \tag{10}
 $$
 
-`DataLogLikelihood` returns (9) or (10). It does not add \(\log f_X+\log f_Y\), so it is a dependence-stage likelihood rather than the full joint-data likelihood from (2). `PointwiseDataLogLikelihood` returns the \(n_p\) summands for WAIC and PSIS-LOO calculations on paired events.
+`DataLogLikelihood` returns (9) or (10). It does not add $\log f_X+\log f_Y$, so it is a dependence-stage likelihood rather than the full joint-data likelihood from (2). `PointwiseDataLogLikelihood` returns the $n_p$ summands for WAIC and PSIS-LOO calculations on paired events.
 
 BestFit creates one `ModelParameter` per copula parameter and assigns an independent Uniform prior over the Numerics bounds. Thus
 
@@ -160,13 +160,13 @@ p(\psi\mid\mathcal D,\hat\eta_X,\hat\eta_Y)
 \frac{\mathbf 1(a_r\le\psi_r\le b_r)}{b_r-a_r}. \tag{11}
 $$
 
-Student-\(t\) has parameters `Dependency (θ)` and `DegreesOfFreedom`; all other families have one dependence parameter. Student-\(t\) initializes \(\nu=5\); other parameters initialize at the midpoint of their bounds. Frank's prior interval is selected from the sign of sample Kendall \(\tau\), so its support is data-dependent.
+Student-$t$ has parameters `Dependency (θ)` and `DegreesOfFreedom`; all other families have one dependence parameter. Student-$t$ initializes $\nu=5$; other parameters initialize at the midpoint of their bounds. Frank's prior interval is selected from the sign of sample Kendall $\tau$, so its support is data-dependent.
 
 ## Estimation and Output Construction
 
 `BivariateAnalysis.RunAsync` validates the model, rebuilds pairs, runs `BayesianAnalysis`, and then constructs joint-frequency uncertainty. Arithmetic exceptions and non-finite copula or marginal-CDF evaluations are converted to `double.NegativeInfinity`, rejecting the proposal without terminating the chain.
 
-For every requested \((x_k,y_k)\) ordinate, the point curve uses (3) at the configured MAP or
+For every requested $(x_k,y_k)$ ordinate, the point curve uses (3) at the configured MAP or
 posterior-mean copula parameter. Posterior mean and credible limits are calculated from the same
 AND probability over copula draws. The marginals remain fixed for every draw. Consequently these
 bands quantify copula-parameter uncertainty conditional on the marginal fits, not total bivariate
@@ -175,7 +175,7 @@ Independent propagation of optional marginal posterior chains occurs downstream 
 `CoincidentFrequencyAnalysis`, where those chains are combined with the copula chain as separate
 product-posterior sources.
 
-The reported RMSE compares \(C(F_{nX},F_{nY})\) with the empirical bivariate CDF at each matched pseudo-observation and divides the squared-error sum by \(n_p-1\). It requires at least two pairs. `GenerateRandomValues(sampleSize, seed)` delegates to the Numerics copula's Latin-hypercube simulation and transforms both uniforms through the attached marginal inverse CDFs.
+The reported RMSE compares $C(F_{nX},F_{nY})$ with the empirical bivariate CDF at each matched pseudo-observation and divides the squared-error sum by $n_p-1$. It requires at least two pairs. `GenerateRandomValues(sampleSize, seed)` delegates to the Numerics copula's Latin-hypercube simulation and transforms both uniforms through the attached marginal inverse CDFs.
 
 The AIC/BIC outputs use the copula data log likelihood at the stored MAP and the number of matched event pairs for BIC; copula-prior densities are excluded. When the copula prior is constant over the relevant region, MAP coincides with the constrained copula MLE and the criteria have their usual likelihood interpretation conditional on the already-fitted marginals. With an informative copula prior, use DIC, WAIC, or verified PSIS-LOO instead. All comparisons remain conditional on the fixed marginal distributions and require the same paired events and likelihood convention.
 
@@ -239,7 +239,7 @@ Before interpreting joint-tail probabilities, compare plausible families with di
 - Only exact, non-low-outlier pairs enter the copula likelihood; censoring and measurement error are not propagated jointly.
 - Dependence is stationary over the pair record; no copula trend model is exposed.
 - Tail extrapolation is controlled strongly by family choice and a small number of extreme pairs. Report sensitivity rather than a single unqualified joint return period.
-- The Student-\(t\) upper bound \(\nu=30\) intentionally treats larger values as practically Gaussian at typical hydrologic sample sizes.
+- The Student-$t$ upper bound $\nu=30$ intentionally treats larger values as practically Gaussian at typical hydrologic sample sizes.
 
 ## Validation and Traceability
 

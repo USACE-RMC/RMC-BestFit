@@ -104,7 +104,7 @@ where `DataFrame.TotalRecordLength()` supplies $n$ and threshold counts expand b
 - **Perception-threshold counts.** `NumberBelow` repeats the left-censored condition and `NumberAbove` repeats the right-censored condition.
 - **Uncertain observations.** Twenty-point Gauss-Legendre quadrature integrates equation (5)'s moment functions over the supplied measurement-error distribution. Infinite supports are truncated to its $10^{-8}$ and $1-10^{-8}$ quantiles and normalized by retained measurement mass. This is measurement-distribution averaging of estimating functions, not the convolution likelihood in equation (3).
 
-Conditional integrations are clipped to parent-distribution support approximated by inverse CDFs at machine-epsilon probabilities. Invalid parameters or nonfinite moments return a `double.MaxValue` estimating vector and a zero covariance accumulator so the optimizer rejects the point.
+For mixed, censored, or uncertain records, conditional integrations are clipped to parent support approximated by inverse CDFs at machine-epsilon probabilities. Systematic-only uncensored Pearson III and LP3 records use their exact moments without constructing those integration bounds. Invalid parameters or nonfinite moments return a `double.MaxValue` estimating vector and a zero covariance accumulator so the optimizer rejects the point.
 
 ## Moment Covariance and Weighting
 
@@ -178,7 +178,7 @@ $$
 
 with both $z_r$ and the configured target interpreted in base-10 log space when `UseLog10` is true. Up to an additive normalizing constant, equation (13) is the negative log density of $N(a_j,v_j)$ divided by $n$. Therefore `ParameterPenalty.MSE` is $v_j$ itself; it is not divided by $n$ before assignment. Multiplying equation (12) by $n$ gives the Gaussian prior kernel on the same scale as the moment information. Equation (15) applies the corresponding Gaussian information statement to a derived quantile.
 
-Let $\widehat\theta_L$ have unpenalized variance $V_L$. For an independent parameter block, the combined estimate and variance are
+Let $\widehat\theta_L$ have unpenalized variance $V_L$. For an independent Gaussian information block, the combined estimate and variance are
 
 $$
 V_P=\left(\frac1{V_L}+\frac1{v_j}\right)^{-1},
@@ -200,9 +200,24 @@ Bootstrap refits use a broader deterministic candidate set. For a fixed simulate
 1. start with identity $\mathbf W$ unless a matrix is supplied;
 2. minimize the current objective using BFGS, with automatic Nelder-Mead fallback;
 3. update $\mathbf S$ and $\mathbf W=\mathbf S^{-1}$;
-4. repeat until absolute parameter distance or relative objective change meets its configured tolerance, or the iteration limit is reached.
+4. repeat until one of the three outer convergence rules in the [GMM chapter](../estimation/generalized-method-of-moments.md) is satisfied, or the iteration limit is reached.
 
-One-step and two-step strategies also exist on the estimator, but `Bulletin17CAnalysis` constructs a fresh estimator and does not expose a pre-run hook for changing those defaults. The model provides no analytical Jacobian, so GMM differentiates the mean estimating equations numerically. `Estimate()` can return a usable parameter set without strict optimizer convergence; engineering workflows must inspect `GMM.Status`, the objective/convergence history, covariance condition, and report diagnostics.
+One-step and two-step strategies also exist on the estimator, but `Bulletin17CAnalysis` constructs a fresh estimator and does not expose a pre-run hook for changing those defaults. The systematic-only Pearson III and LP3 path supplies an analytical Jacobian; other observation configurations use numerical differentiation. `Estimate()` can return a usable parameter set without strict optimizer convergence; engineering workflows must inspect `GMM.Status`, the objective/convergence history, covariance condition, and report diagnostics.
+
+### Analytical systematic-record Jacobian
+
+For an uncensored record, let $\delta_i=y_i-\mu$, where $y_i=\log_{10}x_i$ for LP3 and $y_i=x_i$ for Pearson III. Let $c_2$ and $c_3$ denote the finite-sample corrections in the second and third estimating moments. Differentiation in natural moment coordinates gives
+
+$$
+\mathbf D_{\rm natural}=
+\begin{pmatrix}
+-1&0&0\\
+-2c_2\overline\delta&-2\sigma&0\\
+-3c_3\overline{\delta^2}&-3\gamma\sigma^2&-\sigma^3
+\end{pmatrix}.\tag{B17E.17}
+$$
+
+Each column is multiplied by the derivative of that coordinate's inverse link, $1/\texttt{DLink}(\theta_j)$, to obtain the working-coordinate Jacobian. This chain rule matters because the optimizer takes steps in link coordinates while the moments retain their physical meaning. The analytical branch requires exact systematic observations with no low-outlier, interval, uncertain, or threshold contribution.
 
 ## Identification, Assumptions, and Failure Modes
 
@@ -216,7 +231,7 @@ One-step and two-step strategies also exist on the estimator, but `Bulletin17CAn
 
 ## Verification and Traceability
 
-Focused .NET 10 verification confirms the Log10-Normal unbiased moment solution, the exact penalized objective gradient, and equation (16) for both the posterior parameter estimate and variance under wide-centered, narrow-centered, and narrow-shifted Gaussian information. Fast tests also cover bounded midpoint construction, ranked bootstrap-candidate validity and ordering, and pivotal parameter-bound repair. Fourteen exact bootstrap-refit reliability cells were executed independently for ordinary and pivotal uncertainty across Examples 1 through 7: 1,000 outputs per method for Examples 1-6 and 500 per method for highly censored Example 7. The final unguarded sweep produced 13,000 finite outputs from 13,000 realizations with zero retries, optimizer fallbacks, parent substitutions, failed GMM candidates, and final first-chance exceptions. Separately, the seven exact `B17CExampleTests.Test_Example1` through `Test_Example7` methods all passed current LP3 GMM mean, standard deviation, and skewness against the published Bulletin 17C values at absolute tolerance `1E-3`. The complete long-running Verification project was not run. Parent-family covariance checks, uncertain-data variants, pointwise/aggregate moment consistency, coverage experiments, and Cohn interval values remain separate claims requiring focused execution.
+The [current verification report](../../verification/report/data-distributions-b17c.md) records analytical moment/covariance identities, Gaussian information-combination comparisons, and seven published Bulletin 17C parameter examples. Its current 1,000-refit reliability diagnostic accepts 947 outer-converged and 53 outer-capped fits. Inner optimizer fallbacks, outer convergence, and acceptance are different quantities. These results support the declared calculations and finite refit output; they do not establish repeated-sample interval coverage or full EMA equivalence.
 
 The repository's legacy “Comparison with EMA” PDF evaluates the earlier Bayesian likelihood workflow against EMA and expressly says the comparison does not validate either method. It is useful historical context but is not validation evidence for the current specialized GMM implementation. The verification report therefore limits its Bulletin 17C parameter claim to the seven published examples exercised by the current test fixture.
 

@@ -63,6 +63,8 @@ The example specifies a scale of 500 discharge units and dimensionless shape 3. 
 
 CDF and quantile evaluation use Numerics incomplete-gamma routines. Review checks should cover normalization, limiting probabilities, moment simulation, $F(Q(p))\approx p$ over central and tail probabilities, and the $k=1$ exponential identity. The compiled example verifies the current constructor and method names, not numerical parity with another package. Because the support has a hard zero boundary, extrapolation can be especially sensitive when observations lie close to zero.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] N. L. Johnson, S. Kotz, and N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1, 2nd ed. Wiley, 1994.

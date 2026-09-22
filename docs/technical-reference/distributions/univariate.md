@@ -30,10 +30,10 @@ Here $E_0$ are ordinary exact values, $E_L$ are exact values flagged as low outl
 The scalar data log likelihood is the logarithm of (UNI.1). Impossible support, nonpositive interval probability, invalid distribution parameters, or any non-finite contribution returns negative infinity. The posterior target is
 
 $$
-\log p(\theta\mid D)=\log L_D(\theta)+\log p(\theta), \tag{UNI.2}
+\log\widetilde p(\theta\mid D)=\log L_D(\theta)+\log p(\theta), \tag{UNI.2}
 $$
 
-where the prior term includes configured coefficient priors and optional Jeffreys-scale and quantile-prior contributions.
+Here $\widetilde p$ is the unnormalized posterior kernel; the normalizing constant is not needed for MCMC ratios. The prior term includes configured coefficient priors and optional Jeffreys-scale and quantile-prior contributions.
 
 ## Nonstationarity
 
@@ -96,7 +96,7 @@ This fixture demonstrates valid production data types. Full estimation belongs t
 
 ## Implementation and Evidence
 
-Primary implementation symbols are `UnivariateDistribution`, `UnivariateDistributionModelBase`, `DataFrame`, `ModelParameter`, and the selected Numerics distribution class. The compile-checked fixture guards the current construction API. Numerical validation claims remain family-specific and are linked from each chapter; long-running verification is never inferred from compilation alone.
+Primary implementation symbols are `UnivariateDistribution`, `UnivariateDistributionModelBase`, `DataFrame`, `ModelParameter`, and the selected Numerics distribution class. The compile-checked fixture guards the current construction API. Numerical validation claims remain family-specific and are linked from each chapter; numerical verification is never inferred from compilation alone.
 
 ## References
 

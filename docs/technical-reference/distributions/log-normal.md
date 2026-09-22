@@ -6,7 +6,7 @@
 
 ## Purpose and Parameterization
 
-`Numerics.Distributions.LogNormal` models $Y=\log_{10}X$ as Normal and uses constructor order $(\mu_Y,\sigma_Y)$. Both parameters are expressed in base-10 logarithmic units; they are not the arithmetic mean and standard deviation of $X$. BestFit's standard instance uses `Base = 10`. The mutable base is part of Numerics, but setting it below one clamps it to one, where the logarithm and Jacobian are undefined; BestFit documentation and examples therefore use base 10 only.
+`Numerics.Distributions.LogNormal` models $Y=\log_{10}X$ as Normal and uses constructor order $(\mu_Y,\sigma_Y)$. Both parameters are expressed in base-10 logarithmic units; they are not the arithmetic mean and standard deviation of $X$. BestFit's standard instance uses `Base = 10`. Numerics requires a finite base greater than one and throws for invalid values. BestFit's standard convention and the equations below use base 10; changing the base requires converting both log-space parameters consistently.
 
 ## Distribution
 
@@ -43,7 +43,7 @@ $$
 
 The Jacobian is essential for a likelihood on the original $X$ scale. RMC.BestFit's family methods supply the density and CDF to all exact, censored, uncertain, interval, threshold, stationary, and nonstationary components; there is no additional external transformation step. Trends act on $\mu_Y$ and $\sigma_Y$. The posterior multiplies the complete likelihood by parameter and quantile priors.
 
-Initialization and working bounds are sample-dependent Numerics outputs and become default uniform-prior bounds. The source reports `MinimumOfParameters` as zero for $\mu_Y$, although a log-space mean is mathematically allowed to be negative; the data-dependent constraints and intended measurement units must therefore be reviewed for small-valued variables.
+Initialization and working bounds are sample-dependent Numerics outputs and become default uniform-prior bounds. The log-space location $\mu_Y$ may be any finite real value; only the log-space standard deviation must be positive. Negative log means are therefore valid for positive observations below one in the stated measurement unit.
 
 ## Compile-Checked API Example
 
@@ -61,6 +61,8 @@ The mean 3.20 and standard deviation 0.20 describe $\log_{10}$ discharge. This i
 ## Validation and Limitations
 
 Closed-form verification uses a symmetric deterministic sample in base-10 log space. It verifies the population-divisor MLEs for $\mu_Y$ and $\sigma_Y$, the original-measure log likelihood including the $(x\ln 10)^{-1}$ Jacobian, equality of scalar and pointwise likelihood sums, the median CDF, and a selected analytical quantile. Parameter estimates agree within $10^{-5}$ and the maximized log likelihood within $10^{-8}$; direct likelihood identities use $10^{-10}$. Zero and negative observations have no support and must be represented through censoring or another family rather than silently transformed.
+
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
 
 ## References
 

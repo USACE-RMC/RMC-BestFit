@@ -4,7 +4,7 @@
 
 [Back to Technical Reference](../index.md)
 
-This stable landing page preserves the original documentation URL. The audited material is split because trend models and link functions have different probability roles:
+Trend models and link functions have different probability roles. The companion chapters explain their separate constructions:
 
 - [Trend functions](trend-functions.md) gives every implemented equation, coefficient order, centering rule, numerical safeguard, nonstationary likelihood mapping, and extrapolation limitation.
 - [Link functions](link-functions.md) gives forward and inverse maps, domains, derivatives, BestFit-specific links, Newton inversion, adaptive behavior, and serialization fallback.

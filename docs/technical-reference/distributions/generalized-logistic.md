@@ -61,6 +61,8 @@ Here $\kappa=-0.10$ means an unbounded heavy upper tail under the Numerics sign 
 
 Release evidence should test $F(Q(p))=p$, normalization, endpoint limits, the $\kappa\to0$ Logistic limit, and moment existence. Independent parity checks must first reconcile parameter order and shape sign. The compiled example supplies API evidence only. A good central fit does not validate rare-tail behavior, and L-moment popularity is not evidence that a GLO is appropriate for every flood population.
 
+The [distribution verification matrix](verification-matrix.md) identifies the current independent formula and fitted-objective comparisons, retained Bayesian/MLE recovery designs, and their distinct acceptance rules. The compiled example guards API compatibility; it does not run an estimator or establish scientific accuracy by itself.
+
 ## References
 
 <a id="ref-1"></a>[1] J. R. M. Hosking and J. R. Wallis, *Regional Frequency Analysis: An Approach Based on L-Moments*. Cambridge University Press, 1997.

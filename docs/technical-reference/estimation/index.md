@@ -49,13 +49,13 @@ Every fitted result should state:
 - predictive checks and sensitivity to scientifically material choices;
 - verification source and tolerance for every numerical claim.
 
-## Open Findings Affecting Interpretation
+## Evidence Boundaries
 
 MLE and MAP nuisance profiling, PSIS tail smoothing, covariance failure signaling, GMM Hansen J, overidentified one-step fitting and covariance, ARWMH realized-state adaptation, NUTS acceptance/gradient routing, rank-normalized R-hat and conservative bulk/tail ESS, and combined-influence terminology are implemented and verified. The legacy GMM PSIS-shaped compatibility overloads are explicitly obsolete. Joint-prior sampling remains a documented limitation. The chapters describe current implemented behavior and identify any output whose scientific interpretation remains limited.
 
 ## Validation Boundary
 
-All marked C# examples are compiled against the current .NET 10/RMC.BestFit 2.0 API and synchronized with source regions. Fast documentation, link, citation, namespace, and traceability gates run in `RMC.BestFit.Tests`. Long-running estimator recovery, coverage, and published-result comparisons remain in `RMC.BestFit.Verification`; Codex does not run that project.
+The marked C# examples compile against the .NET 10/RMC.BestFit 2.0 API and establish API conformance. Independent numerical comparisons in `RMC.BestFit.Verification` support the specific estimation, recovery, coverage, and published-result claims identified in each chapter. A compiled example alone does not establish numerical accuracy.
 
 ---
 

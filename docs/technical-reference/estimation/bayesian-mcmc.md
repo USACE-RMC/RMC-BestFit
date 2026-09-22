@@ -88,8 +88,8 @@ Both methods are population samplers and require at least three chains in Numeri
 $$
 \boldsymbol\theta_c^*\sim
 \begin{cases}
-N(\boldsymbol\theta_c,,0.1^2\mathbf I/d), & \text{small-kernel move},\\
-N(\boldsymbol\theta_c,,s\widehat{\boldsymbol\Sigma}_c), & \text{adaptive move},
+N(\boldsymbol\theta_c,0.1^2\mathbf I/d), & \text{small-kernel move},\\
+N(\boldsymbol\theta_c,s\widehat{\boldsymbol\Sigma}_c), & \text{adaptive move},
 \end{cases}
 \quad
 s=2.38^2/d,
@@ -110,7 +110,7 @@ $$
 
 Leapfrog integration builds a binary tree in randomly selected forward/backward directions. Tree doubling stops at a U-turn, invalid/divergent subtree, or `MaxTreeDepth`; the maximum trajectory contains $2^{\texttt{MaxTreeDepth}}$ leapfrog steps. A candidate is selected by multinomial Hamiltonian weights. During `WarmupIterations * ThinningInterval` raw transitions, dual averaging targets an average Metropolis statistic of 0.80. Numerics can adapt a diagonal mass matrix in windows, but its `AdaptMassMatrix` default is false and `BayesianAnalysis.SetUpSampler()` does not enable or expose that property; the BestFit path therefore retains an identity diagonal mass matrix.
 
-BestFit supplies no analytic gradient, so Numerics applies bound-aware finite differences to the complete `Model.LogLikelihood` posterior target. A coupled-prior verification confirms both data and prior derivatives enter this path. When a Numerics caller supplies an analytic `GradientFunction`, both ordinary leapfrog integration and the reasonable-step-size initialization heuristic use it; the latter route has a permanent regression because an earlier implementation bypassed the configured function. Sampling still occurs in the bounded API parameterization rather than an unconstrained transformed space. Nondifferentiable likelihood branches, hard support boundaries, interval-probability underflow, and strongly different parameter scales can impair Hamiltonian trajectories.
+BestFit supplies no analytic gradient, so Numerics applies bound-aware finite differences to the complete `Model.LogLikelihood` posterior target. A coupled-prior verification confirms both data and prior derivatives enter this path. When a Numerics caller supplies an analytic `GradientFunction`, both ordinary leapfrog integration and the reasonable-step-size initialization heuristic use it; both routes are covered by supplied-gradient contracts. Sampling still occurs in the bounded API parameterization rather than an unconstrained transformed space. Nondifferentiable likelihood branches, hard support boundaries, interval-probability underflow, and strongly different parameter scales can impair Hamiltonian trajectories.
 
 At the sampler level, `MCMCSampler.AcceptanceRates` always means accepted transitions divided by samples. NUTS accepts each completed transition, so that generic counter is normally 1.0 and is not its tuning statistic. `NUTS.HamiltonianAcceptanceRates` separately exposes the mean post-warmup Hamiltonian acceptance probability. When results are constructed from NUTS, the existing `MCMCResults.AcceptanceRates` field stores this Hamiltonian statistic so BestFit can persist and report it with concise NUTS-specific wording. Diagnostic transition counts, divergences, maximum-tree-depth hits, mean tree depth, mean leapfrog steps, final step size, and energy Bayesian fraction of missing information (E-BFMI) remain available only on the live `NUTS` sampler. They are accumulated online with constant memory and no additional target or gradient evaluations, but are not serialized or displayed by BestFit. Sampler-level diagnostic tests and BestFit result-routing tests verify this behavior.
 
@@ -194,9 +194,9 @@ Before `RunAsync`, call `Validate()` and treat warnings separately from errors. 
 - Thinning reduces stored autocorrelation but usually discards information; it does not repair a poorly mixing chain.
 - Parallel chains are deterministic for a fixed seed and configuration only to the extent guaranteed by the pinned implementation and runtime.
 - Rank-normalized R-hat and bulk/tail ESS are screening diagnostics, not proof of convergence or model adequacy.
-- Compile checking verifies configuration syntax. Computational recovery, coverage, and cross-package parity remain Verification work and were not run during this pass.
+- Compile checking verifies configuration syntax. The [verification report](../../verification/report/estimation-diagnostics.md) separately identifies the independent numerical comparisons and their acceptance rules.
 
-Implementation source: `RMC.BestFit.Estimation.BayesianAnalysis`; pinned Numerics commit `828664650c9327b309ee8332e707ccca73588e93`, files `MCMCSampler.cs`, `DEMCz.cs`, `DEMCzs.cs`, `ARWMH.cs`, `NUTS.cs`, `MCMCResults.cs`, and `MCMCDiagnostics.cs`.
+Implementation source: `RMC.BestFit.Estimation.BayesianAnalysis`; pinned Numerics commit `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02`, files `MCMCSampler.cs`, `DEMCz.cs`, `DEMCzs.cs`, `ARWMH.cs`, `NUTS.cs`, `MCMCResults.cs`, and `MCMCDiagnostics.cs`.
 
 ## References
 

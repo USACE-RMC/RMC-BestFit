@@ -18,7 +18,7 @@ These objects are not interchangeable. A maximum asks which process produces the
 
 ## Competing-Risk Composition
 
-For independent child CDFs \(F_1,\ldots,F_M\), the maximum and minimum CDFs are
+For independent child CDFs $F_1,\ldots,F_M$, the maximum and minimum CDFs are
 
 $$
 F_{\max}(x)=\prod_{m=1}^{M}F_m(x), \tag{1}
@@ -34,7 +34,7 @@ $$
 
 ## Fixed Mixture Composition
 
-For child predictive distributions \(F_m\) and configured weights \(w_m\),
+For child predictive distributions $F_m$ and configured weights $w_m$,
 
 $$
 F_C(x)=\sum_{m=1}^{M}w_mF_m(x). \tag{3}
@@ -50,7 +50,7 @@ the implementation sets Numerics **IsZeroInflated = true** and **ZeroWeight = 1-
 
 ## Criterion Weights
 
-For AIC, BIC, DIC, WAIC, and LOOIC, let \(C_m\) be the selected smaller-is-better criterion and
+For AIC, BIC, DIC, WAIC, and LOOIC, let $C_m$ be the selected smaller-is-better criterion and
 
 $$
 \Delta_m=C_m-\min_j C_j. \tag{5}
@@ -63,15 +63,15 @@ w_m=\frac{\exp(-\Delta_m/2)}
 {\sum_j\exp(-\Delta_j/2)}. \tag{6}
 $$
 
-For RMSE \(r_m\), it uses inverse-MSE weights,
+For RMSE $r_m$, it uses inverse-MSE weights,
 
 $$
 w_m=\frac{r_m^{-2}}{\sum_jr_j^{-2}}, \tag{7}
 $$
 
-and **Equal** uses \(w_m=1/M\). A final proportional normalization corrects floating-point sums that differ from one.
+and **Equal** uses $w_m=1/M$. A final proportional normalization corrects floating-point sums that differ from one.
 
-Equation (6) gives conventional Akaike weights when \(C_m=\mathrm{AIC}_m\). Applying the same exponential transform to BIC approximates normalized evidence under additional assumptions; applying it to DIC, WAIC, or LOOIC is a pseudo-BMA-style heuristic, not Bayesian posterior model probability and not predictive stacking [1](#ref-1). The implementation does not optimize stacking weights.
+Equation (6) gives conventional Akaike weights when $C_m=\mathrm{AIC}_m$. Applying the same exponential transform to BIC approximates normalized evidence under additional assumptions; applying it to DIC, WAIC, or LOOIC is a pseudo-BMA-style heuristic, not Bayesian posterior model probability and not predictive stacking [1](#ref-1). The implementation does not optimize stacking weights.
 
 Every estimated child is classified by the selected criterion before Numerics weighting. Non-finite information criteria, non-finite RMSE, and negative RMSE are unusable. If at least one usable child remains, each unusable child receives exactly zero weight and a named warning; if none remains, validation fails with named errors and all weights remain zero. If one or more RMSE values are exactly zero, those children divide unit weight equally and all positive or invalid RMSE children receive zero. Ordinary finite values retain equations (6) and (7).
 
@@ -107,7 +107,7 @@ The initial 0.5 values satisfy construction but are replaced by **EstimateModelW
 
 ## Posterior Realization Composition
 
-Suppose child \(m\) exposes retained distributions
+Suppose child $m$ exposes retained distributions
 
 $$
 F_m^{(1)},\ldots,F_m^{(B_m)}. \tag{8}
@@ -129,14 +129,14 @@ k_{m,1},\ldots,k_{m,B}
 $$
 
 Rows are generated independently in configured child order. For each realization
-\(b=1,\ldots,B\), the mixture/model-average branch constructs
+$b=1,\ldots,B$, the mixture/model-average branch constructs
 
 $$
 F_C^{(b)}(x)=
 \sum_m w_mF_m^{(k_{m,b})}(x), \tag{11}
 $$
 
-or the configured min/max composition of the \(F_m^{(k_{m,b})}\) for competing risks.
+or the configured min/max composition of the $F_m^{(k_{m,b})}$ for competing risks.
 Longer chains are sampled across their complete retained range rather than truncated to
 the shortest-chain prefix. The child `MCMCResults` objects and their output order are not
 modified. The point-estimate composite still uses each child's selected posterior-mean or
@@ -188,7 +188,7 @@ Validation requires:
 - at least one child;
 - every **WeightedUnivariateAnalysis** to reference an estimated, valid child;
 - no nested **CompositeAnalysis**;
-- valid ascending probability ordinates in \([0,1]\);
+- valid ascending probability ordinates in $[0,1]$;
 - valid fixed mixture weights and a sum not greater than one; and
 - at least one usable selected criterion for non-equal model averaging; and
 - a valid, dimensionally compatible matrix when correlation-matrix competing-risk dependence is selected; and
@@ -218,7 +218,7 @@ Before averaging, compare supports, upper endpoints, tail indices, prior assumpt
 - AIC/BIC values from **UnivariateAnalysis** use the data log likelihood at MAP. They are comparable with conventional MLE criteria only when all active priors are constant; with nonconstant priors, select DIC, WAIC, or verified PSIS-LOO weighting instead. See [Model Comparison](../estimation/model-comparison.md).
 - DIC, WAIC, and LOOIC require comparable pointwise likelihood definitions and priors.
 - Bulletin 17C has no likelihood-based posterior criterion and is therefore zero-weighted for DIC, WAIC, and LOOIC; it remains eligible for Equal, AIC, BIC, and RMSE.
-- LOOIC exponential weights are not PSIS stacking and do not use Pareto-\(k\) diagnostics in weight optimization.
+- LOOIC exponential weights are not PSIS stacking and do not use Pareto-$k$ diagnostics in weight optimization.
 - Correlated competing sources require a valid joint model; merely choosing a dependency enum is insufficient.
 - A model average can hide severe disagreement in the decision tail. Report component curves and weights alongside the composite.
 

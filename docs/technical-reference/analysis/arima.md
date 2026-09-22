@@ -61,7 +61,7 @@ $$
 -\frac{1}{2\sigma^2}\sum_{t=r}^{T_d-1}e_t^2+J_g, \tag{ARI.6}
 $$
 
-where $T_d$ is the differenced training length. This is not an exact Gaussian state-space likelihood. Pointwise output contains $T_d-r$ contributions, divides $J_g$ equally among them, and applies the same nonfinite or nonpositive scale guard as the scalar likelihood.
+where $T_d$ is the differenced training length. This is not an exact Gaussian state-space likelihood. Pointwise output contains $T_d-r$ contributions, assigns each step the Jacobian of its corresponding raw observation (with equal allocation of the scalar total only as a compatibility fallback when stored terms do not match), and applies the same nonfinite or nonpositive scale guard as the scalar likelihood.
 
 The prior is the product of configured marginal priors and, by default, $1/\sigma$. AR/MA bounds do not enforce stationarity or invertibility. `IsStationary` and `IsInvertible` use exact first-order checks and conservative sums of absolute coefficients at higher order; failures are warnings. For valid ARIMA interpretation, compute roots of $1-\sum\phi_jz^j$ and $1+\sum\theta_kz^k$ for posterior draws.
 
@@ -79,7 +79,7 @@ The component vectors retain raw length $T+h$: their first $d$ conditioning entr
 component step $k$ is stored at raw slot $k+d$. `Transform.None` with $d=0$ retains its established
 fixed-seed values bit for bit.
 
-`GenerateRandomValues(sampleSize, seed)` now simulates exactly
+`GenerateRandomValues(sampleSize, seed)` simulates exactly
 $\max(0,\text{sampleSize}-d)$ highest-order differences on transformed model scale. With attached
 data, the first $\min(d,\text{sampleSize})$ transformed observations are anchors; without data,
 the anchors are zero on transformed scale. The complete path is integrated before one inverse
@@ -137,12 +137,7 @@ recurrences, observed/zero initialization anchors, `sampleSize<=d`, and exact le
 Focused prediction and generator methods pass their algebraic and exactly 1,000-realization moment
 rules; the verification report records integrated parameter-recovery results.
 
-Chunk 13 retains the independently generated log-ARIMA(1,1,1) MLE/Bayesian recovery cells as the
-minimal mixed-ARMA, differencing, transformation, and raw-boundary evidence. The independent Python
-artifact separately exercises pure ARIMA(2,0,0) and pure ARIMA(0,0,2) behavior, including ARIMA-
-specific conditional initialization, likelihood contribution count, one-step response, and
-stationarity/invertibility diagnostics. The removed legacy ARIMA identities used redundant fixtures
-or unmatched R initialization/objective conventions and no historical pass was transferred.
+The [time-series verification report](../../verification/report/time-series-analyses.md) records independent conditional likelihood and optimum comparisons, transformed forecast/generation identities, and retained 1,000-observation recovery designs. Acceptance is tied to the exact recurrence, conditioning window, identified parameters, and forecast quantities; it is not a claim for every order, transformation, or covariate design.
 
 ## References
 

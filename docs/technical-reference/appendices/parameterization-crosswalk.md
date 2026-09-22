@@ -14,7 +14,7 @@ This crosswalk prevents natural space, log/link space, Numerics parameters, tren
 | Nonstationary `UnivariateDistribution` | Concatenated trend coefficients | Trend $k$ predicts Numerics family parameter $k$ at each index |
 | Parameter priors | Same fitted coefficient vector | One stored prior per `ModelParameter`; extra scale/quantile terms are separate |
 | Quantile prior | Derived, not an extra fitted coordinate | $q_a(\theta)=F^{-1}(1-a\mid\theta)$ plus implemented multi-quantile Jacobian |
-| Link | Natural $x$ to working $\eta=h(x)$ | `DLink(x)=d\eta/dx`; probability Jacobian is caller-specific |
+| Link | Natural $x$ to working $\eta=h(x)$ | `DLink(x)` evaluates $d\eta/dx$; probability Jacobian is caller-specific |
 | Result | Estimator or posterior coefficient vector | Quantiles and curves are post-processing; no silent reorder |
 
 ## Univariate Families
@@ -41,15 +41,21 @@ This crosswalk prevents natural space, log/link space, Numerics parameters, tren
 
 For `LnNormal`, public natural-space moments map to internal log parameters by
 
-$$\sigma_{\ln}^2=\log[1+(s/m)^2],\qquad \mu_{\ln}=\log m-\sigma_{\ln}^2/2.\tag{XW.1}$$
+$$
+\sigma_{\ln}^2=\log[1+(s/m)^2],\qquad \mu_{\ln}=\log m-\sigma_{\ln}^2/2.\tag{XW.1}
+$$
 
 For Pearson III and log-Pearson III, moment parameters map to shifted-Gamma coordinates by
 
-$$a=4/\gamma^2,\qquad\beta=\sigma\gamma/2,\qquad\xi=\mu-2\sigma/\gamma.\tag{XW.2}$$
+$$
+a=4/\gamma^2,\qquad\beta=\sigma\gamma/2,\qquad\xi=\mu-2\sigma/\gamma.\tag{XW.2}
+$$
 
 For the GEV, GLO, GNO, and GPD shape transform,
 
-$$y=-\kappa^{-1}\log[1-\kappa(x-\xi)/\alpha],\tag{XW.3}$$
+$$
+y=-\kappa^{-1}\log[1-\kappa(x-\xi)/\alpha],\tag{XW.3}
+$$
 
 with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published extreme-value shape is $-\kappa$.
 
@@ -93,12 +99,12 @@ with the continuous $\kappa=0$ branch. For GEV and GPD, the commonly published e
 | Model | Public parameter order and scale | Status |
 |---|---|---|
 | `BivariateDistribution` | Copula parameter block only; the two marginal `UnivariateDistribution` models are fixed upstream and are not appended to the fitted vector | Complete; copula parameter recovery and criteria routing verified |
-| Bivariate pseudo-likelihood | Copula receives matched nonexceedance pseudo-observations \((\widetilde u_i,\widetilde v_i)\) | Complete |
-| Bivariate IFM | Copula receives \(F_X(x_i;\widehat\eta_X),F_Y(y_i;\widehat\eta_Y)\); marginal estimates remain fixed | Complete |
+| Bivariate pseudo-likelihood | Copula receives matched nonexceedance pseudo-observations $(\widetilde u_i,\widetilde v_i)$ | Complete |
+| Bivariate IFM | Copula receives $F_X(x_i;\widehat\eta_X),F_Y(y_i;\widehat\eta_Y)$; marginal estimates remain fixed | Complete |
 | `SpatialGEV` | copula correlation block; location regression; scale regression; shape regression; enabled location/scale/shape error blocks (process densities in `PriorLogLikelihood`) | Complete; likelihood, prediction, recovery, and uncertainty paths verified |
-| Spatial regression | each `GeneralLinearFunction` is \((\beta_0,\beta_1,\ldots,\beta_K)\), with stored covariate row \(j\) selecting site \(j\) | Complete |
-| Spatial error block | \((\sigma_a,\boldsymbol\phi_a,\epsilon_{a,1},\ldots,\epsilon_{a,S})\); \(\boldsymbol\phi_a=(r_a)\) or \((r_a,p_a)\) | Complete |
-| Spatial GEV links | default \(\xi_j=\exp(\eta_{\xi,j}+\epsilon_{\xi,j})\), \(\alpha_j=\exp(\eta_{\alpha,j}+\epsilon_{\alpha,j})\), and \(\kappa_j=\eta_{\kappa,j}+\epsilon_{\kappa,j}\) | Complete |
+| Spatial regression | each `GeneralLinearFunction` is $(\beta_0,\beta_1,\ldots,\beta_K)$, with stored covariate row $j$ selecting site $j$ | Complete |
+| Spatial error block | $(\sigma_a,\boldsymbol\phi_a,\epsilon_{a,1},\ldots,\epsilon_{a,S})$; $\boldsymbol\phi_a=(r_a)$ or $(r_a,p_a)$ | Complete |
+| Spatial GEV links | default $\xi_j=\exp(\eta_{\xi,j}+\epsilon_{\xi,j})$, $\alpha_j=\exp(\eta_{\alpha,j}+\epsilon_{\alpha,j})$, and $\kappa_j=\eta_{\kappa,j}+\epsilon_{\kappa,j}$ | Complete |
 | Spatial coordinates | `SpatialDistanceMetric.Cartesian` (default): projected coordinates, correlation range in the same linear unit; `Geodesic`: (latitude, longitude) in decimal degrees, great-circle kilometres, range in kilometres | Complete; both distance metrics verified |
 
 ---
