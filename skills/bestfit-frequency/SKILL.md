@@ -1,9 +1,23 @@
 ---
 name: bestfit-frequency
-description: Use when asked to run RMC-BestFit flood or flow frequency analysis, Bulletin 17C with optional MGBT low-outlier screening, or Bayesian univariate analysis from USGS annual peaks or supplied observations, and display a matplotlib frequency curve matching BestFit's default desktop plots.
+description: Use when asked for RMC-BestFit analyses or app-style Python plots, including saved results, frequency, Bulletin 17C, nonstationary chronology, bivariate or coincident frequency, rating curves, time series, regression, and sampler diagnostics.
 ---
 
-# BestFit frequency curves
+# BestFit analysis and app plots
+
+## Start from the supplied evidence
+
+If the task supplies saved results or asks only for plots, read
+[saved-plots.md](references/saved-plots.md) first. List views with
+`python scripts/plot_source.py --source ARTIFACT.json --list`, then export the
+selected view. This path supports saved PlotSpec/case files and completed API
+plot-source snapshots and does not start estimation. Use the bundled
+[45-slot map](references/app-plot-map.json) to check the requested view's source,
+adapter, variants, and verification status. Frozen teaching projects and the
+documented Nile date correction are described in `saved-plots.md`.
+
+For a new analysis, use the workflow below. Preserve existing saved inputs and
+results when preparing a separately requested run.
 
 Use the headless BestFit API for numerical work and the bundled Python scripts for
 requests, saved artifacts, and plotting. In a web session, clone the

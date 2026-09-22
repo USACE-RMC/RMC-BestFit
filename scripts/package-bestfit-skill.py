@@ -5,10 +5,16 @@ from pathlib import Path
 import zipfile
 
 FILES = (
-    "SKILL.md", "requirements.txt", "agents/openai.yaml",
-    "scripts/run_frequency.py", "scripts/plot_frequency.py",
+    "SKILL.md", "requirements.txt", "pyproject.toml", "agents/openai.yaml",
+    "scripts/run_frequency.py", "scripts/plot_frequency.py", "scripts/plot_source.py",
     "references/setup.md", "references/workflow.md", "references/plot-contract.md",
-    "references/install.md", "assets/synthetic-annual-flows.json",
+    "references/install.md", "references/app-plot-map.json", "references/saved-plots.md", "assets/synthetic-annual-flows.json",
+    "bestfit_plots/__init__.py", "bestfit_plots/spec.py", "bestfit_plots/render.py",
+    "bestfit_plots/legacy_frequency.py", "bestfit_plots/source.py",
+    "bestfit_plots/adapters/__init__.py", "bestfit_plots/adapters/common.py",
+    "bestfit_plots/adapters/input_data.py", "bestfit_plots/adapters/frequency.py",
+    "bestfit_plots/adapters/diagnostics.py", "bestfit_plots/adapters/response_models.py",
+    "bestfit_plots/adapters/api_response_models.py",
 )
 
 

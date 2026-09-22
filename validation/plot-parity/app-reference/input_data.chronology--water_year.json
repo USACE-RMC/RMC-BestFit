@@ -1,0 +1,546 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "b809ca84f4792b029e0deca1718c0e394f5c87cea5e3a242028378eb54f52ba3",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "6886eb92b275aa2e8ccc9d3eb577eb572845ffe3f6be0e796e1b41776fb33fea",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+  "element": "USGS - 01134500 - Block Max - Water Year",
+  "plotId": "input_data.chronology",
+  "variant": "water_year",
+  "variantSelection": "saved Water Year input data",
+  "appFactory": "src/RMC.BestFit.UI/Elements/InputData/InputData.cs::CreateDefaultChronologyPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/InputData/InputDataControl.xaml.cs::UpdateChronologyPlot",
+  "title": "Chronology",
+  "axes": [
+    {
+      "type": "LinearAxis",
+      "Key": "Yaxis",
+      "Title": "Flow (cfs)",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 868,
+      "ActualMaximum": 4132,
+      "labels": null
+    },
+    {
+      "type": "LinearAxis",
+      "Key": "Xaxis",
+      "Title": "Year",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 1946.21,
+      "ActualMaximum": 2026.79,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "ExactData",
+      "type": "ScatterSeries",
+      "Title": "Exact Data",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [
+        {
+          "X": 1947,
+          "Y": 1770,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1948,
+          "Y": 1520,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1949,
+          "Y": 1170,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1950,
+          "Y": 2480,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1951,
+          "Y": 1130,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1952,
+          "Y": 1860,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1953,
+          "Y": 2540,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1954,
+          "Y": 2500,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1955,
+          "Y": 2120,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1956,
+          "Y": 1530,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1957,
+          "Y": 1120,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1958,
+          "Y": 1680,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1959,
+          "Y": 1020,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1959,
+          "Y": 2100,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1961,
+          "Y": 1350,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1962,
+          "Y": 1680,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1963,
+          "Y": 1820,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1964,
+          "Y": 2540,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1965,
+          "Y": 965,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1966,
+          "Y": 1320,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1967,
+          "Y": 1320,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1968,
+          "Y": 1200,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1969,
+          "Y": 2040,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1970,
+          "Y": 2470,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1971,
+          "Y": 1350,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1972,
+          "Y": 2510,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1973,
+          "Y": 3250,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1973,
+          "Y": 2250,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1975,
+          "Y": 900,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1976,
+          "Y": 2330,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1977,
+          "Y": 1590,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1978,
+          "Y": 1330,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1979,
+          "Y": 1460,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1980,
+          "Y": 1190,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1981,
+          "Y": 1330,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1982,
+          "Y": 1950,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1983,
+          "Y": 1450,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1984,
+          "Y": 2710,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1985,
+          "Y": 1140,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1986,
+          "Y": 2120,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1987,
+          "Y": 4100,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1988,
+          "Y": 1430,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1989,
+          "Y": 1930,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1990,
+          "Y": 3130,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1990,
+          "Y": 1820,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1992,
+          "Y": 2020,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1993,
+          "Y": 1420,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1994,
+          "Y": 2270,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1995,
+          "Y": 3840,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1996,
+          "Y": 1790,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1996,
+          "Y": 1200,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1998,
+          "Y": 2370,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 1999,
+          "Y": 1150,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2000,
+          "Y": 1680,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2001,
+          "Y": 2240,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2002,
+          "Y": 2150,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2003,
+          "Y": 1810,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2003,
+          "Y": 1650,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2005,
+          "Y": 1390,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2005,
+          "Y": 2400,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2007,
+          "Y": 1800,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2008,
+          "Y": 1680,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2009,
+          "Y": 1540,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2010,
+          "Y": 1470,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2011,
+          "Y": 2440,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2012,
+          "Y": 1240,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2013,
+          "Y": 1640,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2014,
+          "Y": 3330,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2015,
+          "Y": 1460,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2016,
+          "Y": 1850,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2017,
+          "Y": 1950,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2018,
+          "Y": 1460,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2019,
+          "Y": 3000,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2020,
+          "Y": 1970,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2021,
+          "Y": 1390,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2021,
+          "Y": 921,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2023,
+          "Y": 1630,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2024,
+          "Y": 3440,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2025,
+          "Y": 1940,
+          "Value": null,
+          "Size": null
+        },
+        {
+          "X": 2026,
+          "Y": 1270,
+          "Value": null,
+          "Size": null
+        }
+      ],
+      "points2": [],
+      "items": [],
+      "actualItems": [],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "MarkerFill": "#ff000000",
+        "MarkerStroke": "#ff000000",
+        "MarkerType": "Circle",
+        "MarkerSize": 4
+      }
+    }
+  ],
+  "annotations": []
+}

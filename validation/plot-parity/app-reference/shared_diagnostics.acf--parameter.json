@@ -1,0 +1,463 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "6f6f984f8d0357d490ffde9d394601ae77324a0f293a84a3993afaf7e9762e86",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "45b72adb2e983dd40014a29665dfca3ca28af9b638a4a1e862595f41ffec67d4",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+  "element": "MCMC - Systematic (1951-2001)",
+  "plotId": "shared_diagnostics.acf",
+  "variant": "parameter",
+  "variantSelection": "saved Bayesian analysis and control defaults",
+  "appFactory": "src/RMC.BestFit.UI/Elements/Support/BayesianController.cs::CreateDefaultAutocorrelationPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/Support/Controls/AutocorrelationControl.xaml.cs::UpdatePlot",
+  "title": "Autocorrelation of Location (\u03BE)",
+  "axes": [
+    {
+      "type": "LinearAxis",
+      "Key": "Yaxis",
+      "Title": "Autocorrelation",
+      "position": "Left",
+      "Minimum": -0.05,
+      "Maximum": null,
+      "ActualMinimum": -0.05,
+      "ActualMaximum": 1.0101783616426003,
+      "labels": null
+    },
+    {
+      "type": "LinearAxis",
+      "Key": "Xaxis",
+      "Title": "Lag",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -0.51,
+      "ActualMaximum": 51.51,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "Autocorrelation",
+      "type": "HistogramSeries",
+      "Title": "Autocorrelation",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [],
+      "actualItems": [
+        {
+          "Value": 0.9999999999999999,
+          "RangeStart": 0,
+          "RangeEnd": 1,
+          "Area": 0.9999999999999999,
+          "Count": 0
+        },
+        {
+          "Value": 0.01001193467463123,
+          "RangeStart": 1,
+          "RangeEnd": 2,
+          "Area": 0.01001193467463123,
+          "Count": 0
+        },
+        {
+          "Value": -0.004460069706866618,
+          "RangeStart": 2,
+          "RangeEnd": 3,
+          "Area": -0.004460069706866618,
+          "Count": 0
+        },
+        {
+          "Value": 0.007267042735454971,
+          "RangeStart": 3,
+          "RangeEnd": 4,
+          "Area": 0.007267042735454971,
+          "Count": 0
+        },
+        {
+          "Value": 0.006536784545387587,
+          "RangeStart": 4,
+          "RangeEnd": 5,
+          "Area": 0.006536784545387587,
+          "Count": 0
+        },
+        {
+          "Value": 0.009526108459385979,
+          "RangeStart": 5,
+          "RangeEnd": 6,
+          "Area": 0.009526108459385979,
+          "Count": 0
+        },
+        {
+          "Value": -0.0012983571961941876,
+          "RangeStart": 6,
+          "RangeEnd": 7,
+          "Area": -0.0012983571961941876,
+          "Count": 0
+        },
+        {
+          "Value": -0.006830718368431047,
+          "RangeStart": 7,
+          "RangeEnd": 8,
+          "Area": -0.006830718368431047,
+          "Count": 0
+        },
+        {
+          "Value": -0.014055745390458323,
+          "RangeStart": 8,
+          "RangeEnd": 9,
+          "Area": -0.014055745390458323,
+          "Count": 0
+        },
+        {
+          "Value": 0.0029907909833422324,
+          "RangeStart": 9,
+          "RangeEnd": 10,
+          "Area": 0.0029907909833422324,
+          "Count": 0
+        },
+        {
+          "Value": 0.0014714347575328012,
+          "RangeStart": 10,
+          "RangeEnd": 11,
+          "Area": 0.0014714347575328012,
+          "Count": 0
+        },
+        {
+          "Value": -0.016719093693345927,
+          "RangeStart": 11,
+          "RangeEnd": 12,
+          "Area": -0.016719093693345927,
+          "Count": 0
+        },
+        {
+          "Value": 0.002660456186278262,
+          "RangeStart": 12,
+          "RangeEnd": 13,
+          "Area": 0.002660456186278262,
+          "Count": 0
+        },
+        {
+          "Value": 0.00030849883231837214,
+          "RangeStart": 13,
+          "RangeEnd": 14,
+          "Area": 0.00030849883231837214,
+          "Count": 0
+        },
+        {
+          "Value": 0.002344561449241859,
+          "RangeStart": 14,
+          "RangeEnd": 15,
+          "Area": 0.002344561449241859,
+          "Count": 0
+        },
+        {
+          "Value": -0.001844071273660139,
+          "RangeStart": 15,
+          "RangeEnd": 16,
+          "Area": -0.001844071273660139,
+          "Count": 0
+        },
+        {
+          "Value": -0.00937551259740188,
+          "RangeStart": 16,
+          "RangeEnd": 17,
+          "Area": -0.00937551259740188,
+          "Count": 0
+        },
+        {
+          "Value": -0.009161640699611158,
+          "RangeStart": 17,
+          "RangeEnd": 18,
+          "Area": -0.009161640699611158,
+          "Count": 0
+        },
+        {
+          "Value": 0.011812267965560268,
+          "RangeStart": 18,
+          "RangeEnd": 19,
+          "Area": 0.011812267965560268,
+          "Count": 0
+        },
+        {
+          "Value": 0.0026898321243459047,
+          "RangeStart": 19,
+          "RangeEnd": 20,
+          "Area": 0.0026898321243459047,
+          "Count": 0
+        },
+        {
+          "Value": -0.006744444328701644,
+          "RangeStart": 20,
+          "RangeEnd": 21,
+          "Area": -0.006744444328701644,
+          "Count": 0
+        },
+        {
+          "Value": 0.00123678460901032,
+          "RangeStart": 21,
+          "RangeEnd": 22,
+          "Area": 0.00123678460901032,
+          "Count": 0
+        },
+        {
+          "Value": 0.0030250650230673705,
+          "RangeStart": 22,
+          "RangeEnd": 23,
+          "Area": 0.0030250650230673705,
+          "Count": 0
+        },
+        {
+          "Value": -0.0024553992209780644,
+          "RangeStart": 23,
+          "RangeEnd": 24,
+          "Area": -0.0024553992209780644,
+          "Count": 0
+        },
+        {
+          "Value": 0.0016899464459632038,
+          "RangeStart": 24,
+          "RangeEnd": 25,
+          "Area": 0.0016899464459632038,
+          "Count": 0
+        },
+        {
+          "Value": 0.014868351720245749,
+          "RangeStart": 25,
+          "RangeEnd": 26,
+          "Area": 0.014868351720245749,
+          "Count": 0
+        },
+        {
+          "Value": -0.017836164260034454,
+          "RangeStart": 26,
+          "RangeEnd": 27,
+          "Area": -0.017836164260034454,
+          "Count": 0
+        },
+        {
+          "Value": -0.00917948613786738,
+          "RangeStart": 27,
+          "RangeEnd": 28,
+          "Area": -0.00917948613786738,
+          "Count": 0
+        },
+        {
+          "Value": 0.008012871314261214,
+          "RangeStart": 28,
+          "RangeEnd": 29,
+          "Area": 0.008012871314261214,
+          "Count": 0
+        },
+        {
+          "Value": 0.013159282591551611,
+          "RangeStart": 29,
+          "RangeEnd": 30,
+          "Area": 0.013159282591551611,
+          "Count": 0
+        },
+        {
+          "Value": 0.010976926210030533,
+          "RangeStart": 30,
+          "RangeEnd": 31,
+          "Area": 0.010976926210030533,
+          "Count": 0
+        },
+        {
+          "Value": 0.003837532500671023,
+          "RangeStart": 31,
+          "RangeEnd": 32,
+          "Area": 0.003837532500671023,
+          "Count": 0
+        },
+        {
+          "Value": -0.01094044232630105,
+          "RangeStart": 32,
+          "RangeEnd": 33,
+          "Area": -0.01094044232630105,
+          "Count": 0
+        },
+        {
+          "Value": -0.015007167087657643,
+          "RangeStart": 33,
+          "RangeEnd": 34,
+          "Area": -0.015007167087657643,
+          "Count": 0
+        },
+        {
+          "Value": 0.0018058255237031196,
+          "RangeStart": 34,
+          "RangeEnd": 35,
+          "Area": 0.0018058255237031196,
+          "Count": 0
+        },
+        {
+          "Value": 0.0025121971434279,
+          "RangeStart": 35,
+          "RangeEnd": 36,
+          "Area": 0.0025121971434279,
+          "Count": 0
+        },
+        {
+          "Value": -0.008694134628743733,
+          "RangeStart": 36,
+          "RangeEnd": 37,
+          "Area": -0.008694134628743733,
+          "Count": 0
+        },
+        {
+          "Value": 0.013901965733808554,
+          "RangeStart": 37,
+          "RangeEnd": 38,
+          "Area": 0.013901965733808554,
+          "Count": 0
+        },
+        {
+          "Value": -0.00895838681598472,
+          "RangeStart": 38,
+          "RangeEnd": 39,
+          "Area": -0.00895838681598472,
+          "Count": 0
+        },
+        {
+          "Value": -0.008256720617667525,
+          "RangeStart": 39,
+          "RangeEnd": 40,
+          "Area": -0.008256720617667525,
+          "Count": 0
+        },
+        {
+          "Value": -0.014083061280613617,
+          "RangeStart": 40,
+          "RangeEnd": 41,
+          "Area": -0.014083061280613617,
+          "Count": 0
+        },
+        {
+          "Value": -0.012221623072145051,
+          "RangeStart": 41,
+          "RangeEnd": 42,
+          "Area": -0.012221623072145051,
+          "Count": 0
+        },
+        {
+          "Value": 0.003155136292108075,
+          "RangeStart": 42,
+          "RangeEnd": 43,
+          "Area": 0.003155136292108075,
+          "Count": 0
+        },
+        {
+          "Value": -0.003034269011240859,
+          "RangeStart": 43,
+          "RangeEnd": 44,
+          "Area": -0.003034269011240859,
+          "Count": 0
+        },
+        {
+          "Value": -0.0019859625335065826,
+          "RangeStart": 44,
+          "RangeEnd": 45,
+          "Area": -0.0019859625335065826,
+          "Count": 0
+        },
+        {
+          "Value": 0.00971957521185162,
+          "RangeStart": 45,
+          "RangeEnd": 46,
+          "Area": 0.00971957521185162,
+          "Count": 0
+        },
+        {
+          "Value": -0.0117358628628088,
+          "RangeStart": 46,
+          "RangeEnd": 47,
+          "Area": -0.0117358628628088,
+          "Count": 0
+        },
+        {
+          "Value": -0.0009783425668316867,
+          "RangeStart": 47,
+          "RangeEnd": 48,
+          "Area": -0.0009783425668316867,
+          "Count": 0
+        },
+        {
+          "Value": -0.004993062701456952,
+          "RangeStart": 48,
+          "RangeEnd": 49,
+          "Area": -0.004993062701456952,
+          "Count": 0
+        },
+        {
+          "Value": 0.008915268073364251,
+          "RangeStart": 49,
+          "RangeEnd": 50,
+          "Area": 0.008915268073364251,
+          "Count": 0
+        },
+        {
+          "Value": 0.01719097944567827,
+          "RangeStart": 50,
+          "RangeEnd": 51,
+          "Area": 0.01719097944567827,
+          "Count": 0
+        }
+      ],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "FillColor": "#4bdc143c",
+        "StrokeThickness": 1,
+        "StrokeColor": "#ffff0000"
+      }
+    }
+  ],
+  "annotations": [
+    {
+      "type": "LineAnnotation",
+      "text": "5.0% CI",
+      "geometry": {
+        "Type": "Horizontal",
+        "X": 0,
+        "Y": -0.016448536269514726,
+        "MinimumX": -1.7976931348623157E+308,
+        "MaximumX": 1.7976931348623157E+308,
+        "MinimumY": -1.7976931348623157E+308,
+        "MaximumY": 1.7976931348623157E+308,
+        "Slope": 0,
+        "Intercept": 0
+      },
+      "style": {
+        "Color": "#ff000000",
+        "LineStyle": "Dash",
+        "StrokeThickness": 2
+      }
+    },
+    {
+      "type": "LineAnnotation",
+      "text": "95.0% CI",
+      "geometry": {
+        "Type": "Horizontal",
+        "X": 0,
+        "Y": 0.016448536269514716,
+        "MinimumX": -1.7976931348623157E+308,
+        "MaximumX": 1.7976931348623157E+308,
+        "MinimumY": -1.7976931348623157E+308,
+        "MaximumY": 1.7976931348623157E+308,
+        "Slope": 0,
+        "Intercept": 0
+      },
+      "style": {
+        "Color": "#ff000000",
+        "LineStyle": "Dash",
+        "StrokeThickness": 2
+      }
+    }
+  ]
+}
