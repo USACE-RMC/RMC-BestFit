@@ -53,6 +53,8 @@ def add_frequency_comparison(base, alternative, name, *, color="#ff4a46"):
     """Overlay supplied result curves, preserving both run identities and app styling."""
     validate_spec(base)
     validate_spec(alternative)
+    if alternative.get("comparedSources") or alternative.get("variant") == "comparison":
+        raise ValueError("Each alternative must contain a single analysis; add alternatives to the base one at a time")
     if not base["plotId"].endswith(".frequency") or not alternative["plotId"].endswith(".frequency"):
         raise ValueError("Comparison overlays require frequency plots")
     if base["axes"] != alternative["axes"]:

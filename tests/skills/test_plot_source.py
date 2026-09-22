@@ -81,6 +81,8 @@ def test_frequency_comparison_preserves_both_sources_and_rejects_unit_mismatch()
     assert len(combined["series"]) == 2
     assert combined["series"][-1]["name"] == "Alternative - Posterior Mode"
     assert combined["comparedSources"] == [base["source"], other["source"]]
+    with pytest.raises(ValueError, match="single"):
+        add_frequency_comparison(base, combined, "Nested")
     other["axes"]["y"]["unit"] = "m"
     with pytest.raises(ValueError, match="axes"):
         add_frequency_comparison(base, other, "Alternative")
