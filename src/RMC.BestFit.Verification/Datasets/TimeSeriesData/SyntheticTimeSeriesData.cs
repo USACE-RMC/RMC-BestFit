@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace RMC.BestFit.Verification.Datasets.TimeSeriesData
 {
     /// <summary>
-    /// Synthetic time series data for unit testing.
+    /// Generates seeded time-series fixtures with declared parent parameters for numerical verification.
     /// </summary>
     public static class SyntheticTimeSeriesData
     {

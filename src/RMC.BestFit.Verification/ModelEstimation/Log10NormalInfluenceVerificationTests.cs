@@ -7,13 +7,14 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Verification.ModelEstimation;
 
 /// <summary>
-/// Uses analytical Log10-Normal curvature and deletion results to evaluate the estimator
-/// influence and leverage review findings before any production implementation is changed.
+/// Characterizes the accepted limitation of Log10-Normal GMM influence magnitudes against exact deletion.
 /// </summary>
 /// <remarks>
-/// These tests distinguish useful ranking information from calibrated diagnostic magnitudes.
-/// A passing finding-confirmation test records the current discrepancy against the independent
-/// oracle; after an approved production correction, it is replaced by a direct parity assertion.
+/// The discovered method uses a seven-observation symmetric log-space fixture and an eight-observation
+/// outlier variant. It requires the current-to-exact magnitude ratio to differ from one by more than
+/// 0.25 while both methods identify the injected outlier as most influential. A pass confirms this
+/// documented limitation, not calibrated magnitude parity. The separate MAP curvature comparison
+/// remains non-discovered historical source provenance.
 /// </remarks>
 [TestClass]
 public class Log10NormalInfluenceVerificationTests

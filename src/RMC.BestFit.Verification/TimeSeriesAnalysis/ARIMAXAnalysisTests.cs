@@ -7,7 +7,7 @@ using RMC.BestFit.Verification.Datasets.TimeSeriesData;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Computational verification tests for the <see cref="ARIMAXAnalysis"/> class.
+/// Preserves non-discovered historical Bayesian calculations for <see cref="ARIMAXAnalysis"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,11 +23,10 @@ namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 /// Y(t) = μ + γ(t) + ψ(t) + β·X(t) + φ·Y(t-p) + θ·ε(t-q) + ε(t).
 /// </para>
 /// <para>
-/// All tests in this class run a Bayesian MCMC chain. They are SLOW and live in the
-/// Verification project. Programmatic tests (constructor, property round-trip,
-/// validation, serialization, model-property propagation, trend / seasonality /
-/// covariate / differencing / transform configuration, event wiring, cancellation)
-/// live in <c>RMC.BestFit.Verification.TimeSeriesAnalysis</c>.
+/// No method in this class is discovered as a Verification test. Current independent numerical
+/// evidence is owned by <see cref="TimeSeriesIndependentOracleTests"/>,
+/// <see cref="TimeSeriesIndependentRecoveryTests"/>, and <see cref="TimeSeriesChunk13OracleTests"/>.
+/// Constructor, state, configuration, and serialization contracts belong to <c>RMC.BestFit.Tests</c>.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -37,8 +36,8 @@ public class ARIMAXAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of ARIMAX(1,1) parameters against known true values from synthetic data.
-    /// Uses a 1,000-observation time series and validates that the central 90% credible interval recovers the generating
-    /// parameters within 25% tolerance, accounting for Monte Carlo variability.
+    /// The historical 1,000-observation calculation requires every generating parameter to lie
+    /// in its central 90% posterior interval and every R-hat to be finite and below 1.10.
     /// </summary>
     /// <remarks>
     /// <para>

@@ -48,6 +48,16 @@
 
 23. R Core Team. (2026). *R: A Language and Environment for Statistical Computing*. R Foundation for Statistical Computing. https://www.R-project.org/
 
-24. SciPy Community. (2026). *SciPy 1.17.1 Reference Guide*. https://docs.scipy.org/doc/scipy-1.17.1/
+24. SciPy Community. (2026). *SciPy Reference Guide*. The individual comparisons identify the package version used to generate their reference values. https://docs.scipy.org/doc/scipy/
 
 25. USACE Risk Management Center. (2020). *Verification of the Bayesian Estimation and Fitting Software*. Report RMC-TR-2020-02.
+
+26. Kuczera, G. (1999). Comprehensive at-site flood frequency analysis using Monte Carlo Bayesian inference. *Water Resources Research*, 35(5), 1551-1557. [doi:10.1029/1999WR900012](https://doi.org/10.1029/1999WR900012)
+
+27. Ball, J., et al. (eds.) (2019). *Australian Rainfall and Runoff: A Guide to Flood Estimation*, Book 3: Peak Discharge Estimation. Commonwealth of Australia. [ARR Guidelines](https://arr.ga.gov.au/arr-guideline)
+
+28. Viglione, A., Merz, R., Salinas, J. L., and Blöschl, G. (2013). Flood frequency hydrology: 3. A Bayesian analysis. *Water Resources Research*, 49(2), 675-692. [doi:10.1029/2011WR010782](https://doi.org/10.1029/2011WR010782)
+
+29. Skahill, B. E., Viglione, A., and Byrd, A. (2016). *A Bayesian Analysis of the Flood Frequency Hydrology Concept*. ERDC/CHL CHETN-X-1. U.S. Army Engineer Research and Development Center. [Technical note](https://usace.contentdm.oclc.org/digital/api/collection/p266001coll1/id/4163/download)
+
+30. Coles, S. G., and Tawn, J. A. (1996). A Bayesian analysis of extreme rainfall data. *Applied Statistics*, 45(4), 463-478.

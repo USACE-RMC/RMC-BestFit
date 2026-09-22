@@ -15,7 +15,7 @@ using BestFitRatingCurve = RMC.BestFit.Models.RatingCurve;
 namespace RMC.BestFit.Verification.RatingCurve;
 
 /// <summary>
-/// Implements the predeclared Chunk 12 rating-curve recovery design and acceptance rules.
+/// Implements the predeclared rating-curve recovery designs and acceptance rules.
 /// </summary>
 /// <remarks>
 /// The helper is Verification-only. It preserves every retained fixture's generating parent,

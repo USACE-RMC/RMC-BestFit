@@ -34,4 +34,5 @@ report/time-series-analyses.md
 report/spatial-extremes.md
 
 report/evidence-boundaries-conclusions.md
+report/test-coverage.md
 report/references.md

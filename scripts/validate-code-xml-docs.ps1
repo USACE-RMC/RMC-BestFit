@@ -82,8 +82,23 @@ if (-not $SkipBuild) {
     }
 }
 
-$sourceFiles = Get-ChildItem -LiteralPath $sourceRoot -Recurse -Filter *.cs -File |
-    Where-Object { $_.FullName -notmatch '\\(bin|obj|TestResults)\\' -and $_.Name -notmatch '\.(g|Designer|AssemblyAttributes|AssemblyInfo|GlobalUsings\.g)\.cs$' }
+# Prune generated trees before traversal. Filtering them after -Recurse still
+# enters third-party caches and junctions under obj, which may be unreadable.
+$pendingDirectories = New-Object System.Collections.Generic.Stack[string]
+$pendingDirectories.Push($sourceRoot)
+$sourceFiles = @(
+    while ($pendingDirectories.Count -gt 0) {
+        $directory = $pendingDirectories.Pop()
+        Get-ChildItem -LiteralPath $directory -Filter *.cs -File |
+            Where-Object { $_.Name -notmatch '\.(g|Designer|AssemblyAttributes|AssemblyInfo|GlobalUsings\.g)\.cs$' }
+        foreach ($child in Get-ChildItem -LiteralPath $directory -Directory) {
+            if ($child.Name -notin @('bin', 'obj', 'TestResults') -and
+                -not ($child.Attributes -band [System.IO.FileAttributes]::ReparsePoint)) {
+                $pendingDirectories.Push($child.FullName)
+            }
+        }
+    }
+)
 
 # Compile-checked documentation snippets (src\RMC.BestFit.Tests\Documentation\Examples) are extracted
 # verbatim into the technical reference between '#region doc:' markers, so their private helpers are

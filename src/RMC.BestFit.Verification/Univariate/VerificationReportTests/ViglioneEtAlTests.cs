@@ -11,7 +11,7 @@ using System.Transactions;
 namespace RMC.BestFit.Verification.Univariate.VerificationReportTests;
 
 /// <summary>
-/// Unit tests for verifying RMC-BestFit against the Viglione et al. (2013) Bayesian flood frequency analysis framework.
+/// Verifies Bayesian flood-frequency results against the Viglione et al. (2013) and Skahill et al. (2016) examples.
 /// </summary>
 /// <remarks>
 /// <para>

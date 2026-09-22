@@ -6,6 +6,8 @@ This document is the durable handoff plan for finishing the RMC.BestFit 2.0 veri
 
 The scientific source of truth remains the verification report chapters and the review-finding register. This plan tells the next worker where to look and how to proceed.
 
+For the current release, use the [21 September v2.0.1 closeout plan](v2.0.1-closeout-plan.md). It limits the remaining work to three sessions in total, records the completed verification-report/XML session, and targets release by 28 September 2026. The phase ledgers below retain their original decisions and checkpoints.
+
 ## Start Here
 
 A new session should read these files in this order:

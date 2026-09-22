@@ -14,12 +14,11 @@ namespace RMC.BestFit.Verification.RatingCurve;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Every cell builds the model exactly as the example project does (default flat priors, Jeffreys'
-/// rule for the scale) and assigns no <c>BayesianAnalysis</c> setting; the resolved production
-/// DEMCzs defaults are asserted before and after sampling. The fixtures apply the example's exact
-/// recipe to a seeded set of 1,000 draws (recovery fixtures use between 300 and 1,000 observations;
-/// the shipped example has 300, at which the third control is weakly identified), and the
-/// independent optimum comes from the committed <c>rating-curve-example-fixtures.json</c> artifact.
+/// Each discovered MLE method fits exactly 1,000 generated stage-discharge pairs with Differential
+/// Evolution and unchanged optimizer tolerances. The model retains the example's flat parameter
+/// priors and Jeffreys scale setting. The replication fixtures follow the shipped 300-pair example's
+/// generation recipe; their independent SciPy optima are committed in
+/// <c>rating-curve-example-fixtures.json</c>. No Bayesian sampling is performed by these MLE methods.
 /// </para>
 /// <para>
 /// Acceptance: the BestFit likelihood equals the oracle at the independent optimum; the production

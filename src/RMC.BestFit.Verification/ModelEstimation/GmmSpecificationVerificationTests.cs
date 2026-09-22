@@ -6,13 +6,12 @@ using RMC.BestFit.Estimation;
 namespace RMC.BestFit.Verification.ModelEstimation;
 
 /// <summary>
-/// Evaluates the overidentified GMM fitting and specification-test review findings
+/// Verifies overidentified GMM fitting and specification statistics
 /// against a committed independent R <c>gmm</c> oracle.
 /// </summary>
 /// <remarks>
 /// These tests verify fixed-weight one-step estimation and the efficient-weight
-/// Hansen J statistic R is not
-/// required at test runtime.
+/// Hansen J statistic. R is not required at test runtime.
 /// </remarks>
 [TestClass]
 public class GmmSpecificationVerificationTests

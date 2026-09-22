@@ -8,16 +8,14 @@ using RMC.BestFit.Verification.TimeSeriesAnalysis;
 namespace RMC.BestFit.Verification.SpatialExtremes;
 
 /// <summary>
-/// Verifies leave-one-site-out cross-validation of the spatial GEV analysis against independently
-/// constructed reduced training models (TR-050 through TR-053): the completed results must survive the
-/// run, every fold must be the fit of the network without the held-out site, the held-out site's
-/// covariate row must feed its prediction, and fold accounting must be explicit.
+/// Preserves historical spatial GEV leave-one-site-out comparisons with separately constructed
+/// reduced training models.
 /// </summary>
 /// <remarks>
-/// Deterministic reduced-model construction, held-out covariate handling, no-fold failure, and final
-/// result accounting are fast-owned by the sampler-free SpatialGEV tests. These cells compare production
-/// paths with each other, not with independent evidence, so the remaining independent held-out
-/// fold-prediction evidence is open for Chunk 14A.
+/// These methods are not discovered as Verification tests: both sides call production fitting and
+/// prediction paths. Deterministic reduced-model construction, held-out covariates, unscored folds,
+/// and result accounting are covered by the fast SpatialGEV tests. Independent held-out prediction
+/// is verified by <see cref="SpatialGEVChunk14OracleTests"/> against committed Python calculations.
 /// </remarks>
 [TestClass]
 public class SpatialGEVCrossValidationVerificationTests

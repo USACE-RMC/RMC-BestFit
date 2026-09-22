@@ -8,12 +8,12 @@
 |---|---|
 | Title | RMC.BestFit 2.0 Verification Report |
 | Report number | Pending assignment |
-| Version | External peer-review draft |
-| Date | 28 August 2026 |
+| Edition | External peer-review draft, prepared for the v2.0.1 release |
+| Date | 21 September 2026 |
 | Prepared for | U.S. Army Corps of Engineers, Risk Management Center |
-| Software checkpoint | RMC.BestFit 2.0.0, commit `4304fb39f8e162cdb746083108042df88e153afc` |
-| Numerical source checkpoint | RMC.Numerics commit `90a63a46394db9ef95e72b0fcbba943408110636` |
-| Published-package compatibility baseline | RMC.Numerics 2.1.4 |
+| Software source reviewed | RMC.BestFit 2.0.0, commit `8808f19f3bfa712241e55a0dfa47407ff5a60970` |
+| Numerical source reviewed | RMC.Numerics commit `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02` |
+| Declared package baseline | RMC.Numerics 2.2.0 |
 | Review status | Draft for external peer review - not for public release |
 
 ## Authors
@@ -24,18 +24,12 @@
 
 ## Abstract
 
-This report presents numerical verification evidence for RMC.BestFit 2.0, a Bayesian-first statistical analysis framework used in flood-frequency and water-resources engineering. Verification is based on analytical calculations, independently implemented numerical oracles, external scientific packages, published examples, parameter-recovery experiments, and simulation-coverage experiments. The report states the software configuration, test data, oracle provenance, acceptance criteria, observed results, and supported conclusion for each claim. It follows the application order: time-series data; input data; distribution fitting; univariate and Bulletin 17C analyses; point-process, competing-risk, mixture, and composite analyses; bivariate and coincident-frequency analyses; rating curves; AR, MA, ARIMA, and ARIMAX analyses; and spatial extremes. Deterministic unit and regression tests are reported as software-quality controls but are not substituted for scientific verification. Evidence boundaries are stated explicitly where the current checkpoint does not support a broader claim.
+RMC.BestFit is a Bayesian-first framework for flood-frequency and water-resources analysis. This report explains how its calculations are verified and what the results mean for an engineering reader. Each analysis is presented through its data, test setup, comparison procedure, results, and limitations. Evidence includes direct mathematical answers, independent numerical calculations, comparisons with other scientific software, published flood-frequency examples, and experiments in which the generating model is known. The scope includes distribution fitting and frequency analysis, multivariate models, rating curves, time series, and spatial extremes. Appendix A maps all 328 current verification methods to the report. Numerical verification establishes the behavior of the tested calculations; model suitability for a particular engineering application remains a separate judgment.
 
-## Review and release notice
+## Scope and review status
 
-This document is a technical draft supplied for independent scientific and engineering review. A report number, named reviewers, approval signatures, and final distribution statement will be assigned after comment disposition. Numerical conclusions apply only to the software and dependency checkpoints identified above and to the parameter regions, data designs, and acceptance rules stated in this report.
-
-## Revision record
-
-| Revision | Date | Description |
-|---|---:|---|
-| External-review draft | 28 August 2026 | Reorganized the verification record around test design, oracle provenance, numerical results, and conclusions; refreshed the documented software checkpoint and publication controls. |
+This edition describes the repository identified above. Numerical results retain the execution configurations recorded with their evidence; the report date identifies the source and documentation review. The draft is supplied for independent scientific and engineering review. Report number, reviewers, signatures, and final distribution remain subject to publication approval.
 
 ## Suggested citation
 
-Smith, C. H., Fields, W. L., and Skahill, B. (2026). *RMC.BestFit 2.0 Verification Report*. External peer-review draft. U.S. Army Corps of Engineers, Risk Management Center.
+Smith, C. H., Fields, W. L., and Skahill, B. (2026). *RMC.BestFit 2.0 Verification Report*. External peer-review draft, 21 September 2026. U.S. Army Corps of Engineers, Risk Management Center.

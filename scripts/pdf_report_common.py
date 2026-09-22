@@ -92,6 +92,27 @@ def _find_chapter_pages(reader: PdfReader, titles: list[str]) -> list[tuple[str,
     return matches
 
 
+def _add_contents_page_numbers(reader: PdfReader, writer: PdfWriter) -> None:
+    """Print destination page numbers in the space reserved by the contents CSS."""
+    page = writer.pages[1]
+    packet = BytesIO()
+    overlay = canvas.Canvas(packet, pagesize=(float(page.mediabox.width), float(page.mediabox.height)))
+    overlay.setFont("Helvetica", 9)
+    overlay.setFillColor(HexColor("#15324b"))
+    destinations = {str(name).lstrip("/"): value for name, value in reader.named_destinations.items()}
+    for reference in reader.pages[1].get("/Annots", []):
+        annotation = reference.get_object()
+        name = str(annotation.get("/Dest", "")).lstrip("/")
+        if name not in destinations:
+            continue
+        destination_page = reader.get_destination_page_number(destinations[name])
+        _, _, right, top = [float(value) for value in annotation["/Rect"]]
+        overlay.drawRightString(right - 1, top - 10, str(destination_page + 1))
+    overlay.save()
+    packet.seek(0)
+    page.merge_page(PdfReader(packet).pages[0], over=True)
+
+
 def finalize_report_pdf(
     input_path: Path,
     output_path: Path,
@@ -104,6 +125,7 @@ def finalize_report_pdf(
     repository_root = Path(__file__).resolve().parents[1]
     metadata = _load_metadata(repository_root)
     report = metadata[report_key]
+    metadata = {**metadata, **report.get("checkpoint", {})}
     reader = PdfReader(str(input_path))
     if not reader.pages:
         raise ValueError(f"Input PDF contains no pages: {input_path}")
@@ -115,6 +137,16 @@ def finalize_report_pdf(
     writer = PdfWriter()
     writer.clone_document_from_reader(reader)
     page_count = len(writer.pages)
+
+    if report_key == "verification_report":
+        _add_contents_page_numbers(reader, writer)
+        # Keep the complete current acceptance/provenance record with the PDF,
+        # including before the editorial workspace changes are committed.
+        for name, relative in (
+            ("verification-catalog.json", "docs/verification/verification-catalog.json"),
+            ("report-metadata.json", "docs/report-metadata.json"),
+        ):
+            writer.add_attachment(name, (repository_root / relative).read_bytes())
 
     for index in range(1, page_count):
         page = writer.pages[index]

@@ -4,8 +4,8 @@ using Numerics.Sampling;
 namespace RMC.BestFit.Verification;
 
 /// <summary>
-/// Provides synthetic test data generated from known distributions for unit testing.
-/// All datasets contain 1000 samples generated with seed 12345 for reproducibility.
+/// Provides shared synthetic distributions, time series, and historical multivariate fixtures for verification.
+/// Sample sizes and reproducible seed offsets are declared by each generator.
 /// </summary>
 /// <remarks>
 ///     <b> Authors: </b>
@@ -16,12 +16,12 @@ namespace RMC.BestFit.Verification;
 public static class TestData
 {
     /// <summary>
-    /// Random seed used for all synthetic data generation.
+    /// Base random seed; individual generators may use a documented offset.
     /// </summary>
     public const int Seed = 12345;
 
     /// <summary>
-    /// Number of samples in each synthetic dataset.
+    /// Default scalar-observation count used by the distribution and time-series fixtures.
     /// </summary>
     public const int SampleSize = 1000;
 
@@ -38,12 +38,9 @@ public static class TestData
     public static double[] NormalTrueParams { get; } = [100.0, 15.0];
 
     /// <summary>
-    /// Generates normal Data.
+    /// Generates the seeded Normal fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateNormalData()
     {
         var dist = new Normal(100.0, 15.0);
@@ -61,12 +58,9 @@ public static class TestData
     public static double[] LnNormalTrueParams { get; } = [3.5, 0.4];
 
     /// <summary>
-    /// Generates ln Normal Data.
+    /// Generates the seeded natural-log Normal fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateLnNormalData()
     {
         var dist = new LnNormal(3.5, 0.4);
@@ -84,12 +78,9 @@ public static class TestData
     public static double[] GeneralizedNormalTrueParams { get; } = [50.0, 10.0, -0.3];
 
     /// <summary>
-    /// Generates generalized Normal Data.
+    /// Generates the seeded Generalized Normal fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateGeneralizedNormalData()
     {
         var dist = new GeneralizedNormal(50.0, 10.0, -0.3);
@@ -111,12 +102,9 @@ public static class TestData
     public static double[] ExponentialTrueParams { get; } = [10.0, 25.0];
 
     /// <summary>
-    /// Generates exponential Data.
+    /// Generates the seeded Exponential fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateExponentialData()
     {
         var dist = new Exponential(10.0, 25.0);
@@ -134,12 +122,9 @@ public static class TestData
     public static double[] GammaTrueParams { get; } = [5.0, 3.0];
 
     /// <summary>
-    /// Generates gamma Data.
+    /// Generates the seeded Gamma fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateGammaData()
     {
         var dist = new GammaDistribution(5.0, 3.0);
@@ -157,12 +142,9 @@ public static class TestData
     public static double[] PearsonTypeIIITrueParams { get; } = [100.0, 20.0, 0.8];
 
     /// <summary>
-    /// Generates pearson Type III Data.
+    /// Generates the seeded Pearson Type III fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GeneratePearsonTypeIIIData()
     {
         var dist = new PearsonTypeIII(100.0, 20.0, 0.8);
@@ -180,12 +162,9 @@ public static class TestData
     public static double[] LogPearsonTypeIIITrueParams { get; } = [2.0, 0.3, 0.5];
 
     /// <summary>
-    /// Generates log Pearson Type III Data.
+    /// Generates the seeded base-10 Log-Pearson Type III fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateLogPearsonTypeIIIData()
     {
         var dist = new LogPearsonTypeIII(2.0, 0.3, 0.5);
@@ -207,12 +186,9 @@ public static class TestData
     public static double[] GumbelTrueParams { get; } = [50.0, 15.0];
 
     /// <summary>
-    /// Generates gumbel Data.
+    /// Generates the seeded Gumbel fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateGumbelData()
     {
         var dist = new Gumbel(50.0, 15.0);
@@ -230,12 +206,9 @@ public static class TestData
     public static double[] WeibullTrueParams { get; } = [100.0, 2.5];
 
     /// <summary>
-    /// Generates weibull Data.
+    /// Generates the seeded Weibull fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateWeibullData()
     {
         var dist = new Weibull(100.0, 2.5);
@@ -253,12 +226,9 @@ public static class TestData
     public static double[] GEVTrueParams { get; } = [50.0, 15.0, 0.1];
 
     /// <summary>
-    /// Generates gEV Data.
+    /// Generates the seeded GEV fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateGEVData()
     {
         var dist = new GeneralizedExtremeValue(50.0, 15.0, 0.1);
@@ -276,12 +246,9 @@ public static class TestData
     public static double[] GeneralizedParetoTrueParams { get; } = [0.0, 20.0, 0.15];
 
     /// <summary>
-    /// Generates generalized Pareto Data.
+    /// Generates the seeded Generalized Pareto fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateGeneralizedParetoData()
     {
         var dist = new GeneralizedPareto(0.0, 20.0, 0.15);
@@ -303,12 +270,9 @@ public static class TestData
     public static double[] LogisticTrueParams { get; } = [75.0, 10.0];
 
     /// <summary>
-    /// Generates logistic Data.
+    /// Generates the seeded Logistic fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateLogisticData()
     {
         var dist = new Logistic(75.0, 10.0);
@@ -326,12 +290,9 @@ public static class TestData
     public static double[] GeneralizedLogisticTrueParams { get; } = [75.0, 10.0, 0.15];
 
     /// <summary>
-    /// Generates generalized Logistic Data.
+    /// Generates the seeded Generalized Logistic fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateGeneralizedLogisticData()
     {
         var dist = new GeneralizedLogistic(75.0, 10.0, 0.15);
@@ -353,12 +314,9 @@ public static class TestData
     public static double[] AR1TrueParams { get; } = [50.0, 0.7, 5.0];
 
     /// <summary>
-    /// Generates aR1 Data.
+    /// Generates the seeded AR(1) fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateAR1Data()
     {
         var rng = new MersenneTwister(Seed);
@@ -390,12 +348,9 @@ public static class TestData
     public static double[] AR2TrueParams { get; } = [50.0, 0.5, 0.3, 5.0];
 
     /// <summary>
-    /// Generates aR2 Data.
+    /// Generates the seeded AR(2) fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateAR2Data()
     {
         var rng = new MersenneTwister(Seed + 1);
@@ -429,12 +384,9 @@ public static class TestData
     public static double[] MA1TrueParams { get; } = [50.0, 0.6, 5.0];
 
     /// <summary>
-    /// Generates mA1 Data.
+    /// Generates the seeded MA(1) fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateMA1Data()
     {
         var rng = new MersenneTwister(Seed + 2);
@@ -470,12 +422,9 @@ public static class TestData
     public static double[] ARMA11TrueParams { get; } = [50.0, 0.5, 0.4, 5.0];
 
     /// <summary>
-    /// Generates aRMA11 Data.
+    /// Generates the seeded ARMA(1,1) fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateARMA11Data()
     {
         var rng = new MersenneTwister(Seed + 3);
@@ -514,23 +463,20 @@ public static class TestData
     public static double[] BivariateXData { get; } = GenerateBivariateXData();
 
     /// <summary>
-    /// Synthetic bivariate Y data correlated with X using Gaussian copula (ρ=0.7).
-    /// Marginal: Gumbel(50, 15).
+    /// Historical bivariate Y fixture computed from X with Gaussian-score mixing coefficient 0.7
+    /// and the inverse CDF of Gumbel(50, 15).
     /// </summary>
     public static double[] BivariateYData { get; } = GenerateBivariateYData();
 
     /// <summary>
-    /// True Pearson correlation for bivariate data.
+    /// Gaussian-score mixing coefficient used by the historical bivariate generator; not a raw-data Pearson correlation.
     /// </summary>
     public const double BivariateTrueCorrelation = 0.7;
 
     /// <summary>
-    /// Generates bivariate X Data.
+    /// Generates the seeded bivariate X fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateBivariateXData()
     {
         var dist = new Normal(100.0, 15.0);
@@ -538,12 +484,9 @@ public static class TestData
     }
 
     /// <summary>
-    /// Generates bivariate Y Data.
+    /// Generates the seeded historical bivariate Y fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateBivariateYData()
     {
         var rng = new MersenneTwister(Seed + 201);
@@ -583,12 +526,9 @@ public static class TestData
     public static double[] SmallSample { get; } = GenerateSmallSample();
 
     /// <summary>
-    /// Generates small Sample.
+    /// Generates ten Normal observations for a small-sample fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateSmallSample()
     {
         var dist = new Normal(100.0, 15.0);
@@ -601,12 +541,9 @@ public static class TestData
     public static double[] DataWithOutliers { get; } = GenerateDataWithOutliers();
 
     /// <summary>
-    /// Generates data With Outliers.
+    /// Generates 100 Normal observations and replaces five values with fixed outliers.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateDataWithOutliers()
     {
         var dist = new Normal(100.0, 15.0);
@@ -628,12 +565,9 @@ public static class TestData
     public static double[] DataWithNegatives { get; } = GenerateDataWithNegatives();
 
     /// <summary>
-    /// Generates data With Negatives.
+    /// Generates 100 Normal observations with mean 10 and standard deviation 20.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateDataWithNegatives()
     {
         var dist = new Normal(10.0, 20.0);
@@ -692,12 +626,9 @@ public static class TestData
     public const double MixtureTrueWeight1 = 0.7;
 
     /// <summary>
-    /// Generates mixture Data.
+    /// Generates the seeded two-Normal mixture fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateMixtureData()
     {
         var rng = new MersenneTwister(Seed + 300);
@@ -740,12 +671,9 @@ public static class TestData
     public const double PointProcessObservationPeriod = 100.0;
 
     /// <summary>
-    /// Generates point Process Event Times.
+    /// Generates Poisson-process arrival times strictly within the observation period.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GeneratePointProcessEventTimes()
     {
         var rng = new MersenneTwister(Seed + 400);
@@ -772,12 +700,9 @@ public static class TestData
     public static double[] PointProcessEventMagnitudes { get; } = GeneratePointProcessEventMagnitudes();
 
     /// <summary>
-    /// Generates point Process Event Magnitudes.
+    /// Generates one independent GEV magnitude for each stored event time.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GeneratePointProcessEventMagnitudes()
     {
         var dist = new GeneralizedExtremeValue(50.0, 15.0, 0.1);
@@ -809,12 +734,9 @@ public static class TestData
     public const int SpatialYearsPerSite = 50;
 
     /// <summary>
-    /// Generates spatial X Coordinates.
+    /// Generates one uniform X coordinate in [0, 100) km per site.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateSpatialXCoordinates()
     {
         var rng = new MersenneTwister(Seed + 500);
@@ -827,12 +749,9 @@ public static class TestData
     }
 
     /// <summary>
-    /// Generates spatial Y Coordinates.
+    /// Generates one uniform Y coordinate in [0, 100) km per site.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[] GenerateSpatialYCoordinates()
     {
         var rng = new MersenneTwister(Seed + 501);
@@ -851,12 +770,9 @@ public static class TestData
     public static double[,] SpatialGEVData { get; } = GenerateSpatialGEVData();
 
     /// <summary>
-    /// Generates spatial GEV Data.
+    /// Generates the seeded spatial GEV fixture.
     /// </summary>
     /// <returns>The generated data values.</returns>
-    /// <remarks>
-    /// This helper keeps fixture setup local to the tests that use it.
-    /// </remarks>
     private static double[,] GenerateSpatialGEVData()
     {
         var rng = new MersenneTwister(Seed + 502);

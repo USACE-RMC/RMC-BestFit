@@ -1,62 +1,50 @@
-<!-- verification-status: active-remediation -->
+<!-- verification-status: publication-draft -->
 
 # RMC.BestFit 2.0 Verification Report
 
-This is the living formal verification and validation record for `RMC.BestFit.Verification`. It separates scientific numerical evidence from fast unit and regression coverage.
+The report describes the current numerical test library and the scientific evidence supporting each analysis family. Start with the [executive summary](report/executive-summary.md), then read the [methodology](report/system-and-methodology.md) and the relevant analysis chapter. The [complete test index](report/test-coverage.md) accounts for every executable verification method.
 
-The active handoff is the [Verification Completeness Remediation](../superpowers/plans/2026-08-28-verification-completeness-remediation.md), grounded in the [Verification Completeness and Ownership Audit](verification-completeness-audit.md). Start with the first unchecked session chunk when continuing this program.
+The source inventory contains **328 methods in 71 active classes**. The catalog records 326 verified dispositions and two accepted limitations: generic sampling of coupled priors and the magnitude of one-step GMM deletion influence. These are numerical evidence dispositions, distinct from code coverage and repeated-sample interval coverage. The report explains the limits of each claim.
 
-The earlier [Verification Finalization Plan](verification-finalization-plan.md) remains the historical phase ledger. The new program does not invalidate its focused-run results; it audits their coverage, ownership, recovery sample sizes, acceptance consistency, comments, and report traceability against the current source tree.
+| Report area | Chapter |
+|---|---|
+| Document control and scope | [Report documentation](report/report-documentation.md) |
+| Estimation, priors, model comparison, and diagnostics | [Estimation and diagnostics](report/estimation-diagnostics.md) |
+| Distribution fitting, univariate recovery, Flike, Viglione, and Bulletin 17C | [Distributions and Bulletin 17C](report/data-distributions-b17c.md) |
+| Peaks over threshold | [Point process](report/point-process-analysis.md) |
+| Competing risks | [Competing-risk analysis](report/competing-risk-analysis.md) |
+| Mixtures and composite distributions | [Mixtures](report/mixture-analysis.md), [composites](report/composite-analysis.md) |
+| Bivariate and coincident frequency | [Bivariate analyses](report/bivariate-analyses.md) |
+| Rating curves | [Rating-curve analysis](report/rating-curve.md) |
+| AR, MA, ARIMA, and ARIMAX | [Time-series analysis](report/time-series-analyses.md) |
+| Spatial likelihood, prediction, and uncertainty | [Spatial extremes](report/spatial-extremes.md) |
+| Conclusions and limitations | [Evidence boundaries](report/evidence-boundaries-conclusions.md) |
+| Full library coverage | [Appendix A](report/test-coverage.md), [machine-readable catalog](verification-catalog.json) |
 
-## Current status
+## Build and review
 
-| Program area | Status | Evidence |
-|---|---|---|
-| Repository integration | Operational - validated 4 August 2026 | Strict Debug XML build and Verification compilation: 0 warnings/errors; Release solution excludes Verification; the method-level ownership cleanup is complete |
-| Public API baseline | Captured; UI/App boundary refreshed 20 August 2026 | Core exported API plus exact UI/App public-and-protected signatures enforced by `PublicApiCompatibilityTests`; see [Time-Series Verification](time-series.md#ui-and-app-compatibility-baseline) |
-| Fast regression gate | Phase 7 closeout gate, 22 August 2026 | Core 3,337; UI 579; App 438; API 498; 0 failures; strict Debug XML builds 0 warnings/errors; `scripts/validate-code-xml-docs.ps1` passes |
-| Phase 7 closeout | Complete - 22 August 2026 | TR-084 through TR-090 diagnosed and disposed one decision at a time: fixture defects (TR-084 nonstationary generators, TR-087 censored coverage plotting positions) and production defects (TR-085 GMM covariance eigenvalue cap, TR-086 bootstrap re-centring, TR-087 initial-parameter fallback) fixed; TR-088 closed as reruns-on-request; TR-089 legacy fixtures at 1,000 observations with credible-interval acceptance for the Bayesian cells (29/29); TR-090 test race fixed. MANIFEST 29/29 hashes rechecked; the plan is finalized. See [Phase 7 closeout](test-inventory.md#phase-7-closeout---22-august-2026). |
-| External environments | Locked | R 4.4.3 with 131 packages; Python with 15 packages |
-| Test ownership audit | Complete - 4 August 2026 | All 84 Verification C# files were reviewed; 435 of 1,196 methods remain, 761 redundant/non-verification methods were removed, and 35 missing deterministic contracts were added to the fast core project. Core line/branch/method coverage increased from 64.73/59.46/86.94% to 66.03/60.43/88.25%. See [Test Inventory](test-inventory.md) |
-| Distribution fitting | Closed - Phase 1 | All 15 family-specific and both multi-candidate external-oracle methods passed; TR-001, TR-009, and TR-063 are verified; TR-002 and TR-064 are rejected non-defects; TR-010 is fixed by regression. All nine Phase 1 artifact hashes match the manifest. See [Distribution Fitting](distribution-fitting.md) |
-| Model estimation and diagnostics | Closed - Phase 2; completeness Chunk 6B passed 22/22 | Log10-Normal estimator equivalence, fit/variance/combined influence, and external-package parity for DIC, WAIC, PSIS-LOO, MLE/MAP nuisance profiling, Hansen J, overidentified one-step fitting, fixed-weight/efficient GMM sandwich covariance, and rank-normalized R-hat/bulk-tail ESS passed. Chunk 6B adds fifteen stationary Bayesian families, reciprocal analytical evidence, a 380-cell deterministic parent/trend default matrix, and a five-cell nonstationary Bayesian covering array; all current exact identities pass, while sixteen legacy Normal trend cells remain explicitly outside the shared central-95% claim. TR-023 and TR-032 retain their public signatures; TR-024 through TR-027 and TR-029 through TR-031 and TR-034 are fixed in their approved scopes. TR-028 remains an accepted documented limitation; TR-033 is rejected as a non-defect. All seven Phase 2 artifact hashes match the manifest. See [Model Estimation](model-estimation.md) |
-| Data handling and Bulletin 17C | Closed - Phase 3; Phase 7 corrections 22 August 2026 | TR-003 documents the accepted grouped-threshold disaggregation and most-recent-time prior reference. All seven formal worked-example GMM methods passed published mean/standard-deviation/skew parity at `1E-3`. Exact-LP3 Cohn scope guards passed fast tests; Cohn value verification is deferred. The 14 ordinary/pivotal reliability cells retain their 13,000 finite outputs with zero retries, substitutions, or exceptions (14/14 after TR-086). Phase 7 fixed the GMM covariance eigenvalue cap (TR-085, `B17CCovarianceTests` 13/13), the bootstrap re-centring of measurement-error distributions (TR-086, uncertain-data cells 2/2), and the censored-frame initial-parameter fallback (TR-087); the coverage cells stay reruns-on-request (TR-087, TR-088). See [Bulletin 17C Verification](bulletin-17c.md), the [Phase 3 ledger](verification-finalization-plan.md#phase-3---data-handling-and-bulletin-17c), and [Scientific Review Findings](../technical-reference/review-findings.md). |
-| Point-process correction | Closed - Phase 4 point-process subset | TR-004/TR-005 are complete in the approved scope. All ten guarded cells pass with 1,000-observation recovery fixtures and untouched DEMCzs defaults, including calendar/water-year block-origin parity. See [Point-Process Verification](point-process.md). |
-| Mixture correction | Closed - Phase 4 mixture subset; identified-sampler recovery passed 21 August 2026 | Public full-$K$ EM/Numerics parity remains unchanged. New BestFit chains store $K-1$ weights, derive the final weight inside the posterior target, and use the identified EM covariance directly without mixture MAP/Hessian refinement. Deterministic gates pass, and the three parity and three Bayesian recovery methods passed separately under production DEMCzs defaults (6/6). See [Mixture Verification](mixture.md). |
-| Competing-risk simulation and recovery | TR-012 closed; six Bayesian recovery cells deferred as research | Fast seed/matrix contracts and four analytical rank/CDF methods pass. All ten MLE recovery methods and four Default-DEMCzs methods with MAP-centered initialization pass; the six remaining Bayesian cells (four maximum, two correlated) expose convergence, identifiability, ESS, or uncertainty-curve findings and are explicitly deferred research items that gate no later phase. See [Competing-Risks Verification](competing-risks.md). |
-| Composite and cross-analysis posterior propagation | TR-013/TR-014/TR-015 closed; recovery supplement passes 10 of 10 | Fast weighting/matrix/seed/cache contracts and both guarded posterior-resampling methods pass. The unchanged extreme-tail inversion cell passed after the approved `XTransform.None` correction. `BivariateAnalysis` remains conditional on fixed marginals. See [Composite Verification](composite.md). |
-| Time-series models | Phase 5 complete; Phase 7 legacy cells 22 August 2026 | TR-035 through TR-041 and TR-046 are closed; TR-042 remains closed with refreshed evidence. UI/App signatures and serialization remain compatible, every named numerical method passes, and the eight-cell MLE/Bayesian recovery matrix passes with 1,000 retained observations and untouched Bayesian defaults. TR-089: the 29 legacy recovery fixtures now use 1,000 observations and the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat (29/29). See [Time-Series Verification](time-series.md). |
-| Rating curve | Closed - Phase 6 Batch 6.1 (21 August 2026) | TR-043 (discharge-space likelihood), TR-044 (exponent lower bound 0.1, legacy warning), and TR-045 (aligned-pair validation) corrected and verified: three exact discharge-space oracle cells, seven continuity cells, six example-replication recovery cells, and twenty legacy recovery cells pass at 1,000 observations under production defaults. See [Rating-Curve Verification](rating-curve.md). |
-| Bivariate and coincident frequency | Closed - Phase 6 Batch 6.2 (21 August 2026) | TR-047 closed. Fourteen exact `CopulaEstimationOracleTests` methods pass against the independent Python copula-estimation oracle (seven families, MPL and IFM; historical R targets retained for six), Bayesian copula recovery passes 7/7 and the coincident-frequency cells 4/4 under production defaults, and the bivariate TR-047 routing regression runs in the fast gate. See [Bivariate Verification](bivariate.md). |
-| Spatial extremes | Closed - Phase 6 Batches 6.3 through 6.6 (22 August 2026) | TR-048 through TR-062 and TR-091 through TR-093 corrected or closed: likelihood core and clone, leave-one-site-out with reduced training models, conditional Gaussian-process prediction, temporal block bootstrap, per-draw regional posterior, dependent simulation, uncertainty-method dispatch, likelihood guard, link-space error bounds, heuristic-weight naming, and the Cartesian/geodesic distance metric; the `mvtnorm`, conditional-GP, and haversine oracle cells, the criteria, cross-validation, prediction, regional, simulation, and dispatch cells, and the recovery cells pass under production defaults. See [Spatial Extremes Verification](spatial-extremes.md). |
+Markdown is the publication source. [book-order.txt](book-order.txt) defines the PDF chapters. Report-specific source-review metadata lives in the `verification_report.checkpoint` object in [report-metadata.json](../report-metadata.json). Numerical artifact dates and run configurations remain attached to their evidence; the report date is not a library-wide rerun date.
 
-## Evidence rule
+```powershell
+.\scripts\validate-verification-catalog.ps1 -Catalog docs/verification/verification-catalog.json -SourceRoot src/RMC.BestFit.Verification -RequireComplete
+python scripts/build-verification-coverage.py --check
+.\scripts\build-verification-report.ps1
+```
 
-A passing build, estimator invocation, optimizer convergence, finite result, result shape, or reproduction of an internal result is not verification. A claim is verified only when its test has an analytical, independently implemented, external-package, published/real-source, recovery, or coverage oracle with declared provenance and tolerance. Deterministic state, validation, serialization, guard, caching, and regression contracts belong in the fast test projects even when they exercise an object restored to an estimated state.
+The build produces `output/pdf/rmc-bestfit-verification-report.pdf`, using offline vector equations. Use `$...$` for inline mathematics and `$$` on separate lines for display mathematics; these delimiters also render on GitHub. After changing the catalog, regenerate Appendix A with `python scripts/build-verification-coverage.py` and review the diff. The PDF build checks that this generated index is current.
 
-## Execution rule
+The [publication quality record](publication-quality.md) records source alignment, XML and regression gates, equation rendering, and PDF layout checks for this edition.
 
-The full Verification project is never run as one suite. Each result in this report is produced by exactly one fully qualified method through:
+## Test execution
+
+Core, UI, App, and API fast suites are the regression gate. Scoped numerical development checks may run one relevant family, class, or namespace at a time, with the Microsoft.Testing.Platform filter after `--`. Evidence-grade verification uses the guarded runner:
 
 ```powershell
 .\scripts\run-verification-test.ps1 -Test Namespace.Class.Method
 ```
 
-The runner rejects broad filters and requires exactly one TRX result.
+The runner requires exactly one result. A whole-library numerical run is a deliberate, user-coordinated action. Do not infer numerical accuracy from a build, estimator completion, finite output, or agreement between production paths.
 
-## Traceability states
+## Evidence records
 
-- **Planned:** no executable scientific test yet.
-- **Ready - focused run:** the test compiles and may be executed only as one exact fully qualified method through the guarded runner.
-- **Passed:** the focused TRX and oracle artifact have been reviewed.
-- **Failed:** the focused test contradicted the claim or exposed a defect.
-- **Blocked:** an external dependency, upstream correction, or scientific decision prevents completion.
-
-All 30 recovery-supplement methods and both existing TR-014 methods have been run individually
-under the execution rule. Twenty-four supplement methods and both TR-014 methods pass. The six
-remaining Bayesian competing-risk findings have an approved deferred-research disposition, so
-Phase 5 is complete for its approved scope. The supplement pins Numerics
-`c361f2864428a98a33d6072ffa9bc11ac360839d` and RMC-TotalRisk
-`d4d43e6407ddb4219e5cd7f613e80f749a3a0ab7`.
-
-[Finalization Plan](verification-finalization-plan.md) | [Methodology](methodology.md) | [References](references.md)
+The [claim-evidence ledger](claim-evidence-ledger.md) connects current report scope to the catalog. The [completeness audit](verification-completeness-audit.md), [test inventory](test-inventory.md), and [finalization plan](verification-finalization-plan.md) preserve the work records. Catalog entries for source files deleted on 9 September 2026 are retained separately in [verification-catalog-retired.json](verification-catalog-retired.json); they are excluded from the current library and report counts.

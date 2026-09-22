@@ -8,16 +8,13 @@ using RMC.BestFit.Verification.TimeSeriesAnalysis;
 namespace RMC.BestFit.Verification.SpatialExtremes;
 
 /// <summary>
-/// Verifies the posterior prediction and regional summaries of the spatial GEV analysis against
-/// recomputation from the retained posterior draws (TR-054, TR-058): the ungauged-site prediction must
-/// use the model's conditional Gaussian-process predictor for every draw, and the regional credible
-/// bounds must be posterior quantiles of the per-draw regional statistic.
+/// Preserves historical spatial GEV posterior-prediction and regional-aggregation comparisons.
 /// </summary>
 /// <remarks>
-/// Deterministic posterior-draw prediction and regional aggregation are fast-owned by sampler-free
-/// SpatialGEV tests. These cells recompute through production paths rather than supplying independent
-/// evidence, so the remaining independent conditional-GP and regional-posterior evidence is open for
-/// Chunk 14B.
+/// These methods are not discovered as Verification tests because they recompute predictions through
+/// production paths. The fast SpatialGEV tests cover draw routing and aggregation contracts;
+/// <see cref="SpatialGEVKrigingOracleTests"/> and <see cref="SpatialGEVChunk14OracleTests"/> supply
+/// independent conditional-Gaussian-process and regional-posterior numerical evidence.
 /// </remarks>
 [TestClass]
 public class SpatialGEVPredictionVerificationTests

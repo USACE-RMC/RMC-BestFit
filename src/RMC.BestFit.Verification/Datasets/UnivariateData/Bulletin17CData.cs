@@ -130,9 +130,10 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Broken systematic record of 56 annual peak flows with three gap periods (1932–1938,
-        /// 1976–1992, 1999–2003) treated as threshold-censored at 21,000 cfs. Manual low-outlier
-        /// threshold set at 2,000 cfs. Exercises broken-record and perception-threshold handling.
+        /// Broken record of 56 observed annual peak flows, including the 22,000 cfs flood in 1936.
+        /// The perception-threshold periods 1932-1938, 1976-1992, and 1999-2003 use 21,000 cfs;
+        /// the known 1936 observation is retained within the first period. The manual low-outlier
+        /// threshold is 2,000 cfs. Exercises broken-record and perception-threshold handling.
         /// </para>
         /// <para>Reference: B17C Guideline, Example 3, Tables 7–9.</para>
         /// </remarks>

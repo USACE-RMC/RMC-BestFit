@@ -6,8 +6,8 @@ using RMC.BestFit.Estimation;
 namespace RMC.BestFit.Verification.Bivariate;
 
 /// <summary>
-/// Unit tests for the <see cref="BivariateDistribution"/> model class and <see cref="MaximumLikelihood"/> estimation.
-/// Validates copula-based bivariate distributions against the R 'copula' package.
+/// Preserves historical <see cref="BivariateDistribution"/> maximum-likelihood comparisons
+/// with parameter estimates from the R <c>copula</c> package.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -16,7 +16,7 @@ namespace RMC.BestFit.Verification.Bivariate;
 /// with various dependence structures, offering greater flexibility than traditional multivariate distributions.
 /// </para>
 /// <para>
-/// Tests validate two estimation approaches:
+/// The historical calculations cover two estimation approaches:
 /// - Maximum Pseudo Likelihood (MPL): Uses empirical CDFs (plotting positions) of marginals
 /// - Inference From Margins (IFM): Two-stage estimation fitting marginals first, then copula parameters
 /// </para>

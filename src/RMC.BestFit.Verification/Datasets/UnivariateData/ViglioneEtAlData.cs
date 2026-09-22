@@ -48,7 +48,7 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
     ///     <b>References:</b>
     ///     <list type="bullet">
     ///         <item><description>Viglione, A., Merz, R., Salinas, J. L., &amp; Bloschl, G. (2013). Flood frequency hydrology: 3. A Bayesian analysis. Water Resources Research, 49(2), 675-692.</description></item>
-    ///         <item><description>Skahill, B. E., Viglione, A., &amp; Byrd, A. R. (2016). A comparison of Bayesian MCMC with alternative methods for flood frequency analysis. Hydrological Sciences Journal.</description></item>
+    ///         <item><description>Skahill, B. E., Viglione, A., &amp; Byrd, A. (2016). A Bayesian Analysis of the Flood Frequency Hydrology Concept. ERDC/CHL CHETN-X-1, U.S. Army Engineer Research and Development Center.</description></item>
     ///         <item><description>Coles, S. G., &amp; Tawn, J. A. (1996). A Bayesian analysis of extreme rainfall data. Applied Statistics, 45(4), 463-478.</description></item>
     ///         <item><description>Stephenson, A., &amp; Ribatet, M. (2006). evdbayes: Bayesian Analysis in Extreme Value Theory. R package.</description></item>
     ///     </list>
@@ -211,13 +211,20 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
         /// <remarks>
         /// <para>
         /// This is the baseline test using only the shorter systematic record without any additional information.
-        /// Expected results from Skahill et al. (2016):
+        /// Retained comparison targets, with the source exception described below:
         /// </para>
         /// <list type="bullet">
         ///     <item><description>GEV parameters: ξ=42.9, α=20.2, κ=-0.096</description></item>
         ///     <item><description>100-year flood: 160 m³/s (90% CI: 130-288)</description></item>
         ///     <item><description>1000-year flood: 241 m³/s (90% CI: 163-649)</description></item>
         /// </list>
+        /// <para>
+        /// Skahill et al. (2016), Table 2, gives 183 m³/s for the 1000-year lower endpoint.
+        /// This fixture retains 163 m³/s, which appears in the BestFit column of the v1
+        /// verification report's Table 83. Agreement with this fixture therefore does not
+        /// establish published-source agreement for that endpoint. The numerical reference
+        /// contract remains unchanged pending the repository's technical-authority decision.
+        /// </para>
         /// </remarks>
         /// <returns>
         /// A tuple containing:

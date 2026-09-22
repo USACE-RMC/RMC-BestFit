@@ -9,13 +9,14 @@ using System.Threading.Tasks;
 namespace RMC.BestFit.Verification.Datasets.TimeSeriesData
 {
     /// <summary>
-    /// Provides real-world time series datasets and corresponding R validation results for unit testing.
+    /// Provides observed time series and stored R estimates for historical numerical comparisons.
     /// </summary>
     /// <remarks>
     /// <para>
     /// This class contains classic econometric time series datasets along with parameter estimates
-    /// computed in R for validation testing. The R results serve as ground truth for verifying
-    /// that RMC-BestFit produces comparable parameter estimates.
+    /// computed in R. These estimates are same-data reference fits, not known generating parameters.
+    /// A comparison must account for its likelihood, intercept, differencing, and transformation
+    /// conventions; storing the values here does not establish numerical equivalence.
     /// </para>
     /// <para>
     /// Data sources:

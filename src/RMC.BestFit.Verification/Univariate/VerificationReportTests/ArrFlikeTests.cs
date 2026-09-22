@@ -10,7 +10,7 @@ using RMC.BestFit.Verification.Datasets.UnivariateData;
 namespace RMC.BestFit.Verification.Univariate.VerificationReportTests;
 
 /// <summary>
-/// Unit tests for verifying RMC-BestFit against the Flike software from Australian Rainfall and Runoff (ARR).
+/// Verifies flood-frequency posterior summaries against published Flike worked-example results.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,8 +31,10 @@ namespace RMC.BestFit.Verification.Univariate.VerificationReportTests;
 /// </para>
 /// <para>
 ///     <b>Acceptance Criteria:</b>
-///     Posterior mean quantile estimates and credible intervals are verified to be within 5% of
-///     the published Flike results, accounting for differences in MCMC vs. importance sampling methodology.
+///     Posterior mean quantile estimates and both 90% credible-interval endpoints are compared
+///     with the retained Flike references at every specified annual exceedance probability.
+///     The relative limits are 7.5% for Example 3, 10% for Example 6a, and 5% for Examples 4, 5,
+///     and 6b. These are the method-specific comparison rules, not interval-coverage claims.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -44,8 +46,8 @@ public class ArrFlikeTests
     /// <remarks>
     /// <para>
     /// This test verifies the baseline Bayesian LPIII analysis using the Hunter River at Singleton
-    /// dataset with uninformative (flat) priors on all parameters. This corresponds to Example 3
-    /// from the Flike self-training examples.
+    /// dataset with the default bounded parameter priors and the enabled Jeffreys scale rule.
+    /// This corresponds to Example 3 from the Flike self-training examples.
     /// </para>
     /// <para>
     /// Expected results include very wide credible intervals due to the positive skew in the data

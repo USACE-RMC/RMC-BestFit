@@ -2,48 +2,37 @@
 
 # Executive Summary
 
-## Purpose and scope
+## Purpose
 
-The purpose of this report is to establish which scientific calculations in RMC.BestFit 2.0 have been compared with evidence independent of the production implementation. The report does not attempt to prove correctness for every possible model, data set, prior, or tail probability. It documents bounded claims whose test design, reference result, and acceptance rule can be inspected and reproduced.
+This report explains how RMC.BestFit's statistical analyses are tested, what the comparisons show, and where the evidence stops. It is intended for engineers and reviewers who need to assess the software without reading its code. Each analysis chapter describes the observations or generated data, the calculation performed by BestFit, the independent reference, and the meaning of the result.
 
-The report follows the application's project-tree order: time-series data; input data; distribution fitting; univariate, Bulletin 17C, point-process, competing-risk, mixture, and composite analyses; bivariate and coincident-frequency analyses; rating-curve analysis; AR, MA, ARIMA, and ARIMAX analyses; and spatial extremes. Maximum-likelihood, maximum-a-posteriori, generalized-method-of-moments, Bayesian estimation, model comparison, and convergence diagnostics are shared foundations.
+The central question is whether the software performs its specified calculations correctly. Choosing a model that adequately represents a watershed, measurement process, or risk decision remains a separate engineering judgment.
 
-## Verification conclusion
+## Scope and principal findings
 
-At the stated software checkpoint, the independently supported cells summarized below satisfy their declared acceptance criteria. The strongest evidence is exact analytical or external-package parity. Recovery evidence is conditional on its generating model, sample size, seed, estimator configuration, and acceptance rule. Simulation coverage is claimed only where a predeclared repetition design and Monte Carlo acceptance interval were executed for the stated checkpoint.
+The tests combine direct mathematical answers, comparisons with independent R and Python software, published flood-frequency examples, and experiments with known generating models. For example, seven Bulletin 17C examples reproduce 21 published parameter values within 0.001; diagnostic calculations reproduce independent R results to tight numerical tolerances; and generated-data experiments check whether known parameters or responses lie within their stated uncertainty intervals.
 
-The final source catalog contains 384 declarations and 384 execution units: 326 verified, 56 governed
-execution exclusions for the three Bulletin 17C confidence-interval coverage classes, 2 accepted
-limitations, and no open gaps.
+| Capability | Scientific evidence | Supported result |
+|---|---|---|
+| Univariate families and distribution fitting | Fifteen-family recovery, SciPy and R comparisons, analytical identities, and common-data model ranking | Distribution parameterizations, likelihoods, fitted results, and criteria satisfy the specified checks. |
+| Estimation and diagnostics | Analytical posteriors and covariance; R `loo`, `posterior`, `gmm`, and `bbmle` | Estimator objectives, profiling, information criteria, and convergence diagnostics reproduce independent references. |
+| Bulletin 17C | Published examples, PeakFQ plotting positions, moment covariance, regional penalties, and synthetic recovery | Seven example parameter vectors and the specified moment and penalty calculations satisfy their acceptance rules. |
+| Point process, competing risks, mixtures, and composites | Independent likelihoods, dependence identities, external packages, and generating-model recovery | Event rates, combinations of processes, and propagation of uncertainty satisfy the checks for the specified designs. |
+| Bivariate and coincident frequency | Independent dependence-model fits, simulated recovery, and response calculations | The tested fits and probabilities of responses driven by two variables match their references. |
+| Rating curves | SciPy likelihoods and optima, continuity identities, and parameter and response recovery | One-, two-, and three-control designs satisfy the likelihood and recovery criteria. |
+| Time-series models | Independent transforms, recurrences, likelihoods, forecasts, and recovery | AR, MA, ARIMA, and ARIMAX calculations satisfy the specified checks. |
+| Spatial extremes | Independent Gaussian-copula and process calculations, uncertainty propagation, and ten-site recovery | The tested likelihood, prediction, distance, and uncertainty calculations match their references. |
 
-Time-series-data and input-data persistence, validation, and processing contracts passed the fast regression gate. Those two collection-level results control the handoff to the scientific models but are not counted as independent numerical verification.
+The main chapters cover all fifteen analysis types: distribution fitting, univariate, Bulletin 17C, point process, competing risk, mixture, composite, bivariate, coincident frequency, rating curve, autoregressive, moving average, ARIMA, ARIMAX, and spatial extremes. The estimation chapter explains the shared fitting and diagnostic calculations. The data chapters explain checks that preserve measurements, dates, missing values, and observation types before analysis.
 
-| Capability | Verification basis | Result at the accepted checkpoint |
-|---|---|---:|
-| Fifteen univariate families and multi-candidate fitting | N=1000 recovery, SciPy, R `lmomco`, analytical identities, and independent fitting oracles | Passed under current exact identities |
-| Model comparison and convergence diagnostics | R `loo`, R `posterior`, R `gmm`, R `bbmle`, and analytical covariance results | All reported oracle comparisons passed |
-| Bulletin 17C worked examples | Published example parameters and PeakFQ plotting positions | Seven parameter examples and three plotting-position comparisons passed |
-| Point-process models | Analytical Poisson/GPA calculations, likelihood identities, and N=1000 recovery | Passed under current exact identities |
-| Competing risks | Analytical dependence identities and five identified N=1000 recoveries | Passed within the declared fixture scope |
-| Finite mixtures | External-package overlap, identified EM uncertainty, and Bayesian generation-recovery | Six retained identities passed |
-| Composite analyses | Closed forms, R `mistr`, Gaussian orthants, Cartesian posterior enumeration, and four predictive recoveries | Passed under current exact identities |
-| Bivariate and coincident frequency | Independent copula optima, recovery, and closed-form/Lognormal response oracles | Passed under current exact identities |
-| Rating curves | SciPy likelihood and MLE optima, analytical continuity, and ten reconciled recovery designs | Passed; historical Bayesian example percentage bands excluded |
-| Time-series models | Separate AR, MA, ARIMA, and ARIMAX recurrence, transform, likelihood, forecast, and recovery evidence | Eight retained recovery identities and independent oracle groups passed |
-| Spatial extremes | R `mvtnorm`, correlation, cross-validation, prediction, uncertainty, simulation, and 10-site by 100-row recovery | Eight revised recovery identities and independent oracle groups passed |
+Appendix A maps all **328 current test methods in 71 classes** to these explanations. The catalog records 326 verified methods and two tests of accepted limitations. These are inventory counts, not probabilities that a model is correct or percentages of statistical interval coverage.
 
-Bootstrap delivery and accounting results remain engineering evidence and are not counted as scientific
-accuracy or interval-coverage claims. The three Bulletin 17C confidence-interval coverage classes remain
-execution-excluded historical evidence.
+## How to interpret the results
 
-## Interpretation
+Analytical and external-package comparisons provide the most direct checks of a numerical calculation. Recovery experiments ask whether a fitted model can recover its generating parameters or responses under a declared sample size, seed, and estimator configuration. A single successful recovery experiment does not demonstrate repeated-sample confidence-interval coverage.
 
-A passing cell supports the claim stated for that cell. It does not establish universal accuracy outside the tested support, asymptotic regime, sample size, dependence structure, or prior configuration. In particular:
+The two accepted limitations concern joint-prior sampling and one-step GMM deletion influence. The generic sampler draws parameter priors independently and therefore does not represent additional coupled prior factors. GMM influence correctly ranks the tested outlier but its magnitude is not calibrated to exact deletion scale. The relevant checks document these boundaries; they do not remove them.
 
-- Competing-risk recovery is limited to the five identified retained fixtures; removed boundary, local-mode, and correlated-Bayesian designs are not claimed as verified.
-- Current Bulletin 17C Cohn-value and broad coverage claims are excluded because the corresponding numerical comparisons were not executed at this checkpoint.
-- Bivariate copula fitting conditions on fixed fitted marginals; joint marginal-copula posterior estimation is not claimed.
-- Spatial weighting is a heuristic influence weighting and not a composite pairwise likelihood or effective-sample-size correction.
-- Generic prior-predictive sampling is not a joint-prior sampler when a model contains coupled prior factors beyond independently sampled parameter priors.
+Bulletin 17C bootstrap diagnostics also distinguish delivered fits from converged fits. In the inspected 1,000-refit experiment, all outputs were accepted by the delivery workflow, while 947 met outer convergence and 53 reached the iteration cap. Interval coverage and universal bootstrap convergence are not established by that experiment.
 
-These boundaries are limitations of the supported claim set, not evidence that the verified calculations failed.
+The analysis chapters explain these and other model-specific boundaries. The report's conclusions are restricted to the stated calculations, data designs, and acceptance rules.

@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Computational verification tests for the <see cref="ARAnalysis"/> class.
+/// Verifies Bayesian AR(1) recovery and prediction through <see cref="ARAnalysis"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,9 +17,11 @@ namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 /// where ε(t) ~ N(0, σ²).
 /// </para>
 /// <para>
-/// All tests in this class run a Bayesian MCMC chain. They are SLOW and live in the
-/// Verification project. Programmatic tests (constructor, property round-trip,
-/// validation, serialization) live in <c>RMC.BestFit.Verification.TimeSeriesAnalysis</c>.
+/// The discovered AR(1) method uses 1,000 retained observations from an independently generated
+/// R fixture. Every parent must lie in its central 95% posterior interval, with R-hat below 1.10
+/// and ESS at least 100; a separate analytical recurrence checks one-step prediction. Other
+/// methods are non-discovered historical calculations. Constructor, state, and serialization
+/// contracts belong to <c>RMC.BestFit.Tests</c>.
 /// </para>
 /// </remarks>
 [TestClass]

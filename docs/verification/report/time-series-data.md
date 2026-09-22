@@ -1,17 +1,26 @@
 <!-- verification-status: publication-draft -->
 
-# Time-Series Data Verification Boundary
+# Time-Series Data
 
 ## Test objective
 
-The software's first project collection stores dated values, interval and unit metadata, source provenance, and diagnostic plots. The publication question at this boundary is whether the project preserves the data supplied to the scientific model; it is not whether an external data provider or a hydrologic record is correct.
+Time-series data are measurements with dates or times, such as daily discharge or an irregular sequence of stage measurements. Before fitting a model, the software must preserve the values, their timing, missing observations, and the units assigned to them. A missing daily value must not become zero, and an empty file block must not hide observations stored later in the record.
 
 ## Test and result
 
-Fast UI tests exercise manual construction, validation and property transitions, project persistence and copy behavior, and HEC-DSS import contracts. These tests passed in the publication regression gate. They are deterministic software-contract evidence and are not counted as independent numerical verification.
+The tests construct short records with known values and dates, import records from HEC-DSS, and save and reopen project data. Each operation is followed by a direct comparison with the supplied values and the expected dates. Additional cases use long gaps and records spread over several storage blocks to check that the import preserves the complete series.
 
-Independent recurrence, transform, likelihood, generation, and recovery tests consume controlled dated series later in this report. Their passing results establish that the model layer interprets the tested chronology and intervals as stated, but they do not validate arbitrary downloaded records.
+| Test setup | Procedure and expected result | Result |
+|---|---|---|
+| Three daily values: 1, a DSS missing-value marker, and 3 | Import the series. Preserve 1 and 3 and represent the middle day as missing. Four supported missing-value markers are checked. | Passed; valid values agree within $10^{-12}$ and the missing day remains identifiable. |
+| Three daily values: 0, 1, and 0 | Import using the same path as the missing-value examples. | Passed; both zeros remain valid measurements. |
+| Daily period-average values of 1,950 | Convert the DSS end-of-period timestamp at midnight on 2 October 1905 to the represented day, 1 October 1905. | Passed; the value is unchanged and assigned to the correct day. |
+| Regular and irregular records with omitted times | Fill absent expected steps in a regular record with missing values; preserve only the supplied timestamps in an irregular record. | Passed; the two types of record retain their different time meanings. |
+| Sparse records, empty blocks, and adjacent storage boundaries | Read all relevant blocks and compare the complete sequence of timestamps and values. | Passed; later data remain present and boundary observations occur once. |
+| Imported data saved and reopened | Compare values, gaps, interval information, and period conversion after reopening. | Passed; project persistence preserves the tested record. |
 
-## Evidence boundary
+Malformed input also receives deliberate checks. Duplicate timestamps, inconsistent array lengths, and conflicting blocks are rejected instead of being returned as a successful partial import. User-assigned labels and plot settings are checked separately when copying or reopening a series.
 
-The report makes no claim about network availability, provider revisions, station quality, missing-value treatment chosen by an analyst, or the suitability of a series for a specific risk assessment. Those checks precede model verification.
+These are deterministic software checks: the expected answer is the original supplied record or a prescribed timestamp conversion. They passed in the software regression suites and are not included in the 328-method numerical-verification inventory.
+
+Preserving these inputs supports the statistical comparisons in the time-series analysis chapter. Network availability, provider revisions, station quality, and the analyst's treatment of missing values remain outside these checks.

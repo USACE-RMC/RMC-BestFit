@@ -8,16 +8,13 @@ using RMC.BestFit.Verification.TimeSeriesAnalysis;
 namespace RMC.BestFit.Verification.SpatialExtremes;
 
 /// <summary>
-/// Verifies that <see cref="SpatialGEVAnalysis.RunAsync"/> dispatches the selected uncertainty method
-/// (TR-062) and that the temporal block bootstrap fits resampled data with explicit replicate accounting
-/// (TR-056): each cell runs the production analysis with the untouched DEMCzs defaults on a four-site copula
-/// network and checks the applied method, the replicate counts, and the structure of the resulting bounds.
+/// Preserves historical spatial GEV uncertainty-method dispatch and bootstrap-accounting calculations.
 /// </summary>
 /// <remarks>
-/// Deterministic uncertainty dispatch and selected-method state, Godambe availability and failure state,
-/// block-bootstrap row construction, and result/settings DTO state are fast-owned by sampler-free
-/// SpatialGEV tests. The remaining independent Godambe H/J, bootstrap-quantile, and VIF evidence is open
-/// for Chunk 14B.
+/// These methods are not discovered as Verification tests. Sampler-free SpatialGEV tests cover
+/// selected-method state, Godambe availability and failure, bootstrap row construction, and result
+/// contracts. <see cref="SpatialGEVChunk14OracleTests"/> verifies the Godambe sensitivity and variability
+/// matrices, bootstrap quantiles, and variance-inflation formulas against independent Python targets.
 /// </remarks>
 [TestClass]
 public class SpatialGEVUncertaintyMethodVerificationTests

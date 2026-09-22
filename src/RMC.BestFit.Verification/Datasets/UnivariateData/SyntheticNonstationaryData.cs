@@ -12,8 +12,8 @@ namespace RMC.BestFit.Verification.Datasets.UnivariateData
     /// Every generator evaluates the configured trend models at each observation's own time index
     /// (0 through n - 1, the index convention of an <see cref="ExactSeries"/> built from a value list
     /// and therefore the <c>StartIndex = 0</c> convention the fitted model uses) and draws that
-    /// observation from the distribution at that index. Before 22 August 2026 (TR-084) the generators
-    /// drew every observation from the distribution evaluated at index 0, so the fixtures carried no trend.
+    /// observation from the distribution at that index. The returned generating coordinates and
+    /// observation indices therefore describe the same trend convention used by the fitted model.
     /// </remarks>
     public static class SyntheticNonstationaryData
     {

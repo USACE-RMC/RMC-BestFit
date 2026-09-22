@@ -388,23 +388,31 @@ public class TechnicalReferenceDocumentationTests
             repositoryRoot, "docs", "technical-reference", "front-matter.md"));
         string verificationFrontMatter = File.ReadAllText(Path.Combine(
             repositoryRoot, "docs", "verification", "report", "report-documentation.md"));
-        string combinedFrontMatter = technicalFrontMatter + Environment.NewLine + verificationFrontMatter;
-
-        foreach (string propertyName in new[]
+        foreach ((string reportKey, string frontMatter) in new[]
                  {
-                     "release_status", "publication_date_display", "bestfit_commit",
-                     "numerics_source_commit", "numerics_package_baseline"
+                     ("technical_reference", technicalFrontMatter),
+                     ("verification_report", verificationFrontMatter)
                  })
         {
-            string expected = metadata.GetProperty(propertyName).GetString()!;
-            StringAssert.Contains(combinedFrontMatter, expected,
-                $"Publication front matter does not contain controlled metadata '{propertyName}'.");
-        }
+            JsonElement report = metadata.GetProperty(reportKey);
+            bool hasCheckpoint = report.TryGetProperty("checkpoint", out JsonElement checkpoint);
+            foreach (string propertyName in new[]
+                     {
+                         "release_status", "publication_date_display", "bestfit_commit",
+                         "numerics_source_commit", "numerics_package_baseline"
+                     })
+            {
+                string expected = (hasCheckpoint && checkpoint.TryGetProperty(propertyName, out JsonElement value)
+                    ? value : metadata.GetProperty(propertyName)).GetString()!;
+                StringAssert.Contains(frontMatter, expected,
+                    $"{reportKey} front matter does not contain controlled metadata '{propertyName}'.");
+            }
 
-        foreach (JsonElement author in metadata.GetProperty("authors").EnumerateArray())
-        {
-            StringAssert.Contains(combinedFrontMatter, author.GetProperty("name").GetString()!,
-                "Publication front matter omits a controlled author name.");
+            foreach (JsonElement author in metadata.GetProperty("authors").EnumerateArray())
+            {
+                StringAssert.Contains(frontMatter, author.GetProperty("name").GetString()!,
+                    $"{reportKey} front matter omits a controlled author name.");
+            }
         }
     }
 

@@ -12,9 +12,15 @@ using System.Text.Json;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Verifies maximum-likelihood parameter recovery for the <see cref="AutoRegressive"/> model
-/// against deterministic synthetic generating parameters and committed R reference values.
+/// Verifies AR(1) maximum-likelihood recovery and prediction using an independent R fixture.
 /// </summary>
+/// <remarks>
+/// The discovered method fits 1,000 retained observations with Differential Evolution and requires
+/// each generating coordinate to have absolute standardized error at most 1.96, using an available,
+/// unregularized observed-information covariance. It also checks likelihood and one-step prediction.
+/// Other methods preserve non-discovered historical fixed-percentage comparisons for
+/// <see cref="AutoRegressive"/>.
+/// </remarks>
 [TestClass]
 public class AutoRegressiveMLERecoveryTests
 {

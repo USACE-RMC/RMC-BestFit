@@ -9,12 +9,13 @@ namespace RMC.BestFit.Verification.SpatialExtremes;
 /// <summary>
 /// Verifies the spatially dependent simulation of <see cref="SpatialGEV"/> (TR-061): with copula
 /// dependence enabled, a seeded 20,000-row simulation reproduces every intersite normal-score
-/// correlation of the fitted copula matrix within ±0.02 and keeps each site's GEV marginal.
+/// correlation of the configured copula matrix within ±0.02 and checks each site's GEV marginal.
 /// </summary>
 /// <remarks>
-/// The dependence target follows the TR-012 precedent (seeded simulation, ±0.02 at 20,000 rows). The
-/// marginal check compares the empirical quantiles of each site with the site GEV quantiles at the
-/// 0.1, 0.5, and 0.9 non-exceedance levels.
+/// The fixture contains five sites, and each of the 20,000 simulated rows is one joint site vector.
+/// No estimator is run. Every normal-score correlation must agree with the configured matrix to
+/// 0.02 absolute, and empirical site quantiles must agree with configured GEV quantiles to 3% relative
+/// at nonexceedance probabilities 0.1, 0.5, and 0.9. These are fixed simulation acceptance bands.
 /// </remarks>
 [TestClass]
 public class SpatialGEVSimulationVerificationTests

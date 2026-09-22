@@ -7,7 +7,7 @@ using NumericTimeSeries = Numerics.Data.TimeSeries;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Verifies the minimal Chunk 13 AR, MA, ARIMA, and ARIMAX scientific matrix against the
+/// Verifies the retained AR, MA, ARIMA, and ARIMAX numerical cases against the
 /// independently generated Python artifact <c>chunk13-independent-oracle.json</c>.
 /// </summary>
 /// <remarks>

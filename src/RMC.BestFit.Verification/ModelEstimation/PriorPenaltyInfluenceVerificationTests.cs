@@ -7,7 +7,7 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Verification.ModelEstimation;
 
 /// <summary>
-/// Verifies the intended separation of fit influence, variance influence, and combined
+/// Preserves historical qualitative comparisons of fit influence, variance influence, and combined
 /// leverage for Gaussian MAP priors and Gaussian-equivalent GMM penalties on mu.
 /// </summary>
 /// <remarks>

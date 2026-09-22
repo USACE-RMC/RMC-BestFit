@@ -2,84 +2,107 @@
 
 # System Under Test and Verification Methodology
 
+## How to read this report
+
+The report is written for engineers and reviewers who need to understand what was tested without reading the software. Each analysis chapter begins with the question the analysis answers, describes the data and the comparison procedure, and explains the results. The equations identify the quantity being checked; the accompanying text explains its meaning. Appendix A provides the complete test index for readers who need to trace a result to its implementation.
+
+Two kinds of data appear throughout the report. **Observed data** come from a published example or a retained measurement record. **Synthetic data** are generated from a model whose parameters are known in advance. Observed data connect the tests to engineering applications. Synthetic data make it possible to ask whether an analysis can recover a known answer. Synthetic magnitudes have no physical unit unless the chapter assigns one.
+
+The following terms describe different parts of an analysis and should not be read as interchangeable results.
+
+| Term | Meaning in this report |
+|---|---|
+| Parameter | A quantity that defines a model, such as a mean, a standard deviation, or a trend slope. |
+| Generating value, or parent value | The parameter chosen before generating synthetic observations; it is the known target in a recovery experiment. |
+| Likelihood | A measure of how well a specified set of parameters explains the observed data. A log likelihood is the logarithm of this measure. |
+| Prior and posterior | The prior represents information about parameters before using the study data. The posterior combines that information with the data. |
+| Posterior draw | One sampled set of parameter values from the posterior. Many draws describe uncertainty; they are not additional observations. |
+| Quantile | The value associated with a stated probability. For annual maxima, the 0.99 quantile is exceeded with annual probability 0.01, often called the 100-year event. |
+| Confidence interval | An interval constructed by a procedure intended to include the fixed true value at a stated rate over repeated samples. |
+| Credible interval | An interval containing a stated share of the posterior probability for a parameter or response. |
+| Predictive interval or band | An interval or curve band for new observations, including their variability as well as the uncertainty included by the specified method. |
+| Independent reference, also called an oracle | An analytical answer, published result, or calculation made separately from the BestFit calculation being checked. |
+
+An exceedance probability is a probability for each year under the model; a 100-year event is not a prediction that one such event occurs at regular 100-year intervals. A confidence or credible interval for a flood quantile is also different from a predictive interval for a future flood.
+
 ## System under test
 
-All results in this draft are tied to the following reproducible configuration.
+RMC.BestFit combines data management, statistical models, estimation, and presentation of results. Its numerical calculations use the RMC.Numerics library. This report examines both individual calculations and complete analyses: a correct distribution formula is necessary, but the data preparation, fitting, and uncertainty calculations must also work together.
 
-| Component | Checkpoint |
+| Component | Source-review configuration |
 |---|---|
-| RMC.BestFit | Version 2.0.0; commit `4304fb39f8e162cdb746083108042df88e153afc` |
-| RMC.Numerics source used for peer review | Commit `90a63a46394db9ef95e72b0fcbba943408110636` |
-| Published package compatibility baseline | RMC.Numerics 2.1.4 |
+| RMC.BestFit | Version 2.0.0; commit `8808f19f3bfa712241e55a0dfa47407ff5a60970` |
+| RMC.Numerics source | Commit `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02` |
+| Declared package baseline | RMC.Numerics 2.2.0 |
 | Runtime | .NET on Windows, 64-bit process |
-| Verification execution | One fully qualified method per test process, with a uniquely named TRX record |
-| Bayesian workhorse | DEMCzs production defaults unless a test states otherwise |
-| Default reproducibility seed | 12345 unless a fixture declares another seed |
+| Principal Bayesian sampler | DEMCzs, with the configuration declared for each test design |
+| Reproducibility | Explicit generators, retained sample sizes, seeds, and acceptance rules |
 
-The source checkpoint and package baseline answer different questions. The source checkpoint identifies the numerical code used for the peer-review evidence. The package baseline identifies the published dependency version against which public compatibility and serialized payloads were checked.
+Local builds can resolve the sibling Numerics source project instead of the package. These are distinct dependency configurations. A run's recorded configuration identifies which was used; package compatibility and numerical results are not inferred solely from a source build.
 
-## Terminology
+The report describes the current tests and their supporting evidence. A result marked **passed** means that the recorded check met its stated numerical or statistical acceptance rule. A table headed **reference value** reports the comparison target, not an unrecorded BestFit estimate. Where an execution record preserves the pass outcome but not the fitted values, the chapter reports the target and the accepted comparison without inventing an estimate. Source-review dates do not establish that every method has been rerun against one common binary.
 
-**Verification** asks whether the software implements the specified equations and algorithms correctly. **Validation** asks whether a model is an adequate representation of the physical process for a particular application. This report primarily provides verification. Recovery and coverage studies contribute limited validation evidence for their declared simulation designs, but they do not validate a model for every field application.
+## Verification and validation
 
-## Evidence hierarchy
+**Verification** asks whether software implements its specified equations and algorithms correctly. **Validation** asks whether a model adequately represents a physical process for its intended use. This report primarily provides verification. Synthetic recovery experiments assess behavior under a known data-generating law; they do not establish that the law is suitable for a particular watershed.
 
-Evidence is classified before results are interpreted:
+## Evidence types
 
-1. **Analytical oracle.** A closed-form value, identity, derivative, recurrence, or hand calculation independent of the production path.
-2. **Independent numerical implementation.** A separately written R or Python calculation with its generator, environment, source inputs, and hash recorded.
-3. **External scientific package.** A calculation from packages such as R `loo`, `posterior`, `gmm`, `bbmle`, `mvtnorm`, `copula`, or Python SciPy.
-4. **Published result.** A table, worked example, or standard with sufficient parameterization detail to reproduce the comparison.
-5. **Recovery experiment.** Data are generated from known parameters and refitted; acceptance is based on parameter, curve, quantile, and diagnostic criteria.
-6. **Coverage experiment.** Repeated simulated data sets test whether nominal confidence or credible intervals contain the generating quantity at the declared rate.
+| Evidence | Question answered |
+|---|---|
+| Analytical calculation | Does the implementation reproduce a value that can be calculated directly from a formula? |
+| Independent calculation | Does it agree with a separately written numerical calculation? |
+| External scientific package | Does it reproduce an equivalent calculation in a documented R or Python package? |
+| Published source | Does it reproduce a worked example or benchmark with a defined parameterization? |
+| Recovery experiment | Does estimation recover known generating parameters or responses under the specified design? |
 
-An estimator that merely completes, converges, returns finite values, or agrees with another production path is not independently verified. Constructor, validation, state, cache, serialization, exception, and fixed-calculation tests remain in the fast regression projects and are not counted as scientific verification cells.
+The comparison procedure has four parts: specify the data and model, establish an independent reference, perform the BestFit calculation, and compare the results using a rule fixed for that test. Finishing an analysis or producing a plausible graph does not establish accuracy. Conversely, a test deliberately designed to expose an unsupported behavior can pass by confirming that limitation; the report identifies those cases explicitly.
 
 ## Deterministic comparisons
 
-For a scalar reference value $r$ and software value $s$, absolute and relative errors are
+For a reference value $r$ and software value $s$, absolute and relative errors are
 
-$$e_{\mathrm{abs}}=|s-r|,\qquad e_{\mathrm{rel}}=\frac{|s-r|}{\max(|r|,e_0)},\tag{M.1}$$
+$$
+e_{\mathrm{abs}}=|s-r|,\qquad e_{\mathrm{rel}}=\frac{|s-r|}{\max(|r|,e_0)}.\tag{M.1}
+$$
 
-where $e_0$ is the stated scale floor. A cell passes when its declared absolute or relative error is no greater than the predeclared tolerance. Vector and matrix comparisons apply the same rule elementwise unless the test states a norm or specialized statistic.
+Here $r$ is the reference, $s$ is the BestFit result, and $e_0$ prevents division by zero when the reference is close to zero. For example, an absolute tolerance of $10^{-8}$ permits a difference no greater than 0.00000001. This is a check of arithmetic agreement, not an allowance for measurement error. For a matrix, the rule ordinarily applies to every entry.
+
+Comparing two calculations at the **same parameter values** isolates formula implementation. Comparing two **fitted sets of parameters** also tests optimization and can use an uncertainty-based criterion. A fit accepted within a 95% region is not thereby shown to reproduce every printed reference digit.
 
 ## Recovery experiments
 
-Recovery tests predeclare the generating model, retained sample size, seed, fitted coordinates, and response quantity. Maximum-likelihood recovery compares the fitted optimum with the independent optimum or generating parameter. Bayesian recovery ordinarily requires:
+In a recovery experiment, a known model generates the observations and BestFit estimates that model from those observations. Random sampling means that an estimate ordinarily differs from its generating value. The tests therefore assess the difference relative to its uncertainty. For directly estimated maximum-likelihood parameters, a common rule is
 
-- the generating parameter or curve to lie inside the stated central posterior interval;
-- rank-normalized $\widehat R<1.1$ for monitored coordinates;
-- effective sample size greater than the declared minimum, commonly 100; and
-- a point or curve estimate within the declared relative tolerance.
+$$
+\left|\frac{\widehat\theta_j-\theta_{0j}}{\operatorname{SE}(\widehat\theta_j)}\right|\leq 1.96.\tag{M.2}
+$$
 
-Recovery is evaluated on the scientifically interpretable quantity whenever parameter non-identifiability makes individual coordinates misleading. Mixture weights and rating-curve segments are examples where ordered or curve-based assertions are important.
+The symbol $\widehat\theta_j$ denotes the fitted parameter, $\theta_{0j}$ its generating value, and SE its estimated standard error. Thus equation (M.2) requires the difference to be no more than 1.96 standard errors. Other tests assess the entire parameter set using a joint likelihood-ratio region, or vary one parameter while refitting the others to obtain a profile interval. The chapter states which rule applies.
 
-## Coverage experiments
+Bayesian recovery checks ordinarily require the generating value inside the central 95% posterior interval, together with the sampling diagnostics described below. Sometimes several combinations of parameters describe nearly the same response. In those cases the test can assess the engineering quantity directly, such as the 0.99 quantile or the discharge curve, rather than requiring every coefficient to be determined separately.
 
-For $B$ independent repetitions and indicator $I_b$ that the interval contains the truth, empirical coverage is
+Sample size counts observations, not MCMC draws. For spatial recovery, 100 ten-site vectors contain 1,000 scalar observations but only 100 multivariate row/year likelihood contributions. For point processes, the observation period and event count are reported separately.
 
-$$\widehat C=\frac{1}{B}\sum_{b=1}^{B}I_b.\tag{M.2}$$
+## Interval coverage
 
-The Monte Carlo standard error at nominal coverage $C_0$ is
+Recovery and interval coverage answer different questions. Across $B$ independent repetitions, let $I_b$ indicate whether an interval contains its generating truth. Empirical coverage and its Monte Carlo standard error at a nominal target $C_0$ are
 
-$$\operatorname{MCSE}(\widehat C)=\sqrt{\frac{C_0(1-C_0)}{B}}.\tag{M.3}$$
+$$
+\widehat C=\frac{1}{B}\sum_{b=1}^{B}I_b,\qquad
+\operatorname{MCSE}(\widehat C)=\sqrt{\frac{C_0(1-C_0)}{B}}.\tag{M.3}
+$$
 
-A coverage claim is reported only when the repetition count, nominal target, completion rule, and Monte Carlo acceptance interval were declared before execution. Re-enabled but unexecuted assertions are not reported as results.
+Here $\widehat C$ is the observed fraction of successful inclusions, and MCSE describes its sampling uncertainty. For example, testing one generated dataset and finding its true value inside a 95% interval is a recovery result. Showing that such intervals include the truth about 95% of the time requires many independently generated datasets. This distinction applies to the Bulletin 17C, rating-curve, and spatial results in this report.
 
 ## Bayesian diagnostics
 
-Rank-normalized split $\widehat R$, bulk effective sample size, and tail effective sample size are compared with R `posterior`. PSIS-LOO values, smoothed importance weights, Pareto $k$, and importance-sampling effective sample size are compared with R `loo`. A numerically equal aggregate alone is insufficient; the pointwise decomposition and diagnostic vectors are also compared.
+Bayesian estimation uses Markov chain Monte Carlo (MCMC) to sample parameter uncertainty. Several chains explore the same posterior. The convergence statistic $\widehat R$ compares variation within and between chains; a value close to one is desirable. Effective sample size (ESS) estimates how much information remains after accounting for dependence between successive draws. A long chain can therefore have a small ESS.
 
-## Artifact and execution controls
+The usual recovery requirements are $\widehat R<1.10$ and ESS of at least 100 for every monitored parameter. These diagnostics support interpretation of the posterior intervals but do not prove model suitability. The diagnostic calculations themselves are compared with the independent R package `posterior`. Predictive checks based on leave-one-out calculations are compared with R `loo`; the estimation chapter explains both their numerical results and their reliability warnings.
 
-Independent oracle artifacts are committed beneath `verification/data/` with generation metadata and SHA-256 entries in the data manifest. Recovery fixtures record their generating recipe, sample size, seed, parameterization, and acceptance thresholds. Long-running methods are executed separately to prevent fixed result logs or shared test hosts from coupling otherwise independent evidence cells. The complete verification project is not used as a publication command; the report is supported by the explicit method-level evidence set described in its chapters and internal claim-evidence ledger.
+## Reproducibility and report coverage
 
-## Controlled publication refresh
+Independent data and numerical references are stored beneath `verification/data/` with generators, environments, parameter conversions, and hashes. The [verification catalog](../verification-catalog.json) records method identities, scientific references, acceptance rules, and evidence locations. Appendix A maps every current test method to a report chapter. The PDF also embeds the current catalog and document metadata as attachments, retaining the complete acceptance and provenance record with the report.
 
-The following exact-method refresh was completed on 24 August 2026 at the controlled BestFit and Numerics commits in Table 1. It is a reproducibility check on selected cells from the larger evidence matrices reported in the analysis chapters; it does not replace or enlarge those claim sets.
-
-| Refresh group | Test design | Result |
-|---|---|---:|
-| Analytical, external-package, published-source, and independently implemented oracle methods | One exact method and one TRX record per guarded invocation | 55 of 55 passed |
-| Representative MLE, Bayesian, likelihood, and posterior-propagation recovery methods | Point process through spatial extremes, using the predeclared seeds and acceptance rules | 15 of 15 passed |
-| **Total** | No production algorithm, tolerance, sampler setting, seed, or reference contract changed | **70 of 70 passed** |
+The test index is a traceability aid. The analysis chapters carry the scientific explanation; a reader need not understand a test name or open a source file to understand the experiment. Separate software regression tests check data preservation, saved projects, and error handling. Documentation checks protect the report's links, metadata, and code descriptions. These controls support the analysis workflow and are distinguished from the numerical comparisons reported here.

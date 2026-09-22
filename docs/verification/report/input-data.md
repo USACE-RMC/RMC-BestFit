@@ -1,17 +1,27 @@
 <!-- verification-status: publication-draft -->
 
-# Input-Data Verification Boundary
+# Input Data
 
 ## Test objective
 
-The second project collection converts manual, agency, block-series, or peaks-over-threshold inputs into the `DataFrame` consumed by fitting and univariate analyses. The verified boundary is the preservation of observation type, chronology, index, censoring/threshold semantics, and processing configuration.
+Input-data processing prepares the observations used by frequency and distribution analyses. These may be entered directly, obtained from an agency record, extracted as annual or seasonal block values, or selected as peaks above a threshold. The software must preserve both the values and what is known about them. An exact measurement, a flood known only to lie between two bounds, and a year known to remain below a perception threshold contribute different information.
 
 ## Test and result
 
-Fast UI and core tests exercise collection persistence, dirty-state propagation, validation, processing state, plotting-position contracts, exact/interval/threshold/uncertain series construction, and deterministic block/peak calculations. These tests passed in the publication regression gate. They establish data-contract behavior but are not counted as external numerical or recovery evidence.
+The tests construct controlled input records, apply the selected processing settings, save and reopen them, and compare the resulting observations and settings with the expected values. Exact, interval, threshold, and uncertain observations are checked as separate data types. Changes to an input must also identify the project as modified so that an analyst is not unknowingly relying on an outdated saved state.
 
-Downstream chapters describe the independent tests that consume committed frames: distribution fits and functions, Bulletin 17C worked examples, point-process mixed-observation likelihoods, rating-curve aligned pairs, and spatial missing-row likelihoods. All reported downstream results use explicit fixtures and acceptance rules.
+An important example concerns incomplete years. Selecting an annual maximum from a partial daily record can understate the largest event that actually occurred. The following tests assess whether BestFit warns the analyst about that condition; they do not fill in the unobserved flows.
 
-## Evidence boundary
+| Controlled source record | Processing setup | Expected and observed result |
+|---|---|---|
+| All 365 daily values from 1 January through 31 December 2021 | Calendar-year blocks | No incomplete-record warning. Passed. |
+| 334 daily values beginning 1 February 2021 | Calendar-year blocks | Warning for the incomplete first year. Passed. |
+| 426 daily values beginning 1 October 2020 | Water-year blocks starting in October | Warning for the incomplete final water year. Passed. |
+| Full 2021 calendar with one explicitly missing value | Calendar-year blocks | Warning for missing coverage within the year. Passed. |
+| Full 2021 calendar with one omitted daily timestamp | Calendar-year blocks | Warning for the gap, even though no missing-value marker was supplied. Passed. |
 
-Input processing does not prove stationarity, independence, record completeness, perception-threshold correctness, or application suitability. The analyst must validate those assumptions before relying on a downstream frequency model.
+The warning cases remain valid input objects; the result is a warning to support the analyst's decision, not automatic removal of the year. Switching to manual observations clears a warning that applies only to block extraction.
+
+Other tests distinguish a calculated low-outlier threshold from one chosen by the analyst. When derived data are cleared, the calculated threshold is reset; a user-defined threshold of 25 remains 25. Saving and reopening preserves the tested observations, plotting positions, and custom axis titles. These checks and the deterministic block and peak calculations passed in the software regression suites.
+
+These checks establish preservation of supplied information. Later chapters test its statistical use through threshold and interval floods, mixed observation types, paired stage-discharge data, and missing-site observations. Input processing does not establish stationarity, independence, record completeness, correct perception thresholds, or application suitability; those remain the analyst's responsibility.

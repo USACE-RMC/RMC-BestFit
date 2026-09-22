@@ -93,6 +93,11 @@ New-Item -ItemType Directory -Path $browserProfilePath -Force | Out-Null
 
 $env:BESTFIT_NODE_MODULES = (Resolve-Path -LiteralPath $NodeModulesPath).Path
 
+& $pythonExecutable (Join-Path $PSScriptRoot "build-verification-coverage.py") --check
+if ($LASTEXITCODE -ne 0) {
+    throw "The complete verification index is stale. Regenerate it before publishing."
+}
+
 & $nodeExecutable (Join-Path $PSScriptRoot "build-verification-report.mjs") $htmlPath $equationTexPath
 if ($LASTEXITCODE -ne 0) {
     throw "The canonical HTML and equation-source build failed."
@@ -139,6 +144,11 @@ foreach ($asset in $equationAssets) {
 
 if ($equationAssets.Count -eq 0 -or !(Test-Path -LiteralPath (Join-Path $equationDirectory "eq-0001.svg") -PathType Leaf)) {
     throw "dvisvgm did not produce canonical offline equation assets."
+}
+
+& $pythonExecutable (Join-Path $PSScriptRoot "validate-equation-assets.py") $equationDirectory --tex-source $equationTexPath
+if ($LASTEXITCODE -ne 0) {
+    throw "The offline equation assets contain missing glyphs or incomplete output."
 }
 
 $htmlUri = ([Uri](Resolve-Path -LiteralPath $htmlPath).Path).AbsoluteUri

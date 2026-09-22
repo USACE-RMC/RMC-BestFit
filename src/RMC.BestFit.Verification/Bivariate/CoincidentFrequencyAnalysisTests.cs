@@ -39,9 +39,8 @@ namespace RMC.BestFit.Verification.Bivariate;
 ///     across all <see cref="CoincidentFrequencyAnalysis.NumberOfBins"/> Z output bins.
 /// </para>
 /// <para>
-///     <b>Runtime:</b> ≈ 30–90 seconds per ρ. Long enough to belong in
-///     <c>RMC.BestFit.Verification</c>. Inherits <c>[TestCategory("Verification")]</c>
-///     from <c>VerificationAssemblyInfo.cs</c>.
+///     These are numerical recovery and analytical-response checks in the Verification assembly.
+///     Test classification follows the evidence claim; elapsed execution time is not an acceptance rule.
 /// </para>
 /// </remarks>
 [TestClass]

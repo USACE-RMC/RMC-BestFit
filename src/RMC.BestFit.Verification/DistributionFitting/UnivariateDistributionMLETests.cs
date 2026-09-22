@@ -9,7 +9,7 @@ using RMC.BestFit.Verification.Datasets.UnivariateData;
 namespace RMC.BestFit.Verification.DistributionFitting;
 
 /// <summary>
-/// Unit tests for the <see cref="UnivariateDistribution"/> model class and <see cref="MaximumLikelihood"/> estimation.
+/// Verifies <see cref="MaximumLikelihood"/> fits of <see cref="UnivariateDistribution"/> against published reference points.
 /// All tests verify against published results from the RMC-BestFit Verification Report (Smith, 2020).
 /// </summary>
 /// <remarks>

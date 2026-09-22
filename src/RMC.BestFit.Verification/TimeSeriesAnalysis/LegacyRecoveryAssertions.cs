@@ -4,16 +4,14 @@ using RMC.BestFit.Models;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Shared recovery assertion for the legacy synthetic time-series Bayesian cells (TR-089).
+/// Applies the central-90% parameter-inclusion rule used by historical Bayesian time-series calculations.
 /// </summary>
 /// <remarks>
-/// The legacy cells asserted the posterior mode within an arbitrary 25-40% relative band of the
-/// generating value. ARMA coefficients of weakly identified fixtures (for example ARMA(2,2) with
-/// near-cancelling polynomials) carry posterior standard deviations of 0.13-0.17 at 1,000
-/// observations, so a point band is not a recovery criterion. By decision of 22 August 2026 every
-/// legacy Bayesian recovery cell asserts that each generating value lies inside the production
-/// central 90% credible interval of its chain and that R-hat is below 1.1; the R-parity cells
-/// keep their own tolerances.
+/// Every generating coordinate must lie within the completed analysis's central 90% posterior interval,
+/// and every R-hat must be finite and below 1.10. This helper does not require an effective sample size
+/// or apply a relative point-estimate tolerance. The calculations that retain this helper are not
+/// currently discovered as Verification tests; current recovery evidence uses its separately declared
+/// central-95% and diagnostic acceptance rules.
 /// </remarks>
 internal static class LegacyRecoveryAssertions
 {

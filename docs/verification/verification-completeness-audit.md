@@ -8,7 +8,13 @@ This document is the static audit baseline for the RMC.BestFit verification-comp
 
 Haden Smith remains the final technical and numerical authority. This program does not authorize changes to production algorithms, priors, samplers, seeds, likelihoods, convergence policies, numerical defaults, serialization, or public contracts. A verification failure initiates diagnosis and an approval-gated finding; it does not authorize tuning either production behavior or a test tolerance.
 
-## Audit checkpoint
+## Current source inventory — 21 September 2026
+
+At BestFit `8808f19f3bfa712241e55a0dfa47407ff5a60970`, the source and active catalog reconcile to 328 methods in 71 classes: 326 verified dispositions and two accepted limitations. The 56 coverage-study methods deleted by commit `ae4aaa1` on 9 September are preserved in [verification-catalog-retired.json](verification-catalog-retired.json). They are outside the current source denominator. The [current report index](report/test-coverage.md) maps every executable method to its chapter.
+
+The remainder of this audit preserves the remediation baseline and its original counts. Its historical inventories must not be used as current declaration counts.
+
+## Remediation checkpoint — 2 September 2026
 
 The final reconciliation is based on commit `808be5c52bef86927b939b2b2c54fa2282c1ccba` on branch
 `documentation-verification-updates`, with task-scoped uncommitted Chunk 15-16 changes reviewed on

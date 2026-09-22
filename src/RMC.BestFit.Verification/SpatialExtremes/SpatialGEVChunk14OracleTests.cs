@@ -13,7 +13,7 @@ using RMC.BestFit.Models.TrendFunctions;
 namespace RMC.BestFit.Verification.SpatialExtremes;
 
 /// <summary>
-/// Verifies the Chunk 14 spatial correlation, held-out prediction, posterior aggregation, Godambe,
+/// Verifies spatial correlation, held-out prediction, posterior aggregation, Godambe,
 /// block-bootstrap, and variance-inflation formulas against independently implemented Python targets.
 /// </summary>
 /// <remarks>
@@ -438,7 +438,7 @@ public class SpatialGEVChunk14OracleTests
         return analysis;
     }
 
-    /// <summary>Parses the copied Chunk 14 artifact.</summary>
+    /// <summary>Parses the committed independent spatial-oracle artifact.</summary>
     /// <returns>The parsed document; the caller disposes it.</returns>
     private static JsonDocument LoadDocument()
     {

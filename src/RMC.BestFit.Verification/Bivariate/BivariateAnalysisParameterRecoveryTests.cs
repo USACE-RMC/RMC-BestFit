@@ -34,9 +34,8 @@ namespace RMC.BestFit.Verification.Bivariate;
 ///     than through a raw-coordinate recovery claim.
 /// </para>
 /// <para>
-///     <b>Runtime:</b> several minutes for the full class. Long enough to belong in
-///     <c>RMC.BestFit.Verification</c> rather than a fast test project. Inherits
-///     <c>[TestCategory("Verification")]</c> from <c>VerificationAssemblyInfo.cs</c>.
+///     These are numerical recovery and analytical-response checks in the Verification assembly.
+///     Test classification follows the evidence claim; elapsed execution time is not an acceptance rule.
 /// </para>
 /// </remarks>
 [TestClass]

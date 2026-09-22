@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Computational verification tests for the <see cref="MAAnalysis"/> class.
+/// Verifies Bayesian MA(1) recovery and prediction through <see cref="MAAnalysis"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,9 +18,11 @@ namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 /// where ε(t) ~ N(0, σ²).
 /// </para>
 /// <para>
-/// All tests in this class run a Bayesian MCMC chain. They are SLOW and live in the
-/// Verification project. Programmatic tests (constructor, property round-trip,
-/// validation, serialization) live in <c>RMC.BestFit.Verification.TimeSeriesAnalysis</c>.
+/// The discovered MA(1) method uses 1,000 retained observations from an independently generated
+/// R fixture. Every parent must lie in its central 95% posterior interval, with R-hat below 1.10
+/// and ESS at least 100; a separate analytical recurrence checks one-step prediction. Other
+/// methods are non-discovered historical calculations. Constructor, state, and serialization
+/// contracts belong to <c>RMC.BestFit.Tests</c>.
 /// </para>
 /// </remarks>
 [TestClass]
@@ -73,8 +75,8 @@ public class MAAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of MA(2) parameters against known true values from synthetic data.
-    /// Uses a 1,000-observation time series and validates that the central 90% credible interval recovers the generating
-    /// parameters within 30% tolerance, accounting for Monte Carlo variability.
+    /// The historical 1,000-observation calculation requires every generating parameter to lie
+    /// in its central 90% posterior interval and every R-hat to be finite and below 1.10.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -104,8 +106,8 @@ public class MAAnalysisTests
 
     /// <summary>
     /// Tests Bayesian MCMC estimation of MA(3) parameters against known true values from synthetic data.
-    /// Uses a 1,000-observation time series and validates that the central 90% credible interval recovers the generating
-    /// parameters within 25% tolerance, accounting for Monte Carlo variability.
+    /// The historical 1,000-observation calculation requires every generating parameter to lie
+    /// in its central 90% posterior interval and every R-hat to be finite and below 1.10.
     /// </summary>
     /// <remarks>
     /// <para>

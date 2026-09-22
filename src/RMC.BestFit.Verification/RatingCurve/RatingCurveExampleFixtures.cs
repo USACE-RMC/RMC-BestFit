@@ -8,7 +8,7 @@ namespace RMC.BestFit.Verification.RatingCurve;
 /// <summary>
 /// Loads the committed rating-curve example fixtures and likelihood oracle that replicate the three
 /// synthetic cases of <c>examples/6-rating-curve-analysis</c>, and builds the untouched BestFit
-/// rating-curve models used by the Phase 6 rating-curve verification cells.
+/// rating-curve models used by the likelihood, continuity, and recovery verification methods.
 /// </summary>
 /// <remarks>
 /// <para>

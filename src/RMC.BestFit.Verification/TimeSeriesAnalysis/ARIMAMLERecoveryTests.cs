@@ -9,9 +9,14 @@ using RMC.BestFit.Verification.Datasets.TimeSeriesData;
 namespace RMC.BestFit.Verification.TimeSeriesAnalysis;
 
 /// <summary>
-/// Verifies maximum-likelihood parameter recovery for the <see cref="ARIMA"/> model
-/// against deterministic synthetic generating parameters and committed R reference values.
+/// Preserves non-discovered historical maximum-likelihood calculations for <see cref="ARIMA"/>.
 /// </summary>
+/// <remarks>
+/// The fixed-percentage comparisons in this class are retained for source provenance. Current
+/// independent likelihood, prediction, and recovery evidence is provided by
+/// <see cref="TimeSeriesIndependentOracleTests"/>, <see cref="TimeSeriesIndependentRecoveryTests"/>,
+/// and <see cref="TimeSeriesChunk13OracleTests"/>.
+/// </remarks>
 [TestClass]
 public class ARIMAMLERecoveryTests
 {

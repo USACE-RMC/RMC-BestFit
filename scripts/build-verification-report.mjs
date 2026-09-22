@@ -10,8 +10,9 @@ const manifestPath = path.join(referenceRoot, "book-order.txt");
 const metadataPath = path.join(repositoryRoot, "docs", "report-metadata.json");
 const htmlOutputPath = path.resolve(process.argv[2] || path.join(repositoryRoot, "tmp", "pdfs", "rmc-bestfit-verification-report.html"));
 const equationOutputPath = path.resolve(process.argv[3] || path.join(repositoryRoot, "tmp", "pdfs", "verification-report-equations.tex"));
-const reportMetadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
-const report = reportMetadata.verification_report;
+const sharedMetadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+const report = sharedMetadata.verification_report;
+const reportMetadata = { ...sharedMetadata, ...report.checkpoint };
 
 function loadMarked() {
     const searchRoots = [
@@ -110,7 +111,9 @@ function replaceEquationTokens(html) {
 function buildEquationDocument() {
     const lines = [
         "\\documentclass[10pt]{article}",
-        "\\usepackage[T1]{fontenc}",
+        // OT1 Computer Modern keeps equation tags in the same scalable font set
+        // as the math. T1 EC bitmap fallback can silently omit tag glyphs in SVG.
+        "\\usepackage[OT1]{fontenc}",
         "\\usepackage{amsmath,amssymb,mathtools,bm}",
         "\\usepackage[active,tightpage]{preview}",
         "\\PreviewBorder=1pt",
@@ -238,6 +241,25 @@ function cleanSource(document) {
         return "](#" + document.documentSlug + "-" + slugify(decodeURIComponent(fragment)) + ")";
     });
 
+    // Links outside the book must remain usable in a downloaded PDF. The source
+    // audit commit identifies repository files; internal book links stay local.
+    source = source.replace(/(?<!!)\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label, target) => {
+        if (/^(?:[a-z]+:|#)/i.test(target)) {
+            return match;
+        }
+        const [file, fragment] = target.split("#", 2);
+        const absoluteTarget = path.resolve(path.dirname(document.absolutePath), decodeURIComponent(file));
+        const relativeTarget = normalizeRelativePath(path.relative(repositoryRoot, absoluteTarget));
+        if (relativeTarget.startsWith("../") || !fs.existsSync(absoluteTarget)) {
+            throw new Error("Missing or out-of-repository publication link: " + target);
+        }
+        const encodedPath = relativeTarget.split("/").map(encodeURIComponent).join("/");
+        const pdfLabel = relativeTarget === "docs/verification/verification-catalog.json"
+            ? label + " (source baseline; current snapshot attached)" : label;
+        return "[" + pdfLabel + "](https://github.com/USACE-RMC/RMC-BestFit/blob/" +
+            reportMetadata.bestfit_commit + "/" + encodedPath + (fragment ? "#" + fragment : "") + ")";
+    });
+
     return source.trim();
 }
 
@@ -257,7 +279,14 @@ marked.use({
 
 const renderedDocuments = documents.map((document, index) => {
     const markdown = extractEquations(cleanSource(document));
-    const renderedHtml = replaceEquationTokens(marked.parse(markdown));
+    let renderedHtml = replaceEquationTokens(marked.parse(markdown));
+    renderedHtml = renderedHtml.replace(
+        /(<p>(?:(?!<\/p>)[\s\S])*<\/p>\s*)(<p><span class="display-equation"[\s\S]*?<\/span><\/p>)/g,
+        (context) => "<div class=\"equation-context\">" + context + "</div>\n");
+    if (document.entry === "report/test-coverage.md") {
+        renderedHtml = renderedHtml.replace(/<h3\b[\s\S]*?(?=<h[23]\b|$)/g,
+            (testClass) => "<div class=\"verification-test-class\">" + testClass + "</div>\n");
+    }
     const chapterLabel = String(index + 1).padStart(2, "0");
     return [
         "<section class=\"book-document\" id=\"" + document.documentSlug + "\">",
@@ -278,10 +307,10 @@ const style = [
     "@page:first { margin: 0; }",
     ":root { --navy: #15324b; --blue: #1e6594; --pale: #edf4f8; --ink: #1f2a33; --muted: #60717f; --line: #c8d4dd; }",
     "* { box-sizing: border-box; }",
-    "html { font-size: 9.6pt; }",
-    "body { margin: 0; color: var(--ink); font-family: Aptos, 'Segoe UI', Arial, sans-serif; line-height: 1.42; }",
+    "html { font-size: 10.25pt; }",
+    "body { margin: 0; color: var(--ink); font-family: Aptos, 'Segoe UI', Arial, sans-serif; line-height: 1.38; }",
     "a { color: #145f8f; text-decoration: none; }",
-    ".cover { page-break-after: always; height: 11in; padding: 1.04in 0.94in 0.86in; color: white; background: linear-gradient(148deg, #10283c 0%, #174c70 62%, #2c779f 100%); position: relative; }",
+    ".cover { page-break-after: always; height: 11in; padding: 1.04in 0.94in 0.86in; color: white; background: linear-gradient(148deg, #10283c 0%, #174c70 62%, #2c779f 100%); position: relative; overflow: hidden; }",
     ".cover:after { content: ''; position: absolute; right: -1.05in; bottom: -0.80in; width: 4.4in; height: 4.4in; border: 0.19in solid rgba(255,255,255,.13); border-radius: 50%; }",
     ".cover-rule { width: 0.76in; height: 0.08in; background: #84c6e6; margin-bottom: 0.52in; }",
     ".cover h1 { color: white; font-size: 31pt; line-height: 1.08; letter-spacing: -0.4pt; margin: 0 0 0.22in; max-width: 7.0in; }",
@@ -292,26 +321,37 @@ const style = [
     ".front-matter h1 { color: var(--navy); border-bottom: 2px solid var(--blue); padding-bottom: 0.10in; }",
     ".toc { columns: 2; column-gap: 0.34in; padding: 0; list-style: none; }",
     ".toc li { break-inside: avoid; margin: 0 0 0.08in; border-bottom: 0.5px dotted #bac6ce; padding-bottom: 0.045in; }",
-    ".toc a { display: flex; gap: 0.08in; color: var(--ink); }",
+    ".toc a { display: flex; gap: 0.08in; color: var(--ink); padding-right: 0.27in; }",
     ".toc-number { color: var(--blue); font-variant-numeric: tabular-nums; min-width: 0.23in; }",
     ".book-document { page-break-before: always; }",
     ".chapter-kicker { color: var(--blue); font-size: 8.5pt; font-weight: 700; letter-spacing: 1.1pt; text-transform: uppercase; margin-bottom: 0.06in; }",
-    "h1, h2, h3, h4 { color: var(--navy); page-break-after: avoid; break-after: avoid-page; }",
+    "h1, h2, h3, h4 { color: var(--navy); page-break-after: avoid; break-after: avoid-page; overflow-wrap: anywhere; }",
     "h1 { font-size: 23pt; line-height: 1.12; margin: 0 0 0.22in; padding-bottom: 0.09in; border-bottom: 2px solid var(--blue); }",
-    "h2 { font-size: 15.5pt; margin: 0.28in 0 0.10in; padding-bottom: 0.035in; border-bottom: 0.6px solid var(--line); }",
+    "h2 { font-size: 15.5pt; margin: 0.22in 0 0.08in; padding-bottom: 0.035in; border-bottom: 0.6px solid var(--line); }",
     "h3 { font-size: 12.2pt; margin: 0.20in 0 0.07in; }",
     "h4 { font-size: 10.4pt; margin: 0.16in 0 0.05in; }",
-    "p { margin: 0.07in 0 0.10in; orphans: 3; widows: 3; }",
+    "p { margin: 0.07in 0 0.10in; orphans: 3; widows: 3; break-inside: avoid-page; }",
+    ".equation-context { break-inside: avoid-page; }",
+    "#doc-report-report-documentation h2 { font-size: 13.5pt; margin-top: 0.16in; }",
+    "#doc-report-report-documentation { font-size: 9.6pt; line-height: 1.35; }",
+    "#doc-report-report-documentation th, #doc-report-report-documentation td { padding-top: 0.035in; padding-bottom: 0.035in; }",
+    ".verification-test-class { break-inside: avoid-page; }",
+    "#doc-report-test-coverage { font-size: 9.6pt; line-height: 1.35; }",
+    "#doc-report-test-coverage h2 + p { break-after: avoid-page; }",
+    "#doc-report-test-coverage h3 + p, #doc-report-test-coverage h3 + p + p { break-after: avoid-page; }",
     "ul, ol { margin-top: 0.06in; padding-left: 0.25in; }",
     "li { margin-bottom: 0.035in; }",
     "blockquote { margin: 0.12in 0; padding: 0.04in 0.16in; border-left: 3px solid var(--blue); background: var(--pale); color: #334956; }",
-    "table { width: 100%; border-collapse: collapse; margin: 0.12in 0 0.16in; font-size: 8.1pt; page-break-inside: auto; }",
+    "table { width: 100%; border-collapse: collapse; margin: 0.12in 0 0.16in; font-size: 8.7pt; page-break-inside: auto; }",
+    "#doc-report-test-coverage table, #doc-report-report-documentation table { font-size: 8.1pt; }",
     "thead { display: table-header-group; }",
     "tr { page-break-inside: avoid; }",
-    "th { background: var(--navy); color: white; font-weight: 650; text-align: left; }",
+    "thead, tbody tr:first-child { break-after: avoid-page; }",
+    "th { background: #d9e7f1; color: var(--navy); font-weight: 650; text-align: left; }",
     "th, td { border: 0.6px solid #b9c6cf; padding: 0.045in 0.055in; vertical-align: top; overflow-wrap: break-word; word-break: normal; }",
     "tbody tr:nth-child(even) { background: #f5f8fa; }",
     "code { font-family: 'Cascadia Mono', Consolas, monospace; font-size: 0.88em; background: #eef2f5; padding: 0.01in 0.025in; border-radius: 2px; overflow-wrap: anywhere; word-break: break-all; }",
+    "th code { background: transparent; }",
     "pre { margin: 0.12in 0 0.16in; padding: 0.11in 0.13in; color: #edf5f8; background: #172936; border-left: 3px solid #4f9fc5; border-radius: 3px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 7.9pt; line-height: 1.34; page-break-inside: avoid; }",
     "pre code { color: inherit; background: transparent; padding: 0; }",
     ".inline-equation { display: inline-block; width: auto; max-width: none; vertical-align: -0.24em; margin: 0 0.025em; }",
@@ -343,7 +383,7 @@ const html = [
     "</section>",
     "<section class=\"front-matter\">",
     "<h1>Contents</h1>",
-    "<p class=\"release-note\">This external-review draft is generated from the publication manifest. A claim is verified only when its test design, oracle or recovery basis, acceptance rule, and result are stated.</p>",
+    "<p class=\"release-note\">Each analysis chapter explains the data, comparison procedure, results, and limitations. Appendix A provides a complete index of the verification tests.</p>",
     "<ol class=\"toc\">" + tocItems + "</ol>",
     "</section>",
     renderedDocuments.join("\n"),

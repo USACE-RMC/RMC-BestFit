@@ -33,7 +33,7 @@ namespace RMC.BestFit.Verification.Datasets
     ///     Student's t ρ=0.8, ν=4 (strong symmetric tail dependence; λ_U = λ_L ≈ 0.49).
     /// </para>
     /// <para>
-    ///     Seeds are offset per copula to keep datasets independent while staying reproducible.
+    ///     Seeds are offset per copula to select distinct reproducible generator streams.
     /// </para>
     /// </remarks>
     public static class SyntheticBivariateData
@@ -53,7 +53,7 @@ namespace RMC.BestFit.Verification.Datasets
         /// <summary>Default paired sample size required by the generated-parent recovery policy.</summary>
         public const int DefaultSampleSize = RecoveryDesign.SampleSize;
 
-        /// <summary>Shared base seed; per-copula methods add offsets for independence.</summary>
+        /// <summary>Shared base seed; per-copula methods add offsets to select reproducible streams.</summary>
         public const int BaseSeed = 12345;
 
         /// <summary>

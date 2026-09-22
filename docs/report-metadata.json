@@ -31,6 +31,15 @@
     "title": "RMC.BestFit 2.0 Verification Report",
     "short_title": "RMC.BestFit 2.0 Verification Report",
     "document_id": "Pending assignment",
-    "subtitle": "Analytical oracles, independent package comparisons, published benchmarks, recovery studies, and coverage evidence"
+    "subtitle": "Analytical checks, independent benchmarks, estimation recovery, and uncertainty diagnostics",
+    "checkpoint": {
+      "publication_date_iso": "2026-09-21",
+      "publication_date_display": "21 September 2026",
+      "bestfit_version": "2.0.0",
+      "bestfit_commit": "8808f19f3bfa712241e55a0dfa47407ff5a60970",
+      "numerics_source_commit": "7e8e8d1c5f26e045a35ec9fc09367de95ed05b02",
+      "numerics_package_baseline": "2.2.0",
+      "release_status": "Draft for external peer review - not for public release"
+    }
   }
 }

@@ -11,7 +11,7 @@ using RMC.BestFit.Verification.Recovery;
 namespace RMC.BestFit.Verification.DistributionFitting;
 
 /// <summary>
-/// Provides generated-parent recovery preparation for the default <see cref="FittingAnalysis"/> candidate list.
+/// Verifies generated-parent recovery through the default <see cref="FittingAnalysis"/> candidate list.
 /// </summary>
 /// <remarks>
 /// Each cell generates exactly <see cref="RecoveryDesign.SampleSize"/> scalar observations from its

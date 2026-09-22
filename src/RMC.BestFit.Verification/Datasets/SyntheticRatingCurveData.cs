@@ -5,7 +5,7 @@ using BestFitRatingCurve = RMC.BestFit.Models.RatingCurve;
 namespace RMC.BestFit.Verification.Datasets
 {
     /// <summary>
-    /// Synthetic rating curve data generator for unit testing.
+    /// Generates synthetic stage-discharge pairs for rating-curve numerical verification.
     /// </summary>
     /// <remarks>
     /// <para>
