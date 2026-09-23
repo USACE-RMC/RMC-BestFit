@@ -74,11 +74,19 @@ namespace RMC.BestFit.Api.DTOs
 
         /// <summary>
         /// Optional variance-stabilizing transform applied before modeling: "none",
-        /// "logarithmic", "boxCox", or "yeoJohnson". Transform parameters (e.g., the Box-Cox
-        /// lambda) are fitted automatically. Leave null for the model default.
+        /// "logarithmic", "boxCox", or "yeoJohnson". Transform parameters are fitted
+        /// automatically unless <see cref="TransformLambda"/> is supplied. Leave null for the
+        /// model default.
         /// </summary>
         [JsonPropertyName("transformType")]
         public Transform? TransformType { get; set; }
+
+        /// <summary>
+        /// Optional manual Box-Cox or Yeo-Johnson exponent. When omitted, the exponent is fitted
+        /// from the training prefix. This field requires a matching <see cref="TransformType"/>.
+        /// </summary>
+        [JsonPropertyName("transformLambda")]
+        public double? TransformLambda { get; set; }
 
         /// <summary>
         /// Optional deterministic trend for "arimax": "none", "linear", "quadratic", or "cubic".

@@ -206,7 +206,7 @@ namespace RMC.BestFit.Analyses
         /// list contains all 15 supported univariate distributions.
         /// </para>
         /// <para>
-        /// Property (with a private setter) rather than a public field — encapsulating the
+        /// Property (with a private setter) rather than a public field â€” encapsulating the
         /// candidate set behind a property prevents external code from replacing the list
         /// reference wholesale, which would silently invalidate any in-flight fit. Existing
         /// callers that mutate the list contents via <c>Add</c> / <c>Remove</c> still work.
@@ -254,7 +254,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// Probability ordinates do not affect the MLE fit stored in
-        /// <see cref="FittedDistributions"/> — they are consumed only by the App-layer
+        /// <see cref="FittedDistributions"/> â€” they are consumed only by the App-layer
         /// plot/table rendering (see FittingAnalysisControl). So this handler simply
         /// notifies listeners that ordinates changed; it does not touch fit state.
         /// </remarks>
@@ -275,6 +275,26 @@ namespace RMC.BestFit.Analyses
                 _fittedDistributions.Add(new FittedDistribution(DistributionList[i].Clone()));
             }
             IsEstimated = false;
+        }
+
+        /// <summary>
+        /// Computes RMSE when the fitted distribution has positive residual degrees of freedom.
+        /// </summary>
+        /// <param name="values">The observed values.</param>
+        /// <param name="plottingPositions">The plotting positions associated with the observed values.</param>
+        /// <param name="distribution">The fitted distribution.</param>
+        /// <returns>
+        /// The RMSE, or <see cref="double.NaN"/> when the observation count does not exceed
+        /// the number of fitted parameters.
+        /// </returns>
+        internal static double ComputeRmse(
+            IList<double> values,
+            IList<double> plottingPositions,
+            UnivariateDistributionBase distribution)
+        {
+            return values.Count > distribution.NumberOfParameters
+                ? GoodnessOfFit.RMSE(values, plottingPositions, distribution)
+                : double.NaN;
         }
 
         /// <inheritdoc/>
@@ -362,7 +382,7 @@ namespace RMC.BestFit.Analyses
                                     probs.AddRange(DataFrame.UncertainSeries.Select(x => x.PlottingPositionComplement));
                                     probs.AddRange(DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
 
-                                    var rmse = GoodnessOfFit.RMSE(values, probs, dist.Distribution);
+                                    var rmse = ComputeRmse(values, probs, dist.Distribution);
 
                                     bool success = Tools.IsFinite(aic) && Tools.IsFinite(bic) && Tools.IsFinite(rmse);
 
@@ -414,8 +434,11 @@ namespace RMC.BestFit.Analyses
 
                 if (!wasCanceled)
                 {
-                    AnalysisProgress.ReportProcessingResults(progressReporter);
-                    IsEstimated = true;
+                    IsEstimated = _fittedDistributions.Any(fitted => fitted.FitSucceeded);
+                    if (IsEstimated)
+                        AnalysisProgress.ReportProcessingResults(progressReporter);
+
+                    // The run finished even when no candidate fit succeeded; close out the progress.
                     AnalysisProgress.ReportComplete(progressReporter);
                 }
                 else
@@ -425,7 +448,7 @@ namespace RMC.BestFit.Analyses
             }
             catch (OperationCanceledException)
             {
-                // Safety net — should not be reached since the exception is caught inside Task.Run
+                // Safety net â€” should not be reached since the exception is caught inside Task.Run
                 wasCanceled = true;
                 IsEstimated = false;
             }

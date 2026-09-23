@@ -365,6 +365,13 @@ namespace RMC.BestFit.Api.Services
             {
                 throw new ArgumentException("forecastingTimeSteps must be between 0 and 100.");
             }
+            if (request.TransformLambda.HasValue)
+            {
+                if (!double.IsFinite(request.TransformLambda.Value))
+                    throw new ArgumentException("transformLambda must be finite.");
+                if (request.TransformType is not RMC.BestFit.Models.Transform.BoxCox and not RMC.BestFit.Models.Transform.YeoJohnson)
+                    throw new ArgumentException("transformLambda requires transformType 'boxCox' or 'yeoJohnson'.");
+            }
 
             var series = CloneSeries(source.TimeSeries);
             bool includeIntercept = request.IncludeIntercept ?? true;
@@ -376,7 +383,11 @@ namespace RMC.BestFit.Api.Services
                 {
                     var model = new AutoRegressive(series, request.Order ?? 1, includeIntercept);
                     var analysis = new ARAnalysis(model);
-                    ConfigureTimeSeriesAnalysis(request, () => { if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value; },
+                    ConfigureTimeSeriesAnalysis(request, () =>
+                    {
+                        if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value;
+                        if (request.TransformLambda.HasValue) model.SetTransformParameters(request.TransformLambda.Value);
+                    },
                         setTraining: v => { model.UseDefaultTrainingSteps = false; model.TrainingTimeSteps = v; },
                         setForecast: v => analysis.ForecastingTimeSteps = v,
                         analysis.BayesianAnalysis, model, request.ParameterPriors);
@@ -395,7 +406,11 @@ namespace RMC.BestFit.Api.Services
                 {
                     var model = new MovingAverage(series, request.Order ?? 1, includeIntercept);
                     var analysis = new MAAnalysis(model);
-                    ConfigureTimeSeriesAnalysis(request, () => { if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value; },
+                    ConfigureTimeSeriesAnalysis(request, () =>
+                    {
+                        if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value;
+                        if (request.TransformLambda.HasValue) model.SetTransformParameters(request.TransformLambda.Value);
+                    },
                         setTraining: v => { model.UseDefaultTrainingSteps = false; model.TrainingTimeSteps = v; },
                         setForecast: v => analysis.ForecastingTimeSteps = v,
                         analysis.BayesianAnalysis, model, request.ParameterPriors);
@@ -414,7 +429,11 @@ namespace RMC.BestFit.Api.Services
                 {
                     var model = new ARIMA(series, request.POrder ?? 1, request.DOrder ?? 0, request.QOrder ?? 0, includeIntercept);
                     var analysis = new ARIMAAnalysis(model);
-                    ConfigureTimeSeriesAnalysis(request, () => { if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value; },
+                    ConfigureTimeSeriesAnalysis(request, () =>
+                    {
+                        if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value;
+                        if (request.TransformLambda.HasValue) model.SetTransformParameters(request.TransformLambda.Value);
+                    },
                         setTraining: v => { model.UseDefaultTrainingSteps = false; model.TrainingTimeSteps = v; },
                         setForecast: v => analysis.ForecastingTimeSteps = v,
                         analysis.BayesianAnalysis, model, request.ParameterPriors);
@@ -458,7 +477,11 @@ namespace RMC.BestFit.Api.Services
                     }
 
                     var analysis = new ARIMAXAnalysis(model);
-                    ConfigureTimeSeriesAnalysis(request, () => { if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value; },
+                    ConfigureTimeSeriesAnalysis(request, () =>
+                    {
+                        if (request.TransformType.HasValue) model.TransformType = request.TransformType.Value;
+                        if (request.TransformLambda.HasValue) model.SetTransformParameters(request.TransformLambda.Value);
+                    },
                         setTraining: v => { model.UseDefaultTrainingSteps = false; model.TrainingTimeSteps = v; },
                         setForecast: v => analysis.ForecastingTimeSteps = v,
                         analysis.BayesianAnalysis, model, request.ParameterPriors);

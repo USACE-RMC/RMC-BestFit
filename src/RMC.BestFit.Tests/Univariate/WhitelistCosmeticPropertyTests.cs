@@ -7,7 +7,7 @@ using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 namespace RMC.BestFit.Tests.Univariate;
 
 /// <summary>
-/// Phase 1 / Phase 6 whitelist gate tests. Verifies that mutating a *cosmetic*
+/// Whitelist gate tests. Verifies that mutating a *cosmetic*
 /// (post-fit / non-likelihood-affecting) inner-model property does not trigger
 /// <c>UnivariateAnalysis.ClearResults</c> side-effects on the analysis.
 /// </summary>

@@ -16,6 +16,7 @@
   <ItemGroup>
     <!-- Link shared MSTest parallelization settings for public unit tests. -->
     <Compile Include="..\TestCommon\MSTestSettings.cs" Link="MSTestSettings.cs" />
+    <Compile Include="..\TestCommon\PublicApiContractSnapshot.cs" Link="CoreInfrastructure\PublicApiContractSnapshot.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,7 +24,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Numerics" Condition="'$(UseLocalRmcNumerics)' != 'true'" />
+    <ProjectReference Include="$(RmcNumericsProjectPath)" Condition="'$(UseLocalRmcNumerics)' == 'true'" />
     <PackageReference Include="RMC.Wpf.Framework.Core" />
     <PackageReference Include="RMC.Wpf.Framework.Models" />
   </ItemGroup>
@@ -38,6 +40,12 @@
     <Reference Include="Hec.Dss">
       <HintPath>$(HecDssAssemblyPath)</HintPath>
     </Reference>
+    <None Include="$(HecDssNativeWin)" Link="hecdss.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="CoreInfrastructure\PublicApiBaseline.txt"
+                      LogicalName="RMC.BestFit.UI.Tests.CoreInfrastructure.PublicApiBaseline.txt" />
   </ItemGroup>
 
 </Project>

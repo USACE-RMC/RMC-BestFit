@@ -18,7 +18,7 @@ namespace RMC.BestFit.Tests.DistributionFitting;
 /// </list>
 /// <para>
 /// Constructor validation, property round-trips, XML serialization (without estimation),
-/// and Phase 1 behavior: probability ordinate changes must NOT clear the MLE fit.
+/// and the ordinate contract: probability ordinate changes must NOT clear the MLE fit.
 /// Computational/MLE tests (RunAsync, parity against published results) live in
 /// <c>RMC.BestFit.Verification/DistributionFitting/FittingAnalysisTests.cs</c>.
 /// </para>
@@ -50,7 +50,7 @@ public class FittingAnalysisTests
     }
 
     /// <summary>
-    /// Creates a small inline BestFitDataFrame used by the legacy Phase 1 tests below.
+    /// Creates a small inline BestFitDataFrame used by the probability-ordinate tests below.
     /// </summary>
     private static BestFitDataFrame CreateSmallTestDataFrame()
     {
@@ -299,7 +299,33 @@ public class FittingAnalysisTests
 
     #endregion
 
-    #region Phase 1: ProbabilityOrdinates Behavior Without Estimation
+    #region RMSE Guard Tests
+
+    /// <summary>
+    /// Tests that RMSE is undefined without positive residual degrees of freedom
+    /// and is computed normally when residual degrees of freedom are available.
+    /// </summary>
+    [TestMethod]
+    public void ComputeRmse_RoutesByResidualDegreesOfFreedom()
+    {
+        var distribution = new Uniform(0d, 1d);
+
+        var undefinedRmse = FittingAnalysis.ComputeRmse(
+            [0.25d, 0.75d],
+            [0.25d, 0.75d],
+            distribution);
+        Assert.IsTrue(double.IsNaN(undefinedRmse));
+
+        var exactRmse = FittingAnalysis.ComputeRmse(
+            [0.25d, 0.5d, 0.75d],
+            [0.25d, 0.5d, 0.75d],
+            distribution);
+        Assert.AreEqual(0d, exactRmse, 1e-12);
+    }
+
+    #endregion
+
+    #region ProbabilityOrdinates Behavior Without Estimation
 
     /// <summary>
     /// Tests that changing ProbabilityOrdinates on a fresh (not-estimated) FittingAnalysis is a no-op.
@@ -322,7 +348,7 @@ public class FittingAnalysisTests
     /// <summary>
     /// Tests that FittedDistributions collection (initialized to default, unfitted distributions)
     /// is reference-equal before and after a ProbabilityOrdinates change — confirming ordinates
-    /// do not trigger ClearResults() in the model layer (Phase 1 fix).
+    /// do not trigger ClearResults() in the model layer.
     /// </summary>
     [TestMethod]
     public void ProbabilityOrdinatesChange_DoesNotReplaceFittedDistributionsList()

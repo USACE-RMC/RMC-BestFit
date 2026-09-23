@@ -24,7 +24,7 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// Given a fitted <see cref="BivariateAnalysis"/> (marginals X, Y and copula C) and
-    /// an external response surface Z = f(X, Y) tabulated on an M � N grid, the analysis
+    /// an external response surface Z = f(X, Y) tabulated on an M × N grid, the analysis
     /// produces a stage-frequency curve P(Z = z) with posterior uncertainty bands.
     /// </para>
     /// <para>
@@ -67,7 +67,7 @@ namespace RMC.BestFit.Analyses
         /// <param name="bivariateAnalysis">The fitted bivariate analysis containing marginals and copula.</param>
         /// <param name="xValues">The X (primary) ordinates, strictly ascending. Length M = rows of <paramref name="bivariateResponse"/>.</param>
         /// <param name="yValues">The Y (secondary) ordinates, strictly ascending. Length N = columns of <paramref name="bivariateResponse"/>.</param>
-        /// <param name="bivariateResponse">The response surface Z[i, j] (M � N), strictly increasing along both axes.</param>
+        /// <param name="bivariateResponse">The response surface Z[i, j] (M × N), strictly increasing along both axes.</param>
         /// <exception cref="ArgumentNullException">Any argument is null.</exception>
         public CoincidentFrequencyAnalysis(BivariateAnalysis bivariateAnalysis, double[] xValues, double[] yValues, double[,] bivariateResponse)
         {
@@ -83,7 +83,7 @@ namespace RMC.BestFit.Analyses
         /// Initializes a new instance of the <see cref="CoincidentFrequencyAnalysis"/> class
         /// from a serialized <see cref="XElement"/> and a fitted bivariate analysis.
         /// </summary>
-        /// <param name="bivariateAnalysis">The fitted bivariate analysis (the upstream input � not serialized here).</param>
+        /// <param name="bivariateAnalysis">The fitted bivariate analysis (the upstream input — not serialized here).</param>
         /// <param name="xElement">The XML element containing the persisted state.</param>
         /// <exception cref="ArgumentNullException">Either argument is null.</exception>
         public CoincidentFrequencyAnalysis(BivariateAnalysis bivariateAnalysis, XElement xElement)
@@ -154,11 +154,18 @@ namespace RMC.BestFit.Analyses
         private double[] _yValues = null!;
         private double[,] _bivariateResponse = null!;
         private int _numberOfBins = 50;
+        private MCMCResults? _marginalXChain;
+        private MCMCResults? _marginalYChain;
+        private readonly object _posteriorRandomIndexLock = new();
+        private int[][]? _posteriorRandomIndexes;
+        private int[]? _posteriorRandomIndexSourceCounts;
+        private int _posteriorRandomIndexSeed = -1;
 
         /// <summary>
-        /// Gets the Bayesian analysis settings (CredibleIntervalWidth, OutputLength, PointEstimator).
-        /// CFA does not own an MCMC chain � this object holds presentation settings only and is
-        /// set once in the constructor (mirrors <c>CompositeAnalysis</c>).
+        /// Gets the Bayesian result settings (CredibleIntervalWidth, OutputLength,
+        /// PointEstimator, and PRNGSeed).
+        /// CFA does not own an MCMC chain; this object holds presentation and result-generation settings.
+        /// PRNGSeed controls cross-source posterior resampling; the remaining values control presentation.
         /// </summary>
         public BayesianAnalysis BayesianAnalysis { get; private set; } = null!;
 
@@ -253,16 +260,37 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Gets or sets the X marginal posterior MCMC samples. When non-null, each
-        /// realisation r uses <see cref="MCMCResults.Output"/>[r].Values as the marginal X
-        /// parameters. When null, the algorithm uses the point-estimate marginal X.
+        /// realisation uses an independently randomized, without-replacement index into
+        /// <see cref="MCMCResults.Output"/>. When null, the algorithm uses the point-estimate
+        /// marginal X.
         /// </summary>
-        public MCMCResults? MarginalXChain { get; set; }
+        public MCMCResults? MarginalXChain
+        {
+            get { return _marginalXChain; }
+            set
+            {
+                if (ReferenceEquals(_marginalXChain, value)) return;
+                _marginalXChain = value;
+                ClearResults();
+                RaisePropertyChange(nameof(MarginalXChain));
+            }
+        }
 
         /// <summary>
         /// Gets or sets the Y marginal posterior MCMC samples. Same semantics as
         /// <see cref="MarginalXChain"/>.
         /// </summary>
-        public MCMCResults? MarginalYChain { get; set; }
+        public MCMCResults? MarginalYChain
+        {
+            get { return _marginalYChain; }
+            set
+            {
+                if (ReferenceEquals(_marginalYChain, value)) return;
+                _marginalYChain = value;
+                ClearResults();
+                RaisePropertyChange(nameof(MarginalYChain));
+            }
+        }
 
         /// <summary>
         /// Gets the uncertainty analysis results: ModeCurve, MeanCurve, ConfidenceIntervals
@@ -304,7 +332,8 @@ namespace RMC.BestFit.Analyses
         /// Loss of estimated state clears results; PointEstimator changes update the
         /// point-estimate output without re-running the chain; CredibleIntervalWidth
         /// changes clear derived CFA results because the per-realisation AEP matrix is
-        /// not cached and the user must rerun explicitly.
+        /// not cached and the user must rerun explicitly. PRNGSeed changes also clear the
+        /// cached cross-source posterior pairing and derived results.
         /// All other notifications propagate for UI binding.
         /// </summary>
         private void BayesianAnalysis_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -325,9 +354,77 @@ namespace RMC.BestFit.Analyses
                 ClearResults();
                 RaisePropertyChange(e.PropertyName);
             }
+            else if (e.PropertyName == nameof(Estimation.BayesianAnalysis.PRNGSeed))
+            {
+                ClearResults();
+                RaisePropertyChange(e.PropertyName);
+            }
             else
             {
                 RaisePropertyChange(e.PropertyName);
+            }
+        }
+
+        /// <summary>
+        /// Returns the cached posterior-index mapping when it matches the current source
+        /// counts and seed, or creates a new mapping when the cache is absent or stale.
+        /// </summary>
+        /// <param name="copulaResults">The required upstream copula posterior results.</param>
+        /// <returns>
+        /// Index rows in semantic order: copula, X marginal when present, and Y marginal
+        /// when present; or <c>null</c> when any supplied source has no retained output.
+        /// </returns>
+        /// <remarks>
+        /// The mapping is generated before parallel processing so no random-number generator
+        /// is shared by worker threads. It is not serialized; deterministic regeneration from
+        /// the saved seed preserves the same finite pairing after a project is reopened.
+        /// </remarks>
+        private int[][]? GetOrCreatePosteriorRandomIndexes(MCMCResults copulaResults)
+        {
+            var sourceOutputCounts = new List<int>
+            {
+                copulaResults.Output?.Count ?? 0
+            };
+            if (MarginalXChain != null)
+                sourceOutputCounts.Add(MarginalXChain.Output?.Count ?? 0);
+            if (MarginalYChain != null)
+                sourceOutputCounts.Add(MarginalYChain.Output?.Count ?? 0);
+
+            if (sourceOutputCounts.Any(count => count <= 0)) return null;
+
+            // The cache is read by the estimation task and by UI-thread callers such as
+            // GetEmpiricalDistribution, so the check-and-regenerate sequence is serialized.
+            lock (_posteriorRandomIndexLock)
+            {
+                bool cacheMatches = _posteriorRandomIndexes != null &&
+                    _posteriorRandomIndexSourceCounts != null &&
+                    _posteriorRandomIndexSeed == BayesianAnalysis.PRNGSeed &&
+                    _posteriorRandomIndexSourceCounts.SequenceEqual(sourceOutputCounts);
+                if (cacheMatches) return _posteriorRandomIndexes;
+
+                _posteriorRandomIndexes = PosteriorIndexResampler.CreateRandomIndexes(
+                    sourceOutputCounts,
+                    BayesianAnalysis.PRNGSeed);
+                _posteriorRandomIndexSourceCounts = sourceOutputCounts.ToArray();
+                _posteriorRandomIndexSeed = BayesianAnalysis.PRNGSeed;
+                return _posteriorRandomIndexes;
+            }
+        }
+
+        /// <summary>
+        /// Clears the transient posterior-index mapping and its cache key.
+        /// </summary>
+        /// <remarks>
+        /// Posterior index arrays are derived state. They are regenerated from the current
+        /// posterior source counts and <see cref="BayesianAnalysis.PRNGSeed"/> when needed.
+        /// </remarks>
+        private void InvalidatePosteriorRandomIndexes()
+        {
+            lock (_posteriorRandomIndexLock)
+            {
+                _posteriorRandomIndexes = null;
+                _posteriorRandomIndexSourceCounts = null;
+                _posteriorRandomIndexSeed = -1;
             }
         }
 
@@ -337,6 +434,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         public void ClearResults()
         {
+            InvalidatePosteriorRandomIndexes();
             AnalysisResults = null;
             ZOutputValues = null;
             RaisePropertyChange(nameof(AnalysisResults));
@@ -364,7 +462,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -382,9 +480,9 @@ namespace RMC.BestFit.Analyses
                     // PropertyChanged fires inside CreateFrequencyAnalysisResultsAsync, the
                     // App control's BindSummaryStatisticsDataGrid gate (Element.IsEstimated == true)
                     // sees the analysis as estimated and populates summary stats. Without this, the
-                    // batch path � which calls inner.RunAsync directly without the UI wrapper's
-                    // post-await RaisePropertyChange � leaves the summary grid empty. Mirrors the
-                    // B17C pattern (Bulletin17CAnalysis.cs:558).
+                    // batch path — which calls inner.RunAsync directly without the UI wrapper's
+                    // post-await RaisePropertyChange — leaves the summary grid empty. Mirrors the
+                    // B17C pattern in Bulletin17CAnalysis.
                     _isEstimated = true;
                     await CreateFrequencyAnalysisResultsAsync(progressReporter, cancellationToken);
                     RaisePropertyChange(nameof(IsEstimated));
@@ -418,7 +516,7 @@ namespace RMC.BestFit.Analyses
         /// response surface and 2-point copula conditional CDF differences, looped over
         /// posterior MCMC realisations to produce uncertainty bands.
         /// </summary>
-        /// <param name="progressReporter">Optional progress reporter (0�100).</param>
+        /// <param name="progressReporter">Optional progress reporter (0–100).</param>
         /// <param name="cancellationToken">Token used to cancel the per-realisation
         /// parallel loop and the surrounding aggregation. When triggered, the task
         /// throws <see cref="OperationCanceledException"/> before any partial
@@ -444,10 +542,10 @@ namespace RMC.BestFit.Analyses
                 int K = NumberOfBins;
                 double alpha = 1d - BayesianAnalysis.CredibleIntervalWidth;
 
-                // Step 1 � Z output bins (endpoint-inclusive linspace).
+                // Step 1 — Z output bins (endpoint-inclusive linspace).
                 ZOutputValues = BuildZOutputBins(BivariateResponse, K);
 
-                // Step 2 � Y bin edges (midpoints with �8 at ends).
+                // Step 2 — Y bin edges (midpoints with ±∞ at ends).
                 var yEdges = ComputeYBinEdges(YValues);
 
                 // Cancellation checkpoint: if the user cancelled before the parallel
@@ -456,12 +554,16 @@ namespace RMC.BestFit.Analyses
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Determine realisation count: copula chain is the only required source
-                // (marginal chains are optional � fall back to point-estimate marginals if missing).
+                // (marginal chains are optional — fall back to point-estimate marginals if missing).
                 var copulaResults = BivariateAnalysis.BayesianAnalysis?.Results;
-                int copulaRealz = copulaResults?.Output?.Count ?? 0;
-                int marginalXRealz = MarginalXChain?.Output?.Count ?? int.MaxValue;
-                int marginalYRealz = MarginalYChain?.Output?.Count ?? int.MaxValue;
-                int realz = Math.Min(copulaRealz, Math.Min(marginalXRealz, marginalYRealz));
+                int[][]? randomIndexes = copulaResults == null
+                    ? null
+                    : GetOrCreatePosteriorRandomIndexes(copulaResults);
+                int realz = randomIndexes?[0].Length ?? 0;
+                int marginalXSourceRow = MarginalXChain == null ? -1 : 1;
+                int marginalYSourceRow = MarginalYChain == null
+                    ? -1
+                    : 1 + (MarginalXChain == null ? 0 : 1);
 
                 AnalysisResults = new UncertaintyAnalysisResults
                 {
@@ -483,7 +585,7 @@ namespace RMC.BestFit.Analyses
                     return;
                 }
 
-                // Steps 3�4 � Per-realisation loop.
+                // Steps 3–4 — Per-realisation loop.
                 // aepStore[k][r] = AEP at output bin k under realisation r.
                 var aepStore = new double[K][];
                 for (int k = 0; k < K; k++) aepStore[k] = new double[realz];
@@ -496,17 +598,20 @@ namespace RMC.BestFit.Analyses
                     // ThrowIfCancellationRequested fires immediately when the token is
                     // signaled. The OperationCanceledException pops as a "first-chance
                     // exception" in the Visual Studio debugger when CLR exceptions are
-                    // enabled in Debug ? Windows ? Exception Settings, but the outer
-                    // catch in RunAsync (CoincidentFrequencyAnalysis.cs:382) handles it
-                    // correctly � the user sees a clean cancel in Release mode and when
+                    // enabled in the debugger's exception settings, but the outer
+                    // catch in RunAsync handles it
+                    // correctly — the user sees a clean cancel in Release mode and when
                     // running outside the debugger.
                     options.CancellationToken.ThrowIfCancellationRequested();
 
-                    double[]? mxParams = (MarginalXChain != null && r < MarginalXChain.Output.Count)
-                        ? MarginalXChain.Output[r].Values : null;
-                    double[]? myParams = (MarginalYChain != null && r < MarginalYChain.Output.Count)
-                        ? MarginalYChain.Output[r].Values : null;
-                    var aep = ComputeAEPCurveForDraw(copulaResults!.Output[r].Values, mxParams, myParams, yEdges);
+                    double[]? mxParams = MarginalXChain == null
+                        ? null
+                        : MarginalXChain.Output[randomIndexes![marginalXSourceRow][r]].Values;
+                    double[]? myParams = MarginalYChain == null
+                        ? null
+                        : MarginalYChain.Output[randomIndexes![marginalYSourceRow][r]].Values;
+                    var copulaParameters = copulaResults!.Output[randomIndexes![0][r]].Values;
+                    var aep = ComputeAEPCurveForDraw(copulaParameters, mxParams, myParams, yEdges);
                     for (int k = 0; k < K; k++) aepStore[k][r] = aep[k];
 
                     int done = Interlocked.Increment(ref progressCounter);
@@ -612,8 +717,8 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <param name="z">The Z output bin value.</param>
         /// <param name="response">The response surface BivariateResponse[i, j].</param>
-        /// <param name="xZetas">Pre-computed F?�(F_X(xValues[i])) for i = 0..M - 1. The
-        /// column inversion interpolates linearly in (z, ?) space, the standard Normal-Z
+        /// <param name="xZetas">Pre-computed Φ⁻¹(F_X(xValues[i])) for i = 0..M - 1. The
+        /// column inversion interpolates linearly in (z, ζ) space, the standard Normal-Z
         /// probability-paper convention used elsewhere in BestFit.</param>
         /// <param name="vEdges">Pre-computed Y bin edges in copula space (length N + 1).
         /// vEdges[0] = 0 and vEdges[N] = 1; interior values are F_Y at midpoints between
@@ -622,7 +727,7 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// For each Y column j the algorithm finds x*(z, j) by interpolating linearly along
-        /// (response[*, j], xZetas) � i.e., the response value vs the Normal Z-variate of
+        /// (response[*, j], xZetas) — i.e., the response value vs the Normal Z-variate of
         /// F_X(x_i). When z falls outside the column's response range it uses linear
         /// extrapolation along the nearest segment. The result is converted back to a
         /// probability via F.
@@ -631,7 +736,7 @@ namespace RMC.BestFit.Analyses
         /// The contribution of column j is C(u, v_{j+1}) - C(u, v_j) (a 2-point copula CDF
         /// difference). The boundary identities C(u, 0) = 0 and C(u, 1) = u are applied
         /// analytically for j = 0 and j = N - 1 to avoid passing 0 or 1 to copula.CDF, which
-        /// elliptical copulas compute via F?� internally.
+        /// elliptical copulas compute via Φ⁻¹ internally.
         /// </para>
         /// <para>
         /// Mass conservation: at z = +8 every column has u = 1, so the sum collapses to
@@ -669,7 +774,7 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Finds u = F_X(x*) where x* is the X-axis solution to response(x*, yValues[colIdx]) = z,
-        /// interpolating linearly in (response, ?) space where ? = F?�(F_X(x)) is the Normal
+        /// interpolating linearly in (response, ζ) space where ζ = Φ⁻¹(F_X(x)) is the Normal
         /// Z-variate. Linear extrapolation along the first or last segment is used when z
         /// falls outside the column's response range. The result is converted back via F.
         /// </summary>
@@ -677,10 +782,10 @@ namespace RMC.BestFit.Analyses
         /// <param name="colIdx">Column index (Y position) into the response surface.</param>
         /// <param name="response">The response surface.</param>
         /// <param name="M">Length of the X axis (rows of <paramref name="response"/>).</param>
-        /// <param name="xZetas">Pre-computed Normal Z-variate of F_X at each X grid point �
+        /// <param name="xZetas">Pre-computed Normal Z-variate of F_X at each X grid point —
         /// see <see cref="BuildXZetas"/>. Length must equal <paramref name="M"/>.</param>
         /// <returns>u = F(?*) ? [0, 1].</returns>
-        /// <remarks>Interpolating in (z, ?) rather than (z, x) follows the project's
+        /// <remarks>Interpolating in (z, ζ) rather than (z, x) follows the project's
         /// standard Normal-Z probability-paper convention. For Normal marginals the two
         /// schemes coincide because ? is a linear function of x; for non-Normal marginals
         /// (LP3, GEV, Gumbel) the Normal-Z form is more accurate at sparse-grid resolutions.</remarks>
@@ -729,7 +834,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Pre-computes ?_i = F?�(F_X(xValues[i])) for use as the probability-axis ordinate
+        /// Pre-computes ζ_i = Φ⁻¹(F_X(xValues[i])) for use as the probability-axis ordinate
         /// in <see cref="FindUStarInColumn"/>. Called once per posterior draw in
         /// <see cref="ComputeAEPCurveForDraw"/>; the result is reused across all Z output bins.
         /// </summary>
@@ -791,7 +896,7 @@ namespace RMC.BestFit.Analyses
         /// <param name="copulaParameters">Copula parameters; null leaves the cloned upstream copula unchanged.</param>
         /// <param name="marginalXParameters">Marginal X parameters; null leaves the cloned upstream marginal X unchanged.</param>
         /// <param name="marginalYParameters">Marginal Y parameters; null leaves the cloned upstream marginal Y unchanged.</param>
-        /// <param name="yEdges">Pre-computed Y bin edges (length N + 1) � see <see cref="ComputeYBinEdges"/>.</param>
+        /// <param name="yEdges">Pre-computed Y bin edges (length N + 1) — see <see cref="ComputeYBinEdges"/>.</param>
         /// <returns>AEP[k] = 1 - F_Z(<see cref="ZOutputValues"/>[k]) for k in [0, K).</returns>
         /// <remarks>Each call clones the upstream copula and marginals so the helper is safe under
         /// the parallel realisation loop in <see cref="CreateFrequencyAnalysisResultsAsync"/>.</remarks>
@@ -811,7 +916,7 @@ namespace RMC.BestFit.Analyses
             if (marginalYParameters != null) mY.SetParameters(marginalYParameters);
 
             // Pre-compute the X probability-axis ordinates (Normal Z-variates of F_X(x_i))
-            // and the Y bin edges in copula space ONCE per draw � both are constant across
+            // and the Y bin edges in copula space ONCE per draw — both are constant across
             // Z output bins and reused inside every ComputeFZAtBin call.
             var xZetas = BuildXZetas(XValues, mX);
             var vEdges = BuildVEdges(YValues, yEdges, mY);
@@ -899,16 +1004,19 @@ namespace RMC.BestFit.Analyses
 
         /// <summary>
         /// Returns an empirical distribution over Z (response value) and AEP (= 1 - F_Z) for posterior
-        /// draw <paramref name="index"/>. The realisation count equals
-        /// min(copulaChain, marginalXChain, marginalYChain), where missing marginal chains are treated
-        /// as unbounded (point-estimate fall-back inside <see cref="ComputeAEPCurveForDraw"/>).
+        /// realization <paramref name="index"/>. The realization count equals the shortest
+        /// supplied retained chain. Missing marginal chains use the point-estimate fallback
+        /// inside <see cref="ComputeAEPCurveForDraw"/> and do not constrain that count.
         /// </summary>
         /// <param name="index">Posterior realisation index in [0, realz).</param>
         /// <returns>The empirical Z?AEP distribution for the requested draw, or null when upstream is
         /// not estimated, <see cref="ZOutputValues"/> is null, the index is out of range, or the
         /// constructor rejects the data.</returns>
-        /// <remarks>Mirrors <see cref="UnivariateAnalysis.GetDistribution(int)"/>. The probability
-        /// axis is in descending sort order (AEP).</remarks>
+        /// <remarks>
+        /// Mirrors <see cref="UnivariateAnalysis.GetDistribution(int)"/>. The probability
+        /// axis is in descending sort order (AEP). The accessor reuses the cached randomized
+        /// copula/X/Y mapping used to construct <see cref="AnalysisResults"/>.
+        /// </remarks>
         public EmpiricalDistribution? GetEmpiricalDistribution(int index)
         {
             if (BivariateAnalysis?.BayesianAnalysis == null
@@ -918,18 +1026,22 @@ namespace RMC.BestFit.Analyses
                 return null;
 
             var copulaResults = BivariateAnalysis.BayesianAnalysis.Results;
-            int copulaRealz = copulaResults.Output?.Count ?? 0;
-            int marginalXRealz = MarginalXChain?.Output?.Count ?? int.MaxValue;
-            int marginalYRealz = MarginalYChain?.Output?.Count ?? int.MaxValue;
-            int realz = Math.Min(copulaRealz, Math.Min(marginalXRealz, marginalYRealz));
+            int[][]? randomIndexes = GetOrCreatePosteriorRandomIndexes(copulaResults);
+            int realz = randomIndexes?[0].Length ?? 0;
 
             if (index < 0 || index >= realz) return null;
 
-            var copulaParams = copulaResults.Output![index].Values;
-            var mxParams = (MarginalXChain != null && index < MarginalXChain.Output.Count)
-                ? MarginalXChain.Output[index].Values : null;
-            var myParams = (MarginalYChain != null && index < MarginalYChain.Output.Count)
-                ? MarginalYChain.Output[index].Values : null;
+            int marginalXSourceRow = MarginalXChain == null ? -1 : 1;
+            int marginalYSourceRow = MarginalYChain == null
+                ? -1
+                : 1 + (MarginalXChain == null ? 0 : 1);
+            var copulaParams = copulaResults.Output![randomIndexes![0][index]].Values;
+            var mxParams = MarginalXChain == null
+                ? null
+                : MarginalXChain.Output[randomIndexes[marginalXSourceRow][index]].Values;
+            var myParams = MarginalYChain == null
+                ? null
+                : MarginalYChain.Output[randomIndexes[marginalYSourceRow][index]].Values;
 
             var yEdges = ComputeYBinEdges(YValues);
             var aepCurve = ComputeAEPCurveForDraw(copulaParams, mxParams, myParams, yEdges);
@@ -1095,7 +1207,7 @@ namespace RMC.BestFit.Analyses
                     messages.Add("Bivariate response contains NaN or infinity values.");
                 }
 
-                // Per-column monotonicity (along X) � required for X inversion.
+                // Per-column monotonicity (along X) — required for X inversion.
                 if (rows == XValues.Length && cols == YValues.Length)
                 {
                     bool columnMonotonic = true;
@@ -1116,7 +1228,7 @@ namespace RMC.BestFit.Analyses
                         messages.Add("Bivariate response must be strictly increasing along X (each column).");
                     }
 
-                    // Per-row monotonicity (along Y) � required for physical sense.
+                    // Per-row monotonicity (along Y) — required for physical sense.
                     bool rowMonotonic = true;
                     for (int i = 0; i < rows && rowMonotonic; i++)
                     {
@@ -1150,8 +1262,14 @@ namespace RMC.BestFit.Analyses
             }
             else if (NumberOfBins > 100)
             {
-                // Non-blocking warning � large bin counts are valid but slow.
+                // Non-blocking warning — large bin counts are valid but slow.
                 messages.Add("Warning: NumberOfBins > 100 may result in slow run times.");
+            }
+
+            if (BayesianAnalysis.PRNGSeed < 0)
+            {
+                isValid = false;
+                messages.Add("The posterior-resampling PRNG seed must be nonnegative.");
             }
 
             return (isValid, messages);

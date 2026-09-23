@@ -1,0 +1,12 @@
+{
+  "name": "bestfit-local",
+  "interface": { "displayName": "BestFit Local" },
+  "plugins": [
+    {
+      "name": "bestfit-frequency",
+      "source": { "source": "local", "path": "./plugins/bestfit-frequency" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

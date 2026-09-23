@@ -2,6 +2,7 @@ using Numerics.Distributions;
 using Numerics.Mathematics.Optimization;
 using Numerics.Sampling.MCMC;
 using RMC.BestFit.Api.Mappers;
+using RMC.BestFit.Api.Tests.Support;
 
 namespace RMC.BestFit.Api.Tests.Mappers
 {
@@ -149,6 +150,47 @@ namespace RMC.BestFit.Api.Tests.Mappers
         {
             var summaries = ResultsMapper.BuildParameterSummaries(new List<string> { "Mu" }, null, includeChainDiagnostics: true);
             Assert.AreEqual(0, summaries.Count);
+        }
+
+        /// <summary>
+        /// Verifies mixture API diagnostics label K-1 stored coordinates without shifting component names.
+        /// </summary>
+        [TestMethod]
+        public async Task ToFrequencyResults_MixtureKMinusOneResults_UsesSampledNames()
+        {
+            var resource = TestAnalyses.CreateMixtureResource();
+            var analysis = resource.Mixture!;
+            var model = analysis.MixtureDistribution;
+            double[] center = model.Parameters.Select(parameter => parameter.Value)
+                .Where((_, index) => index != 1)
+                .ToArray();
+            var output = Enumerable.Range(0, 20)
+                .Select(drawIndex =>
+                {
+                    double[] values = center.ToArray();
+                    values[0] = 0.35 + drawIndex * 0.01;
+                    double[] physicalValues = new[] { values[0], 1.0 - values[0] }
+                        .Concat(values.Skip(1))
+                        .ToArray();
+                    return new ParameterSet(values, model.LogLikelihood(physicalValues));
+                })
+                .ToList();
+            var results = new MCMCResults(
+                output.OrderByDescending(parameterSet => parameterSet.Fitness).First(),
+                output,
+                alpha: 0.10);
+            analysis.BayesianAnalysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+            await analysis.CreateFrequencyAnalysisResultsAsync();
+
+            var response = ResultsMapper.ToFrequencyResults(resource);
+            string[] names = response.ParameterSummaries
+                .Select(summary => summary.Name ?? string.Empty)
+                .ToArray();
+
+            Assert.AreEqual(model.NumberOfParameters - 1, names.Length);
+            Assert.AreEqual(model.Parameters[0].DisplayName, names[0]);
+            Assert.AreEqual(model.Parameters[2].DisplayName, names[1]);
+            Assert.IsFalse(names.Contains(model.Parameters[1].DisplayName));
         }
 
         /// <summary>

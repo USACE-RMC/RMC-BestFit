@@ -1,0 +1,90 @@
+{
+  "metadata": {
+    "artifact_id": "ME-PROFILE-LIKELIHOOD-001",
+    "generator": "verification/r/model-estimation/generate_profile_likelihood_oracle.R",
+    "generator_sha256": "62fc8f99ab27b3c19cedeebcf31f87ef6e38f62c52da070b05007fed01597c4d",
+    "source_commit": "adb49200e87004db499d668a8163af9e8dec088c",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "bbmle_version": "1.0.25.1",
+    "jsonlite_version": "2.0.0",
+    "generated_utc": "2026-07-26 21:08:35 UTC",
+    "tolerances": {
+      "fitted_parameter_absolute": 1e-08,
+      "log_likelihood_absolute": 1e-10,
+      "interval_absolute": 1e-08
+    }
+  },
+  "fixture": {
+    "rho": 0.8,
+    "lower_bound": -4,
+    "upper_bound": 4,
+    "bin_count": 8,
+    "alpha": 0.1,
+    "start": [0.25, -0.25]
+  },
+  "bbmle_fit": {
+    "theta1": -4.92201443583753e-15,
+    "theta2": -4.92197547232199e-15,
+    "maximum_log_likelihood": -1.34589079618903e-29
+  },
+  "profile_grid": [
+    {
+      "theta1": -3.5,
+      "conditional_log_likelihood": -17.0138888888889,
+      "true_profile_log_likelihood": -6.125,
+      "optimized_nuisance": -2.8
+    },
+    {
+      "theta1": -2.5,
+      "conditional_log_likelihood": -8.68055555555556,
+      "true_profile_log_likelihood": -3.125,
+      "optimized_nuisance": -2
+    },
+    {
+      "theta1": -1.5,
+      "conditional_log_likelihood": -3.125,
+      "true_profile_log_likelihood": -1.125,
+      "optimized_nuisance": -1.1999999821186
+    },
+    {
+      "theta1": -0.5,
+      "conditional_log_likelihood": -0.347222222222222,
+      "true_profile_log_likelihood": -0.125,
+      "optimized_nuisance": -0.4
+    },
+    {
+      "theta1": 0.5,
+      "conditional_log_likelihood": -0.347222222222222,
+      "true_profile_log_likelihood": -0.125,
+      "optimized_nuisance": 0.4
+    },
+    {
+      "theta1": 1.5,
+      "conditional_log_likelihood": -3.125,
+      "true_profile_log_likelihood": -1.125,
+      "optimized_nuisance": 1.2000000178814
+    },
+    {
+      "theta1": 2.5,
+      "conditional_log_likelihood": -8.68055555555556,
+      "true_profile_log_likelihood": -3.125,
+      "optimized_nuisance": 2
+    },
+    {
+      "theta1": 3.5,
+      "conditional_log_likelihood": -17.0138888888889,
+      "true_profile_log_likelihood": -6.125,
+      "optimized_nuisance": 2.8
+    }
+  ],
+  "intervals": {
+    "likelihood_ratio_critical_value": 2.70554345409542,
+    "target_log_likelihood": -1.35277172704771,
+    "true_profile": [-1.64485362695147, 1.64485362695147],
+    "conditional_slice": [-0.986912176170884, 0.986912176170884]
+  },
+  "status": {
+    "true_profile_reoptimizes_nuisance": true,
+    "conditional_slice_holds_nuisance_at_joint_mle": true
+  }
+}

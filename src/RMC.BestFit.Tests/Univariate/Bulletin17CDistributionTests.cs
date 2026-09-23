@@ -84,6 +84,43 @@ public class Bulletin17CDistributionTests
     }
 
     /// <summary>
+    /// Verifies that Bulletin 17C keeps the broader moments-based location search range for
+    /// the Exponential distribution instead of inheriting its support-limited MLE upper bound.
+    /// </summary>
+    [TestMethod]
+    public void SetDefaultParameters_Exponential_UsesMomentsLocationUpperBound()
+    {
+        double[] values = [100d, 120d, 140d, 160d, 180d];
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(values) };
+        var constraints = new Exponential().GetParameterConstraints(values);
+        double expectedUpperBound = Math.Pow(
+            10d,
+            Math.Ceiling(Math.Log10(constraints.Item1[0]) + 1d));
+
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Exponential);
+
+        Assert.AreEqual(expectedUpperBound, model.Parameters[0].UpperBound, 1e-12);
+        Assert.IsTrue(model.Parameters[0].UpperBound > values.Min(),
+            "B17C GMM must allow an Exponential location above the minimum observation.");
+    }
+
+    /// <summary>
+    /// Verifies that the Bulletin 17C GMM-specific upper-bound override does not alter the
+    /// Numerics constraints for other supported distribution families.
+    /// </summary>
+    [TestMethod]
+    public void SetDefaultParameters_Normal_PreservesNumericsLocationUpperBound()
+    {
+        double[] values = [100d, 120d, 140d, 160d, 180d];
+        var df = new BestFitDataFrame { ExactSeries = new ExactSeries(values) };
+        var constraints = new Normal().GetParameterConstraints(values);
+
+        var model = new Bulletin17CDistribution(df, UnivariateDistributionType.Normal);
+
+        Assert.AreEqual(constraints.Item3[0], model.Parameters[0].UpperBound, 1e-12);
+    }
+
+    /// <summary>
     /// Duplicate bootstrap-like values must not poison the ROS moment path used by B17C
     /// default parameter setup when low outliers are present.
     /// </summary>
@@ -793,6 +830,81 @@ public class Bulletin17CDistributionTests
                 $"Parameter {i} must restore from XML, not from boot-frame defaults.");
         }
         Assert.IsTrue(restored.ParameterPenalties[2].Enabled, "The serialized penalty state must be restored.");
+    }
+
+
+    /// <summary>
+    /// Bootstrap starting candidates are finite, valid, bounded, distinct, and ordered by the
+    /// same identity-weight objective used by the first GMM optimization pass.
+    /// </summary>
+    [TestMethod]
+    public void GetRankedBootstrapInitialValues_CensoredSample_ReturnsObjectiveOrderedCandidates()
+    {
+        var frame = CreateFloodDataFrame();
+        double threshold = frame.ExactSeries
+            .Select(data => data.Value)
+            .OrderBy(value => value)
+            .ElementAt(FixtureSize / 5);
+        frame.LowOutlierThreshold = threshold;
+        frame.SetLowOutliersFromThreshold();
+        frame.CalculatePlottingPositions();
+
+        var model = new Bulletin17CDistribution(
+            frame, UnivariateDistributionType.LogPearsonTypeIII);
+        double[] parentParameters = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        // Enable the regional-skew penalty so the ranking objective exercises its penalized form.
+        model.ParameterPenalties[2].Enabled = true;
+        model.ParameterPenalties[2].Mean = parentParameters[2];
+        model.ParameterPenalties[2].MSE = 0.05;
+        model.SetRandomPenaltyFunction(parentParameters, new Random(1234));
+        Assert.IsNotNull(model.PenaltyFunction, "The randomized bootstrap penalty must be installed.");
+
+        IReadOnlyList<double[]> candidates =
+            model.GetRankedBootstrapInitialValues(parentParameters);
+
+        Assert.IsTrue(candidates.Count >= 2,
+            "Censored data should supply at least one data-derived candidate and the parent fit.");
+        double previousObjective = double.NegativeInfinity;
+        for (int candidateIndex = 0; candidateIndex < candidates.Count; candidateIndex++)
+        {
+            double[] candidate = candidates[candidateIndex];
+            Assert.AreEqual(model.NumberOfParameters, candidate.Length);
+            Assert.IsTrue(candidate.All(double.IsFinite));
+
+            // The ranking objective is the first-pass identity-weight objective with the penalty:
+            // 0.5 * g'g + P(candidate).
+            double[] moments = model.MomentConditionFunction(candidate).G.ToArray();
+            double expectedObjective = 0.5 * moments.Sum(value => value * value) + model.PenaltyFunction!(candidate);
+            double rankingObjective = model.EvaluateBootstrapInitialObjective(candidate);
+            Assert.IsTrue(double.IsFinite(rankingObjective) && rankingObjective < double.MaxValue);
+            Assert.AreEqual(expectedObjective, rankingObjective, 1e-12 * Math.Max(1.0, Math.Abs(expectedObjective)),
+                "The ranking objective must equal the penalized identity-weight moment objective.");
+
+            for (int parameterIndex = 0; parameterIndex < candidate.Length; parameterIndex++)
+            {
+                Assert.IsTrue(candidate[parameterIndex] >= model.Parameters[parameterIndex].LowerBound);
+                Assert.IsTrue(candidate[parameterIndex] <= model.Parameters[parameterIndex].UpperBound);
+            }
+
+            double objective = model.EvaluateBootstrapInitialObjective(candidate);
+            Assert.IsTrue(double.IsFinite(objective));
+            Assert.IsTrue(objective >= previousObjective,
+                "Candidates must be returned in nondecreasing first-pass objective order.");
+            previousObjective = objective;
+        }
+    }
+
+    /// <summary>
+    /// Bootstrap candidate construction rejects a parent vector with the wrong dimension.
+    /// </summary>
+    [TestMethod]
+    public void GetRankedBootstrapInitialValues_WrongParentDimension_Throws()
+    {
+        var model = new Bulletin17CDistribution(
+            CreateFloodDataFrame(), UnivariateDistributionType.LogPearsonTypeIII);
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            model.GetRankedBootstrapInitialValues([1d, 2d]));
     }
 
     #endregion

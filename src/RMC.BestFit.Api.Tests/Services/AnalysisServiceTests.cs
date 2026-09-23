@@ -1145,6 +1145,42 @@ namespace RMC.BestFit.Api.Tests.Services
         }
 
         /// <summary>
+        /// Verifies the additive API transform-lambda field maps to the unchanged model setter for
+        /// every time-series family and remains fixed through an explicit training-window change.
+        /// </summary>
+        [TestMethod]
+        public void CreateTimeSeries_ManualTransformLambdaMapsToEveryFamily()
+        {
+            var source = AddDailySeries();
+            foreach (TimeSeriesModelType modelType in Enum.GetValues<TimeSeriesModelType>())
+            {
+                var request = new CreateTimeSeriesAnalysisRequest
+                {
+                    TimeSeriesId = source.Id,
+                    ModelType = modelType,
+                    TransformType = RMC.BestFit.Models.Transform.YeoJohnson,
+                    TransformLambda = 0.6,
+                    TrainingTimeSteps = 900,
+                };
+                if (modelType is TimeSeriesModelType.Ar or TimeSeriesModelType.Ma)
+                    request.Order = 1;
+                else
+                    request.POrder = 1;
+
+                AnalysisResource resource = _service.CreateTimeSeries(request);
+                double actual = modelType switch
+                {
+                    TimeSeriesModelType.Ar => resource.Ar!.AutoRegressive.TransformLambda,
+                    TimeSeriesModelType.Ma => resource.Ma!.MovingAverage.TransformLambda,
+                    TimeSeriesModelType.Arima => resource.Arima!.ARIMA.TransformLambda,
+                    TimeSeriesModelType.Arimax => resource.Arimax!.ARIMAX.TransformLambda,
+                    _ => double.NaN,
+                };
+                Assert.AreEqual(0.6, actual, 1E-12, modelType.ToString());
+            }
+        }
+
+        /// <summary>
         /// Verifies fields that do not apply to the chosen model type are rejected with the
         /// offending fields named, and out-of-range forecast horizons and missing covariates fail.
         /// </summary>
@@ -1185,6 +1221,20 @@ namespace RMC.BestFit.Api.Tests.Services
                 TimeSeriesId = source.Id,
                 ModelType = TimeSeriesModelType.Ar,
                 ForecastingTimeSteps = 101
+            }));
+
+            Assert.ThrowsException<ArgumentException>(() => _service.CreateTimeSeries(new CreateTimeSeriesAnalysisRequest
+            {
+                TimeSeriesId = source.Id,
+                ModelType = TimeSeriesModelType.Ar,
+                TransformLambda = 0.6
+            }));
+            Assert.ThrowsException<ArgumentException>(() => _service.CreateTimeSeries(new CreateTimeSeriesAnalysisRequest
+            {
+                TimeSeriesId = source.Id,
+                ModelType = TimeSeriesModelType.Ar,
+                TransformType = RMC.BestFit.Models.Transform.BoxCox,
+                TransformLambda = double.NaN
             }));
 
             Assert.ThrowsException<ResourceNotFoundException>(() => _service.CreateTimeSeries(new CreateTimeSeriesAnalysisRequest

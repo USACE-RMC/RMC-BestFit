@@ -50,6 +50,14 @@ namespace RMC.BestFit.Api.DTOs
         [JsonPropertyName("value")]
         public double? Value { get; set; }
 
+        /// <summary>The model's lower display bound; populated in responses and ignored in requests.</summary>
+        [JsonPropertyName("lowerBound")]
+        public double? LowerBound { get; set; }
+
+        /// <summary>The model's upper display bound; populated in responses and ignored in requests.</summary>
+        [JsonPropertyName("upperBound")]
+        public double? UpperBound { get; set; }
+
         /// <summary>
         /// The computed plotting position (exceedance probability) of the observation. Populated
         /// in responses; ignored in requests.

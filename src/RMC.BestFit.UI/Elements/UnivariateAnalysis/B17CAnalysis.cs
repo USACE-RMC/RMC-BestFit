@@ -91,10 +91,10 @@ namespace RMC.BestFit.UI
                 _descriptionMsg = new BasicMessageItem(MessageType.Message, "The Bulletin 17C analysis does not have a description.", this, ParentCollection.Name, Name, nameof(Description), "B17-MSG-001");
                 _inputDataNullMsg = new BasicMessageItem(MessageType.Error, "Input data is missing. Please select valid input data.", this, ParentCollection.Name, Name, nameof(InputData), "B17-ERR-005");
                 _inputDataInValidMsg = new BasicMessageItem(MessageType.Error, "The selected input data is invalid.", this, ParentCollection.Name, Name, nameof(InputData), "B17-ERR-006");
-                _uncertaintyFailedMsg = new BasicMessageItem(MessageType.Warning, "Uncertainty quantification failed â€” the covariance matrix is not positive-definite. The point estimate is still valid but confidence intervals could not be computed. Consider using a different distribution or the Bootstrap uncertainty method.", this, ParentCollection.Name, Name, nameof(B17CAnalysis), "B17-WRN-001");
+                _uncertaintyFailedMsg = new BasicMessageItem(MessageType.Warning, "Uncertainty quantification failed — the covariance matrix is not positive-definite. The point estimate is still valid but confidence intervals could not be computed. Consider using a different distribution or the Bootstrap uncertainty method.", this, ParentCollection.Name, Name, nameof(B17CAnalysis), "B17-WRN-001");
 
                 // ProbabilityOrdinates validation messages are surfaced by the model-layer
-                // ProbabilityOrdinates.Validate() routed through _validationAdapter â€” defining
+                // ProbabilityOrdinates.Validate() routed through _validationAdapter — defining
                 // duplicates here would produce two messages per error.
                 _messages = new List<BasicMessageItem>()
                 {   _descriptionMsg,
@@ -113,7 +113,7 @@ namespace RMC.BestFit.UI
 
                 _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "B17");
                 SetIsValid();
-                // Not a v1 feature â€” no legacy migration path, so no openedFromV1 flag.
+                // Not a v1 feature — no legacy migration path, so no openedFromV1 flag.
                 SetIsDirty(false);
             }
             finally
@@ -432,7 +432,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         /// <remarks>
         /// <b>Returns a live reference, not a copy.</b> Mutations to the returned list (Add / Remove /
-        /// item-property edits) bypass the element's undo/dirty tracking â€” only changes that flow through
+        /// item-property edits) bypass the element's undo/dirty tracking — only changes that flow through
         /// <c>RecordDistributionUndo</c> via <c>Bulletin17CDistribution.PropertyChanged</c> are captured.
         /// Treat this property as read-via-binding; route programmatic edits through the wrapping
         /// distribution's API so undo / dirty / persistence stay coherent.
@@ -443,7 +443,7 @@ namespace RMC.BestFit.UI
         /// Gets the quantile penalties from the B17C distribution. Used for regional quantile priors.
         /// </summary>
         /// <remarks>
-        /// Same caveat as <see cref="ParameterPenalties"/> â€” live reference, not a copy. Mutate via
+        /// Same caveat as <see cref="ParameterPenalties"/> — live reference, not a copy. Mutate via
         /// the wrapping distribution to preserve undo / dirty tracking.
         /// </remarks>
         public List<QuantilePenalty> QuantilePenalties => _innerAnalysis.Bulletin17CDistribution.QuantilePenalties;
@@ -656,7 +656,7 @@ namespace RMC.BestFit.UI
         /// <param name="e">The collection change event arguments.</param>
         private void ProbabilityOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            // Validate ordinates locally only for the IsValid flag â€” diagnostic messages are
+            // Validate ordinates locally only for the IsValid flag — diagnostic messages are
             // surfaced by the model-layer ProbabilityOrdinates.Validate() routed through
             // _validationAdapter inside SetIsValid().
             _ordinatesValid = true;
@@ -972,7 +972,7 @@ namespace RMC.BestFit.UI
                 if (wasOpen == false) sqlite.Close();
                 SetupBridges();
 
-                // Validate probability ordinates â€” ProbabilityOrdinates_CollectionChanged didn't fire
+                // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
                 // during Open because SubscribeInnerAnalysis hadn't been called when the ordinates were loaded.
                 // Diagnostic messages are surfaced by the model-layer Validate() routed through
                 // _validationAdapter inside SetIsValid(); we only set the local flag here.
@@ -1173,7 +1173,7 @@ namespace RMC.BestFit.UI
                         ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter),
                         ProbabilityOrdinates.DefaultDelimiter);
 
-                // Copy plot settings via PlotSerializer round-trip (inside undo suppression â€” matches FittingAnalysis.Copy template)
+                // Copy plot settings via PlotSerializer round-trip (inside undo suppression — matches FittingAnalysis.Copy template)
                 if (_frequencyPlot != null) PlotSerializer.FromXElement(element._frequencyPlot, PlotSerializer.ToXElement(_frequencyPlot));
                 _bayesianController.CopyTo(element._bayesianController);
 
@@ -1211,7 +1211,7 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
             // Unhook upstream Deleted subscription directly (do not route through the
-            // InputData setter â€” that would re-add _inputDataNullMsg and re-flip IsDirty=true,
+            // InputData setter — that would re-add _inputDataNullMsg and re-flip IsDirty=true,
             // breaking messenger cleanup and triggering a spurious save prompt on tab close).
             if (_inputData != null) _inputData.Deleted -= OnInputDataDeleted;
             DisposeBridges();
@@ -1263,7 +1263,7 @@ namespace RMC.BestFit.UI
             if (_ordinatesValid == false) valid = false;
 
             // Delegate model validation to inner analysis.
-            // Skip model validation when InputData is invalid â€” the UI layer already reports that
+            // Skip model validation when InputData is invalid — the UI layer already reports that
             // via _inputDataNullMsg / _inputDataInValidMsg, and the model's "DataFrame is null"
             // message would be a confusing developer-facing duplicate.
             bool modelValid = _inputDataValid
@@ -1478,7 +1478,7 @@ namespace RMC.BestFit.UI
             var analysisXml = _innerAnalysis.ToXElement();
 
             // 3. Create new distribution from snapshot.
-            //    DataFrame may be null if InputData was undone back to null â€” use default constructor
+            //    DataFrame may be null if InputData was undone back to null — use default constructor
             //    and restore from XElement without data-dependent parameter initialization.
             var newDist = df != null
                 ? new Bulletin17CDistribution(df, snapshot)
@@ -1634,7 +1634,7 @@ namespace RMC.BestFit.UI
                     this);
             }
 
-            // Distribution undo â€” capture baseline snapshot for XElement comparison.
+            // Distribution undo — capture baseline snapshot for XElement comparison.
             _distributionSnapshot = _innerAnalysis?.Bulletin17CDistribution?.ToXElement();
 
             // Plot undo managers for element-level plots

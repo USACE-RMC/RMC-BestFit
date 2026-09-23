@@ -553,7 +553,7 @@ public class UnivariateAnalysisTests
 
     #endregion
 
-    #region ProbabilityOrdinates Reprocess-or-Clear Tests (Phase 1)
+    #region ProbabilityOrdinates Reprocess-or-Clear Tests
 
     /// <summary>
     /// Tests that <c>UnivariateAnalysis.ClearFrequencyAnalysisResults</c> exists and is callable.
@@ -640,7 +640,7 @@ public class UnivariateAnalysisTests
 
     /// <summary>
     /// Tests that <c>UnivariateAnalysis.ClearResults</c> still clears everything destructively
-    /// (unchanged by the Phase 1 work).
+    /// regardless of the ordinate reprocess path.
     /// </summary>
     [TestMethod]
     public void ClearResults_ClearsBothDerivedAndFit()

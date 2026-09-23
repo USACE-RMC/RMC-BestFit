@@ -55,7 +55,7 @@ For each NSFFA alternative:
 
 Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
 
-- **Sampler type** (DEMCzs, ARWMH, HMC).
+- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
 - **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
 - **Number of Chains** — typically 6 for routine work.
 - **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.

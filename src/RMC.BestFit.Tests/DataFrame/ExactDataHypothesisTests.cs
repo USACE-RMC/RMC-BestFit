@@ -1,4 +1,4 @@
-using RMC.BestFit.Models;
+﻿using RMC.BestFit.Models;
 using Numerics.Distributions;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
@@ -529,4 +529,39 @@ public class ExactDataHypothesisTests
         Assert.AreEqual(LO, Samp_True);
 
     }
+    /// <summary>
+    /// Verifies the 50-percent-censoring guard on the threshold low-outlier setter fires exactly
+    /// above the upper-middle order statistic, and that a rejected call leaves the frame unchanged.
+    /// </summary>
+    /// <remarks>
+    /// Mirrors the boundary reported in GitHub issue #13 for USGS gage 11083500, where a threshold
+    /// of 1,900 cfs ran while 2,000 cfs crashed: the guard compares against the Count/2 order
+    /// statistic (1,950 cfs there), which sat between the two probes. The crash itself was the
+    /// missing App-layer catch; the guard is by design, and this test pins its exact boundary plus
+    /// the contract that a throwing call neither flags outliers nor strands the series with
+    /// collection notifications suppressed.
+    /// </remarks>
+    [TestMethod]
+    public void Test_SetLowOutliersFromThreshold_GuardFiresAboveUpperMiddleValue()
+    {
+        var frame = new BestFitDataFrame();
+        for (int i = 1; i <= 17; i++)
+            frame.ExactSeries.Add(new ExactData(i, i));
+        double upperMiddle = frame.ExactSeries.UpperMiddleValue;
+        Assert.AreEqual(9.0, upperMiddle, "Fixture precondition: the Count/2 order statistic.");
+
+        // At the boundary the guard must not fire.
+        frame.LowOutlierThreshold = upperMiddle;
+        frame.SetLowOutliersFromThreshold();
+        Assert.AreEqual(8, frame.NumberOfLowOutliers);
+
+        // Strictly above the boundary the guard throws, and the frame is left consistent:
+        // the flags keep their prior state and notifications are not stranded suppressed.
+        frame.LowOutlierThreshold = upperMiddle + 0.5;
+        Assert.ThrowsException<ArgumentException>(() => frame.SetLowOutliersFromThreshold());
+        Assert.IsFalse(frame.ExactSeries.SuppressCollectionChanged,
+            "A rejected call must not strand collection notifications suppressed.");
+        Assert.AreEqual(8, frame.NumberOfLowOutliers, "A rejected call must not change the flags.");
+    }
+
 }

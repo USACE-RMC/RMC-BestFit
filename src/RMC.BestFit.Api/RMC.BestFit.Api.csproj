@@ -16,7 +16,8 @@
     <!-- Direct reference lifts the transitive Microsoft.OpenApi above the vulnerable 2.0.0 (NU1903). -->
     <PackageReference Include="Microsoft.OpenApi" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
-    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Numerics" Condition="'$(UseLocalRmcNumerics)' != 'true'" />
+    <ProjectReference Include="$(RmcNumericsProjectPath)" Condition="'$(UseLocalRmcNumerics)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>

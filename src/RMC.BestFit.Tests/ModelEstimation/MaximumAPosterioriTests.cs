@@ -118,4 +118,57 @@ public class MaximumAPosterioriTests
 
         Assert.AreEqual(model.Parameters.Count, map.NumberOfParameters);
     }
+
+    /// <summary>
+    /// Verifies the internal local-refinement constructor preserves an explicit in-bounds start.
+    /// </summary>
+    [TestMethod]
+    public void Constructor_WithExplicitInitialValues_UsesProvidedStart()
+    {
+        var model = MakeNormalModel();
+        double[] initialValues = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        initialValues[0] = Math.Min(
+            model.Parameters[0].UpperBound,
+            Math.Max(model.Parameters[0].LowerBound, initialValues[0] + 1d));
+
+        var map = new MaximumAPosteriori(
+            model,
+            OptimizationMethod.NelderMead,
+            initialValues);
+
+        CollectionAssert.AreEqual(initialValues, map.InitialValues);
+        Assert.AreEqual(OptimizationMethod.NelderMead, map.OptimizerMethod);
+    }
+
+    /// <summary>
+    /// Verifies the internal local-refinement constructor rejects a start with the wrong dimension.
+    /// </summary>
+    [TestMethod]
+    public void Constructor_WithWrongInitialDimension_Throws()
+    {
+        var model = MakeNormalModel();
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            new MaximumAPosteriori(
+                model,
+                OptimizationMethod.NelderMead,
+                new double[model.NumberOfParameters - 1]));
+    }
+
+    /// <summary>
+    /// Verifies the internal local-refinement constructor rejects an out-of-bounds start.
+    /// </summary>
+    [TestMethod]
+    public void Constructor_WithOutOfBoundsInitialValue_Throws()
+    {
+        var model = MakeNormalModel();
+        double[] initialValues = model.Parameters.Select(parameter => parameter.Value).ToArray();
+        initialValues[0] = model.Parameters[0].UpperBound + 1d;
+
+        Assert.ThrowsException<ArgumentException>(() =>
+            new MaximumAPosteriori(
+                model,
+                OptimizationMethod.NelderMead,
+                initialValues));
+    }
 }

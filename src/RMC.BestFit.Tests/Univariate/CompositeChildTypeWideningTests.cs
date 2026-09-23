@@ -1,4 +1,7 @@
+using Numerics.Data;
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
@@ -248,76 +251,170 @@ public class CompositeChildTypeWideningTests
 
     #endregion
 
-    #region Model Averaging incompatible with Bulletin17C children (DIC/WAIC/LOOIC)
+    #region Model Averaging criterion availability for Bulletin17C children
 
     /// <summary>
     /// Helper: assemble a CompositeAnalysis configured for ModelAverage with the supplied
     /// averaging method. Mixes one UnivariateAnalysis and one Bulletin17CAnalysis child;
-    /// both children are force-marked as estimated so the validation we exercise is the
-    /// new B17C-incompatibility rule, not the upstream un-estimated-child check.
+    /// both children receive deterministic fitted results so the validation exercises
+    /// criterion availability rather than the upstream unestimated-child check.
     /// </summary>
     private static CompositeAnalysis CreateModelAverageWithB17CChild(AverageMethod method)
     {
         var ua = CreateUnivariateAnalysis();
         var b17c = CreateB17CAnalysis();
+        SetAscendingProbabilityOrdinates(ua.ProbabilityOrdinates);
+        SetAscendingProbabilityOrdinates(b17c.ProbabilityOrdinates);
 
-        // Force-mark both children as estimated so we isolate the rule under test.
+        // Supply deterministic fitted-result containers so validation and weighting
+        // exercise criterion handling rather than an unestimated-child guard.
+        double[] uaParameters = ua.UnivariateDistribution.GetParameterValues(
+            ua.UnivariateDistribution.DataFrame.FullTimeSeries.Last().Index);
+        double[] b17cParameters = b17c.Bulletin17CDistribution.Distribution.GetParameters;
+        SetCustomResults(ua.BayesianAnalysis, uaParameters);
+        SetCustomResults(b17c.BayesianAnalysis, b17cParameters);
+        SetPrivateCriterion(ua.BayesianAnalysis, nameof(BayesianAnalysis.DIC), 100d);
+        SetPrivateCriterion(ua.BayesianAnalysis, nameof(BayesianAnalysis.WAIC), 100d);
+        SetPrivateCriterion(ua.BayesianAnalysis, nameof(BayesianAnalysis.LOOIC), 100d);
+        SetPrivateCriterion(b17c.BayesianAnalysis, nameof(BayesianAnalysis.DIC), 50d);
+        SetPrivateCriterion(b17c.BayesianAnalysis, nameof(BayesianAnalysis.WAIC), 50d);
+        SetPrivateCriterion(b17c.BayesianAnalysis, nameof(BayesianAnalysis.LOOIC), 50d);
+
         var isEstField = typeof(AnalysisBase).GetField("_isEstimated",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.IsNotNull(isEstField);
         isEstField!.SetValue(ua, true);
         isEstField.SetValue(b17c, true);
+        SetAnalysisResults(ua, 100d, 1d);
+        SetAnalysisResults(b17c, 102d, 2d);
 
         var outer = new CompositeAnalysis();
         outer.CompositeDistributionType = CompositeType.ModelAverage;
         outer.ModelAverageMethod = method;
-        outer.ProbabilityOrdinates.Add(0.99);
-        outer.ProbabilityOrdinates.Add(0.5);
+        outer.ProbabilityOrdinates.Clear();
         outer.ProbabilityOrdinates.Add(0.01);
+        outer.ProbabilityOrdinates.Add(0.5);
+        outer.ProbabilityOrdinates.Add(0.99);
         outer.Analyses.Add(new WeightedUnivariateAnalysis(ua, weight: 0.5));
         outer.Analyses.Add(new WeightedUnivariateAnalysis(b17c, weight: 0.5));
         return outer;
     }
 
     /// <summary>
-    /// Model Averaging weighted by DIC must fail validation when at least one child is
-    /// a Bulletin17CAnalysis. B17C is fit by GMM, not MCMC, so it does not produce a
-    /// posterior chain and DIC is undefined for it.
+    /// Replaces default ordinates with a compact ascending validation fixture.
+    /// </summary>
+    /// <param name="ordinates">The probability-ordinate collection.</param>
+    private static void SetAscendingProbabilityOrdinates(ProbabilityOrdinates ordinates)
+    {
+        ordinates.Clear();
+        ordinates.Add(0.01d);
+        ordinates.Add(0.5d);
+        ordinates.Add(0.99d);
+    }
+
+    /// <summary>
+    /// Populates the compatibility result container with deterministic parameter sets.
+    /// </summary>
+    /// <param name="analysis">The Bayesian compatibility container.</param>
+    /// <param name="parameters">The fitted parameter values.</param>
+    private static void SetCustomResults(BayesianAnalysis analysis, double[] parameters)
+    {
+        var output = new List<ParameterSet>();
+        for (int index = 0; index < 100; index++)
+            output.Add(new ParameterSet((double[])parameters.Clone(), 0d));
+
+        analysis.OutputLength = output.Count;
+        analysis.SetCustomMCMCResults(
+            new MCMCResults(new ParameterSet((double[])parameters.Clone(), 0d), output, 0.1d),
+            skipInformationCriteria: true);
+    }
+
+    /// <summary>
+    /// Assigns a private-set comparison criterion for a deterministic test fixture.
+    /// </summary>
+    /// <param name="analysis">The Bayesian compatibility container.</param>
+    /// <param name="propertyName">The criterion property name.</param>
+    /// <param name="value">The criterion value.</param>
+    private static void SetPrivateCriterion(BayesianAnalysis analysis, string propertyName, double value)
+    {
+        analysis.GetType()
+            .GetProperty(propertyName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)!
+            .GetSetMethod(true)!
+            .Invoke(analysis, new object[] { value });
+    }
+
+    /// <summary>
+    /// Assigns deterministic frequency-analysis criteria to a fitted child.
+    /// </summary>
+    /// <param name="analysis">The fitted child analysis.</param>
+    /// <param name="informationCriterion">The AIC and BIC value.</param>
+    /// <param name="rmse">The RMSE value.</param>
+    private static void SetAnalysisResults(
+        IUnivariateAnalysis analysis,
+        double informationCriterion,
+        double rmse)
+    {
+        analysis.GetType()
+            .GetProperty(nameof(IBayesianAnalysis.AnalysisResults),
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)!
+            .SetValue(analysis, new UncertaintyAnalysisResults
+            {
+                AIC = informationCriterion,
+                BIC = informationCriterion,
+                RMSE = rmse
+            });
+    }
+
+    /// <summary>
+    /// Model Averaging weighted by DIC must not rely on the removed type-specific B17C
+    /// rejection rule. Criterion availability is handled by the general invalid-value policy.
     /// </summary>
     [TestMethod]
-    public void ModelAverage_DIC_RejectsBulletin17CChild()
+    public void ModelAverage_DIC_KeepsCompositeValidAndGivesB17CZeroWeight()
     {
         var outer = CreateModelAverageWithB17CChild(AverageMethod.DIC);
 
+        outer.EstimateModelWeights();
         var (isValid, messages) = outer.Validate();
 
-        Assert.IsFalse(isValid, "DIC averaging must be rejected with a B17C child.");
-        Assert.IsTrue(messages.Exists(m => m.Contains("DIC") && m.Contains("Bulletin17C")),
-            "Error message should call out the DIC + B17C incompatibility specifically.");
+        Assert.IsTrue(isValid, string.Join("; ", messages));
+        Assert.AreEqual(1d, outer.Analyses[0].Weight, 0d);
+        Assert.AreEqual(0d, outer.Analyses[1].Weight, 0d);
+        Assert.IsTrue(messages.Exists(m =>
+            m.StartsWith("Warning: Sub-analysis 2 (Bulletin17CAnalysis)", StringComparison.Ordinal) &&
+            m.Contains("assigned zero weight", StringComparison.Ordinal)));
     }
 
-    /// <summary>WAIC averaging must be rejected with a B17C child for the same reason.</summary>
+    /// <summary>WAIC validation uses the general invalid-criterion policy rather than a type-specific rejection.</summary>
     [TestMethod]
-    public void ModelAverage_WAIC_RejectsBulletin17CChild()
+    public void ModelAverage_WAIC_KeepsCompositeValidAndGivesB17CZeroWeight()
     {
         var outer = CreateModelAverageWithB17CChild(AverageMethod.WAIC);
 
+        outer.EstimateModelWeights();
         var (isValid, messages) = outer.Validate();
 
-        Assert.IsFalse(isValid);
-        Assert.IsTrue(messages.Exists(m => m.Contains("WAIC") && m.Contains("Bulletin17C")));
+        Assert.IsTrue(isValid, string.Join("; ", messages));
+        Assert.AreEqual(1d, outer.Analyses[0].Weight, 0d);
+        Assert.AreEqual(0d, outer.Analyses[1].Weight, 0d);
+        Assert.IsTrue(messages.Exists(m => m.Contains("Bulletin17CAnalysis", StringComparison.Ordinal) &&
+            m.Contains("assigned zero weight", StringComparison.Ordinal)));
     }
 
-    /// <summary>LOO-CV (LOOIC) averaging must be rejected with a B17C child for the same reason.</summary>
+    /// <summary>LOOIC validation uses the general invalid-criterion policy rather than a type-specific rejection.</summary>
     [TestMethod]
-    public void ModelAverage_LOOIC_RejectsBulletin17CChild()
+    public void ModelAverage_LOOIC_KeepsCompositeValidAndGivesB17CZeroWeight()
     {
         var outer = CreateModelAverageWithB17CChild(AverageMethod.LOOIC);
 
+        outer.EstimateModelWeights();
         var (isValid, messages) = outer.Validate();
 
-        Assert.IsFalse(isValid);
-        Assert.IsTrue(messages.Exists(m => m.Contains("LOOIC") && m.Contains("Bulletin17C")));
+        Assert.IsTrue(isValid, string.Join("; ", messages));
+        Assert.AreEqual(1d, outer.Analyses[0].Weight, 0d);
+        Assert.AreEqual(0d, outer.Analyses[1].Weight, 0d);
+        Assert.IsTrue(messages.Exists(m => m.Contains("Bulletin17CAnalysis", StringComparison.Ordinal) &&
+            m.Contains("assigned zero weight", StringComparison.Ordinal)));
     }
 
     /// <summary>
@@ -335,10 +432,14 @@ public class CompositeChildTypeWideningTests
     {
         var outer = CreateModelAverageWithB17CChild(method);
 
-        var (_, messages) = outer.Validate();
+        outer.EstimateModelWeights();
+        var (isValid, messages) = outer.Validate();
 
-        Assert.IsFalse(messages.Exists(m => m.Contains("Bulletin17C")),
-            $"Method {method} is supported for B17C children; the B17C guard must not trigger.");
+        Assert.IsTrue(isValid, string.Join("; ", messages));
+        Assert.IsTrue(outer.Analyses[1].Weight > 0d,
+            $"Method {method} is supported for B17C children and must give it positive weight.");
+        Assert.IsFalse(messages.Exists(m => m.Contains("Bulletin17C", StringComparison.Ordinal)),
+            $"Method {method} is supported for B17C children and must not emit a B17C diagnostic.");
     }
 
     /// <summary>
@@ -369,16 +470,16 @@ public class CompositeChildTypeWideningTests
         var (_, messages) = outer.Validate();
 
         Assert.IsFalse(messages.Exists(m => m.Contains("Bulletin17C")),
-            "The B17C guard must not trigger when no child is a Bulletin17CAnalysis.");
+            "No Bulletin17C diagnostic should appear when no child is a Bulletin17CAnalysis.");
     }
 
     /// <summary>
     /// Mixture and CompetingRisks composite types do not use the averaging method, so
-    /// the B17C guard must NOT trigger even when ModelAverageMethod is DIC and a B17C
-    /// child is present.
+    /// posterior-criterion availability is irrelevant even when ModelAverageMethod is DIC
+    /// and a B17C child is present.
     /// </summary>
     [TestMethod]
-    public void NonModelAverageCompositeType_DoesNotTriggerB17CGuard()
+    public void NonModelAverageCompositeType_DoesNotApplyB17CPosteriorCriterionPolicy()
     {
         var outer = CreateModelAverageWithB17CChild(AverageMethod.DIC);
         outer.CompositeDistributionType = CompositeType.Mixture;
@@ -386,7 +487,7 @@ public class CompositeChildTypeWideningTests
         var (_, messages) = outer.Validate();
 
         Assert.IsFalse(messages.Exists(m => m.Contains("DIC") && m.Contains("Bulletin17C")),
-            "Mixture composites do not use the averaging method, so the B17C-DIC guard must not fire.");
+            "Mixture composites do not use the averaging method, so B17C-DIC availability is irrelevant.");
     }
 
     #endregion

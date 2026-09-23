@@ -138,4 +138,47 @@ public class NonparametricEmpiricalTests
         Assert.IsTrue(frame.ExactSeries.All(data =>
             double.IsNaN(data.StandardizedValue) && double.IsNaN(data.StandardizedLog10Value)));
     }
+
+
+    /// <summary>
+    /// Verifies low-outlier midpoint moments are computed from bounded pseudo-values in the
+    /// measurement scale before the optional log transform.
+    /// </summary>
+    [TestMethod]
+    public void GetNonparametricMomentsWithLowOutlierMidpoints_LogScaleMatchesExplicitPseudoSample()
+    {
+        double[] observed = [1d, 2d, 3d, 8d, 12d, 20d, 30d, 50d, 80d, 100d];
+        var frame = new BestFitDataFrame
+        {
+            ExactSeries = new ExactSeries(observed)
+        };
+        frame.LowOutlierThreshold = 10d;
+        frame.SetLowOutliersFromThreshold();
+        frame.CalculatePlottingPositions();
+
+        double[] pseudoValues = observed
+            .Select(value => value < frame.LowOutlierThreshold
+                ? value + 0.5d * (frame.LowOutlierThreshold - value)
+                : value)
+            .ToArray();
+        var explicitPseudoFrame = new BestFitDataFrame
+        {
+            ExactSeries = new ExactSeries(pseudoValues)
+        };
+        explicitPseudoFrame.CalculatePlottingPositions();
+
+        double[]? actual =
+            frame.GetNonparametricMomentsWithLowOutlierMidpoints(useLog10Values: true);
+        double[]? expected =
+            explicitPseudoFrame.GetNonparametricMoments(useLog10Values: true);
+
+        Assert.IsNotNull(actual);
+        Assert.IsNotNull(expected);
+        Assert.AreEqual(expected.Length, actual.Length);
+        for (int i = 0; i < expected.Length; i++)
+            Assert.AreEqual(expected[i], actual[i], 1E-12d, $"Moment {i} did not match.");
+
+        CollectionAssert.AreEqual(observed, frame.ExactSeries.Select(data => data.Value).ToArray(),
+            "Initialization must not mutate the recorded low-outlier observations.");
+    }
 }

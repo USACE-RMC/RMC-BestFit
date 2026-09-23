@@ -1,0 +1,139 @@
+<!-- verification-status: finalized -->
+# Bulletin 17C Verification
+
+## Status
+
+The approved Phase 3 scope is closed. TR-003 documents the accepted grouped-threshold disaggregation and most-recent-time prior-reference assumptions for the general nonstationary univariate workflow. TR-016 documents the intentional reuse of the Bayesian analysis result-storage architecture without changing code, public API, or serialization. TR-017 through TR-019 retain their previously recorded naming and bootstrap-refit dispositions. TR-020 restricts Cohn diagnostics to exact-data Log-Pearson Type III (LP3) and is covered by fast unit tests. TR-021 is verified by the seven formal Bulletin 17C worked-example parameter tests described below.
+
+## Phase 3 data-handling assumptions
+
+For nonstationary univariate models, grouped perception-threshold counts are expanded conditionally: explicit records keep their indexes, unoccupied earlier indexes are assigned below-threshold status, and unoccupied indexes in the terminal `NumberAbove` portion are assigned above-threshold status. The allocation is an explicit modeling assumption rather than an inferred event chronology. Distribution-dependent Jeffreys and quantile-prior terms are evaluated once at the last, most-recent observed index, consistent with the published quantile-prior workflow. The [data-frame chronology](../technical-reference/data-frame/index.md#stationary-and-nonstationary-chronology) and [prior reference-time](../technical-reference/models/parameters-and-priors.md#complete-univariate-prior) sections define the full contract. TR-003 is documentation-only and makes no permutation-invariance claim.
+
+## Formal worked-example parameter parity
+
+The executable source is [B17CExampleTests.cs](../../src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CExampleTests.cs), and the published fixtures are defined in [Bulletin17CData.cs](../../src/RMC.BestFit.Verification/Datasets/UnivariateData/Bulletin17CData.cs). Each test:
+
+1. constructs the published example data frame;
+2. fits `Bulletin17CDistribution` with the LP3 parent through `GeneralizedMethodOfMoments`;
+3. requires `gmm.IsEstimated`; and
+4. compares fitted log-space mean, standard deviation, and skewness with the published values at absolute tolerance `1E-3`.
+
+The seven methods were executed separately on 28 July 2026 through `scripts/run-verification-test.ps1`, which source-resolves one fully qualified method, builds only the Debug Verification project, requires exactly one TRX result, and rejects broad filters. Runtime was .NET 10, x64. Every build reported zero warnings and zero errors.
+
+| Example | Station and principal data condition | Published mean | Published standard deviation | Published skewness | Result | Test duration |
+|---:|---|---:|---:|---:|---|---:|
+| 1 | Moose River at Victory, VT; 68-year systematic record | 3.328623159 | 0.140287994 | 0.396626124 | Passed | 0.832 s |
+| 2 | Orestimba Creek near Newman, CA; low outliers and zero-flow years | 3.022663041 | 0.682087092 | -0.929108050 | Passed | 0.402 s |
+| 3 | Back Creek near Jones Springs, WV; broken record, thresholds, and low outliers | 3.759834285 | 0.243406211 | 0.144442997 | Passed | 0.425 s |
+| 4 | Arkansas River at Pueblo, CO; historical intervals and perception thresholds | 3.885777246 | 0.245920859 | 0.817849937 | Passed | 0.471 s |
+| 5 | Bear Creek at Ottumwa, IA; variable crest-stage thresholds and low outliers | 3.278686106 | 0.233135027 | -0.925407257 | Passed | 0.333 s |
+| 6 | Santa Cruz River at Lochiel, AZ; historical information and MGBT low outliers | 3.069106533 | 0.489820622 | -0.462278724 | Passed | 0.598 s |
+| 7 | American River at Fair Oaks, CA; paleoflood intervals and long perception thresholds | 4.653457000 | 0.376721000 | -0.101163000 | Passed | 0.728 s |
+
+Aggregate result: **7 passed, 0 failed, 0 skipped**. The formal comparisons cover 21 fitted parameter values. Example 1's fourth fixture value is weighted regional-skew metadata and is intentionally not treated as a model parameter.
+
+## Cohn diagnostic scope
+
+`ComputeCohnStyleConfidenceIntervals()` and the report-side asymptotic quantile variance use LP3 base-10 transformations and are supported only when all observations are exact and no exact observation is marked as a low outlier. The production guard rejects:
+
+- Exponential;
+- Gamma;
+- Log-Normal;
+- Normal;
+- Pearson Type III;
+- LP3 with low outliers;
+- LP3 with uncertain observations;
+- LP3 with interval censoring; and
+- LP3 with threshold censoring.
+
+Fast tests in `Bulletin17CAnalysisTests` cover these rejection cases, retain the unestimated exact-LP3 null contract, and confirm that the private report helper returns no values outside scope. Numerical verification of Cohn interval values is deferred and is not implied by the formal worked-example results.
+
+## Result-storage architecture
+
+Bulletin 17C uses penalized GMM and frequentist uncertainty ensembles, while deliberately storing results through the same `BayesianAnalysis` and `MCMCResults` architecture used by Bayesian analyses. In this context, `MAP` is the penalized GMM estimate, `Output` is the frequentist uncertainty ensemble, `PosteriorMean` is its arithmetic mean, and `CredibleIntervalWidth` supplies the confidence level. This compatibility mapping supports stable persistence, UI integration, and result reprocessing; it does not define a posterior distribution. TR-016 therefore requires documentation, not a parallel result hierarchy or code/API change.
+
+## Evidence boundary
+
+The seven passed worked-example methods verify current specialized LP3 GMM parameter parity with the published Bulletin 17C examples. Three additional PeakFQ cells verify Hirsch-Stedinger plotting-position parity, and twelve analytical penalty cells verify regional parameter/quantile weighting behavior. Chunk 7 separately verifies six generated-parent recovery cells and all thirteen independently derived complete-data covariance cells. The evidence still does not verify:
+
+- Cohn confidence-interval values or coverage;
+- bootstrap covariance;
+- uncertain-data variants;
+- bootstrap interval coverage; or
+- agreement with an objective/generalized-posterior target.
+
+Those are separate claims and require separately authorized, exactly filtered verification methods or independent artifacts. The legacy version 1 Comparison with EMA report evaluates an earlier Bayesian workflow and is not the oracle for the current specialized GMM path.
+
+## Chunk 7 six-family parameterization crosswalk
+
+The generated-parent recovery design uses exactly 1,000 complete scalar observations and the fixed
+generator seed `12345` for every supported family. The generator constructs the listed Numerics
+distribution directly; `Bulletin17CDistribution` exposes the same parameter names and order through
+the wrapped distribution. Complete raw-space families enter the GMM moments without transformation.
+Log-Normal and Log-Pearson Type III observations are transformed with `log10` before the GMM moment
+conditions are evaluated.
+
+| Family | Generator and Numerics order | B17C/GMM order | Coordinate space and convention | Predeclared recovery uncertainty |
+|---|---|---|---|---|
+| Exponential | `(Xi location, Alpha scale) = (0, 50)` | `(Xi, Alpha)` | Natural response space; positive scale | Numerics method-of-moments `ParameterCovariance(1000, MethodOfMoments)` at the fitted `(Xi, Alpha)` |
+| Gamma | `(Theta scale, Kappa shape) = (5, 2)` | `(Theta, Kappa)` | Natural response space; `Theta` is scale and the derived rate is `1/Theta` | Numerics method-of-moments parameter covariance at fitted `(Theta, Kappa)` |
+| Normal | `(Mu mean, Sigma standard deviation) = (100, 15)` | `(Mu, Sigma)` | Natural response space; positive standard deviation | Numerics method-of-moments parameter covariance at fitted `(Mu, Sigma)` |
+| Pearson Type III | `(Mu mean, Sigma standard deviation, Gamma skew) = (100, 20, 0.5)` | `(Mu, Sigma, Gamma)` | Natural response space; positive `Gamma` is positive/right skew | Parameter covariance for fitted `Mu` and `Sigma`; Numerics method-of-moments Q(0.99) variance for the weak skew direction |
+| Log-Normal | `(Mu, Sigma) = (3, 0.5)` | `(Mu, Sigma)` | Base-10 log space; both coordinates describe `log10(X)`, not natural-log or real-space moments | Numerics method-of-moments parameter covariance in fitted base-10 `(Mu, Sigma)` coordinates |
+| Log-Pearson Type III | `(Mu, Sigma, Gamma) = (3, 0.5, 0.2)` | `(Mu, Sigma, Gamma)` | Base-10 log space; skew sign is unchanged by the monotone transform and positive `Gamma` is positive/right log-space skew | Parameter covariance for fitted log-space `Mu` and `Sigma`; Numerics method-of-moments Q(0.99) variance in real response space for the weak skew direction |
+
+For each parameter-coordinate check, the generating coordinate must have absolute standardized error
+no greater than `1.96` using the fitted method-of-moments covariance at `N=1000`. For the two
+predeclared Q(0.99) response checks, the generating quantile must lie inside the fitted response's
+central Normal-approximation 95-percent band formed from Numerics `QuantileVariance`. These
+acceptance rules are fixed before observing the Chunk 7 GMM results; estimator success, finiteness,
+or agreement with sample product moments is not the scientific oracle.
+
+The covariance cells use a separate evidence boundary. Approval to use Numerics uncertainty for the
+recovery acceptance above does not make Numerics an independent covariance oracle. Their Chunk 7
+replacement derives the complete-data just-identified GMM sandwich independently from the first six
+central moments and the finite-sample centered-moment Jacobian. In particular, the three-coordinate
+Jacobian uses `D[2,0] = -3 * (N / (N - 2)) * Sigma^2`, preserving the B17C second- and third-moment
+Bessel factors. The derivation is checked against frozen values generated without RMC.BestFit or
+Numerics production code and cites Bulletin 17C version 1.1 and Cohn, Lane, and Stedinger (2001) for
+the method-of-moments/EMA uncertainty framework.
+
+## Chunk 7 current results
+
+All six generated-parent recovery identities and all thirteen covariance identities passed current
+exact guarded runs on 30 August 2026. The covariance artifact was generated with Python 3.12.13
+standard library only and independently cross-checked by the C# analytical evaluator.
+
+The two natural-space Pearson Type III cells initially failed because their fourth-to-sixth central
+moments are scale-separated. The shared Numerics positive-definite helper added a trace-scaled ridge
+before testing an already-positive-definite matrix, so the largest moment coordinate materially changed
+covariance[0,0]. Haden Smith approved correcting the shared contract: the symmetric candidate is now
+tested first and returned unchanged when Cholesky accepts it; the existing ridge magnitudes, escalation,
+and fallback remain unchanged for rejected candidates. No covariance formula, oracle, tolerance, seed,
+or B17C estimator behavior changed. Fresh isolated TRXs at `20260830-094558` and `20260830-094618`
+record the two Pearson cells passing; the other eleven covariance cells and all six recoveries passed in
+the `20260830-094658` through `20260830-094833` series. The exact method/TRX ledger is in the
+[Chunk 7 inventory](test-inventory.md#chunk-7-bulletin-17c-reconciliation).
+
+The twelve penalty identities, twelve example/plotting-position identities, and seven selected general
+GMM identities also passed fresh exact guarded runs after the shared change. Three discarded wrong-class
+attempts produced zero-result TRXs and are not evidence; the corrected
+`HirschStedingerPlottingPositionVerificationTests` identities each passed exactly once.
+
+No confidence-interval coverage method was executed. The 56 catalog entries in the three coverage
+classes remain execution-excluded historical evidence and reruns-on-request.
+
+## Phase 7 dispositions - 22 August 2026
+
+Three Bulletin 17C items from the 21 August 2026 reruns were diagnosed and disposed in the closeout:
+
+- **TR-085 (GMM covariance, independently closed).** The eigenvalue cap was removed and only the positive-definite floor remained. The historical 13/13 result compared with the same Numerics covariance ecosystem. Chunk 7 replaced that oracle with an independent analytical sandwich. After the approved shared Numerics correction stopped adding a ridge to already-positive-definite matrices, all 13 current exact methods passed without changing the independent oracle or tolerance.
+- **TR-086 (bootstrap re-centring, fixed).** `DataFrame.BootstrapDataFrame` re-centres additive measurement-error distributions by the simulated/original ratio for log-space fits and strictly positive error supports, so MOVE.3-style relative errors keep their relative spread and never cross zero. `UncertainDataBootstrapVerificationTests` 2/2 and the reliability grid 14/14 after the fix.
+- **TR-087 (censored coverage frames and initial parameters, fixed).** The coverage fixture now computes plotting positions; `Bulletin17CDistribution` keeps the constraint-based initial values and records a validation warning when the censored-data (ROS) initial estimate is unavailable instead of reporting zero parameters. The censored coverage cells and the `B17CCoverageTests` cells (TR-088) were not rerun, by decision; they remain exact-method reruns on request.
+
+Details: [Phase 7 closeout](test-inventory.md#phase-7-closeout---22-august-2026) and the register sections [TR-085](../technical-reference/review-findings.md#tr-085), [TR-086](../technical-reference/review-findings.md#tr-086), [TR-087](../technical-reference/review-findings.md#tr-087), and [TR-088](../technical-reference/review-findings.md#tr-088).
+
+## Traceability
+
+- Findings: [TR-003](../technical-reference/review-findings.md#tr-003) and [TR-016 through TR-021](../technical-reference/review-findings.md#tr-016)
+- Technical method: [Bulletin 17C analysis](../technical-reference/analysis/bulletin-17c.md)

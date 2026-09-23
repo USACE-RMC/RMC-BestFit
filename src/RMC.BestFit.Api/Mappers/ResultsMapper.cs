@@ -4,6 +4,7 @@ using RMC.BestFit.Api.DTOs;
 using RMC.BestFit.Api.Helpers;
 using RMC.BestFit.Api.Store;
 using RMC.BestFit.Estimation;
+using RMC.BestFit.Models;
 
 namespace RMC.BestFit.Api.Mappers
 {
@@ -62,7 +63,7 @@ namespace RMC.BestFit.Api.Mappers
         {
             var analysis = resource.Univariate!;
             var distribution = analysis.UnivariateDistribution;
-            return ToMcmcFrequencyResults(
+            var response = ToMcmcFrequencyResults(
                 resource,
                 analysis.AnalysisResults,
                 analysis.BayesianAnalysis,
@@ -70,6 +71,17 @@ namespace RMC.BestFit.Api.Mappers
                 distribution.Parameters,
                 EnumHelper.ToCamelCase(distribution.DistributionType.ToString()),
                 MetadataMapper.ToDisplayName(distribution.DistributionType));
+            if (distribution.EnableQuantilePriors)
+            {
+                response.QuantileAnnotations = distribution.QuantilePriors.Select(prior => new QuantileAnnotationDto
+                {
+                    Aep = prior.Alpha,
+                    Value = prior.MeanValue,
+                    LowerBound = prior.LowerValue,
+                    UpperBound = prior.UpperValue
+                }).ToList();
+            }
+            return response;
         }
 
         /// <summary>
@@ -225,7 +237,7 @@ namespace RMC.BestFit.Api.Mappers
             }
             // DisplayName, not Name: stationary models blank the short name and keep the
             // user-facing identifier (the same one priors are matched against) in DisplayName.
-            var parameterNames = parameters.Select(p => p.DisplayName).ToList();
+            var parameterNames = GetSampledParameterNames(bayesian, parameters);
 
             return new FrequencyResultsResponse
             {
@@ -275,6 +287,14 @@ namespace RMC.BestFit.Api.Mappers
                         .ToList()
                 },
                 FrequencyCurve = BuildFrequencyCurve(results, analysis.ProbabilityOrdinates.ToList(), analysis.BayesianAnalysis.CredibleIntervalWidth),
+                QuantileAnnotations = distribution.QuantilePenalties.Where(penalty => penalty.Enabled)
+                    .Select(penalty => new QuantileAnnotationDto
+                    {
+                        Aep = penalty.AEP,
+                        Value = penalty.MeanValue,
+                        LowerBound = penalty.LowerValue,
+                        UpperBound = penalty.UpperValue
+                    }).ToList(),
                 ParameterSummaries = BuildParameterSummaries(parameterNames, analysis.BayesianAnalysis.Results, includeChainDiagnostics: false),
                 InformationCriteria = BuildInformationCriteria(results, bayesianAnalysis: null),
                 Diagnostics = new DiagnosticsDto
@@ -441,6 +461,27 @@ namespace RMC.BestFit.Api.Mappers
                 });
             }
             return summaries;
+        }
+
+        /// <summary>
+        /// Gets names aligned with the coordinates stored in an MCMC result.
+        /// </summary>
+        /// <param name="bayesian">The Bayesian analysis that owns the results.</param>
+        /// <param name="parameters">The public model parameters.</param>
+        /// <returns>Sampled-coordinate names, omitting the derived final mixture weight for new K-1 results.</returns>
+        private static List<string> GetSampledParameterNames(
+            BayesianAnalysis bayesian,
+            IReadOnlyList<RMC.BestFit.Models.ModelParameter> parameters)
+        {
+            var names = parameters.Select(parameter => parameter.DisplayName).ToList();
+            if (bayesian.Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                bayesian.Results?.ParameterResults?.Length == names.Count - 1)
+            {
+                names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
+            }
+            return names;
         }
 
         /// <summary>

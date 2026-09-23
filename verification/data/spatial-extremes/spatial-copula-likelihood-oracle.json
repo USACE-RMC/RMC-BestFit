@@ -1,0 +1,627 @@
+{
+  "metadata": {
+    "generated": "2026-08-21",
+    "generator": "verification/r/spatial-extremes/generate_spatial_copula_oracle.R",
+    "generator_sha256": "fa0063b84a158b2bd476cd21ad5ebf6973424c22147d0ea6a342545d3f43b2e8",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "mvtnorm": "1.4.2",
+    "jsonlite": "2.0.0",
+    "digest": "0.6.39",
+    "seed": 20260821,
+    "rows": 12,
+    "sites": 5,
+    "distance_metric": "Euclidean on projected coordinates (Numerics Tools.Distance)",
+    "correlation_function": "exponential rho(h) = exp(-h / range) with rho(0) = 1",
+    "gev_convention": "Hosking: y = -log(1 - kappa (x - xi) / alpha) / kappa, log f = -(1 - kappa) y - exp(-y) - log(alpha)",
+    "links": "log link for location and scale, identity for shape",
+    "copula_density": "log phi_R(z) - sum log phi(z_j) with z_j = PhiInverse(F_GEV(y_j)) over the observed sites",
+    "tolerances": {
+      "total_log_likelihood": 1e-08,
+      "row_log_likelihood": 1e-10
+    }
+  },
+  "network": {
+    "coordinates": [
+      [
+        0,
+        0
+      ],
+      [
+        12,
+        3
+      ],
+      [
+        25,
+        0
+      ],
+      [
+        8,
+        18
+      ],
+      [
+        30,
+        22
+      ]
+    ],
+    "distance_matrix": [
+      {
+        "1": 0,
+        "2": 12.369316876853,
+        "3": 25,
+        "4": 19.6977156035922,
+        "5": 37.2021504754766
+      },
+      {
+        "1": 12.369316876853,
+        "2": 0,
+        "3": 13.3416640641263,
+        "4": 15.52417469626,
+        "5": 26.1725046566048
+      },
+      {
+        "1": 25,
+        "2": 13.3416640641263,
+        "3": 0,
+        "4": 24.7588368062799,
+        "5": 22.561028345357
+      },
+      {
+        "1": 19.6977156035922,
+        "2": 15.52417469626,
+        "3": 24.7588368062799,
+        "4": 0,
+        "5": 22.3606797749979
+      },
+      {
+        "1": 37.2021504754766,
+        "2": 26.1725046566048,
+        "3": 22.561028345357,
+        "4": 22.3606797749979,
+        "5": 0
+      }
+    ]
+  },
+  "missing_site_model": {
+    "bestfit_parameter_names": ["copula range", "location intercept", "scale intercept", "shape"],
+    "bestfit_parameters": [15, 4.60517018598809, 3.40119738166216, -0.1],
+    "site_location": [100, 100, 100, 100, 100],
+    "site_scale": [30, 30, 30, 30, 30],
+    "site_shape": [-0.1, -0.1, -0.1, -0.1, -0.1],
+    "correlation_matrix": [
+      {
+        "1": 1,
+        "2": 0.438401060151034,
+        "3": 0.188875602837562,
+        "4": 0.268963111638388,
+        "5": 0.0837312206025668
+      },
+      {
+        "1": 0.438401060151034,
+        "2": 1,
+        "3": 0.410884029511224,
+        "4": 0.355245926106685,
+        "5": 0.174674044664857
+      },
+      {
+        "1": 0.188875602837562,
+        "2": 0.410884029511224,
+        "3": 1,
+        "4": 0.191936801418336,
+        "5": 0.222224186768493
+      },
+      {
+        "1": 0.268963111638388,
+        "2": 0.355245926106685,
+        "3": 0.191936801418336,
+        "4": 1,
+        "5": 0.225212250699012
+      },
+      {
+        "1": 0.0837312206025668,
+        "2": 0.174674044664857,
+        "3": 0.222224186768493,
+        "4": 0.225212250699012,
+        "5": 1
+      }
+    ],
+    "data": [
+      [
+        94.9535190790573,
+        86.5364504783398,
+        74.5262190989277,
+        69.4522903567964,
+        223.932618347535
+      ],
+      [
+        83.1567390502383,
+        96.6477002707553,
+        77.4539719043154,
+        106.4214724505,
+        137.619224340872
+      ],
+      [
+        127.267253051428,
+        118.503478891314,
+        159.288736934386,
+        76.5186468571839,
+        99.1682954441886
+      ],
+      [
+        89.8388640695411,
+        144.146913593167,
+        107.866184722026,
+        98.4235954433339,
+        141.824983328971
+      ],
+      [
+        87.2766988748483,
+        null,
+        110.127405565459,
+        279.492561851712,
+        174.735132047491
+      ],
+      [
+        null,
+        86.1014638050587,
+        62.4363325780746,
+        131.0091543907,
+        null
+      ],
+      [
+        108.22845212507,
+        75.3770149601257,
+        null,
+        210.097974871389,
+        83.8667838980712
+      ],
+      [
+        127.760591747703,
+        null,
+        null,
+        null,
+        145.315842781558
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        94.7463051672612,
+        117.173042160121,
+        107.228746974903,
+        127.010936463827,
+        129.128556488096
+      ],
+      [
+        122.278142501348,
+        164.006138812161,
+        150.766608741143,
+        156.460212683535,
+        113.762252512016
+      ],
+      [
+        98.7829039930029,
+        133.033239857599,
+        119.618248341607,
+        145.224329297263,
+        99.2918069269377
+      ]
+    ],
+    "missing_sites_by_row": [
+      [],
+      [],
+      [],
+      [],
+      2,
+      [1, 5],
+      3,
+      [2, 3, 4],
+      [1, 2, 3, 4, 5],
+      [],
+      [],
+      []
+    ],
+    "rows": [
+      {
+        "row": 1,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -26.1152525986603,
+        "copula_log_density_observed_subset": -0.328002724776605,
+        "copula_log_density_zero_placeholder": -0.328002724776605,
+        "row_log_likelihood": -26.4432553234369,
+        "row_log_likelihood_zero_placeholder": -26.4432553234369
+      },
+      {
+        "row": 2,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.1211677849646,
+        "copula_log_density_observed_subset": 0.309302517275733,
+        "copula_log_density_zero_placeholder": 0.309302517275733,
+        "row_log_likelihood": -22.8118652676888,
+        "row_log_likelihood_zero_placeholder": -22.8118652676888
+      },
+      {
+        "row": 3,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -24.0987439249887,
+        "copula_log_density_observed_subset": -0.047602220245107,
+        "copula_log_density_zero_placeholder": -0.047602220245107,
+        "row_log_likelihood": -24.1463461452338,
+        "row_log_likelihood_zero_placeholder": -24.1463461452338
+      },
+      {
+        "row": 4,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.5614913528992,
+        "copula_log_density_observed_subset": -0.300099722842838,
+        "copula_log_density_zero_placeholder": -0.300099722842838,
+        "row_log_likelihood": -23.8615910757421,
+        "row_log_likelihood_zero_placeholder": -23.8615910757421
+      },
+      {
+        "row": 5,
+        "observed_sites": [1, 3, 4, 5],
+        "marginal_log_density": -23.4757567720112,
+        "copula_log_density_observed_subset": -0.277929373381919,
+        "copula_log_density_zero_placeholder": -0.116347840354932,
+        "row_log_likelihood": -23.7536861453931,
+        "row_log_likelihood_zero_placeholder": -23.5921046123661
+      },
+      {
+        "row": 6,
+        "observed_sites": [2, 3, 4],
+        "marginal_log_density": -15.0836368182549,
+        "copula_log_density_observed_subset": 0.188935617903596,
+        "copula_log_density_zero_placeholder": 0.254813761661478,
+        "row_log_likelihood": -14.8947012003513,
+        "row_log_likelihood_zero_placeholder": -14.8288230565934
+      },
+      {
+        "row": 7,
+        "observed_sites": [1, 2, 4, 5],
+        "marginal_log_density": -20.6906658368912,
+        "copula_log_density_observed_subset": -1.27942291001259,
+        "copula_log_density_zero_placeholder": -1.38822677697423,
+        "row_log_likelihood": -21.9700887469038,
+        "row_log_likelihood_zero_placeholder": -22.0788926138654
+      },
+      {
+        "row": 8,
+        "observed_sites": [1, 5],
+        "marginal_log_density": -9.98099578764455,
+        "copula_log_density_observed_subset": 0.0282617343294649,
+        "copula_log_density_zero_placeholder": 0.264119733540092,
+        "row_log_likelihood": -9.95273405331508,
+        "row_log_likelihood_zero_placeholder": -9.71687605410446
+      },
+      {
+        "row": 9,
+        "observed_sites": [],
+        "marginal_log_density": 0,
+        "copula_log_density_observed_subset": 0,
+        "copula_log_density_zero_placeholder": 0,
+        "row_log_likelihood": 0,
+        "row_log_likelihood_zero_placeholder": 0
+      },
+      {
+        "row": 10,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.026154213084,
+        "copula_log_density_observed_subset": 0.222669978201291,
+        "copula_log_density_zero_placeholder": 0.222669978201291,
+        "row_log_likelihood": -22.8034842348827,
+        "row_log_likelihood_zero_placeholder": -22.8034842348827
+      },
+      {
+        "row": 11,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -25.6905664915357,
+        "copula_log_density_observed_subset": 0.844645702883395,
+        "copula_log_density_zero_placeholder": 0.844645702883395,
+        "row_log_likelihood": -24.8459207886523,
+        "row_log_likelihood_zero_placeholder": -24.8459207886523
+      },
+      {
+        "row": 12,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.5192349371344,
+        "copula_log_density_observed_subset": 0.110178549004148,
+        "copula_log_density_zero_placeholder": 0.110178549004148,
+        "row_log_likelihood": -23.4090563881302,
+        "row_log_likelihood_zero_placeholder": -23.4090563881302
+      }
+    ],
+    "total_log_likelihood": -238.89272936973,
+    "total_log_likelihood_zero_placeholder": -238.538215560696,
+    "marginal_only_total": -238.363666518069
+  },
+  "complete_data_model": {
+    "bestfit_parameters": [15, 4.60517018598809, 3.40119738166216, -0.1],
+    "source_rows": [1, 2, 3, 4, 10, 11, 12],
+    "data": [
+      [
+        94.9535190790573,
+        86.5364504783398,
+        74.5262190989277,
+        69.4522903567964,
+        223.932618347535
+      ],
+      [
+        83.1567390502383,
+        96.6477002707553,
+        77.4539719043154,
+        106.4214724505,
+        137.619224340872
+      ],
+      [
+        127.267253051428,
+        118.503478891314,
+        159.288736934386,
+        76.5186468571839,
+        99.1682954441886
+      ],
+      [
+        89.8388640695411,
+        144.146913593167,
+        107.866184722026,
+        98.4235954433339,
+        141.824983328971
+      ],
+      [
+        94.7463051672612,
+        117.173042160121,
+        107.228746974903,
+        127.010936463827,
+        129.128556488096
+      ],
+      [
+        122.278142501348,
+        164.006138812161,
+        150.766608741143,
+        156.460212683535,
+        113.762252512016
+      ],
+      [
+        98.7829039930029,
+        133.033239857599,
+        119.618248341607,
+        145.224329297263,
+        99.2918069269377
+      ]
+    ],
+    "rows": [
+      {
+        "row": 1,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -26.1152525986603,
+        "copula_log_density_observed_subset": -0.328002724776605,
+        "copula_log_density_zero_placeholder": -0.328002724776605,
+        "row_log_likelihood": -26.4432553234369,
+        "row_log_likelihood_zero_placeholder": -26.4432553234369
+      },
+      {
+        "row": 2,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.1211677849646,
+        "copula_log_density_observed_subset": 0.309302517275733,
+        "copula_log_density_zero_placeholder": 0.309302517275733,
+        "row_log_likelihood": -22.8118652676888,
+        "row_log_likelihood_zero_placeholder": -22.8118652676888
+      },
+      {
+        "row": 3,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -24.0987439249887,
+        "copula_log_density_observed_subset": -0.047602220245107,
+        "copula_log_density_zero_placeholder": -0.047602220245107,
+        "row_log_likelihood": -24.1463461452338,
+        "row_log_likelihood_zero_placeholder": -24.1463461452338
+      },
+      {
+        "row": 4,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.5614913528992,
+        "copula_log_density_observed_subset": -0.300099722842838,
+        "copula_log_density_zero_placeholder": -0.300099722842838,
+        "row_log_likelihood": -23.8615910757421,
+        "row_log_likelihood_zero_placeholder": -23.8615910757421
+      },
+      {
+        "row": 5,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.026154213084,
+        "copula_log_density_observed_subset": 0.222669978201291,
+        "copula_log_density_zero_placeholder": 0.222669978201291,
+        "row_log_likelihood": -22.8034842348827,
+        "row_log_likelihood_zero_placeholder": -22.8034842348827
+      },
+      {
+        "row": 6,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -25.6905664915357,
+        "copula_log_density_observed_subset": 0.844645702883395,
+        "copula_log_density_zero_placeholder": 0.844645702883395,
+        "row_log_likelihood": -24.8459207886523,
+        "row_log_likelihood_zero_placeholder": -24.8459207886523
+      },
+      {
+        "row": 7,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.5192349371344,
+        "copula_log_density_observed_subset": 0.110178549004148,
+        "copula_log_density_zero_placeholder": 0.110178549004148,
+        "row_log_likelihood": -23.4090563881302,
+        "row_log_likelihood_zero_placeholder": -23.4090563881302
+      }
+    ],
+    "total_log_likelihood": -168.321519223767,
+    "marginal_only_total": -169.132611303267
+  },
+  "location_error_model": {
+    "bestfit_parameter_names": ["copula range", "location intercept", "scale intercept", "shape", "error scale", "error range", "epsilon_1", "epsilon_2", "epsilon_3", "epsilon_4", "epsilon_5"],
+    "bestfit_parameters": [15, 4.60517018598809, 3.40119738166216, -0.1, 0.06, 20, 0.05, -0.03, 0.02, -0.04, 0.01],
+    "data": [
+      [
+        94.9535190790573,
+        86.5364504783398,
+        74.5262190989277,
+        69.4522903567964,
+        223.932618347535
+      ],
+      [
+        83.1567390502383,
+        96.6477002707553,
+        77.4539719043154,
+        106.4214724505,
+        137.619224340872
+      ],
+      [
+        127.267253051428,
+        118.503478891314,
+        159.288736934386,
+        76.5186468571839,
+        99.1682954441886
+      ],
+      [
+        89.8388640695411,
+        144.146913593167,
+        107.866184722026,
+        98.4235954433339,
+        141.824983328971
+      ],
+      [
+        94.7463051672612,
+        117.173042160121,
+        107.228746974903,
+        127.010936463827,
+        129.128556488096
+      ],
+      [
+        122.278142501348,
+        164.006138812161,
+        150.766608741143,
+        156.460212683535,
+        113.762252512016
+      ],
+      [
+        98.7829039930029,
+        133.033239857599,
+        119.618248341607,
+        145.224329297263,
+        99.2918069269377
+      ]
+    ],
+    "errors": [0.05, -0.03, 0.02, -0.04, 0.01],
+    "error_scale": 0.06,
+    "error_range": 20,
+    "error_covariance": [
+      {
+        "1": 0.0036,
+        "2": 0.00193957330230808,
+        "3": 0.00103141726869668,
+        "4": 0.00134453478072296,
+        "5": 0.000560361213932976
+      },
+      {
+        "1": 0.00193957330230808,
+        "2": 0.0036,
+        "3": 0.00184753190367315,
+        "4": 0.00165653009538524,
+        "5": 0.000972688504445032
+      },
+      {
+        "1": 0.00103141726869668,
+        "2": 0.00184753190367315,
+        "3": 0.0036,
+        "4": 0.00104392954875508,
+        "5": 0.00116518797763454
+      },
+      {
+        "1": 0.00134453478072296,
+        "2": 0.00165653009538524,
+        "3": 0.00104392954875508,
+        "4": 0.0036,
+        "5": 0.00117691882326633
+      },
+      {
+        "1": 0.000560361213932976,
+        "2": 0.000972688504445032,
+        "3": 0.00116518797763454,
+        "4": 0.00117691882326633,
+        "5": 0.0036
+      }
+    ],
+    "site_location_with_errors": [105.127109637602, 97.0445533548508, 102.020134002676, 96.0789439152324, 101.005016708417],
+    "rows": [
+      {
+        "row": 1,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -25.9527643374624,
+        "copula_log_density_observed_subset": -0.295733743222208,
+        "copula_log_density_zero_placeholder": -0.295733743222208,
+        "row_log_likelihood": -26.2484980806846,
+        "row_log_likelihood_zero_placeholder": -26.2484980806846
+      },
+      {
+        "row": 2,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.3858696298102,
+        "copula_log_density_observed_subset": 0.172607167611486,
+        "copula_log_density_zero_placeholder": 0.172607167611486,
+        "row_log_likelihood": -23.2132624621987,
+        "row_log_likelihood_zero_placeholder": -23.2132624621987
+      },
+      {
+        "row": 3,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.8536775823836,
+        "copula_log_density_observed_subset": 0.0468181538402099,
+        "copula_log_density_zero_placeholder": 0.0468181538402099,
+        "row_log_likelihood": -23.8068594285434,
+        "row_log_likelihood_zero_placeholder": -23.8068594285434
+      },
+      {
+        "row": 4,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.6846627857731,
+        "copula_log_density_observed_subset": -0.447339548907419,
+        "copula_log_density_zero_placeholder": -0.447339548907419,
+        "row_log_likelihood": -24.1320023346805,
+        "row_log_likelihood_zero_placeholder": -24.1320023346805
+      },
+      {
+        "row": 5,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.15676627979,
+        "copula_log_density_observed_subset": 0.120807105648807,
+        "copula_log_density_zero_placeholder": 0.120807105648807,
+        "row_log_likelihood": -23.0359591741412,
+        "row_log_likelihood_zero_placeholder": -23.0359591741412
+      },
+      {
+        "row": 6,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -25.7131699668723,
+        "copula_log_density_observed_subset": 0.758619131060793,
+        "copula_log_density_zero_placeholder": 0.758619131060793,
+        "row_log_likelihood": -24.9545508358115,
+        "row_log_likelihood_zero_placeholder": -24.9545508358115
+      },
+      {
+        "row": 7,
+        "observed_sites": [1, 2, 3, 4, 5],
+        "marginal_log_density": -23.6541150756629,
+        "copula_log_density_observed_subset": -0.0264177064329232,
+        "copula_log_density_zero_placeholder": -0.0264177064329232,
+        "row_log_likelihood": -23.6805327820959,
+        "row_log_likelihood_zero_placeholder": -23.6805327820959
+      }
+    ],
+    "data_log_likelihood_without_process_density": -169.071665098156,
+    "process_log_density": 8.46428373793472,
+    "data_plus_process": -160.607381360221
+  }
+}

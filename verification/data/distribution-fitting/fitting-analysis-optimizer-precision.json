@@ -1,0 +1,55 @@
+{
+  "finding": "TR-064",
+  "classification": "External-package optimizer likelihood-region audit",
+  "oracle": {
+    "package": "SciPy",
+    "artifact": "verification/data/distribution-fitting/scipy-family-oracles.json",
+    "candidate": "Gumbel",
+    "expected_parameters": [
+      93.11234799935337,
+      13.157628567998076
+    ],
+    "expected_rmse": 3.10635330619202
+  },
+  "bestfit": {
+    "optimizer": "DifferentialEvolution",
+    "actual_parameters": [
+      93.1129321294911,
+      13.157823249599968
+    ],
+    "actual_rmse": 3.106522984310708
+  },
+  "accepted_tolerances": {
+    "optimizer_method": "joint-likelihood-ratio",
+    "optimizer_confidence_level": 0.95,
+    "optimizer_degrees_of_freedom": 2,
+    "optimizer_maximum_two_log_likelihood_difference": 5.991464547107979,
+    "cross_language_log_likelihood_absolute": 1e-8,
+    "cross_language_log_likelihood_relative": 1e-7,
+    "rmse_formula_absolute": 1e-10,
+    "inverse_rmse_weight_formula_absolute": 1e-12,
+    "aic_and_rmse_ranking": "Exact candidate ordering"
+  },
+  "rationale": {
+    "differential_evolution": "Converges from dispersion of objective values rather than direct parameter-coordinate convergence.",
+    "scipy_local_optimizer": "Converges using parameter or gradient behavior under a different configuration.",
+    "rmse_comparison": "RMSE magnitudes evaluated at different optimizer-returned parameter vectors are not required to be numerically identical; the formula is checked at the BestFit vector and cross-optimizer ranking is checked independently.",
+    "conclusion": "The returned points occupy the same joint 95% likelihood-ratio region; coordinate deltas are retained as diagnostics rather than acceptance thresholds."
+  },
+  "verification": [
+    {
+      "test": "RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.FittedParameters_MatchIndependentOracle",
+      "outcome": "Passed",
+      "trx": "TestResults/VerificationFocused/20260901-111937-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisCriteriaVerificationTests_FittedParameters_MatchIndependentOracle/haden_HADEN_2026-09-01_17_19_40.251.trx"
+    },
+    {
+      "test": "RMC.BestFit.Verification.DistributionFitting.FittingAnalysisCriteriaVerificationTests.CriteriaRankingWeightsAndConfiguredOrder_MatchIndependentOracle",
+      "outcome": "Passed",
+      "trx": "TestResults/VerificationFocused/20260901-111945-RMC_BestFit_Verification_DistributionFitting_FittingAnalysisCriteriaVerificationTests_CriteriaRankingWeightsAndConfiguredOrder_MatchIndependentOracle/haden_HADEN_2026-09-01_17_19_48.230.trx"
+    }
+  ],
+  "production_change": false,
+  "public_api_change": false,
+  "disposition": "Rejected non-defect",
+  "status": "Passed"
+}

@@ -16,6 +16,7 @@
   <ItemGroup>
     <!-- Link shared MSTest parallelization settings for public unit tests. -->
     <Compile Include="..\TestCommon\MSTestSettings.cs" Link="MSTestSettings.cs" />
+    <Compile Include="..\TestCommon\PublicApiContractSnapshot.cs" Link="CoreInfrastructure\PublicApiContractSnapshot.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,7 +30,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="RMC.Numerics" />
+    <PackageReference Include="RMC.Numerics" Condition="'$(UseLocalRmcNumerics)' != 'true'" />
+    <ProjectReference Include="$(RmcNumericsProjectPath)" Condition="'$(UseLocalRmcNumerics)' == 'true'" />
     <PackageReference Include="RMC.Wpf.Framework.Core" />
     <PackageReference Include="RMC.Wpf.Framework.Models" />
     <PackageReference Include="RMC.Wpf.Framework.Controls" />
@@ -39,6 +41,11 @@
     <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
     <ProjectReference Include="..\RMC.BestFit.UI\RMC.BestFit.UI.csproj" />
     <ProjectReference Include="..\RMC.BestFit.App\RMC.BestFit.App.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="CoreInfrastructure\PublicApiBaseline.txt"
+                      LogicalName="RMC.BestFit.App.Tests.CoreInfrastructure.PublicApiBaseline.txt" />
   </ItemGroup>
 
 </Project>

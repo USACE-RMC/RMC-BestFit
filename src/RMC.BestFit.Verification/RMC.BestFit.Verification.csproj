@@ -1,0 +1,78 @@
+<Project Sdk="MSTest.Sdk/3.6.4">
+
+  <ItemGroup>
+    <Compile Include="..\TestCommon\CovarianceCoordinateTransforms.cs" Link="TestCommon\CovarianceCoordinateTransforms.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>RMC.BestFit.Verification</AssemblyTitle>
+    <Description>Long-running computational verification and validation tests for RMC-BestFit. Validates the math against R packages, published results, and Bulletin 17C reference data. Not built in Release configuration.</Description>
+    <Company>U.S. Army Corps of Engineers</Company>
+    <Product>RMC-BestFit</Product>
+    <!--
+      Displays error on console in addition to the log file. Note that this feature comes with a performance impact.
+      For more information, visit https://learn.microsoft.com/dotnet/core/testing/unit-testing-platform-integration-dotnet-test#show-failure-per-test
+      -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Datasets\Bivariate\**" />
+    <EmbeddedResource Remove="Datasets\Bivariate\**" />
+    <None Remove="Datasets\Bivariate\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="RMC.Numerics" Condition="'$(UseLocalRmcNumerics)' != 'true'" />
+    <ProjectReference Include="$(RmcNumericsProjectPath)" Condition="'$(UseLocalRmcNumerics)' == 'true'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RMC.BestFit\RMC.BestFit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\verification\data\distribution-fitting\scipy-family-oracles.json" Link="VerificationData\scipy-family-oracles.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\distribution-fitting\lmomco-family-oracles.json" Link="VerificationData\lmomco-family-oracles.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\gmm-influence-oracle.json" Link="VerificationData\gmm-influence-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\gmm-specification-oracle.json" Link="VerificationData\gmm-specification-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\mcmc-diagnostics-oracle.json" Link="VerificationData\mcmc-diagnostics-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\profile-likelihood-oracle.json" Link="VerificationData\profile-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\model-comparison-oracle.json" Link="VerificationData\model-comparison-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\model-estimation\psis-loo-oracle.json" Link="VerificationData\psis-loo-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-jeffreys-prior-oracle.json" Link="VerificationData\phase5-jeffreys-prior-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-invalid-scale-oracle.json" Link="VerificationData\phase5-invalid-scale-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-transform-lambda-oracle.json" Link="VerificationData\phase5-transform-lambda-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-arimax-alignment-oracle.json" Link="VerificationData\phase5-arimax-alignment-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-recovery-fixtures.json" Link="VerificationData\phase5-recovery-fixtures.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-arima-mle-recovery-oracle.json" Link="VerificationData\phase5-arima-mle-recovery-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\phase5-arimax-mle-recovery-oracle.json" Link="VerificationData\phase5-arimax-mle-recovery-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\time-series\chunk13-independent-oracle.json" Link="VerificationData\chunk13-independent-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\rating-curve\rating-curve-example-fixtures.json" Link="VerificationData\rating-curve-example-fixtures.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\rating-curve\rating-curve-likelihood-oracle.json" Link="VerificationData\rating-curve-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\bivariate\copula-estimation-oracle.json" Link="VerificationData\copula-estimation-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\bulletin17c\b17c-gmm-covariance-oracle.json" Link="VerificationData\b17c-gmm-covariance-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\point-process\stationary-poisson-gpa-scipy-oracle.json" Link="VerificationData\stationary-poisson-gpa-scipy-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\mixture\normal-mixture-sklearn-oracle.json" Link="VerificationData\normal-mixture-sklearn-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\spatial-extremes\spatial-copula-likelihood-oracle.json" Link="VerificationData\spatial-copula-likelihood-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\spatial-extremes\spatial-conditional-gp-oracle.json" Link="VerificationData\spatial-conditional-gp-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\spatial-extremes\chunk14-independent-oracle.json" Link="VerificationData\chunk14-independent-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\verification\data\spatial-extremes\geodesic-distance-oracle.json" Link="VerificationData\geodesic-distance-oracle.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Univariate\CompetingRiskTests\" />
+    <Folder Include="Univariate\MixtureTests\" />
+    <Folder Include="Univariate\CompositeTests\" />
+    <Folder Include="Univariate\PointProcessTests\" />
+  </ItemGroup>
+
+</Project>

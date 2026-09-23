@@ -1367,7 +1367,7 @@ namespace RMC.BestFit.UI
                 }
                 else
                 {
-                    // Row not found by Name in the parent collection table � usually a deleted row
+                    // Row not found by Name in the parent collection table — usually a deleted row
                     // or a mismatch between disk state and the live ElementList. Surface the
                     // condition rather than silently leaving the element with constructor defaults.
                     System.Diagnostics.Debug.WriteLine($"TimeSeriesElement.Open: no row matched NameOnDisk='{NameOnDisk}' in '{ParentCollection.Name}'; element loaded with constructor defaults.");
@@ -1565,7 +1565,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Delete()
         {
-            // Early-return on missing Name BEFORE bridge teardown � otherwise an element
+            // Early-return on missing Name BEFORE bridge teardown — otherwise an element
             // constructed with a null/empty name (rare but possible during partial init)
             // would have its bridges torn down without writing to disk, leaving a
             // half-deleted state. Mirrors InputData.Delete's order.
@@ -2042,7 +2042,7 @@ namespace RMC.BestFit.UI
         /// <summary>
         /// Downloads time series data from the specified external source based on the entry method.
         /// </summary>
-        /// <param name="cancellationToken">Token used to cancel HTTP-based downloads.</param>
+        /// <param name="cancellationToken">Token used to cancel downloads, including between DSS block reads.</param>
         /// <returns>A task representing the asynchronous download operation.</returns>
         /// <remarks>
         /// This method supports downloading data from HEC-DSS files, GHCN, USGS, CHMN, and ABOM sources.
@@ -2108,15 +2108,14 @@ namespace RMC.BestFit.UI
                                 $"Use the path selector to choose a valid path. Details: {ex.Message}");
                         }
 
-                        // If the D-part contains a date range (condensed path from catalog) or spaces
-                        // (from a legacy spacing bug), use PathWithoutDate so GetTimeSeries auto-discovers
-                        // the full date range from the native library.
+                        // Normalize catalog ranges and legacy spacing before resolving the
+                        // complete logical series from its concrete storage blocks.
                         if (pathName.IsDPartARange() || pathName.Dpart.Contains(" "))
                         {
                             pathName = new Hec.Dss.DssPath(pathName.PathWithoutDate);
                         }
 
-                        var timeSeries = dssReader.GetTimeSeries(pathName);
+                        var timeSeries = DssTimeSeriesReader.Read(dssReader, pathName, cancellationToken);
 
                         // Check if the time series data was found
                         if (timeSeries == null || timeSeries.Values == null || timeSeries.Values.Length == 0)

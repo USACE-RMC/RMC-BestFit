@@ -2,12 +2,17 @@ using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
+using Numerics.Mathematics.LinearAlgebra;
+using Numerics.Mathematics.Optimization;
 using Numerics.Sampling;
+using Numerics.Sampling.MCMC;
 using Numerics.Utilities;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models.SpatialExtremes;
+using RMC.BestFit.Models.TrendFunctions;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Globalization;
 using System.Diagnostics;
 using System.Xml.Linq;
 
@@ -135,6 +140,20 @@ namespace RMC.BestFit.Analyses
             {
                 BayesianAnalysis = new BayesianAnalysis(spatialGEV);
             }
+
+            // Uncertainty settings (optional attributes; legacy projects keep the defaults)
+            var methodAttr = xElement.Attribute(nameof(UncertaintyMethod));
+            if (methodAttr != null && Enum.TryParse(methodAttr.Value, out SpatialGEVUncertaintyMethod method))
+                UncertaintyMethod = method;
+            var residualAttr = xElement.Attribute(nameof(SampleConditionalResidual));
+            if (residualAttr != null && bool.TryParse(residualAttr.Value, out bool residual))
+                SampleConditionalResidual = residual;
+            var replicatesAttr = xElement.Attribute(nameof(BootstrapReplicates));
+            if (replicatesAttr != null && int.TryParse(replicatesAttr.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int replicates) && replicates > 0)
+                _bootstrapReplicates = replicates;
+            var blockAttr = xElement.Attribute(nameof(BootstrapBlockSize));
+            if (blockAttr != null && int.TryParse(blockAttr.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int block) && block >= 0)
+                _bootstrapBlockSize = block;
 
             // Check if estimated
             var isEstimatedAttr = xElement.Attribute("IsEstimated");
@@ -306,9 +325,116 @@ namespace RMC.BestFit.Analyses
         public SpatialGEVUncertaintyMethod UncertaintyMethod { get; set; } = SpatialGEVUncertaintyMethod.BayesianPosterior;
 
         /// <summary>
-        /// Gets the Godambe (sandwich) covariance matrix after calling <see cref="ComputeGodambeCovariance"/>.
+        /// Gets the uncertainty method the most recent run actually applied to the site and regional
+        /// results, or <c>null</c> before a run or after <see cref="ClearResults"/>.
+        /// </summary>
+        [Category("Output")]
+        [DisplayName("Applied Uncertainty Method")]
+        [Description("The uncertainty method that produced the current interval bounds: Bayesian posterior intervals, posterior intervals widened by the variance inflation factor, Gaussian parameter draws from the Godambe sandwich covariance at the MAP, or temporal block bootstrap percentile intervals. Null until an analysis has run.")]
+        [Browsable(true)]
+        public SpatialGEVUncertaintyMethod? AppliedUncertaintyMethod { get; private set; }
+
+        /// <summary>
+        /// Gets or sets whether an ungauged-site prediction adds a draw of the conditional Gaussian-process
+        /// residual (conditional variance of the latent error at the location) to the conditional mean for
+        /// every posterior draw. Default is <c>true</c>; <c>false</c> uses the conditional mean only.
+        /// </summary>
+        /// <remarks>
+        /// The residual draws come from a generator seeded with <see cref="BayesianAnalysis"/>'s
+        /// <c>PRNGSeed</c>, so predictions are reproducible. With <c>false</c> the predictive interval
+        /// omits the spatial-interpolation uncertainty of the latent errors and reflects parameter
+        /// uncertainty only.
+        /// </remarks>
+        [Category("Output")]
+        [DisplayName("Sample Conditional Residual")]
+        [Description("When true (default), ungauged-site predictions add a seeded draw of the conditional Gaussian-process residual at the location to each posterior draw, so the predictive interval includes the spatial-interpolation uncertainty of the latent errors; set false to predict with the conditional mean only (parameter uncertainty only).")]
+        [Browsable(true)]
+        public bool SampleConditionalResidual { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the number of bootstrap replicates used when <see cref="UncertaintyMethod"/> is
+        /// <see cref="SpatialGEVUncertaintyMethod.SpatialBootstrap"/>. Default is 200.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is not positive.</exception>
+        [Category("Output")]
+        [DisplayName("Bootstrap Replicates")]
+        [Description("The number of temporal block-bootstrap replicates (each a maximum a posteriori refit of a resampled data set) used for bootstrap intervals when the uncertainty method is SpatialBootstrap. Default 200; at least 50% of the replicates must succeed. Larger values narrow the Monte Carlo error of the percentile intervals at proportional cost.")]
+        [Browsable(true)]
+        public int BootstrapReplicates
+        {
+            get => _bootstrapReplicates;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "At least one bootstrap replicate is required.");
+                _bootstrapReplicates = value;
+                RaisePropertyChange(nameof(BootstrapReplicates));
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the number of consecutive rows (years) per bootstrap block; 0 (default) uses the
+        /// cube root of the number of rows, rounded up.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is negative.</exception>
+        [Category("Output")]
+        [DisplayName("Bootstrap Block Size")]
+        [Description("The number of consecutive rows (years) resampled together in the temporal block bootstrap; blocks preserve short-range serial dependence between years while every site is kept in each row. 0 (default) uses the cube root of the number of rows, rounded up; 1 is an ordinary row bootstrap.")]
+        [Browsable(true)]
+        public int BootstrapBlockSize
+        {
+            get => _bootstrapBlockSize;
+            set
+            {
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "The block size cannot be negative.");
+                _bootstrapBlockSize = value;
+                RaisePropertyChange(nameof(BootstrapBlockSize));
+            }
+        }
+
+        /// <summary>
+        /// Gets the replicate accounting of the most recent spatial bootstrap run, or <c>null</c> when no
+        /// bootstrap has run since the results were cleared.
+        /// </summary>
+        public SpatialGEVBootstrapResults? BootstrapResults { get; private set; }
+
+        /// <summary>
+        /// The minimum fraction of bootstrap replicates that must succeed for intervals to be reported.
+        /// </summary>
+        private const double MinimumBootstrapSuccessFraction = 0.5;
+
+        private int _bootstrapReplicates = 200;
+        private int _bootstrapBlockSize;
+
+        /// <summary>
+        /// The regional mean quantile of every retained draw [probabilities × draws] from the most recent
+        /// site-result construction; the regional curve's posterior summaries derive from it.
+        /// </summary>
+        private double[,]? _regionalQuantileDraws;
+
+        /// <summary>
+        /// Gets the Godambe (sandwich) covariance matrix after calling <see cref="ComputeGodambeCovariance"/>,
+        /// or <c>null</c> before the first computation, after <see cref="ClearResults"/>, or when the most
+        /// recent computation failed (see <see cref="GodambeCovarianceStatus"/>).
         /// </summary>
         public double[,]? GodambeCovariance { get; private set; }
+
+        /// <summary>
+        /// Gets the outcome of the most recent <see cref="ComputeGodambeCovariance"/> call:
+        /// <see cref="CovarianceComputationStatus.NotComputed"/> before any call or after
+        /// <see cref="ClearResults"/>, <see cref="CovarianceComputationStatus.Available"/> when
+        /// <see cref="GodambeCovariance"/> holds a finite matrix with positive variances, and
+        /// <see cref="CovarianceComputationStatus.Failed"/> when the computation failed and
+        /// <see cref="GodambeCovariance"/> is <c>null</c>.
+        /// </summary>
+        public CovarianceComputationStatus GodambeCovarianceStatus { get; private set; } = CovarianceComputationStatus.NotComputed;
+
+        /// <summary>
+        /// Gets the diagnostic text of the most recent failed <see cref="ComputeGodambeCovariance"/>
+        /// call, or <c>null</c> when the computation succeeded or has not been attempted.
+        /// </summary>
+        public string? GodambeCovarianceDiagnostic { get; private set; }
 
         /// <summary>
         /// Gets the variance inflation factor computed from intersite correlation.
@@ -402,6 +528,12 @@ namespace RMC.BestFit.Analyses
             AnalysisResults = null;
             SiteResults = null;
             CrossValidationResults = null;
+            GodambeCovariance = null;
+            GodambeCovarianceStatus = CovarianceComputationStatus.NotComputed;
+            GodambeCovarianceDiagnostic = null;
+            AppliedUncertaintyMethod = null;
+            BootstrapResults = null;
+            _regionalQuantileDraws = null;
             RaisePropertyChange(nameof(AnalysisResults));
             RaisePropertyChange(nameof(SiteResults));
             RaisePropertyChange(nameof(CrossValidationResults));
@@ -409,7 +541,7 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> and <see cref="SiteResults"/> only � the outputs
+        /// Clears <see cref="AnalysisResults"/> and <see cref="SiteResults"/> only — the outputs
         /// whose quantile arrays are keyed on <see cref="ProbabilityOrdinates"/>. Leaves the
         /// Bayesian MCMC output and <c>IsEstimated</c> intact so the fit can be reused
         /// once valid ordinates are restored.
@@ -443,7 +575,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// SpatialGEV's reprocess chains two awaits (per-site results then aggregated
-        /// uncertainty) � wraps them in an async lambda passed to the shared
+        /// uncertainty) — wraps them in an async lambda passed to the shared
         /// <see cref="AnalysisBase.ReprocessIfEstimated"/> helper for consistent
         /// fire-and-forget exception logging.
         /// </remarks>
@@ -451,11 +583,7 @@ namespace RMC.BestFit.Analyses
         {
             if (ProbabilityOrdinates.Validate().IsValid)
             {
-                ReprocessIfEstimated(async () =>
-                {
-                    await CreateSiteResultsAsync();
-                    await CreateUncertaintyAnalysisResultsAsync();
-                });
+                ReprocessIfEstimated(RebuildPosteriorResultsAsync);
             }
             else if (IsEstimated)
             {
@@ -489,7 +617,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults �
+            // inside its parallel loop when ClearResults() nulls AnalysisResults —
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -514,12 +642,15 @@ namespace RMC.BestFit.Analyses
                         await CreateUncertaintyAnalysisResultsAsync();
                     }
 
-                    // Conditional set � BayesianAnalysis.IsEstimated is false on soft-failure paths
+                    // Conditional set — BayesianAnalysis.IsEstimated is false on soft-failure paths
                     // (sampler returns without setting IsEstimated). Setting unconditionally would
                     // silently report success even when the chain failed.
                     IsEstimated = BayesianAnalysis.IsEstimated;
                     if (IsEstimated)
                     {
+                        // Apply the selected uncertainty method; a method that cannot be applied throws
+                        // and the run is reported as failed (no silent fallback to the posterior).
+                        await ApplyUncertaintyMethodAsync(progressReporter);
                         AnalysisProgress.ReportComplete(progressReporter);
                     }
                 }
@@ -559,6 +690,16 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Rebuilds the site results and the regional results from the current posterior: the
+        /// reprocessor of ordinate changes, also used by deterministic tests with injected results.
+        /// </summary>
+        internal async Task RebuildPosteriorResultsAsync()
+        {
+            await CreateSiteResultsAsync();
+            await CreateUncertaintyAnalysisResultsAsync();
+        }
+
+        /// <summary>
         /// Creates site-specific results from the Bayesian posterior samples.
         /// </summary>
         private async Task CreateSiteResultsAsync()
@@ -568,38 +709,62 @@ namespace RMC.BestFit.Analyses
                 return;
             }
 
+            MCMCResults results = BayesianAnalysis.Results;
+            int drawCount = Math.Min(BayesianAnalysis.OutputLength, results.Output.Count);
+            await CreateSiteResultsFromDrawsAsync(
+                index => results.Output[index].Values,
+                drawCount,
+                results.MAP.Values,
+                SpatialGEVUncertaintyMethod.BayesianPosterior);
+        }
+
+        /// <summary>
+        /// Builds the site results and the per-draw regional mean quantiles from a parameter draw set.
+        /// </summary>
+        /// <param name="draw">Returns the parameter vector of a draw by index.</param>
+        /// <param name="drawCount">The number of draws.</param>
+        /// <param name="pointEstimate">The parameter vector of the point (mode) curves.</param>
+        /// <param name="method">The uncertainty method recorded on every site result.</param>
+        /// <remarks>
+        /// The draws are the retained posterior sample for the Bayesian methods and seeded Gaussian draws
+        /// from the Godambe sandwich covariance for <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/>.
+        /// For every probability the regional mean of the site quantiles is stored per draw so the regional
+        /// curve can report the posterior summaries of that statistic.
+        /// </remarks>
+        private async Task CreateSiteResultsFromDrawsAsync(Func<int, double[]> draw, int drawCount, double[] pointEstimate, SpatialGEVUncertaintyMethod method)
+        {
             await Task.Run(() =>
             {
                 int nSites = SpatialGEV.Sites;
-                SiteResults = new SpatialGEVSiteResults[nSites];
+                var siteResults = new SpatialGEVSiteResults[nSites];
 
-                var prng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
-                var realz = BayesianAnalysis.OutputLength;
                 double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
                 var probs = ProbabilityOrdinates.ToArray();
                 int nProbs = probs.Length;
+                var regionalDraws = new double[nProbs, drawCount];
 
                 for (int j = 0; j < nSites; j++)
                 {
-                    SiteResults[j] = new SpatialGEVSiteResults
+                    siteResults[j] = new SpatialGEVSiteResults
                     {
                         SiteIndex = j,
-                        Coordinate = new double[] { SpatialGEV.Coordinates[j, 0], SpatialGEV.Coordinates[j, 1] }
+                        Coordinate = new double[] { SpatialGEV.Coordinates[j, 0], SpatialGEV.Coordinates[j, 1] },
+                        UncertaintyMethod = method
                     };
 
-                    // Arrays for GEV parameters across realizations
-                    var xiVals = new double[realz];
-                    var alphaVals = new double[realz];
-                    var kappaVals = new double[realz];
+                    // Arrays for GEV parameters across draws
+                    var xiVals = new double[drawCount];
+                    var alphaVals = new double[drawCount];
+                    var kappaVals = new double[drawCount];
 
                     // Arrays for quantiles at each probability
-                    var quantiles = new double[nProbs, realz];
+                    var quantiles = new double[nProbs, drawCount];
 
-                    // Compute for each posterior sample
-                    Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
+                    // Compute for each draw
+                    Parallel.For(0, drawCount, AnalysisProgress.CreateParallelOptions(), idx =>
                     {
                         var tempModel = (SpatialGEV)SpatialGEV.Clone();
-                        tempModel.SetParameterValues(BayesianAnalysis.Results.Output[idx].Values);
+                        tempModel.SetParameterValues(draw(idx));
 
                         var gevParams = tempModel.GetGEVParameters(j);
                         xiVals[idx] = gevParams[0];
@@ -613,51 +778,69 @@ namespace RMC.BestFit.Analyses
                         }
                     });
 
+                    // Regional mean quantile of every draw (accumulated over the sites)
+                    for (int p = 0; p < nProbs; p++)
+                    {
+                        for (int idx = 0; idx < drawCount; idx++)
+                            regionalDraws[p, idx] += quantiles[p, idx] / nSites;
+                    }
+
                     // Compute summary statistics for GEV parameters
                     Array.Sort(xiVals);
                     Array.Sort(alphaVals);
                     Array.Sort(kappaVals);
 
-                    SiteResults[j].LocationMean = Statistics.ParallelMean(xiVals);
-                    SiteResults[j].LocationLower = Statistics.Percentile(xiVals, alpha / 2d, true);
-                    SiteResults[j].LocationUpper = Statistics.Percentile(xiVals, 1 - alpha / 2d, true);
+                    siteResults[j].LocationMean = Statistics.ParallelMean(xiVals);
+                    siteResults[j].LocationLower = Statistics.Percentile(xiVals, alpha / 2d, true);
+                    siteResults[j].LocationUpper = Statistics.Percentile(xiVals, 1 - alpha / 2d, true);
 
-                    SiteResults[j].ScaleMean = Statistics.ParallelMean(alphaVals);
-                    SiteResults[j].ScaleLower = Statistics.Percentile(alphaVals, alpha / 2d, true);
-                    SiteResults[j].ScaleUpper = Statistics.Percentile(alphaVals, 1 - alpha / 2d, true);
+                    siteResults[j].ScaleMean = Statistics.ParallelMean(alphaVals);
+                    siteResults[j].ScaleLower = Statistics.Percentile(alphaVals, alpha / 2d, true);
+                    siteResults[j].ScaleUpper = Statistics.Percentile(alphaVals, 1 - alpha / 2d, true);
 
-                    SiteResults[j].ShapeMean = Statistics.ParallelMean(kappaVals);
-                    SiteResults[j].ShapeLower = Statistics.Percentile(kappaVals, alpha / 2d, true);
-                    SiteResults[j].ShapeUpper = Statistics.Percentile(kappaVals, 1 - alpha / 2d, true);
+                    siteResults[j].ShapeMean = Statistics.ParallelMean(kappaVals);
+                    siteResults[j].ShapeLower = Statistics.Percentile(kappaVals, alpha / 2d, true);
+                    siteResults[j].ShapeUpper = Statistics.Percentile(kappaVals, 1 - alpha / 2d, true);
 
                     // Compute quantile curves
-                    SiteResults[j].Probabilities = probs;
-                    SiteResults[j].QuantileMean = new double[nProbs];
-                    SiteResults[j].QuantileLower = new double[nProbs];
-                    SiteResults[j].QuantileUpper = new double[nProbs];
-                    SiteResults[j].QuantileMode = new double[nProbs];
+                    siteResults[j].Probabilities = probs;
+                    siteResults[j].QuantileMean = new double[nProbs];
+                    siteResults[j].QuantileLower = new double[nProbs];
+                    siteResults[j].QuantileUpper = new double[nProbs];
+                    siteResults[j].QuantileMode = new double[nProbs];
 
-                    // Point estimate using MAP
-                    SpatialGEV.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
+                    // Point estimate using the supplied parameter vector
+                    SpatialGEV.SetParameterValues(pointEstimate);
 
                     for (int p = 0; p < nProbs; p++)
                     {
                         var qVals = quantiles.GetRow(p);
                         Array.Sort(qVals);
-                        SiteResults[j].QuantileMean[p] = Statistics.ParallelMean(qVals);
-                        SiteResults[j].QuantileLower[p] = Statistics.Percentile(qVals, alpha / 2d, true);
-                        SiteResults[j].QuantileUpper[p] = Statistics.Percentile(qVals, 1 - alpha / 2d, true);
-                        SiteResults[j].QuantileMode[p] = SpatialGEV.InverseCDF(1 - probs[p], j);
+                        siteResults[j].QuantileMean[p] = Statistics.ParallelMean(qVals);
+                        siteResults[j].QuantileLower[p] = Statistics.Percentile(qVals, alpha / 2d, true);
+                        siteResults[j].QuantileUpper[p] = Statistics.Percentile(qVals, 1 - alpha / 2d, true);
+                        siteResults[j].QuantileMode[p] = SpatialGEV.InverseCDF(1 - probs[p], j);
                     }
                 }
+
+                _regionalQuantileDraws = regionalDraws;
+                SiteResults = siteResults;
             });
 
             RaisePropertyChange(nameof(SiteResults));
         }
 
         /// <summary>
-        /// Creates the regional uncertainty analysis results from the Bayesian posterior samples.
+        /// Creates the regional uncertainty analysis results: the posterior summaries of the per-draw
+        /// regional mean quantile (mean curve and equal-tailed bounds), the regional mean of the site point
+        /// curves (mode curve), and the information criteria.
         /// </summary>
+        /// <remarks>
+        /// The regional bounds are posterior quantiles of the regional statistic computed within each draw,
+        /// so cross-site posterior dependence is retained; they are not averages of the site interval
+        /// endpoints. The mean curve equals the regional mean of the site posterior-mean quantiles because
+        /// the mean is linear.
+        /// </remarks>
         private async Task CreateUncertaintyAnalysisResultsAsync()
         {
             AnalysisResults = null;
@@ -668,46 +851,220 @@ namespace RMC.BestFit.Analyses
                 return;
             }
 
-            // Capture local reference to avoid null warnings in closure
+            // Capture local references to avoid null warnings in closure
             var siteResults = SiteResults;
+            var regionalDraws = _regionalQuantileDraws;
 
             await Task.Run(() =>
             {
                 var probs = ProbabilityOrdinates.ToArray();
                 int n = probs.Length;
+                double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
 
                 AnalysisResults = new UncertaintyAnalysisResults();
                 AnalysisResults.ModeCurve = new double[n];
                 AnalysisResults.MeanCurve = new double[n];
                 AnalysisResults.ConfidenceIntervals = new double[n, 3];
 
-                // For regional results, average across all sites
+                bool drawsAvailable = regionalDraws != null && regionalDraws.GetLength(0) == n && regionalDraws.GetLength(1) > 0;
                 for (int p = 0; p < n; p++)
                 {
-                    double sumMode = 0, sumMean = 0, sumLower = 0, sumUpper = 0;
+                    double sumMode = 0;
                     for (int j = 0; j < SpatialGEV.Sites; j++)
-                    {
                         sumMode += siteResults[j].QuantileMode[p];
-                        sumMean += siteResults[j].QuantileMean[p];
-                        sumLower += siteResults[j].QuantileLower[p];
-                        sumUpper += siteResults[j].QuantileUpper[p];
-                    }
                     AnalysisResults.ModeCurve[p] = sumMode / SpatialGEV.Sites;
-                    AnalysisResults.MeanCurve[p] = sumMean / SpatialGEV.Sites;
                     AnalysisResults.ConfidenceIntervals[p, 0] = probs[p];
-                    AnalysisResults.ConfidenceIntervals[p, 1] = sumLower / SpatialGEV.Sites;
-                    AnalysisResults.ConfidenceIntervals[p, 2] = sumUpper / SpatialGEV.Sites;
+
+                    if (drawsAvailable)
+                    {
+                        int drawCount = regionalDraws!.GetLength(1);
+                        var values = new double[drawCount];
+                        for (int idx = 0; idx < drawCount; idx++)
+                            values[idx] = regionalDraws[p, idx];
+                        AnalysisResults.MeanCurve[p] = Statistics.ParallelMean(values);
+                        Array.Sort(values);
+                        AnalysisResults.ConfidenceIntervals[p, 1] = Statistics.Percentile(values, alpha / 2d, true);
+                        AnalysisResults.ConfidenceIntervals[p, 2] = Statistics.Percentile(values, 1 - alpha / 2d, true);
+                    }
+                    else
+                    {
+                        // No draw set behind the current site results: report the regional mean of the site
+                        // posterior means and leave the bounds undefined rather than averaging endpoints.
+                        double sumMean = 0;
+                        for (int j = 0; j < SpatialGEV.Sites; j++)
+                            sumMean += siteResults[j].QuantileMean[p];
+                        AnalysisResults.MeanCurve[p] = sumMean / SpatialGEV.Sites;
+                        AnalysisResults.ConfidenceIntervals[p, 1] = double.NaN;
+                        AnalysisResults.ConfidenceIntervals[p, 2] = double.NaN;
+                    }
                 }
 
-                // Goodness-of-fit metrics
-                // AIC/BIC at MAP using full LogLikelihood (data + prior).
-                double mapLogLH = SpatialGEV.LogLikelihood(BayesianAnalysis.Results.MAP.Values);
-                AnalysisResults.AIC = GoodnessOfFit.AIC(SpatialGEV.NumberOfParameters, mapLogLH);
-                AnalysisResults.BIC = GoodnessOfFit.BIC(SpatialGEV.Sites * SpatialGEV.Observations, SpatialGEV.NumberOfParameters, mapLogLH);
+                // AIC/BIC use the observation log likelihood at MAP with one nonempty row/year
+                // block per BIC observation (see ComputeInformationCriteria).
+                var (aic, bic, _) = ComputeInformationCriteria(SpatialGEV, BayesianAnalysis.Results.MAP.Values);
+                AnalysisResults.AIC = aic;
+                AnalysisResults.BIC = bic;
                 AnalysisResults.DIC = BayesianAnalysis.DIC;
             });
 
             RaisePropertyChange(nameof(AnalysisResults));
+        }
+
+        /// <summary>
+        /// Applies the selected <see cref="UncertaintyMethod"/> to the freshly built posterior results and
+        /// records the method on the analysis and on every site result.
+        /// </summary>
+        /// <param name="progressReporter">Optional progress reporter for the bootstrap replicates.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the Godambe covariance is unavailable or the
+        /// bootstrap does not reach its minimum success fraction; the run is then reported as failed.</exception>
+        internal async Task ApplyUncertaintyMethodAsync(SafeProgressReporter? progressReporter)
+        {
+            switch (UncertaintyMethod)
+            {
+                case SpatialGEVUncertaintyMethod.BayesianPosterior:
+                    break;
+                case SpatialGEVUncertaintyMethod.BayesianInflated:
+                    InflatePosteriorCovariance();
+                    InflateRegionalIntervals();
+                    break;
+                case SpatialGEVUncertaintyMethod.GodambeSandwich:
+                    await CreateGodambeSiteResultsAsync();
+                    await CreateUncertaintyAnalysisResultsAsync();
+                    break;
+                case SpatialGEVUncertaintyMethod.SpatialBootstrap:
+                    await RunSpatialBootstrapAsync(BootstrapReplicates, BootstrapBlockSize, progressReporter);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported uncertainty method {UncertaintyMethod}.");
+            }
+
+            AppliedUncertaintyMethod = UncertaintyMethod;
+            if (SiteResults != null)
+            {
+                foreach (var site in SiteResults)
+                    site.UncertaintyMethod = UncertaintyMethod;
+            }
+            RaisePropertyChange(nameof(AppliedUncertaintyMethod));
+        }
+
+        /// <summary>
+        /// Widens the regional credible bounds around the regional mean curve by the square root of the
+        /// variance inflation factor, matching <see cref="InflatePosteriorCovariance"/> for the site results.
+        /// </summary>
+        private void InflateRegionalIntervals()
+        {
+            if (AnalysisResults?.ConfidenceIntervals == null || AnalysisResults.MeanCurve == null)
+                return;
+            double sqrtVIF = Math.Sqrt(VarianceInflationFactor);
+            for (int p = 0; p < AnalysisResults.MeanCurve.Length; p++)
+            {
+                double mid = AnalysisResults.MeanCurve[p];
+                double halfWidth = (AnalysisResults.ConfidenceIntervals[p, 2] - AnalysisResults.ConfidenceIntervals[p, 1]) / 2;
+                AnalysisResults.ConfidenceIntervals[p, 1] = mid - halfWidth * sqrtVIF;
+                AnalysisResults.ConfidenceIntervals[p, 2] = mid + halfWidth * sqrtVIF;
+            }
+            RaisePropertyChange(nameof(AnalysisResults));
+        }
+
+        /// <summary>
+        /// Builds the site results from seeded Gaussian parameter draws N(MAP, Σ) with the Godambe sandwich
+        /// covariance Σ at the MAP, propagated through the same site-result machinery as the posterior.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when the covariance is unavailable or not positive definite.</exception>
+        /// <remarks>
+        /// Draws are truncated to the parameter bounds coordinate by coordinate. The number of draws is
+        /// <see cref="BayesianAnalysis"/>'s <c>OutputLength</c> and the generator is seeded with its
+        /// <c>PRNGSeed</c>, so the results are reproducible.
+        /// </remarks>
+        private async Task CreateGodambeSiteResultsAsync()
+        {
+            double[] map = BayesianAnalysis.Results!.MAP.Values;
+            double[,]? covariance = ComputeGodambeCovariance(map);
+            if (covariance == null)
+                throw new InvalidOperationException("The Godambe sandwich covariance is unavailable: " + GodambeCovarianceDiagnostic);
+            var L = FactorGodambeCovariance(covariance);
+
+            int k = map.Length;
+            int drawCount = BayesianAnalysis.OutputLength;
+            var prng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
+            var draws = new double[drawCount][];
+            var z = new double[k];
+            for (int d = 0; d < drawCount; d++)
+            {
+                for (int i = 0; i < k; i++)
+                    z[i] = Normal.StandardZ(prng.NextDouble());
+                var theta = new double[k];
+                for (int i = 0; i < k; i++)
+                {
+                    double value = map[i];
+                    for (int c = 0; c <= i; c++)
+                        value += L[i, c] * z[c];
+                    var parameter = SpatialGEV.Parameters[i];
+                    theta[i] = Math.Min(Math.Max(value, parameter.LowerBound), parameter.UpperBound);
+                }
+                draws[d] = theta;
+            }
+
+            await CreateSiteResultsFromDrawsAsync(index => draws[index], drawCount, map, SpatialGEVUncertaintyMethod.GodambeSandwich);
+        }
+
+        /// <summary>
+        /// Factors a Godambe sandwich covariance for Gaussian parameter draws.
+        /// </summary>
+        /// <param name="covariance">The Godambe sandwich covariance matrix.</param>
+        /// <returns>The lower-triangular Cholesky factor.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the covariance is not positive definite.
+        /// </exception>
+        internal static Matrix FactorGodambeCovariance(double[,] covariance)
+        {
+            try
+            {
+                return new CholeskyDecomposition(new Matrix(covariance)).L;
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException(
+                    "The Godambe sandwich covariance is not positive definite; Gaussian parameter draws are unavailable.",
+                    exception);
+            }
+        }
+
+        /// <summary>
+        /// Computes the AIC and BIC of the spatial model from the observation log likelihood at the
+        /// supplied parameter vector, counting one nonempty row/year block per BIC observation.
+        /// </summary>
+        /// <param name="model">The spatial GEV model.</param>
+        /// <param name="parameters">The parameter vector (the MAP estimate in production).</param>
+        /// <returns>The AIC, the BIC (NaN when no row has data), and the number of nonempty row/year blocks.</returns>
+        /// <remarks>
+        /// Each row/year is one multivariate observation whose sites are contemporaneously dependent, so
+        /// the BIC sample size is the number of rows with at least one observed site rather than the
+        /// number of site cells; fully missing rows contribute nothing to the likelihood and are not
+        /// counted. The observation log likelihood excludes the latent-error process densities, which are
+        /// prior structure.
+        /// </remarks>
+        internal static (double AIC, double BIC, int ObservationBlocks) ComputeInformationCriteria(SpatialGEV model, double[] parameters)
+        {
+            double logLikelihood = model.DataLogLikelihood(parameters);
+            int observationBlocks = 0;
+            for (int observation = 0; observation < model.Observations; observation++)
+            {
+                for (int site = 0; site < model.Sites; site++)
+                {
+                    if (!double.IsNaN(model.AtSiteData[observation, site]))
+                    {
+                        observationBlocks++;
+                        break;
+                    }
+                }
+            }
+
+            double aic = GoodnessOfFit.AIC(model.NumberOfParameters, logLikelihood);
+            double bic = observationBlocks > 0
+                ? GoodnessOfFit.BIC(observationBlocks, model.NumberOfParameters, logLikelihood)
+                : double.NaN;
+            return (aic, bic, observationBlocks);
         }
 
         /// <summary>
@@ -816,18 +1173,25 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Predicts GEV parameters and quantiles at an ungauged location using spatial interpolation.
         /// </summary>
-        /// <param name="coordinates">The coordinates [X, Y] or [Lat, Lon] of the ungauged location.</param>
-        /// <param name="covariates">Optional covariate values at the ungauged location for the trend models.</param>
+        /// <param name="coordinates">The coordinates of the ungauged location in the model's distance metric:
+        /// [X, Y] for Cartesian or [latitude, longitude] in decimal degrees for geodesic.</param>
+        /// <param name="covariates">The covariate values at the ungauged location, applied to every trend
+        /// model that has covariates (the location, scale, and shape trends must then share the covariate
+        /// definition); null is accepted only when no trend model has covariates.</param>
         /// <param name="exceedanceProbabilities">Array of exceedance probabilities for quantile estimation.</param>
         /// <returns>
         /// A <see cref="SpatialGEVSiteResults"/> object containing predicted GEV parameters and quantile curves.
         /// </returns>
         /// <exception cref="InvalidOperationException">Thrown if the analysis has not been run.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="coordinates"/> is not a two-element
+        /// array, or when a trend model has covariates and <paramref name="covariates"/> is null, empty, or
+        /// of the wrong length.</exception>
         /// <remarks>
         /// <para>
         /// This method uses the posterior samples to propagate uncertainty to the ungauged location.
         /// The prediction uses the trend surface evaluated at the provided coordinates and covariates.
-        /// If spatial regression errors are enabled, a kriging-type interpolation is used for the errors.
+        /// If spatial regression errors are enabled, an inverse-distance interpolation of the sampled
+        /// latent errors is used for every posterior draw.
         /// </para>
         /// </remarks>
         public SpatialGEVSiteResults PredictAtUngaugedLocation(double[] coordinates, double[]? covariates, double[] exceedanceProbabilities)
@@ -838,8 +1202,64 @@ namespace RMC.BestFit.Analyses
             if (coordinates == null || coordinates.Length != 2)
                 throw new ArgumentException("Coordinates must be a 2-element array [X, Y].", nameof(coordinates));
 
-            var realz = BayesianAnalysis.OutputLength;
-            double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
+            return PredictFromPosterior(
+                SpatialGEV,
+                BayesianAnalysis.Results,
+                BayesianAnalysis.OutputLength,
+                1 - BayesianAnalysis.CredibleIntervalWidth,
+                coordinates,
+                covariates,
+                covariates,
+                covariates,
+                exceedanceProbabilities,
+                SampleConditionalResidual,
+                BayesianAnalysis.PRNGSeed);
+        }
+
+        /// <summary>
+        /// Predicts the GEV parameters and quantiles at a location from a posterior sample of a spatial
+        /// model: the trend surfaces evaluated at the supplied covariates, the conditional Gaussian-process
+        /// prediction of every enabled latent error for each draw (optionally with a seeded conditional
+        /// residual), and posterior summaries of the parameters and quantiles.
+        /// </summary>
+        /// <param name="model">The fitted model (the analysis model or a cross-validation fold's reduced model).</param>
+        /// <param name="results">The posterior sample of <paramref name="model"/>.</param>
+        /// <param name="outputLength">The number of retained draws to use (capped at the sample size).</param>
+        /// <param name="alpha">One minus the credible-interval width.</param>
+        /// <param name="coordinates">The location [X, Y].</param>
+        /// <param name="locationCovariates">The location-trend covariate values, or null for an intercept-only trend.</param>
+        /// <param name="scaleCovariates">The scale-trend covariate values, or null for an intercept-only trend.</param>
+        /// <param name="shapeCovariates">The shape-trend covariate values, or null for an intercept-only trend.</param>
+        /// <param name="exceedanceProbabilities">The exceedance probabilities of the quantile curve.</param>
+        /// <param name="sampleConditionalResidual">Whether each draw adds a conditional Gaussian-process residual to the conditional mean.</param>
+        /// <param name="seed">The seed of the residual draws.</param>
+        /// <returns>The site results with <c>SiteIndex = -1</c>.</returns>
+        /// <exception cref="ArgumentException">Thrown when a trend model has covariates and its covariate
+        /// values are null, empty, or of the wrong length.</exception>
+        /// <remarks>
+        /// For every draw the latent error at the location is the simple-kriging conditional mean
+        /// <c>k*ᵀK⁻¹ε</c> of that draw's error model (<see cref="SpatialRegressionErrors.GetKrigingPrediction"/>),
+        /// plus, when requested, a residual drawn from N(0, σ² − k*ᵀK⁻¹k*) with standard-normal scores
+        /// generated sequentially from the seed before the parallel loop, so the prediction is reproducible.
+        /// </remarks>
+        private static SpatialGEVSiteResults PredictFromPosterior(
+            SpatialGEV model,
+            MCMCResults results,
+            int outputLength,
+            double alpha,
+            double[] coordinates,
+            double[]? locationCovariates,
+            double[]? scaleCovariates,
+            double[]? shapeCovariates,
+            double[] exceedanceProbabilities,
+            bool sampleConditionalResidual,
+            int seed)
+        {
+            ValidateCovariateVector(model.Location, locationCovariates, "location");
+            ValidateCovariateVector(model.Scale, scaleCovariates, "scale");
+            ValidateCovariateVector(model.Shape, shapeCovariates, "shape");
+
+            int realz = Math.Min(outputLength, results.Output.Count);
             int nProbs = exceedanceProbabilities.Length;
 
             var result = new SpatialGEVSiteResults
@@ -854,26 +1274,28 @@ namespace RMC.BestFit.Analyses
             var kappaVals = new double[realz];
             var quantiles = new double[nProbs, realz];
 
-            // Use inverse-distance weighting for spatial interpolation of errors
-            var distances = new double[SpatialGEV.Sites];
-            double sumInvDist = 0;
-            for (int j = 0; j < SpatialGEV.Sites; j++)
+            // Standard-normal scores of the conditional residuals (location, scale, shape) per draw,
+            // generated sequentially so the parallel evaluation is reproducible.
+            var residualScores = new double[realz, 3];
+            if (sampleConditionalResidual)
             {
-                double dx = coordinates[0] - SpatialGEV.Coordinates[j, 0];
-                double dy = coordinates[1] - SpatialGEV.Coordinates[j, 1];
-                distances[j] = Math.Max(Math.Sqrt(dx * dx + dy * dy), 1e-10);
-                sumInvDist += 1.0 / distances[j];
+                var prng = new MersenneTwister(seed);
+                for (int idx = 0; idx < realz; idx++)
+                {
+                    for (int field = 0; field < 3; field++)
+                        residualScores[idx, field] = Normal.StandardZ(prng.NextDouble());
+                }
             }
 
             Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
             {
-                var tempModel = (SpatialGEV)SpatialGEV.Clone();
-                tempModel.SetParameterValues(BayesianAnalysis.Results.Output[idx].Values);
+                var tempModel = (SpatialGEV)model.Clone();
+                tempModel.SetParameterValues(results.Output[idx].Values);
 
                 // Evaluate trend at ungauged location
-                double xi = tempModel.Location.PredictWithCovariates(covariates);
-                double scl = tempModel.Scale.PredictWithCovariates(covariates);
-                double kappa = tempModel.Shape.PredictWithCovariates(covariates);
+                double xi = tempModel.Location.PredictWithCovariates(locationCovariates);
+                double scl = tempModel.Scale.PredictWithCovariates(scaleCovariates);
+                double kappa = tempModel.Shape.PredictWithCovariates(shapeCovariates);
 
                 // Apply link functions
                 if (tempModel.UseLogLinkForLocation)
@@ -881,37 +1303,28 @@ namespace RMC.BestFit.Analyses
                 if (tempModel.UseLogLinkForScale)
                     scl = Math.Exp(scl);
 
-                // Interpolate spatial errors if enabled (IDW)
+                // Conditional Gaussian-process prediction of the enabled latent errors for this draw
                 if (tempModel.UseLocationErrors && tempModel.LocationErrors != null)
                 {
-                    double errSum = 0;
-                    for (int j = 0; j < tempModel.Sites; j++)
-                        errSum += tempModel.LocationErrors.GetError(j) / distances[j];
-                    double interpErr = errSum / sumInvDist;
+                    double error = ConditionalError(tempModel.LocationErrors, coordinates, sampleConditionalResidual, residualScores[idx, 0]);
                     if (tempModel.UseLogLinkForLocation)
-                        xi *= Math.Exp(interpErr);
+                        xi *= Math.Exp(error);
                     else
-                        xi += interpErr;
+                        xi += error;
                 }
 
                 if (tempModel.UseScaleErrors && tempModel.ScaleErrors != null)
                 {
-                    double errSum = 0;
-                    for (int j = 0; j < tempModel.Sites; j++)
-                        errSum += tempModel.ScaleErrors.GetError(j) / distances[j];
-                    double interpErr = errSum / sumInvDist;
+                    double error = ConditionalError(tempModel.ScaleErrors, coordinates, sampleConditionalResidual, residualScores[idx, 1]);
                     if (tempModel.UseLogLinkForScale)
-                        scl *= Math.Exp(interpErr);
+                        scl *= Math.Exp(error);
                     else
-                        scl = Math.Max(scl + interpErr, Tools.DoubleMachineEpsilon);
+                        scl = Math.Max(scl + error, Tools.DoubleMachineEpsilon);
                 }
 
                 if (tempModel.UseShapeErrors && tempModel.ShapeErrors != null)
                 {
-                    double errSum = 0;
-                    for (int j = 0; j < tempModel.Sites; j++)
-                        errSum += tempModel.ShapeErrors.GetError(j) / distances[j];
-                    kappa += errSum / sumInvDist;
+                    kappa += ConditionalError(tempModel.ShapeErrors, coordinates, sampleConditionalResidual, residualScores[idx, 2]);
                 }
 
                 xiVals[idx] = xi;
@@ -963,6 +1376,63 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
+        /// Evaluates the latent error of one error model at a location for one draw: the simple-kriging
+        /// conditional mean plus, when requested, a residual scaled by the conditional standard deviation.
+        /// </summary>
+        /// <param name="errors">The draw's error model (parameters already applied).</param>
+        /// <param name="coordinates">The location [X, Y].</param>
+        /// <param name="sampleConditionalResidual">Whether to add the conditional residual.</param>
+        /// <param name="standardScore">The standard-normal score of the residual.</param>
+        /// <returns>The latent error at the location.</returns>
+        private static double ConditionalError(SpatialRegressionErrors errors, double[] coordinates, bool sampleConditionalResidual, double standardScore)
+        {
+            var (mean, variance) = errors.GetKrigingPrediction(coordinates);
+            return sampleConditionalResidual ? mean + Math.Sqrt(Math.Max(variance, 0.0)) * standardScore : mean;
+        }
+
+        /// <summary>
+        /// Validates the covariate values supplied for one trend model before a posterior prediction.
+        /// </summary>
+        /// <param name="trend">The trend model.</param>
+        /// <param name="covariates">The covariate values, or null.</param>
+        /// <param name="name">The trend name used in the message.</param>
+        /// <exception cref="ArgumentException">Thrown when the trend has covariates and the values are missing or of the wrong length.</exception>
+        private static void ValidateCovariateVector(GeneralLinearFunction trend, double[]? covariates, string name)
+        {
+            if (trend.NumberOfCovariates == 0)
+                return;
+            if (covariates == null || covariates.Length == 0)
+            {
+                throw new ArgumentException(
+                    $"The {name} trend has {trend.NumberOfCovariates} covariate(s); covariate values at the prediction location are required.",
+                    nameof(covariates));
+            }
+            if (covariates.Length != trend.NumberOfCovariates)
+            {
+                throw new ArgumentException(
+                    $"The {name} trend expects {trend.NumberOfCovariates} covariate(s) but received {covariates.Length}.",
+                    nameof(covariates));
+            }
+        }
+
+        /// <summary>
+        /// Extracts one site's covariate row from a trend model's stored covariate matrix.
+        /// </summary>
+        /// <param name="trend">The trend model.</param>
+        /// <param name="site">The site index.</param>
+        /// <returns>The covariate row, or null when the trend has no covariates.</returns>
+        private static double[]? CovariateRow(GeneralLinearFunction trend, int site)
+        {
+            double[,]? covariates = trend.Covariates;
+            if (covariates == null || covariates.GetLength(1) == 0)
+                return null;
+            var row = new double[covariates.GetLength(1)];
+            for (int k = 0; k < row.Length; k++)
+                row[k] = covariates[site, k];
+            return row;
+        }
+
+        /// <summary>
         /// Runs leave-one-site-out cross-validation to assess model predictive performance.
         /// </summary>
         /// <param name="progressReporter">Optional progress reporter for tracking cross-validation progress.</param>
@@ -970,13 +1440,22 @@ namespace RMC.BestFit.Analyses
         /// A task that completes when cross-validation is finished.
         /// Results are available via the <see cref="CrossValidationResults"/> property.
         /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when the analysis is not valid, or when no fold
+        /// produces a prediction (an empty validation is never reported as a result).</exception>
         /// <remarks>
         /// <para>
         /// For each site, this method:
-        /// 1. Excludes the site by setting its weight to zero.
-        /// 2. Re-runs the Bayesian analysis.
-        /// 3. Predicts quantiles at the excluded site.
-        /// 4. Compares predictions to observed data.
+        /// 1. Builds the training model without the site (data column, coordinates, covariate row, copula
+        ///    dimension, and latent error removed) through <c>SpatialGEV.CreateReducedModel</c>.
+        /// 2. Fits it with a Bayesian analysis carrying this analysis's sampler settings and seed.
+        /// 3. Predicts the quantiles at the held-out site from the fold posterior, using the site's own
+        ///    covariate row for every covariate trend.
+        /// 4. Compares the predictions to the site's at-site maximum-likelihood GEV quantiles.
+        /// </para>
+        /// <para>
+        /// The analysis model and its posterior are never modified, so the results survive the run. A
+        /// fold that cannot be scored is recorded in <see cref="SpatialGEVCrossValidationResults.FoldStatus"/>
+        /// with NaN metrics and a message, and the aggregate metrics average the successful folds only.
         /// </para>
         /// <para>
         /// This provides an estimate of how well the model generalizes to ungauged locations.
@@ -987,92 +1466,232 @@ namespace RMC.BestFit.Analyses
             if (Validate().IsValid == false)
                 throw new InvalidOperationException("Model validation failed.");
 
-            CrossValidationResults = new SpatialGEVCrossValidationResults
+            int sites = SpatialGEV.Sites;
+            var results = new SpatialGEVCrossValidationResults
             {
-                SitePredictionErrors = new double[SpatialGEV.Sites],
-                SiteRMSE = new double[SpatialGEV.Sites],
-                SiteBias = new double[SpatialGEV.Sites],
-                SiteCRPS = new double[SpatialGEV.Sites] // CRPS not yet computed (always zero); see remarks on the property.
+                SitePredictionErrors = new double[sites],
+                SiteRMSE = new double[sites],
+                SiteBias = new double[sites],
+                SiteCRPS = new double[sites], // CRPS not yet computed (always zero); see remarks on the property.
+                FoldStatus = new SpatialGEVCrossValidationFoldStatus[sites],
+                FoldMessages = new string[sites],
+                TotalFolds = sites
             };
-
-            var originalWeights = (double[])SpatialGEV.SiteWeights.Clone();
-
-            try
+            for (int j = 0; j < sites; j++)
             {
-                for (int j = 0; j < SpatialGEV.Sites; j++)
+                results.SitePredictionErrors[j] = double.NaN;
+                results.SiteRMSE[j] = double.NaN;
+                results.SiteBias[j] = double.NaN;
+                results.FoldMessages[j] = string.Empty;
+            }
+            CrossValidationResults = null;
+
+            var probs = new double[] { 0.5, 0.2, 0.1, 0.04, 0.02, 0.01 }; // T=2, 5, 10, 25, 50, 100
+            var successfulErrors = new List<double>();
+            var successfulBias = new List<double>();
+
+            for (int j = 0; j < sites; j++)
+            {
+                progressReporter?.ReportProgress((int)(100.0 * j / sites));
+
+                // Observed data at the held-out site
+                var siteData = new List<double>();
+                for (int i = 0; i < SpatialGEV.Observations; i++)
                 {
-                    progressReporter?.ReportProgress((int)(100.0 * j / SpatialGEV.Sites));
-
-                    // Set weight to zero for left-out site
-                    for (int k = 0; k < SpatialGEV.Sites; k++)
-                        SpatialGEV.SiteWeights[k] = k == j ? 0.0 : originalWeights[k];
-
-                    // Clear and re-run
-                    if (BayesianAnalysis is null)
-                        continue;
-                    BayesianAnalysis.ClearResults();
-                    await BayesianAnalysis.RunAsync(null, false);
-
-                    if (!BayesianAnalysis.IsEstimated)
-                        continue;
-
-                    // Predict at left-out site
-                    var coords = new double[] { SpatialGEV.Coordinates[j, 0], SpatialGEV.Coordinates[j, 1] };
-                    var probs = new double[] { 0.5, 0.2, 0.1, 0.04, 0.02, 0.01 }; // T=2, 5, 10, 25, 50, 100
-
-                    var prediction = PredictAtUngaugedLocation(coords, null, probs);
-
-                    // Compare to observed data at this site
-                    var siteData = new List<double>();
-                    for (int i = 0; i < SpatialGEV.Observations; i++)
-                    {
-                        if (!double.IsNaN(SpatialGEV.AtSiteData[i, j]))
-                            siteData.Add(SpatialGEV.AtSiteData[i, j]);
-                    }
-
-                    if (siteData.Count > 0)
-                    {
-                        // Compute prediction error as difference in T=100 quantile
-                        var gev = new GeneralizedExtremeValue();
-                        gev.Estimate(siteData, ParameterEstimationMethod.MaximumLikelihood);
-                        double obsQ100 = gev.InverseCDF(0.99);
-                        double predQ100 = prediction.QuantileMean[5]; // T=100
-
-                        CrossValidationResults.SitePredictionErrors[j] = predQ100 - obsQ100;
-                        CrossValidationResults.SiteBias[j] = (predQ100 - obsQ100) / obsQ100;
-
-                        // Compute RMSE over multiple quantiles
-                        double sumSqErr = 0;
-                        for (int p = 0; p < probs.Length; p++)
-                        {
-                            double obsQ = gev.InverseCDF(1 - probs[p]);
-                            double predQ = prediction.QuantileMean[p];
-                            sumSqErr += (predQ - obsQ) * (predQ - obsQ);
-                        }
-                        CrossValidationResults.SiteRMSE[j] = Math.Sqrt(sumSqErr / probs.Length);
-                    }
+                    if (!double.IsNaN(SpatialGEV.AtSiteData[i, j]))
+                        siteData.Add(SpatialGEV.AtSiteData[i, j]);
+                }
+                if (siteData.Count == 0)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.NoObservations;
+                    results.FoldMessages[j] = "The held-out site has no finite observation.";
+                    continue;
                 }
 
-                // Restore original weights
-                SpatialGEV.SiteWeights = originalWeights;
+                // Training model without the held-out site, fitted with this analysis's settings and seed
+                SpatialGEV fold;
+                BayesianAnalysis foldBayes;
+                try
+                {
+                    fold = SpatialGEV.CreateReducedModel(j);
+                    var (foldValid, foldMessages) = fold.Validate();
+                    if (!foldValid)
+                    {
+                        results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.FitFailed;
+                        results.FoldMessages[j] = "The reduced training model is not valid: " + string.Join(" ", foldMessages);
+                        continue;
+                    }
+                    foldBayes = CreateFoldAnalysis(fold);
+                    await foldBayes.RunAsync(null, false);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.FitFailed;
+                    results.FoldMessages[j] = "The reduced training model could not be fitted: " + ex.Message;
+                    continue;
+                }
 
-                // Compute overall metrics
-                CrossValidationResults.MeanAbsoluteError = Statistics.ParallelMean(
-                    CrossValidationResults.SitePredictionErrors.Select(Math.Abs).ToArray());
-                CrossValidationResults.RootMeanSquareError = Math.Sqrt(Statistics.ParallelMean(
-                    CrossValidationResults.SitePredictionErrors.Select(e => e * e).ToArray()));
-                CrossValidationResults.MeanBias = Statistics.ParallelMean(CrossValidationResults.SiteBias);
+                if (!foldBayes.IsEstimated || foldBayes.Results == null)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.FitFailed;
+                    results.FoldMessages[j] = foldBayes.LastError != null
+                        ? "The fold sampler failed: " + foldBayes.LastError.Message
+                        : "The fold sampler did not produce an estimate.";
+                    continue;
+                }
 
-                // Re-run full analysis
-                BayesianAnalysis?.ClearResults();
-                await RunAsync(null);
+                // Predict at the held-out site from the fold posterior with the site's own covariate rows
+                try
+                {
+                    var coords = new double[] { SpatialGEV.Coordinates[j, 0], SpatialGEV.Coordinates[j, 1] };
+                    SpatialGEVSiteResults prediction = PredictFromPosterior(
+                        fold,
+                        foldBayes.Results,
+                        foldBayes.OutputLength,
+                        1 - foldBayes.CredibleIntervalWidth,
+                        coords,
+                        CovariateRow(SpatialGEV.Location, j),
+                        CovariateRow(SpatialGEV.Scale, j),
+                        CovariateRow(SpatialGEV.Shape, j),
+                        probs,
+                        SampleConditionalResidual,
+                        foldBayes.PRNGSeed);
+
+                    // Compare to the at-site maximum-likelihood GEV of the held-out site
+                    var gev = new GeneralizedExtremeValue();
+                    gev.Estimate(siteData, ParameterEstimationMethod.MaximumLikelihood);
+                    double obsQ100 = gev.InverseCDF(0.99);
+                    double predQ100 = prediction.QuantileMean[5]; // T=100
+
+                    double sumSqErr = 0;
+                    for (int p = 0; p < probs.Length; p++)
+                    {
+                        double obsQ = gev.InverseCDF(1 - probs[p]);
+                        double predQ = prediction.QuantileMean[p];
+                        sumSqErr += (predQ - obsQ) * (predQ - obsQ);
+                    }
+
+                    double error = predQ100 - obsQ100;
+                    double bias = (predQ100 - obsQ100) / obsQ100;
+                    double rmse = Math.Sqrt(sumSqErr / probs.Length);
+                    if (!Tools.IsFinite(error) || !Tools.IsFinite(bias) || !Tools.IsFinite(rmse))
+                    {
+                        results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.PredictionFailed;
+                        results.FoldMessages[j] = "The held-out prediction or its at-site comparison is not finite.";
+                        continue;
+                    }
+
+                    results.SitePredictionErrors[j] = error;
+                    results.SiteBias[j] = bias;
+                    results.SiteRMSE[j] = rmse;
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.Succeeded;
+                    successfulErrors.Add(error);
+                    successfulBias.Add(bias);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    results.FoldStatus[j] = SpatialGEVCrossValidationFoldStatus.PredictionFailed;
+                    results.FoldMessages[j] = "The held-out prediction failed: " + ex.Message;
+                }
             }
-            finally
+
+            CompleteCrossValidation(results, successfulErrors, successfulBias, sites, progressReporter);
+        }
+
+        /// <summary>
+        /// Finalizes leave-one-site-out cross-validation accounting and publishes the completed results.
+        /// </summary>
+        /// <param name="results">The per-fold results collected during the cross-validation run.</param>
+        /// <param name="successfulErrors">The prediction errors from folds whose predictions were scored.</param>
+        /// <param name="successfulBias">The prediction biases from folds whose predictions were scored.</param>
+        /// <param name="sites">The number of folds in the cross-validation run.</param>
+        /// <param name="progressReporter">The optional reporter notified when finalization reaches completion.</param>
+        /// <exception cref="InvalidOperationException">Thrown when no cross-validation fold succeeded.</exception>
+        /// <remarks>
+        /// This internal completion seam preserves the accounting and publication behavior of
+        /// <see cref="RunCrossValidationAsync"/> while allowing the deterministic finalization contract
+        /// to be exercised without fitting a fold model or running a sampler.
+        /// </remarks>
+        internal void CompleteCrossValidation(
+            SpatialGEVCrossValidationResults results,
+            List<double> successfulErrors,
+            List<double> successfulBias,
+            int sites,
+            SafeProgressReporter? progressReporter)
+        {
+            results.SuccessfulFolds = successfulErrors.Count;
+            if (results.SuccessfulFolds == 0)
             {
-                SpatialGEV.SiteWeights = originalWeights;
+                var reasons = new List<string>();
+                for (int j = 0; j < sites; j++)
+                    reasons.Add($"site {j + 1}: {results.FoldStatus[j]} - {results.FoldMessages[j]}");
+                throw new InvalidOperationException(
+                    "Leave-one-site-out cross-validation produced no successful fold. " + string.Join(" ", reasons));
             }
 
+            // Aggregate metrics over the successful folds only
+            results.MeanAbsoluteError = Statistics.ParallelMean(successfulErrors.Select(Math.Abs).ToArray());
+            results.RootMeanSquareError = Math.Sqrt(Statistics.ParallelMean(successfulErrors.Select(e => e * e).ToArray()));
+            results.MeanBias = Statistics.ParallelMean(successfulBias.ToArray());
+
+            CrossValidationResults = results;
+            progressReporter?.ReportProgress(100);
             RaisePropertyChange(nameof(CrossValidationResults));
+        }
+
+        /// <summary>
+        /// Creates the Bayesian analysis of a cross-validation fold: the fold model with this analysis's
+        /// sampler type, defaults policy, seed, interval width, output length, and point estimator, and its
+        /// explicit iteration, chain, thinning, and tuning settings whenever the defaults are not in use.
+        /// </summary>
+        /// <param name="fold">The reduced training model.</param>
+        /// <returns>The fold analysis, ready to run.</returns>
+        /// <remarks>
+        /// When the simulation defaults are in use they resolve against the fold model's own parameter
+        /// count, exactly as a fresh analysis of that model would resolve them.
+        /// </remarks>
+        private BayesianAnalysis CreateFoldAnalysis(SpatialGEV fold)
+        {
+            var foldBayes = new BayesianAnalysis(fold)
+            {
+                UseSimulationDefaults = BayesianAnalysis.UseSimulationDefaults,
+                UseAdvancedSimulationDefaults = BayesianAnalysis.UseAdvancedSimulationDefaults
+            };
+            foldBayes.Type = BayesianAnalysis.Type;
+            foldBayes.PRNGSeed = BayesianAnalysis.PRNGSeed;
+            foldBayes.CredibleIntervalWidth = BayesianAnalysis.CredibleIntervalWidth;
+            foldBayes.OutputLength = BayesianAnalysis.OutputLength;
+            foldBayes.PointEstimator = BayesianAnalysis.PointEstimator;
+
+            if (!BayesianAnalysis.UseSimulationDefaults)
+            {
+                foldBayes.NumberOfChains = BayesianAnalysis.NumberOfChains;
+                foldBayes.ThinningInterval = BayesianAnalysis.ThinningInterval;
+                foldBayes.WarmupIterations = BayesianAnalysis.WarmupIterations;
+                foldBayes.Iterations = BayesianAnalysis.Iterations;
+                foldBayes.InitialIterations = BayesianAnalysis.InitialIterations;
+            }
+
+            if (!BayesianAnalysis.UseAdvancedSimulationDefaults)
+            {
+                foldBayes.Jump = BayesianAnalysis.Jump;
+                foldBayes.JumpThreshold = BayesianAnalysis.JumpThreshold;
+                foldBayes.SnookerThreshold = BayesianAnalysis.SnookerThreshold;
+                foldBayes.Noise = BayesianAnalysis.Noise;
+                foldBayes.Scale = BayesianAnalysis.Scale;
+                foldBayes.Beta = BayesianAnalysis.Beta;
+                foldBayes.MaxTreeDepth = BayesianAnalysis.MaxTreeDepth;
+            }
+
+            return foldBayes;
         }
 
         /// <summary>
@@ -1141,18 +1760,36 @@ namespace RMC.BestFit.Analyses
         /// Computes the Godambe (sandwich) covariance matrix for robust standard errors.
         /// </summary>
         /// <param name="parameters">The MLE or MAP parameter values. If null, uses the current MAP estimate.</param>
-        /// <returns>The Godambe covariance matrix [nParams � nParams].</returns>
+        /// <returns>
+        /// The Godambe covariance matrix [nParams × nParams], or <c>null</c> when the computation fails;
+        /// <see cref="GodambeCovarianceStatus"/> and <see cref="GodambeCovarianceDiagnostic"/> describe
+        /// the outcome.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when <paramref name="parameters"/> is null
+        /// and no MAP estimate is available.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="parameters"/> does not hold one
+        /// value per model parameter.</exception>
         /// <remarks>
         /// <para>
         /// The Godambe sandwich estimator provides robust standard errors that account for
         /// model misspecification and correlation in the data:
         /// </para>
         /// <para>
-        /// Var(?^) = H(?)?� J(?) H(?)?�
+        /// Var(θ̂) = H(θ)⁻¹ J(θ) H(θ)⁻¹
         /// </para>
         /// <para>
-        /// where H is the Hessian (sensitivity matrix) and J is the variability matrix computed
-        /// from the outer product of the score vectors.
+        /// where H is the sensitivity matrix (the central-difference Hessian of the observation log
+        /// likelihood <see cref="SpatialGEV.DataLogLikelihood"/>) and J is the variability matrix (the
+        /// sum of outer products of the row/year score vectors obtained from
+        /// <see cref="SpatialGEV.PointwiseDataLogLikelihood"/>). The scalar log likelihood is the sum of
+        /// the row/year terms, so both matrices derive from the same estimating equations; the latent
+        /// error process densities, which are prior structure, enter neither matrix.
+        /// </para>
+        /// <para>
+        /// A non-finite likelihood evaluation, a singular sensitivity matrix, or a non-finite or
+        /// non-positive-variance result is a failure: the method returns <c>null</c>, clears
+        /// <see cref="GodambeCovariance"/>, and reports <see cref="CovarianceComputationStatus.Failed"/>
+        /// with a diagnostic. No substitute matrix is returned.
         /// </para>
         /// <para>
         ///     <b>References:</b>
@@ -1162,7 +1799,7 @@ namespace RMC.BestFit.Analyses
         ///       Statistica Sinica, 21, 5-42.
         /// </para>
         /// </remarks>
-        public double[,] ComputeGodambeCovariance(double[]? parameters = null)
+        public double[,]? ComputeGodambeCovariance(double[]? parameters = null)
         {
             if (parameters == null)
             {
@@ -1171,33 +1808,34 @@ namespace RMC.BestFit.Analyses
                 parameters = BayesianAnalysis.Results.MAP.Values;
             }
 
+            if (parameters.Length != SpatialGEV.NumberOfParameters)
+            {
+                throw new ArgumentException(
+                    $"Expected {SpatialGEV.NumberOfParameters} parameter values but got {parameters.Length}.",
+                    nameof(parameters));
+            }
+
             int nParams = parameters.Length;
             double eps = 1e-5;
 
-            // Compute Hessian H (second derivative of log-likelihood)
+            // Sensitivity matrix H: central-difference Hessian of the observation log likelihood.
             var H = new double[nParams, nParams];
             double f0 = SpatialGEV.DataLogLikelihood(parameters);
+            if (!Tools.IsFinite(f0))
+                return FailGodambeCovariance("The observation log likelihood is not finite at the evaluation point.");
 
             for (int i = 0; i < nParams; i++)
             {
                 for (int j = i; j < nParams; j++)
                 {
-                    // Central difference approximation
-                    var pPlusI = (double[])parameters.Clone();
-                    var pPlusJ = (double[])parameters.Clone();
-                    var pMinusI = (double[])parameters.Clone();
-                    var pMinusJ = (double[])parameters.Clone();
-                    var pPlusIJ = (double[])parameters.Clone();
-                    var pMinusIJ = (double[])parameters.Clone();
-                    var pPlusIMinusJ = (double[])parameters.Clone();
-                    var pMinusIPlusJ = (double[])parameters.Clone();
-
                     double hi = Math.Abs(parameters[i]) * eps + eps;
                     double hj = Math.Abs(parameters[j]) * eps + eps;
 
                     if (i == j)
                     {
-                        // Diagonal: d�L/d??�
+                        // Diagonal: d²L/dθᵢ²
+                        var pPlusI = (double[])parameters.Clone();
+                        var pMinusI = (double[])parameters.Clone();
                         pPlusI[i] += hi;
                         pMinusI[i] -= hi;
                         double fPlusI = SpatialGEV.DataLogLikelihood(pPlusI);
@@ -1206,7 +1844,11 @@ namespace RMC.BestFit.Analyses
                     }
                     else
                     {
-                        // Off-diagonal: d�L/d??d??
+                        // Off-diagonal: d²L/dθᵢdθⱼ
+                        var pPlusIJ = (double[])parameters.Clone();
+                        var pMinusIJ = (double[])parameters.Clone();
+                        var pPlusIMinusJ = (double[])parameters.Clone();
+                        var pMinusIPlusJ = (double[])parameters.Clone();
                         pPlusIJ[i] += hi;
                         pPlusIJ[j] += hj;
                         pMinusIJ[i] -= hi;
@@ -1224,56 +1866,93 @@ namespace RMC.BestFit.Analyses
                         H[i, j] = (fPlusIJ - fPlusIMinusJ - fMinusIPlusJ + fMinusIJ) / (4 * hi * hj);
                         H[j, i] = H[i, j];
                     }
-                }
-            }
 
-            // Compute J (variability matrix) from outer product of score vectors
-            // J = S? s? s?? where s? is the score for observation i
-            var J = new double[nParams, nParams];
-            var pointwiseLL = SpatialGEV.PointwiseDataLogLikelihood(parameters);
-
-            for (int obs = 0; obs < pointwiseLL.Length; obs++)
-            {
-                // Compute score vector for this observation
-                var score = new double[nParams];
-                for (int k = 0; k < nParams; k++)
-                {
-                    var pPlus = (double[])parameters.Clone();
-                    var pMinus = (double[])parameters.Clone();
-                    double h = Math.Abs(parameters[k]) * eps + eps;
-                    pPlus[k] += h;
-                    pMinus[k] -= h;
-
-                    var llPlus = SpatialGEV.PointwiseDataLogLikelihood(pPlus);
-                    var llMinus = SpatialGEV.PointwiseDataLogLikelihood(pMinus);
-
-                    score[k] = (llPlus[obs] - llMinus[obs]) / (2 * h);
-                }
-
-                // Add outer product to J
-                for (int i = 0; i < nParams; i++)
-                {
-                    for (int j = 0; j < nParams; j++)
+                    if (!Tools.IsFinite(H[i, j]))
                     {
-                        J[i, j] += score[i] * score[j];
+                        return FailGodambeCovariance(
+                            $"The Hessian entry ({i + 1}, {j + 1}) of the observation log likelihood is not finite.");
                     }
                 }
             }
 
-            // Invert H
+            // Variability matrix J: sum over row/year blocks of the outer products of the score vectors,
+            // each score obtained by central differences of the pointwise (row/year) log likelihood.
+            int observationCount = SpatialGEV.Observations;
+            var scores = new double[observationCount, nParams];
+            for (int k = 0; k < nParams; k++)
+            {
+                var pPlus = (double[])parameters.Clone();
+                var pMinus = (double[])parameters.Clone();
+                double h = Math.Abs(parameters[k]) * eps + eps;
+                pPlus[k] += h;
+                pMinus[k] -= h;
+
+                var llPlus = SpatialGEV.PointwiseDataLogLikelihood(pPlus);
+                var llMinus = SpatialGEV.PointwiseDataLogLikelihood(pMinus);
+
+                for (int obs = 0; obs < observationCount; obs++)
+                {
+                    scores[obs, k] = (llPlus[obs] - llMinus[obs]) / (2 * h);
+                    if (!Tools.IsFinite(scores[obs, k]))
+                    {
+                        return FailGodambeCovariance(
+                            $"The score of row {obs + 1} with respect to parameter {k + 1} is not finite.");
+                    }
+                }
+            }
+
+            var J = new double[nParams, nParams];
+            for (int obs = 0; obs < observationCount; obs++)
+            {
+                for (int i = 0; i < nParams; i++)
+                {
+                    for (int j = 0; j < nParams; j++)
+                    {
+                        J[i, j] += scores[obs, i] * scores[obs, j];
+                    }
+                }
+            }
+
+            // Invert H; a singular sensitivity matrix leaves the sandwich undefined.
             var HInv = InvertMatrix(H);
             if (HInv == null)
             {
-                // Return J if H is singular
-                GodambeCovariance = J;
-                return J;
+                return FailGodambeCovariance(
+                    "The sensitivity matrix (Hessian of the observation log likelihood) is singular; the sandwich covariance is undefined.");
             }
 
-            // Compute sandwich: H?� J H?�
-            var temp = MultiplyMatrices(HInv, J);
-            GodambeCovariance = MultiplyMatrices(temp, HInv);
+            // Compute sandwich: H⁻¹ J H⁻¹
+            var covariance = MultiplyMatrices(MultiplyMatrices(HInv, J), HInv);
+            for (int i = 0; i < nParams; i++)
+            {
+                for (int j = 0; j < nParams; j++)
+                {
+                    if (!Tools.IsFinite(covariance[i, j]))
+                        return FailGodambeCovariance($"The sandwich covariance entry ({i + 1}, {j + 1}) is not finite.");
+                }
 
-            return GodambeCovariance;
+                if (covariance[i, i] <= 0)
+                    return FailGodambeCovariance($"The sandwich covariance has a non-positive variance for parameter {i + 1}.");
+            }
+
+            GodambeCovariance = covariance;
+            GodambeCovarianceStatus = CovarianceComputationStatus.Available;
+            GodambeCovarianceDiagnostic = null;
+            return covariance;
+        }
+
+        /// <summary>
+        /// Records a failed Godambe covariance computation and returns <c>null</c>.
+        /// </summary>
+        /// <param name="diagnostic">The reason the computation failed.</param>
+        /// <returns><c>null</c>, so callers can return the result directly.</returns>
+        private double[,]? FailGodambeCovariance(string diagnostic)
+        {
+            GodambeCovariance = null;
+            GodambeCovarianceStatus = CovarianceComputationStatus.Failed;
+            GodambeCovarianceDiagnostic = diagnostic;
+            System.Diagnostics.Debug.WriteLine($"SpatialGEVAnalysis.ComputeGodambeCovariance: {diagnostic}");
+            return null;
         }
 
         /// <summary>
@@ -1285,10 +1964,10 @@ namespace RMC.BestFit.Analyses
         /// is underestimated by a factor approximately equal to the variance inflation factor:
         /// </para>
         /// <para>
-        /// VIF = 1 + (n_sites - 1) * ?�
+        /// VIF = 1 + (n_sites - 1) * ρ̄
         /// </para>
         /// <para>
-        /// where ?� is the average intersite correlation. This method computes the VIF and
+        /// where ρ̄ is the average intersite correlation. This method computes the VIF and
         /// adjusts the site results accordingly.
         /// </para>
         /// <para>
@@ -1346,27 +2025,32 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Runs spatial block bootstrap to compute empirical confidence intervals.
+        /// Runs a temporal block bootstrap to compute empirical confidence intervals.
         /// </summary>
         /// <param name="nBootstrap">Number of bootstrap replicates. Default is 200.</param>
-        /// <param name="blockSize">Spatial block size (number of sites per block). If 0, uses sqrt(Sites).</param>
+        /// <param name="blockSize">Number of consecutive rows (years) per resampled block. If 0, uses the cube root of the number of rows, rounded up.</param>
         /// <param name="progressReporter">Optional progress reporter.</param>
         /// <returns>
-        /// A task that completes when bootstrap is finished. Results are stored in
-        /// <see cref="SiteResults"/> with updated confidence bounds.
+        /// A task that completes when bootstrap is finished. The percentile intervals replace the bounds of
+        /// <see cref="SiteResults"/> and of the regional curve in <see cref="AnalysisResults"/>, and
+        /// <see cref="BootstrapResults"/> records the replicate accounting.
         /// </returns>
+        /// <exception cref="InvalidOperationException">Thrown when the analysis has not been run, or when fewer
+        /// than half of the replicates produce a usable refit.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="nBootstrap"/> is not positive.</exception>
         /// <remarks>
         /// <para>
-        /// Spatial block bootstrap preserves the spatial correlation structure by resampling
-        /// blocks of spatially contiguous sites rather than individual sites. This provides
-        /// valid confidence intervals when data are spatially correlated.
+        /// Rows (years) are resampled with replacement in contiguous blocks, wrapping at the end of the record,
+        /// while every site is kept in each resampled row, so the intersite dependence, coordinates, and
+        /// covariate rows of the network are preserved. Each replicate model
+        /// (<c>SpatialGEV.CreateResampledModel</c>) carries the full model's settings and priors and is
+        /// refitted by maximum a posteriori estimation warm-started at the full-model MAP. Replicates whose
+        /// refit fails or is not finite are excluded; at least half of the replicates must succeed.
         /// </para>
         /// <para>
-        /// The method:
-        /// 1. Divides sites into spatial blocks based on proximity
-        /// 2. For each bootstrap replicate, resamples blocks with replacement
-        /// 3. Re-estimates the model on resampled data
-        /// 4. Computes quantiles from the bootstrap distribution
+        /// The resampling is seeded with <see cref="BayesianAnalysis"/>'s <c>PRNGSeed</c>, so the replicates
+        /// are reproducible. The point estimates of the results are unchanged; only the interval bounds are
+        /// replaced.
         /// </para>
         /// <para>
         ///     <b>References:</b>
@@ -1376,102 +2060,91 @@ namespace RMC.BestFit.Analyses
         /// </remarks>
         public async Task RunSpatialBootstrapAsync(int nBootstrap = 200, int blockSize = 0, SafeProgressReporter? progressReporter = null)
         {
-            if (!IsEstimated || BayesianAnalysis?.Results == null)
+            if (!IsEstimated || BayesianAnalysis?.Results == null || SiteResults == null)
                 throw new InvalidOperationException("Analysis must be run before bootstrap.");
+            if (nBootstrap <= 0)
+                throw new ArgumentOutOfRangeException(nameof(nBootstrap), "At least one bootstrap replicate is required.");
 
+            int observations = SpatialGEV.Observations;
             if (blockSize <= 0)
-                blockSize = Math.Max(2, (int)Math.Sqrt(SpatialGEV.Sites));
+                blockSize = Math.Max(1, (int)Math.Ceiling(Math.Pow(observations, 1.0 / 3.0)));
+            blockSize = Math.Min(blockSize, observations);
 
-            var prng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
+            int seed = BayesianAnalysis.PRNGSeed;
+            var prng = new MersenneTwister(seed);
             var probs = ProbabilityOrdinates.ToArray();
             int nProbs = probs.Length;
             int nSites = SpatialGEV.Sites;
+            double[] fullMap = BayesianAnalysis.Results.MAP.Values;
+            var siteResults = SiteResults;
 
-            // Create spatial blocks using k-means-like clustering on coordinates
-            var blockAssignments = CreateSpatialBlocks(blockSize);
-            int nBlocks = blockAssignments.Max() + 1;
-
-            // Arrays to store bootstrap quantiles for each site
+            // Replicate statistics (NaN for a failed replicate)
             var bootQuantiles = new double[nSites, nProbs, nBootstrap];
             var bootLocation = new double[nSites, nBootstrap];
             var bootScale = new double[nSites, nBootstrap];
             var bootShape = new double[nSites, nBootstrap];
+            var bootRegional = new double[nProbs, nBootstrap];
+            int successful = 0;
 
             await Task.Run(() =>
             {
                 for (int b = 0; b < nBootstrap; b++)
                 {
                     progressReporter?.ReportProgress((int)(100.0 * b / nBootstrap));
-
-                    // Resample blocks
-                    var resampledBlocks = new List<int>();
-                    while (resampledBlocks.Count < nBlocks)
-                    {
-                        int block = prng.Next(nBlocks);
-                        resampledBlocks.Add(block);
-                    }
-
-                    // Get sites in resampled blocks
-                    var resampledSites = new List<int>();
-                    foreach (int block in resampledBlocks)
-                    {
-                        for (int j = 0; j < nSites; j++)
-                        {
-                            if (blockAssignments[j] == block)
-                                resampledSites.Add(j);
-                        }
-                    }
-
-                    // Create bootstrap data matrix
-                    var bootData = new double[SpatialGEV.Observations, nSites];
-                    for (int i = 0; i < SpatialGEV.Observations; i++)
-                    {
-                        for (int j = 0; j < nSites; j++)
-                        {
-                            // Use resampled site data (with replacement)
-                            int srcSite = resampledSites[j % resampledSites.Count];
-                            bootData[i, j] = SpatialGEV.AtSiteData[i, srcSite];
-                        }
-                    }
-
-                    // Create bootstrap model and estimate
-                    var bootModel = (SpatialGEV)SpatialGEV.Clone();
-
-                    // For speed, use a short MCMC run
-                    var bootBayes = new BayesianAnalysis(bootModel)
-                    {
-                        Iterations = 500,
-                        WarmupIterations = 250,
-                        ThinningInterval = 5
-                    };
-
+                    int[] rows = BuildBlockBootstrapRows(observations, blockSize, prng);
+                    bool usable = false;
                     try
                     {
-                        bootBayes.RunAsync(null, false).GetAwaiter().GetResult();
-
-                        if (bootBayes.IsEstimated && bootBayes.Results != null)
+                        SpatialGEV replicate = SpatialGEV.CreateResampledModel(rows);
+                        replicate.SetParameterValues(fullMap);
+                        var map = new MaximumAPosteriori(replicate, OptimizationMethod.DifferentialEvolution, fullMap)
                         {
-                            bootModel.SetParameterValues(bootBayes.Results.MAP.Values);
-
-                            // Store results for each site
-                            for (int j = 0; j < nSites; j++)
+                            ComputeHessian = false
+                        };
+                        if (map.Estimate() && map.IsEstimated)
+                        {
+                            replicate.SetParameterValues(map.BestParameterSet.Values);
+                            usable = true;
+                            for (int j = 0; j < nSites && usable; j++)
                             {
-                                var gevParams = bootModel.GetGEVParameters(j);
+                                var gevParams = replicate.GetGEVParameters(j);
                                 bootLocation[j, b] = gevParams[0];
                                 bootScale[j, b] = gevParams[1];
                                 bootShape[j, b] = gevParams[2];
-
-                                for (int p = 0; p < nProbs; p++)
+                                if (!Tools.IsFinite(gevParams[0]) || !Tools.IsFinite(gevParams[1]) || !Tools.IsFinite(gevParams[2]))
+                                    usable = false;
+                                for (int p = 0; p < nProbs && usable; p++)
                                 {
-                                    bootQuantiles[j, p, b] = bootModel.InverseCDF(1 - probs[p], j);
+                                    bootQuantiles[j, p, b] = replicate.InverseCDF(1 - probs[p], j);
+                                    if (!Tools.IsFinite(bootQuantiles[j, p, b]))
+                                        usable = false;
                                 }
                             }
                         }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        throw;
+                    }
                     catch (Exception ex)
                     {
-                        // Mark failed bootstrap replicate with NaN.
-                        Debug.WriteLine($"SpatialGEVAnalysis.Bootstrap: replicate {b} failed, marked NaN: {ex.Message}");
+                        Debug.WriteLine($"SpatialGEVAnalysis.Bootstrap: replicate {b + 1} failed: {ex.Message}");
+                        usable = false;
+                    }
+
+                    if (usable)
+                    {
+                        successful++;
+                        for (int p = 0; p < nProbs; p++)
+                        {
+                            double sum = 0;
+                            for (int j = 0; j < nSites; j++)
+                                sum += bootQuantiles[j, p, b];
+                            bootRegional[p, b] = sum / nSites;
+                        }
+                    }
+                    else
+                    {
                         for (int j = 0; j < nSites; j++)
                         {
                             bootLocation[j, b] = double.NaN;
@@ -1480,121 +2153,115 @@ namespace RMC.BestFit.Analyses
                             for (int p = 0; p < nProbs; p++)
                                 bootQuantiles[j, p, b] = double.NaN;
                         }
-                    }
-                }
-
-                // Compute bootstrap confidence intervals
-                double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
-
-                for (int j = 0; j < nSites; j++)
-                {
-                    // Get valid bootstrap samples (non-NaN)
-                    var validLoc = new List<double>();
-                    var validScl = new List<double>();
-                    var validShp = new List<double>();
-
-                    for (int b = 0; b < nBootstrap; b++)
-                    {
-                        if (!double.IsNaN(bootLocation[j, b]))
-                        {
-                            validLoc.Add(bootLocation[j, b]);
-                            validScl.Add(bootScale[j, b]);
-                            validShp.Add(bootShape[j, b]);
-                        }
-                    }
-
-                    if (validLoc.Count >= 10 && SiteResults != null)
-                    {
-                        validLoc.Sort();
-                        validScl.Sort();
-                        validShp.Sort();
-
-                        SiteResults[j].LocationLower = Statistics.Percentile(validLoc.ToArray(), alpha / 2, true);
-                        SiteResults[j].LocationUpper = Statistics.Percentile(validLoc.ToArray(), 1 - alpha / 2, true);
-                        SiteResults[j].ScaleLower = Statistics.Percentile(validScl.ToArray(), alpha / 2, true);
-                        SiteResults[j].ScaleUpper = Statistics.Percentile(validScl.ToArray(), 1 - alpha / 2, true);
-                        SiteResults[j].ShapeLower = Statistics.Percentile(validShp.ToArray(), alpha / 2, true);
-                        SiteResults[j].ShapeUpper = Statistics.Percentile(validShp.ToArray(), 1 - alpha / 2, true);
-
-                        // Quantile CIs
                         for (int p = 0; p < nProbs; p++)
-                        {
-                            var validQ = new List<double>();
-                            for (int b = 0; b < nBootstrap; b++)
-                            {
-                                if (!double.IsNaN(bootQuantiles[j, p, b]))
-                                    validQ.Add(bootQuantiles[j, p, b]);
-                            }
-
-                            if (validQ.Count >= 10)
-                            {
-                                validQ.Sort();
-                                SiteResults[j].QuantileLower[p] = Statistics.Percentile(validQ.ToArray(), alpha / 2, true);
-                                SiteResults[j].QuantileUpper[p] = Statistics.Percentile(validQ.ToArray(), 1 - alpha / 2, true);
-                            }
-                        }
+                            bootRegional[p, b] = double.NaN;
                     }
                 }
             });
 
-            RaisePropertyChange(nameof(SiteResults));
-        }
-
-        /// <summary>
-        /// Creates spatial blocks for bootstrap resampling using k-means-like clustering.
-        /// </summary>
-        /// <param name="blockSize">Target number of sites per block.</param>
-        /// <returns>Array of block assignments for each site.</returns>
-        private int[] CreateSpatialBlocks(int blockSize)
-        {
-            int nSites = SpatialGEV.Sites;
-            int nBlocks = Math.Max(1, (nSites + blockSize - 1) / blockSize);
-            var assignments = new int[nSites];
-
-            // Simple greedy spatial clustering
-            var unassigned = new List<int>(Enumerable.Range(0, nSites));
-            var prng = new MersenneTwister(12345);
-
-            for (int block = 0; block < nBlocks && unassigned.Count > 0; block++)
+            BootstrapResults = new SpatialGEVBootstrapResults
             {
-                // Start with random unassigned site
-                int startIdx = prng.Next(unassigned.Count);
-                int startSite = unassigned[startIdx];
-                unassigned.RemoveAt(startIdx);
-                assignments[startSite] = block;
+                RequestedReplicates = nBootstrap,
+                SuccessfulReplicates = successful,
+                BlockSize = blockSize,
+                Seed = seed,
+                MinimumSuccessFraction = MinimumBootstrapSuccessFraction,
+                Scheme = "Temporal block bootstrap: rows (years) resampled with replacement in contiguous blocks with wrap-around, all sites retained; maximum a posteriori refit per replicate warm-started at the full-model MAP"
+            };
+            RaisePropertyChange(nameof(BootstrapResults));
 
-                // Add nearest unassigned sites to this block
-                int siteCount = 1;
-                while (siteCount < blockSize && unassigned.Count > 0)
+            int required = (int)Math.Ceiling(MinimumBootstrapSuccessFraction * nBootstrap);
+            if (successful < required)
+            {
+                throw new InvalidOperationException(
+                    $"The spatial bootstrap produced {successful} successful replicate(s) of {nBootstrap}; at least {required} are required for percentile intervals.");
+            }
+
+            // Percentile intervals over the successful replicates
+            double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;
+            for (int j = 0; j < nSites; j++)
+            {
+                var validLoc = Finite(bootLocation, j);
+                var validScl = Finite(bootScale, j);
+                var validShp = Finite(bootShape, j);
+                siteResults[j].LocationLower = Statistics.Percentile(validLoc, alpha / 2, true);
+                siteResults[j].LocationUpper = Statistics.Percentile(validLoc, 1 - alpha / 2, true);
+                siteResults[j].ScaleLower = Statistics.Percentile(validScl, alpha / 2, true);
+                siteResults[j].ScaleUpper = Statistics.Percentile(validScl, 1 - alpha / 2, true);
+                siteResults[j].ShapeLower = Statistics.Percentile(validShp, alpha / 2, true);
+                siteResults[j].ShapeUpper = Statistics.Percentile(validShp, 1 - alpha / 2, true);
+                for (int p = 0; p < nProbs; p++)
                 {
-                    // Find nearest unassigned site to centroid of current block
-                    double minDist = double.MaxValue;
-                    int nearestIdx = -1;
-
-                    foreach (int idx in Enumerable.Range(0, unassigned.Count))
+                    var validQ = new List<double>();
+                    for (int b = 0; b < nBootstrap; b++)
                     {
-                        int site = unassigned[idx];
-                        double dist = Tools.Distance(
-                            SpatialGEV.Coordinates[site, 0], SpatialGEV.Coordinates[site, 1],
-                            SpatialGEV.Coordinates[startSite, 0], SpatialGEV.Coordinates[startSite, 1]);
-
-                        if (dist < minDist)
-                        {
-                            minDist = dist;
-                            nearestIdx = idx;
-                        }
+                        if (!double.IsNaN(bootQuantiles[j, p, b]))
+                            validQ.Add(bootQuantiles[j, p, b]);
                     }
+                    validQ.Sort();
+                    siteResults[j].QuantileLower[p] = Statistics.Percentile(validQ.ToArray(), alpha / 2, true);
+                    siteResults[j].QuantileUpper[p] = Statistics.Percentile(validQ.ToArray(), 1 - alpha / 2, true);
+                }
+                siteResults[j].UncertaintyMethod = SpatialGEVUncertaintyMethod.SpatialBootstrap;
+            }
 
-                    if (nearestIdx >= 0)
+            if (AnalysisResults?.ConfidenceIntervals != null)
+            {
+                for (int p = 0; p < nProbs && p < AnalysisResults.ConfidenceIntervals.GetLength(0); p++)
+                {
+                    var validR = new List<double>();
+                    for (int b = 0; b < nBootstrap; b++)
                     {
-                        assignments[unassigned[nearestIdx]] = block;
-                        unassigned.RemoveAt(nearestIdx);
-                        siteCount++;
+                        if (!double.IsNaN(bootRegional[p, b]))
+                            validR.Add(bootRegional[p, b]);
                     }
+                    validR.Sort();
+                    AnalysisResults.ConfidenceIntervals[p, 1] = Statistics.Percentile(validR.ToArray(), alpha / 2, true);
+                    AnalysisResults.ConfidenceIntervals[p, 2] = Statistics.Percentile(validR.ToArray(), 1 - alpha / 2, true);
                 }
             }
 
-            return assignments;
+            RaisePropertyChange(nameof(SiteResults));
+            RaisePropertyChange(nameof(AnalysisResults));
+        }
+
+        /// <summary>
+        /// Collects the finite replicate values of one site, sorted ascending.
+        /// </summary>
+        /// <param name="values">The replicate matrix [sites × replicates].</param>
+        /// <param name="site">The site index.</param>
+        /// <returns>The sorted finite values.</returns>
+        private static double[] Finite(double[,] values, int site)
+        {
+            var list = new List<double>();
+            for (int b = 0; b < values.GetLength(1); b++)
+            {
+                if (!double.IsNaN(values[site, b]))
+                    list.Add(values[site, b]);
+            }
+            list.Sort();
+            return list.ToArray();
+        }
+
+        /// <summary>
+        /// Draws the source rows of one temporal block-bootstrap replicate: contiguous blocks of
+        /// <paramref name="blockSize"/> rows starting at uniformly random rows, wrapping at the end of the
+        /// record, concatenated until <paramref name="observations"/> rows are drawn.
+        /// </summary>
+        /// <param name="observations">The number of rows in the record.</param>
+        /// <param name="blockSize">The rows per block (at least 1).</param>
+        /// <param name="prng">The seeded generator.</param>
+        /// <returns>The source row of each replicate row.</returns>
+        internal static int[] BuildBlockBootstrapRows(int observations, int blockSize, MersenneTwister prng)
+        {
+            var rows = new List<int>(observations);
+            while (rows.Count < observations)
+            {
+                int start = prng.Next(observations);
+                for (int k = 0; k < blockSize && rows.Count < observations; k++)
+                    rows.Add((start + k) % observations);
+            }
+            return rows.ToArray();
         }
 
         /// <summary>
@@ -1729,6 +2396,10 @@ namespace RMC.BestFit.Analyses
         {
             var root = new XElement("SpatialGEVAnalysis",
                 new XAttribute("IsEstimated", IsEstimated),
+                new XAttribute(nameof(UncertaintyMethod), UncertaintyMethod.ToString()),
+                new XAttribute(nameof(SampleConditionalResidual), SampleConditionalResidual.ToString()),
+                new XAttribute(nameof(BootstrapReplicates), BootstrapReplicates.ToString(CultureInfo.InvariantCulture)),
+                new XAttribute(nameof(BootstrapBlockSize), BootstrapBlockSize.ToString(CultureInfo.InvariantCulture)),
                 new XElement("ProbabilityOrdinates",
                     ProbabilityOrdinates.ToDelimitedString(ProbabilityOrdinates.DefaultDelimiter)));
 

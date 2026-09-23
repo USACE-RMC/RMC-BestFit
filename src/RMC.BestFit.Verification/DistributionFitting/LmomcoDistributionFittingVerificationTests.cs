@@ -1,0 +1,177 @@
+using System;
+using Numerics.Mathematics.Optimization;
+using System.IO;
+using System.Text.Json;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Numerics.Distributions;
+using RMC.BestFit.Estimation;
+using RMC.BestFit.Models;
+
+namespace RMC.BestFit.Verification.DistributionFitting;
+
+/// <summary>
+/// Verifies hydrologic distribution fitting against the pinned R lmomco oracle.
+/// </summary>
+/// <remarks>
+/// The 39 fixed scalar observations for each family and expected values are stored in
+/// <c>verification/data/distribution-fitting/lmomco-family-oracles.json</c>. R <c>lmomco</c>
+/// 2.5.7 independently supplies the parameter crosswalk, optimum, likelihood, density,
+/// distribution, and quantile values. Function values use 1e-8 absolute plus 1e-7 relative
+/// tolerance; the two optima must occupy the same joint 95% likelihood-ratio region. R is not
+/// required at test runtime.
+/// </remarks>
+[TestClass]
+public class LmomcoDistributionFittingVerificationTests
+{
+    /// <summary>
+    /// Verifies Generalized Logistic MLE and distribution functions against lmomco.
+    /// </summary>
+    [TestMethod]
+    public void GeneralizedLogistic_MleAndDistributionFunctionsMatchLmomco()
+    {
+        VerifyFamily(
+            "GeneralizedLogistic",
+            UnivariateDistributionType.GeneralizedLogistic);
+    }
+
+    /// <summary>
+    /// Verifies Generalized Normal MLE and distribution functions against lmomco.
+    /// </summary>
+    [TestMethod]
+    public void GeneralizedNormal_MleAndDistributionFunctionsMatchLmomco()
+    {
+        VerifyFamily(
+            "GeneralizedNormal",
+            UnivariateDistributionType.GeneralizedNormal);
+    }
+
+    /// <summary>
+    /// Verifies one family against its committed lmomco fit and function values.
+    /// </summary>
+    /// <param name="familyName">Artifact key for the family.</param>
+    /// <param name="distributionType">BestFit distribution type.</param>
+    private static void VerifyFamily(
+        string familyName,
+        UnivariateDistributionType distributionType)
+    {
+        JsonElement family = LoadFamily(familyName);
+        double[] data = ReadArray(family.GetProperty("data"));
+        double[] expectedParameters = ReadArray(family.GetProperty("numerics_parameters"));
+        double expectedMaximumLogLikelihood = family.GetProperty("maximum_log_likelihood").GetDouble();
+        JsonElement optimizerAcceptance = family.GetProperty("optimizer_acceptance");
+        JsonElement evaluation = family.GetProperty("evaluation");
+        double evaluationX = evaluation.GetProperty("x").GetDouble();
+        double expectedPdf = evaluation.GetProperty("pdf").GetDouble();
+        double expectedCdf = evaluation.GetProperty("cdf").GetDouble();
+        double evaluationProbability = evaluation.GetProperty("probability").GetDouble();
+        double expectedQuantile = evaluation.GetProperty("quantile").GetDouble();
+
+        var dataFrame = new DataFrame
+        {
+            ExactSeries = new ExactSeries(data)
+        };
+        var model = new UnivariateDistribution(dataFrame, distributionType);
+        UnivariateDistributionBase crosswalkDistribution = model.Distribution.Clone();
+        crosswalkDistribution.SetParameters(expectedParameters);
+
+        AssertCrossLanguageEqual(expectedPdf, crosswalkDistribution.PDF(evaluationX), "PDF");
+        AssertCrossLanguageEqual(expectedCdf, crosswalkDistribution.CDF(evaluationX), "CDF");
+        AssertCrossLanguageEqual(
+            expectedQuantile,
+            crosswalkDistribution.InverseCDF(evaluationProbability),
+            "quantile");
+        AssertCrossLanguageEqual(
+            expectedMaximumLogLikelihood,
+            model.DataLogLikelihood(expectedParameters),
+            "data log likelihood at the lmomco optimum");
+
+        var mle = new MaximumLikelihood(model, OptimizationMethod.DifferentialEvolution)
+        {
+            ComputeHessian = false,
+            ReportFailure = true
+        };
+
+        bool estimated = mle.Estimate();
+
+        Assert.IsTrue(estimated, $"{familyName} MLE did not converge.");
+        Assert.AreEqual(expectedParameters.Length, mle.BestParameterSet.Values.Length);
+        AssertJointLikelihoodRegion(
+            optimizerAcceptance,
+            expectedParameters.Length,
+            expectedMaximumLogLikelihood,
+            mle.MaximumLogLikelihood,
+            $"{familyName} production MLE versus lmomco MLE");
+    }
+
+    /// <summary>
+    /// Loads and clones one family element from the committed lmomco artifact.
+    /// </summary>
+    /// <param name="familyName">Artifact family key.</param>
+    /// <returns>A detached JSON element for the requested family.</returns>
+    private static JsonElement LoadFamily(string familyName)
+    {
+        string path = Path.Combine(
+            AppContext.BaseDirectory,
+            "VerificationData",
+            "lmomco-family-oracles.json");
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+        return document.RootElement.GetProperty("families").GetProperty(familyName).Clone();
+    }
+
+    /// <summary>
+    /// Reads a JSON numeric array into managed doubles.
+    /// </summary>
+    /// <param name="element">JSON array element.</param>
+    /// <returns>The array values as doubles.</returns>
+    private static double[] ReadArray(JsonElement element)
+    {
+        var values = new double[element.GetArrayLength()];
+        int index = 0;
+        foreach (JsonElement value in element.EnumerateArray())
+        {
+            values[index++] = value.GetDouble();
+        }
+        return values;
+    }
+
+    /// <summary>
+    /// Applies the predeclared cross-language absolute and relative tolerance.
+    /// </summary>
+    /// <param name="expected">External oracle value.</param>
+    /// <param name="actual">C# value.</param>
+    /// <param name="quantity">Quantity name for assertion output.</param>
+    private static void AssertCrossLanguageEqual(double expected, double actual, string quantity)
+    {
+        const double absoluteTolerance = 1E-8d;
+        const double relativeTolerance = 1E-7d;
+        double tolerance = absoluteTolerance + relativeTolerance * Math.Abs(expected);
+        Assert.AreEqual(expected, actual, tolerance, $"Cross-language {quantity} differs.");
+    }
+
+    /// <summary>
+    /// Requires two fitted objectives to occupy the same independently declared joint
+    /// likelihood-ratio confidence region.
+    /// </summary>
+    /// <param name="acceptance">Artifact metadata defining the confidence level and cutoff.</param>
+    /// <param name="parameterCount">Number of independently fitted physical coordinates.</param>
+    /// <param name="referenceLogLikelihood">External-package maximized log likelihood.</param>
+    /// <param name="candidateLogLikelihood">Production maximized log likelihood.</param>
+    /// <param name="quantity">Comparison name for assertion output.</param>
+    private static void AssertJointLikelihoodRegion(
+        JsonElement acceptance,
+        int parameterCount,
+        double referenceLogLikelihood,
+        double candidateLogLikelihood,
+        string quantity)
+    {
+        Assert.AreEqual("joint-likelihood-ratio", acceptance.GetProperty("method").GetString());
+        Assert.AreEqual(0.95d, acceptance.GetProperty("confidence_level").GetDouble(), 0d);
+        Assert.AreEqual(parameterCount, acceptance.GetProperty("degrees_of_freedom").GetInt32());
+        double maximumStatistic = acceptance.GetProperty("maximum_two_log_likelihood_difference").GetDouble();
+        double statistic = 2d * Math.Abs(referenceLogLikelihood - candidateLogLikelihood);
+        Assert.IsTrue(
+            double.IsFinite(statistic) && statistic <= maximumStatistic,
+            $"{quantity}: 2*|delta log L|={statistic:G17} exceeds the independent " +
+            $"95% chi-square({parameterCount}) cutoff {maximumStatistic:G17}.");
+    }
+}

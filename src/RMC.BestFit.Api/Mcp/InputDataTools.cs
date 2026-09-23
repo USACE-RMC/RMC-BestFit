@@ -36,6 +36,7 @@ namespace RMC.BestFit.Api.Mcp
         /// <param name="seriesType">peakDischarge (default) or peakStage.</param>
         /// <param name="name">Optional display name.</param>
         /// <param name="cancellationToken">Cancellation token supplied by the MCP host.</param>
+        /// <param name="useMultipleGrubbsBeckTest">True to screen peaks before storing input; default false.</param>
         /// <returns>JSON with the created resource summary including its id.</returns>
         [McpServerTool(Name = "create_inputdata_usgs_peaks")]
         [Description("Download the USGS annual peak-flow file for a site directly into an input-data resource (no intermediate time series needed). Returns the inputData id to pass to create_univariate_analysis or create_bulletin17c_analysis.")]
@@ -43,12 +44,14 @@ namespace RMC.BestFit.Api.Mcp
             [Description("8-digit USGS surface-water site number.")] string siteNumber,
             [Description("peakDischarge (default) or peakStage.")] string? seriesType = null,
             [Description("Optional display name for the resource.")] string? name = null,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            [Description("Run Multiple Grubbs-Beck low-outlier screening before storing input. Requires at least ten observations. Default false.")] bool useMultipleGrubbsBeckTest = false)
         {
             var resource = await _service.CreateFromUsgsPeaksAsync(new CreateUsgsPeaksInputDataRequest
             {
                 SiteNumber = siteNumber,
                 SeriesType = EnumHelper.ParseOrDefault(seriesType, TimeSeriesDownload.TimeSeriesType.PeakDischarge),
+                UseMultipleGrubbsBeckTest = useMultipleGrubbsBeckTest,
                 Name = name
             }, cancellationToken);
             return McpJson.Serialize(InputDataMapper.ToResourceResponse(resource));
@@ -132,6 +135,7 @@ namespace RMC.BestFit.Api.Mcp
         /// <param name="lowOutlierThreshold">Optional low-outlier threshold.</param>
         /// <param name="lambda">Optional events-per-year rate.</param>
         /// <param name="name">Optional display name.</param>
+        /// <param name="useMultipleGrubbsBeckTest">True to screen exact observations; incompatible with manual screening.</param>
         /// <returns>JSON with the created resource summary including its id.</returns>
         [McpServerTool(Name = "create_inputdata_manual")]
         [Description("Create an input-data resource from explicit observations: exactData is required (each { index: waterYear, value }), optionally with uncertain observations ({ index, distribution: { type, parameters } } — e.g., paleoflood estimates as measurement-error distributions), interval-censored observations ({ index, lowerBound, upperBound }), and perception thresholds ({ startIndex, endIndex, value, numberAbove }) for historical floods. Returns the inputData id.")]
@@ -141,9 +145,10 @@ namespace RMC.BestFit.Api.Mcp
             [Description("Optional interval-censored observations: array of { index, lowerBound, upperBound, value? }.")] List<IntervalObservationDto>? intervalData = null,
             [Description("Optional perception-threshold records: array of { startIndex, endIndex, value, numberAbove }.")] List<ThresholdObservationDto>? thresholdData = null,
             [Description("Plotting-position parameter a: 0 Weibull (default), 0.375 Blom, 0.44 Gringorten, 0.5 Hazen.")] double? plottingParameter = null,
-            [Description("Optional low-outlier threshold; observations at or below it are censored.")] double? lowOutlierThreshold = null,
+            [Description("Optional manual low-outlier threshold. Supply isLowOutlier flags explicitly; this value alone does not flag observations.")] double? lowOutlierThreshold = null,
             [Description("Optional events-per-year rate (lambda); omit for annual data (≈1).")] double? lambda = null,
-            [Description("Optional display name for the resource.")] string? name = null)
+            [Description("Optional display name for the resource.")] string? name = null,
+            [Description("Run Multiple Grubbs-Beck screening after populating observations. Requires at least ten exact observations; cannot combine with lowOutlierThreshold or isLowOutlier=true. Default false.")] bool useMultipleGrubbsBeckTest = false)
         {
             var resource = _service.CreateManual(new CreateManualInputDataRequest
             {
@@ -154,6 +159,7 @@ namespace RMC.BestFit.Api.Mcp
                 PlottingParameter = plottingParameter,
                 LowOutlierThreshold = lowOutlierThreshold,
                 Lambda = lambda,
+                UseMultipleGrubbsBeckTest = useMultipleGrubbsBeckTest,
                 Name = name
             });
             return McpJson.Serialize(InputDataMapper.ToResourceResponse(resource));
@@ -173,6 +179,26 @@ namespace RMC.BestFit.Api.Mcp
         {
             var resource = _service.Get(id);
             return McpJson.Serialize(InputDataMapper.ToResourceResponse(resource, includeData));
+        }
+
+        /// <summary>Returns model-derived input chronology data before an analysis is created.</summary>
+        /// <param name="id">The input resource identifier.</param>
+        /// <returns>JSON with dated observations, uncertainty bounds and inclusive threshold windows.</returns>
+        [McpServerTool(Name = "get_inputdata_chronology")]
+        [Description("Get input chronology before fitting: exact/uncertain/interval observations and inclusive perception windows with effective censored counts. No event dates are inferred from aggregate counts.")]
+        public string GetInputDataChronology(Guid id)
+        {
+            return McpJson.Serialize(InputDataMapper.ToChronologyResponse(_service.Get(id)));
+        }
+
+        /// <summary>Returns original input requests and available raw USGS evidence.</summary>
+        /// <param name="id">The input resource identifier.</param>
+        /// <returns>JSON with the original request, raw decoded source and its UTF-8 checksum.</returns>
+        [McpServerTool(Name = "get_inputdata_source")]
+        [Description("Get the original input request and available raw USGS peak text for provenance, dates and qualifier review. A raw download is evidence, not automatic approval to treat all peaks as exact.")]
+        public string GetInputDataSource(Guid id)
+        {
+            return McpJson.Serialize(InputDataMapper.ToSourceResponse(_service.Get(id)));
         }
     }
 }

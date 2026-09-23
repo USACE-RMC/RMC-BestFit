@@ -34,6 +34,12 @@ namespace RMC.BestFit.Api.DTOs
         public string? TransformType { get; set; }
 
         /// <summary>
+        /// The effective fitted or manually assigned transformation exponent.
+        /// </summary>
+        [JsonPropertyName("transformLambda")]
+        public double TransformLambda { get; set; }
+
+        /// <summary>
         /// The observed series length in time steps.
         /// </summary>
         [JsonPropertyName("dataLength")]

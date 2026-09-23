@@ -1,4 +1,5 @@
 using Numerics.Data;
+using System.Text.Json;
 using RMC.BestFit.Models;
 
 namespace RMC.BestFit.Api.Store
@@ -10,6 +11,12 @@ namespace RMC.BestFit.Api.Store
     /// </summary>
     public class InputDataResource : ResourceBase
     {
+        /// <summary>The detached original creation request, retained without changing numerical data.</summary>
+        public JsonElement? SourceRequest { get; init; }
+
+        /// <summary>Raw decoded USGS source text, including dates and qualifiers discarded by numerical extraction.</summary>
+        public string? SourceRawText { get; init; }
+
         /// <summary>
         /// The model-layer data frame holding the exact / interval / threshold series and the
         /// plotting-position and record-length settings. Treated as immutable after creation;

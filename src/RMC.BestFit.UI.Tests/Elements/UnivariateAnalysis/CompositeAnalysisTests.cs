@@ -393,6 +393,51 @@ public class CompositeAnalysisTests
             "CancellationTokenSource must be canceled — otherwise the App's Cancel " +
             "button is a visual-only no-op and the parallel simulation runs to completion.");
     }
+
+    /// <summary>
+    /// Verifies a correlation-matrix change is recorded for undo and redo and restores the
+    /// previous matrix by value.
+    /// </summary>
+    [STATestMethod]
+    public void CorrelationMatrix_UndoRedo_RestoresMatrix()
+    {
+        var composite = new CompositeAnalysis("MatrixComposite", _collection!);
+        var first = new[,] { { 1d, 0.3d }, { 0.3d, 1d } };
+        var second = new[,] { { 1d, 0.6d }, { 0.6d, 1d } };
+        composite.CorrelationMatrix = first;
+        composite.UndoManager.Clear();
+
+        composite.CorrelationMatrix = second;
+        Assert.IsTrue(composite.UndoManager.CanUndo, "A correlation-matrix change must be recorded for undo.");
+        Assert.AreEqual(0.6d, composite.CorrelationMatrix[0, 1], 0d);
+
+        composite.UndoManager.Undo();
+        Assert.AreEqual(0.3d, composite.CorrelationMatrix[0, 1], 0d, "Undo must restore the previous matrix.");
+        composite.UndoManager.Redo();
+        Assert.AreEqual(0.6d, composite.CorrelationMatrix[0, 1], 0d, "Redo must reapply the matrix.");
+    }
+
+    /// <summary>
+    /// Verifies the posterior-resampling seed is preserved by copy and participates in
+    /// the Bayesian-settings undo bridge.
+    /// </summary>
+    [STATestMethod]
+    public void PRNGSeed_CopyAndUndoRedo_PreserveValue()
+    {
+        var composite = new CompositeAnalysis("SeedComposite", _collection!);
+        int originalSeed = composite.BayesianAnalysis.PRNGSeed;
+        composite.UndoManager.Clear();
+
+        composite.BayesianAnalysis.PRNGSeed = 112358;
+        Assert.IsTrue(composite.UndoManager.CanUndo);
+        var copy = (CompositeAnalysis)composite.Copy("SeedCompositeCopy");
+        Assert.AreEqual(112358, copy.BayesianAnalysis.PRNGSeed);
+
+        composite.UndoManager.Undo();
+        Assert.AreEqual(originalSeed, composite.BayesianAnalysis.PRNGSeed);
+        composite.UndoManager.Redo();
+        Assert.AreEqual(112358, composite.BayesianAnalysis.PRNGSeed);
+    }
     /// <summary>
     /// Verifies that a child <see cref="RMC.BestFit.UI.UnivariateAnalysis.IsEstimated"/> event recomputes
     /// App-bound DIC model-average weights after the batch-run event order completes.

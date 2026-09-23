@@ -527,21 +527,20 @@ public class ARIMAXTests
     }
 
     /// <summary>
-    /// Tests that DataLogLikelihood returns zero (the canonical "no data" value) when no time series is assigned.
+    /// Tests that DataLogLikelihood returns negative infinity when no time series is assigned.
     /// </summary>
     /// <remarks>
-    /// ARIMAX uses 0.0 as a sentinel for the no-time-series case rather than
-    /// <c>double.NegativeInfinity</c>. The behaviour here is verified to match the model
-    /// implementation; do not change it without updating <c>ARIMAX.DataLogLikelihood</c> too.
+    /// Without data no model step is evaluated, so the conditional likelihood is undefined and
+    /// the model reports an impossible fit, consistent with the other time-series models.
     /// </remarks>
     [TestMethod]
-    public void Test_DataLogLikelihood_NullTimeSeries_ReturnsZero()
+    public void Test_DataLogLikelihood_NullTimeSeries_ReturnsNegativeInfinity()
     {
         var model = new ARIMAX();
 
         double result = model.DataLogLikelihood(model.Parameters.Select(p => p.Value).ToArray());
 
-        Assert.AreEqual(0.0, result);
+        Assert.AreEqual(double.NegativeInfinity, result);
     }
 
     /// <summary>

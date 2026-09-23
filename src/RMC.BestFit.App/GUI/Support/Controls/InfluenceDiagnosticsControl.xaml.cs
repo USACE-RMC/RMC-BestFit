@@ -45,7 +45,7 @@ namespace RMC_BestFit
     /// In <see cref="InfluenceControlMode.Bayesian"/> mode, supports two views:
     /// <list type="bullet">
     /// <item><description>Influence — Hessian leverage decomposition at the MAP estimate, showing
-    /// each observation's and prior component's share of the total information budget (% of total).</description></item>
+    /// each observation's and prior component's share of combined influence (% of total combined influence).</description></item>
     /// <item><description>Leave-One-Out Diagnostic — Pareto k values from PSIS-LOO-CV,
     /// color-coded by diagnostic category with reference lines at k = 0.5, 0.7, and 1.0.</description></item>
     /// </list>
@@ -179,7 +179,7 @@ namespace RMC_BestFit
         /// the App control rewrites the plot title and axis titles dynamically via
         /// <see cref="SetPlotTitle"/> / <see cref="SetAxisTitle"/> in each <see cref="UpdatePlot"/> path,
         /// so the same Plot object serves both "Pareto k" (Bayesian LOO Diagnostic view) and
-        /// "% of Total Information" (Bayesian Leverage view + every GMM view).
+        /// "% of Total Influence" (Bayesian Leverage view + every GMM view).
         /// </remarks>
         private Plot _plot;
 
@@ -459,16 +459,16 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Updates the plot to display the Influence view (Hessian leverage decomposition at MAP).
-        /// Shows each observation's and prior component's share of the total information budget
+        /// Shows each observation's and prior component's share of the total combined-influence index
         /// as a percentage. Observation bars use a single blue series; prior bars are colored by
         /// <see cref="PriorComponentType"/>. The "Include Prior Components" checkbox toggles prior bar visibility.
         /// </summary>
         private void UpdateLeveragePlot()
         {
             ClearPlot();
-            SetPlotTitle("Leverage (% of Total Information)");
+            SetPlotTitle("Combined Leverage (% of Total Influence)");
             SetAxisTitle("YAxis", "");
-            SetAxisTitle("XAxis", "% of Total Information");
+            SetAxisTitle("XAxis", "% of Total Influence");
 
             if (Analysis == null || Analysis.IsEstimated == false || Analysis.Results == null)
             {
@@ -566,7 +566,7 @@ namespace RMC_BestFit
                     ? diagnostics.TotalPriorLeverage / diagnostics.TotalLeverage * 100.0
                     : 0;
                 SummaryText.Text = $"p = {diagnostics.NumberOfParameters}. " +
-                    $"Data: {obsPct:F1}% of total information. " +
+                    $"Data: {obsPct:F1}% of total combined influence. " +
                     $"Priors: {priorPct:F1}%.";
             }
             catch (Exception ex)
@@ -861,9 +861,9 @@ namespace RMC_BestFit
         private void UpdateGMMInfluencePlot()
         {
             ClearPlot();
-            SetPlotTitle("Leverage (% of Total Information)");
+            SetPlotTitle("Combined Leverage (% of Total Influence)");
             SetAxisTitle("YAxis", "");
-            SetAxisTitle("XAxis", "% of Total Information");
+            SetAxisTitle("XAxis", "% of Total Influence");
 
             if (GMMAnalysis == null || GMMAnalysis.IsEstimated == false)
             {
@@ -957,7 +957,7 @@ namespace RMC_BestFit
                     ? diagnostics.TotalPriorLeverage / diagnostics.TotalLeverage * 100.0
                     : 0;
                 SummaryText.Text = $"p = {diagnostics.NumberOfParameters}. " +
-                    $"Data: {obsPct:F1}% of total information. " +
+                    $"Data: {obsPct:F1}% of total combined influence. " +
                     $"Penalties: {priorPct:F1}%.";
             }
             catch (Exception ex)
@@ -1267,7 +1267,7 @@ namespace RMC_BestFit
             public double Leverage { get; set; }
 
             /// <summary>
-            /// Gets or sets the leverage as a percentage of total information.
+            /// Gets or sets the leverage as a percentage of total combined influence.
             /// </summary>
             public double PercentOfTotal { get; set; }
 

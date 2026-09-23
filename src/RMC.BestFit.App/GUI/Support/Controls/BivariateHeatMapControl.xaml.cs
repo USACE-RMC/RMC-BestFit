@@ -76,8 +76,8 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Gets or sets a value indicating whether the control should use simplified (non-Bayesian)
-        /// terminology. When true, the plot title omits "Posterior" (e.g. "Joint Density of � and s"
-        /// instead of "Joint Posterior Density of � and s"). Set to true for B17C bootstrap/GMM
+        /// terminology. When true, the plot title omits "Posterior" (e.g. "Joint Density of μ and σ"
+        /// instead of "Joint Posterior Density of μ and σ"). Set to true for B17C bootstrap/GMM
         /// contexts where the parameter samples are not posterior draws.
         /// </summary>
         public bool SimpleView { get; set; } = false;
@@ -161,7 +161,9 @@ namespace RMC_BestFit
             {
                 UpdatePlot();
             }
-            if (e.PropertyName == nameof(Analysis.Model) || e.PropertyName == nameof(Analysis.ParameterNames))
+            if (e.PropertyName == nameof(Analysis.Model) ||
+                e.PropertyName == nameof(Analysis.ParameterNames) ||
+                e.PropertyName == nameof(Analysis.Results))
             {
                 LoadParameterComboBox();
             }
@@ -175,14 +177,39 @@ namespace RMC_BestFit
         private void LoadParameterComboBox()
         {
             if (Analysis == null || Analysis.ParameterNames == null) return;
-            var parms = Analysis.ParameterNames.ToList();
+            var selectedXParameter = XParameterComboBox.SelectedValue as string;
+            var selectedYParameter = YParameterComboBox.SelectedValue as string;
+            var parms = GetSampledParameterNames();
             XParameterComboBox.ItemsSource = null;
             XParameterComboBox.ItemsSource = parms;
-            XParameterComboBox.SelectedIndex = 0;
+            int selectedXIndex = selectedXParameter == null ? -1 : parms.IndexOf(selectedXParameter);
+            XParameterComboBox.SelectedIndex = selectedXIndex >= 0
+                ? selectedXIndex
+                : parms.Count > 0 ? 0 : -1;
 
             YParameterComboBox.ItemsSource = null;
             YParameterComboBox.ItemsSource = parms;
-            YParameterComboBox.SelectedIndex = 1;
+            int selectedYIndex = selectedYParameter == null ? -1 : parms.IndexOf(selectedYParameter);
+            YParameterComboBox.SelectedIndex = selectedYIndex >= 0
+                ? selectedYIndex
+                : parms.Count > 1 ? 1 : parms.Count > 0 ? 0 : -1;
+        }
+
+        /// <summary>
+        /// Gets names aligned with the coordinates stored in the MCMC results.
+        /// </summary>
+        /// <returns>Sampled parameter names; the derived final mixture weight is omitted for new K-1 results.</returns>
+        private List<string> GetSampledParameterNames()
+        {
+            var names = Analysis.ParameterNames!.ToList();
+            if (Analysis.Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                Analysis.Results?.ParameterResults?.Length == names.Count - 1)
+            {
+                names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
+            }
+            return names;
         }
 
         /// <summary>
@@ -260,7 +287,7 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Sets the plot title. Suppresses PropertyChanged so the change is not recorded
-        /// as an undoable action � the title tracks combo selection, not user intent.
+        /// as an undoable action — the title tracks combo selection, not user intent.
         /// </summary>
         private void SetPlotTitle(string title)
         {
@@ -281,7 +308,7 @@ namespace RMC_BestFit
 
             // Set plot title and axis titles to reflect the selected parameter pair. Suppress
             // PropertyChanged so the PlotUndoManager does not record these as undoable actions
-            // � they track combo selections, not user intent.
+            // — they track combo selections, not user intent.
             string xParamName = XParameterComboBox.SelectedValue as string ?? "";
             string yParamName = YParameterComboBox.SelectedValue as string ?? "";
             string densityLabel = SimpleView ? "Joint Density" : "Joint Posterior Density";
@@ -328,8 +355,19 @@ namespace RMC_BestFit
                 try
                 {
 
-                int Xindex = Math.Max(0, XParameterComboBox.SelectedIndex);
-                int Yindex = Math.Max(0, YParameterComboBox.SelectedIndex);
+                int Xindex = XParameterComboBox.SelectedIndex;
+                int Yindex = YParameterComboBox.SelectedIndex;
+                int retainedDrawCount = Analysis.Results.Output.Count;
+                if (Analysis.Results.ParameterResults == null ||
+                    Xindex < 0 ||
+                    Xindex >= Analysis.Results.ParameterResults.Length ||
+                    Yindex < 0 ||
+                    Yindex >= Analysis.Results.ParameterResults.Length ||
+                    retainedDrawCount == 0)
+                {
+                    _plot.InvalidatePlot(true);
+                    return;
+                }
 
                 // Get histogram bins
                 var histX = Analysis.Results.ParameterResults[Xindex].Histogram;
@@ -371,17 +409,20 @@ namespace RMC_BestFit
                 double minZ = double.MaxValue;
                 double maxZ = double.MinValue;
 
-                // Ensure output values are available and match expected length
-                //if (Analysis.OutputLength != Analysis.Results.Output[0].Values.Length)
-                //    return;
-
-                for (int i = 0; i < Analysis.OutputLength; i++)
+                for (int i = 0; i < retainedDrawCount; i++)
                 {
-                    var x = Analysis.Results.Output[i].Values != null ? Analysis.Results.Output[i].Values[Xindex] : 0;
-                    var y = Analysis.Results.Output[i].Values != null ? Analysis.Results.Output[i].Values[Yindex] : 0;
+                    double[] values = Analysis.Results.Output[i].Values;
+                    if (values == null || Xindex >= values.Length || Yindex >= values.Length)
+                    {
+                        _plot.InvalidatePlot(true);
+                        return;
+                    }
+
+                    var x = values[Xindex];
+                    var y = values[Yindex];
                     var xId = Math.Max(0, Math.Min(bins - 1, (int)Math.Floor((x - minX) / dx)));
                     var yID = Math.Max(0, Math.Min(bins - 1, (int)Math.Floor((y - minY) / dy)));
-                    data[xId, yID] += 1d / Analysis.OutputLength;
+                    data[xId, yID] += 1d / retainedDrawCount;
                     minZ = Math.Min(minZ, data[xId, yID]);
                     maxZ = Math.Max(maxZ, data[xId, yID]);
                 }
@@ -393,7 +434,7 @@ namespace RMC_BestFit
                 for (int i = 1; i < zBins; i++)
                     zVals[i] = Math.Round(zVals[i - 1] + dz, 5);
 
-                // Exception: series count varies per parameter pair selection � runtime-variable
+                // Exception: series count varies per parameter pair selection — runtime-variable
                 // inline creation is intentional per the series-preservation guidance.
                 _plot.Series.Add(new HeatMapSeries()
                 {

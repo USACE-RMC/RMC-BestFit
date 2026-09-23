@@ -1,0 +1,4 @@
+# Direct Python oracle dependencies. requirements.lock is generated from a clean Python 3.13 environment.
+numpy==2.4.2
+scipy==1.17.1
+arviz==1.2.0

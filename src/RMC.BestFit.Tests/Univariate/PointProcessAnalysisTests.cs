@@ -1,5 +1,8 @@
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
+using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using System.Xml.Linq;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
@@ -29,7 +32,7 @@ public class PointProcessAnalysisTests
         .GenerateRandomValues(FixtureSize, 12345);
 
     /// <summary>
-    /// Creates test Data Frame.
+    /// Creates the inline POT data frame.
     /// </summary>
     /// <returns>The created test object.</returns>
     /// <remarks>
@@ -40,13 +43,13 @@ public class PointProcessAnalysisTests
         var df = new BestFitDataFrame();
         for (int i = 0; i < InlinePOTData.Length; i++)
         {
-            df.ExactSeries.Add(new ExactData(100 + i * 10, InlinePOTData[i])); // Spread throughout year
+            df.ExactSeries.Add(new ExactData(100 + i * 10, InlinePOTData[i]));
         }
         return df;
     }
 
     /// <summary>
-    /// Creates test Model.
+    /// Creates the inline nonseasonal point-process model.
     /// </summary>
     /// <returns>The created test object.</returns>
     /// <remarks>
@@ -57,7 +60,7 @@ public class PointProcessAnalysisTests
         var df = CreateTestDataFrame();
         var model = new PointProcessModel
         { DataFrame = df,
-            Threshold = 14000 // Set threshold for POT
+            Threshold = 14000
         };
         return model;
     }
@@ -80,7 +83,7 @@ public class PointProcessAnalysisTests
 
     #region Constructor Tests
 
-    /// <summary>Verifies that constructor with model initializes correctly.</summary>
+    /// <summary>Verifies the model constructor initializes analysis state.</summary>
     [TestMethod]
     public void Constructor_WithModel_InitializesCorrectly()
     {
@@ -95,7 +98,7 @@ public class PointProcessAnalysisTests
         Assert.IsNull(analysis.AnalysisResults, "AnalysisResults should be null initially.");
     }
 
-    /// <summary>Verifies that constructor throws when with null model.</summary>
+    /// <summary>Verifies the model constructor rejects a null model.</summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
     public void Constructor_WithNullModel_ThrowsArgumentNullException()
@@ -103,7 +106,7 @@ public class PointProcessAnalysisTests
         _ = new PointProcessAnalysis(null!);
     }
 
-    /// <summary>Verifies that constructor bayesian analysis has correct model.</summary>
+    /// <summary>Verifies Bayesian estimation references the supplied model.</summary>
     [TestMethod]
     public void Constructor_BayesianAnalysis_HasCorrectModel()
     {
@@ -119,7 +122,7 @@ public class PointProcessAnalysisTests
 
     #region XML Serialization Tests
 
-    /// <summary>Verifies that xml serialization preserves configuration for round trip.</summary>
+    /// <summary>Verifies XML round-trip preserves the analysis configuration.</summary>
     [TestMethod]
     public void XmlSerialization_RoundTrip_PreservesConfiguration()
     {
@@ -138,7 +141,7 @@ public class PointProcessAnalysisTests
             "Probability ordinates count should be preserved.");
     }
 
-    /// <summary>Verifies that constructor throws when with null X element.</summary>
+    /// <summary>Verifies the XML constructor rejects a null element.</summary>
     [TestMethod]
     [ExpectedException(typeof(ArgumentNullException))]
     public void Constructor_WithNullXElement_ThrowsArgumentNullException()
@@ -151,7 +154,7 @@ public class PointProcessAnalysisTests
 
     #region Validation Tests
 
-    /// <summary>Verifies that validate returns valid when with valid configuration.</summary>
+    /// <summary>Verifies a valid point-process analysis passes validation.</summary>
     [TestMethod]
     public void Validate_WithValidConfiguration_ReturnsValid()
     {
@@ -167,7 +170,7 @@ public class PointProcessAnalysisTests
 
     #region ClearResults Tests
 
-    /// <summary>Verifies that clear results resets all results.</summary>
+    /// <summary>Verifies clearing results resets the estimated state and outputs.</summary>
     [TestMethod]
     public void ClearResults_ResetsAllResults()
     {
@@ -184,7 +187,7 @@ public class PointProcessAnalysisTests
 
     #region Property Change Tests
 
-    /// <summary>Verifies that probability ordinates change raises property changed.</summary>
+    /// <summary>Verifies ordinate edits raise the analysis property-change event.</summary>
     [TestMethod]
     public void ProbabilityOrdinates_Change_RaisesPropertyChanged()
     {
@@ -268,7 +271,7 @@ public class PointProcessAnalysisTests
 
     #region GetDistribution Tests
 
-    /// <summary>Verifies that get distribution returns null when when not estimated.</summary>
+    /// <summary>Verifies indexed distribution retrieval returns null before estimation.</summary>
     [TestMethod]
     public void GetDistribution_WhenNotEstimated_ReturnsNull()
     {
@@ -280,7 +283,7 @@ public class PointProcessAnalysisTests
         Assert.IsNull(result, "GetDistribution should return null when not estimated.");
     }
 
-    /// <summary>Verifies that get point estimate distribution returns null when when not estimated.</summary>
+    /// <summary>Verifies point-estimate distribution retrieval returns null before estimation.</summary>
     [TestMethod]
     public void GetPointEstimateDistribution_WhenNotEstimated_ReturnsNull()
     {
@@ -291,12 +294,60 @@ public class PointProcessAnalysisTests
 
         Assert.IsNull(result, "GetPointEstimateDistribution should return null when not estimated.");
     }
+    /// <summary>Verifies seasonal posterior retrieval applies the analytical exposure transform.</summary>
+    [TestMethod]
+    public void GetDistribution_SeasonalResultsApplyExposureTransform()
+    {
+        var frame = new BestFitDataFrame();
+        for (int year = 2000; year < 2010; year++)
+        {
+            frame.ExactSeries.Add(new ExactData(new DateTime(year, 1, 15), 100.0 + year - 2000));
+            frame.ExactSeries.Add(new ExactData(new DateTime(year, 7, 15), 120.0 + year - 2000));
+        }
+
+        var model = new PointProcessModel
+        {
+            UseDefaults = false,
+            IsSeasonal = true,
+            TimeBlock = Numerics.Data.TimeBlockWindow.CalendarYear,
+            StartMonth = 1,
+            DataFrame = frame,
+            Threshold = 80.0,
+            TotalYears = 10.0
+        };
+        model.SetDefaultParameters();
+        double[] values = { 80.5, 260.5, 100.0, 20.0, -0.10, 120.0, 25.0, 0.05 };
+        var output = new List<ParameterSet> { new ParameterSet((double[])values.Clone(), 0.0) };
+        var results = new MCMCResults(new ParameterSet((double[])values.Clone(), 0.0), output, 0.10);
+        var analysis = new PointProcessAnalysis(model);
+        analysis.BayesianAnalysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+
+        var indexed = (CompetingRisks)analysis.GetDistribution(0)!;
+        var pointEstimate = (CompetingRisks)analysis.GetPointEstimateDistribution(BayesianAnalysis.PointEstimateType.PosteriorMode)!;
+
+        double firstWeight = (80.0 + 366.0 - 260.0) / 366.0;
+        double secondWeight = (260.0 - 80.0) / 366.0;
+        double[] expected =
+        {
+            100.0 + 20.0 / -0.10 * (1.0 - Math.Pow(firstWeight, 0.10)),
+            20.0 * Math.Pow(firstWeight, 0.10),
+            -0.10,
+            120.0 + 25.0 / 0.05 * (1.0 - Math.Pow(secondWeight, -0.05)),
+            25.0 * Math.Pow(secondWeight, -0.05),
+            0.05
+        };
+        for (int i = 0; i < expected.Length; i++)
+        {
+            Assert.AreEqual(expected[i], indexed.GetParameters[i], 1E-12, $"Indexed parameter {i} was not annualized.");
+            Assert.AreEqual(expected[i], pointEstimate.GetParameters[i], 1E-12, $"Point-estimate parameter {i} was not annualized.");
+        }
+    }
 
     #endregion
 
     #region CancelAnalysis Tests
 
-    /// <summary>Verifies that cancel analysis does not throw for when not running.</summary>
+    /// <summary>Verifies cancellation is safe when no analysis is running.</summary>
     [TestMethod]
     public void CancelAnalysis_WhenNotRunning_DoesNotThrow()
     {
@@ -310,7 +361,7 @@ public class PointProcessAnalysisTests
 
     #region Event Tests
 
-    /// <summary>Verifies that run async raises analysis starting event.</summary>
+    /// <summary>Verifies RunAsync raises the starting event before estimation.</summary>
     [TestMethod]
     public async Task RunAsync_RaisesAnalysisStartingEvent()
     {
@@ -330,7 +381,7 @@ public class PointProcessAnalysisTests
         Assert.IsTrue(eventRaised, "AnalysisStarting event should be raised.");
     }
 
-    /// <summary>Verifies that run async raises analysis completed event.</summary>
+    /// <summary>Verifies cancellation raises the completed event with canceled status.</summary>
     [TestMethod]
     public async Task RunAsync_RaisesAnalysisCompletedEvent()
     {
@@ -354,7 +405,7 @@ public class PointProcessAnalysisTests
 
     #region Threshold Tests
 
-    /// <summary>Verifies that threshold can be set.</summary>
+    /// <summary>Verifies threshold configuration delegates to the model.</summary>
     [TestMethod]
     public void Threshold_CanBeSet()
     {
@@ -366,7 +417,7 @@ public class PointProcessAnalysisTests
         Assert.AreEqual(15000, analysis.PointProcess.Threshold);
     }
 
-    /// <summary>Verifies that observation period can be set.</summary>
+    /// <summary>Verifies exposure configuration delegates to the model.</summary>
     [TestMethod]
     public void ObservationPeriod_CanBeSet()
     {
@@ -382,7 +433,7 @@ public class PointProcessAnalysisTests
 
     #region Probability Ordinates Tests
 
-    /// <summary>Verifies that probability ordinates default initialization has default values.</summary>
+    /// <summary>Verifies default probability ordinates are populated.</summary>
     [TestMethod]
     public void ProbabilityOrdinates_DefaultInitialization_HasDefaultValues()
     {
@@ -398,7 +449,7 @@ public class PointProcessAnalysisTests
 
     #region Edge Cases
 
-    /// <summary>Verifies that to X element creates valid xml structure.</summary>
+    /// <summary>Verifies serialization creates the expected XML structure.</summary>
     [TestMethod]
     public void ToXElement_CreatesValidXmlStructure()
     {
@@ -412,7 +463,7 @@ public class PointProcessAnalysisTests
         Assert.IsNotNull(xElement.Attribute("IsEstimated"), "Should have IsEstimated attribute.");
     }
 
-    /// <summary>Verifies that bayesian analysis has default settings.</summary>
+    /// <summary>Verifies Bayesian estimation receives nonzero default iterations.</summary>
     [TestMethod]
     public void BayesianAnalysis_HasDefaultSettings()
     {
@@ -428,7 +479,7 @@ public class PointProcessAnalysisTests
 
     #region IUnivariateAnalysis Interface Tests
 
-    /// <summary>Verifies that i univariate analysis is accessible when probability ordinates.</summary>
+    /// <summary>Verifies probability ordinates are available through IUnivariateAnalysis.</summary>
     [TestMethod]
     public void IUnivariateAnalysis_ProbabilityOrdinates_IsAccessible()
     {

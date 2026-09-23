@@ -1,5 +1,6 @@
-using Numerics.Distributions;
+﻿using Numerics.Distributions;
 using RMC.BestFit.Models;
+using System.Xml.Linq;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
@@ -114,7 +115,12 @@ public class MixtureModelTests
             Mixture = new Mixture(weights, distributions),
             DataFrame = CreateSampleDataFrame()
         };
-        double[] parameterValues = model.Mixture!.GetParameters;
+        int componentCount = model.Mixture!.Distributions.Length;
+        int publicWeightCount = componentCount > 1 ? componentCount : 0;
+        double[] physicalParameters = model.Mixture.GetParameters;
+        double[] parameterValues = physicalParameters.Take(publicWeightCount)
+            .Concat(physicalParameters.Skip(componentCount))
+            .ToArray();
 
         for (int i = 0; i < parameterValues.Length; i++)
         {
@@ -447,12 +453,11 @@ public class MixtureModelTests
         };
         var model = new MixtureModel(df, types);
 
-        // Should have 2 weight parameters + 2*2 distribution parameters = 6
-        Assert.IsTrue(model.NumberOfParameters >= 6);
-
-        // First two parameters should be weights
-        Assert.IsTrue(model.Parameters[0].Name.Contains("Weight"));
-        Assert.IsTrue(model.Parameters[1].Name.Contains("Weight"));
+        // The public contract retains both physical weights plus two parameters per Normal component.
+        Assert.AreEqual(6, model.NumberOfParameters);
+        Assert.AreEqual("Weight (w₁)", model.Parameters[0].Name);
+        Assert.AreEqual("Weight (w₂)", model.Parameters[1].Name);
+        Assert.IsFalse(model.Parameters[2].Name.Contains("Weight", StringComparison.Ordinal));
     }
 
     /// <summary>Verifies that set default parameters single component no weight parameters.</summary>
@@ -762,9 +767,9 @@ public class MixtureModelTests
 
         model.ExpectationMaximization(out double[] parameters, out double[,] covariance, out int iterations);
 
-        // First two parameters are weights
-        double weightSum = parameters[0] + parameters[1];
-        Assert.AreEqual(1.0, weightSum, 0.01); // EM may not be perfectly converged
+        Assert.IsTrue(parameters[0] >= 0.0);
+        Assert.IsTrue(parameters[1] >= 0.0);
+        Assert.AreEqual(1.0, parameters[0] + parameters[1], 1E-12);
     }
 
     #endregion
@@ -893,6 +898,57 @@ public class MixtureModelTests
         var xElement = model.ToXElement();
 
         Assert.IsNotNull(xElement.Element("Distribution"));
+    }
+
+    /// <summary>Verifies mixture XML retains every physical component weight.</summary>
+    [TestMethod]
+    public void Test_ToXElement_PersistsFullKParameterVector()
+    {
+        var model = new MixtureModel(
+            CreateSampleDataFrame(),
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            });
+
+        XElement xElement = model.ToXElement();
+        List<XElement> parameters = xElement
+            .Element(nameof(MixtureModel.Parameters))!
+            .Elements(nameof(ModelParameter))
+            .ToList();
+
+        Assert.AreEqual(model.NumberOfParameters, parameters.Count);
+        Assert.AreEqual(6, parameters.Count);
+        StringAssert.Contains(parameters[0].ToString(), "Weight (w₁)");
+        StringAssert.Contains(parameters[1].ToString(), "Weight (w₂)");
+    }
+
+    /// <summary>Verifies distinct priors on every physical weight survive XML round trip.</summary>
+    [TestMethod]
+    public void Test_RoundTrip_PreservesAllPhysicalWeightPriors()
+    {
+        var dataFrame = CreateSampleDataFrame();
+        var original = new MixtureModel(
+            dataFrame,
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            });
+        original.Parameters[0].PriorDistribution = new Normal(0.25, 0.10);
+        original.Parameters[1].PriorDistribution = new Normal(0.75, 0.15);
+
+        var restored = new MixtureModel(dataFrame, original.ToXElement());
+
+        Assert.AreEqual(
+            original.Parameters[0].PriorDistribution.LogPDF(0.4),
+            restored.Parameters[0].PriorDistribution.LogPDF(0.4),
+            1E-12);
+        Assert.AreEqual(
+            original.Parameters[1].PriorDistribution.LogPDF(0.6),
+            restored.Parameters[1].PriorDistribution.LogPDF(0.6),
+            1E-12);
     }
 
     /// <summary>Verifies that round trip preserves all properties for .</summary>
@@ -1122,22 +1178,13 @@ public class MixtureModelTests
     }
 
     /// <summary>
-    /// When input data is constant (zero-width sample range), the MixtureModel's
-    /// auto-fit Uniform prior collapses to <c>Uniform(a, a)</c>, which
-    /// <c>Numerics.Distributions.Uniform</c> correctly rejects with
-    /// <c>ArgumentOutOfRangeException</c> during PDF evaluation. This is the
-    /// intended contract: degenerate data surfaces as an exception rather than a
-    /// silent NaN / −∞, so the caller cannot mistakenly proceed with meaningless
-    /// posterior inference.
+    /// Verifies constant data are reported as invalid initialization inputs without failing construction.
     /// </summary>
     /// <remarks>
-    /// The test pins down the throw contract. If the contract changes (e.g., future
-    /// work adds an upstream degeneracy guard in MixtureModel that returns
-    /// <c>double.NegativeInfinity</c> instead), this test should be updated with the
-    /// new expected behavior.
+    /// The diagnostic identifies the constant sample directly rather than relying on a degenerate fitted prior.
     /// </remarks>
     [TestMethod]
-    public void Test_MixtureModel_AllSameValue_ThrowsOnDegenerateData()
+    public void Test_MixtureModel_AllSameValue_ReportsInvalidInitialization()
     {
         var df = new BestFitDataFrame();
         var data = new List<ExactData>();
@@ -1150,12 +1197,10 @@ public class MixtureModelTests
         var types = new List<UnivariateDistributionType> { UnivariateDistributionType.Normal };
         var model = new MixtureModel(df, types);
 
-        var parameters = model.Parameters.Select(p => p.Value).ToArray();
-
-        // All-same data → auto-fit Uniform prior has min == max → Uniform.PDF throws.
-        // This surfaces the data degeneracy instead of silently returning NaN / −∞.
-        Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.LogLikelihood(parameters),
-            "LogLikelihood should throw ArgumentOutOfRangeException on constant-value data.");
+        var validation = model.Validate();
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message =>
+            message.Contains("constant sample", StringComparison.OrdinalIgnoreCase)));
     }
 
     /// <summary>Verifies that mixture model large values.</summary>
@@ -1268,4 +1313,39 @@ public class MixtureModelTests
     }
 
     #endregion
+    /// <summary>
+    /// Verifies the K-1 weight expansion accepts a residual weight at and vanishingly below the
+    /// simplex boundary, and still rejects a genuinely negative residual.
+    /// </summary>
+    /// <remarks>
+    /// A posterior summary of the free weights can land a few ULP above the component mass from
+    /// floating-point accumulation, making the derived final weight a vanishingly small negative.
+    /// The expansion used to reject that outright, so GetPhysicalParameters threw and the
+    /// point-estimator reprocess silently failed, freezing the GUI on stale results (issue #17).
+    /// The residual is now clamped to zero within a 1E-12 tolerance of the component mass.
+    /// </remarks>
+    [TestMethod]
+    public void Test_GetPhysicalParameters_SimplexBoundaryResidual_IsClampedNotRejected()
+    {
+        var model = new MixtureModel();
+        Assert.AreEqual(2, model.Mixture!.Distributions.Length, "Fixture precondition: two components.");
+
+        // Free weight exactly at the component mass: residual weight is exactly zero.
+        var atBoundary = new double[] { 1.0, 10.0, 2.0, 30.0, 5.0 };
+        var expanded = model.GetPhysicalParameters(atBoundary);
+        Assert.AreEqual(6, expanded.Length);
+        Assert.AreEqual(0.0, expanded[1], 0d, "The residual weight at the boundary is zero.");
+
+        // Free weight one representable step above the mass: the tiny negative residual is
+        // clamped to zero; this exact vector used to throw.
+        var justAbove = new double[] { 1.0 + 1E-15, 10.0, 2.0, 30.0, 5.0 };
+        expanded = model.GetPhysicalParameters(justAbove);
+        Assert.AreEqual(0.0, expanded[1], 0d, "A ULP-scale negative residual is clamped to zero.");
+
+        // A genuinely negative residual is still rejected.
+        var infeasible = new double[] { 1.001, 10.0, 2.0, 30.0, 5.0 };
+        Assert.IsFalse(model.TryGetPhysicalParameters(infeasible, out _),
+            "A residual below the clamp tolerance must still be rejected.");
+    }
+
 }

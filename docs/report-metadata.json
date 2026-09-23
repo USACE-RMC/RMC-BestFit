@@ -1,0 +1,54 @@
+{
+  "release_status": "Draft for external peer review - not for public release",
+  "publication_date_iso": "2026-08-28",
+  "publication_date_display": "28 August 2026",
+  "bestfit_version": "2.0.0",
+  "bestfit_commit": "4304fb39f8e162cdb746083108042df88e153afc",
+  "numerics_source_commit": "90a63a46394db9ef95e72b0fcbba943408110636",
+  "numerics_package_baseline": "2.1.4",
+  "organization": "U.S. Army Corps of Engineers, Risk Management Center",
+  "authors": [
+    {
+      "name": "C. Haden Smith",
+      "affiliation": "U.S. Army Corps of Engineers, Risk Management Center, Lakewood, Colorado, USA"
+    },
+    {
+      "name": "Woodrow L. Fields",
+      "affiliation": "U.S. Army Corps of Engineers, Risk Management Center, Lakewood, Colorado, USA"
+    },
+    {
+      "name": "Brian Skahill",
+      "affiliation": "Fariborz Maseeh Department of Mathematics and Statistics, Portland State University, Portland, Oregon, USA"
+    }
+  ],
+  "technical_reference": {
+    "title": "RMC.BestFit 2.0 Technical Reference Manual",
+    "short_title": "RMC.BestFit 2.0 Technical Reference",
+    "document_id": "Pending assignment",
+    "subtitle": "Statistical models, likelihoods, estimation, uncertainty, diagnostics, and scientific API traceability",
+    "checkpoint": {
+      "publication_date_iso": "2026-09-22",
+      "publication_date_display": "22 September 2026",
+      "bestfit_version": "2.0.0",
+      "bestfit_commit": "3fa55a0f75bbd583e2fb7fce42180faa376f007c",
+      "numerics_source_commit": "7e8e8d1c5f26e045a35ec9fc09367de95ed05b02",
+      "numerics_package_baseline": "2.2.0",
+      "release_status": "Draft for external peer review - not for public release"
+    }
+  },
+  "verification_report": {
+    "title": "RMC.BestFit 2.0 Verification Report",
+    "short_title": "RMC.BestFit 2.0 Verification Report",
+    "document_id": "Pending assignment",
+    "subtitle": "Analytical checks, independent benchmarks, estimation recovery, and uncertainty diagnostics",
+    "checkpoint": {
+      "publication_date_iso": "2026-09-21",
+      "publication_date_display": "21 September 2026",
+      "bestfit_version": "2.0.0",
+      "bestfit_commit": "8808f19f3bfa712241e55a0dfa47407ff5a60970",
+      "numerics_source_commit": "7e8e8d1c5f26e045a35ec9fc09367de95ed05b02",
+      "numerics_package_baseline": "2.2.0",
+      "release_status": "Draft for external peer review - not for public release"
+    }
+  }
+}

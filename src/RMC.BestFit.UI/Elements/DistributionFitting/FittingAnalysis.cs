@@ -281,7 +281,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         private InputData _inputData;
 
-        // ProbabilityOrdinates removed â€” now owned by _innerAnalysis (pass-through property)
+        // ProbabilityOrdinates removed — now owned by _innerAnalysis (pass-through property)
 
         /// <summary>
         /// The frequency plot.
@@ -739,7 +739,7 @@ namespace RMC.BestFit.UI
                     }
                 }
 
-                // Create inner analysis from XElement â€” atomically loads ProbOrdinates + FittedDists
+                // Create inner analysis from XElement — atomically loads ProbOrdinates + FittedDists
                 if (_inputData?.DataFrame != null && analysisXElement != null)
                 {
                     UnsubscribeInnerAnalysis();
@@ -1135,14 +1135,14 @@ namespace RMC.BestFit.UI
         /// <param name="sender">The event source.</param>
         /// <param name="e">The collection changed event arguments.</param>
         /// <remarks>
-        /// Validates probability ordinates. Does not invalidate the MLE fit â€” ordinates
+        /// Validates probability ordinates. Does not invalidate the MLE fit — ordinates
         /// are an output display grid only; the fitted distribution parameters don't
         /// depend on them. The App-layer control listens for the <c>ProbabilityOrdinates</c>
         /// property change and refreshes the frequency plot / summary tables there.
         /// </remarks>
         private void ProbabilityOrdinates_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            // Check probability ordinates (flag only â€” messages come from model via adapter in SetIsValid)
+            // Check probability ordinates (flag only — messages come from model via adapter in SetIsValid)
             _ordinatesValid = true;
             if (ProbabilityOrdinates.Count == 0)
             {
@@ -1520,7 +1520,7 @@ namespace RMC.BestFit.UI
                 );
             }
 
-            // Create plot undo managers â€” each monitors its plot's axes and annotations
+            // Create plot undo managers — each monitors its plot's axes and annotations
             // for collection changes and auto-rebuilds bridges as needed.
             Func<IUndoManager> getUndo = () => IsUndoEnabled ? UndoManager : null;
             Action onRecorded = () => SetIsDirty(true);

@@ -11,6 +11,14 @@ namespace RMC.BestFit.Api.DTOs
     public class CreateManualInputDataRequest
     {
         /// <summary>
+        /// Runs the model's Multiple Grubbs-Beck Test after populating all observations.
+        /// Defaults to false. Requires at least ten exact observations and cannot be combined
+        /// with an explicit low-outlier threshold or preflagged exact observations.
+        /// </summary>
+        [JsonPropertyName("useMultipleGrubbsBeckTest")]
+        public bool UseMultipleGrubbsBeckTest { get; set; }
+
+        /// <summary>
         /// Optional display name for the resource. Defaults to "Manual input data".
         /// </summary>
         [JsonPropertyName("name")]
@@ -62,8 +70,9 @@ namespace RMC.BestFit.Api.DTOs
         public double? PlottingParameter { get; set; }
 
         /// <summary>
-        /// Optional low-outlier threshold: exact observations at or below this magnitude are
-        /// flagged as low outliers and censored during fitting.
+        /// Optional manually selected low-outlier threshold. Supply the intended
+        /// <see cref="ExactObservationDto.IsLowOutlier"/> flags explicitly; assigning this
+        /// threshold does not derive flags from observation magnitudes.
         /// </summary>
         [JsonPropertyName("lowOutlierThreshold")]
         public double? LowOutlierThreshold { get; set; }

@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "generator": "verification/python/point-process/generate_point_process_scipy_oracle.py",
+    "python": "3.12.13",
+    "scipy": "1.17.1",
+    "numpy": "2.5.2",
+    "scope": "stationary Poisson count plus conditional generalized-Pareto excesses",
+    "seasonalCompatibility": false
+  },
+  "crosswalk": {
+    "thresholdConvention": "exact values strictly above u; excess y=x-u",
+    "exposureUnit": "years",
+    "intensityUnit": "events per year",
+    "rmcBestFitParameters": [
+      "Mu",
+      "Sigma",
+      "Kappa"
+    ],
+    "scipyGenparetoParameters": [
+      "c=xi",
+      "loc=0",
+      "scale=sigma_u"
+    ],
+    "scipyGenextremeShape": "c=-xi",
+    "shapeIdentity": "Numerics Kappa = -Coles xi"
+  },
+  "inputs": {
+    "location": 100.0,
+    "scale": 20.0,
+    "colesShape": 0.1,
+    "numericsKappa": -0.1,
+    "threshold": 80.0,
+    "exposureYears": 1.25,
+    "exactValues": [
+      85.0,
+      100.0,
+      120.0
+    ],
+    "tailValue": 120.0,
+    "annualMaximumProbability": 0.99
+  },
+  "expected": {
+    "thresholdIntensity": 2.867971990792441,
+    "gpaScaleAtThreshold": 18.0,
+    "pointProcessLogLikelihood": -12.762996830833266,
+    "conditionalSurvivalAtTailValue": 0.1344306327493119,
+    "annualMaximumQuantile": 216.8195247592646,
+    "eventCountProbability": 0.2129967580009875
+  }
+}

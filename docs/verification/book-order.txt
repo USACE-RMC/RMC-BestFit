@@ -1,0 +1,38 @@
+# Canonical external-review order follows the RMC.BestFit project tree.
+report/report-documentation.md
+report/executive-summary.md
+report/system-and-methodology.md
+
+# 1. Time Series Data
+report/time-series-data.md
+
+# 2. Input Data
+report/input-data.md
+
+# Estimation, model comparison, and diagnostics
+report/estimation-diagnostics.md
+
+# 3. Distribution Fitting
+# 4. Univariate Analyses: univariate, Bulletin 17C, point process,
+#    competing risk, mixture, and composite
+report/data-distributions-b17c.md
+report/point-process-analysis.md
+report/competing-risk-analysis.md
+report/mixture-analysis.md
+report/composite-analysis.md
+
+# 5. Bivariate Analyses: bivariate and coincident frequency
+report/bivariate-analyses.md
+
+# 6. Rating-Curve Analysis
+report/rating-curve.md
+
+# 7. Time-Series Analyses: AR, MA, ARIMA, and ARIMAX
+report/time-series-analyses.md
+
+# 8. Spatial Extremes
+report/spatial-extremes.md
+
+report/evidence-boundaries-conclusions.md
+report/test-coverage.md
+report/references.md

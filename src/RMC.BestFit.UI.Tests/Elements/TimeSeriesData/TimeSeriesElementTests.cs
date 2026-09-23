@@ -733,7 +733,7 @@ public class TimeSeriesElementTests
     }
 
     /// <summary>
-    /// Verifies that collections larger than the former performance threshold retain complete
+    /// Verifies that collections larger than the performance threshold retain complete
     /// per-ordinate notifications and collection undo/redo behavior.
     /// </summary>
     /// <remarks>

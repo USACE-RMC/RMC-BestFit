@@ -55,7 +55,7 @@ namespace RMC.BestFit.Analyses
         /// reprocess body (running on the thread pool inside its own
         /// <c>Parallel.For</c> writing to <c>AnalysisResults.*</c>) can be live when
         /// <see cref="RunAsync"/> calls a derived <c>ClearResults</c> that nulls
-        /// <c>AnalysisResults</c> — producing an NRE on the next dereference inside
+        /// <c>AnalysisResults</c> ï¿½ producing an NRE on the next dereference inside
         /// the loop body. Reprocess scheduling and Run both go through the same
         /// gate, so the new MCMC waits for any in-flight reprocess to complete
         /// before clearing results, and concurrent reprocesses queue rather than
@@ -175,12 +175,12 @@ namespace RMC.BestFit.Analyses
         /// or <c>CreateUncertaintyAnalysisResultsAsync</c>).
         /// </param>
         /// <param name="callerName">
-        /// Captured automatically by the compiler — used to label exceptions in the
+        /// Captured automatically by the compiler ï¿½ used to label exceptions in the
         /// background task continuation. Callers should not pass this explicitly.
         /// </param>
         /// <remarks>
         /// <para>
-        /// Returns immediately if <c>IsEstimated</c> is <c>false</c> — fresh
+        /// Returns immediately if <c>IsEstimated</c> is <c>false</c> ï¿½ fresh
         /// (un-fit) analyses have nothing to reprocess. Otherwise schedules
         /// <paramref name="reprocessor"/> on the default task scheduler and logs any
         /// exception via <c>Debug.WriteLine</c> without propagating to the
@@ -211,6 +211,13 @@ namespace RMC.BestFit.Analyses
                     // results would remain visible to consumers despite the
                     // re-process having silently failed.
                     IsEstimated = false;
+                    // Also raise the conventional results notification: the App controls rebuild
+                    // their bound views and reset the wait cursor on "AnalysisResults", and almost
+                    // none listen to IsEstimated, so without this raise a failed reprocess left the
+                    // GUI frozen on stale output with a stuck wait cursor. Every analysis exposes
+                    // its results under this one name; the base cannot use nameof because the typed
+                    // property lives on each derived class.
+                    RaisePropertyChange("AnalysisResults");
                 }
                 finally
                 {

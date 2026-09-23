@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -56,6 +56,35 @@ namespace RMC.BestFit.App.Tests.GUI
 
             Assert.IsFalse(method.Contains("Mouse.OverrideCursor", StringComparison.Ordinal),
                 "POT diagnostics should not clear the shared wait cursor before the dispatcher reset can paint.");
+        }
+
+        /// <summary>
+        /// Verifies the diagnostics operate on the smoothed series the POT extraction thresholds.
+        /// </summary>
+        [TestMethod]
+        public void UpdateThresholdDiagnosticsPlots_UsesTheSmoothedSeries()
+        {
+            string source = ReadInputDataControlSource();
+            string method = ExtractMethodSource(source, "UpdateThresholdDiagnosticsPlots");
+
+            StringAssert.Contains(method, "SmoothedSeries(Element.SmoothingFunction, Element.Period)");
+            Assert.IsFalse(method.Contains("ts.Select(s => s.Value)", StringComparison.Ordinal),
+                "The diagnostics must not read the raw series values directly.");
+        }
+
+        /// <summary>
+        /// Verifies smoothing configuration changes mark the diagnostics dirty.
+        /// </summary>
+        [TestMethod]
+        public void ElementPropertyChanged_MarksDirtyOnSmoothingConfiguration()
+        {
+            string source = ReadInputDataControlSource();
+            string method = ExtractMethodSource(source, "ElementPropertyChanged");
+
+            StringAssert.Contains(method, "nameof(Element.SmoothingFunction)");
+            StringAssert.Contains(method, "nameof(Element.Period)");
+            StringAssert.Contains(method, "nameof(Element.MinStepsBetweenPeaks)");
+            StringAssert.Contains(method, "nameof(Element.TimeSeriesElement)");
         }
 
         /// <summary>

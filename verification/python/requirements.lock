@@ -1,0 +1,15 @@
+arviz==1.2.0
+arviz-base==1.2.0
+arviz-plots==1.2.0
+arviz-stats==1.2.0
+lazy-loader==0.5
+numpy==2.4.2
+packaging==26.2
+pandas==3.0.5
+python-dateutil==2.9.0.post0
+scipy==1.17.1
+six==1.17.0
+typing_extensions==4.16.0
+tzdata==2026.3
+xarray==2026.7.0
+xarray-einstats==0.11.0

@@ -1,4 +1,4 @@
-﻿using Numerics;
+using Numerics;
 using Numerics.Data;
 using Numerics.Data.Statistics;
 using Numerics.Distributions;
@@ -50,17 +50,28 @@ namespace RMC.BestFit.Models
             if (lowOutlierThresholdAttr != null) double.TryParse(lowOutlierThresholdAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _lowOutlierThreshold);
             var plottingParameterAttr = xElement.Attribute(nameof(PlottingParameter));
             if (plottingParameterAttr != null) double.TryParse(plottingParameterAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _plottingParameter);
+            var pointProcessObservationYearsAttr = xElement.Attribute(nameof(PointProcessObservationYears));
+            if (pointProcessObservationYearsAttr != null)
+                double.TryParse(pointProcessObservationYearsAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out _pointProcessObservationYears);
 
-            foreach (XElement xEl in xElement.Elements())
+            _suppressSeriesReplacementRefresh = true;
+            try
             {
-                if (xEl.Name == nameof(ExactSeries))
-                    ExactSeries = new ExactSeries(xEl);
-                if (xEl.Name == nameof(UncertainSeries))
-                    UncertainSeries = new UncertainSeries(xEl);
-                if (xEl.Name == nameof(IntervalSeries))
-                    IntervalSeries = new IntervalSeries(xEl);
-                if (xEl.Name == nameof(ThresholdSeries))
-                    ThresholdSeries = new ThresholdSeries(xEl);
+                foreach (XElement xEl in xElement.Elements())
+                {
+                    if (xEl.Name == nameof(ExactSeries))
+                        ExactSeries = new ExactSeries(xEl);
+                    if (xEl.Name == nameof(UncertainSeries))
+                        UncertainSeries = new UncertainSeries(xEl);
+                    if (xEl.Name == nameof(IntervalSeries))
+                        IntervalSeries = new IntervalSeries(xEl);
+                    if (xEl.Name == nameof(ThresholdSeries))
+                        ThresholdSeries = new ThresholdSeries(xEl);
+                }
+            }
+            finally
+            {
+                _suppressSeriesReplacementRefresh = false;
             }
 
             var lambdaAttr = xElement.Attribute(nameof(Lambda));
@@ -108,8 +119,10 @@ namespace RMC.BestFit.Models
         private int _numberOfLowOutliers = 0;
         private double _lowOutlierThreshold = 0;
         private double _plottingParameter = 0.0;
+        private double _pointProcessObservationYears = double.NaN;
         private long _plottingPositionVersion;
         private string _usgsRawText = "";
+        private bool _suppressSeriesReplacementRefresh;
 
         /// <summary>
         /// The exact data series collection.
@@ -126,7 +139,7 @@ namespace RMC.BestFit.Models
                 _exactSeries.CollectionChanged += ExactSeriesCollectionChanged;
                 for (int i = 0; i < _exactSeries.Count; i++)
                     _exactSeries[i].PropertyChanged += ExactDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: true);
                 RaisePropertyChange(nameof(ExactSeries));
             }
         }
@@ -146,7 +159,7 @@ namespace RMC.BestFit.Models
                 _uncertainSeries.CollectionChanged += UncertainSeriesCollectionChanged;
                 for (int i = 0; i < _uncertainSeries.Count; i++)
                     _uncertainSeries[i].PropertyChanged += UncertainDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: false);
                 RaisePropertyChange(nameof(UncertainSeries));
             }
         }
@@ -166,7 +179,7 @@ namespace RMC.BestFit.Models
                 _intervalSeries.CollectionChanged += IntervalSeriesCollectionChanged;
                 for (int i = 0; i < _intervalSeries.Count; i++)
                     _intervalSeries[i].PropertyChanged += IntervalDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: false);
                 RaisePropertyChange(nameof(IntervalSeries));
             }
         }
@@ -186,7 +199,7 @@ namespace RMC.BestFit.Models
                 _thresholdSeries.CollectionChanged += ThresholdSeriesCollectionChanged;
                 for (int i = 0; i < _thresholdSeries.Count; i++)
                     _thresholdSeries[i].PropertyChanged += ThresholdDataChanged;
-                Interlocked.Increment(ref _plottingPositionVersion);
+                RefreshAfterSeriesReplacement(recalculateLambda: false);
                 RaisePropertyChange(nameof(ThresholdSeries));
             }
         }
@@ -296,6 +309,38 @@ namespace RMC.BestFit.Models
         /// The average number of events per index.
         /// </summary>
         public double Lambda => _lambda;
+
+        /// <summary>
+        /// Gets or sets the source-record exposure, in years, retained when a peaks-over-threshold
+        /// series is extracted from a time series.
+        /// </summary>
+        /// <remarks>
+        /// This metadata preserves leading and trailing source years that contain no extracted
+        /// peaks. A value of <see cref="double.NaN"/> means that source exposure is unavailable.
+        /// Collection edits do not recalculate this value because the retained POT events cannot
+        /// reveal unobserved zero-event years.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// Thrown when the value is not <see cref="double.NaN"/> and is not positive and finite.
+        /// </exception>
+        public double PointProcessObservationYears
+        {
+            get { return _pointProcessObservationYears; }
+            set
+            {
+                if (!double.IsNaN(value) && (!Tools.IsFinite(value) || value <= 0.0))
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Point-process observation years must be positive and finite, or NaN when unavailable.");
+
+                bool unchanged = double.IsNaN(_pointProcessObservationYears)
+                    ? double.IsNaN(value)
+                    : _pointProcessObservationYears.AlmostEquals(value);
+                if (unchanged)
+                    return;
+
+                _pointProcessObservationYears = value;
+                RaisePropertyChange(nameof(PointProcessObservationYears));
+            }
+        }
 
 
         /// <summary>
@@ -831,59 +876,104 @@ namespace RMC.BestFit.Models
         #region Hypothesis Testing
 
         /// <summary>
-        /// Clear the low outlier results. 
+        /// Clear the low outlier results.
         /// </summary>
+        /// <remarks>
+        /// The flags are cleared under suppressed collection notifications and the caller's
+        /// suppression state is restored afterwards, so the low-outlier setters can call this inside
+        /// their own suppression window without it being un-suppressed underneath them. When the
+        /// caller was not suppressing, the Hirsch-Stedinger plotting positions — which depend on the
+        /// low-outlier flags — are refreshed and a single "LowOutliers" change is raised; a caller
+        /// that suppressed notifications owns the refresh itself.
+        /// </remarks>
         public void ClearLowOutliers()
         {
-            for (int i = 0; i < ExactSeries.Count; i++)
-                ((ExactData)ExactSeries[i]).IsLowOutlier = false;
-            _numberOfLowOutliers = 0;
+            bool wasSuppressed = ExactSeries.SuppressCollectionChanged;
+            ExactSeries.SuppressCollectionChanged = true;
+            try
+            {
+                for (int i = 0; i < ExactSeries.Count; i++)
+                    ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                _numberOfLowOutliers = 0;
+            }
+            finally
+            {
+                ExactSeries.SuppressCollectionChanged = wasSuppressed;
+            }
+            if (!wasSuppressed)
+            {
+                RecalculatePlottingPositionsAfterEdit();
+                RaisePropertyChange("LowOutliers");
+            }
         }
 
         /// <summary>
-        /// Estimates and sets the low outliers using the Multiple Grubbs Beck Test (MGBT). This is only performed on exact data. 
+        /// Estimates and sets the low outliers using the Multiple Grubbs Beck Test (MGBT). This is only performed on exact data.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when exact data series has errors or insufficient data.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the plotting-position refresh fails
+        /// for a reason other than a transiently invalid threshold series — the same exposure as any
+        /// unsuppressed data edit.</exception>
+        /// <remarks>
+        /// The flag flips run with collection notifications suppressed, which also gates the data-edit
+        /// handlers that normally refresh the Hirsch-Stedinger plotting positions, so this method
+        /// refreshes the positions itself before raising "LowOutliers": the positions depend on the
+        /// flags, and the model-layer handlers listening for that raise rebuild Bulletin 17C initial
+        /// parameters from the positions via the censored-data (ROS) regression. On return the frame's
+        /// plotting positions therefore reflect the new flags for headless and GUI callers alike; the
+        /// refresh is skipped only while the threshold series is transiently invalid. The suppression
+        /// flag is restored in a finally block so a throwing test can never strand the frame with
+        /// notifications suppressed, which would silently disable every later plotting-position refresh.
+        /// </remarks>
         public void SetLowOutliersFromMGBT()
         {
             if (!ExactSeries.Validate().IsValid) throw new ArgumentException("The exact data series has errors.", nameof(ExactSeries));
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before evaluating low outliers.", nameof(ExactSeries));
 
             ExactSeries.SuppressCollectionChanged = true;
-            ClearLowOutliers();
-            LowOutlierThreshold = 0;
-
-            // Add all data point values to an array
-            var values = ExactSeries.Select(x => x.Value).ToArray();
-
-            // Compute the number of low outliers using the Multiple Grubbs Beck Test
-            _numberOfLowOutliers = MultipleGrubbsBeckTest.Function(values);
-
-            // Set the threshold value as first value larger than N
-            Array.Sort(values);
-            if (_numberOfLowOutliers > 0)
+            try
             {
-                LowOutlierThreshold = values[_numberOfLowOutliers];
-            }            
-            else
-            {
+                ClearLowOutliers();
                 LowOutlierThreshold = 0;
-            }
 
-            // Set all exact data points to IsLowOutlier = true if less than threshold
-            for (int i = 0; i < ExactSeries.Count; i++)
-            {
-                if (ExactSeries[i].Value < _lowOutlierThreshold)
+                // Add all data point values to an array
+                var values = ExactSeries.Select(x => x.Value).ToArray();
+
+                // Compute the number of low outliers using the Multiple Grubbs Beck Test
+                _numberOfLowOutliers = MultipleGrubbsBeckTest.Function(values);
+
+                // Set the threshold value as first value larger than N
+                Array.Sort(values);
+                if (_numberOfLowOutliers > 0)
                 {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = true;
+                    LowOutlierThreshold = values[_numberOfLowOutliers];
                 }
                 else
                 {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = false;
-                }               
+                    LowOutlierThreshold = 0;
+                }
+
+                // Set all exact data points to IsLowOutlier = true if less than threshold
+                for (int i = 0; i < ExactSeries.Count; i++)
+                {
+                    if (ExactSeries[i].Value < _lowOutlierThreshold)
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = true;
+                    }
+                    else
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                    }
+                }
+            }
+            finally
+            {
+                ExactSeries.SuppressCollectionChanged = false;
             }
 
-            ExactSeries.SuppressCollectionChanged = false;
+            // Refresh the derived plotting positions BEFORE raising "LowOutliers", so the handlers
+            // that rebuild model initials on that raise read current positions instead of stale ones.
+            RecalculatePlottingPositionsAfterEdit();
             RaisePropertyChange("LowOutliers");
         }
 
@@ -891,30 +981,48 @@ namespace RMC.BestFit.Models
         /// Estimates and sets the low outliers using low outlier threshold value. This is only performed on exact data.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when exact data series has errors, insufficient data, or threshold would censor more than 50%.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the plotting-position refresh fails
+        /// for a reason other than a transiently invalid threshold series — the same exposure as any
+        /// unsuppressed data edit.</exception>
+        /// <remarks>
+        /// See <see cref="SetLowOutliersFromMGBT"/> for the derived-state contract: on return the
+        /// frame's plotting positions reflect the new flags, the refresh precedes the "LowOutliers"
+        /// raise so listeners rebuild model initials from current positions, and the suppression flag
+        /// is restored in a finally block so a throw cannot strand notifications suppressed.
+        /// </remarks>
         public void SetLowOutliersFromThreshold()
         {
             if (!ExactSeries.Validate().IsValid) throw new ArgumentException("The exact data series has errors.", nameof(ExactSeries));
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before evaluating low outliers.", nameof(ExactSeries));
-            if (LowOutlierThreshold > ExactSeries.UpperMiddleValue) throw new ArgumentException("The low outlier threshold value cannot be set to a value that would censor more than 50 percent of the values.", nameof(LowOutlierThreshold));
+            if (LowOutlierThreshold > ExactSeries.UpperMiddleValue)
+                throw new ArgumentException($"The low outlier threshold cannot censor more than 50% of the data. Set it to {ExactSeries.UpperMiddleValue} or less.", nameof(LowOutlierThreshold));
 
             ExactSeries.SuppressCollectionChanged = true;
-
-            // Set all exact data points to IsLowOutlier = true if less than threshold
-            _numberOfLowOutliers = 0;
-            for (int i = 0; i < ExactSeries.Count; i++)
+            try
             {
-                if (ExactSeries[i].Value < LowOutlierThreshold)
+                // Set all exact data points to IsLowOutlier = true if less than threshold
+                _numberOfLowOutliers = 0;
+                for (int i = 0; i < ExactSeries.Count; i++)
                 {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = true;
-                    _numberOfLowOutliers += 1;
-                }
-                else
-                {
-                    ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                    if (ExactSeries[i].Value < LowOutlierThreshold)
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = true;
+                        _numberOfLowOutliers += 1;
+                    }
+                    else
+                    {
+                        ((ExactData)ExactSeries[i]).IsLowOutlier = false;
+                    }
                 }
             }
+            finally
+            {
+                ExactSeries.SuppressCollectionChanged = false;
+            }
 
-            ExactSeries.SuppressCollectionChanged = false;
+            // Refresh the derived plotting positions BEFORE raising "LowOutliers", so the handlers
+            // that rebuild model initials on that raise read current positions instead of stale ones.
+            RecalculatePlottingPositionsAfterEdit();
             RaisePropertyChange("LowOutliers");
         }
 
@@ -1004,12 +1112,9 @@ namespace RMC.BestFit.Models
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before performing hypothesis tests.", nameof(ExactSeries));
             var indexes = ExactSeries.Select(x => (double)x.Index).ToArray();
             var values = useLog10 ? ExactSeries.Select(x => x.Log10Value).ToArray() : ExactSeries.Select(x => x.Value).ToArray();
-            var xVals = new Matrix(indexes);
-            var yVals = new Vector(values);
-            var lm = new LinearRegression(xVals, yVals, true);
-            var tdist = new StudentT(lm.DegreesOfFreedom);
-            double d = Math.Abs(lm.Parameters[1] / lm.ParameterStandardErrors[1]);
-            return (1 - tdist.CDF(Math.Abs(lm.Parameters[1] / lm.ParameterStandardErrors[1]))) * 2;
+            // Delegate to the Numerics implementation, matching every sibling hypothesis test in this
+            // class; the former inline regression duplicated it line for line (plus a dead local).
+            return HypothesisTests.LinearTrendTest(indexes, values);
         }
 
         /// <summary>
@@ -1146,6 +1251,40 @@ namespace RMC.BestFit.Models
         #region Plotting Positions
 
         /// <summary>
+        /// Refreshes derived plotting state after a complete data-series replacement.
+        /// </summary>
+        /// <param name="recalculateLambda">
+        /// <see langword="true"/> to refresh the exact-series event rate; otherwise,
+        /// <see langword="false"/>.
+        /// </param>
+        /// <remarks>
+        /// XML construction suppresses recalculation so persisted plotting positions remain exact and
+        /// the four series assignments do not trigger redundant full-frame calculations. Programmatic
+        /// replacement performs one plotting-position calculation after a valid new series is subscribed.
+        /// Invalid transient frames retain their data and defer the derived-state refresh.
+        /// </remarks>
+        private void RefreshAfterSeriesReplacement(bool recalculateLambda)
+        {
+            if (_suppressSeriesReplacementRefresh)
+            {
+                Interlocked.Increment(ref _plottingPositionVersion);
+                return;
+            }
+
+            if (recalculateLambda)
+                CalculateLambda();
+
+            if (!Validate().IsValid)
+            {
+                Interlocked.Increment(ref _plottingPositionVersion);
+                Debug.WriteLine("Plotting positions were deferred until the replacement data are valid.");
+                return;
+            }
+
+            RecalculatePlottingPositionsAfterEdit();
+        }
+
+        /// <summary>
         /// Recalculates plotting positions after an interactive data edit when threshold inputs are valid.
         /// </summary>
         /// <remarks>
@@ -1204,9 +1343,9 @@ namespace RMC.BestFit.Models
         /// </para>
         /// <para>
         /// The implementation is a documented port of peakFQ's ARRANGE2, PPLOT2, and PLPOS
-        /// sequence. Each explicit observation is classified against the perception threshold
-        /// covering its own index; this classification changes plotting ranks only and never
-        /// changes the observation type or value.
+        /// sequence. An explicit exact, uncertain, or interval representative below its covering
+        /// perception threshold receives an unbounded preparation threshold so its magnitude remains
+        /// observed. Actual threshold rows and counts, observation types, and values are preserved.
         /// </para>
         /// <para>
         /// After threshold counts are processed, observations and distinct levels are arranged
@@ -1303,6 +1442,9 @@ namespace RMC.BestFit.Models
                     occupiedIndexes.Add(source.Index);
                     ThresholdData? threshold = FindThresholdForPlotting(thresholdsByIndex, source.Index);
                     double thresholdValue = threshold?.Value ?? double.NegativeInfinity;
+                    // An explicit magnitude is observed even below its covering perception threshold.
+                    if (source.Value < thresholdValue)
+                        thresholdValue = double.NegativeInfinity;
                     thresholdLevels.Add(thresholdValue);
                     observations.Add((source, thresholdValue, i, source.Value >= thresholdValue));
                 }
@@ -1826,6 +1968,10 @@ namespace RMC.BestFit.Models
                 result.Add("Mean", moments[0]);
                 result.Add("Std Dev", moments[1]);
                 result.Add("Skewness", moments[2]);
+                // Statistics.ProductMoments reports bias-corrected EXCESS kurtosis (a Normal reads 0).
+                // The +3 converts to Pearson kurtosis (a Normal reads 3), matching the CentralMoments
+                // convention SummaryStatisticsAllData reports, so the two summary columns share one
+                // scale. It is a unit conversion, not a bias adjustment — do not remove it.
                 result.Add("Kurtosis", moments[3] + 3);
                 result.Add("Mean (of log)", logMoments[0]);
                 result.Add("Std Dev (of log)", logMoments[1]);
@@ -1875,6 +2021,12 @@ namespace RMC.BestFit.Models
             }
             else
             {
+                // Known limitation: the three lists are sorted independently and paired positionally,
+                // which assumes the log10 transform is monotone over the sample. A zero value floors to
+                // log10(0.001) and a negative value maps to NaN (which sorts first), so samples with
+                // non-positive values can silently mispair values with plotting positions. The same
+                // pattern appears in SetStandardizedValues and GetNonparametricMoments; a structural
+                // co-sort of (value, logValue, probability) tuples is deliberately deferred.
                 var values = ExactSeries.Select(x => x.Value).ToList();
                 values.AddRange(UncertainSeries.Select(x => x.Value).ToList());
                 values.AddRange(IntervalSeries.Select(x => x.Value).ToList());
@@ -1906,6 +2058,9 @@ namespace RMC.BestFit.Models
                 result.Add("Mean", moments[0]);
                 result.Add("Std Dev", moments[1]);
                 result.Add("Skewness", moments[2]);
+                // CentralMoments already returns Pearson kurtosis (a Normal reads 3), so no +3 is
+                // needed here; SummaryStatisticsExactDataOnly adds 3 to ProductMoments' excess
+                // kurtosis to reach the same convention.
                 result.Add("Kurtosis", moments[3]);
                 result.Add("Mean (of log)", logMoments[0]);
                 result.Add("Std Dev (of log)", logMoments[1]);
@@ -2034,6 +2189,86 @@ namespace RMC.BestFit.Models
             var dist = CreateEmpiricalDistributionWithUniqueValues(values, probs);
             if (dist is null) return null;
             return dist.CentralMoments(1000);
+        }
+
+        /// <summary>
+        /// Computes nonparametric central moments using bounded midpoint values for low outliers.
+        /// </summary>
+        /// <param name="useLog10Values">
+        /// If <c>true</c>, transforms the bounded midpoint values to base-10 logarithms before
+        /// computing moments; otherwise, uses the values in their natural measurement scale.
+        /// </param>
+        /// <returns>
+        /// An array of central moments [mean, standard deviation, skewness, kurtosis], or
+        /// <c>null</c> when the data are insufficient or a usable empirical distribution cannot
+        /// be constructed.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method is an initialization heuristic for Bulletin 17C bootstrap refits. Each
+        /// flagged low outlier with observed value <c>x</c> and censoring threshold <c>T</c> is
+        /// represented by <c>x + 0.5(T - x)</c>. The pseudo-value is therefore bounded between
+        /// the recorded observation and its low-outlier threshold, unlike an unconstrained ROS
+        /// extrapolation. The stored observation and plotting position are never modified.
+        /// </para>
+        /// <para>
+        /// For log-family fitting, midpoint construction occurs in the original measurement
+        /// scale and the result is transformed afterward. This preserves the stated censoring
+        /// interval while avoiding direct use of an extreme low observation in log moments.
+        /// </para>
+        /// </remarks>
+        internal double[]? GetNonparametricMomentsWithLowOutlierMidpoints(bool useLog10Values = false)
+        {
+            if (NumberOfLowOutliers == 0)
+                return GetNonparametricMoments(useLog10Values);
+
+            if (ExactSeries == null || ExactSeries.Count < 4)
+                return null;
+
+            int totalCount = ExactSeries.Count + UncertainSeries.Count + IntervalSeries.Count;
+            if (totalCount < 4 || !double.IsFinite(LowOutlierThreshold))
+                return null;
+
+            var values = new List<double>(totalCount);
+            for (int i = 0; i < ExactSeries.Count; i++)
+            {
+                double value = ExactSeries[i].Value;
+                if (((ExactData)ExactSeries[i]).IsLowOutlier)
+                    value += 0.5d * (LowOutlierThreshold - value);
+
+                if (useLog10Values)
+                {
+                    if (value <= 0d)
+                        return null;
+                    value = Math.Log10(value);
+                }
+
+                if (!double.IsFinite(value))
+                    return null;
+                values.Add(value);
+            }
+
+            if (useLog10Values)
+            {
+                values.AddRange(UncertainSeries.Select(x => x.Log10Value));
+                values.AddRange(IntervalSeries.Select(x => x.Log10Value));
+            }
+            else
+            {
+                values.AddRange(UncertainSeries.Select(x => x.Value));
+                values.AddRange(IntervalSeries.Select(x => x.Value));
+            }
+            if (values.Any(value => !double.IsFinite(value)))
+                return null;
+            values.Sort();
+
+            var probabilities = ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
+            probabilities.AddRange(UncertainSeries.Select(x => x.PlottingPositionComplement));
+            probabilities.AddRange(IntervalSeries.Select(x => x.PlottingPositionComplement));
+            probabilities.Sort();
+
+            var distribution = CreateEmpiricalDistributionWithUniqueValues(values, probabilities);
+            return distribution?.CentralMoments(1000);
         }
 
         /// <summary>
@@ -2203,8 +2438,11 @@ namespace RMC.BestFit.Models
                 return;
             }
 
-            var moments = dist.CentralMoments(200);
-            var logMoments = logDist.CentralMoments(200);
+            // 1000 fixed steps, matching every other CentralMoments call on this class, so the
+            // standardization moments agree with the reported summary statistics; the former 200-step
+            // call computed the Q-Q reference at a coarser quadrature than the summary table.
+            var moments = dist.CentralMoments(1000);
+            var logMoments = logDist.CentralMoments(1000);
 
             // Check if moments are invalid
             if (double.IsNaN(moments[0]) || double.IsNaN(moments[1]))
@@ -2286,6 +2524,8 @@ namespace RMC.BestFit.Models
             result.SetAttributeValue(nameof(LowOutlierThreshold), LowOutlierThreshold.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(PlottingParameter), PlottingParameter.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(Lambda), Lambda.ToString("G17", CultureInfo.InvariantCulture));
+            if (Tools.IsFinite(PointProcessObservationYears) && PointProcessObservationYears > 0.0)
+                result.SetAttributeValue(nameof(PointProcessObservationYears), PointProcessObservationYears.ToString("G17", CultureInfo.InvariantCulture));
             result.SetAttributeValue(nameof(USGSRawText), USGSRawText.ToString(CultureInfo.InvariantCulture));
             result.Add(ExactSeries.ToXElement());
             result.Add(UncertainSeries.ToXElement());
@@ -2311,10 +2551,18 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Calculates the average number of events per index.
         /// </summary>
+        /// <remarks>
+        /// When the frame records a peaks-over-threshold observation span
+        /// (<see cref="PointProcessObservationYears"/>), the rate is events per observed year.
+        /// Otherwise the span of the retained event indices is used, which cannot account for
+        /// years without events at either end of the record.
+        /// </remarks>
         public void CalculateLambda()
         {
             double events = ExactSeries.Count;
-            double span = ExactSeries.IndexSpan();
+            double span = Tools.IsFinite(_pointProcessObservationYears) && _pointProcessObservationYears > 0.0
+                ? _pointProcessObservationYears
+                : ExactSeries.IndexSpan();
             if (events <= 0 || span <= 0)
             {
                 _lambda = 0;
@@ -2380,18 +2628,26 @@ namespace RMC.BestFit.Models
         /// <param name="minStepsBetweenPeaks">The minimum number of time steps between peaks. Default = 1.</param>
         /// <param name="smoothingFunction">The time series smoothing function. Default = None.</param>
         /// <param name="period">The time period to perform smoothing over. Default = 1.</param>
+        /// <remarks>
+        /// The inclusive source calendar-year span is retained in
+        /// <see cref="PointProcessObservationYears"/> so leading and trailing years with no
+        /// extracted peaks remain part of the point-process exposure.
+        /// </remarks>
         public void CreatePeaksOverThresholdSeries(TimeSeries timeSeries, double threshold, int minStepsBetweenPeaks = 1, 
             SmoothingFunctionType smoothingFunction = SmoothingFunctionType.None, int period = 1)
         {
             var _timeSeries = timeSeries.PeaksOverThresholdSeries(threshold, minStepsBetweenPeaks, smoothingFunction, period);
 
+            PointProcessObservationYears = timeSeries.Count > 0
+                ? timeSeries.EndDate.Year - timeSeries.StartDate.Year + 1.0
+                : double.NaN;
+
             ExactSeries.Clear();
             ExactSeries.SuppressCollectionChanged = true;
             for (int i = 0; i < _timeSeries.Count; i++)
                 ExactSeries.Add(new ExactData(_timeSeries[i].Index, _timeSeries[i].Value));
-            // Set lambda
             double events = ExactSeries.Count;
-            double span = timeSeries.EndDate.Year - timeSeries.StartDate.Year + 1;
+            double span = PointProcessObservationYears;
             _lambda = events / span;
             ExactSeries.SuppressCollectionChanged = false;
             ExactSeries.RaiseCollectionChangedReset();
@@ -2665,9 +2921,13 @@ namespace RMC.BestFit.Models
         ///         distribution via <c>InverseCDF(U)</c>. This simulates a new annual peak occurring
         ///         under the same flood-generating process.</description></item>
         ///     <item><description><b>Uncertain data:</b> Draw a "true" flood magnitude from the fitted
-        ///         distribution, then shift the measurement error distribution to center on that value
-        ///         while preserving the original error spread. This simulates observing a new flood
-        ///         with the same measurement quality.</description></item>
+        ///         distribution, then shift the measurement error distribution to center on that value.
+        ///         For log-space fitted families (Log-Pearson Type III, Log-Normal, Ln-Normal) and for
+        ///         measurement-error distributions with strictly positive support, additive families are
+        ///         rescaled by the ratio of the simulated magnitude to the original mean so that the
+        ///         relative error (and the positive support) is preserved; otherwise the original
+        ///         absolute spread is preserved by an additive shift (TR-086). This simulates observing
+        ///         a new flood with the same measurement quality.</description></item>
         ///     <item><description><b>Interval data:</b> Draw a value unconditionally from the fitted
         ///         distribution and re-classify against the original interval bounds. If the simulated
         ///         value falls below the lower bound, the observation becomes left-censored; if above
@@ -2723,11 +2983,15 @@ namespace RMC.BestFit.Models
 
             // ── Uncertain data ──────────────────────────────────────────────────
             // Draw a "true" flood magnitude, then shift the measurement error
-            // distribution to center on that value (preserving error spread).
+            // distribution to center on that value. Log-space fitted families keep
+            // the relative error (ratio shift) so the support stays positive; other
+            // fits keep the absolute error spread unless the error distribution
+            // itself has strictly positive support (TR-086).
+            bool logSpaceFit = distribution is LogPearsonTypeIII || distribution is LogNormal || distribution is LnNormal;
             foreach (UncertainData data in UncertainSeries)
             {
                 var simulatedValue = distribution.InverseCDF(prng.NextDouble());
-                var shiftedDist = ShiftDistribution(data.Distribution, simulatedValue);
+                var shiftedDist = ShiftDistribution(data.Distribution, simulatedValue, logSpaceFit);
                 dataframe.UncertainSeries.Add(new UncertainData(data.Index, shiftedDist));
             }
 
@@ -2834,16 +3098,32 @@ namespace RMC.BestFit.Models
 
         /// <summary>
         /// Creates a new distribution of the same type, shifted so that its center is at the specified value,
-        /// while preserving the original measurement error spread.
+        /// while preserving the original measurement error spread (absolute or relative).
         /// </summary>
         /// <param name="original">The original measurement error distribution.</param>
         /// <param name="newCenter">The new center value (simulated "true" flood magnitude).</param>
+        /// <param name="preferRelativeShift">
+        /// When <see langword="true"/> (log-space fitted families), additive-error families are rescaled
+        /// by <c>newCenter / original.Mean</c> instead of being shifted by <c>newCenter - original.Mean</c>,
+        /// so the relative error is preserved and the support stays positive. The relative shift is also
+        /// used whenever the original error distribution has strictly positive support. Either form is
+        /// used only when both the original mean and <paramref name="newCenter"/> are positive.
+        /// </param>
         /// <returns>A new distribution shifted to center on <paramref name="newCenter"/>.</returns>
         /// <remarks>
         /// <para>
         ///     For additive-error families (Normal, Uniform, Triangular, etc.), the distribution
-        ///     is shifted by <c>newCenter - original.Mean</c>. For multiplicative-error families
-        ///     (LogNormal, Gamma), a ratio-based shift preserves the coefficient of variation.
+        ///     is shifted by <c>newCenter - original.Mean</c> (absolute spread preserved) or, when the
+        ///     relative form applies, rescaled by <c>newCenter / original.Mean</c> (coefficient of
+        ///     variation preserved). For multiplicative-error families (LogNormal, Gamma), a ratio-based
+        ///     shift always preserves the coefficient of variation.
+        /// </para>
+        /// <para>
+        ///     Before 22 August 2026 (TR-086) every additive family was shifted additively. For
+        ///     log-space fits a wide relative error (for example a MOVE.3 flow estimate with a
+        ///     Triangular(0.5q, q, 1.75q) error) shifted onto a small simulated flood crossed zero,
+        ///     the log-space moment conditions became NaN, and the bootstrap refit fell back to the
+        ///     derivative-free optimizer on most realizations.
         /// </para>
         /// <para>
         ///     Supported distributions: Normal, StudentT, TruncatedNormal, LogNormal, LnNormal,
@@ -2851,7 +3131,7 @@ namespace RMC.BestFit.Models
         ///     fall back to a clone of the original.
         /// </para>
         /// </remarks>
-        private static UnivariateDistributionBase ShiftDistribution(UnivariateDistributionBase original, double newCenter)
+        private static UnivariateDistributionBase ShiftDistribution(UnivariateDistributionBase original, double newCenter, bool preferRelativeShift = false)
         {
             double originalMean = original.Mean;
             double shift = newCenter - originalMean;
@@ -2860,16 +3140,25 @@ namespace RMC.BestFit.Models
             if (double.IsNaN(shift) || double.IsInfinity(shift))
                 return (UnivariateDistributionBase)original.Clone();
 
+            // Relative (ratio) shift: requested by the caller for log-space fits, or implied by an
+            // error distribution whose support is strictly positive; both centers must be positive.
+            bool relative = (preferRelativeShift || original.Minimum > 0.0) && originalMean > 0.0 && newCenter > 0.0;
+            double relativeRatio = relative ? newCenter / originalMean : 1.0;
+
             switch (original)
             {
                 case Normal n:
-                    return new Normal(n.Mu + shift, n.Sigma);
+                    return relative ? new Normal(n.Mu * relativeRatio, n.Sigma * relativeRatio) : new Normal(n.Mu + shift, n.Sigma);
 
                 case TruncatedNormal tn:
-                    return new TruncatedNormal(tn.Mu + shift, tn.Sigma, tn.Min + shift, tn.Max + shift);
+                    return relative
+                        ? new TruncatedNormal(tn.Mu * relativeRatio, tn.Sigma * relativeRatio, tn.Min * relativeRatio, tn.Max * relativeRatio)
+                        : new TruncatedNormal(tn.Mu + shift, tn.Sigma, tn.Min + shift, tn.Max + shift);
 
                 case StudentT st:
-                    return new StudentT(st.Mu + shift, st.Sigma, st.DegreesOfFreedom);
+                    return relative
+                        ? new StudentT(st.Mu * relativeRatio, st.Sigma * relativeRatio, st.DegreesOfFreedom)
+                        : new StudentT(st.Mu + shift, st.Sigma, st.DegreesOfFreedom);
 
                 case LogNormal ln:
                 {
@@ -2880,7 +3169,9 @@ namespace RMC.BestFit.Models
                 }
 
                 case LnNormal lnn:
-                    return new LnNormal(lnn.Mean + shift, lnn.StandardDeviation);
+                    return relative
+                        ? new LnNormal(lnn.Mean * relativeRatio, lnn.StandardDeviation * relativeRatio)
+                        : new LnNormal(lnn.Mean + shift, lnn.StandardDeviation);
 
                 case GammaDistribution g:
                 {
@@ -2891,16 +3182,22 @@ namespace RMC.BestFit.Models
                 }
 
                 case Uniform u:
-                    return new Uniform(u.Min + shift, u.Max + shift);
+                    return relative ? new Uniform(u.Min * relativeRatio, u.Max * relativeRatio) : new Uniform(u.Min + shift, u.Max + shift);
 
                 case Triangular t:
-                    return new Triangular(t.Min + shift, t.MostLikely + shift, t.Max + shift);
+                    return relative
+                        ? new Triangular(t.Min * relativeRatio, t.MostLikely * relativeRatio, t.Max * relativeRatio)
+                        : new Triangular(t.Min + shift, t.MostLikely + shift, t.Max + shift);
 
                 case Pert p:
-                    return new Pert(p.Min + shift, p.MostLikely + shift, p.Max + shift);
+                    return relative
+                        ? new Pert(p.Min * relativeRatio, p.MostLikely * relativeRatio, p.Max * relativeRatio)
+                        : new Pert(p.Min + shift, p.MostLikely + shift, p.Max + shift);
 
                 case GeneralizedBeta gb:
-                    return new GeneralizedBeta(gb.Alpha, gb.Beta, gb.Min + shift, gb.Max + shift);
+                    return relative
+                        ? new GeneralizedBeta(gb.Alpha, gb.Beta, gb.Min * relativeRatio, gb.Max * relativeRatio)
+                        : new GeneralizedBeta(gb.Alpha, gb.Beta, gb.Min + shift, gb.Max + shift);
 
                 default:
                     // Unrecognized distribution type — clone as-is

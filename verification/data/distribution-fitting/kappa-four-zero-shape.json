@@ -1,0 +1,42 @@
+{
+    "finding":  "TR-001",
+    "oracle":  "Analytical derivative and algebraic inverse of the Kappa Four CDF",
+    "tolerance_absolute":  1E-10,
+    "baseline":  {
+                     "numerics_commit":  "828664650c9327b309ee8332e707ccca73588e93",
+                     "pdf":  {
+                                 "expected":  0.27098479126119851,
+                                 "actual":  0.73661303387408328,
+                                 "outcome":  "Failed as expected",
+                                 "trx":  "TestResults/VerificationFocused/20260724-131106-RMC_BestFit_Verification_DistributionFitting_KappaFourZeroShapeVerificationTests_ZeroShapeNonzeroHondo_PdfMatchesAnalyticalDerivative/haden_HADEN_2026-07-24_19_11_15.390.trx"
+                             },
+                     "inverse_cdf":  {
+                                         "expected_cdf_round_trip":  0.99999999999999933,
+                                         "actual_cdf_round_trip":  "NaN",
+                                         "outcome":  "Failed as expected",
+                                         "trx":  "TestResults/VerificationFocused/20260724-131222-RMC_BestFit_Verification_DistributionFitting_KappaFourZeroShapeVerificationTests_ZeroShapeNonzeroHondo_QuantileInvertsCdf/haden_HADEN_2026-07-24_19_12_26.878.trx"
+                                     }
+                 },
+    "fix":  {
+                "numerics_commit":  "3e058ebe5917817f3dde5e3b2ed6574d6bab083e",
+                "public_api_changed":  false,
+                "numerics_net10_unit_tests":  {
+                                                  "passed":  1905,
+                                                  "failed":  0,
+                                                  "skipped":  0
+                                              },
+                "focused_verification":  [
+                                             {
+                                                 "test":  "RMC.BestFit.Verification.DistributionFitting.KappaFourZeroShapeVerificationTests.ZeroShapeNonzeroHondo_PdfMatchesAnalyticalDerivative",
+                                                 "outcome":  "Passed",
+                                                 "trx":  "TestResults/VerificationFocused/20260724-131457-RMC_BestFit_Verification_DistributionFitting_KappaFourZeroShapeVerificationTests_ZeroShapeNonzeroHondo_PdfMatchesAnalyticalDerivative/haden_HADEN_2026-07-24_19_15_06.583.trx"
+                                             },
+                                             {
+                                                 "test":  "RMC.BestFit.Verification.DistributionFitting.KappaFourZeroShapeVerificationTests.ZeroShapeNonzeroHondo_QuantileInvertsCdf",
+                                                 "outcome":  "Passed",
+                                                 "trx":  "TestResults/VerificationFocused/20260724-131515-RMC_BestFit_Verification_DistributionFitting_KappaFourZeroShapeVerificationTests_ZeroShapeNonzeroHondo_QuantileInvertsCdf/haden_HADEN_2026-07-24_19_15_20.834.trx"
+                                             }
+                                         ]
+            },
+    "status":  "Fixed and verified"
+}

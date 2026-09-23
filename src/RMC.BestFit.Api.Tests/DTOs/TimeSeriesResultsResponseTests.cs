@@ -19,6 +19,7 @@ namespace RMC.BestFit.Api.Tests.DTOs
             var response = new TimeSeriesResultsResponse();
             Assert.AreEqual(Guid.Empty, response.AnalysisId);
             Assert.IsNull(response.ModelType);
+            Assert.AreEqual(0.0, response.TransformLambda);
             Assert.AreEqual(0, response.DataLength);
             Assert.IsNull(response.Order);
             Assert.IsNull(response.POrder);
@@ -44,6 +45,7 @@ namespace RMC.BestFit.Api.Tests.DTOs
                 Kind = "timeSeries",
                 ModelType = "arima",
                 TransformType = "logarithmic",
+                TransformLambda = 0.0,
                 DataLength = 1096,
                 TrainingTimeSteps = 900,
                 ForecastingTimeSteps = 12,
@@ -63,6 +65,7 @@ namespace RMC.BestFit.Api.Tests.DTOs
             var copy = TestJson.Roundtrip(response);
 
             Assert.AreEqual("arima", copy.ModelType);
+            Assert.AreEqual(0.0, copy.TransformLambda);
             Assert.AreEqual(1096, copy.DataLength);
             Assert.AreEqual(900, copy.TrainingTimeSteps);
             Assert.AreEqual(12, copy.ForecastingTimeSteps);

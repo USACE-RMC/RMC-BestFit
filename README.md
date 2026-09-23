@@ -43,6 +43,7 @@ Source builds include the model library, unit tests, UI/project layer, desktop a
 | [Getting Started](docs/getting-started.md) | Minimal namespaces and first model-library workflows |
 | [Technical Reference](docs/index.md) | Model, data, distribution, estimation, analysis, and diagnostic documentation |
 | [REST API + MCP Server](docs/api.md) | Headless API and MCP server over `RMC.BestFit.dll` |
+| [Frequency Curve Skill](docs/bestfit-frequency-skill.md) | Downloadable Claude/Codex skill for headless analysis and BestFit-style matplotlib plots |
 | [References](docs/references.md) | Consolidated bibliography for the public documentation |
 | [Version 1.0 User's Guide](https://usace-rmc.github.io/RMC-Software-Documentation/docs/desktop-applications/rmc-bestfit/users-guide/v1.0/preface/) | Published desktop user guide for the previous major release |
 | [Version 1.0 Verification Report](https://usace-rmc.github.io/RMC-Software-Documentation/source-documents/desktop-applications/rmc-bestfit/verification-report/RMC-BestFit-Verification-Report.pdf) | Published verification report for the previous major release |

@@ -1,0 +1,75 @@
+<DataFrame NumberOfLowOutliers="0" LowOutlierThreshold="0" PlottingParameter="0.40000000000000002" Lambda="1" USGSRawText="">
+  <ExactSeries>
+    <ExactData Index="1947" Value="2080" PlottingPosition="0.53665689149560114" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1948" Value="1670" PlottingPosition="0.72727272727272729" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1949" Value="1480" PlottingPosition="0.87390029325513197" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1950" Value="2940" PlottingPosition="0.14076246334310849" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1951" Value="1560" PlottingPosition="0.8299120234604106" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1952" Value="2380" PlottingPosition="0.36070381231671556" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1953" Value="2720" PlottingPosition="0.24340175953079179" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1954" Value="2860" PlottingPosition="0.18475073313782989" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1955" Value="2620" PlottingPosition="0.30205278592375367" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1956" Value="1710" PlottingPosition="0.69794721407624638" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1957" Value="1370" PlottingPosition="0.94721407624633414" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1958" Value="2180" PlottingPosition="0.4633431085043988" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1959" Value="1160" PlottingPosition="0.99120234604105562" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1960" Value="2780" PlottingPosition="0.19941348973607037" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1961" Value="1580" PlottingPosition="0.78592375366568912" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1962" Value="2110" PlottingPosition="0.50733137829912023" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1963" Value="2160" PlottingPosition="0.47800586510263932" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1964" Value="2750" PlottingPosition="0.22873900293255131" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1965" Value="1190" PlottingPosition="0.97653958944281516" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1966" Value="1560" PlottingPosition="0.81524926686217003" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1967" Value="1800" PlottingPosition="0.68328445747800581" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1968" Value="1600" PlottingPosition="0.77126099706744866" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1969" Value="2400" PlottingPosition="0.3460410557184751" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1970" Value="3010" PlottingPosition="0.096774193548387094" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1971" Value="1490" PlottingPosition="0.85923753665689151" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1972" Value="2920" PlottingPosition="0.15542521994134897" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1973" Value="4940" PlottingPosition="0.0087976539589442806" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1974" Value="2550" PlottingPosition="0.31671554252199413" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1975" Value="1250" PlottingPosition="0.9618768328445747" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1976" Value="2670" PlottingPosition="0.27272727272727276" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1977" Value="2020" PlottingPosition="0.5513196480938416" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1978" Value="1460" PlottingPosition="0.88856304985337242" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1979" Value="1620" PlottingPosition="0.74193548387096775" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1980" Value="1460" PlottingPosition="0.90322580645161288" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1981" Value="1570" PlottingPosition="0.80058651026392957" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1982" Value="2890" PlottingPosition="0.17008797653958943" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1983" Value="1840" PlottingPosition="0.6539589442815249" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1984" Value="2950" PlottingPosition="0.11143695014662755" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1985" Value="1380" PlottingPosition="0.91788856304985333" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1986" Value="2350" PlottingPosition="0.37536656891495601" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1987" Value="4180" PlottingPosition="0.052785923753665691" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1988" Value="1700" PlottingPosition="0.71260997067448684" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1989" Value="2200" PlottingPosition="0.41935483870967744" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1990" Value="3430" PlottingPosition="0.067448680351906154" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1991" Value="2270" PlottingPosition="0.39002932551319647" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1992" Value="2180" PlottingPosition="0.44868035190615835" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1993" Value="1900" PlottingPosition="0.60997067448680353" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1994" Value="2760" PlottingPosition="0.21407624633431083" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1995" Value="4536" PlottingPosition="0.023460410557184751" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1996" Value="2160" PlottingPosition="0.49266862170087977" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1997" Value="1860" PlottingPosition="0.63929618768328444" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1998" Value="2680" PlottingPosition="0.25806451612903225" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="1999" Value="1540" PlottingPosition="0.84457478005865105" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2000" Value="2110" PlottingPosition="0.52199413489736068" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2001" Value="2950" PlottingPosition="0.12609970674486803" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2002" Value="2410" PlottingPosition="0.33137829912023459" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2003" Value="2230" PlottingPosition="0.40469208211143698" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2004" Value="1980" PlottingPosition="0.56598240469208216" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2005" Value="1610" PlottingPosition="0.75659824046920821" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2006" Value="2640" PlottingPosition="0.28739002932551322" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2007" Value="1930" PlottingPosition="0.59530791788856308" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2008" Value="1940" PlottingPosition="0.58064516129032262" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2009" Value="1810" PlottingPosition="0.66862170087976536" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2010" Value="1900" PlottingPosition="0.62463343108504399" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2011" Value="3140" PlottingPosition="0.082111436950146624" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2012" Value="1370" PlottingPosition="0.93255131964809379" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2013" Value="2180" PlottingPosition="0.43401759530791789" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+    <ExactData Index="2014" Value="4250" PlottingPosition="0.038123167155425221" IsLowOutlier="False" DateTime="0001-01-01T00:00:00.0000000" />
+  </ExactSeries>
+  <UncertainSeries />
+  <IntervalSeries />
+  <ThresholdSeries />
+</DataFrame>

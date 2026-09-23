@@ -18,7 +18,6 @@ BestFit uses Numerics for probability distributions, optimization, MCMC, and mat
 
 ```cs
 using Numerics.Distributions;
-using RMC.BestFit;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Diagnostics;
 using RMC.BestFit.Estimation;
@@ -30,7 +29,6 @@ using RMC.BestFit.Models;
 ## Create Input Data
 
 ```cs
-using RMC.BestFit;
 using RMC.BestFit.Models;
 
 var dataFrame = new DataFrame
@@ -45,7 +43,6 @@ For censored or uncertain records, use `UncertainSeries`, `IntervalSeries`, and 
 
 ```cs
 using Numerics.Distributions;
-using RMC.BestFit;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 
@@ -68,7 +65,6 @@ if (mle.Estimate())
 
 ```cs
 using Numerics.Distributions;
-using RMC.BestFit;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Models;
 

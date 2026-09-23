@@ -1,5 +1,42 @@
 # RMC-BestFit REST API + MCP Server
 
+## Agentic FFA data review and provenance
+
+The portable [FFA skill](../skills/bestfit-frequency/SKILL.md) now covers collection,
+justification, preparation and comparison of historical, regional and causal
+information. Official [Bulletin 17C](https://pubs.usgs.gov/publication/tm4B5) is its
+primary data-collection/entry resource for both Bayesian and B17C analyses.
+
+| Contract | Purpose |
+|---|---|
+| `GET /api/inputdata/{id}/chronology` / MCP `get_inputdata_chronology` | Before fitting, returns `schemaVersion:1`, `inputData`, exact/uncertain/interval observations and inclusive threshold windows; bounds/counts come from the model |
+| `GET /api/inputdata/{id}/source` / MCP `get_inputdata_source` | Returns detached original creation `request`, `capturedUtc`, optional USGS `rawText`, and SHA-256 of its UTF-8 text. Raw dates/qualifiers remain available for review |
+| Univariate `useJeffreysRuleForScale` | Nullable request/MCP option exposing the existing switch; omission preserves its model default |
+| Univariate/B17C resource `configuration` | Effective parent distribution, AEP ordinates, priors/penalties, exposed sampler settings and relevant switches; save before and after running |
+
+These are additive contracts. Univariate requests now reject a quantile-prior count
+the model cannot apply: one with `useSingleQuantile=true`, otherwise one per parent
+distribution parameter. Priors, estimators, formulas and defaults are unchanged.
+
+`thresholdData.numberAbove` means additional aggregate exceedances not already
+entered as explicit exact/uncertain/interval observations. Responses contain
+processed counts; the source endpoint preserves submitted counts. An explicit
+1882 event inside 1870–1922 with aggregate above count zero leaves 52 censored years.
+Do not copy processed responses back as original scientific evidence. Date-only
+exact/uncertain observations use calendar year in the API; clients must supply
+explicit indexes for a declared water-year convention. Raw USGS preservation does
+not change the downloader's classification or interpret peak qualifiers.
+
+See [study workflow](../skills/bestfit-frequency/references/study-workflow.md) and
+[chronology contract](../skills/bestfit-frequency/references/plot-contract.md).
+The source/chronology endpoints never run an estimator. Their resources share the
+existing in-memory lifetime; save artifacts before stopping the host. Original
+requests are retained for manual, USGS, block-maxima and POT inputs; raw downloads
+are retained here for direct USGS peaks. Older programmatically built resources
+without a stored request return only the available provenance.
+
+## Overview
+
 `src/RMC.BestFit.Api` hosts a headless REST API and an MCP (Model Context Protocol) server over
 the RMC-BestFit model library (`RMC.BestFit.dll`), enabling programmatic and agentic AI
 flood-frequency workflows: download USGS data, build input data, fit distributions with Bayesian
@@ -17,6 +54,9 @@ dotnet run --project src/RMC.BestFit.Api          # http://localhost:5210 (Devel
   `MaxConcurrentRuns` (default 2), `MaxIterations` (default 500,000)
 
 ## Concepts
+
+For a terminal-capable Claude or Codex workflow with matplotlib exports and chat
+display, use the [portable frequency-curve skill](bestfit-frequency-skill.md).
 
 - **Stateful resource store.** Creation endpoints store resources in memory keyed by GUID; later
   calls reference the ids. Resources are immutable after creation; analyses clone their inputs at
@@ -118,6 +158,48 @@ steps so the workflow can be resumed manually through the granular endpoints.
 ordinates and server limits), `GET api/resources` (cross-cutting id overview).
 
 ## MCP server
+
+### Optional Multiple Grubbs-Beck screening
+
+Manual input creation, USGS-peak input creation, and the USGS B17C workflow accept
+`useMultipleGrubbsBeckTest` (default **false**, preserving existing requests).
+For example, POST `/api/workflows/usgs-bulletin17c`:
+
+```json
+{"siteNumber":"01646500","useMultipleGrubbsBeckTest":true}
+```
+
+Or POST `/api/inputdata/manual` with all supplied observations and the same flag,
+then create a B17C analysis linked to its returned id. Screening delegates to
+`DataFrame.SetLowOutliersFromMGBT()` after all series are populated and before an
+analysis clones the data. It requires at least ten exact observations. It flags
+low outliers, sets the threshold, and refreshes plotting positions; it does not
+delete the observations. The model's existing strict threshold comparison is
+preserved. When true, a manual `lowOutlierThreshold` (including zero) or any
+`isLowOutlier:true` observation is rejected to avoid overwriting the caller's
+screening choice. Omitted/false retains existing manual behavior.
+For manual screening, provide the intended `isLowOutlier` flags explicitly: the
+current API stores `lowOutlierThreshold` but does not derive flags from it.
+
+The MCP tools `create_inputdata_manual`, `create_inputdata_usgs_peaks`, and
+`run_usgs_bulletin17c_workflow` expose the same optional boolean. For example:
+`run_usgs_bulletin17c_workflow(siteNumber="01646500", useMultipleGrubbsBeckTest=true)`.
+Input summaries return `lowOutlierThreshold` and `lowOutlierCount`; GET input data
+with `includeData=true` to save flags and the model's computed plotting positions.
+MGBT failures store no new input resource; workflow failures identify
+`failedStep:"createInputData"` before analysis creation.
+
+### Display coordinates
+
+Uncertain observations now include response-only `lowerBound`/`upperBound` from
+the model's display properties. Frequency results add `quantileAnnotations`, an
+array of `{aep,value,lowerBound,upperBound}` for enabled univariate priors or B17C
+quantile penalties, in physical units. These additions preserve existing fields.
+Plotters should use these values directly, including input `plottingPosition`,
+instead of recomputing them from ranks or distribution parameters. The default
+matplotlib renderer is `skills/bestfit-frequency/scripts/plot_frequency.py`.
+
+### Transport
 
 The same host serves MCP over the streamable HTTP transport at **`/mcp`** (stateless mode — all
 state lives in the app-singleton resource store, so ids remain valid across MCP sessions and the

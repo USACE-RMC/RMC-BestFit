@@ -90,10 +90,36 @@ public class BayesianAnalysisReportTests
     }
 
     /// <summary>
-    /// Verifies that a NUTS acceptance rate above 95 percent is reported as a warning.
+    /// Verifies that NUTS reports only the persisted Hamiltonian acceptance statistic.
     /// </summary>
     [TestMethod]
-    public void GenerateReport_NutsAcceptanceAboveBuffer_ReportsWarning()
+    public void GenerateReport_NutsAcceptance_ReportsHamiltonianRatesOnly()
+    {
+        var analysis = CreateEstimatedAnalysis(
+            BayesianAnalysis.SamplerType.NUTS,
+            new[] { 0.80, 0.81, 0.79, 0.80 },
+            ess: 250.0,
+            retainedDrawCount: 1000);
+
+        string report = analysis.GenerateReport();
+
+        StringAssert.Contains(report, "NUTS SAMPLER DIAGNOSTICS");
+        StringAssert.Contains(report, "Chain 1:   80.0% Hamiltonian acceptance");
+        StringAssert.Contains(report, "Overall Hamiltonian Acceptance: 80.0%");
+        StringAssert.Contains(report, "Target:    80% Hamiltonian acceptance");
+        Assert.IsFalse(report.Contains("Divergences:"));
+        Assert.IsFalse(report.Contains("Maximum Tree Depth Hits:"));
+        Assert.IsFalse(report.Contains("E-BFMI"));
+        Assert.IsFalse(report.Contains("step size"));
+        Assert.IsFalse(report.Contains("legacy result"));
+        Assert.IsFalse(report.Contains("Proposals are too timid"));
+    }
+
+    /// <summary>
+    /// Verifies that high NUTS Hamiltonian acceptance uses NUTS-specific concise advice.
+    /// </summary>
+    [TestMethod]
+    public void GenerateReport_NutsHighAcceptance_UsesHamiltonianAdviceOnly()
     {
         var analysis = CreateEstimatedAnalysis(
             BayesianAnalysis.SamplerType.NUTS,
@@ -104,9 +130,12 @@ public class BayesianAnalysisReportTests
         string report = analysis.GenerateReport();
 
         StringAssert.Contains(report, "Status:    WARNING - above acceptable buffer");
-        StringAssert.Contains(report, "NUTS is accepting almost every proposal");
+        StringAssert.Contains(report, "Advice: Hamiltonian acceptance is above the acceptable range.");
+        StringAssert.Contains(report, "Review ESS and autocorrelation for inefficient trajectories.");
+        Assert.IsFalse(report.Contains("Proposals are too timid"));
+        Assert.IsFalse(report.Contains("leapfrog"));
+        Assert.IsFalse(report.Contains("Divergences:"));
     }
-
     /// <summary>
     /// Verifies that a single chain outside the acceptable buffer is called out even
     /// when the overall acceptance rate remains acceptable.
@@ -124,6 +153,46 @@ public class BayesianAnalysisReportTests
 
         StringAssert.Contains(report, "Chain-level warnings:");
         StringAssert.Contains(report, "Chain 1 acceptance 10.0% is below acceptable buffer 15-50%.");
+    }
+
+    /// <summary>
+    /// Verifies rank-normalized R-hat below 1.01 passes without expanding report labels.
+    /// </summary>
+    [TestMethod]
+    public void GenerateReport_Rhat1005_PassesModernThreshold()
+    {
+        var analysis = CreateEstimatedAnalysis(
+            BayesianAnalysis.SamplerType.DEMCzs,
+            new[] { 0.30, 0.30, 0.30, 0.30 },
+            ess: 2500.0,
+            retainedDrawCount: 10000);
+
+        string report = analysis.GenerateReport();
+
+        StringAssert.Contains(report, "Max R-hat:   1.0050   (target < 1.01)   OK");
+        StringAssert.Contains(report, "R-hat Verdict: OK - chains mixed across parameters");
+        StringAssert.Contains(report, "Overall Readiness: READY");
+    }
+
+    /// <summary>
+    /// Verifies rank-normalized R-hat above 1.01 produces the existing concise warning.
+    /// </summary>
+    [TestMethod]
+    public void GenerateReport_Rhat102_WarnsAtModernThreshold()
+    {
+        var analysis = CreateEstimatedAnalysis(
+            BayesianAnalysis.SamplerType.DEMCzs,
+            new[] { 0.30, 0.30, 0.30, 0.30 },
+            ess: 2500.0,
+            retainedDrawCount: 10000);
+        foreach (ParameterResults parameterResult in analysis.Results!.ParameterResults)
+            parameterResult.SummaryStatistics.Rhat = 1.02;
+
+        string report = analysis.GenerateReport();
+
+        StringAssert.Contains(report, "Max R-hat:   1.0200   (target < 1.01)   WARNING");
+        StringAssert.Contains(report, "R-hat Verdict: WARNING - chain mixing problem detected");
+        StringAssert.Contains(report, "Overall Readiness: NOT READY");
     }
 
     /// <summary>

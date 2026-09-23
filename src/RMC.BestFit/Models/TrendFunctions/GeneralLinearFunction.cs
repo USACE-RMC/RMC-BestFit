@@ -349,7 +349,7 @@ namespace RMC.BestFit.Models.TrendFunctions
         /// <returns>
         /// The predicted value: β₀ + β₁×x₁ + β₂×x₂ + ... + βₚ×xₚ
         /// </returns>
-        /// <exception cref="ArgumentException">
+        /// <exception cref="ArgumentException">Thrown when the trend has covariates and <paramref name="covariates"/> is null or empty, or when 
         /// Thrown if the length of <paramref name="covariates"/> does not match <see cref="NumberOfCovariates"/>.
         /// </exception>
         /// <remarks>
@@ -376,10 +376,13 @@ namespace RMC.BestFit.Models.TrendFunctions
                 return result;
             }
 
-            // Validate covariate array
+            // A covariate trend cannot be evaluated without its covariates; a silent intercept-only
+            // value would misrepresent the fitted trend.
             if (covariates == null || covariates.Length == 0)
             {
-                return result;
+                throw new ArgumentException(
+                    $"The trend has {NumberOfCovariates} covariate(s); covariate values are required to evaluate it.",
+                    nameof(covariates));
             }
 
             if (covariates.Length != NumberOfCovariates)

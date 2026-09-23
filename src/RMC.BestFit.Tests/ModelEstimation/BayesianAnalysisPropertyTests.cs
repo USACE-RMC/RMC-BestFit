@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
@@ -29,6 +31,93 @@ public class BayesianAnalysisPropertyTests
             df.ExactSeries.Add(new ExactData(1990 + i, values[i]));
         return new UnivariateDistribution(df, UnivariateDistributionType.Normal);
     }
+
+    /// <summary>
+    /// Creates deterministic two-parameter MCMC results without running a sampler.
+    /// </summary>
+    /// <param name="offset">A value added to every retained parameter value.</param>
+    /// <returns>Processed MCMC results containing four retained parameter sets.</returns>
+    private static MCMCResults MakeResults(double offset = 0.0)
+    {
+        var output = new List<ParameterSet>
+        {
+            new(new[] { 1.0 + offset, 2.0 + offset }, -4.0),
+            new(new[] { 1.1 + offset, 2.2 + offset }, -3.0),
+            new(new[] { 0.9 + offset, 1.8 + offset }, -2.0),
+            new(new[] { 1.2 + offset, 2.1 + offset }, -1.0)
+        };
+        return new MCMCResults(output[^1], output, alpha: 0.10);
+    }
+
+    #region Results notification tests
+
+    /// <summary>
+    /// Installing results notifies observers before the analysis becomes estimated.
+    /// </summary>
+    [TestMethod]
+    public void SetCustomMCMCResults_RaisesResultsBeforeIsEstimated()
+    {
+        var bayesian = new BayesianAnalysis(MakeNormalModel());
+        var notifications = new List<string?>();
+        bayesian.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BayesianAnalysis.Results) ||
+                e.PropertyName == nameof(BayesianAnalysis.IsEstimated))
+            {
+                notifications.Add(e.PropertyName);
+            }
+        };
+
+        bayesian.SetCustomMCMCResults(MakeResults(), skipInformationCriteria: true);
+
+        CollectionAssert.AreEqual(
+            new[] { nameof(BayesianAnalysis.Results), nameof(BayesianAnalysis.IsEstimated) },
+            notifications);
+    }
+
+    /// <summary>
+    /// Replacing results on an already-estimated analysis still notifies observers exactly once.
+    /// </summary>
+    [TestMethod]
+    public void SetCustomMCMCResults_ReplacesResults_RaisesResultsExactlyOnce()
+    {
+        var bayesian = new BayesianAnalysis(MakeNormalModel());
+        bayesian.SetCustomMCMCResults(MakeResults(), skipInformationCriteria: true);
+        int resultsNotifications = 0;
+        int estimatedNotifications = 0;
+        bayesian.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BayesianAnalysis.Results)) resultsNotifications++;
+            if (e.PropertyName == nameof(BayesianAnalysis.IsEstimated)) estimatedNotifications++;
+        };
+
+        bayesian.SetCustomMCMCResults(MakeResults(10.0), skipInformationCriteria: true);
+
+        Assert.AreEqual(1, resultsNotifications);
+        Assert.AreEqual(0, estimatedNotifications);
+    }
+
+    /// <summary>
+    /// Clearing results notifies once for a real reference change and not for a repeated null assignment.
+    /// </summary>
+    [TestMethod]
+    public void ClearResults_RaisesResultsOnlyWhenReferenceChanges()
+    {
+        var bayesian = new BayesianAnalysis(MakeNormalModel());
+        bayesian.SetCustomMCMCResults(MakeResults(), skipInformationCriteria: true);
+        int resultsNotifications = 0;
+        bayesian.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BayesianAnalysis.Results)) resultsNotifications++;
+        };
+
+        bayesian.ClearResults();
+        bayesian.ClearResults();
+
+        Assert.AreEqual(1, resultsNotifications);
+    }
+
+    #endregion
 
     #region Type / SamplerType Tests
 

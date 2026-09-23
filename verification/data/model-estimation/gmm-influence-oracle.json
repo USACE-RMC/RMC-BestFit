@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "artifact_id": "ME-GMM-INFLUENCE-001",
+    "generated_utc": "2026-07-25",
+    "command": "scripts/generate-verification-data.ps1 -Family model-estimation",
+    "generator": "verification/r/model-estimation/generate_gmm_influence_oracle.R",
+    "generator_sha256": "dee9e8b96d64749e6b751a0422b5780d7d6970dbf88d04984596fe13bbac4482",
+    "bestfit_source_commit": "06b85d8f2df808f6857df69b0a2f01039a9d7dd1",
+    "numerics_source_commit": "92754066a9085accb1738494c72dedf3d023766b",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "gmm_version": "1.9.1",
+    "sandwich_version": "3.1.2",
+    "jsonlite_version": "2.0.0",
+    "fixture": "Just-identified Log10-Normal mean and unbiased-variance moments; fixed theoretical Normal-moment weighting matrix",
+    "fit_influence_absolute_tolerance": 1e-05,
+    "variance_influence_absolute_tolerance": 1e-05,
+    "combined_leverage_absolute_tolerance": 1e-05,
+    "vanishing_penalty_equivalence_absolute_tolerance": 0.0001,
+    "tolerance_rationale": "R uses the supplied analytical moment Jacobian; BestFit obtains the diagnostic objective Hessian by bounded numerical differentiation. The 1e-5 tolerance is predeclared for that algorithmic difference."
+  },
+  "data_log10": [1.1, 1.4, 1.7, 2, 2.3, 2.6, 2.9],
+  "c2": 1.16666666666667,
+  "fitted_parameters": {
+    "mu": 2,
+    "sigma": 0.648074069840786
+  },
+  "weighting_matrix": [
+    [2.38095238095238, 0],
+    [0, 2.83446712018141]
+  ],
+  "formulas": {
+    "pointwise_moments": "g1_i=x_i-mu; g2_i=c2*(x_i-mu)^2-sigma^2",
+    "pointwise_score": "e_i=D' W g_i",
+    "bread": "B=D' W D",
+    "fit_influence": "e_i' B^-1 e_i/(n^2*p)",
+    "variance_influence": "e_i' B^-1 e_i/(n*p)",
+    "combined_leverage": "fit_influence+variance_influence"
+  },
+  "observations": [
+    {
+      "index": 0,
+      "x": 1.1,
+      "fit_influence": 0.0276512390670554,
+      "variance_influence": 0.193558673469388,
+      "combined_leverage": 0.221209912536443
+    },
+    {
+      "index": 1,
+      "x": 1.4,
+      "fit_influence": 0.00874635568513119,
+      "variance_influence": 0.0612244897959184,
+      "combined_leverage": 0.0699708454810496
+    },
+    {
+      "index": 2,
+      "x": 1.7,
+      "fit_influence": 0.00505648688046648,
+      "variance_influence": 0.0353954081632654,
+      "combined_leverage": 0.0404518950437319
+    },
+    {
+      "index": 3,
+      "x": 2,
+      "fit_influence": 0.00510204081632654,
+      "variance_influence": 0.0357142857142858,
+      "combined_leverage": 0.0408163265306124
+    },
+    {
+      "index": 4,
+      "x": 2.3,
+      "fit_influence": 0.00505648688046648,
+      "variance_influence": 0.0353954081632654,
+      "combined_leverage": 0.0404518950437319
+    },
+    {
+      "index": 5,
+      "x": 2.6,
+      "fit_influence": 0.0087463556851312,
+      "variance_influence": 0.0612244897959184,
+      "combined_leverage": 0.0699708454810496
+    },
+    {
+      "index": 6,
+      "x": 2.9,
+      "fit_influence": 0.0276512390670554,
+      "variance_influence": 0.193558673469388,
+      "combined_leverage": 0.221209912536443
+    }
+  ],
+  "totals": {
+    "fit_influence": 0.0880102040816327,
+    "variance_influence": 0.616071428571429,
+    "combined_leverage": 0.704081632653061
+  },
+  "interpretation": "Cook distance and variance influence are calibrated on the GMM estimating-equation scale. They are not compared numerically with likelihood-based MAP Cook distance.",
+  "status": "Independent R oracle"
+}

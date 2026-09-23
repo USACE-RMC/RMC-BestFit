@@ -5,6 +5,7 @@ using System.Runtime.Versioning;
 
 // Grant internal visibility to the UI test project.
 [assembly: InternalsVisibleTo("RMC.BestFit.UI.Tests")]
+[assembly: InternalsVisibleTo("RMC-BestFit")]
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information

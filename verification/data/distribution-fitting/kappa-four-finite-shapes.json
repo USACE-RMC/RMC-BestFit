@@ -1,0 +1,35 @@
+{
+  "finding": "TR-002",
+  "disposition": "Rejected non-defect",
+  "basis": "The Kappa Four support changes with kappa and h; finite shape pairs remain admissible distribution parameters when alpha is positive. Moment-existence restrictions are separate.",
+  "numerics_commit": "bc11849c762d7b87d06aa64a3f3706ecf118fc13",
+  "public_api_changed": false,
+  "shape_pairs": [
+    { "kappa": -0.25, "hondo": -0.5 },
+    { "kappa": -0.25, "hondo": 0.5 },
+    { "kappa": 0.25, "hondo": -0.5 },
+    { "kappa": 0.25, "hondo": 0.5 }
+  ],
+  "probabilities": [1E-6, 0.1, 0.5, 0.9, 0.999999],
+  "assertions": [
+    "ParametersValid is true",
+    "quantiles are finite and strictly increasing",
+    "CDF(InverseCDF(p)) equals p within 1E-10",
+    "quantiles remain within the reported support",
+    "the median density is finite and positive",
+    "finite endpoints have exact CDF and exterior-density behavior"
+  ],
+  "test": "Distributions.Univariate.Test_KappaFour.Test_K4_FiniteShapePairsHaveConsistentSupport",
+  "target_framework": "net10.0",
+  "focused_outcome": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "kappa_class_outcome": {
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0
+  },
+  "status": "Closed by regression; no production change required"
+}

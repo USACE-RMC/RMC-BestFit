@@ -65,6 +65,14 @@ namespace RMC.BestFit.Api.Services
             }
 
             var distribution = new UnivariateDistribution(input.DataFrame.Clone(), request.Distribution);
+            if (request.QuantilePriors is { Count: > 0 })
+            {
+                int expected = (request.UseSingleQuantile ?? distribution.UseSingleQuantile) ? 1 : distribution.Distribution.NumberOfParameters;
+                if (request.QuantilePriors.Count != expected)
+                    throw new ArgumentException($"quantilePriors requires exactly {expected} entries for this formulation. Use useSingleQuantile=true for one quantile.");
+            }
+            if (request.UseJeffreysRuleForScale.HasValue)
+                distribution.UseJeffreysRuleForScale = request.UseJeffreysRuleForScale.Value;
             var analysis = new UnivariateAnalysis(distribution);
             ApplyProbabilityOrdinates(request.ProbabilityOrdinates, analysis.ProbabilityOrdinates);
             BayesianOptionsMapper.Apply(analysis.BayesianAnalysis, request.BayesianOptions, _options.MaxIterations);

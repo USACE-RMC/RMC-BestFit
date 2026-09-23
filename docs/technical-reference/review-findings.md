@@ -1,0 +1,1620 @@
+<!-- technical-reference-status: in-progress -->
+
+# Scientific Review Findings
+
+[Technical Reference](index.md)
+
+The active continuation and batching plan is maintained in the [Verification Finalization Plan](../verification/verification-finalization-plan.md).
+
+This is the canonical register for disagreements among statistical theory, the pinned RMC.Numerics 2.1.4 source, RMC.BestFit behavior, tests, and earlier documentation. Corrections require explicit authorization, focused tests, and—where scientific parity is claimed—approved verification evidence.
+
+Closeout reconciliation (updated 1 September 2026): Phase 1 and Phase 2 dispositions are closed for their approved scopes. All associated oracle files match the manifest. Phase 3 is closed in its approved scope. The original Phase 4 findings are complete: TR-014 independently resamples the actual retained outputs used by Composite and coincident-frequency propagation, while `BivariateAnalysis` remains intentionally conditional on fixed marginals. Chunk 9 supersedes the oversized competing-risk recovery cross-product and arbitrary CDF-error gates with five BestFit cells over three N=1000 cause-balanced dog-leg fixtures. All five current identities pass. The independent maximum recovers under both BestFit and Numerics MLE and under BestFit Bayesian MCMC when the Verification fixture disables the optional Jeffreys scale multiplier while retaining its bounded parameter priors. Its separate default-prior diagnostic remains failure evidence for a disappeared-component boundary mode with rank-deficient information; the production prior default is unchanged. Chunk 10A has current exact passing evidence for all six mixture recovery identities plus the frozen scikit-learn oracle. Chunk 10B has current exact passing evidence for all ten renamed composite-oracle identities and four end-to-end predictive-recovery identities. Chunk 11 completes the seven-family copula matrix (Student-t MLE plus independent MPL/IFM targets) and the nonlinear coincident response. Chunk 12 retains five scientifically distinct fixtures per estimator; all ten exact recovery identities pass after parameter and declared log10-residual uncertainty are propagated into simultaneous 95% predictive bands, and TR-094 records the resolved design gap. The whole-library Verification audit places 144 non-profile MLE/MAP constructions on Differential Evolution and retains BFGS only for five intentional Brent/BFGS profile constructions. With Haden Smith's approval, BestFit MLE/MAP now uses a minimum DE population of 100 and Numerics repairs infeasible trials halfway between the target and violated bound; convergence tolerances remain unchanged. The original 143-method audit is fully reconciled: four qualitative influence methods, eight statistically unsupported fixed-data fitting methods, and twelve redundant embedded-R copula methods were declassified; one identity was renamed. All 120 current reconciled MLE/MAP identities have passing exact evidence after scientific optimizer/recovery gates, including all 15 published real-data MLE cells, were replaced by known covariance, central intervals, profiles, or joint 95% likelihood-ratio regions. Deterministic same-point formulas retain only numerical round-off checks.
+
+Phase 5 closeout (20 August 2026): TR-035 through TR-041 and TR-046 are complete, and TR-042 retains
+its refreshed closed contract. Haden Smith approved 110 discarded stationary initialization steps
+while retaining the established seeds and exactly 1,000 observations. The 1,000 limit applies to
+fixtures and generator-moment methods, not MCMC. Commit `ccd5842` removed all time-series
+Verification assignments to `BayesianAnalysis` settings; every Bayesian recovery uses and asserts
+the production DEMCzs defaults. All eight MLE/Bayesian recovery cells pass. ARIMA and ARIMAX point
+recovery compares C# conditional MLE and sampled posterior MAP with independently implemented R
+conditional MLE/default-prior MAP oracles; generating truth remains a central-95% coverage
+criterion. `stats::arima(method="ML")` is retained only as a Kalman/state-space diagnostic, not as
+an exact likelihood oracle. The ARIMAX MLE cell uses the unchanged production Differential
+Evolution default after the forced bounded-Nelder-Mead test override was shown to settle on a
+boundary solution despite same-point R/C# likelihood parity. No production optimizer, likelihood,
+prior, sampler, seed, tolerance, convergence rule, or Bayesian default changed. Earlier failures
+remain documented in full, and the complete Verification project was not run.
+
+Phase 6 opening and register completion (updated 31 August 2026): the register now runs through TR-094
+(TR-091 was found and fixed during Batch 6.3; TR-092 and TR-093 were found and fixed during Batch 6.5;
+TR-094 records the resolved Chunk 12 rating-curve recovery design). TR-084
+through TR-090 record the Verification results and one fast-suite race that the 21 August reruns left
+without dispositions; they were diagnosed and disposed in Phase 7 on 22 August 2026 (fixture defects in
+TR-084 and TR-087, production defects in TR-085, TR-086, and TR-087, a test race in TR-090, and decisions
+for TR-088 and TR-089; see their sections). TR-078 and
+TR-081 are closed with 21 August evidence (the twelve `B17CPenalityTests` methods were rerun one at a
+time through the guarded runner, 12/12). The TR-052 failure mode is restated: a null covariate vector
+yields an intercept-only prediction rather than an exception. Phase 6 (rating curve, bivariate, and
+spatial models) begins from this checkpoint under the batch ledger in the finalization plan.
+
+## Summary
+
+| ID | Finding | Severity | Review disposition | Implementation | Verification | Evidence | Updated |
+|---|---|---|---|---|---|---|---|
+| [TR-001](#tr-001) | Kappa Four zero-shape PDF and quantile | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-001---kappa-four-zero-primary-shape) · [Artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json) | 2026-07-24 |
+| [TR-002](#tr-002) | Kappa Four shape validation | Closed | Rejected non-defect | N/A | Passed - regression | [Report](../verification/distribution-fitting.md#tr-002---finite-kappa-shape-pairs) / [Artifact](../../verification/data/distribution-fitting/kappa-four-finite-shapes.json) | 2026-07-24 |
+| [TR-003](#tr-003) | Nonstationary threshold chronology and prior reference time | Closed | Accepted documented conventions | Documentation complete; no code change required | Passed - source/documentation/literature audit | [Data frame](data-frame/index.md#stationary-and-nonstationary-chronology) · [Priors](models/parameters-and-priors.md#complete-univariate-prior) | 2026-07-28 |
+| [TR-004](#tr-004) | Point-process rate definitions | High | Confirmed defect with accepted inference fallback | Complete | Passed - fast contracts and two independent mixed-likelihood cells | [Report](../verification/point-process.md#tr-004---exposure-and-rate-definitions) | 2026-07-31 |
+| [TR-005](#tr-005) | Point-process Poisson-GPA simulation | High | Confirmed defect | Complete | Passed in approved scope - all ten guarded cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-07-31 |
+| [TR-006](#tr-006) | Mixture weights and proposal mutation | High | Confirmed defect; corrected | Complete | Passed - fast, exact parity, and Bayesian recovery | [Report](../verification/mixture.md#tr-006--weights-and-proposal-purity) | 2026-07-31 |
+| [TR-007](#tr-007) | Zero-inflated mixed distribution | High | Confirmed defect; corrected | Complete | Passed - analytical, simulation, parity, and Bayesian recovery | [Report](../verification/mixture.md#tr-007--positive-hurdle) | 2026-07-31 |
+| [TR-008](#tr-008) | Mixture EM impossible rows | High | Confirmed defect; corrected | Complete | Passed - explicit-failure regressions and focused recovery | [Report](../verification/mixture.md#tr-008--impossible-rows) | 2026-07-31 |
+| [TR-009](#tr-009) | RMSE residual omission | High | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) / [Artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json) | 2026-07-24 |
+| [TR-010](#tr-010) | FittingAnalysis all-failed status | Medium | Confirmed defect | Fixed | Passed - regression | [Report](../verification/distribution-fitting.md#tr-010---all-candidate-failure-reports-overall-success) · [Artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json) | 2026-07-24 |
+| [TR-011](#tr-011) | Bayesian AIC/BIC prior-density inclusion | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
+| [TR-012](#tr-012) | Competing-risk dependent simulation | High | Confirmed defect; corrected | Complete | Passed - fast seed/validation contracts and four analytical rank/CDF methods | [Report](../verification/competing-risks.md) | 2026-08-03 |
+| [TR-013](#tr-013) | Non-finite composite criteria | Medium | Confirmed defect; corrected | Complete | Passed - fast mixed-validity, zero-RMSE, finite-weight, and B17C compatibility contracts | [Report](../verification/composite.md#criterion-weighting) | 2026-08-03 |
+| [TR-014](#tr-014) | Cross-analysis posterior draw coupling | Methodological | Confirmed concern; corrected | Complete | Passed - fast contracts and two independent numerical oracles | [Report](../verification/composite.md#independent-posterior-resampling) | 2026-08-03 |
+| [TR-015](#tr-015) | Composite correlation matrix configuration | High | Confirmed defect; corrected | Complete | Passed - fast validation, ownership, persistence, and construction contracts | [Report](../verification/composite.md#correlation-matrix-configuration) | 2026-08-03 |
+| [TR-016](#tr-016) | Bulletin 17C frequentist terminology | Closed | Accepted shared result-storage architecture | Documentation complete; no code/API change required | Passed - source/XML/report terminology audit | [Bulletin 17C](analysis/bulletin-17c.md#uncertainty-interpretation) | 2026-07-28 |
+| [TR-017](#tr-017) | Bulletin 17C bootstrap naming | Closed | Rejected naming defect; documentation clarified | No production change required | Passed - paper/implementation concordance audit | [Uncertainty method](analysis/bulletin-17c-uncertainty.md) | 2026-07-28 |
+| [TR-018](#tr-018) | Bulletin 17C failed bootstrap fits | Closed | Robust initialization and convergence-aware acceptance implemented; parent fallback retained only for output length | Complete | Passed - 14 exact cells; 13,000 outputs with zero retries, exceptions, or substitutions | [Test inventory](../verification/test-inventory.md#tr-018tr-019-bulletin-17c-bootstrap-refit-reliability---28-july-2026) | 2026-07-28 |
+| [TR-019](#tr-019) | Bulletin 17C bootstrap truncation | Closed | Obsolete Mahalanobis rejection removed | Complete | Passed - unguarded 13,000-output sweep; zero malformed or failed refits | [Test inventory](../verification/test-inventory.md#tr-018tr-019-bulletin-17c-bootstrap-refit-reliability---28-july-2026) | 2026-07-28 |
+| [TR-020](#tr-020) | Bulletin 17C Cohn diagnostics scope | Closed | Confirmed scope defect - resolved | LP3 exact-data guards implemented | Passed - fast scope regressions; numerical Cohn verification deferred | [Bulletin 17C report](../verification/bulletin-17c.md#cohn-diagnostic-scope) | 2026-07-28 |
+| [TR-021](#tr-021) | Bulletin 17C formal-example parity | Closed | Current GMM formal-example source verified | Seven exact methods executed | Passed - 7/7 published worked examples at 1E-3 | [Bulletin 17C report](../verification/bulletin-17c.md#formal-worked-example-parameter-parity) | 2026-07-28 |
+| [TR-022](#tr-022) | NUTS versus HMC inventory | Documentation/API | Confirmed defect | Fixed | Passed - source/API inventory | [Bayesian MCMC](estimation/bayesian-mcmc.md) | 2026-07-25 |
+| [TR-023](#tr-023) | MLE and MAP nuisance profiling | High | Confirmed defect - resolved | Fixed without public API changes | Passed - R `bbmle`, closed-form, and informative-prior MAP parity | [Report](../verification/model-estimation.md#profile-likelihood-covariance-failure-and-joint-prior-characterization) / [Artifact](../../verification/data/model-estimation/profile-likelihood-oracle.json) | 2026-07-27 |
+| [TR-024](#tr-024) | PSIS tail smoothing | High | Confirmed defect - resolved | Fixed | Passed - R `loo` aggregate, pointwise, tail, threshold, and performance parity | [Report](../verification/model-estimation.md#psis-loo-and-pareto-diagnostics) / [Artifact](../../verification/data/model-estimation/psis-loo-oracle.json) | 2026-07-26 |
+| [TR-025](#tr-025) | ARWMH covariance adaptation | High | Confirmed scoped defect - resolved | Fixed | Passed - focused Numerics and BestFit regression | [Report](../verification/model-estimation.md#numerics-mcmc-verification) | 2026-07-26 |
+| [TR-026](#tr-026) | GMM Hansen J statistic | High | Confirmed defect - resolved | Fixed | Passed - R `gmm::specTest` J/p-value parity | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) / [Artifact](../../verification/data/model-estimation/gmm-specification-oracle.json) | 2026-07-26 |
+| [TR-027](#tr-027) | Explicit covariance failure status | High | Confirmed defect - resolved | Fixed | Passed - deterministic failure, success, and regularization paths | [Report](../verification/model-estimation.md#profile-likelihood-covariance-failure-and-joint-prior-characterization) | 2026-07-26 |
+| [TR-028](#tr-028) | Joint prior-predictive sampling | High | Confirmed limitation | Documented | Passed - source/contract and coupled-prior characterization | [Report](../verification/model-estimation.md#profile-likelihood-covariance-failure-and-joint-prior-characterization) / [Predictive checks](estimation/predictive-checks.md) | 2026-07-26 |
+| [TR-029](#tr-029) | MCMC diagnostic claims | High | Confirmed defect - resolved | Modernized without API or serialization changes | Passed - R `posterior` 1.7.0 rank-normalized R-hat and ESS parity | [Report](../verification/model-estimation.md#rank-normalized-convergence-diagnostics-tr-029) / [Artifact](../../verification/data/model-estimation/mcmc-diagnostics-oracle.json) | 2026-07-27 |
+| [TR-030](#tr-030) | NUTS acceptance reporting | High | Confirmed defect - resolved | Fixed surgically | Passed - acceptance contract, gradient, JSON compatibility, and report regression | [Report](../verification/model-estimation.md#numerics-mcmc-verification) | 2026-07-26 |
+| [TR-031](#tr-031) | Combined influence interpretation | Methodological | Confirmed defect | Fixed | Passed - analytical and R parity | [Report](../verification/model-estimation.md#fit-influence-variance-influence-and-combined-leverage) | 2026-07-25 |
+| [TR-032](#tr-032) | GMM influence labeled Pareto k | High | Confirmed defect - resolved | Legacy overloads obsolete; supported GMM paths correctly labeled | Passed - compatibility, attribute, and mapping regressions | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) | 2026-07-27 |
+| [TR-033](#tr-033) | GMM objective/gradient scale | High | Rejected non-defect | No change required | Passed | [Model-estimation verification](../verification/model-estimation.md#gmm-objective-gradient-and-covariance-scaling) | 2026-07-25 |
+| [TR-034](#tr-034) | Overidentified one-step GMM | Medium | Confirmed defect - resolved | Fit and covariance fixed | Passed - R `gmm` parameter/objective and fixed-weight/two-step covariance parity | [Report](../verification/model-estimation.md#gmm-specification-covariance-and-legacy-influence-verification) / [Artifact](../../verification/data/model-estimation/gmm-specification-oracle.json) | 2026-07-27 |
+| [TR-035](#tr-035) | Time-series Jeffreys component type | Medium | Confirmed defect; corrected | Complete | Passed - fast decomposition and analytical oracle | [Report](../verification/time-series.md#tr-035--jeffreys-prior-metadata) | 2026-08-20 |
+| [TR-036](#tr-036) | Transform fitting holdout leakage | High | Confirmed defect; corrected | Complete | Passed - fast lifecycle and R training-only oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
+| [TR-037](#tr-037) | ARIMA/ARIMAX reintegration index | High | Confirmed defect; corrected | Complete | Passed - recurrence, compatibility, and fixed-seed regressions | [Report](../verification/time-series.md#tr-037--arima-and-arimax-prediction-reintegration) | 2026-08-20 |
+| [TR-038](#tr-038) | ARIMA simulation transform/differencing | High | Confirmed defect; corrected | Complete | Passed - transform/order regressions and algebraic/moment oracles | [Report](../verification/time-series.md#tr-038--ar-ma-and-arima-transformed-generation) | 2026-08-20 |
+| [TR-039](#tr-039) | ARIMAX simulation scale mixing | High | Confirmed defect; corrected | Complete | Passed - scale/order/date regressions and algebraic/moment oracle | [Report](../verification/time-series.md#tr-039--arimax-transformed-and-differenced-generation) | 2026-08-20 |
+| [TR-040](#tr-040) | Pointwise time-series invalid scale | High | Confirmed defect; corrected | Complete | Passed - fast parity and analytical oracle | [Report](../verification/time-series.md#tr-040--invalid-innovation-scale-parity) | 2026-08-20 |
+| [TR-041](#tr-041) | Differenced ARIMAX alignment | High | Confirmed defect; corrected | Complete | Passed - date/index regressions and independent R oracle | [Report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment) | 2026-08-20 |
+| [TR-042](#tr-042) | Time-series/rating AIC/BIC kernel | High | Confirmed defect - resolved | Complete | Passed - counting regression and five-analysis oracle refreshed | [Report](../verification/time-series.md#tr-042--information-criteria-use-data-likelihood-at-map) | 2026-08-20 |
+| [TR-043](#tr-043) | Rating-curve log10 Jacobian | High | Confirmed defect; corrected | Fixed - discharge-space density in the scalar, pointwise, and component likelihoods | Passed - three exact discharge-space oracle cells (SciPy and Numerics base-10 lognormal), fast hand-calculation and identity contracts, six example-replication cells | [Report](../verification/rating-curve.md#tr-043---discharge-space-likelihood) / [Artifact](../../verification/data/rating-curve/rating-curve-likelihood-oracle.json) | 2026-08-21 |
+| [TR-044](#tr-044) | Rating-curve zero-exponent continuity | High | Confirmed defect; corrected | Fixed - default exponent lower bound and prior minimum 0.1; legacy bounds restored verbatim with a validation warning | Passed - seven exact continuity/bound cells and fast bound, legacy-warning, and XML round-trip contracts | [Report](../verification/rating-curve.md#tr-044---continuity-at-activation-stages) | 2026-08-21 |
+| [TR-045](#tr-045) | Rating-curve unused-record validation | Medium | Confirmed defect; corrected | Fixed - aligned-pair positivity error plus a non-blocking unmatched-record warning with counts | Passed - fast aligned-pair, unmatched-record, and count-reporting contracts | [Report](../verification/rating-curve.md#tr-045---aligned-pair-validation) | 2026-08-21 |
+| [TR-046](#tr-046) | Manual transform state rebuild | High | Confirmed defect; corrected | Complete | Passed - fast persistence and independent likelihood oracle | [Report](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle) | 2026-08-20 |
+| [TR-047](#tr-047) | Bivariate AIC/BIC posterior kernel | High | Confirmed defect - resolved | Fixed | Passed - focused regression/source audit | [Report](../verification/model-estimation.md#aic-and-bic-evaluated-at-map) | 2026-07-25 |
+| [TR-048](#tr-048) | Spatial missing-site marginalization | High | Confirmed defect - fixed | Fixed (21 August 2026): observed-subset copula evaluation used by both likelihood paths | Passed - the two missing-site cells match the R `mvtnorm` observed-subset oracle after the correction; complete-row and marginal-only cells unchanged | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
+| [TR-049](#tr-049) | Spatial likelihood decomposition | High | Confirmed defect - fixed | Fixed (21 August 2026): Gaussian-process densities moved to a `PriorLogLikelihood` override; kernel unchanged | Passed - data excludes the process density, the scalar/pointwise identities hold, and the posterior kernel matches the oracle | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-copula-likelihood-oracle.json) | 2026-08-21 |
+| [TR-050](#tr-050) | Spatial cross-validation result retention | High | Confirmed defect - fixed | Fixed (22 August 2026): folds fit reduced training models, so no restoration refit clears the results | Passed - guarded cells retain `CrossValidationResults` after the run | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
+| [TR-051](#tr-051) | Spatial held-out-site leakage | High | Confirmed defect - fixed | Fixed (22 August 2026): `SpatialGEV.CreateReducedModel` builds each fold's training model without the held-out site | Passed - fold 1 of a copula network equals an independently reduced model fitted with the same defaults and seed (`1e-6` relative); fast reduced-model contracts | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
+| [TR-052](#tr-052) | Spatial held-out covariates | High | Confirmed defect - fixed | Fixed (22 August 2026): folds predict with the held-out site's covariate rows; `PredictWithCovariates` throws for a covariate trend without covariates | Passed - fold 1 of a location-regression network equals the reduced model evaluated at the held-out row; fast throw contracts | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
+| [TR-053](#tr-053) | Failed spatial folds counted as zero | High | Confirmed defect - fixed | Fixed (22 August 2026): `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, `TotalFolds`; NaN metrics; aggregates over successful folds; throws when none succeed | Passed - guarded no-observation fold cell and the fast two-site no-fold policy contract | [Report](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026) | 2026-08-22 |
+| [TR-054](#tr-054) | Ungauged conditional spatial variance | High | Confirmed defect - fixed | Fixed (22 August 2026): conditional Gaussian-process prediction per draw with a seeded conditional residual (`SampleConditionalResidual`, default true) | Passed - R conditional-GP oracle (15 cases, `1e-10`) for the predictor; guarded cell: deterministic option equals the posterior mean of the model-level kriging prediction (`1e-9`), residual option reproducible and at least as wide; fast contract | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) / [Artifact](../../verification/data/spatial-extremes/spatial-conditional-gp-oracle.json) | 2026-08-22 |
+| [TR-055](#tr-055) | Spatial AIC/BIC definition | Methodological | Confirmed defect - closed | Corrected; row/year unit verified after TR-048/TR-049 | Passed - guarded criteria cell (AIC/BIC at the sampled MAP with nonempty row/year blocks; WAIC/PSIS-LOO from row/year terms) and fast helper contracts | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) / [Spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) | 2026-08-21 |
+| [TR-056](#tr-056) | Spatial bootstrap data wiring | High | Confirmed defect - fixed | Fixed (22 August 2026): temporal block bootstrap on resampled replicate models with MAP refits, NaN failures, 50% success floor, `SpatialGEVBootstrapResults` | Passed - guarded twenty-replicate cell (accounting, finite ordered bounds, seed sensitivity); fast resampled-model and block-draw contracts | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-057](#tr-057) | Spatial Godambe decomposition | High | Confirmed defect - fixed | Fixed (21 August 2026): both sandwich factors from the row/year estimating equations; explicit failure status | Passed - scalar and summed-pointwise gradients agree (`1e-4`); fast singular-Hessian failure, well-conditioned, validation, and reset contracts | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
+| [TR-058](#tr-058) | Regional posterior interval construction | High | Confirmed defect - fixed | Fixed (22 August 2026): regional bounds are posterior quantiles of the per-draw regional mean quantile | Passed - guarded heterogeneous-network cell (`1e-9` relative) and fast injected-draw contract; endpoint averages failed the contract before the fix | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-059](#tr-059) | Spatial site-weight interpretation | Methodological | Confirmed - closed | Fixed (22 August 2026): `ComputeCorrelationHeuristicSiteWeights` with an obsolete forwarding alias; remarks and technical reference state the heuristic nature | Passed - fast formula and alias-forwarding contracts | [Report](../verification/spatial-extremes.md#batch-66-site-weight-naming-and-distance-metric-22-august-2026) | 2026-08-22 |
+| [TR-060](#tr-060) | Spatial distance units | High | Confirmed defect - fixed | Fixed (22 August 2026): additive `SpatialDistanceMetric` (Cartesian default, geodesic haversine kilometres) on `SpatialGEV`, `GaussianCopula`, and `SpatialRegressionErrors`; coordinate validation; serialized | Passed - R haversine oracle (distances `1e-9` km, correlation and kriging `1e-10`) and the Cartesian planar regression; fast propagation, validation, and round-trip contracts | [Report](../verification/spatial-extremes.md#batch-66-site-weight-naming-and-distance-metric-22-august-2026) / [Artifact](../../verification/data/spatial-extremes/geodesic-distance-oracle.json) | 2026-08-22 |
+| [TR-061](#tr-061) | Spatial dependent simulation | High | Confirmed defect - fixed | Fixed (22 August 2026): Cholesky-correlated normals through Φ and the site inverse GEV CDFs when the copula is enabled; independent path unchanged | Passed - seeded 20,000-row cell (all intersite normal-score correlations within ±0.02, marginal quantiles within 3%) and fast contracts (dependence, historical independent algorithm, reproducibility) | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-062](#tr-062) | Spatial uncertainty-method dispatch | High | Confirmed defect - fixed | Fixed (22 August 2026): `RunAsync` dispatches the selected method (posterior, sqrt-VIF inflation, Gaussian draws from the Godambe covariance, temporal block bootstrap) and records `AppliedUncertaintyMethod` on the analysis and every site result | Passed - three guarded dispatch cells and the fast injected-result dispatch contract | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-063](#tr-063) | Whole-series replacement leaves plotting positions stale | Medium | Confirmed defect | Fixed | Passed - analytical | [Report](../verification/distribution-fitting.md#tr-063---whole-series-replacement-refresh) / [Artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json) | 2026-07-24 |
+| [TR-064](#tr-064) | DE/external-optimizer likelihood-region parity | Medium | Rejected non-defect | N/A | Passed - SciPy parity | [Report](../verification/distribution-fitting.md#tr-064---distribution-fitting-optimizer-likelihood-region) / [Artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json) | 2026-09-01 |
+| [TR-065](#tr-065) | GMM influence Hessian scale depends on penalty presence | High | Confirmed defect | Fixed | Passed - R `gmm` parity | [Report](../verification/model-estimation.md#gmm-calibration-against-r) / [Artifact](../../verification/data/model-estimation/gmm-influence-oracle.json) | 2026-07-25 |
+| [TR-066](#tr-066) | ARIMAX conditional order omitted covariate lags | High | Confirmed defect | Fixed | Passed - hand-derived distributed-lag likelihood, regenerated R alignment oracle, recovery cells | [Report](../verification/time-series.md) / [Artifact](../../verification/data/time-series/phase5-arimax-alignment-oracle.json) | 2026-08-21 |
+| [TR-067](#tr-067) | ARIMA and AR order setters left the transform Jacobian stale | Medium | Confirmed defect | Fixed | Passed - fast order-change likelihood parity | [Report](../verification/time-series.md) | 2026-08-21 |
+| [TR-068](#tr-068) | Empty conditional likelihood sum returned zero | Medium | Confirmed defect | Fixed | Passed - fast negative-infinity and validation contracts | [Report](../verification/time-series.md) | 2026-08-21 |
+| [TR-069](#tr-069) | Pointwise transform Jacobian was spread uniformly | Medium | Confirmed defect | Fixed | Passed - per-observation pins, regenerated alignment oracle | [Report](../verification/time-series.md) / [Artifact](../../verification/data/time-series/phase5-arimax-alignment-oracle.json) | 2026-08-21 |
+| [TR-070](#tr-070) | Time-series residual, prediction-window, and transform-reset guards | Low | Confirmed defect | Fixed | Passed - fast contracts | [Report](../verification/time-series.md) | 2026-08-21 |
+| [TR-071](#tr-071) | Seasonal Gumbel-limit annualization sign | High | Confirmed defect | Fixed | Passed - hand value, continuity, point-process recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
+| [TR-072](#tr-072) | Point-process clone rate and seasonal quantile priors | Medium | Confirmed defect | Fixed | Passed - fast clone and prior contracts, recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
+| [TR-073](#tr-073) | Competing-risk empirical CDF grid lost resolution for heavy tails (Numerics) | High | Confirmed defect | Fixed in Numerics (local) | Passed - Numerics root-solve parity, composite and competing-risk cells | [Report](../verification/composite.md) | 2026-08-21 |
+| [TR-074](#tr-074) | Composite zero inflation inferred from roundoff | Medium | Confirmed defect | Fixed | Passed - 1 ulp weight-sum contract | [Report](../verification/composite.md) | 2026-08-21 |
+| [TR-075](#tr-075) | Composite correlation undo and coincident-frequency cache thread safety | Low | Confirmed defect | Fixed | Passed - UI undo round trip, fast cache contracts | [Report](../verification/composite.md) | 2026-08-21 |
+| [TR-076](#tr-076) | Bulletin 17C bootstrap diagnostics counted realizations as replicates | High | Confirmed regression | Fixed | Passed - per-replicate rate and legacy XML contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-077](#tr-077) | Parent-fit substitution reported as a point mass | High | Confirmed defect; substitution retained by decision | Fixed (reporting) | Passed - report contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-078](#tr-078) | Converged-within-tolerance refit acceptance requires objective improvement | Medium | Confirmed defect | Fixed | Passed - 14/14 reliability-grid cells (21 August 2026) | [Test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-079](#tr-079) | Pivot bound repairs and z-limit clips are counted | Medium | Confirmed defect | Fixed | Passed - fast report and counter contracts | [Report](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026) | 2026-08-21 |
+| [TR-080](#tr-080) | Bulletin 17C status counters, loop progress, and documentation corrections | Low | Confirmed defect | Fixed | Passed - fast report contracts, documentation review | [Report](../verification/bulletin-17c.md) | 2026-08-21 |
+| [TR-081](#tr-081) | Log-scale penalty centers perturbed on the log scale | Low | Confirmed latent defect | Fixed | Passed - 12/12 `B17CPenalityTests` exact guarded reruns | [Test inventory](../verification/test-inventory.md#phase-6-prelude---21-august-2026) | 2026-08-21 |
+| [TR-082](#tr-082) | Strict distribution XML parsers verified against 2.1.4 payloads | Medium | Compatibility risk | Verified | Passed - fifteen literal 2.1.4 payloads and embedding elements | [Report](../verification/test-inventory.md) | 2026-08-21 |
+| [TR-083](#tr-083) | Example project SQLite sidecars were tracked | Low | Repository hygiene | Fixed | N/A | [Report](../verification/test-inventory.md) | 2026-08-21 |
+| [TR-084](#tr-084) | Nonstationary recovery fixtures carried no trend | Medium | Confirmed fixture defect; fixed (Verification only); acceptance re-specified | Fixture generates each observation from the trend at its own index; Exponential/Logistic truths inside the default rate bounds; gross-error gate (4 posterior SD, R-hat, ESS) | Passed - 16/16 cells under production defaults | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-085](#tr-085) | Pearson Type III covariance diagonal mismatch | Medium | Confirmed defect; fixed | Eigenvalue cap removed from the GMM covariance and post-estimate weighting conditioning | Passed - 13/13 covariance cells; 47/47 GMM regression cells | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-086](#tr-086) | Move3-style uncertain-data bootstrap fallback rate | Medium | Confirmed defect; fixed | Relative re-centring of measurement-error distributions for log-space fits and positive error supports | Passed - uncertain-data cells 2/2, reliability grid 14/14 | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-087](#tr-087) | Censored-coverage bootstrap cells fail to estimate | Medium | Confirmed fixture defect plus production robustness defect; both fixed | Fixture computes plotting positions; initial-parameter fallback with validation warning | Passed - four fast regressions; coverage cells not rerun (on request only) | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-088](#tr-088) | Bulletin 17C coverage assertions re-enabled but not rerun | Low | Closed - reruns on request only (decision 22 August 2026) | Assertions re-enabled | Not rerun in the closeout by decision | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-089](#tr-089) | ARIMA/ARIMAX MAP recovery cells fail | Medium | Legacy fixtures moved to 1,000 observations; Bayesian cells assert credible-interval coverage (decisions 22 August 2026) | 29 legacy fixtures use 1,000 observations; the 22 Bayesian cells assert central 90% credible-interval coverage and R-hat | Passed - 29/29 legacy cells | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-090](#tr-090) | Intermittent fast-suite reprocess race | Low | Test race; fixed (fast test only) | Test waits for the published reprocess instead of racing a second direct call | Passed - fast core project | [Test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026) | 2026-08-22 |
+| [TR-091](#tr-091) | Spatial clone drops copula/error parameter blocks | High | Confirmed defect - fixed | Fixed (21 August 2026): the clone rebuilds its parameter list from the cloned components and copies values, bounds, and priors | Passed - three fast clone contracts (failed before the fix: 3 parameters instead of 4 and 17); the guarded row/year criteria cell and the copula recovery cell complete after the fix | [Report](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026) | 2026-08-21 |
+| [TR-092](#tr-092) | Spatial likelihood throws on non-finite site parameters | High | Confirmed defect - fixed | Fixed (22 August 2026): non-finite site GEV parameters return negative-infinite likelihood in both paths | Passed - fast contract (overflowing latent error); the location-error network now samples under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-093](#tr-093) | Latent-error default bounds ignore the log link | High | Confirmed defect - fixed | Fixed (22 August 2026): link-space spread × 3, floor 1.0, for log-link location and scale errors | Passed - fast bound-rule contract; the TR-054 guarded cell runs under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
+| [TR-094](#tr-094) | Rating-curve legacy recovery used arbitrary bands and omitted residual uncertainty from response recovery | High | Confirmed verification gap; resolved | Verification matrix normalized; parameter and log10-residual uncertainty feed simultaneous predictive bands; all non-profile MLE/MAP tests use Differential Evolution with untouched defaults | 10/10 retained recovery cells passed; exact segmented allocations reported | [Report](../verification/rating-curve.md#current-exact-outcomes) | 2026-08-31 |
+<a id="tr-001"></a>
+## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API changes in RMC.Numerics commit `3e058ebe5917817f3dde5e3b2ed6574d6bab083e`.
+
+**Verification status.** Passed. The two exact analytical Verification methods pass independently against the corrected Numerics source.
+
+**Report evidence.** [Distribution fitting verification](../verification/distribution-fitting.md#tr-001---kappa-four-zero-primary-shape) and [committed result artifact](../../verification/data/distribution-fitting/kappa-four-zero-shape.json).
+
+**Evidence.** At pinned Numerics commit `828664650c9327b309ee8332e707ccca73588e93`, `KappaFour.CDF` uses
+
+$$
+F(x)=[1-h\exp(-z)]^{1/h},\qquad z=(x-\xi)/\alpha,
+$$
+
+when \(\kappa=0\) and \(h\ne0\). Algebraic inversion gives
+
+$$
+x=\xi-\alpha\log\left(\frac{1-p^h}{h}\right),
+$$
+
+but `InverseCDF` evaluates `Xi - Alpha * Log(1 - p^h / h)`. `PDF` also evaluates the generic factor `(1-kappa*z)^(1/kappa-1)` at exactly zero shape. In .NET that base-one/infinite-exponent expression evaluates as one, omitting the required \(\exp(-z)\) limit.
+
+A compiled local probe with \((\xi,\alpha,\kappa)=(0,1,0)\) found, at \(x=1\): for \(h=0.2\), CDF `0.6824160756`, PDF `0.7366130339`, central numerical CDF derivative `0.2709847914`, and inverse-CDF at that CDF `NaN`. The existing Numerics Kappa test exercises construction at zero but not zero-shape density or CDF/quantile inversion.
+
+The corrected source adds the exact zero-kappa density factor and fixes the inverse-CDF grouping. Four upstream regressions cover the analytical derivative, inverse/CDF round trip, support and normalization, and two-sided continuity. The normalized Numerics .NET 10 Release gate records 2,024 passing tests with no failures. Both exact BestFit verification methods pass independently at absolute tolerance `1e-10`.
+
+**Impact.** The defect affected zero-primary-shape likelihoods and quantiles. The corrected implementation restores the analytical density and inverse CDF for this branch.
+
+**Follow-up.** Retain the two exact BestFit methods and four upstream regressions as permanent release gates.
+
+<a id="tr-002"></a>
+## TR-002 — Kappa Shape Validation Re-audit (Closed)
+
+**Review disposition.** Rejected non-defect.
+
+**Implementation status.** No production change required.
+
+**Verification status.** Passed by the Numerics finite-shape/support regression on .NET 10. The complete Kappa Four class passed 12 tests with zero failures or skips. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-002---finite-kappa-shape-pairs) and [result artifact](../../verification/data/distribution-fitting/kappa-four-finite-shapes.json).
+
+The initial audit suspected that finite \((\kappa,h)\) pairs needed additional rejection. Re-reading `Minimum`, `Maximum`, CDF branches, and the Hosking formulation showed that the support changes with the two shapes and that all finite shape pairs are admissible distribution parameters when \(\alpha>0\). Existence of particular moments is a separate question. No general shape-combination validation defect was established, so this item is closed as a non-defect.
+
+**Evidence.** The regression spans positive and negative values of both shape parameters. It verifies admissibility, monotone finite quantiles, CDF/quantile round trips at (10^{-10}), positive interior density, and the reported finite support endpoints. No production change was required; the regression is committed in RMC.Numerics commit `bc11849c762d7b87d06aa64a3f3706ecf118fc13`.
+
+<a id="tr-003"></a>
+## TR-003 — Nonstationary Threshold Chronology and Prior Reference Time
+
+**Review disposition.** Closed as accepted, explicitly documented modeling conventions.
+
+**Implementation status.** Documentation complete; no production-code, API, or serialization change is required.
+
+**Verification status.** Passed by source, technical-documentation, and published-literature audit. No numerical oracle is required for this documentation-only disposition, and no permutation-invariance claim is made.
+
+**Evidence.** `DataFrame.CreateFullTimeSeries()` retains explicit observation indexes and disaggregates a grouped perception period around a terminal split: unoccupied earlier indexes receive below-threshold records and unoccupied indexes in the final `NumberAbove` portion receive above-threshold records. It does not marginalize over other compatible allocations. For a nonstationary `UnivariateDistribution`, coefficient priors are evaluated on the trend coefficients, while distribution-dependent Jeffreys and quantile-prior terms use the distribution predicted at `DataFrame.FullTimeSeries.Last().Index`. The final-time quantile-prior reference is consistent with the published workflow of Viglione et al. (2013).
+
+**Impact.** Group totals identify counts and bounds, not event chronology, so a nonstationary fit is conditional on the terminal-above disaggregation. Likewise, a quantile prior for a changing distribution expresses present-condition information at the most-recent observed time; it is not repeated across the historical record and does not automatically describe earlier conditions.
+
+**Follow-up.** Retain these assumptions in practitioner-facing documentation. Analysts must use explicitly dated observations when event chronology is known, document the final-time reference for distribution-dependent priors, and assess alternative defensible allocations when grouped-threshold chronology could materially affect a result. A chronology-marginalized likelihood would be a separately approved enhancement, not unfinished TR-003 work.
+
+<a id="tr-004"></a>
+## TR-004 - Point-Process Rate Definitions
+
+**Review disposition.** Confirmed defect with an accepted manual-data fallback.
+
+**Implementation status.** The public empirical count/rate and fitted threshold intensity are distinct. `Lambda` remains the empirical exact-event-rate alias. Source-record exposure is serialized on `DataFrame`; explicit `TotalYears` takes precedence, followed by stored source exposure and then the exact-record year/index span.
+
+**Verification status.** Passed. Fast mixed-count, precedence, warning, seasonal-date, annualized mixed-likelihood, state-refresh, and serialization regressions pass. Both guarded independent mixed-likelihood cells pass, including uncertain, interval, and threshold records under the seasonal annual-maximum distribution.
+
+**Evidence.** `CalculateLambda()` counts every exact POT record and excludes uncertain, interval, and threshold-count rows. Simulation uses that empirical rate, while the likelihood separately exposes the GEV-compatible fitted threshold intensity. POT extraction retains inclusive source-record years, including leading and trailing years with no selected peak. Manual POT data fall back to exact year/index span and receive an inference warning. `CalculateLambda()` uses the stored source exposure whenever the frame records one, so replacing the exact series of a POT frame keeps the rate per observed year; only frames without a recorded exposure fall back to the exact year/index span.
+
+**Resolved authority decisions.** Seasonal fitting now requires a valid date on every exact POT observation; nonseasonal manual records retain year/index-span exposure fallback. Seasonal uncertain, interval, and threshold records are annual/block-indexed. Their likelihood uses the annual maximum of the two independent exposure-adjusted seasonal processes through **CompetingRisks**. Exposure fractions weight process intensities and are not annual mixture probabilities.
+
+**Closeout.** The seasonal fixture correction retained one below-threshold and two above-threshold annual observations and derived its oracle from the processed counts. No production likelihood or tolerance changed. TR-004 is complete.
+
+<a id="tr-005"></a>
+## TR-005 - Point-Process Poisson-GPA Simulation
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** The approved production process is implemented. Both simulation surfaces use empirical `Lambda` for nonseasonal Poisson counts and Madsen marks, the fitted seasonal threshold intensities `Lambda_j(u)` for seasonal counts, season assignment (`w_j Lambda_j`) and Madsen marks, floored changepoints, analytical exposure weights, and the shared elapsed block-day convention. GEV priors, exact-event point-process likelihood equations, sampler settings, tolerances, and seed behavior remain unchanged.
+
+**Verification status.** Complete in the approved scope. All ten guarded current-source cells pass. Recovery fixtures use 1,000 observations and the untouched `BayesianAnalysis` defaults. Calendar-year uniform recovery, October-water-year block-origin parity, nonseasonal production recovery, and seasonal production recovery pass; the robust defaults eliminate the former seasonal second-Kappa miss. The initial water-year failure was a verification-coordinate error: the fixture changed `K1/K2` from `170/350` to `80/260` rather than keeping the parent block-day parameters fixed while changing only the block origin.
+
+**Evidence.** Seasonal exposure is \(w_1=(k_1+366-k_2)/366\) and \(w_2=(k_2-k_1)/366\). Default supports are \([1,251)\) and \([200,367)\); the linear-time rotated monthly histogram may supply five-month flat windows, while ambiguous, insufficient, flat, or undated timing retains broad defaults. Independent exponential-clock Poisson and analytical Hosking-GPA fixtures support the scientific checks. The seasonal exposure fractions divide by a fixed 366 block days while the block-day index of a non-leap block reaches 365, an exposure difference below 0.3% that is documented rather than corrected.
+
+**Impact.** Generated counts, component assignments, dates, and marks now follow the approved Poisson-GPA parent process. Automatic changepoint priors enter a broad seasonal neighborhood without profile likelihood, MAP preprocessing, or changes to GEV defaults.
+
+**Closeout.** TR-005 is complete without changing any production formula, DEMCzs default, prior, or recovery tolerance. PERT timing remains placement evidence only because its interior timing law is absent from the fitted likelihood.
+
+<a id="tr-006"></a>
+## TR-006 — Mixture Weights Are Redundant and Mutate Candidate Arrays
+
+**Review disposition.** Confirmed proposal-mutation and sampler-identifiability defect. The full-$K$ public model contract and identified $K-1$ posterior-storage contract are authoritative.
+
+**Implementation status.** Numerics retains its full-$K$ copy-and-normalize boundary. BestFit retains full $K$ for model configuration, configured priors, public likelihood methods, EM output, and project-model XML, while new mixture `MCMCResults` store the identified $K-1$ sampled coordinates.
+
+**Verification status.** The mixture-focused Core batch, the UI, App, and API suites, and Numerics' focused mixture class pass. All six current mixture recovery identities have current exact passing evidence under the shared central-95% acceptance rule, and the independently generated scikit-learn artifact supplies frozen external likelihood, fit, and response evidence for the ordinary two-component overlap. The older exact Numerics/BestFit likelihood-and-EM parity results remain historical same-ecosystem evidence rather than the scientific oracle.
+
+**Evidence.** For sampled coordinates $(w_1,\ldots,w_{K-1},\boldsymbol\theta)$, BestFit derives $w_K=m-\sum_{k<K}w_k$, rejects infeasible proposals, and evaluates the established full-$K$ posterior so every configured weight prior contributes. The responsibility covariance has negative off-diagonal terms and zero full-$K$ row sums. Diagnostics expose stored coordinates; physical consumers reconstruct full $K$ locally.
+
+**Impact.** Objective-side proposal mutation is removed without changing the public model API. New posterior chains are identified and avoid the redundant weight direction. Existing full-$K$ saved posterior results open and create frequency curves directly without migration.
+
+**Closeout.** Exact parity retains the declared likelihood and recovery tolerances. Bayesian recovery retains deterministic DEMCzs settings and, when separately rerun, requires finite split R-hat below 1.1 and conservative ESS above 100 for every sampled coordinate. Saved full-$K$ results remain usable without re-estimation.
+
+<a id="tr-007"></a>
+## TR-007 — Zero-Inflated Mixture Probability Functions
+
+**Review disposition.** Confirmed defect; the exact-zero positive-hurdle interpretation was approved.
+
+**Implementation status.** Complete in reachable Numerics commit `3e69a93` and the BestFit Phase 4 mixture batch.
+
+**Verification status.** Passed. Analytical identities, simulation, support, invalid-positive-mass, and mixed-observation fast tests pass. The guarded zero-inflated parity and Bayesian recovery methods pass; Bayesian recovery also checks the generated atom against its five-standard-error binomial bound.
+
+**Evidence.** The corrected law has $F(x)=0$ for $x<0$, an atom $\pi_0$ at zero, and component distributions conditioned on $X>0$ for every positive continuous contribution. `PDF(0)=pi0` is documented under the Lebesgue-plus-Dirac reference measure. CDF, log density, quantiles, simulation, and BestFit exact, uncertain, interval, and threshold likelihoods use the same law. BestFit derives the fixed atom only from exact zeros divided by all exact annual records and rejects negative exact observations.
+
+**Impact.** The probability functions, likelihood, and simulator now define one coherent distribution; negative values are no longer collapsed into the zero atom.
+
+**Closeout.** The positive-hurdle generator, likelihood, EM fit, and Bayesian fit recover the same seeded parent without tolerance changes.
+
+<a id="tr-008"></a>
+## TR-008 — Mixture EM Skips Impossible Rows
+
+**Review disposition.** Confirmed defect; explicit failure was approved.
+
+**Implementation status.** Complete in reachable Numerics commit `3e69a93` and the BestFit Phase 4 mixture batch.
+
+**Verification status.** Passed. Fast impossible-row tests pass for Numerics exact data and BestFit exact, uncertain, interval, and threshold records. All six guarded recovery methods pass with the explicit-failure contract retained.
+
+**Evidence.** Numerics and BestFit now throw `InvalidOperationException` containing row index and value whenever the required total row probability is zero or nonfinite. The exact-data BestFit path delegates to the corrected Numerics EM, while the mixed path applies the same explicit failure contract.
+
+**Impact.** An impossible observation can no longer disappear from the objective or leave stale responsibilities behind.
+
+**Closeout.** Explicit impossible-row failures remain part of the verified contract; no row skipping or convergence-tolerance change was introduced.
+
+<a id="tr-009"></a>
+## TR-009 — RMSE Omits the Last \(k\) Residuals
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API changes in RMC.Numerics commit `24bf9f98139b23400bf008df413b0d97330ccfd3`. The numerator now includes every residual, and only the denominator uses the residual degrees of freedom \(n-k\). Invalid parameter counts that do not leave positive residual degrees of freedom are rejected.
+
+**Verification status.** Passed by an analytical hand calculation and paired-permutation test at absolute tolerance \(10^{-12}\). The normalized Numerics .NET 10 Release gate records 2,024 passing tests with no failures. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-009---parameter-adjusted-rmse) and [result artifact](../../verification/data/distribution-fitting/parameter-adjusted-rmse.json).
+
+**Evidence.** For observed values \([0,0,0,0]\), modeled values \([1,2,3,4]\), and \(k=1\), the analytical value is \(\sqrt{30/3}=3.1622776601683795\). The baseline implementation returned \(2.160246899469287\) because it summed only the first three squared residuals. The same exact verification method passes after the correction and proves invariance to paired row permutation.
+
+**Impact.** `FittingAnalysis` and Bayesian univariate point-result RMSE are now independent of paired input ordering. Rankings and inverse-MSE model weights use the complete residual vector. `MixtureAnalysis`, `CompetingRiskAnalysis`, and `Bulletin17CAnalysis` report `NaN` RMSE instead of failing when the paired record count does not exceed the parameter count.
+
+**Follow-up.** Retain the hand-calculated, paired-permutation, and invalid-parameter-count regressions. Family-level fitting verification must continue to compare the resulting RMSE and rankings with independent distribution oracles.
+
+<a id="tr-010"></a>
+## TR-010 — FittingAnalysis Overall Success State
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API changes. Overall success now requires at least one candidate with `FitSucceeded == true`.
+
+**Verification status.** Passed by two deterministic fast regressions and the complete .NET 10 core gate. See the [distribution-fitting verification chapter](../verification/distribution-fitting.md#tr-010---all-candidate-failure-reports-overall-success) and [result artifact](../../verification/data/distribution-fitting/fitting-analysis-success-state.json).
+
+**Evidence.** Candidate exceptions are caught inside the parallel loop and recorded per `FittedDistribution`. If the outer loop is not canceled and raises no outer exception, `FittingAnalysis` sets `IsEstimated = true` without requiring any `FitSucceeded` result. On 24 July 2026, the isolated outlier smoke fixture reproduced exactly that state: `IsEstimated` was true and all 15 candidates had `FitSucceeded == false`.
+
+**Impact.** An all-failed screening run now reports failure, while a partial-success run remains successful and preserves every candidate result. The all-failed run still reports completion to its progress reporter.
+
+**Follow-up.** Retain the zero-success and partial-success regressions as permanent state-semantic gates. Candidate counts remain directly available from `FittedDistributions` without adding API.
+
+<a id="tr-011"></a>
+## TR-011 — Bayesian AIC/BIC Included Prior Density at MAP
+
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
+
+**Implementation status.** Fixed without public API or serialization changes. `MaximumAPosteriori` and every Bayesian analysis result builder now pass `DataLogLikelihood(MAP)` to the AIC/BIC helpers.
+
+**Verification status.** Passed by the focused MAP AIC and BIC regressions plus a complete source-call-site audit; see [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
+
+**Evidence.** The prior implementation passed `LogLikelihood(MAP)`, adding parameter-prior normalization constants and any Jeffreys or quantile-prior terms. The current implementation excludes all prior-density values while retaining the stored posterior mode as the evaluation point. The focused fixture has bounded uniform priors with nonzero normalization constants and proves that both criteria equal the data-likelihood formulas and differ from posterior-kernel formulas.
+
+**Impact.** Under priors that are constant throughout the relevant bounded region, MAP coincides with the constrained MLE and the Bayesian-analysis criteria are comparable with fitting-analysis MLE criteria. Under informative, Jeffreys, quantile, or other nonconstant priors, the MAP remains prior-influenced and the fields are not conventional AIC/BIC.
+
+**Follow-up.** Retain the focused regressions and call-site audit. With nonconstant priors, direct users to DIC, WAIC, or verified PSIS-LOO rather than AIC/BIC.
+<a id="tr-012"></a>
+## TR-012 — Competing-Risk Simulation Ignores Dependency
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete. Pinned Numerics commit `cafe6cf3837988341912a5aa8bfda444ea55ff77` preserves the established simulation signature and independent seeded sequence while routing all dependency modes through the existing dependency-aware implementation. BestFit preflights any required matrix before calling Numerics.
+
+**Verification status.** Passed. Fast Numerics and BestFit contracts cover seed determinism, independent golden-sequence preservation, entry-point equivalence, mode selection, and invalid matrices. Four exact guarded methods independently verify every dependency mode against Gaussian-copula Spearman-rank and analytical maximum-CDF targets; see [competing-risks verification](../verification/competing-risks.md).
+
+**Evidence.** The prior Numerics public entry point contained a separate independent-only loop even though a dependency-aware method already existed. The corrected entry point delegates to that method. Independent mode retains its original PRNG loop, perfectly positive mode shares ranks, and the perfectly negative/correlation-matrix modes use the configured Gaussian copula.
+
+**Impact.** Simulation now follows the same configured dependency semantics as CDF evaluation for all supported modes. Invalid custom matrices fail explicitly before sampling.
+
+**Follow-up.** Retain the independent golden sequence and all four exact rank/CDF cells. Do not change the limiting perfectly-negative construction or seed defaults without separate approval.
+
+<a id="tr-013"></a>
+## TR-013 — Non-Finite Composite Criteria
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete without changing public weighting signatures. Every estimated child criterion is classified before weighting. Invalid values are exactly zero-weighted when a usable child remains and cause an explicit invalid result only when no usable criterion remains. Exact-zero RMSE is handled as a separate limiting case.
+
+**Verification status.** Passed by fast programmatic tests for mixed finite/non-finite criteria, all-invalid criteria, negative and exact-zero RMSE, ordinary finite-weight parity, normalization, and Bulletin 17C participation.
+
+**Evidence.** Criterion classification now excludes NaN and infinities for every method and negative RMSE. Exact-zero RMSE children split unit weight. Bulletin 17C remains eligible for Equal/AIC/BIC/RMSE; its non-posterior compatibility container does not supply DIC/WAIC/LOOIC, so those values are treated as unavailable rather than rejecting the child type.
+
+**Impact.** One invalid child can no longer contaminate otherwise usable models, and no zero-RMSE case divides by zero or publishes NaN. A model average still cannot be defined when every selected criterion is unavailable or invalid.
+
+**Follow-up.** Retain named diagnostics and exact-zero tests. B17C must not be type-rejected: it participates in every criterion it computes and receives zero weight only when the selected posterior criterion is unavailable.
+
+<a id="tr-014"></a>
+## TR-014 — Cross-Analysis Posterior Draw Coupling
+
+**Review disposition.** Confirmed methodological concern; corrected under the approved independent product-posterior policy.
+
+**Implementation status.** Complete. One internal helper validates positive actual retained-output counts, sets the realization count to their minimum, and uses Numerics `NextIntegers(..., replacement: false)` to generate one full-range index row per source from the owning analysis's existing nonnegative `PRNGSeed`. Composite applies those rows in both construction branches. CFA uses fixed semantic order (copula, optional X, optional Y), caches the mapping for indexed access, and invalidates cache and results when sources or seed change. No index arrays are serialized, no Numerics code or public API changed, and `BivariateAnalysis` remains unchanged.
+
+**Verification status.** Passed. Fast helper tests establish unique in-range rows, complete longer-chain range, exact seed repeatability, distinct source permutations, and pairwise absolute Spearman correlation below `0.05` for 5,000 draws. Composite and CFA fast tests cover both composition branches, unequal counts, source separation, fallback, cache identity/invalidation, child immutability, point-estimate stability, and UI seed save/open/copy/undo. The exact current `CompositeOracleVerificationTests` Cartesian-product cells pass, and the four `CompositePredictiveRecoveryTests` cells independently exercise mixture, maximum, minimum, and equal-weight model-average propagation from fitted children. Historical `CompositeRecoveryTests` names are not treated as evidence for these current identities.
+
+**Evidence.** The generated sample targets the product posterior of separately fitted sources. Longer chains contribute across their complete retained range without replacement, while every source contributes exactly the shortest actual output count. A fixed seed, source order, and retained order reproduce the exact matrix. Reversing a chain or swapping commutative Composite children changes the finite seeded sample but passes the same independent target, establishing distributional rather than bitwise order invariance. Child `MCMCResults` and point estimates remain unchanged.
+
+**Impact.** Composite and CFA uncertainty summaries no longer encode raw-index alignment among separately fitted chains. Saved derived summaries created before TR-014 remain readable but must be reprocessed to adopt the corrected coupling policy.
+
+**Follow-up.** Preserve the existing seed/semantic source-order contract and transient-cache policy. Do not reinterpret `BivariateAnalysis` intervals as marginal-uncertainty propagation; optional marginal propagation remains downstream in CFA.
+
+<a id="tr-015"></a>
+## TR-015 — Composite Correlation Matrix Cannot Be Supplied
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete. The authorized `CorrelationMatrix` property was added to core and UI composite analyses. Existing constructors, methods, parameter vectors, seed behavior, defaults, and result signatures remain unchanged. XML and UI persistence use optional appended fields so legacy projects remain readable.
+
+**Verification status.** Passed by fast core/UI tests for defensive ownership, square/dimension checks, finite bounds, unit diagonal, symmetry, strict positive definiteness, invariant XML, legacy-null loading, SQLite save/open, copy independence, and result construction.
+
+**Evidence.** Core validation now requires a matrix exactly when correlation-matrix competing-risk dependence is active and requires its dimension to match the child count. Point-estimate, modal, and retained-realization constructions all copy the matrix into the new Numerics `CompetingRisks` object.
+
+**Impact.** The existing public enum value is now fully configurable and persistable; malformed configurations fail during assignment, validation, or simulation preflight with explicit messages.
+
+**Follow-up.** Retain the property in the public API baseline and preserve the established `CorrelationMatrix`/`Correlation_Row` serialization names.
+
+<a id="tr-016"></a>
+## TR-016 — Bulletin 17C Frequentist Results Use Bayesian/MCMC Terminology
+
+**Review disposition.** Accepted shared result-storage architecture; the terminology limitation is documented.
+
+**Implementation status.** Complete as documentation only. Bulletin 17C intentionally uses the same `BayesianAnalysis`/`MCMCResults` storage architecture as Bayesian analyses so persistence, result reprocessing, and UI consumers share one stable shape. No production behavior, public API, serialization member, alias, or parallel result hierarchy was added.
+
+**Verification status.** Passed by source, XML-documentation, and report-terminology audit. No numerical verification was required for this architectural clarification.
+
+**Evidence.** `Bulletin17CDistribution` implements `IGMMModel`, not `IModel`, and defines no likelihood, prior, posterior, or MCMC target. In the shared container, `MAP` stores the penalized GMM point estimate, `Output` stores the frequentist uncertainty ensemble, `PosteriorMean` is the ensemble arithmetic mean, and `CredibleIntervalWidth` supplies the confidence level. Inapplicable DIC, WAIC, LOOIC, R-hat, and effective-sample-size interpretations remain unset or out of scope.
+
+**Impact.** The stable shared architecture avoids a second serialization and result-processing system, but consumers must interpret its legacy Bayesian-shaped member names in the Bulletin 17C context. The technical reference and XML comments now state that mapping explicitly. Shared AIC/BIC fields remain labeled pseudo-criteria formed from the LP3 data likelihood at the GMM solution, not likelihood-maximized or Bayesian criteria.
+
+**Follow-up.** Preserve the documented mapping and serialization compatibility. A future breaking API redesign may introduce estimator-neutral names, but it is not required for TR-016.
+
+<a id="tr-017"></a>
+## TR-017 — `BiasCorrectedBootstrap` Implements a Bias-Corrected Pivotal Bootstrap (Closed)
+
+**Review disposition.** Rejected naming defect; the implementation and pending methods paper support the existing name. A documentation ambiguity was confirmed and corrected.
+
+**Implementation status.** No production, enum, public-API, GUI-label, or serialization change is required. `BiasCorrectedBootstrap = 3` remains the stable compatibility contract.
+
+**Verification status.** Passed by concordance audit against Smith and Stedinger, *A Bias-Corrected Pivotal Bootstrap for Objective-Bayes Parameter Ensembles* (manuscript in preparation, local paper checkpoint `aaec860e875e`) and its reference engine. No numerical verification was rerun.
+
+**Evidence.** BestFit implements the paper's three-part construction: refit each parametric sample and retain its covariance; form the multivariate studentized pivot $\mathbf z_b=(\mathbf L_b^*)^{-1}(\widehat{\boldsymbol\eta}-\widehat{\boldsymbol\eta}^{*(b)})$ in variance-stabilizing link space; then re-inflate with the parent factor $\mathbf L$ and invert the link. The replicate covariance removes local bias and heteroskedasticity, while the parent covariance expresses the corrected draw in the parent's uncertainty. This is the method the paper names the *bias-corrected pivotal bootstrap* and describes as second-order under its stated regularity and estimator-target conditions.
+
+**Impact.** The compact enum and GUI label are scientifically defensible and easier for practitioners than the full technical name. Confusion remains possible because Efron's scalar BC and BCa intervals also use “bias-corrected”; documentation must therefore identify this as a multivariate pivotal/studentized ensemble and explicitly state that it is not the BC or BCa endpoint algorithm.
+
+**Documentation convention.** Retain “Bias-Corrected Bootstrap” in the enum and GUI. On first technical mention, use “bias-corrected pivotal bootstrap,” explain that the correction is intrinsic to the two-covariance pivot, and distinguish it from BC/BCa. Link stabilization, bounds repair, and failed-refit policy remain documented separately from the paper's bare construction.
+
+<a id="tr-018"></a>
+## TR-018 — Failed Bulletin 17C Bootstrap Refits Become Parent-Estimate Mass
+
+**Review disposition.** Confirmed numerical-reliability risk. The parent-fit fallback remains an explicit operational policy because downstream processing requires the configured output length; the primary correction is to make refit exhaustion exceptional.
+
+**Implementation status.** Complete. Every bootstrap realization preserves the parent model's bounds, links, and penalties; draws one randomized penalty target; constructs midpoint-moment, ROS-moment, distribution-default, and parent-fit starts; ranks valid distinct starts by the first-pass penalized GMM objective; and tries them against the same realization before generating another sample. A finite fit is accepted when its inner optimizer reports `Success`, or when iterative GMM confirms `ConvergedWithinTolerance` over at least two weighting passes and the final objective improves on the objective of its own start candidate under the same selected weighting. The ten-realization retry limit and final parent-fit substitution remain only to preserve configured output length; the run is not aborted. Bootstrap rates are per requested replicate: `FailedReplicates` counts substituted replicates, `AttemptedRealizations` counts data realizations including retries, and the report states the substituted count and fraction, that substituted replicates form a point mass at the parent estimate, and (for the pivotal method) the number of bound-repaired draws and z-limit clips.
+
+**Verification status.** Passed. Fast tests cover bounded midpoint construction, candidate validity, distinctness, bounds, ordering, invalid dimensions, and pivotal parameter repair. Fourteen seeded ordinary/pivotal Examples 1-7 cells were executed separately: 1,000 outputs per method for Examples 1-6 and 500 per method for highly censored Example 7. The final unguarded run produced 13,000 finite outputs from exactly 13,000 attempted realizations with zero retries, optimizer fallbacks, parent substitutions, failed GMM candidates, and first-chance exceptions from Numerics or RMC.BestFit.
+
+**Evidence.** Alternate initializations are optimizer restarts for one fixed bootstrap data/penalty target; they are not additional bootstrap draws. During diagnosis, an apparent Example 3 failure was a false rejection: every candidate had reached outer iterative-GMM tolerance with objectives near zero, although the final inner pass reported `MaximumFunctionEvaluationsReached`. Honoring the estimator's convergence contract eliminated that retry. The final grid accepted 140 such confirmed-converged results and required no alternate realization. Exhausted ordinary refits still receive the parent vector, and exhausted pivotal phase-one refits receive the parent vector and covariance, preserving the exact-output-count contract while incrementing `FailedReplicates`. Exact per-cell evidence is recorded in the [test inventory](../verification/test-inventory.md#tr-018tr-019-bulletin-17c-bootstrap-refit-reliability---28-july-2026).
+
+**Impact.** Ranked same-realization starts and convergence-aware acceptance eliminated fallback mass in the 13,000-output worked-example grid without changing requested ensemble size. Any future nonzero `FailedReplicates` still creates artificial point mass at the fitted estimate and can narrow confidence limits, so it remains a verification failure for this grid and a required report diagnostic in production.
+
+**Follow-up.** Retain the exact reliability cells as zero-retry regressions and continue reporting retries, optimizer fallbacks, and parent substitutions. If parent substitution is exercised, reopen the initialization/solver defect rather than accepting fallback mass as normal behavior.
+
+<a id="tr-019"></a>
+## TR-019 — Bulletin 17C Bootstrap Uses Asymptotic Mahalanobis Truncation (Closed)
+
+**Review disposition.** Confirmed truncation defect; the guard was no longer needed after refit reliability was corrected and has been removed.
+
+**Implementation status.** Complete. Ordinary and pivotal bootstrap refits no longer compute parent-covariance Mahalanobis distances or reject converged fits against a chi-squared threshold. Multi-start fitting, finite-parameter validation, pivotal covariance checks, parameter-bound repair, fresh-realization retries, and the fixed-length parent fallback remain.
+
+**Verification status.** Passed. In the complete guarded Examples 1-7 diagnostic sweep, every outer retry was caused by Mahalanobis rejection of an otherwise finite converged refit. After removal, the same 14 exact cells produced 13,000 finite outputs from 13,000 realizations with zero retries, zero rejections, zero parent substitutions, zero optimizer fallbacks, and zero BestFit/Numerics first-chance exceptions.
+
+**Evidence.** Guarded runs forced resampling without exposing any independent solver, covariance, or transform failure. The unguarded runs accepted those tail refits directly and still satisfied all parameter, covariance, output-length, and exception assertions, including highly censored Example 7. Example 5 pivotal separately exercised the model-bound repair for one inverse-linked skew draw.
+
+**Impact.** Removing the guard eliminates an undocumented asymptotic truncation of the empirical bootstrap distribution, avoids unnecessary resampling, and preserves genuine tail behavior. The safeguards that directly test numerical usability remain in place.
+
+**Follow-up.** Retain the no-guard reliability grid as a regression. Pivotal smoothing and $z$ clipping remain separate operational choices whose calibration and coverage evidence are not resolved by this closeout.
+
+<a id="tr-020"></a>
+## TR-020 — Cohn-Style Bulletin 17C Diagnostics Are Unguarded LP3 Calculations
+
+**Review disposition.** Confirmed scope defect; resolved by explicit validation.
+
+**Implementation status.** Complete. `ComputeCohnStyleConfidenceIntervals()` now throws `NotSupportedException` unless the parent is Log-Pearson Type III and the data are exact, with no low outliers, uncertain observations, interval censoring, or threshold censoring. The report-side asymptotic-variance path uses the same guard and reports why the diagnostic is unavailable instead of applying LP3 calculations outside scope.
+
+**Verification status.** Fast unit tests cover all five non-LP3 parent families, all four unsupported LP3 data conditions, the unestimated exact-LP3 null contract, and the report-side helper's unsupported-scope null result. Numerical verification of Cohn interval values is explicitly deferred.
+
+**Evidence.** `EvaluateQuantileSafe()`, nested quadrature, delta-method variance, and base-10 endpoint conversion remain LP3-specific. A single scope helper now protects both Cohn entry points before those assumptions are used. Exact LP3 remains the sole supported domain.
+
+**Impact.** Unsupported parents and censored/uncertain data now fail explicitly instead of producing misleading intervals or variances.
+
+**Follow-up.** Defer Cohn value/parity verification to a separately approved verification task. Do not extend the method to censoring without a derived and independently verified covariance treatment.
+
+<a id="tr-021"></a>
+## TR-021 — Formal Bulletin 17C Examples Are the Current GMM Traceability Source
+
+**Review disposition.** Documentation and source-traceability scope complete.
+
+**Implementation status.** Complete as documentation only. No production or test code was changed for TR-021.
+
+**Verification status.** Passed. `B17CExampleTests.Test_Example1` through `Test_Example7` were executed separately through the exact-method verification runner. All seven passed with zero failures or skips. Each method compares the current specialized LP3 GMM estimates for mean, standard deviation, and skewness with the published Bulletin 17C worked-example values at absolute tolerance `1E-3`.
+
+**Evidence.** The canonical source is `src/RMC.BestFit.Verification/Univariate/Bulletin17CTests/B17CExampleTests.cs`; fixtures and published targets are in `Datasets/UnivariateData/Bulletin17CData.cs`. The suite spans systematic records, low outliers, broken records, historical information, crest-stage censoring, combined historical/low-outlier records, and paleoflood information. Each focused run produced exactly one passing TRX after a zero-warning, zero-error Verification-only build. The repository's legacy “Comparison with EMA - Verification Report” concerns the earlier Bayesian workflow and is not the oracle for this current GMM path.
+
+**Impact.** The current specialized GMM point estimates now have executed traceability to all seven formal published worked examples.
+
+**Follow-up.** Retain the seven exact methods as the formal parameter-parity regression. Broader PeakFQ diagnostics, covariance, penalty, coverage, and Cohn-interval verification are separate claims and are not part of TR-021's scope.
+
+<a id="tr-022"></a>
+## TR-022 — BestFit Selects NUTS, Not Plain HMC
+
+**Review disposition.** Confirmed documentation and inventory defect.
+
+**Implementation status.** Fixed without production-code, public-API, or serialization changes.
+
+**Verification status.** Passed by source and public-API inventory.
+
+**Evidence.** `BayesianAnalysis.SamplerType` exposes `DEMCz`, `DEMCzs`, `ARWMH`, and `NUTS`, and `SetUpSampler()` constructs those four Numerics samplers. Numerics also contains a separate plain `HMC` class, but BestFit exposes no `SamplerType.HMC` member or configuration branch.
+
+**Impact.** The technical reference now distinguishes BestFit-selectable samplers from the broader Numerics capability and no longer directs users to a nonexistent BestFit HMC option.
+
+**Follow-up.** Treat the current BestFit API as authoritative. Adding plain HMC remains a separate feature decision.
+
+<a id="tr-023"></a>
+## TR-023 — MLE and MAP Reoptimize Profile Nuisance Parameters
+
+**Review disposition.** Confirmed defect; resolved.
+
+**Implementation status.** `MaximumLikelihood.ProfileLikelihood()` and `ParameterConfidenceIntervals()` reoptimize all free nuisance parameters against the data likelihood. `MaximumAPosteriori.ProfileLikelihood()` and `ParameterConfidenceIntervals()` now perform the same nuisance reoptimization against the complete posterior kernel. Public signatures remain unchanged; bounded BFGS uses a deterministic bounded Nelder-Mead fallback. Profile grids accept any finite nuisance optimum and report `NaN` for a grid point that has none, so a single failed point does not discard the curve; `ParameterConfidenceIntervals()` requires converged nuisance solves and throws when a bound evaluation has none.
+
+**Verification status.** Passed by three exact focused methods against a committed R `bbmle` oracle, its closed-form correlated-quadratic solution, and an analytical informative-prior posterior profile. The grid-point contract is verified by `ProfileLikelihoodGridPointFailureTests` on a support-restricted quadratic model for MLE and flat-prior MAP.
+
+**Evidence.** For correlation $\rho=0.8$, nuisance reoptimization gives the 90% profile interval $[-1.6448536,1.6448536]$, whereas the former fixed-nuisance coordinate slice gives $[-0.9869122,0.9869122]$. MLE and flat-prior MAP match every R and analytical profile ordinate plus the nuisance-optimized interval. The informative-prior fixture confirms that MAP reoptimizes the nuisance parameter using the full posterior target rather than either a coordinate slice or a data-only profile.
+
+**Impact.** MLE and MAP profile curves now retain parameter correlation through nuisance reoptimization. MAP `ParameterConfidenceIntervals()` still are not Bayesian credible intervals: they apply a chi-squared cutoff to a profiled posterior kernel rather than integrating posterior mass. MCMC marginal quantiles remain the Bayesian interval product.
+
+**Follow-up.** Preserve all three exact regressions and the committed oracle. Keep the MAP interval interpretation explicit in technical documentation and user guidance.
+
+<a id="tr-024"></a>
+## TR-024 — PSIS Tail Smoothing Did Not Preserve the Required Tail Model or Ordering
+
+**Review disposition.** Confirmed defect; resolved.
+
+**Implementation status.** Fixed without public API changes and without a Numerics dependency change. The PSIS tail now uses cutoff excesses, the bounded fixed-grid generalized-Pareto fit and shrinkage used by `posterior::gpdfit` 1.7.0, monotone expected order statistics, and reference-compatible truncation. WAIC and PSIS share one transient pointwise likelihood matrix; only pointwise ELPD and Pareto-k summaries are retained for later influence reporting. A degenerate tail (tied lower-quartile excesses or no positive excess) reports $k=+\infty$, and a Pareto $k$ that could not be estimated counts as exceeding every reliability limit, so influence diagnostics never report such units as reliable. With fewer than eleven retained draws the draw-count limit formula is not positive; the diagnostics then use the fixed 0.7 limit and the report states that the draw-count threshold is unavailable.
+
+**Verification status.** Passed by six exact focused methods against R `loo` 2.10.0 and `posterior` 1.7.0. Fast `PsisDegenerateTailDiagnosticTests` and `InfluenceDiagnosticsParetoKLimitTests` pin the degenerate-tail, unestimated-$k$, and small-draw-count contracts.
+
+**Evidence.** On the deterministic 40-draw fixture, BestFit matches R for LOOIC $13.4018968330430$, $p_{\mathrm{loo}}=0.342431868035246$, LOOIC standard error $1.95756902272540$, all five pointwise contributions, and Pareto $k=(0.0682,-0.0302,0.4116,0.3062,0.3209)$. Six bounded-through-degenerate tail fixtures match every smoothed log weight, Pareto $k$, and importance-sampling effective sample size; the degenerate tail returns $k=+\infty$. The 40-draw reliability limit is $0.375803649418215$, so the third observation is correctly flagged. Default WAIC plus PSIS performs exactly $S$ pointwise model evaluations, and a later influence request remains at $S$ by reusing cached $O(n)$ summaries.
+
+**Impact.** LOOIC, $p_{\mathrm{loo}}$, LOOIC standard error, Pareto $k$, and PSIS observation influence now follow the pinned external implementation for independent retained draws. They remain approximate leave-one-out results: no exact refits or moment matching are performed, and the current tail-length calculation uses `r_eff = 1` rather than estimating MCMC relative efficiency.
+
+**Follow-up.** Retain the pinned artifact, exact methods, single-pass call-count checks, and legacy serialization regression. Users must inspect Pareto $k$ and use an explicit sensitivity/refit strategy when the draw-count reliability limit is exceeded.<a id="tr-025"></a>
+## TR-025 — ARWMH Covariance Uses the Complete Realized-State History
+
+**Review disposition.** Confirmed scoped defect; resolved.
+
+**Implementation status.** Fixed in Numerics without changing the continual Adaptive Metropolis schedule, public API, or serialization.
+
+**Verification status.** Passed by two deterministic Numerics methods and one exact BestFit integration method; see [model-estimation verification](../verification/model-estimation.md#numerics-mcmc-verification).
+
+**Evidence.** `ARWMH.ChainIteration()` now determines the retained state and performs exactly one covariance update after every transition. Accepted, rejected, and infeasible proposals therefore contribute the realized chain state. Both 12-transition rejection fixtures record 12 covariance states, regardless of whether the nominal warmup is 50 or five. Through BestFit's production setup path, all four chains record all 125 repeated retained states.
+
+**Current behavior.** Covariance adaptation is based on the complete realized-chain history. Continued updating after the nominal warmup remains intentional and consistent with the original Haario-Saksman-Tamminen Adaptive Metropolis construction.
+
+**Follow-up.** Retain the deterministic rejection/count tests. Distributional recovery on correlated Gaussian targets remains useful additional sampler validation, but is not required to establish the corrected state-history contract.
+
+<a id="tr-026"></a>
+## TR-026 — Hansen J Uses the Selected Efficient Weight
+
+**Review disposition.** Confirmed defect; resolved.
+
+**Implementation status.** Fixed. Successful estimation preserves the unpenalized moment objective evaluated with the strategy-selected weight before covariance post-processing can replace `W`.
+
+**Verification status.** Passed by exact focused parameter, objective, Hansen J, and p-value parity against R 4.4.3 and `gmm` 1.9.1.
+
+**Evidence.** The committed one-parameter, two-moment R oracle gives the two-step fit $\widehat\theta=1.93548454750500$, selected-weight objective $Q=1.00755078518454$, $J=nQ=10.0755078518454$, and $p=0.00150253202968641$. BestFit matches all four quantities within the declared tolerances.
+
+**Current behavior.** `PostProcess(computeJstat: true)` populates `JStat` and `JStatPval` for unpenalized overidentified `TwoStep` and `Iterative` fits. Generic fixed-weight `OneStep` and penalized fits leave both fields as `NaN`, because the efficient-weight Hansen chi-squared interpretation is not automatic in those cases. Covariance queries at any parameter vector compute into local matrices and leave `S`, `W`, and therefore `Q` unchanged; `PostProcess()` refreshes `S` and `W` at the estimate for two-step and iterative fits before computing the covariance. An estimator restored from XML keeps its restored `JStat` and `JStatPval` through `PostProcess()`, and a restored statistic outside the verified scope (one-step, penalized, or just-identified) reads as `NaN`. `GeneralizedMethodOfMomentsRestoredStateTests` pins these contracts on injected estimated states.
+
+**Correction.** The rank-deficient projected-residual-covariance calculation was removed. The statistic is now $n\mathbf g(\widehat{\boldsymbol\theta})^\mathsf T\mathbf W\mathbf g(\widehat{\boldsymbol\theta})$ with $\chi^2_{q-p}$ reference degrees of freedom in its verified scope. Public API and XML serialization member names are unchanged.
+
+<a id="tr-027"></a>
+## TR-027 — Covariance Failure Is Explicitly Reported
+
+**Review disposition.** Confirmed defect; resolved.
+
+**Implementation status.** Fixed with additive status and `Try` APIs while retaining existing covariance method signatures. `CovarianceComputationStatus` exposes `NotComputed`, `Available`, `Regularized`, and `Failed`; MLE, MAP, and GMM expose the latest status and diagnostic text.
+
+**Verification status.** Passed by deterministic fast tests covering singular MLE/MAP Hessians, a forced GMM covariance exception, a well-conditioned covariance, a positive-definite repair, and stable enum values.
+
+**Evidence.** `TryGetCovarianceMatrix` for MLE/MAP and public `TryGetCovariance` for GMM return `false` with `Failed` status when covariance is unavailable. Their zero-valued out parameters are documented placeholders only. Existing throwing getters now raise `InvalidOperationException` instead of returning false zero uncertainty. MLE sandwich covariance has the same `Try` contract, and MLE/MAP influence paths obtain covariance through the validated throwing getter. A usable unmodified covariance reports `Available`; a repaired result reports `Regularized` and provides an adjustment diagnostic. Single-parameter models obtain their $1\times1$ covariance, standard errors, and influence through the same validated path, and the MLE Hessian uses the same bounded finite-difference steps as MAP; `MaximumLikelihoodCovarianceVerificationTests` checks the closed-form single-parameter variance and MLE/flat-prior-MAP covariance parity for interior and bound-adjacent optima.
+
+**Impact.** Numerical failure can no longer be silently presented as zero standard errors or zero influence. Callers can choose an explicit non-throwing branch or let covariance-dependent reporting fail fast.
+
+**Follow-up.** Preserve the singular, available, and regularized regressions. Scientific interpretation must still review `Regularized` results because successful numerical repair does not resolve weak identification.
+
+**Addendum (21 August 2026).** The MLE numerical Hessian now uses bound-aware finite-difference steps (`NumericalDiff.ComputeHessian` with the parameter bounds), matching the posterior Hessian used by `MaximumAPosteriori`, so bound-adjacent optima no longer produce steps outside the parameter support. `MaximumLikelihoodCovarianceVerificationTests` (2/2) verifies the closed-form $\sigma^2/n$ one-parameter covariance and MLE/flat-prior MAP covariance parity within the `1e-4` numerical-Hessian tolerance.
+
+<a id="tr-028"></a>
+## TR-028 — Prior-Predictive Sampling Is Marginal, Not a General Joint-Prior Sampler
+
+**Review disposition.** Confirmed limitation.
+
+**Implementation status.** The current behavior is documented without a production algorithm change.
+
+**Verification status.** Passed by source/model-contract audit and one exact focused coupled-prior characterization.
+
+**Evidence.** `PriorPredictiveCheck.SampleFromPriors()` independently samples each `ModelParameter.PriorDistribution`, clamps values to bounds, and records each set's full prior log likelihood in `ParameterSet.Fitness`; `GeneratePriorPredictive()` skips sets whose prior log likelihood is non-finite, leaving their slots empty without reporting the skipped count. It does not sample or reweight coupled quantile priors, Jeffreys factors, transformation Jacobians, spatial terms, or other non-marginal contributions implemented only in `IModel.PriorLogLikelihood`. `ParameterSet.Fitness` stores the negative joint prior log likelihood for each accepted draw; it is not a likelihood or posterior score. A fixed-seed 20,000-draw fixture with independent Uniform$(-1,1)$ marginals and a narrow $y\mid x$ coupling confirms that the draws remain marginally independent even though fitness records the coupled density.
+
+**Impact.** The resulting ensemble is a valid direct prior sample only when the model prior factorizes into the sampled parameter marginals subject to the rejection rule. It is not a general joint-prior sampler for models with additional coupled prior structure.
+
+**Follow-up.** Retain the documented scope. A general solution requires a model-level joint-prior sampler or a separately approved validated weighting/MCMC method, genuine truncation, failure reporting, and independent/coupled-prior verification.
+
+<a id="tr-029"></a>
+## TR-029 — Rank-Normalized R-hat and Conservative Bulk/Tail ESS
+
+**Review disposition.** Confirmed defect - resolved.
+
+**Implementation status.** Fixed without new public methods, result fields, or serialized fields. `GelmanRubin(...)` stores the maximum of rank-normalized split and folded rank-normalized split R-hat in the existing `Rhat` field. The existing scalar `ESS` stores the minimum of rank-normalized bulk ESS and pooled 0.05/0.95 quantile ESS. The concise `R-hat` and `ESS` report labels remain unchanged, while the readiness threshold is now 1.01.
+
+**Verification status.** Passed against R `posterior` 1.7.0 and by focused Numerics/BestFit tests. Public signatures and serialization are unchanged.
+
+**Evidence.** The committed deterministic oracle covers IID chains, autocorrelation, shifted means, scale disagreement, sticky tails, ties, constants, warmup removal, and chain permutation. C# uses pooled midranks, Blom inverse-normal scores, split chains, and Geyer's multi-chain initial-positive and initial-monotone paired autocorrelation sequence with zero-padded FFT autocovariances. Invalid, constant, or insufficient input returns `NaN`; single-chain R-hat remains `NaN`; ESS trims unequal chains to their common usable length. A five-run .NET 10 Release benchmark of the same deterministic four-chain, ten-parameter completion fixture retained exactly 439,645 target evaluations and changed median completion time from 1,232.328 ms to 1,243.330 ms, a 0.893% increase.
+
+**Impact.** The existing compact report now detects within-chain drift, between-chain location or scale disagreement, and weak 5%/95% tail mixing more robustly. The 51-lag original-scale averaged ACF remains unchanged for plots, and diagnostics add no model-target evaluations.
+
+**Follow-up.** Retain the R-oracle fixtures, public-API and serialization contract, focused report-threshold tests, and FFT-based $O(PMN\log N)$ implementation. R-hat and ESS remain screening diagnostics rather than proof of convergence or model adequacy.
+
+<a id="tr-030"></a>
+## TR-030 — NUTS Reports Sampler-Specific Hamiltonian Diagnostics
+
+**Review disposition.** Confirmed defect; resolved.
+
+**Implementation status.** Fixed without adding sampler-specific properties to `MCMCResults`. `MCMCSampler.AcceptanceRates` retains accepted-transition/sample-count semantics. `NUTS.HamiltonianAcceptanceRates` holds the mean post-warmup Hamiltonian statistic, and the existing `MCMCResults.AcceptanceRates` field receives that statistic for NUTS so BestFit can persist and report it. Other NUTS diagnostics remain on the live sampler only.
+
+**Verification status.** Passed by focused Numerics acceptance-contract, live-diagnostic, E-BFMI, nullability, analytic-gradient-routing, and stale-JSON compatibility tests plus exact BestFit acceptance-only report and posterior-gradient methods; see [model-estimation verification](../verification/model-estimation.md#numerics-mcmc-verification).
+
+**Evidence.** Generic sampler acceptance is again calculated as accepted transitions divided by samples. NUTS separately streams post-warmup Hamiltonian acceptance, divergence counts, maximum-depth hits, mean tree depth, mean leapfrog steps, final step size, and E-BFMI without additional target evaluations or retained-draw storage. Only Hamiltonian acceptance crosses the `MCMCResults` boundary through its existing acceptance field. BestFit reports that statistic with NUTS-specific wording and does not persist or display the other live-sampler diagnostics.
+
+**Gradient regression.** A prior Numerics audit had already corrected the step-size initialization heuristic so it honors a caller-supplied `GradientFunction` instead of unconditionally recomputing finite differences. The permanent Numerics test proves that route. BestFit does not currently supply an analytic gradient; its coupled-prior verification proves that the default bounded finite-difference function differentiates the complete `Model.LogLikelihood` posterior target.
+
+**Follow-up.** Retain the focused diagnostic, gradient, serialization, and report regressions. Sampling remains in the bounded API parameterization, so posterior-boundary behavior and model-specific recovery still require review when NUTS is selected.
+
+<a id="tr-031"></a>
+## TR-031 — Combined Influence Was Presented as Hat-Matrix Information
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API or serialization changes.
+
+**Verification status.** Passed by focused analytical Log10-Normal tests and the R `gmm` oracle associated with TR-065.
+
+**Report evidence.** [Model-estimation verification](../verification/model-estimation.md#fit-influence-variance-influence-and-combined-leverage).
+
+**Evidence.** `LeverageDiagnostics` intentionally combines a Cook score quadratic with variance influence. Observation variance uses a local curvature trace, while prior and penalty variance uses a finite log generalized-variance change. Their sum is a useful ranking index but is not a hat-matrix diagonal or conserved information decomposition. The former sum-to-$p$ warning and “% of Total Information” plot labels asserted an identity that these definitions do not possess.
+
+The displaced-prior Log10-Normal calculation also compared the observation trace approximation with the full analytical Hessian. The historical fixture differed by less than `0.003` and preserved the three leading observations, but `0.003` was a qualitative materiality judgment rather than a statistically derived or exact numerical tolerance. The fixture is therefore retained as design provenance, not Verification evidence, and it does not justify a universal hat interpretation.
+
+**Correction.** The unsupported sum-to-$p$ warning was removed. MAP and GMM plots now say “Combined Leverage (% of Total Influence),” and summaries say “total combined influence.” XML documentation identifies the observation trace and prior/penalty generalized-variance definitions separately. The DTO and public members remain source- and serialization-compatible.
+
+**Impact.** The combined plot can be used to rank fit and variance effects without implying a classical leverage identity. No universal threshold or cross-estimator magnitude comparison is claimed.
+
+**Follow-up.** Retain the regime, sample-size, and full-curvature tests. Extend model-family-specific calibration before adopting numerical intervention thresholds.
+<a id="tr-032"></a>
+## TR-032 — Legacy GMM PSIS-Shaped Influence Overloads Are Obsolete
+
+**Review disposition.** Confirmed defect; resolved for supported API use.
+
+**Implementation status.** Both legacy `GeneralizedMethodOfMoments.GetInfluenceDiagnostics()` overloads are marked `[Obsolete]` with a non-error compatibility warning. Their signatures and behavior remain intact for source, binary, and serialization compatibility. The warning directs callers to `GetLeverageDiagnostics()` for labeled GMM diagnostics or `GetCooksDistance()` for raw Cook-like values.
+
+**Verification status.** Passed by a fast reflection regression and an exact focused compatibility/mapping method.
+
+**Evidence.** The compatibility test confirms both overloads are obsolete without being compile errors. Reflection invocation preserves the legacy value-for-value mapping from `GetCooksDistance()` into `ObservationInfluence.ParetoK`, while demonstrating why its PSIS categories and summary are not supported GMM interpretations. The main GMM UI already consumes `GetLeverageDiagnostics()` and remains on the correctly labeled path.
+
+**Impact.** New and maintained callers receive an explicit compiler warning before entering the semantically invalid PSIS-shaped path, while existing compiled clients remain functional. Supported GMM diagnostics no longer direct users through Pareto-k labels or thresholds.
+
+**Follow-up.** Retain the compatibility regressions. Remove the legacy overloads only in a future major version with an explicit migration notice.
+
+<a id="tr-033"></a>
+## TR-033 — The Unpenalized GMM Objective and Gradient Have Different Scale
+
+**Review disposition.** Rejected non-defect.
+
+**Implementation status.** No production change required.
+
+**Verification status.** Passed by focused analytical verification.
+
+**Evidence.** Independent central differences confirm that the unpenalized estimating-equation gradient is one half of the derivative of the conventional reported objective $\mathbf g^\mathsf T\mathbf W\mathbf g$, while the penalized objective $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$ and supplied gradient agree exactly. Multiplication by the positive constant preserves the unpenalized stationary point. The reported GMM covariance is constructed from $\mathbf D^\mathsf T\mathbf W\mathbf D$ and the sandwich meat, not from the scalar objective Hessian. A deterministic Log10-Normal experiment further verifies that the current half-quadratic parameter penalty, gradient, penalty Hessian, and default Bulletin 17C covariance path reproduce both the inverse-variance posterior mean and posterior variance for wide-centered, narrow-centered, and narrow-shifted Gaussian information. The B17C GMM scale remains the intended unbiased $n-1$ moment estimate, while MAP retains its $n$-denominator MLE scale.
+
+**Impact.** No point-estimate or covariance defect is present in the verified Log10-Normal path. The unpenalized constant factor is an optimizer-direction convention and is not a covariance multiplier. The penalized path, where relative data/prior scaling matters, is internally consistent and produces the required Gaussian inverse-precision inference.
+
+**Follow-up.** Retain the two independent gradient-scale tests and the MAP/GMM inverse-variance test as permanent verification evidence. Any future change to the objective, gradient, penalty definition, or covariance bread/meat must preserve their joint equations.
+
+<a id="tr-034"></a>
+## TR-034 — Overidentified One-Step GMM Uses Fixed Weighting for Fit and Covariance
+
+**Review disposition.** Confirmed defect; resolved.
+
+**Implementation status.** The overidentified/`OneStep` guards were removed from `Estimate()` and `IsValid(out List<string>)`. Covariance now retains the configured fixed weight for `OneStep` bread and meat while recomputing $\mathbf S$ at the solution. `TwoStep` and `Iterative` covariance use final fitted-parameter $\mathbf S^{-1}$. Public API and serialization are unchanged.
+
+**Verification status.** Four exact focused tests pass R 4.4.3 and `gmm` 1.9.1 parameter/objective, selected-weight Hansen J, fixed-weight IID sandwich covariance, and efficient two-step covariance parity.
+
+**Evidence.** For the one-parameter, two-moment fixture with identity weight, R obtains $\widehat\theta=2.28992700729929$, $Q=0.317956204379562$, and fixed-weight sandwich variance $0.145652392138090$; BestFit matches all three. For two-step GMM, R and BestFit agree on variance $0.132600447299456$. The generator independently reconstructs both centered IID sandwiches and distinguishes the second-step objective weight from the final efficient covariance weight.
+
+**Current behavior.** `OneStep` fitting and covariance use the requested fixed weight for just-identified and overidentified systems. Generic fixed-weight fits do not populate Hansen J. `TwoStep` and `Iterative` refresh the efficient covariance weight at the final parameters.
+
+**Correction.** Identification guards and covariance weight selection were corrected surgically. Enum values, constructor signatures, default identity weighting, underidentification handling, public API, and XML serialization signatures remain unchanged.
+
+<a id="tr-035"></a>
+## TR-035 — Time-Series Jeffreys Terms Are Misclassified in Pointwise Prior Output
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete. AR, MA, and ARIMA now identify the existing Jeffreys scale contribution as `JeffreysScalePrior`; ARIMAX remains the unchanged reference implementation.
+
+**Verification status.** Passed. Three deterministic fast regressions cover enabled/disabled metadata, component identity and density, scalar/decomposed equality, and the unchanged ARIMAX contract. The exact guarded verification method passes four independently tabulated $-\log(\sigma)$ values at `1E-12` absolute tolerance.
+
+**Evidence.** The pre-change AR, MA, and ARIMA pointwise-prior methods typed their Jeffreys scale contribution as `ParameterPrior` rather than `JeffreysScalePrior`. The scalar sum remained correct, but downstream grouping relied on the component type. The corrected output now passes explicit type/count and scalar-decomposition regressions for all four models.
+
+**Impact.** Corrected: prior-influence summaries can now separate the scale-invariant Jeffreys contribution from ordinary marginal priors.
+
+**Correction.** Only the three component-type enum arguments changed. Scalar prior values, model parameters, public signatures, serialization, transforms, likelihoods, estimation, and ARIMAX behavior are unchanged. See the complete evidence in the [time-series verification report](../verification/time-series.md#tr-035--jeffreys-prior-metadata).
+
+<a id="tr-036"></a>
+## TR-036 — Time-Series Transform Fitting Leaks Holdout Data
+
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
+
+**Implementation status.** Complete. All four models fit Box-Cox/Yeo-Johnson lambda from raw
+observations `[0, TrainingTimeSteps)`, freeze it before transforming the full response, and keep
+holdout values out of training state and ARIMAX default initialization. The additive read-only
+`TransformLambda` getter exposes the effective state without changing UI/App signatures.
+
+**Verification status.** Passed by deterministic Core/UI/API lifecycle regressions and the exact
+R training-only profile-likelihood oracle; see [time-series verification](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle).
+
+**Evidence.** AR, MA, ARIMA, and ARIMAX call `BoxCox.FitLambda(TimeSeries.ValuesToList(), ...)` or the Yeo-Johnson equivalent on the entire response series. `TrainingTimeSteps` is applied only afterward. ARIMAX also transforms the entire response before selecting the training prefix.
+
+**Impact.** Transformation choice uses validation/holdout observations, so reported out-of-sample performance is not genuinely out of sample. Forecast-era additions can change calibration without changing the training window.
+
+**Correction.** Fitted and manual provenance is persisted through optional invariant-culture XML
+attributes and clone/copy/save/open paths. A restored fitted value is used for the loaded response
+and refits after later data/training changes; a restored manual value remains fixed across
+training-window changes. Legacy XML retains automatic fitting. The R oracle was committed before
+C# evaluation and both named methods pass at their fixed tolerances. No optimizer, sampler, prior,
+seed, likelihood definition, or convergence default changed.
+
+<a id="tr-037"></a>
+## TR-037 — ARIMA and ARIMAX Reintegration Is Off by One
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete after corrective audit. Both predictors calculate exactly
+$T-d+h$ model-scale differences and map model step $k$ to raw slot $k+d$. Fitted levels use the
+observed lower-order state at the preceding raw index throughout training; the first forecast uses
+the final observed training states, and only later forecasts recurse from generated states. The
+inverse transform is applied once after reconstruction. Existing tuple signatures and raw
+component lengths are unchanged; the first $d$ component slots are zero.
+
+**Verification status.** Passed. Fast tests cover unchanged AR/MA boundaries plus irregular
+ARIMA/ARIMAX `d=1`, `d=2`, zero/positive horizons, transformed and untransformed paths, holdout
+sentinels, exact-date level covariates, component mapping, and bit-for-bit `Transform.None`/`d=0`
+fixed-seed values. The corrected guarded analytical recurrence passes at `1E-10`; an additional
+exactly 1,000-realization oracle verifies that differenced uncertainty remains conditional in
+training and begins recursive accumulation only after the forecast boundary. All four affected
+ARIMA/ARIMAX MLE/Bayesian recovery cells pass against the R boundary oracle.
+
+**Evidence.** For first differences, `Difference` stores `d[0]=x[1]-x[0]`. `Predict()` allocates `TrainingTimeSteps + forecastSteps` differenced entries, then overwrites `integrated[0]` with `x[0]` and evaluates `integrated[i]=anchor[i-1]+integrated[i]`. Thus `d[0]` is discarded and output index 1 uses `d[1]`; the differenced vector is also `d` entries too long for an output of the requested undifferenced length. ARIMA and ARIMAX share this integration pattern.
+
+**Impact.** Corrected: fitted values no longer accumulate innovations from the start of the
+record, uncertainty no longer fans out through the training period, and forecasting begins from
+the final observed training state. Every predicted difference remains at its raw response index,
+and output/component lengths match the established UI/App contract.
+
+**Correction.** The approved raw/differenced map and conditional training/forecast boundary are
+implemented without changing a public UI/App signature, persisted meaning, seed policy, sampler,
+prior, tolerance, likelihood, optimizer, or convergence default. Generation remains separately
+governed by TR-038 and TR-039 and continues to use complete-path initialization anchors. The
+verification report explicitly records that commit `3d79c31` introduced complete-path prediction
+and commit `1c0cecd` then incorrectly changed the independent oracle to match it. See
+[time-series verification](../verification/time-series.md#tr-037--arima-and-arimax-prediction-reintegration).
+
+<a id="tr-038"></a>
+## TR-038 — ARIMA Simulation Ignores Differencing and Transformations
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete. AR and MA complete their recursion on transformed model
+scale before one inverse transform. ARIMA generates `max(0,sampleSize-d)` transformed differences,
+integrates them from observed transformed anchors when data are attached or zero anchors otherwise,
+and inverse-transforms the complete `sampleSize` vector once.
+
+**Verification status.** Passed. Six deterministic fast contracts cover logarithmic, Box-Cox,
+and Yeo-Johnson recurrences, attached/zero anchors, `sampleSize<=d`, lengths, and exact
+`Transform.None`/`d=0` seeds. Two exact guarded algebraic/Monte Carlo methods pass at `1E-10` and
+the four-standard-error/3% moment rule using the user-directed 1,000-step cap.
+
+**Evidence.** `ARIMA.GenerateRandomValues()` simulates a stationary ARMA recursion from intercept, AR, MA, and scale, then returns it directly. It does not apply `DOrder`, inverse Box-Cox/Yeo-Johnson transformation, or the configured initial conditions.
+
+**Impact.** Corrected for AR, MA, and ARIMA: `ISimulatable<double[]>` consumers now receive raw-
+scale values from the configured transformed/differenced model and the requested output length.
+
+**Correction.** Existing signatures, validation, parameter order, and `Transform.None`/`d=0`
+fixed-seed sequences are unchanged. The initial 50,000-step logarithmic ARIMA moment fixture
+overflowed the finite raw double range; that failure remains documented. The explicit 1,000-step
+direction changed only verification sample count, not its seeds, model parameters, formulas, or
+acceptance rules. See
+[time-series verification](../verification/time-series.md#tr-038--ar-ma-and-arima-transformed-generation).
+
+<a id="tr-039"></a>
+## TR-039 — ARIMAX Simulation Mixes Original and Transformed Scales
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete. Every deterministic and stochastic term remains on the
+transformed/differenced model scale; the completed differences are integrated from observed or
+zero transformed anchors and inverse-transformed once.
+
+**Verification status.** Passed. Seven fast contracts cover component scale, date alignment,
+anchors, explicit and extended covariates, missing dates, length, and exact legacy seed output.
+The exact guarded algebraic/1,000-step moment oracle passes at `1E-10` and the fixed four-standard-
+error/3% rule.
+
+**Evidence.** `ARIMAX.GenerateRandomValues()` constructs its deterministic mean and ARMA recursion on the fitted transformed/differenced parameter scale. For Box-Cox or Yeo-Johnson it then calls `Transform(deterministic)` again, adds noise, and immediately inverse-transforms each value. Subsequent AR/MA residual recursion combines those original-scale values with transformed-scale means, and differencing is reversed only after the inverse transform.
+
+**Impact.** Generated data do not follow the fitted ARIMAX model under a transform and/or differencing, invalidating predictive checks and synthetic uncertainty studies.
+
+**Correction.** Model step `k` maps to raw response index `k+d`; its level covariate is selected by
+exact date and never differenced. Existing signatures, parameter order, covariate extension policy,
+and `Transform.None`/`d=0` fixed-seed results are unchanged. Observed transformed anchors are used
+when data are attached and zero anchors otherwise. See
+[time-series verification](../verification/time-series.md#tr-039--arimax-transformed-and-differenced-generation).
+
+<a id="tr-040"></a>
+## TR-040 — Pointwise Time-Series Likelihoods Can Throw at Invalid Scale
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete. Every scalar, pointwise, component, and prior path in AR, MA, ARIMA, and ARIMAX now enforces the same finite-positive innovation-scale domain.
+
+**Verification status.** Passed. Six fast cases cover zero, a negative value, NaN, both infinities, and a valid positive control across all four models. The exact guarded Gaussian/prior oracle passes at `1E-12` for valid values and exact negative infinity for invalid values.
+
+**Evidence.** Before correction, scalar data likelihoods rejected `sigma<=0`, but non-finite positive scales could reach Numerics and pointwise/component paths constructed `Normal(0,sigma)` without the same guard. The corrected scalar and decomposed paths now agree exactly and preserve pointwise lengths and metadata on rejection.
+
+**Impact.** Corrected: invalid scale proposals are uniformly rejected with negative infinity and cannot throw from WAIC/LOO or influence diagnostics.
+
+**Correction.** The guard is limited to numerical parameter evaluation. Valid positive-scale formulas, public signatures, serialization, validation messages, priors, samplers, likelihood definitions, and convergence defaults are unchanged. See [time-series verification](../verification/time-series.md#tr-040--invalid-innovation-scale-parity).
+
+<a id="tr-041"></a>
+## TR-041 — Differenced ARIMAX Raw-Time Alignment Is Inconsistent
+
+**Review disposition.** Confirmed defect; corrected.
+
+**Implementation status.** Complete. Differenced model step $k$ now maps to raw response index
+$k+d$ and retains that later raw timestamp. Training contains exactly $T-d$ model steps for a
+$T$-observation raw prefix; conditional evaluation begins at $k=\max(p,q)$. Level covariates are
+selected by exact response timestamp and are never differenced. Missing or duplicate required
+timestamps make validation fail and numerical evaluation return negative infinity; extra dates
+outside the required window are harmless. The transform Jacobian covers raw indices
+$d+\max(p,q)$ through $T-1$.
+
+**Verification status.** Passed. Seven fast Core regressions cover `d=0,1,2`, later timestamps,
+training/holdout isolation, shifted/duplicate/extra covariate dates, level-covariate likelihood,
+direct timestamp and conditional-order mutation, and scalar/pointwise/component parity. The App residual plot follows the corrected differenced
+training count and timestamps. The exact guarded R-backed verification passes 1/1 at `1E-10`.
+
+**Evidence.** Before correction, differenced response index $t$ represented raw response index
+$t+d$, but residual regression used covariate position $t$, differencing reset dates to the first
+raw timestamp, and training selected the first $T$ differences rather than the $T-d$ differences
+available inside the raw training prefix. That admitted response holdout values and misassigned the
+conditional Jacobian observation set.
+
+**Impact.** Corrected: exogenous effects, transformed responses, Jacobian contributions, residual
+dates, and plotted residual indices share one explicit raw/model map. Prediction reintegration and
+generation remain separately governed by TR-037 and TR-039.
+
+**Correction.** No public/protected UI/App signature, existing XML meaning, XAML binding, model
+tuple, sampler, prior, optimizer, seed, tolerance, or convergence default changed. See the complete
+fixture, oracle, compatibility, execution, and failure history in the
+[time-series verification report](../verification/time-series.md#tr-041--arimax-differencing-date-covariate-and-jacobian-alignment).
+
+<a id="tr-042"></a>
+## TR-042 — Time-Series and Rating-Curve AIC/BIC Included Prior Density
+
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
+
+**Implementation status.** Fixed without public API or serialization changes. AR, MA, ARIMA, ARIMAX, and rating-curve analyses now evaluate their data likelihoods at `Results.MAP.Values`.
+
+**Verification status.** Passed by the shared focused MAP criterion regression and source-call-site
+audit, then refreshed in Phase 5 by a deterministic counting regression and the exact five-analysis
+data-likelihood/MAP oracle. See [time-series verification](../verification/time-series.md#tr-042--information-criteria-use-data-likelihood-at-map)
+and [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
+
+**Evidence.** Prior-density terms are no longer passed to `GoodnessOfFit.AIC/BIC`. Each analysis
+retains its existing parameter count and observation/training sample-size convention. The Phase 5
+cell covers AR, MA, ARIMA, ARIMAX, and rating curve at `1E-10`, with the four time-series
+likelihoods compared against an independent iid Gaussian evaluation of each training window, and
+separately runs the production MLE and flat-prior MAP estimators against the analytical Gaussian
+optimum, accepting each production MLE/MAP fit through the known Normal information scales and
+joint two-coordinate 95% likelihood-ratio region.
+
+**Impact.** Prior normalization constants no longer shift the reported criteria. Flat-prior fits can be compared with their constrained-MLE counterparts; nonconstant priors can move MAP away from MLE, so those values require the documented Bayesian caveat.
+
+**Follow-up.** Resolve the separate time-series indexing and rating-curve likelihood-measure findings before making cross-model criterion claims. Use DIC, WAIC, or verified PSIS-LOO with informative priors.
+
+<a id="tr-043"></a>
+## TR-043 — Rating-Curve Likelihood Omits the Log10 Change-of-Variables Term
+
+**Review disposition.** Confirmed defect (21 August 2026).
+
+**Implementation status.** Fixed without public API or serialization changes (approved 21 August 2026). `DataLogLikelihood`, `PointwiseDataLogLikelihood`, and `PointwiseDataLogLikelihoodComponents` add the base-10 change-of-variables term $-\log(Q_i\ln 10)$ for every aligned pair, cached alongside the aligned-observation cache and invalidated with it; a nonpositive aligned discharge makes every path negative-infinite. The observation measure is documented as discharge-space (equation RC.5 of the technical reference).
+
+**Verification status.** Passed. The three exact guarded cells `RatingCurveLikelihoodOracleTests.{One,Two,Three}Segment_DataLogLikelihood_IsDischargeSpaceDensity` match the committed SciPy discharge-space oracle and the Numerics base-10 lognormal density at `1e-8` (sums) and `1e-10` (terms) after failing by exactly the change-of-variables sums `2043.2563714262035`, `2315.8103643545292`, and `2354.0657454049206` on the uncorrected source; fast hand-calculation, parameter-free-difference, pointwise/component identity, and nonpositive-discharge contracts pass; the six example-replication recovery cells pass under the approved acceptance rule. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-043---discharge-space-likelihood).
+
+**Evidence.** The rating curve assumes `Z=log10(Q)` is Normal and sums `Normal.LogPDF(log10(q)-log10(qhat))`. As a density for observed discharge `Q`, the likelihood also requires `-log(q ln 10)` per observation. The code omits this Jacobian while transformed time-series likelihoods include their corresponding Jacobians.
+
+**Impact.** Parameter estimates (MLE, MAP, posterior) are unchanged because the term is data-only; absolute log likelihoods, predictive densities, and AIC/BIC/DIC/WAIC/LOOIC shift by the constant $-\sum_i\log(Q_i\ln 10)$, so persisted rating-curve criteria differ on reprocess and comparisons among rating-curve models of the same data are unchanged.
+
+**Follow-up.** Retain the three oracle cells and the fast contracts as release gates; the release notes record the criteria shift.
+
+<a id="tr-044"></a>
+## TR-044 — Rating-Curve Continuity Claim Fails at the Allowed Zero Exponent
+
+**Review disposition.** Confirmed defect (21 August 2026).
+
+**Implementation status.** Fixed (approved 21 August 2026: lower bound 0.1). `SetDefaultParameters` gives every exponent the lower bound 0.1 and the prior $\mathrm{Uniform}(0.1,5)$; legacy projects restore their stored bounds verbatim through the `ModelParameter` XML, remain loadable, and `Validate()` adds a non-blocking warning when an exponent bound admits zero. The likelihood is unchanged.
+
+**Verification status.** Passed. The seven exact `RatingCurveContinuityVerificationTests` cells pass: the analytical two-sided increment and zero-exponent jump cells, the three default-bound cells, and the lower-bound limit cell (added increment at offset `1e-12` is `0.251` times its value at `1e-6` for $\beta=0.1$), after the bound cells and the limit cell had failed on the uncorrected source; fast contracts cover the new bounds, the legacy warning, and the verbatim XML round trip. See the [rating-curve verification chapter](../verification/rating-curve.md#tr-044---continuity-at-activation-stages).
+
+**Evidence.** Each added control contributes zero at `h=h_k` because activation requires `h>h_k`. Its exponent prior and bound allow `beta_k=0`; immediately above the breakpoint, `(h-h_k)^0=1`, so discharge jumps by `alpha_k` rather than approaching zero.
+
+**Impact.** Every admissible default model is continuous at its activation stages; the default prior support changed from $[0,5]$ to $[0.1,5]$ for new analyses, which is recorded in the release notes, and legacy projects keep their bounds with a warning.
+
+**Follow-up.** Retain the continuity cells and the legacy-bound contracts as release gates.
+
+<a id="tr-045"></a>
+## TR-045 — Rating-Curve Validation Rejects Unused Discharge Records
+
+**Review disposition.** Confirmed defect (21 August 2026).
+
+**Implementation status.** Fixed (approved 21 August 2026). `Validate()` rebuilds the date alignment, reports an error only when a date-aligned discharge is not positive, and adds a non-blocking warning that counts the stage and discharge records unmatched by date (and how many ignored discharge records are nonpositive); the UI validation adapter renders the `Warning:` prefix as a warning.
+
+**Verification status.** Passed. The fast contracts `Validate_UnmatchedNonPositiveDischarge_RemainsValidAndIsReported`, `Validate_ReportsUnmatchedRecordCounts`, and the retained `Validate_NonPositiveDischarge_IsInvalid` pass (the first failed with `Error: All discharge values must be positive` on the uncorrected source). See the [rating-curve verification chapter](../verification/rating-curve.md#tr-045---aligned-pair-validation).
+
+**Evidence.** The likelihood uses only the date-inner-joined stage/discharge pairs, but `Validate()` rejects the model if any value in the entire discharge series is nonpositive, including dates with no matching stage that never enter the likelihood.
+
+**Impact.** Validation now follows the likelihood's alignment contract: unmatched records no longer block a fit, and analysts see how many records are ignored.
+
+**Follow-up.** Retain the aligned-pair and count-reporting contracts as release gates.
+
+<a id="tr-046"></a>
+## TR-046 — Manual Transform Parameters Do Not Rebuild Model Data
+
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
+
+**Implementation status.** Complete. The unchanged two-argument setter validates finite
+`lambda1`, treats `lambda2` as an accepted but intentionally ignored compatibility placeholder,
+and atomically rebuilds transformed/differenced data, Jacobian, applicable defaults, validation,
+and dependent analysis state. None/log transforms canonicalize lambda to zero.
+
+**Verification status.** Passed by Core state/invalidation tests, UI serialization/copy/undo tests,
+API mapping tests, and the exact independent transformed-likelihood oracle; see
+[time-series verification](../verification/time-series.md#tr-036-and-tr-046--atomic-transform-state-lifecycle).
+
+**Evidence.** `SetTransformParameters(lambda1,lambda2)` in AR, MA, ARIMA, and ARIMAX only assigns backing fields. It does not re-transform the training series, recompute differences or Jacobians, reset parameters, or clear analysis results. The stored `lambda2` offset is not used by the shown transform calls.
+
+**Impact.** Calling the public method can leave the reported transform parameters inconsistent with the data and likelihood actually evaluated; `lambda2` suggests an unsupported offset capability.
+
+**Correction.** `TransformLambda` is additive, read-only, and hidden from property grids. Optional
+XML attributes preserve effective lambda and manual/fitted provenance without changing existing
+names or meanings. UI/App public and protected signature baselines remain exact, while the Core
+baseline changes only by the approved four getters. `lambda2` remains present so existing callers
+retain source and binary compatibility.
+
+<a id="tr-047"></a>
+## TR-047 — Bivariate AIC and BIC Included the Copula Prior
+
+**Review disposition.** Confirmed defect; the scoped issue is resolved.
+
+**Implementation status.** Fixed without public API or serialization changes. `BivariateAnalysis.UpdatePointEstimateResultsAsync` now evaluates `BivariateDistribution.DataLogLikelihood` at the stored MAP.
+
+**Verification status.** Passed by the shared focused MAP criterion regression and the source-call-site audit; see [model-estimation verification](../verification/model-estimation.md#aic-and-bic-evaluated-at-map).
+
+**Evidence.** Copula-prior density is excluded from AIC/BIC. The parameter penalty remains the number of fitted copula parameters, and BIC continues to use the matched-pair count.
+
+**Impact.** With a flat copula prior, MAP coincides with the constrained copula MLE and the criteria have their usual likelihood interpretation conditional on the fixed marginal fits. Informative copula priors invalidate that interpretation, and comparisons remain conditional on identical marginals and paired events.
+
+**Follow-up.** With informative priors, use DIC, WAIC, or verified PSIS-LOO. Do not compare bivariate criteria across different marginal fits, event pairings, or likelihood conventions.
+
+<a id="tr-048"></a>
+## TR-048 — Spatial Copula Does Not Marginalize Missing Sites
+
+**Review disposition.** Confirmed defect (21 August 2026); fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. `GaussianCopula.LogPDF(IList<double> z, IReadOnlyList<int> observedSites)` (additive) evaluates `log phi_{R_O}(z_O) - sum_{j in O} log phi(z_j)` over the observed-site correlation submatrix, returns zero for fewer than two observed sites and the full-dimensional value for a complete row, and caches the factorization of each observed-site pattern until the correlation parameters change; `SpatialGEV.ComputeLogLikelihoodInternal` and `PointwiseDataLogLikelihood` pass the observed-site index list instead of a zero placeholder score. Complete rows are bitwise unchanged.
+
+**Verification status.** Passed. After the correction `SpatialGEVLikelihoodOracleTests.MissingSites_DataLogLikelihood_UsesObservedSiteCopulaSubmatrix` and `MissingSites_PointwiseRows_MatchObservedSubsetOracle` match the R `mvtnorm` observed-subset oracle (`1e-8` total, `1e-10` per row), the complete-row and marginal-only cells are unchanged, and the nine complete-data spatial recovery cells pass unchanged; fast contracts cover complete-row parity, single-site rows, fully missing rows, equality with the copula built on the observed sites, cache invalidation, and argument validation. Before the correction the scalar cell returned the zero-placeholder value `-238.53821556069616` against the marginalized `-238.89272936973`. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
+
+**Evidence.** In both scalar and pointwise `SpatialGEV` likelihoods, a missing site was assigned latent Gaussian score `z[j] = 0.0`, after which the full-dimensional Gaussian-copula density was evaluated. The observed-data likelihood uses the correlation submatrix of the sites observed in that row, which is exact because the Gaussian copula family is closed under marginalization.
+
+**Impact.** Missing observations were treated as if their latent normal score were exactly zero, altering the likelihood for every observed site correlated with them; posteriors of copula models fitted to networks with missing data change with the correction (release note), while complete-data fits are unchanged.
+
+**Follow-up.** Keep the two missing-site oracle cells and the fast parity contracts as the regression set; TR-051 (leave-one-site-out reduced model) builds on the observed-subset evaluation in Batch 6.4.
+
+<a id="tr-049"></a>
+## TR-049 — Spatial Likelihood Decomposition Is Internally Inconsistent
+
+**Review disposition.** Confirmed defect (21 August 2026); fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. `SpatialGEV.PriorLogLikelihood` (additive override) returns the parameter priors plus the Gaussian-process log densities of the enabled location, scale, and shape error vectors, evaluated on local clones of the error models; `DataLogLikelihood` no longer adds the process densities, so it is the observation log likelihood (weighted observed-site marginals plus the observed-subset copula term, one pointwise term per row/year). The posterior kernel `LogLikelihood` is identical for every model; the "non-canonical decomposition" remarks were deleted and replaced by the three identities.
+
+**Verification status.** Passed. `SpatialGEVLikelihoodOracleTests.LocationErrorModel_DataLogLikelihood_ExcludesProcessDensity`, `LocationErrorModel_ScalarAndPointwiseDecompositionsAgree`, and `LocationErrorModel_PosteriorKernel_IsInvariantToTheDecomposition` pass (the kernel cell passed before and after the change), and fast contracts pin the prior as parameter priors plus process densities, the data likelihood as the marginal sum, the pointwise-prior sum identity, and the purity of the evaluation. Before the correction the data log likelihood equaled `-169.072 + 8.464 = -160.607` for the oracle's location-error model. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
+
+**Evidence.** `SpatialGEV.DataLogLikelihood` included the Gaussian-process spatial-error densities while `PointwiseDataLogLikelihood` omitted them and `PointwisePriorLogLikelihood` emitted them without a matching scalar prior, so the scalar/pointwise identities failed and WAIC/LOO did not score the fitted kernel's observation unit consistently with the scalar criteria.
+
+**Impact.** The sampler, MAP, and posterior are unchanged by the correction; AIC, BIC, DIC, WAIC, and LOOIC of models with latent spatial errors change because they now exclude the process densities (release note), and consumers can no longer double-count the process densities by combining the scalar data likelihood with the pointwise prior components.
+
+**Follow-up.** The predictive unit for spatial model comparison is the row/year (TR-055). Keep the four location-error cells and the fast identity contracts as the regression set.
+
+<a id="tr-050"></a>
+## TR-050 — Spatial Leave-One-Site-Out Results Are Cleared Before Return
+
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval.
+
+**Implementation status.** Fixed. Each fold now fits its own reduced training model with its own `BayesianAnalysis`, so the analysis model, its posterior, and its site weights are never modified and the restoration refit (and the `ClearResults` it triggered) is gone; `RunCrossValidationAsync` assigns the completed DTO and raises the notification last. On the pre-fix source a fresh analysis could not even complete the run: the per-fold prediction threw "Analysis must be run before predicting at ungauged locations" because the fold refit never set the analysis's own estimated flag.
+
+**Verification status.** Passed. `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel` (112.0 s) and `LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` (113.0 s) assert that `CrossValidationResults` is retained after the run under the production defaults. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
+
+**Evidence.** `RunCrossValidationAsync` populated `CrossValidationResults`, restored site weights, and then called `RunAsync` to refit the full model; `RunAsync` begins with `ClearResults`, which set `CrossValidationResults = null` before the final notification.
+
+**Impact.** A successful cross-validation run now leaves the documented result available; the main fit is untouched by the validation.
+
+**Follow-up.** Keep the two retention assertions in the guarded regression set.
+
+<a id="tr-051"></a>
+## TR-051 — Spatial Leave-One-Site-Out Does Not Fully Exclude the Site
+
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval.
+
+**Implementation status.** Fixed. `SpatialGEV.CreateReducedModel(excludedSite)` (internal) builds the training model of a fold without the held-out site: its data column, coordinate row, each trend model's covariate row, copula coordinate, and latent error are removed, while the flags, links, remaining site weights, and every remaining parameter's value, bounds, and prior are copied. `RunCrossValidationAsync` fits that model with a fold `BayesianAnalysis` that carries the main analysis's sampler type, defaults policy (resolved against the fold's own parameter count), seed, interval width, output length, point estimator, and its explicit iteration/chain/thinning/tuning settings when the defaults are not in use, and predicts the held-out site from the fold posterior through the shared prediction helper. Site weights are no longer used for exclusion.
+
+**Verification status.** Passed. Fast contracts show that a zero site weight leaves the held-out observations in the copula likelihood and the held-out latent error in the prior (the leakage mechanism) and that the reduced model removes the site from the data, coordinates, weights, covariate rows, copula dimension, and error blocks, is independent of the held-out column, and equals a network built directly without the site; the guarded cell `LeaveOneSiteOut_WithCopula_RetainsResultsAndMatchesReducedModel` (112.0 s) finds fold 1 of a four-site copula network equal to an independently reduced three-site model fitted through the production path with the same defaults and seed (`1e-6` relative). See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
+
+**Evidence.** Cross-validation set only the held-out site's marginal `SiteWeight` to zero; with copula dependence the held-out observations remained in the Gaussian-copula vector and enabled spatial-error vectors retained the held-out site's latent error and Gaussian-process contribution.
+
+**Impact.** The leave-one-site-out fit no longer leaks held-out information; reported ungauged-site predictive performance reflects a genuine training/validation split.
+
+**Follow-up.** TR-056 (bootstrap replicate models) in Batch 6.5 can reuse the reduced-model construction; keep the parity cell and the reduced-model contracts in the regression set.
+
+<a id="tr-052"></a>
+## TR-052 — Spatial Cross-Validation Omits Held-Out Covariates
+
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval.
+
+**Implementation status.** Fixed. Each fold predicts the held-out site with that site's own covariate row from each trend model's stored matrix (location, scale, and shape rows separately, so trends with different covariate sets are handled), and `GeneralLinearFunction.PredictWithCovariates(null or empty)` now throws `ArgumentException` for a trend that has covariates instead of silently returning the intercept (intercept-only trends still accept null). The public `PredictAtUngaugedLocation` keeps its single covariate vector, documented as applying to every covariate trend, and validates it before the posterior loop so the error is an `ArgumentException` rather than an aggregate exception.
+
+**Verification status.** Passed. `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_WithLocationRegression_UsesHeldOutCovariates` (113.0 s) finds fold 1 of a four-site location-regression network equal to the reduced model evaluated at the held-out covariate row (`1e-6` relative); the fast contracts `GeneralLinearFunctionTests.Test_PredictWithCovariates_NullOrEmpty_Throws`, `SpatialGEVAnalysisTests.PredictWithCovariates_NullForCovariateTrend_Throws`, and `SpatialGEVTests.CreateReducedModel_WithCovariateTrend_RemovesTheHeldOutRow` cover the throw and the row extraction. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
+
+**Evidence.** `RunCrossValidationAsync` called `PredictAtUngaugedLocation(coords, null, probs)` and `PredictWithCovariates` returned the intercept-only prediction for a null or empty vector, so a fitted covariate trend was evaluated without its covariates.
+
+**Impact.** Cross-validation evaluates the fitted regression trend at the held-out site; callers of the ungauged-prediction methods that omitted covariates for a covariate model now receive an explicit error instead of an intercept-only value.
+
+**Follow-up.** None beyond the regression set.
+
+<a id="tr-053"></a>
+## TR-053 — Failed Spatial Cross-Validation Folds Are Counted as Zero Error
+
+**Review disposition.** Confirmed defect (21 August 2026); fixed on 22 August 2026 after Haden Smith's approval (report what succeeded with counts; throw only when no fold succeeds).
+
+**Implementation status.** Fixed. `SpatialGEVCrossValidationResults` gains `FoldStatus` (`SpatialGEVCrossValidationFoldStatus`: `Succeeded`, `NoObservations`, `FitFailed`, `PredictionFailed`), `FoldMessages`, `SuccessfulFolds`, and `TotalFolds`; a fold that is not scored stores NaN in `SitePredictionErrors`, `SiteRMSE`, and `SiteBias`; `MeanAbsoluteError`, `RootMeanSquareError`, and `MeanBias` average the successful folds only; an invalid reduced model, a sampler failure, or a non-finite prediction is recorded instead of aborting the run; and when no fold succeeds `RunCrossValidationAsync` throws `InvalidOperationException` listing the fold reasons, leaving `CrossValidationResults` null.
+
+**Verification status.** Passed. `SpatialGEVCrossValidationVerificationTests.LeaveOneSiteOut_SiteWithoutObservations_IsReportedNotScored` (54.3 s) reports a fully missing site as `NoObservations` with NaN metrics while the three remaining folds succeed and the aggregates equal the averages over those folds; the fast contract `SpatialGEVAnalysisTests.RunCrossValidationAsync_WhenNoFoldSucceeds_ThrowsAndReportsNothing` (a two-site network whose reduced models are invalid) covers the no-fold policy without a sampler run, and `SpatialGEVResultsTests` covers the DTO fields. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-64-leave-one-site-out-cross-validation-22-august-2026).
+
+**Evidence.** Site error arrays were zero-initialized and a failed fit, missing analysis, or site without observations executed `continue` without marking the fold, so MAE, RMSE, and bias averaged zeros.
+
+**Impact.** Failed or unevaluable folds are visible and excluded from the aggregates; an empty validation is never reported as a result.
+
+**Follow-up.** None beyond the regression set; CRPS remains unimplemented (zero-filled, documented).
+
+<a id="tr-054"></a>
+## TR-054 — Analysis-Level Ungauged Prediction Uses IDW and Omits Conditional Spatial Variance
+
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval (conditional residual sampled by default).
+
+**Implementation status.** Fixed. For every retained draw the shared prediction helper applies that draw's latent-error model through the model-level simple-kriging predictor (`SpatialRegressionErrors.GetKrigingPrediction`: conditional mean `k*ᵀK⁻¹ε`, variance `σ² − k*ᵀK⁻¹k*`) and adds a residual from N(0, variance) with standard-normal scores generated from `BayesianAnalysis.PRNGSeed` before the parallel loop; the additive `SpatialGEVAnalysis.SampleConditionalResidual` (default `true`) switches to the conditional mean. `PredictAtUngaugedLocation` and the cross-validation folds use the same helper; the inverse-distance interpolation is gone.
+
+**Verification status.** Passed. The R oracle `spatial-conditional-gp-oracle.json` (`SpatialGEVKrigingOracleTests`, 15 cases, `1e-10`) verifies the model-level predictor. The current completeness identity `SpatialGEVChunk14OracleTests.UngaugedDrawSpecificPrediction_MatchesIndependentGeodesicGaussianOracle` checks independently generated geodesic conditional means, variances, and predictions for four parameter/error draws at one ungauged target. `SpatialGEVAnalysisTests.PredictAtUngaugedLocation_UsesConditionalGaussianProcessPerDraw` owns the injected-draw analysis contract. The historical guarded `SpatialGEVPredictionVerificationTests.UngaugedPrediction_UsesConditionalGaussianProcessPerDraw` comparison is design history rather than a current Verification declaration because its expected path was another production path. See the [spatial verification chapter](../verification/spatial-extremes.md#verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026).
+
+**Evidence.** `SpatialGEV.PredictAtUngauged` uses simple kriging and returns kriging variances. `SpatialGEVAnalysis.PredictAtUngaugedLocation`, which provides posterior summaries, instead interpolates each latent error with inverse-distance weights proportional to `1/d` and never samples or propagates the conditional spatial-error variance.
+
+**Impact.** The main posterior prediction API disagrees with the model-level predictor and produces intervals that omit an important source of ungauged-site uncertainty.
+
+**Follow-up.** None beyond the regression set; the IDW fallback remains only inside the model-level predictor when the error covariance cannot be factorized after jitter.
+
+<a id="tr-055"></a>
+## TR-055 — Spatial AIC and BIC Required a Defensible Likelihood and Sample Unit
+
+**Review disposition.** Confirmed defect; closed on 21 August 2026 after the TR-048 and TR-049 corrections.
+
+**Implementation status.** Closed. `SpatialGEVAnalysis.ComputeInformationCriteria` (internal, used by the result builder) computes AIC and BIC from the observation log likelihood `SpatialGEV.DataLogLikelihood` at the MAP, which after TR-049 excludes the latent-error process densities and after TR-048 marginalizes missing sites, with one nonempty row/year block per BIC observation instead of `Sites * Observations`; WAIC and PSIS-LOO consume `SpatialGEV.PointwiseDataLogLikelihood`, one term per row/year. No public API or serialization change.
+
+**Verification status.** Passed. The guarded cell `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks` runs MCMC with the production defaults on the oracle's five-site missing-site model (twelve rows, one fully missing) and checks AIC and BIC against the observation log likelihood at the sampled MAP with the eleven nonempty row/year blocks (`1e-8`; site cells and the fully missing row are rejected as units), WAIC and `WAIC_pD` against the row/year recomputation over the retained draws (`1e-9` relative), one Pareto k per row/year, and a finite LOOIC; the fast contracts `SpatialGEVAnalysisTests.ComputeInformationCriteria_UsesNonEmptyRowYearBlocks` and `PredictiveCriteria_FromInjectedDraws_UseRowYearPointwiseTerms` pin the helper and the injected-draw WAIC. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
+
+**Evidence.** Independent parameter-prior densities, latent-error process densities, and fully missing rows do not affect the criteria; contemporaneously dependent site cells are not counted as independent BIC replicates; missing sites are marginalized.
+
+**Impact.** The spatial AIC/BIC are now the conventional criteria of the observation likelihood at the row/year unit, still qualified because the MAP is not an MLE under nonconstant priors and weighted or dependent spatial likelihoods do not automatically satisfy ordinary AIC/BIC regularity conditions; WAIC and PSIS-LOO at the row/year unit are the preferred comparison tools, as the [spatial reference](spatial/spatial-extremes.md#estimation-and-output-construction) states.
+
+**Follow-up.** None beyond keeping the criteria cell and the fast contracts in the regression set.
+
+<a id="tr-056"></a>
+## TR-056 — Spatial Bootstrap Does Not Fit the Resampled Data
+
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval (temporal block bootstrap, MAP refit, 50% minimum).
+
+**Implementation status.** Fixed. `RunSpatialBootstrapAsync` resamples rows (years) with replacement in contiguous blocks of `blockSize` rows (default the cube root of the row count, rounded up; wrap-around at the end of the record) while keeping every site, builds each replicate with `SpatialGEV.CreateResampledModel` (same network, settings, and priors), refits it by `MaximumAPosteriori` warm-started at the full-model MAP, marks failed or non-finite replicates NaN, requires at least half of the replicates to succeed (otherwise `InvalidOperationException`), records the accounting in the additive `SpatialGEVBootstrapResults` (`BootstrapResults`), and replaces the site and regional bounds with percentile intervals over the successful replicates; the resampling is seeded with the analysis seed. The unused site-block clustering was removed.
+
+**Verification status.** Passed. The current completeness identity `SpatialGEVChunk14OracleTests.TemporalBlockBootstrap_MatchesIndependentWholeRowOracle` freezes five seeded MT19937 wrapping-block replicates from twelve complete row/year vectors at block size four, preserves each full site vector, fits each replicate independently by bounded SciPy flat-prior MAP, and checks the production default-DE bootstrap's fitted physical-parameter, site-quantile, and regional-quantile intervals. The fast contracts `SpatialGEVTests.CreateResampledModel_ReplacesRowsAndKeepsTheNetwork` and `SpatialGEVAnalysisTests.BuildBlockBootstrapRows_DrawsContiguousWrappingBlocks` own production model wiring and the block-draw contract. The historical end-to-end uncertainty method is design history rather than a current Verification declaration because completion, accounting, and seed sensitivity alone are not an independent scientific oracle. See the [spatial verification chapter](../verification/spatial-extremes.md#verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026).
+
+**Evidence.** `RunSpatialBootstrapAsync` constructs a `bootData` matrix from resampled site blocks, but then creates `bootModel` by cloning `SpatialGEV`; the clone retains the original `AtSiteData`, and `bootData` is never passed to any model. Consequently each replicate refits the original data with a short stochastic MCMC run. If a run returns `IsEstimated == false` without throwing, its zero-initialized result entries are also treated as valid bootstrap values.
+
+**Impact.** The reported "spatial bootstrap" intervals are not bootstrap intervals and can be dominated by MCMC variability or artificial zeros.
+
+**Follow-up.** A coverage study of the bootstrap intervals is not part of this batch; the replicate estimator is the production MAP (Differential Evolution), so two hundred replicates cost two hundred refits.
+
+<a id="tr-057"></a>
+## TR-057 — Godambe Covariance Mixes Incompatible Likelihood Decompositions
+
+**Review disposition.** Confirmed defect (21 August 2026); fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. With TR-049 the observation log likelihood is the sum of the row/year pointwise terms, so `ComputeGodambeCovariance` derives the sensitivity matrix (central-difference Hessian of `SpatialGEV.DataLogLikelihood`) and the variability matrix (outer products of the row/year scores from `SpatialGEV.PointwiseDataLogLikelihood`, each parameter's perturbations evaluated once and shared by every row) from the same estimating equations. A non-finite evaluation, a singular sensitivity matrix, or a non-finite or non-positive-variance sandwich returns `null`, clears `GodambeCovariance`, and reports `CovarianceComputationStatus.Failed` through the additive `GodambeCovarianceStatus` and `GodambeCovarianceDiagnostic` properties (TR-027 pattern); the variability matrix is never returned as a substitute; the method validates the parameter count and `ClearResults` resets the state.
+
+**Verification status.** Passed. `SpatialGEVLikelihoodOracleTests.LocationErrorModel_ScalarAndPointwiseGradientsAgree` finds the scalar and summed-pointwise gradients equal for every parameter (`1e-4`). The current completeness identity `SpatialGEVChunk14OracleTests.GodambeSensitivityVariabilityAndSandwich_MatchIndependentOracle` independently pins the complete sensitivity matrix `H`, row-score variability matrix `J`, and sandwich covariance `H^-1 J H^-1`. Fast contracts continue to own singular-H failure without substitution, available well-conditioned covariance, argument validation, and reset behavior. Before the correction the scalar score for the error scale was `-31.375` where the pointwise score was `0`. See the [spatial verification chapter](../verification/spatial-extremes.md#verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026).
+
+**Evidence.** `ComputeGodambeCovariance` formed its Hessian from the scalar `SpatialGEV.DataLogLikelihood`, which included spatial-error Gaussian-process densities, but its score outer products from `PointwiseDataLogLikelihood`, which omitted them; a singular Hessian returned the variability matrix `J` as though it were a covariance matrix.
+
+**Impact.** The sandwich factors now derive from the same estimating equations and numerical failure is explicit; the Godambe path remains a frequentist diagnostic dispatched through `SpatialGEVUncertaintyMethod` as described in TR-062.
+
+**Follow-up.** None beyond retaining the independent `H`, `J`, and sandwich oracle and the fast failure/status contracts.
+
+<a id="tr-058"></a>
+## TR-058 — Regional Spatial Bounds Average Sitewise Endpoints
+
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. The site-result builder accumulates, for every draw and probability, the regional mean of the site quantiles; the regional curve reports the posterior mean of that per-draw statistic (the mean curve, identical to the regional mean of the site posterior means) and its equal-tailed posterior quantiles as the bounds, while the mode curve remains the regional mean of the point-estimate site curves. Endpoint averages are not retained; the regional growth curve keeps its site-average definition.
+
+**Verification status.** Passed. The current completeness identity `SpatialGEVChunk14OracleTests.RegionalFixedDrawAggregation_MatchesIndependentPosteriorOracle` independently transforms nine supplied link-space intercept/slope and log-scale draws with physical shape at three ordinates, forms the regional mean per draw, and checks the posterior mean and equal-tailed bounds. `SpatialGEVAnalysisTests.RegionalCurve_FromInjectedDraws_IsPosteriorOfTheRegionalMean` owns the production aggregation contract. The historical guarded end-to-end method is design history rather than a current Verification declaration because it recomputed expectations from production output. Before the fix its lower bound at p = 1e-6 was 66,486 where the per-draw posterior quantile was 66,526. See the [spatial verification chapter](../verification/spatial-extremes.md#verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026).
+
+**Evidence.** `CreateUncertaintyAnalysisResultsAsync` computes the regional curve by averaging each site's posterior mean, lower endpoint, and upper endpoint separately. It does not compute the regional mean quantile for each joint posterior draw and then take quantiles of that derived sample.
+
+**Impact.** The displayed lower and upper regional curves are descriptive averages of marginal interval endpoints, not a credible interval for the regional-average quantile; cross-site posterior dependence is discarded.
+
+**Follow-up.** None beyond the regression set.
+
+<a id="tr-059"></a>
+## TR-059 — Spatial Site Weights Are Not an Effective-Sample-Size or Pairwise Composite Likelihood
+
+**Review disposition.** Confirmed (22 August 2026); closed the same day after Haden Smith's approval of the name.
+
+**Implementation status.** Fixed without numerical change. The method is `SpatialGEV.ComputeCorrelationHeuristicSiteWeights` (same body: `w*_j = 1/(1+(S-1)ρ̄_j)` rescaled to sum S); `ComputeEffectiveSampleSizeWeights` remains as an `[Obsolete]` forwarding alias. Its XML remarks, the remarks and `useWeightedLikelihood` parameter of `ConfigureForProperCoverage`, and the technical reference state that the weights are a relative correlation-based down-weighting of the marginal GEV terms, not an effective-sample-size reduction or a pairwise composite likelihood, and that no Godambe adjustment follows from them; composite pairwise likelihood stays the documented future enhancement.
+
+**Verification status.** Passed. `SpatialGEVTests.ComputeCorrelationHeuristicSiteWeights_PinsTheFormulaAndTheObsoleteAlias` pins the formula and the bitwise forwarding of the alias; the renamed contracts cover the update, the custom matrix, and the mismatch error. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-66-site-weight-naming-and-distance-metric-22-august-2026).
+
+**Evidence.** `ComputeEffectiveSampleSizeWeights` first computes \(w_j^\star=[1+(S-1)\bar\rho_j]^{-1}\), but then rescales the weights so that \(\sum_j w_j=S\). The likelihood uses those weights only on marginal GEV log densities; it retains one unweighted full-dimensional Gaussian-copula density per row. `ConfigureForProperCoverage` nevertheless describes this option as composite-likelihood weighting.
+
+**Impact.** The option changes relative site influence but does not reduce the total marginal log-likelihood contribution to the separately reported effective sample size. It is not a pairwise composite likelihood, and standard composite-likelihood uncertainty corrections do not follow from it.
+
+**Follow-up.** Composite pairwise likelihood with its Godambe adjustment and a coverage study remain the documented future enhancement (CLAUDE.md); the heuristic weights are named for what they are.
+
+<a id="tr-060"></a>
+## TR-060 — Spatial Distance Is Euclidean Despite Latitude/Longitude Being Advertised
+
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval (range prior unchanged in both metrics, units documented).
+
+**Implementation status.** Fixed. The additive `SpatialDistanceMetric` enum (`Cartesian` default, `Geodesic`) is a property of `SpatialGEV` (serialized as an optional attribute; legacy projects read Cartesian) and a constructor argument of new `GaussianCopula` and `SpatialRegressionErrors` overloads (the existing constructors keep the Cartesian metric bitwise); `ConfigureForProperCoverage`, `Clone`, and the reduced/resampled model factories carry it, `Validate` rejects components whose metric differs from the model's, and the geodesic metric interprets coordinates as (latitude, longitude) in decimal degrees, validates |lat| ≤ 90 and |lon| ≤ 180, and uses the haversine great-circle distance in kilometres (mean Earth radius 6371.0088 km) for the copula and latent-error separations, kriging, and the inverse-distance fallback. The correlation-range prior Uniform(ε, 500) is unchanged and documented as projected units (Cartesian) or kilometres (geodesic); the constructor XML no longer advertises (Lat, Lon) for the Cartesian default.
+
+**Verification status.** Passed. `SpatialGEVDistanceOracleTests.GeodesicMetric_MatchesHaversineOracle` (3.9 s) reproduces the R haversine oracle (`geodesic-distance-oracle.json`: five-site latitude/longitude network, distances `1e-9` km, exponential correlation and simple-kriging moments `1e-10`) and `CartesianMetric_IsPlanarEuclidean` (3.5 s) shows the default metric equals the planar Euclidean distances used before the option existed; fast contracts cover the metric default, validation, propagation through `ConfigureForProperCoverage`, serialization, cloning, and the reduced/resampled factories. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-66-site-weight-naming-and-distance-metric-22-august-2026).
+
+**Evidence.** Spatial constructors and prediction methods accept coordinates described as `(X,Y) or (Lat,Lon)`. Both `GaussianCopula` and `SpatialRegressionErrors` call pinned Numerics `Tools.Distance`, which is \(\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}\). Correlation-range priors are hard-coded to \((\epsilon,500)\), with source comments interpreting 500 as kilometres.
+
+**Impact.** Supplying unprojected longitude/latitude produces distances in degrees, ignores Earth geometry and longitude scaling, and makes the range prior's units inconsistent. Fitted spatial dependence and ungauged interpolation can therefore be materially wrong.
+
+**Follow-up.** Review the range bounds for the network at hand in either metric (the chapter's standing advice); a network-extent default bound was considered and not adopted.
+
+<a id="tr-061"></a>
+## TR-061 — Spatial Simulation Ignores Enabled Dependence
+
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. When copula dependence is enabled, `SpatialGEV.GenerateRandomValues` draws one standard-normal vector per sample, multiplies it by the Cholesky factor of the fitted copula correlation matrix (exposed through the additive `GaussianCopula.GetCorrelationMatrix()`), maps through Φ, and applies each site's inverse GEV distribution function; the output stays grouped by site with sample `i` of every site belonging to one simulated event, and a non-positive-definite correlation matrix throws. Without the copula the historical site-major independent algorithm runs unchanged.
+
+**Verification status.** Passed. `SpatialGEVSimulationVerificationTests.GenerateRandomValues_WithCopula_ReproducesTheFittedIntersiteDependence` (3.2 s; seeded 20,000 rows at five sites) finds every intersite normal-score correlation within ±0.02 of the fitted matrix and the site quantiles within 3% of the GEV quantiles; the fast contracts cover the dependence (±0.05 at 4,000 rows), the independent path's equality with the historical algorithm, reproducibility, and marginal support. Before the fix the normal-score correlation of two nearby sites was −0.02 against the fitted 0.57. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
+
+**Evidence.** `SpatialGEV.GenerateRandomValues` samples each site's GEV independently and groups the result by site. It does not consult `UseCopulaDependence` or `SpatialDependence`. Its remarks refer users to “copula-based simulation methods,” but no correlated simulation method exists in the spatial model namespace.
+
+**Impact.** Simulations from a fitted dependent model do not reproduce intersite dependence and are unsuitable for regional risk aggregation, simultaneous-event probabilities, or posterior predictive checks of spatial structure.
+
+**Follow-up.** None beyond the regression set.
+
+<a id="tr-062"></a>
+## TR-062 — Spatial Uncertainty-Method Selection Does Not Control Result Construction
+
+**Review disposition.** Confirmed defect (22 August 2026); fixed the same day after Haden Smith's approval (Gaussian parameter draws for the Godambe path).
+
+**Implementation status.** Fixed. After the MCMC fit `RunAsync` dispatches on `UncertaintyMethod`: `BayesianPosterior` leaves the posterior results; `BayesianInflated` widens the site and regional intervals by the square root of the variance inflation factor; `GodambeSandwich` computes the Godambe covariance at the MAP (TR-057), draws `OutputLength` seeded Gaussian parameter vectors N(MAP, Σ) truncated to the parameter bounds, and propagates them through the same site-result machinery as the posterior (a failed or non-positive-definite covariance makes the run fail explicitly); `SpatialBootstrap` runs the temporal block bootstrap with the additive `BootstrapReplicates` (200) and `BootstrapBlockSize` (0 = automatic) settings. The method applied is recorded in the additive `AppliedUncertaintyMethod` and in `SpatialGEVSiteResults.UncertaintyMethod`; `UncertaintyMethod`, `SampleConditionalResidual`, `BootstrapReplicates`, and `BootstrapBlockSize` are serialized as optional attributes.
+
+**Verification status.** Passed. The current completeness identities independently pin `H`, `J`, and `H^-1 J H^-1`, temporal whole-row block replicates and their quantiles, and the exact centre-plus-`sqrt(VIF)` interval transformation. `SpatialGEVAnalysisTests.ApplyUncertaintyMethod_RecordsTheAppliedMethod`, `ComputeGodambeCovariance_SingularHessian_ReportsFailureWithoutSubstitute`, `ComputeGodambeCovariance_WellConditioned_ReportsAvailableCovariance`, `BuildBlockBootstrapRows_DrawsContiguousWrappingBlocks`, and `UncertaintySettings_ValidateAndRoundTrip` own dispatch, state, failure, row construction, and serialization. The three historical guarded dispatch cells are design history rather than current Verification declarations because dispatch, result completion, finiteness, widening, and accounting are not independent scientific oracles. See the [spatial verification chapter](../verification/spatial-extremes.md#verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026).
+
+**Evidence.** `SpatialGEVAnalysis.UncertaintyMethod` exposes `BayesianPosterior`, `BayesianInflated`, `GodambeSandwich`, and `SpatialBootstrap`, but no production branch reads the property after assignment. `RunAsync` always constructs Bayesian posterior site summaries. Variance inflation, Godambe covariance, and bootstrap require independent method calls and do not replace the normal result-construction path automatically.
+
+**Impact.** Selecting an advertised uncertainty method can leave outputs unchanged, so callers may report a method that was not applied.
+
+**Follow-up.** None beyond the regression set; the Godambe and bootstrap paths remain frequentist diagnostics documented as such.
+
+<a id="tr-063"></a>
+## TR-063 - Whole-Series Replacement Leaves Plotting Positions Stale
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API or serialization-schema changes.
+
+**Verification status.** Passed by exact analytical verification at absolute tolerance `1e-12` and by focused serialization and invalid-input regressions.
+
+**Report evidence.** [Distribution fitting verification](../verification/distribution-fitting.md#tr-063---whole-series-replacement-refresh) and [evidence artifact](../../verification/data/distribution-fitting/dataframe-series-replacement.json).
+
+**Evidence.** Assigning a complete `ExactSeries` detached and attached collection handlers and incremented `PlottingPositionVersion`, but did not calculate plotting positions. Newly constructed observations therefore retained `PlottingPosition == 0`. `FittingAnalysis` complements the stored value and evaluated candidate quantiles at probability one, so finite MLE fits acquired infinite RMSE values and were classified as failed. The deterministic three-family fixture reproduced zero successful candidates before the correction.
+
+**Correction.** A valid programmatic whole-series replacement now refreshes plotting positions after the new collection and item handlers are attached. Exact-series replacement also refreshes `Lambda`. Invalid transient frames retain the previous non-throwing setter behavior and defer derived-state calculation. XML construction suppresses all four intermediate replacement refreshes, preserves serialized plotting positions exactly, and reprocesses effective threshold counts once after loading.
+
+**Regression control.** A custom-position XML round trip proves deserialization does not recalculate the serialized plotting positions. A special-value fixture proves that replacement with `NaN` or infinity still does not throw. The analytical verification independently reproduces all 39 Weibull nonexceedance probabilities as \(i/(n+1)\). The normalized Debug regression gate records Core 3,116, UI 568, and App 428 passing tests with zero failures; the public API baseline and enforced XML-documentation build also passed.
+
+**Impact.** Programmatic replacement now leaves a valid data frame immediately ready for distribution fitting without an extra manual `CalculatePlottingPositions()` call. Persisted projects retain their stored plotting positions and avoid redundant deserialization work.
+
+**Follow-up.** Retain the analytical and serialization regressions as permanent release gates.
+
+<a id="tr-064"></a>
+## TR-064 - Distribution Fitting Optimizer Likelihood Region
+
+**Review disposition.** Rejected non-defect.
+
+**Implementation status.** No production change required.
+
+**Verification status.** Passed both exact SciPy comparison methods after replacing the arbitrary scaled-coordinate tolerance with a joint 95% likelihood-ratio region. Likelihood and information criteria evaluated at the same coordinates retain tight cross-language numerical tolerances.
+
+**Report evidence.** [Distribution fitting verification](../verification/distribution-fitting.md#tr-064---distribution-fitting-optimizer-likelihood-region) and [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json).
+
+**Evidence.** The deterministic common-data `FittingAnalysis` run uses differential evolution, whose stopping rule measures convergence of objective values across the population. The SciPy oracle uses a local configuration that converges in parameter or gradient space. For Gumbel, SciPy returned location `93.11234799935337` and scale `13.157628567998076`; BestFit returned location `93.1129321294911` and scale `13.157823249599968`. Their relative coordinate differences are approximately `6.27e-6` and `1.48e-5`, but those coordinate deltas are diagnostics only. Acceptance requires \(2|\Delta\ell|\leq\chi^2_{0.95,k}\), with \(k\) equal to the fitted-coordinate count, so optimizer parity is assessed in statistically meaningful objective space.
+
+RMSE magnitudes are evaluated at each optimizer's returned parameter vector, so they are not required to be identical across the two configurations. The verification instead checks the RMSE equation to `1e-10` at the BestFit vector, checks inverse-RMSE weights to `1e-12` from those actual values, and requires the SciPy and BestFit RMSE rankings to agree exactly.
+
+**Impact.** No production defect was established. Both optimizers identify effectively identical likelihood solutions, and candidate ordering and model weights remain verified under comparisons appropriate to the quantities being tested.
+
+**Follow-up.** Retain `1e-4` scaled parameter tolerance for comparisons between objective-converged global optimizers and parameter-converged local optimizers. Continue to enforce tight likelihood parity, exact criterion formulas, and exact candidate rankings.
+
+<a id="tr-065"></a>
+## TR-065 - GMM Influence Hessian Scale Depended on Penalty Presence
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed without public API, optimizer, objective, gradient, penalty, covariance, or serialization changes.
+
+**Verification status.** Passed every pointwise and aggregate comparison against R `gmm` 1.9.1 at the predeclared `1e-5` absolute tolerance. A second focused method passed the `1e-4` finite-wide-penalty invariance tolerance.
+
+**Report evidence.** [Model-estimation verification](../verification/model-estimation.md#gmm-calibration-against-r), [R generator](../../verification/r/model-estimation/generate_gmm_influence_oracle.R), and [oracle artifact](../../verification/data/model-estimation/gmm-influence-oracle.json).
+
+**Evidence.** GMM observation scores and bread use the half-quadratic estimating-equation convention. `GetLeverageDiagnostics()` formerly obtained Cook curvature from the public `Q` method, which returns $\mathbf g^\mathsf T\mathbf W\mathbf g$ when no penalty exists but $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$ when a penalty exists. The unpenalized numerical Hessian was therefore twice the score-consistent Hessian, and its inverse halved every Cook value. On the seven-point Log10-Normal fixture, observation zero was `0.0138256180` rather than R's `0.0276512391`; total Cook influence was `0.0440051` rather than `0.0880102`. Merely enabling an effectively flat centered penalty restored the R scale, proving that the diagnostic changed units based only on penalty presence. Variance influence already matched R at `0.6160714`.
+
+**Correction.** `GetLeverageDiagnostics()` now differentiates a private local diagnostic objective $\tfrac12\mathbf g^\mathsf T\mathbf W\mathbf g+P$ in both penalized and unpenalized cases. Penalty-deletion generalized variance uses that same diagnostic objective. The estimator's public `Q`, `GetGradient`, parameter estimates, penalty Hessian, and covariance bread/meat are unchanged.
+
+**Regression control.** `Log10NormalObservationInfluence_MatchesRGmmOracle` verifies all seven observation Cook, variance, and combined values plus all totals. `VanishingCenteredPenalty_PreservesObservationInfluenceScale` proves that a centered penalty at $100SE_L$ does not change observation diagnostic scale. MAP and GMM regime tests separately verify wide-centered, narrow-centered, and narrow-shifted behavior, and the fixed-centered sample-size test verifies declining variance influence.
+
+**Impact.** GMM fit influence now has one estimator-consistent scale regardless of penalty configuration. The combined leverage plot and percentages no longer jump by a factor of two when a negligible penalty is toggled.
+
+**Follow-up.** Retain the pinned R artifact and focused methods. Do not compare GMM Cook magnitudes directly with likelihood-based MAP Cook magnitudes.
+
+<a id="tr-066"></a>
+## TR-066 - ARIMAX Conditional Order Omitted Covariate Lags
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. ARIMAX conditions its likelihood, pointwise terms, components, residuals, Jacobian start, generation, and prediction on `max(p, q, b)` through one `ConditionalOrder` helper, the convention of the 2.0.0 release. Pure distributed-lag regressions no longer include model steps whose mean omits lagged covariate terms, and validation names the conditional AR/MA/covariate-lag order.
+
+**Verification status.** Passed. `TimeSeriesConditioningOrderTests` pins a hand-derived `p = q = 0, b = 2` likelihood and the `d = 0` and `d = 1` prediction sequences with credible-band width guards; the regenerated ARIMAX alignment oracle carries `covariate_lag_order >= 1`; the time-series recovery and alignment cells pass.
+
+**Impact.** Distributed-lag ARIMAX fits are no longer biased in the covariate coefficients and innovation scale. Bit-for-bit `Transform.None`, `d = 0`, `b = 0` sequences are unchanged.
+
+<a id="tr-067"></a>
+## TR-067 - ARIMA and AR Order Setters Left the Transform Jacobian Stale
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `ARIMA.POrder`, `ARIMA.QOrder`, and `AutoRegressive.Order` call `SetTrainingData()`, so the log-Jacobian and conditional range follow the new order immediately, as ARIMAX already did.
+
+**Verification status.** Passed. A fast test establishes that `DataLogLikelihood` after an order change equals that of a freshly constructed model.
+
+**Impact.** AIC, BIC, and DIC comparisons across orders no longer shift by a constant number of Jacobian terms.
+
+<a id="tr-068"></a>
+## TR-068 - Empty Conditional Likelihood Sum Returned Zero
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. ARIMA and ARIMAX `DataLogLikelihood` and the pointwise methods return negative infinity when the training series has no conditional step, and `ARIMA.Validate` reports a training difference count at or below the conditional order.
+
+**Verification status.** Passed. Fast tests cover the negative-infinite likelihood and the validation message.
+
+**Impact.** An unfittable model cannot report a perfect likelihood or `AIC = 2k`.
+
+<a id="tr-069"></a>
+## TR-069 - Pointwise Transform Jacobian Was Spread Uniformly
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. Each pointwise term carries its own change-of-variables term, `(lambda - 1) log x_t` for Box-Cox/Yeo-Johnson and `-log x_t` for the logarithmic transform, computed once per observation; the scalar sum is unchanged.
+
+**Verification status.** Passed. `TimeSeriesPointwiseJacobianTests` pins the per-term values and the unchanged sum; the regenerated ARIMAX alignment oracle records per-observation terms and its manifest hash is updated.
+
+**Impact.** WAIC, PSIS-LOO, Pareto k, and leverage diagnostics see the true per-observation dispersion instead of an artificially flattened one.
+
+<a id="tr-070"></a>
+## TR-070 - Time-Series Residual, Prediction-Window, and Transform-Reset Guards
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `ARIMA.Residuals` returns an empty array before data are attached; covariate dates missing only in the holdout or forecast window and transform-level failures are validation messages rather than exceptions inside the fire-and-forget uncertainty task; the `TransformType` setter resets priors only when `UseDefaultFlatPriors` is true, matching `SetTransformParameters`.
+
+**Verification status.** Passed by fast contracts.
+
+**Impact.** No unobserved exceptions from the uncertainty task; custom priors survive a transform change.
+
+<a id="tr-071"></a>
+## TR-071 - Seasonal Gumbel-Limit Annualization Sign
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. The zero-shape branch of the seasonal annualization uses `xi + alpha ln p` in `SetParameterValues` and `GetDistribution`, with the same `1E-4` shape cutoff as the exact-event terms; the general branch `xi + (alpha / kappa)(1 - p^-kappa)` is unchanged.
+
+**Verification status.** Passed. `PointProcessSeasonalAnnualizationTests` checks the hand value and continuity at `kappa = ±1e-7`; the point-process recovery cells pass.
+
+**Impact.** A seasonal annual maximum with zero shape shifts down by `alpha |ln p|` as the product of the seasonal distribution functions requires, rather than up.
+
+<a id="tr-072"></a>
+## TR-072 - Point-Process Clone Rate and Seasonal Quantile Priors
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `Clone()` recomputes the event rate from the copied `TotalYears`; seasonal quantile priors are evaluated on the annualized distribution in both the scalar and pointwise prior paths, returning a negative-infinite prior when the change points are invalid, matching the likelihood.
+
+**Verification status.** Passed. Fast tests cover the clone rate, the scalar prior hand value on the annualized object, and the pointwise prior sum; the point-process recovery cells pass.
+
+**Impact.** Copies no longer carry an inflated rate into simulation and the Madsen scale; annual-quantile priors apply at the annual scale.
+
+<a id="tr-073"></a>
+## TR-073 - Competing-Risk Empirical CDF Grid Lost Resolution for Heavy Tails (Numerics)
+
+**Review disposition.** Confirmed defect; fixed in the local Numerics checkout without a package version change.
+
+**Implementation status.** Fixed. `CompetingRisks.CreateEmpiricalCDF` stratifies on log-spaced bins of the offset axis for any `XTransform`; the offset is zero for positive supports, so existing log-grid results for positive children are unchanged, and BestFit keeps `XTransform.None`.
+
+**Verification status.** Passed. A Numerics test checks GEV, LP3, and negative-support children against a root-solved inversion within 0.5%; all ten current `CompositeOracleVerificationTests` identities, the competing-risk dependency and posterior-resampling cells, and the heavy-tailed composite cell pass. The older `CompositeRecoveryTests` name is historical and its results were not transferred to the renamed methods.
+
+**Impact.** Composite quantiles of heavy-tailed children are no longer interpolated inside one wide uniform bin (a GEV child's 1% AEP quantile moved from about 521 to the correct 251).
+
+<a id="tr-074"></a>
+## TR-074 - Composite Zero Inflation Inferred From Roundoff
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. The composite infers zero inflation only when the weights sum to less than one by more than `1e-10`, symmetric with `Validate`, and `EstimateModelWeights` renormalizes whenever the sum is positive.
+
+**Verification status.** Passed. A fast test with weights summing to `1 - 1 ulp` is not zero-inflated.
+
+**Impact.** A normalized composite is not silently converted into a positive-hurdle law.
+
+<a id="tr-075"></a>
+## TR-075 - Composite Correlation Undo and Coincident-Frequency Cache Thread Safety
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. The UI `CorrelationMatrix` setter records an undo entry through `RecordPropertyChange`; the coincident-frequency posterior index cache is guarded by a lock.
+
+**Verification status.** Passed. A UI undo round-trip test and the fast cache contracts pass.
+
+**Impact.** Matrix edits are undoable, and the UI thread cannot race the estimation task on the cache.
+
+<a id="tr-076"></a>
+## TR-076 - Bulletin 17C Bootstrap Diagnostics Counted Realizations as Replicates
+
+**Review disposition.** Confirmed regression.
+
+**Implementation status.** Fixed. `BootstrapDiagnostics` rates are per requested replicate: `FailedReplicates` counts substituted replicates, the new `AttemptedRealizations` counts data realizations including retries, `ValidReplicates` is requested minus substituted, and the ordinary bootstrap sets `RetainedReplicates` to requested minus substituted. Files written by earlier versions, which stored the realization count under `AttemptedReplicates`, restore with the same per-replicate rates.
+
+**Verification status.** Passed. The merged `BootstrapDiagnosticsTests` and `Bulletin17CReportDiagnosticsTests` cover the per-replicate rates, the realization count, the legacy attribute mapping, and the discard warnings (a quarter of the replicates substituted after ten attempts each triggers the 10% warning).
+
+**Impact.** The discard-rate warnings can fire again (their supremum is no longer 10%), and the per-replicate retry and evaluation averages are labelled correctly.
+
+<a id="tr-077"></a>
+## TR-077 - Parent-Fit Substitution Reported as a Point Mass
+
+**Review disposition.** Confirmed defect in reporting; the substitution itself is retained by decision so a run is never aborted.
+
+**Implementation status.** Fixed. The bootstrap report lists the realizations attempted, the substituted replicates with their per-replicate fraction, the replicates used, and a note that substituted replicates form a point mass at the parent estimate and narrow the reported limits; the pivotal path reports the same counts.
+
+**Verification status.** Passed by report contracts.
+
+**Impact.** Substitution is visible in every report; the point-mass consequence is stated rather than implied.
+
+<a id="tr-078"></a>
+## TR-078 - Converged-Within-Tolerance Refit Acceptance Requires Objective Improvement
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. A refit that does not report `Success` is accepted only when the iterative GMM converged within tolerance over at least two weighting passes and its final objective improves on the objective of its own start candidate under the same selected weighting; a stalled inner optimizer is rejected and the next ranked candidate is tried.
+
+**Verification status.** Passed. The 21 August 2026 focused reruns of the fourteen `B17CBootstrapRefitReliabilityTests` cells passed 14/14, asserting zero retries through `AttemptedRealizations`, optimizer status counts that cover every realization, and no substituted replicates; see the [test inventory](../verification/test-inventory.md#bulletin-17c-bootstrap-diagnostics-and-reporting---21-august-2026).
+
+**Impact.** The widened acceptance gate cannot admit an optimizer that never moved off its start.
+
+<a id="tr-079"></a>
+## TR-079 - Pivot Bound Repairs and z-Limit Clips Are Counted
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. `BoundRepairs` counts pivot draws whose inverse-linked parameters were moved inside the model bounds; `PivotRejections` counts draws whose standardized pivot was clipped at the z-limit; both are reported with per-replicate rates. Repaired and clipped draws are retained. The Mahalanobis counter is never incremented by the current methods and is retained only for diagnostics saved by earlier versions.
+
+**Verification status.** Passed by fast counter and report contracts.
+
+**Impact.** Bound repairs and clips are visible; no draw is silently altered.
+
+<a id="tr-080"></a>
+## TR-080 - Bulletin 17C Status Counters, Loop Progress, and Documentation Corrections
+
+**Review disposition.** Confirmed defect.
+
+**Implementation status.** Fixed. Optimizer status counts are documented and labelled per start candidate; the three bootstrap loops use `AnalysisProgress.ShouldReportLoopProgress`, so progress ticks for any replicate count; the Pearson III `mu_5` documentation reads `sigma^5 gamma (10 + 3 gamma^2)`; the Gamma quadrature comments pair the larger weight with the smaller node and give `w1 = 0.724, w2 = 0.276` at `a = 4`.
+
+**Verification status.** Passed by fast report contracts and documentation review.
+
+**Impact.** Correct documentation and progress reporting; no numerical change.
+
+<a id="tr-081"></a>
+## TR-081 - Log-Scale Penalty Centers Perturbed on the Log Scale
+
+**Review disposition.** Confirmed latent defect.
+
+**Implementation status.** Fixed. `SetRandomPenaltyFunction` perturbs a `UseLog` penalty center on the log scale with the delta-method standard deviation `sqrt(MSE) / Mean`, so the center stays positive; `ParameterPenalty.Function` writes a debug line when a log-scale penalty contributes nothing. The real-scale perturbation and the random sequence are unchanged.
+
+**Verification status.** Passed. All twelve `B17CPenalityTests` methods (Log-Normal and Log-Pearson Type III parameter, quantile, and combined penalties at $n=25$ and $n=100$) passed one at a time through the guarded runner on 21 August 2026 against the closed-form multivariate inverse-variance weighting; see the [test inventory](../verification/test-inventory.md#phase-6-prelude---21-august-2026).
+
+**Impact.** A log-scale penalty cannot silently contribute zero for a replicate.
+
+<a id="tr-082"></a>
+## TR-082 - Strict Distribution XML Parsers Verified Against 2.1.4 Payloads
+
+**Review disposition.** Compatibility risk; verified.
+
+**Implementation status.** No production change. `LegacyDistributionXmlTests` loads the literal `ToXElement()` output of the public RMC.Numerics 2.1.4 package for all fifteen supported families through the strict factory with exact type and parameter values, and through the BestFit elements that embed a distribution (`UnivariateDistribution`, `UncertainData`, `FittedDistribution`, `ModelParameter`).
+
+**Verification status.** Passed.
+
+**Impact.** Projects saved by the 2.0.0 release load through the strict parsers.
+
+<a id="tr-083"></a>
+## TR-083 - Example Project SQLite Sidecars Were Tracked
+
+**Review disposition.** Repository hygiene.
+
+**Implementation status.** Fixed. `*.bestfit-shm`, `*.bestfit-wal`, and `*.bestfit-journal` are ignored and the two tracked sidecars were removed from the index. The policy for re-saved example binaries (Git LFS or save-without-results) remains an open decision.
+
+**Verification status.** Not applicable.
+
+**Impact.** No stale SQLite sidecar can ship with an example project.
+
+<a id="tr-084"></a>
+## TR-084 - Nonstationary Recovery Fixtures Carried No Trend
+
+**Review disposition.** Confirmed fixture defect (Verification project); the estimator is not implicated. Decisions 22 August 2026 (Haden Smith), in sequence: fix the fixture and rerun under the unchanged 1% rule; move the two infeasible truths inside the default rate bounds and adopt central 90% interval coverage with a 5% mode band; after the realization diagnosis adopt the gross-error gate (posterior mode within four posterior standard deviations of the truth, R-hat < 1.1, ESS > 100) with seed 12345 kept.
+
+**Implementation status.** Fixed in `SyntheticNonstationaryData` (Verification only). The generators built a nonstationary model without a data frame, set the true parameters (which set the base distribution to the trend evaluated at `ParameterTimeIndex = 0`), and then called the iid inverse-CDF generator, so every "trend" fixture was a constant-mean sample (Linear {80, 0.5, 15}: first-100 mean 83.2, last-100 mean 80.5, OLS slope -0.0009; Power {100, 0.2, 15}: iid N(0, 15) because 100 x 0^0.2 = 0). Each generator now draws observation `t` from the distribution with the trend models evaluated at index `t` (0 through n - 1, the `StartIndex = 0` convention the fitted model uses) with a seeded `MersenneTwister`; the Exponential truth became {50, 0.002, 15} and the Logistic truth {100, 0.004, 15} because the former rates (0.2 and 0.05) lie outside the model's default rate prior bounds (+/- 5/(n - 1) = +/- 0.005) and 50 e^(0.2 t) overflows over 1,000 steps; the production `BayesianAnalysis` defaults are unchanged. The acceptance rule is the gross-error gate above; the stale "10,000/5,000 iterations" remarks were corrected.
+
+**Verification status.** Passed. Under the unchanged 1% rule 2/16 passed (Constant, Linear): twelve cells missed an intercept or scale by 1-4% (one to three posterior standard deviations at 1,000 observations), Exponential failed to estimate (overflow) and Logistic pinned its rate at the bound (alpha 190). Under the interval-coverage rule 9/16 passed while Quadratic, Cubic, Logistic, StepFunction, SigmaQuadratic, MuQuadraticSigmaLinear, and MuLinearSigmaExponential missed on an intercept or level parameter because the single seed-12345 noise realization (first 100 residuals averaging +3.2) shifts every intercept by about two posterior standard deviations: the MLE gives alpha 103.13 on the quadratic fixture, the default MCMC agrees (mean 103.18, sd 1.41, R-hat 1.000, ESS 9,600), an independent OLS gives z = 2.23, and seeds 1-5 give |z| < 0.7, so generation is unbiased (residual mean 0.24 +/- 0.47) and the check is a one-shot coin shared across cells. Under the gross-error gate all 16 cells pass the gross-error gate (posterior mode within four posterior standard deviations of the truth, R-hat < 1.1, ESS > 100) under the production defaults; every method ran once through the guarded runner per rule (see the [test inventory](../verification/test-inventory.md#phase-7-closeout---22-august-2026)). The former 15/16 failures were the intercepts of constant-mean samples fitted with trend models; no slope was ever testable.
+
+**Impact.** The nonstationary trend recovery claims now rest on fixtures that carry the declared trends.
+
+**Follow-up.** None.
+
+<a id="tr-085"></a>
+## TR-085 - Pearson Type III Covariance Diagonal Mismatch
+
+**Review disposition.** Confirmed defect in the GMM covariance conditioning; the Numerics oracle is correct. Decision 22 August 2026 (Haden Smith): remove the eigenvalue cap from both post-estimate uses.
+
+**Implementation status.** Fixed in `GeneralizedMethodOfMoments` (`ComputeCovariance` and `UpdateWeightingMatrixAtEstimate`). The moment covariance was passed through Numerics `MatrixRegularization.Regularize`, which caps eigenvalues at fifty times their median; for real-space Pearson Type III the eigenvalues scale like sigma^2, sigma^4, and sigma^6 (226, 6.2e5, 2.7e9 at n = 25), so the cap rewrote S (S00 561 to 906) and every sandwich entry inherited the distortion. Only the symmetric positive-definite floor remains; the estimation loop (`GetS`) never applied the cap, so point estimates are unaffected, and two-parameter families and log-space LP3 fits never triggered it. The `Regularized` covariance status is still reported when the floor binds.
+
+**Verification status.** Passed. An independent influence-function derivation reproduces all three oracle diagonals exactly; with the raw S the production sandwich reproduces them (22.428701, 11.297873; skew diagonal 0.2463 versus 0.2436 inside the documented Bessel tolerance). After the fix `B17CCovarianceTests` passes 13/13 (the two Pearson III cells included) and the GMM specification, gradient, influence, recovery, penalty, and example cells pass 34/34; fast regression `GeneralizedMethodOfMomentsCovarianceScaleTests` pins the closed-form mean and scale variances at 1e-3 relative on the spread-eigenvalue fixture.
+
+**Impact.** Bulletin 17C and GMM covariance intervals for real-space three-parameter families were distorted by a scale-dependent cap; they now equal the exactly identified sandwich.
+
+**Follow-up.** None.
+
+<a id="tr-086"></a>
+## TR-086 - Move3-Style Uncertain-Data Bootstrap Fallback Rate
+
+**Review disposition.** Confirmed defect in the bootstrap re-centring of measurement-error distributions. Decision 22 August 2026 (Haden Smith): relative (ratio) shift for positive-support families in log-space fits.
+
+**Implementation status.** Fixed in `DataFrame.BootstrapDataFrame` / `ShiftDistribution`. Additive families (Normal, StudentT, TruncatedNormal, LnNormal, Uniform, Triangular, Pert, GeneralizedBeta) were always shifted by `simulatedValue - originalMean`; for the LP3 fit the wide MOVE.3 row Triangular(0.5q, q, 1.75q) shifted onto a small simulated flood acquired a negative lower bound, the log10 moment conditions became NaN, BFGS failed, and the Nelder-Mead fallback limped until a fresh realization kept the support positive (cross-tab on 60 frames: 19 negative supports, exactly those 19 NaN objectives; three candidate fallbacks per bad realization reproduce 177/200). The shift is now multiplicative by `simulatedValue / originalMean` when the fitted family is log-space (Log-Pearson Type III, Log-Normal, Ln-Normal) or the error distribution has strictly positive support, preserving the relative error and the positive support; real-space fits with unbounded errors keep the additive shift bitwise.
+
+**Verification status.** Passed. `UncertainDataBootstrapVerificationTests` 2/2 (NormalBootstrap_UncertainObservationsRemainStable Passed, LogPearsonBootstrap_Move3StyleUncertaintyRemainsStable Passed) and `B17CBootstrapRefitReliabilityTests` 14/14 after the fix; fast regression `DataFrameBootstrapShiftTests` pins the positive support and preserved relative spread under an LP3 sampling distribution, the bitwise additive shift for unbounded real-space errors, and the relative shift for positive-support errors.
+
+**Impact.** The uncertain-data bootstrap no longer generates impossible (negative) flow realizations for log-space fits.
+
+**Follow-up.** None.
+
+<a id="tr-087"></a>
+## TR-087 - Censored-Coverage Bootstrap Cells Fail to Estimate
+
+**Review disposition.** Confirmed fixture defect plus a production robustness defect. Decision 22 August 2026 (Haden Smith): fix the fixture and fall back to the constraint-based initial values in production; coverage cells rerun only on request.
+
+**Implementation status.** Fixed. Fixture: `CreateCensoredDataFrame` added its data with collection notifications suppressed, so plotting positions stayed at their defaults (every complement 1.0); it now calls `CalculatePlottingPositions()`. Production: `Bulletin17CDistribution.SetDefaultParameters` swallowed the ROS failure ("X value must be a valid number" for low outliers, "Y values must be strictly increasing" for thresholds) and left zero parameters, so `RunAsync` threw an index error; the censored-data initial estimate is now isolated in `GetInitialValuesForCensoredData`, which keeps the constraint-based initial values and records a validation warning when the ROS estimate throws or is non-finite, `SetInitialParameters` shares it, an outright initialization failure keeps the parameter shells and records a validation error, and `Validate()` reports both.
+
+**Verification status.** Passed (fast). Four fast regressions (`Bulletin17CInitialParameterFallbackTests`) pin the three finite in-bounds parameters and the warning for pre-flagged low outliers and for thresholds without plotting positions, the censored initial estimate without a warning once plotting positions exist, and the cleared warning after `SetDefaultParameters`. With plotting positions the censored frames run (LinkedMVN 0.2 s, bootstrap 9.1 s per replicate, 0 fallbacks, 0 failures); the coverage cells themselves (about 2.5 hours each for the bootstrap designs) were not rerun, by decision.
+
+**Impact.** Programmatic and API callers that construct a Bulletin 17C model on a censored frame without plotting positions get a usable model and a warning instead of an unusable zero-parameter model.
+
+**Follow-up.** The `B17CCensoredCoverageTests` cells remain exact-method reruns on request.
+
+<a id="tr-088"></a>
+## TR-088 - Bulletin 17C Coverage Assertions Re-enabled but Not Rerun
+
+**Review disposition.** Closed by decision (22 August 2026, Haden Smith): the coverage cells are not rerun in the closeout.
+
+**Implementation status.** Assertions re-enabled on 21 August 2026 (completion at least 90%, mean coverage in [0.82, 0.97], per-ordinate coverage at least 0.70; binomial 95% band at B = 1,000 stated for reference). The TR-085 cap removal changes the GMM covariance of real-space three-parameter cells, so the Pearson III coverage cells should be run after it when they are requested.
+
+**Verification status.** Not rerun. `B17CCoverageTests` has eighteen cells (seventeen multivariate-normal cells of seconds to minutes each and one bias-corrected-bootstrap cell of several hours); they remain exact-method reruns on request.
+
+**Impact.** The re-enabled coverage assertions have no recorded outcome; the claim stays unverified until a requested run.
+
+**Follow-up.** Exact-method reruns on request; record outcomes.
+
+<a id="tr-089"></a>
+## TR-089 - ARIMA and ARIMAX MAP Recovery Cells Fail
+
+**Review disposition.** Decisions 22 August 2026 (Haden Smith): make all legacy time-series recovery tests use 1,000 observations and rerun at the existing tolerances; then replace the arbitrary 25-40% posterior-mode bands of the 22 legacy Bayesian cells with central 90% credible-interval coverage and R-hat < 1.1 (the 7 MLE cells and the R-parity cells keep their tolerances).
+
+**Implementation status.** Superseded as current evidence by Chunk 13. The Phase 7 changes and method bodies remain historical provenance, but the redundant legacy identities are no longer discovered or cataloged. Current evidence is the retained Phase 5 N=1,000 recovery matrix plus independent first-order objective, higher-order response, and ARIMAX interaction cells.
+
+**Verification status.** Passed. With 1,000 observations and the former bands 27/29 passed; `ARIMA22` and `ARIMAX22` (the same data and model) still missed the 40% band on phi1 (MAP 0.287 versus 0.5) because ARMA(2,2) with phi = (0.5, -0.3), theta = (0.3, -0.2) is weakly identified at 1,000 observations: the generator and the model share one convention (data-likelihood gap MLE minus truth 0.8-3.8 across the ARMA fixtures), the MLE standard errors are 0.16 (phi1), 0.17 (theta1), 0.13 (theta2), the estimate sits 1.4-1.5 standard errors from the truth, and at 5,000 observations the MLE is within 0.05 of every coefficient. Under the credible-interval rule all 29 cells pass with 1,000 observations (the 22 Bayesian cells under the central 90% credible-interval and R-hat rule, the 7 MLE cells under their unchanged tolerances); the three cells that failed at 500 observations are `Test_EstimateParameters_ARIMA22` Passed, `Test_EstimateParameters_ARIMAX22` Passed, `Test_EstimateParameters_ARIMA111` Passed. Every method ran once through the guarded runner per rule under the production defaults.
+
+**Impact.** The historical passes are not transferred. The Phase 5 matrix remains the estimator evidence; Chunk 13 adds independently generated response/objective evidence. The former AR(1) boundary failure remains diagnostic history, while the final approved DE configuration passes the retained identity.
+
+**Follow-up.** Retain the final AR(1) exact identity and the independent first-order objective/covariance oracle as regression evidence for the approved DE reliability configuration.
+
+<a id="tr-090"></a>
+## TR-090 - Intermittent Fast-Suite Reprocess Race
+
+**Review disposition.** Confirmed test race; the production path behaves as designed. Decision 22 August 2026 (Haden Smith): test-only deterministic wait.
+
+**Implementation status.** Fixed in `UnivariateAnalysisPositivePathReprocessTests`. After `CredibleIntervalWidth = 0.95` the model fires a fire-and-forget `CreateFrequencyAnalysisResultsAsync`; the test awaited its own second call concurrently, and both start by nulling `AnalysisResults`, so the background copy could null the property between the awaited call and the assertion. The test now waits (15 s timeout) until `AnalysisResults` is non-null and is a new instance relative to the 90% results.
+
+**Verification status.** Passed in the fast core project (3,337 tests).
+
+**Impact.** The fast gate no longer carries a timing-dependent assertion.
+
+**Follow-up.** None.
+
+<a id="tr-091"></a>
+## TR-091 - Spatial Clone Dropped the Copula and Latent-Error Parameter Blocks
+
+**Review disposition.** Confirmed defect (21 August 2026), found by the Batch 6.3 acceptance runs; fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. `SpatialGEV.Clone()` constructed the clone with the base constructor, which calls `SetDefaultParameters` before the copula and error components and their flags are attached, so the clone's flat parameter list held only the trend blocks (3 parameters instead of 4 for a copula model and instead of 17 for a model with location and scale errors) and the constructor reset the cloned trend intercepts to data-derived defaults. The clone now rebuilds its flat list from the cloned components in the canonical order (`RebuildParameterList`) and copies every source parameter's value, bounds, and prior, so it reproduces the source exactly; no numerical method changed.
+
+**Verification status.** Passed. `SpatialGEVTests.Clone_WithCopula_PreservesParameterStructure`, `Clone_WithSpatialErrors_PreservesParameterStructure`, and `Clone_PreservesParameterValuesBoundsAndPriors` (fast) failed before the fix and pass after it; after the fix the guarded `SpatialGEVInformationCriteriaTests.MissingSiteModel_InformationCriteria_UseRowYearBlocks` (18.2 s) and `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversRangeParameter` (93.7 s) complete and pass. See the [spatial verification chapter](../verification/spatial-extremes.md#corrections-and-acceptance-runs-21-august-2026).
+
+**Evidence.** `SpatialGEVAnalysis.CreateSiteResultsAsync`, `PredictAtUngaugedLocation`, and `GetSiteQuantiles` clone the model for every retained draw and call `SetParameterValues` with the sampled vector; for a copula or latent-error model the clone threw `Expected 3 parameters but got 4`, the post-processing failed, and the analysis reported `IsEstimated == false` although the sampler had completed (the failure mode of the two acceptance cells before the fix). `RunSpatialBootstrapAsync` would have sampled a clone without the copula or error blocks.
+
+**Impact.** Before the fix no copula or latent-error spatial Bayesian analysis produced site results; complete-data models without dependence or latent errors were unaffected because their clone structure matched and the sampled values overwrote the reset intercepts. The fix is behavioral only (structure and copied values); sampled posteriors are unchanged.
+
+**Follow-up.** Keep the three clone contracts in the fast gate; TR-056 (bootstrap) and TR-062 (dispatch) in Batch 6.5 rely on the exact clone.
+
+<a id="tr-092"></a>
+## TR-092 - Spatial Likelihood Threw on Non-Finite Site Parameters
+
+**Review disposition.** Confirmed defect (22 August 2026), found by the Batch 6.5 confirmation runs; fixed the same day after Haden Smith's approval.
+
+**Implementation status.** Fixed. `SpatialGEV`'s scalar and pointwise likelihoods treat a non-finite site location, scale, or shape (for example an overflowing `exp(trend + latent error)`) as an impossible proposal and return negative infinity for the likelihood or the affected row instead of calling the GEV parameter validation, which threw `ArgumentOutOfRangeException` inside the sampler and failed the whole run.
+
+**Verification status.** Passed. `SpatialGEVTests.DataLogLikelihood_NonFiniteSiteParameters_IsNegativeInfinity` (fast) and the TR-054 guarded cell, whose location-error network failed to sample before the fix with "The location parameter ξ (Xi) must be a number". See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
+
+**Evidence.** The likelihood paths guarded only `α <= 0`; a NaN or infinite parameter passed through to `GeneralizedExtremeValue.SetParameters`.
+
+**Impact.** Proposals that overflow are rejected instead of aborting the MCMC run; finite proposals are unchanged.
+
+**Follow-up.** None.
+
+<a id="tr-093"></a>
+## TR-093 - Latent-Error Default Bounds Ignored the Log Link
+
+**Review disposition.** Confirmed defect (22 August 2026), found by the Batch 6.5 confirmation runs; fixed the same day after Haden Smith's approval (link-space spread × 3, floor 1.0).
+
+**Implementation status.** Fixed. `SpatialGEV.SetDefaultParameters` sizes the latent location and scale error bounds from three times the spread of the site statistics in the space in which the error acts: the log-space spread of the site means (or standard deviations) under a log link, the raw spread under an identity link, ceiling, floor 1.0; the shape-error rule is unchanged.
+
+**Verification status.** Passed. `SpatialGEVTests.SetDefaultParameters_LatentErrorBounds_FollowTheLinkSpace` (fast) pins both rules; the TR-054 guarded cell and the location-error model now sample under the production defaults. See the [spatial verification chapter](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026).
+
+**Evidence.** The bounds were computed from raw site means (thousands) while the error added in log space, so default proposals overflowed `exp(trend + ε)` and, with TR-092, failed every default-configured latent-error run (including `ConfigureForProperCoverage`).
+
+**Impact.** Default latent-error models are usable; configured bounds in saved projects are restored verbatim.
+
+**Follow-up.** None.
+
+<a id="tr-094"></a>
+## TR-094 - Rating-Curve Recovery Bands and Activation-Stage Identification
+
+**Review disposition.** Confirmed Verification-design gap, resolved 31 August 2026. The former ten MLE and
+ten Bayesian identities used arbitrary 5-50% parameter bands with large absolute floors. The first Chunk
+12 response-space normalization then omitted the residual term from the declared log10 observation model
+and treated multiple pointwise 95% intervals as if they formed one grid-wide 95% statement.
+
+**Implementation status.** Verification-only normalization complete. All retained experiments use exactly
+1,000 aligned stage-discharge pairs and preserve their parents, generator seeds, prior flags, sampler
+defaults, response grids, and convergence rules. Every retained MLE uses Differential Evolution with
+untouched default tolerances, and Bayesian recovery publishes posterior MAP as its point estimator without
+changing posterior coordinate intervals or diagnostics. MLE parameter uncertainty comes from 20,000
+bounded multivariate-Normal draws from the unregularized observed-information covariance; Bayesian
+parameter uncertainty comes from retained posterior draws. Both paths separately add the draw-specific
+Normal residual on the log10-discharge scale and use the empirical 95th percentile of maximum absolute
+standardized deviation to create one simultaneous predictive band over the complete grid. Ten redundant
+declarations were removed before execution. No R `bdrc` parity is claimed because exact law,
+error-density, segmentation, and parameter-order equivalence is not established.
+
+**Verification status.** All ten current exact identities pass, and every latest TRX contains exactly one
+result. The exact two-control stage allocation is 495 below and 505 at/above `h2=6`; the exact
+three-control exclusive allocation is 270/406/324, so controls 1/2/3 are active for 1,000/730/324
+observations. At stage 6.5 the MLE/Bayesian simultaneous predictive bands are `[578.013, 950.262]` and
+`[576.299, 953.454]`, both containing parent 724.391. At stage 8.5 the three-control MLE/Bayesian bands are
+`[1695.479, 2851.016]` and `[1701.739, 2838.807]`, both containing parent 2144.093. See the
+[rating-curve verification chapter](../verification/rating-curve.md#current-exact-outcomes).
+
+**Evidence.** Both MLE likelihood comparisons rule out a generation error or inferior attained fit: each
+fitted objective exceeds the fixed generating parent's objective. Differential Evolution ignores the
+initial point, and the MLE path does not use Bayesian priors. `RatingCurve.DataLogLikelihood` evaluates
+Normal residuals as `log10(observed Q) - log10(predicted Q)`, and the observed-information Hessian is of
+that likelihood in native model coordinates. The superseded mean-curve bands propagated only parameter
+uncertainty and therefore answered a different question from the predictive response recovery declared by
+the rating-curve observation model. Adding the residual is not an arbitrary widening: low-noise `sigma=0.02`
+fixtures remain materially narrower than `sigma` near 0.05, and parameter versus residual uncertainty is
+reported separately. Exact regime counts diagnose identification; they are not manually substituted as
+effective sample sizes because the likelihood covariance and posterior already reflect activation.
+
+**Impact.** The current rating-curve inventory reports 22 verified declarations and no open rating-curve
+gaps. The independently generated likelihood and example-optimum evidence remains separate from recovery.
+
+**Follow-up.** The recovery matrix does not establish R `bdrc` compatibility, arbitrary control-matrix
+parity, or predictive coverage outside the generated stage ranges.
+
+## Resolution Rule
+
+A documentation-only clarification may close a finding when the implementation is intentional and mathematically coherent. A defect in production behavior is never silently corrected by documentation. It moves to a separately authorized code-change task, receives focused unit tests, and uses the repository's mandated build/test gates. The complete `RMC.BestFit.Verification` suite is never run as one command; verification executes one exact fully qualified method at a time through the guarded runner.
+
+---
+
+[Technical Reference](index.md)

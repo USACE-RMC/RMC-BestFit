@@ -44,7 +44,7 @@ For each Rating Curve Analysis alternative:
 
 Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
 
-- **Sampler type** (DEMCzs, ARWMH, HMC).
+- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
 - **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
 - **Number of Chains** — typically 6 for routine work.
 - **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
@@ -52,6 +52,8 @@ Each Bayesian analysis in this project uses the DEMCzs sampler with project-spec
 - **Credible Interval Width** — typically 0.90 or 0.95.
 
 ## Expected Results
+
+The verification program replicates these three cases in `RMC.BestFit.Verification` (`RatingCurveExampleRecoveryTests`, recipe applied at 1,000 observations, production defaults) and compares BestFit's maximum-likelihood and Bayesian results with an independent SciPy optimum; the generating parameters, independent optima, and standard errors are committed in `verification/data/rating-curve/rating-curve-example-fixtures.json`, and the results are recorded in `docs/verification/rating-curve.md`. At the 300 observations of this project the third control of the three-segment case is weakly identified (its exponent's standard error is about 22%), so individual third-control parameters recover only approximately while the curve recovers.
 
 <!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
 

@@ -142,7 +142,7 @@ namespace RMC.BestFit.Estimation
                 // PointEstimator XML attribute did not exist. Defaulting to
                 // PosteriorMode here keeps loaded legacy results faithful to what
                 // those projects actually contain. New analyses (constructor at
-                // line ~217) default to PosteriorMean � the asymmetry is intentional.
+                // line ~217) default to PosteriorMean — the asymmetry is intentional.
                 _pointEstimator = PointEstimateType.PosteriorMode;
             }
             var isEstimatedAttr = xElement.Attribute(nameof(IsEstimated));
@@ -224,7 +224,9 @@ namespace RMC.BestFit.Estimation
         private bool _isEstimated = false;
         private IModel? _model = null;
         private IReadOnlyList<string>? _parameterNames = null;
+        private MCMCResults? _results = null;
         private TimeSpan? _elapsedTime = null;
+        private double[]? _pointwiseElpdLoo = null;
         /// <summary>
         /// Occurs when an analysis property changes.
         /// </summary>
@@ -369,7 +371,16 @@ namespace RMC.BestFit.Estimation
         /// <summary>
         /// The MCMC results for this analysis.
         /// </summary>
-        public MCMCResults? Results { get; private set; }
+        public MCMCResults? Results
+        {
+            get { return _results; }
+            private set
+            {
+                if (ReferenceEquals(_results, value)) return;
+                _results = value;
+                RaisePropertyChange(nameof(Results));
+            }
+        }
 
         /// <summary>
         /// The exception captured by the most recent <see cref="RunAsync"/> call,
@@ -407,43 +418,42 @@ namespace RMC.BestFit.Estimation
         public double DIC { get; private set; }
 
         /// <summary>
-        /// Gets the Watanabe-Akaike Information Criterion (WAIC) computed from the MCMC results.
+        /// Gets the Watanabe-Akaike Information Criterion computed from the MCMC results.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// WAIC is computed as -2 � lppd + 2 � p_WAIC, where lppd is the log pointwise predictive density
-        /// and p_WAIC is the effective number of parameters.
+        /// WAIC is <c>-2 * lppd + 2 * p_WAIC</c>, where lppd is the sum of pointwise
+        /// log posterior predictive densities and <c>p_WAIC</c> is the effective parameter count.
         /// </para>
         /// <para>
-        /// This implementation uses total data log-likelihoods as an approximation. The lppd is approximated
-        /// by the mean total log-likelihood across posterior samples, and p_WAIC is approximated by the
-        /// variance of total log-likelihoods. This provides a computationally efficient criterion for model
-        /// comparison that accounts for posterior uncertainty.
+        /// The implementation uses data log likelihoods from
+        /// <see cref="IModel.PointwiseDataLogLikelihood(double[])"/>. It evaluates the pointwise
+        /// likelihood once per retained posterior draw and shares that transient matrix with PSIS-LOO.
         /// </para>
         /// </remarks>
         public double WAIC { get; private set; }
 
         /// <summary>
-        /// Gets the effective number of parameters (p_WAIC) as computed by the WAIC criterion.
+        /// Gets the effective number of parameters computed by the WAIC criterion.
         /// </summary>
         /// <remarks>
-        /// This value represents the penalty term in WAIC, computed as the variance of total log-likelihoods
-        /// across posterior samples. Larger values indicate more complex models with greater effective
-        /// parameter counts.
+        /// This is the sum, over pointwise observation units, of the unbiased sample variance of
+        /// their log likelihoods across retained posterior draws.
         /// </remarks>
         public double WAIC_pD { get; private set; }
 
         /// <summary>
-        /// Gets the Leave-One-Out Information Criterion (LOOIC) computed using Pareto Smoothed Importance Sampling.
+        /// Gets the leave-one-out information criterion computed using Pareto-smoothed importance sampling.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// LOOIC is computed as -2 � elpd_loo, where elpd_loo is the expected log pointwise predictive
-        /// density for a new dataset estimated using leave-one-out cross-validation.
+        /// LOOIC is <c>-2 * elpd_loo</c>, where <c>elpd_loo</c> is the estimated
+        /// leave-one-out expected log predictive density.
         /// </para>
         /// <para>
-        /// PSIS-LOO uses importance sampling with Pareto smoothing to efficiently approximate exact LOO-CV
-        /// without refitting the model. The Pareto k diagnostic values indicate the reliability of the estimates.
+        /// PSIS-LOO approximates exact leave-one-out cross-validation from the retained full-posterior
+        /// draws and does not refit the model. Pareto-k values must be inspected to assess approximation
+        /// reliability.
         /// </para>
         /// </remarks>
         public double LOOIC { get; private set; }
@@ -463,20 +473,17 @@ namespace RMC.BestFit.Estimation
         public double LOOIC_SE { get; private set; }
 
         /// <summary>
-        /// Gets the Pareto k diagnostic values for each observation.
+        /// Gets one Pareto-k importance-weight-tail diagnostic for each pointwise observation unit.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// The Pareto k value indicates the reliability of the importance sampling estimate for each observation:
+        /// For <c>S</c> retained draws, reliability is assessed against
+        /// <c>min(1 - 1 / log10(S), 0.7)</c>. Values at or above that limit require
+        /// investigation; values at or above 1.0 lack the usual finite-mean guarantee.
         /// </para>
-        /// <list type="bullet">
-        /// <item><description>k &lt; 0.5: Very good, estimates are reliable</description></item>
-        /// <item><description>0.5 = k &lt; 0.7: Good, estimates are reasonably reliable</description></item>
-        /// <item><description>0.7 = k &lt; 1.0: Problematic, estimates may be biased</description></item>
-        /// <item><description>k = 1.0: Very bad, estimates are unreliable</description></item>
-        /// </list>
         /// <para>
-        /// If many observations have k = 0.7, consider using exact LOO-CV for those points or WAIC instead.
+        /// A high value diagnoses the PSIS approximation for that pointwise unit. It is not by
+        /// itself evidence that the observation is erroneous or should be removed.
         /// </para>
         /// </remarks>
         public double[]? ParetoK { get; private set; }
@@ -831,7 +838,7 @@ namespace RMC.BestFit.Estimation
 
                     // Alpha = 1 - CIWidth only affects the LowerCI/UpperCI percentiles in
                     // ParameterResults[i].SummaryStatistics. The MCMC chain itself is
-                    // independent of alpha � preserve Results and recompute summaries in place.
+                    // independent of alpha — preserve Results and recompute summaries in place.
                     if (IsEstimated && Results != null)
                     {
                         Results.RecomputeParameterResults(1.0 - value);
@@ -1178,13 +1185,28 @@ namespace RMC.BestFit.Estimation
                 return;
             }
 
-            // Get the prior distributions
-            var priors = Model.Parameters.Select(x => (IUnivariateDistribution)x.PriorDistribution.Clone()).ToList();
+            // Mixture models retain all K weights at their public configuration boundary, but
+            // sample only the first K-1 weights. The omitted final-weight prior is evaluated
+            // after MixtureModel derives the residual inside the posterior target.
+            var sampledParameters = Model.Parameters.AsEnumerable();
+            LogLikelihood logLikelihood = Model.LogLikelihood;
+            if (Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1)
+            {
+                int derivedWeightIndex = mixtureModel.Mixture.Distributions.Length - 1;
+                sampledParameters = Model.Parameters.Where((_, index) => index != derivedWeightIndex);
+                logLikelihood = mixtureModel.SamplingLogLikelihood;
+            }
+
+            var priors = sampledParameters
+                .Select(parameter => (IUnivariateDistribution)parameter.PriorDistribution.Clone())
+                .ToList();
 
             // Set up the MCMC sampler
             if (Type == SamplerType.DEMCz)
             {
-                Sampler = new DEMCz(priors, x => Model.LogLikelihood(x))
+                Sampler = new DEMCz(priors, logLikelihood)
                 {
                     Jump = Jump,
                     JumpThreshold = JumpThreshold,
@@ -1193,7 +1215,7 @@ namespace RMC.BestFit.Estimation
             }
             else if (Type == SamplerType.DEMCzs)
             {
-                Sampler = new DEMCzs(priors, x => Model.LogLikelihood(x))
+                Sampler = new DEMCzs(priors, logLikelihood)
                 {
                     Jump = Jump,
                     JumpThreshold = JumpThreshold,
@@ -1203,7 +1225,7 @@ namespace RMC.BestFit.Estimation
             }
             else if (Type == SamplerType.ARWMH)
             {
-                Sampler = new ARWMH(priors, x => Model.LogLikelihood(x))
+                Sampler = new ARWMH(priors, logLikelihood)
                 {
                     Scale = Scale,
                     Beta = Beta
@@ -1211,7 +1233,7 @@ namespace RMC.BestFit.Estimation
             }
             else if (Type == SamplerType.NUTS)
             {
-                Sampler = new NUTS(priors, x => Model.LogLikelihood(x), maxTreeDepth: MaxTreeDepth);
+                Sampler = new NUTS(priors, logLikelihood, maxTreeDepth: MaxTreeDepth);
             }
             else
             {
@@ -1226,6 +1248,54 @@ namespace RMC.BestFit.Estimation
             Sampler.PRNGSeed = PRNGSeed;
             Sampler.InitialIterations = InitialIterations;
             Sampler.OutputLength = OutputLength;
+        }
+
+        /// <summary>
+        /// Converts a stored result vector to the parameter vector required by the public model.
+        /// </summary>
+        /// <param name="storedParameters">The stored MCMC parameter values.</param>
+        /// <returns>The full public model vector for a mixture, or the original vector for other models.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when a stored mixture vector has an unrecognized or infeasible shape.</exception>
+        private double[] GetModelParameterValues(double[] storedParameters)
+        {
+            if (Model is not MixtureModel mixtureModel)
+                return storedParameters;
+
+            if (!mixtureModel.TryGetPhysicalParameters(storedParameters, out double[] physicalParameters))
+            {
+                throw new InvalidOperationException(
+                    "The stored mixture result does not match the K-1 sampled or full-K public parameterization.");
+            }
+
+            return physicalParameters;
+        }
+
+        /// <summary>
+        /// Gets the public model-parameter indexes corresponding to stored MCMC coordinates.
+        /// </summary>
+        /// <returns>One public model index for each stored parameter result.</returns>
+        /// <remarks>
+        /// New mixture results omit the derived final weight. Legacy full-K mixture results and
+        /// every non-mixture result retain identity indexing.
+        /// </remarks>
+        private IReadOnlyList<int> GetStoredModelParameterIndexes()
+        {
+            if (Model is null || Results?.ParameterResults is null)
+                return Array.Empty<int>();
+
+            int storedCount = Results.ParameterResults.Length;
+            if (Model is MixtureModel mixtureModel &&
+                mixtureModel.Mixture is not null &&
+                mixtureModel.Mixture.Distributions.Length > 1 &&
+                storedCount == Model.NumberOfParameters - 1)
+            {
+                int derivedWeightIndex = mixtureModel.Mixture.Distributions.Length - 1;
+                return Enumerable.Range(0, Model.NumberOfParameters)
+                    .Where(index => index != derivedWeightIndex)
+                    .ToArray();
+            }
+
+            return Enumerable.Range(0, Math.Min(storedCount, Model.NumberOfParameters)).ToArray();
         }
 
         /// <summary>
@@ -1258,6 +1328,8 @@ namespace RMC.BestFit.Estimation
             {
                 IsEstimated = false;
                 Results = null;
+                ParetoK = null;
+                _pointwiseElpdLoo = null;
                 _tokenDisposed = false;
 
                 if (reportTaskStartEnd)
@@ -1295,7 +1367,7 @@ namespace RMC.BestFit.Estimation
 
                 // Post-await: now back on the dispatcher (or whichever SynchronizationContext
                 // was captured at await). Property setters here fire PropertyChanged on the
-                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results � assign Results
+                // correct thread. ComputeDIC / WAIC / PSISLOO read this.Results — assign Results
                 // first so they see the new chains, and they internally use Parallel.For which
                 // dispatches its own worker threads (no dispatcher block on the math itself).
                 ElapsedTime = capturedElapsed;
@@ -1305,8 +1377,7 @@ namespace RMC.BestFit.Estimation
                     await Task.Run(() =>
                     {
                         ComputeDIC();
-                        ComputeWAIC();
-                        ComputePSISLOO();
+                        ComputePredictiveInformationCriteria();
                     });
                 }
 
@@ -1317,7 +1388,7 @@ namespace RMC.BestFit.Estimation
             }
             catch (OperationCanceledException)
             {
-                // Cancellation is normal � re-throw so wrapper analyses' OperationCanceledException
+                // Cancellation is normal — re-throw so wrapper analyses' OperationCanceledException
                 // handlers see it as a cancel rather than a generic failure. Without this branch
                 // the catch (Exception) below would swallow OCE into LastError and the user would
                 // see "TaskCanceledException" reported as a run failure.
@@ -1349,7 +1420,7 @@ namespace RMC.BestFit.Estimation
         /// Cancels the Bayesian analysis if it is currently running.
         /// </summary>
         /// <remarks>
-        /// One-shot per <c>RunAsync(SafeProgressReporter?, bool)</c> invocation �
+        /// One-shot per <c>RunAsync(SafeProgressReporter?, bool)</c> invocation —
         /// after the run completes (success, fault, or cancellation) the underlying
         /// <see cref="System.Threading.CancellationTokenSource"/> is disposed in the
         /// finally block of <c>RunAsync</c>. Subsequent calls to <c>CancelSimulation</c>
@@ -1380,6 +1451,7 @@ namespace RMC.BestFit.Estimation
             LOO_pD = double.NaN;
             LOOIC_SE = double.NaN;
             ParetoK = null;
+            _pointwiseElpdLoo = null;
             IsEstimated = false;
             SetUpSampler();
         }
@@ -1396,416 +1468,436 @@ namespace RMC.BestFit.Estimation
             }
 
             int N = Results.Output.Count;
-            double dicHat = 0.0;
 
-            Parallel.For(0, N, () => 0d, (j, loop, sum) =>
+            // Each draw's deviance is written to its own slot and summed sequentially in index order,
+            // matching ComputePSISLOO's deterministic reduction. The former shared accumulator combined
+            // partial sums in thread-scheduler order, and floating-point addition is not associative,
+            // so the reported DIC wobbled in its last bits from run to run.
+            var deviances = new double[N];
+            Parallel.For(0, N, j =>
             {
-                sum += -2.0 * Model.DataLogLikelihood(Results.Output[j].Values);
-                return sum;
-            }, z => Tools.ParallelAdd(ref dicHat, z));
+                double[] parameters = GetModelParameterValues(Results.Output[j].Values);
+                deviances[j] = -2.0 * Model.DataLogLikelihood(parameters);
+            });
 
-            dicHat /= N;
-            double dicMu = -2.0 * Model.DataLogLikelihood(Results.PosteriorMean.Values);
+            double dicHat = deviances.Sum() / N;
+            double[] posteriorMean = GetModelParameterValues(Results.PosteriorMean.Values);
+            double dicMu = -2.0 * Model.DataLogLikelihood(posteriorMean);
             DIC = 2.0 * dicHat - dicMu;
         }
 
         /// <summary>
-        /// Computes the Watanabe-Akaike Information Criterion (WAIC) from the current MCMC results.
+        /// Computes WAIC and PSIS-LOO from one shared pointwise log-likelihood matrix.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// WAIC is computed as -2 � lppd + 2 � p_WAIC using the correct pointwise formulation:
-        /// </para>
-        /// <para>
-        /// <b>lppd</b> (log pointwise predictive density):
-        /// lppd = S? log(1/S S? p(y?|??))
-        /// </para>
-        /// <para>
-        /// <b>p_WAIC</b> (effective number of parameters):
-        /// p_WAIC = S? Var?[log p(y?|??)]
-        /// </para>
-        /// <para>
-        /// This implementation uses the log-sum-exp trick for numerical stability when computing lppd.
-        /// </para>
-        /// <para>
-        /// <b>References:</b>
-        /// Watanabe, S. (2010). Asymptotic equivalence of Bayes cross validation and widely applicable
-        /// information criterion in singular learning theory. Journal of Machine Learning Research, 11, 3571-3594.
-        /// </para>
+        /// The matrix is retained only for this calculation. Pointwise LOO summaries are cached
+        /// separately so later influence reporting does not reevaluate the model.
         /// </remarks>
-        private void ComputeWAIC()
+        private void ComputePredictiveInformationCriteria()
+        {
+            double[,]? pointwiseLogLikelihood = BuildPointwiseLogLikelihoodMatrix();
+            if (pointwiseLogLikelihood == null || pointwiseLogLikelihood.GetLength(0) == 0)
+            {
+                WAIC = double.NaN;
+                WAIC_pD = double.NaN;
+                LOOIC = double.NaN;
+                LOO_pD = double.NaN;
+                LOOIC_SE = double.NaN;
+                ParetoK = null;
+                _pointwiseElpdLoo = null;
+                return;
+            }
+
+            ComputeWAIC(pointwiseLogLikelihood);
+            ComputePSISLOO(pointwiseLogLikelihood);
+        }
+
+        /// <summary>
+        /// Evaluates the pointwise data log likelihood once for every retained posterior draw.
+        /// </summary>
+        /// <returns>
+        /// An observation-by-draw matrix, or <c>null</c> when posterior results or the model are unavailable.
+        /// </returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when pointwise likelihood vectors do not have a consistent observation count.
+        /// </exception>
+        private double[,]? BuildPointwiseLogLikelihoodMatrix()
         {
             if (Results == null || Results.Output == null || Results.Output.Count == 0 || Model == null)
+                return null;
+
+            int drawCount = Results.Output.Count;
+            double[] firstParameters = GetModelParameterValues(Results.Output[0].Values);
+            double[] firstPointwise = Model.PointwiseDataLogLikelihood(firstParameters);
+            int observationCount = firstPointwise.Length;
+            var pointwiseLogLikelihood = new double[observationCount, drawCount];
+
+            for (int observationIndex = 0; observationIndex < observationCount; observationIndex++)
+                pointwiseLogLikelihood[observationIndex, 0] = firstPointwise[observationIndex];
+
+            Parallel.For(1, drawCount, drawIndex =>
             {
-                WAIC = double.NaN;
-                WAIC_pD = double.NaN;
-                return;
-            }
+                double[] parameters = GetModelParameterValues(Results.Output[drawIndex].Values);
+                double[] values = Model.PointwiseDataLogLikelihood(parameters);
+                if (values.Length != observationCount)
+                {
+                    throw new InvalidOperationException(
+                        "Pointwise data log-likelihood length changed across posterior draws.");
+                }
 
-            int S = Results.Output.Count;  // Number of posterior samples
-
-            // Get the number of observations from first sample
-            double[] firstPointwise = Model.PointwiseDataLogLikelihood(Results.Output[0].Values);
-            int n = firstPointwise.Length;  // Number of observations
-
-            if (n == 0)
-            {
-                WAIC = double.NaN;
-                WAIC_pD = double.NaN;
-                return;
-            }
-
-            // Allocate matrix for pointwise log-likelihoods: logLik[obs, sample]
-            var pointwiseLogLik = new double[n, S];
-
-            // Copy first sample
-            for (int i = 0; i < n; i++)
-                pointwiseLogLik[i, 0] = firstPointwise[i];
-
-            // Compute pointwise log-likelihoods for remaining samples in parallel
-            Parallel.For(1, S, s =>
-            {
-                double[] logLiks = Model.PointwiseDataLogLikelihood(Results.Output[s].Values);
-                for (int i = 0; i < n; i++)
-                    pointwiseLogLik[i, s] = logLiks[i];
+                for (int observationIndex = 0; observationIndex < observationCount; observationIndex++)
+                    pointwiseLogLikelihood[observationIndex, drawIndex] = values[observationIndex];
             });
 
-            // Compute lppd and p_WAIC in parallel over observations
-            double totalLppd = 0.0;
-            double totalPWaic = 0.0;
+            return pointwiseLogLikelihood;
+        }
 
-            Parallel.For(0, n,
-                () => (lppd: 0.0, pWaic: 0.0),
-                (i, loop, local) =>
+        /// <summary>
+        /// Computes the Watanabe-Akaike Information Criterion from a pointwise log-likelihood matrix.
+        /// </summary>
+        /// <param name="pointwiseLogLikelihood">Observation-by-draw data log likelihoods.</param>
+        /// <remarks>
+        /// WAIC uses the pointwise log predictive density and the sum of unbiased sample variances
+        /// of pointwise log likelihoods. The calculation follows Vehtari, Gelman, and Gabry (2017).
+        /// Per-observation terms are written to their own slots and summed sequentially in index
+        /// order, matching ComputePSISLOO's deterministic reduction, so the reported WAIC is
+        /// bit-reproducible run to run.
+        /// </remarks>
+        private void ComputeWAIC(double[,] pointwiseLogLikelihood)
+        {
+            int observationCount = pointwiseLogLikelihood.GetLength(0);
+            int drawCount = pointwiseLogLikelihood.GetLength(1);
+            var pointwiseLppdTerms = new double[observationCount];
+            var pointwisePWaicTerms = new double[observationCount];
+
+            Parallel.For(0, observationCount, observationIndex =>
+            {
+                double maxLogLikelihood = double.NegativeInfinity;
+                double sumLogLikelihood = 0.0;
+                double sumLogLikelihoodSquared = 0.0;
+
+                for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
                 {
-                    // Extract log-likelihoods for observation i across all samples
-                    // Find max for log-sum-exp stability. Use NegativeInfinity (not MinValue)
-                    // per the numerical robustness guidelines � when every per-sample LL is -Inf
-                    // (a fully invalid posterior sample for this obs), the log-sum-exp must
-                    // collapse to -Inf, not MinValue.
-                    double maxLogLik = double.NegativeInfinity;
-                    double sumLogLik = 0.0;
-                    double sumLogLikSq = 0.0;
+                    double value = pointwiseLogLikelihood[observationIndex, drawIndex];
+                    sumLogLikelihood += value;
+                    sumLogLikelihoodSquared += value * value;
+                    if (value > maxLogLikelihood)
+                        maxLogLikelihood = value;
+                }
 
-                    for (int s = 0; s < S; s++)
-                    {
-                        double ll = pointwiseLogLik[i, s];
-                        sumLogLik += ll;
-                        sumLogLikSq += ll * ll;
-                        if (ll > maxLogLik) maxLogLik = ll;
-                    }
-
-                    // lppd_i = log(1/S S? exp(logLik_is)) using log-sum-exp trick
-                    // = log(1/S) + max + log(S? exp(logLik_is - max))
-                    double sumExp = 0.0;
-                    for (int s = 0; s < S; s++)
-                    {
-                        sumExp += Math.Exp(pointwiseLogLik[i, s] - maxLogLik);
-                    }
-                    double lppd_i = maxLogLik + Math.Log(sumExp) - Math.Log(S);
-
-                    // p_WAIC_i = Var_s[logLik_is] using the unbiased sample-variance
-                    // estimator (divisor S-1) per Vehtari, Gelman & Gabry (2017) Eq. 12.
-                    double meanLogLik = sumLogLik / S;
-                    double pWaic_i = S > 1
-                        ? (sumLogLikSq - S * meanLogLik * meanLogLik) / (S - 1)
-                        : 0.0;
-
-                    // Ensure non-negative variance (can be slightly negative due to floating point)
-                    if (pWaic_i < 0.0) pWaic_i = 0.0;
-
-                    local.lppd += lppd_i;
-                    local.pWaic += pWaic_i;
-                    return local;
-                },
-                local =>
+                double sumExponentials = 0.0;
+                for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
                 {
-                    Tools.ParallelAdd(ref totalLppd, local.lppd);
-                    Tools.ParallelAdd(ref totalPWaic, local.pWaic);
-                });
+                    sumExponentials += Math.Exp(
+                        pointwiseLogLikelihood[observationIndex, drawIndex] - maxLogLikelihood);
+                }
+
+                double pointwiseLppd = maxLogLikelihood
+                    + Math.Log(sumExponentials)
+                    - Math.Log(drawCount);
+                double meanLogLikelihood = sumLogLikelihood / drawCount;
+                double pointwisePWaic = drawCount > 1
+                    ? (sumLogLikelihoodSquared
+                        - drawCount * meanLogLikelihood * meanLogLikelihood)
+                        / (drawCount - 1)
+                    : 0.0;
+
+                if (pointwisePWaic < 0.0)
+                    pointwisePWaic = 0.0;
+
+                pointwiseLppdTerms[observationIndex] = pointwiseLppd;
+                pointwisePWaicTerms[observationIndex] = pointwisePWaic;
+            });
+
+            double totalLppd = pointwiseLppdTerms.Sum();
+            double totalPWaic = pointwisePWaicTerms.Sum();
 
             WAIC_pD = totalPWaic;
             WAIC = -2.0 * totalLppd + 2.0 * totalPWaic;
         }
-
         /// <summary>
-        /// Computes the Leave-One-Out Information Criterion using Pareto Smoothed Importance Sampling.
+        /// Computes PSIS-LOO by evaluating a fresh pointwise log-likelihood matrix.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// PSIS-LOO approximates exact leave-one-out cross-validation using importance sampling.
-        /// The importance weights are stabilized using Pareto smoothing, which fits a generalized
-        /// Pareto distribution to the tail of the weight distribution and replaces extreme weights
-        /// with smoothed values.
-        /// </para>
-        /// <para>
-        /// <b>References:</b>
-        /// Vehtari, A., Gelman, A., and Gabry, J. (2017). Practical Bayesian model evaluation using
-        /// leave-one-out cross-validation and WAIC. Statistics and Computing, 27(5), 1413-1432.
-        /// </para>
+        /// This wrapper is used only when PSIS summaries were not produced during normal
+        /// Bayesian completion, such as when restored results omit those transient values.
         /// </remarks>
         private void ComputePSISLOO()
         {
-            if (Results == null || Results.Output == null || Results.Output.Count == 0 || Model == null)
+            double[,]? pointwiseLogLikelihood = BuildPointwiseLogLikelihoodMatrix();
+            if (pointwiseLogLikelihood == null || pointwiseLogLikelihood.GetLength(0) == 0)
             {
                 LOOIC = double.NaN;
                 LOO_pD = double.NaN;
                 LOOIC_SE = double.NaN;
                 ParetoK = null;
+                _pointwiseElpdLoo = null;
                 return;
             }
 
-            int S = Results.Output.Count;  // Number of posterior samples
-
-            // Get the number of observations from first sample
-            double[] firstPointwise = Model.PointwiseDataLogLikelihood(Results.Output[0].Values);
-            int n = firstPointwise.Length;  // Number of observations
-
-            if (n == 0)
-            {
-                LOOIC = double.NaN;
-                LOO_pD = double.NaN;
-                LOOIC_SE = double.NaN;
-                ParetoK = null;
-                return;
-            }
-
-            // Allocate matrix for pointwise log-likelihoods: logLik[obs, sample]
-            var pointwiseLogLik = new double[n, S];
-
-            // Copy first sample
-            for (int i = 0; i < n; i++)
-                pointwiseLogLik[i, 0] = firstPointwise[i];
-
-            // Compute pointwise log-likelihoods for remaining samples in parallel
-            Parallel.For(1, S, s =>
-            {
-                double[] logLiks = Model.PointwiseDataLogLikelihood(Results.Output[s].Values);
-                for (int i = 0; i < n; i++)
-                    pointwiseLogLik[i, s] = logLiks[i];
-            });
-
-            // Compute PSIS-LOO for each observation
-            ParetoK = new double[n];
-            var elpdLoo = new double[n];
-            var lppd = new double[n];
-
-            // Number of tail samples for Pareto fitting per Vehtari et al. (2017):
-            // M = min(S/5, 3*sqrt(S)). For very small S the formula can drop below 3,
-            // so enforce an absolute floor of 3 samples (minimum needed for GPD fit).
-            // Drop the legacy floor-of-10 once the Vehtari formula gives a usable
-            // value, so the tail size scales naturally with S.
-            int M = (int)Math.Min(S / 5.0, 3.0 * Math.Sqrt(S));
-            M = Math.Max(M, 3);
-            M = Math.Min(M, S - 1);
-
-            Parallel.For(0, n, i =>
-            {
-                // Extract log-likelihoods for observation i
-                var logLiks = new double[S];
-                for (int s = 0; s < S; s++)
-                    logLiks[s] = pointwiseLogLik[i, s];
-
-                // Compute log importance weights: log r_is = -logLik_is
-                // (We want 1/p(y_i|?^s), and log(1/x) = -log(x))
-                var logWeights = new double[S];
-                for (int s = 0; s < S; s++)
-                    logWeights[s] = -logLiks[s];
-
-                // Normalize log weights to prevent overflow: shift by max
-                double maxLogWeight = logWeights[0];
-                for (int s = 1; s < S; s++)
-                    if (logWeights[s] > maxLogWeight) maxLogWeight = logWeights[s];
-
-                var shiftedLogWeights = new double[S];
-                for (int s = 0; s < S; s++)
-                    shiftedLogWeights[s] = logWeights[s] - maxLogWeight;
-
-                // Apply Pareto smoothing to the tail
-                double paretoK = ParetoSmoothWeights(shiftedLogWeights, M);
-                ParetoK[i] = paretoK;
-
-                // Convert back to regular weights (still shifted)
-                var weights = new double[S];
-                for (int s = 0; s < S; s++)
-                    weights[s] = Math.Exp(shiftedLogWeights[s]);
-
-                // Normalize weights to sum to 1
-                double sumWeights = 0.0;
-                for (int s = 0; s < S; s++)
-                    sumWeights += weights[s];
-
-                for (int s = 0; s < S; s++)
-                    weights[s] /= sumWeights;
-
-                // Compute LOO predictive density using normalized weights
-                // elpd_loo_i = log(S_s w_is * exp(logLik_is))
-                // Using log-sum-exp trick for stability
-                double maxLL = logLiks[0];
-                for (int s = 1; s < S; s++)
-                    if (logLiks[s] > maxLL) maxLL = logLiks[s];
-
-                double sumWeightedExp = 0.0;
-                for (int s = 0; s < S; s++)
-                    sumWeightedExp += weights[s] * Math.Exp(logLiks[s] - maxLL);
-
-                // Guard against log(0) when sumWeightedExp is zero or negative
-                elpdLoo[i] = sumWeightedExp > 0 ? maxLL + Math.Log(sumWeightedExp) : double.NegativeInfinity;
-
-                // Compute lppd_i for p_LOO calculation (same as WAIC)
-                double sumExp = 0.0;
-                for (int s = 0; s < S; s++)
-                    sumExp += Math.Exp(logLiks[s] - maxLL);
-                lppd[i] = maxLL + Math.Log(sumExp) - Math.Log(S);
-            });
-
-            // Sum up elpd_loo
-            double totalElpdLoo = 0.0;
-            double totalLppd = 0.0;
-            for (int i = 0; i < n; i++)
-            {
-                totalElpdLoo += elpdLoo[i];
-                totalLppd += lppd[i];
-            }
-
-            // Compute standard error using the variance of pointwise elpd_loo
-            double meanElpdLoo = totalElpdLoo / n;
-            double variance = 0.0;
-            for (int i = 0; i < n; i++)
-            {
-                double diff = elpdLoo[i] - meanElpdLoo;
-                variance += diff * diff;
-            }
-            variance /= (n - 1);  // Sample variance
-            double seElpdLoo = Math.Sqrt(n * variance);  // SE of sum = sqrt(n) * SD
-
-            LOOIC = -2.0 * totalElpdLoo;
-            LOO_pD = totalLppd - totalElpdLoo;
-            LOOIC_SE = 2.0 * seElpdLoo;  // SE of -2*elpd_loo = 2*SE(elpd_loo)
+            ComputePSISLOO(pointwiseLogLikelihood);
         }
 
         /// <summary>
-        /// Applies Pareto smoothing to the tail of log importance weights.
+        /// Computes the Leave-One-Out Information Criterion using Pareto-smoothed importance sampling.
         /// </summary>
-        /// <param name="logWeights">The log importance weights (modified in place for tail values).</param>
-        /// <param name="M">The number of tail samples to smooth.</param>
-        /// <returns>The estimated Pareto shape parameter k.</returns>
-        private static double ParetoSmoothWeights(double[] logWeights, int M)
+        /// <param name="pointwiseLogLikelihood">Observation-by-draw data log likelihoods.</param>
+        /// <remarks>
+        /// The smoothing and generalized-Pareto fit match R <c>loo</c> 2.10.0 and
+        /// <c>posterior::gpdfit</c> 1.7.0 for independent draws (<c>r_eff = 1</c>).
+        /// The method is approximate LOO and performs no model refits.
+        /// </remarks>
+        private void ComputePSISLOO(double[,] pointwiseLogLikelihood)
         {
-            int S = logWeights.Length;
+            int observationCount = pointwiseLogLikelihood.GetLength(0);
+            int drawCount = pointwiseLogLikelihood.GetLength(1);
+            int tailLength = ComputeParetoTailLength(drawCount);
+            var paretoK = new double[observationCount];
+            var pointwiseElpdLoo = new double[observationCount];
+            var pointwiseLppd = new double[observationCount];
 
-            // Get indices sorted by weight (descending order)
-            var indices = Enumerable.Range(0, S).OrderByDescending(s => logWeights[s]).ToArray();
-
-            // Extract the M largest log weights (tail)
-            var tailLogWeights = new double[M];
-            for (int j = 0; j < M; j++)
-                tailLogWeights[j] = logWeights[indices[j]];
-
-            // Find the cutoff (smallest tail weight)
-            double cutoff = tailLogWeights[M - 1];
-
-            // Shift tail weights so minimum is 0
-            for (int j = 0; j < M; j++)
-                tailLogWeights[j] -= cutoff;
-
-            // Convert to linear scale for Pareto fitting
-            var tailWeights = new double[M];
-            for (int j = 0; j < M; j++)
-                tailWeights[j] = Math.Exp(tailLogWeights[j]);
-
-            // Fit Generalized Pareto Distribution by maximum likelihood using the
-            // Numerics distribution. This matches the canonical PSIS reference fit
-            // (Vehtari, Gelman & Gabry 2017) more closely than method-of-moments.
-            //
-            // Numerics uses Hosking's parameterization where the shape Kappa has the
-            // OPPOSITE sign of the PSIS k convention. If GPD CDF is
-            //   F(x) = 1 - (1 + k_psis � x/s)^(-1/k_psis)
-            // then Numerics Kappa = -k_psis. We flip the sign on the way out so the
-            // downstream smoothing formulas (which use the PSIS k convention) are
-            // unchanged.
-            double k;
-            double sigma;
-            try
+            Parallel.For(0, observationCount, observationIndex =>
             {
-                var gpdMle = new Numerics.Distributions.GeneralizedPareto();
-                var mleParams = gpdMle.MLE(tailWeights);
-                // mleParams: [xi (location, fixed at min), alpha (scale), kappa (Hosking shape)].
-                sigma = mleParams[1];
-                k = -mleParams[2];  // Convert Hosking ? ? PSIS k.
-            }
-            catch (Exception ex)
+                var logLikelihoods = new double[drawCount];
+                var logWeights = new double[drawCount];
+                for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
+                {
+                    double logLikelihood = pointwiseLogLikelihood[observationIndex, drawIndex];
+                    logLikelihoods[drawIndex] = logLikelihood;
+                    logWeights[drawIndex] = -logLikelihood;
+                }
+
+                paretoK[observationIndex] = ParetoSmoothWeights(logWeights, tailLength);
+                double logWeightNormalizer = Tools.LogSumExp(logWeights);
+                var weightedLogLikelihoods = new double[drawCount];
+                for (int drawIndex = 0; drawIndex < drawCount; drawIndex++)
+                {
+                    weightedLogLikelihoods[drawIndex] = logWeights[drawIndex]
+                        - logWeightNormalizer
+                        + logLikelihoods[drawIndex];
+                }
+
+                pointwiseElpdLoo[observationIndex] = Tools.LogSumExp(weightedLogLikelihoods);
+                pointwiseLppd[observationIndex] = Tools.LogSumExp(logLikelihoods) - Math.Log(drawCount);
+            });
+
+            double totalElpdLoo = pointwiseElpdLoo.Sum();
+            double totalLppd = pointwiseLppd.Sum();
+            double standardError = double.NaN;
+            if (observationCount > 1)
             {
-                // MLE failed (rare � happens when the tail is degenerate).
-                // Fall back to method-of-moments.
-                Debug.WriteLine($"BayesianAnalysis.FitGPD: MLE failed, falling back to MOM: {ex.Message}");
-                double mean = 0.0;
-                for (int j = 0; j < M; j++) mean += tailWeights[j];
-                mean /= M;
-                double variance = 0.0;
-                for (int j = 0; j < M; j++)
+                double mean = totalElpdLoo / observationCount;
+                double sumSquares = pointwiseElpdLoo.Sum(value =>
                 {
-                    double diff = tailWeights[j] - mean;
-                    variance += diff * diff;
-                }
-                variance /= (M - 1);
-                if (variance > 0 && mean > 0)
-                {
-                    double cv2 = variance / (mean * mean);
-                    k = 0.5 * (cv2 - 1.0) / (cv2 + 1.0);
-                    sigma = mean * (1.0 - k);
-                    if (sigma <= 0) sigma = mean;
-                }
-                else
-                {
-                    k = 0.0;
-                    sigma = mean > 0 ? mean : 1.0;
-                }
+                    double difference = value - mean;
+                    return difference * difference;
+                });
+                double sampleVariance = sumSquares / (observationCount - 1);
+                standardError = 2.0 * Math.Sqrt(observationCount * sampleVariance);
             }
 
-            // Clamp k to a reasonable range and guard sigma > 0.
-            k = Math.Max(-0.5, Math.Min(k, 1.5));
-            if (sigma <= 0) sigma = double.Epsilon;
-
-            // If k is reasonable, smooth the tail weights
-            if (k < 1.0 && k > -0.5)
-            {
-
-                // Replace tail weights with expected order statistics from fitted GPD
-                // F(x) = 1 - (1 + k*x/s)^(-1/k) for k ? 0
-                // Quantile: Q(p) = s/k * ((1-p)^(-k) - 1) for k ? 0
-                // Expected order statistic at rank j of M: p_j = (j - 0.5)/M
-                for (int j = 0; j < M; j++)
-                {
-                    double p = (j + 0.5) / M;  // Probability for j-th order statistic (0 = smallest)
-                    double quantile;
-
-                    if (Math.Abs(k) < 1e-8)
-                    {
-                        // k � 0: Exponential distribution, Q(p) = -s * log(1-p)
-                        quantile = -sigma * Math.Log(1.0 - p);
-                    }
-                    else
-                    {
-                        // General GPD quantile
-                        quantile = sigma / k * (Math.Pow(1.0 - p, -k) - 1.0);
-                    }
-
-                    // Ensure quantile is non-negative
-                    quantile = Math.Max(0.0, quantile);
-
-                    // Convert back to log scale and un-shift
-                    // Use small epsilon to avoid log(0), quantile is guaranteed non-negative by Math.Max above
-                    double smoothedLogWeight = quantile > 0 ? Math.Log(quantile) + cutoff : cutoff - 300 * Math.Log(10);
-
-                    // Update the weight at this tail position
-                    logWeights[indices[j]] = smoothedLogWeight;
-                }
-            }
-
-            return k;
+            ParetoK = paretoK;
+            _pointwiseElpdLoo = pointwiseElpdLoo;
+            LOOIC = -2.0 * totalElpdLoo;
+            LOO_pD = totalLppd - totalElpdLoo;
+            LOOIC_SE = standardError;
         }
 
+        /// <summary>
+        /// Computes the generalized-Pareto tail length used by R <c>loo</c> for independent draws.
+        /// </summary>
+        /// <param name="drawCount">Number of retained posterior draws.</param>
+        /// <returns>The number of upper-tail ratios considered for smoothing.</returns>
+        private static int ComputeParetoTailLength(int drawCount)
+        {
+            if (drawCount <= 1)
+                return 0;
+
+            int tailLength = (int)Math.Ceiling(Math.Min(
+                0.2 * drawCount,
+                3.0 * Math.Sqrt(drawCount)));
+            return Math.Min(tailLength, drawCount - 1);
+        }
+
+        /// <summary>
+        /// Applies Pareto smoothing to log importance ratios in place.
+        /// </summary>
+        /// <param name="logWeights">Log importance ratios, modified in place.</param>
+        /// <param name="tailLength">Number of upper-tail values to smooth.</param>
+        /// <returns>The estimated generalized-Pareto shape parameter.</returns>
+        /// <remarks>
+        /// This is the deterministic <c>loo</c> 2.10.0 algorithm: ratios are shifted by
+        /// their maximum, the cutoff precedes the fitted tail, positive excesses are fit
+        /// with the bounded fixed-grid estimator, expected order statistics replace the
+        /// ordered tail, and final ratios are truncated at the largest raw ratio.
+        /// </remarks>
+        private static double ParetoSmoothWeights(double[] logWeights, int tailLength)
+        {
+            int sampleCount = logWeights.Length;
+            if (sampleCount == 0)
+                return double.NaN;
+
+            double rawMaximum = logWeights.Max();
+            for (int index = 0; index < sampleCount; index++)
+                logWeights[index] -= rawMaximum;
+
+            double paretoK = double.PositiveInfinity;
+            if (tailLength >= 5 && tailLength < sampleCount)
+            {
+                var orderedLogWeights = (double[])logWeights.Clone();
+                int[] orderedIndices = Enumerable.Range(0, sampleCount).ToArray();
+                Array.Sort(orderedLogWeights, orderedIndices);
+                int tailStart = sampleCount - tailLength;
+                double smallestTail = orderedLogWeights[tailStart];
+                double largestTail = orderedLogWeights[sampleCount - 1];
+
+                if (Math.Abs(largestTail - smallestTail) >= 2.2204460492503131e-18)
+                {
+                    double cutoff = orderedLogWeights[tailStart - 1];
+                    double exponentialCutoff = Math.Exp(cutoff);
+                    var excesses = new double[tailLength];
+                    for (int tailIndex = 0; tailIndex < tailLength; tailIndex++)
+                    {
+                        excesses[tailIndex] = Math.Exp(orderedLogWeights[tailStart + tailIndex])
+                            - exponentialCutoff;
+                    }
+
+                    (paretoK, double scale) = FitGeneralizedParetoTail(excesses);
+                    if (double.IsFinite(paretoK))
+                    {
+                        for (int tailIndex = 0; tailIndex < tailLength; tailIndex++)
+                        {
+                            double probability = (tailIndex + 0.5) / tailLength;
+                            double quantile = GeneralizedParetoQuantile(probability, scale, paretoK);
+                            orderedLogWeights[tailStart + tailIndex] = Math.Log(
+                                quantile + exponentialCutoff);
+                        }
+
+                        for (int tailIndex = tailStart; tailIndex < sampleCount; tailIndex++)
+                            logWeights[orderedIndices[tailIndex]] = orderedLogWeights[tailIndex];
+                    }
+                }
+            }
+
+            for (int index = 0; index < sampleCount; index++)
+            {
+                if (logWeights[index] > 0.0)
+                    logWeights[index] = 0.0;
+                logWeights[index] += rawMaximum;
+            }
+
+            return paretoK;
+        }
+
+        /// <summary>
+        /// Fits a zero-location generalized Pareto distribution with the bounded fixed-grid estimator.
+        /// </summary>
+        /// <param name="orderedExcesses">Ascending positive excesses over the Pareto cutoff.</param>
+        /// <returns>The shape and scale estimates.</returns>
+        /// <remarks>
+        /// The calculation follows <c>posterior::gpdfit</c> 1.7.0 with weakly informative
+        /// prior shrinkage enabled. It uses a fixed grid rather than an iterative optimizer,
+        /// keeping the per-observation PSIS cost small and deterministic.
+        /// </remarks>
+        private static (double Shape, double Scale) FitGeneralizedParetoTail(double[] orderedExcesses)
+        {
+            int sampleCount = orderedExcesses.Length;
+            int gridCount = 30 + (int)Math.Floor(Math.Sqrt(sampleCount));
+            int quarterIndex = (int)Math.Floor(sampleCount / 4.0 + 0.5) - 1;
+            quarterIndex = Math.Clamp(quarterIndex, 0, sampleCount - 1);
+            double referenceExcess = orderedExcesses[quarterIndex];
+            double maximumExcess = orderedExcesses[sampleCount - 1];
+
+            // A degenerate tail (tied lower quartile or no positive excess) has no usable GPD
+            // fit. Report the shape as infinite, the same outcome R loo assigns when the fit is
+            // not finite, so the observation is counted as unreliable rather than skipped.
+            if (!(referenceExcess > orderedExcesses[0]) || !(maximumExcess > 0.0))
+                return (double.PositiveInfinity, double.NaN);
+
+            const double prior = 3.0;
+            var theta = new double[gridCount];
+            var logPosterior = new double[gridCount];
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+            {
+                double gridPosition = gridIndex + 1.0;
+                theta[gridIndex] = 1.0 / maximumExcess
+                    + (1.0 - Math.Sqrt(gridCount / (gridPosition - 0.5)))
+                    / (prior * referenceExcess);
+
+                double shapeAtGridPoint = 0.0;
+                for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+                {
+                    shapeAtGridPoint += Tools.Log1p(
+                        -theta[gridIndex] * orderedExcesses[sampleIndex]);
+                }
+                shapeAtGridPoint /= sampleCount;
+
+                logPosterior[gridIndex] = sampleCount * (
+                    Math.Log(-theta[gridIndex] / shapeAtGridPoint)
+                    - shapeAtGridPoint
+                    - 1.0);
+            }
+
+            double logNormalizer = Tools.LogSumExp(logPosterior);
+            double thetaEstimate = 0.0;
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+            {
+                thetaEstimate += theta[gridIndex]
+                    * Math.Exp(logPosterior[gridIndex] - logNormalizer);
+            }
+
+            double shapeEstimate = 0.0;
+            for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+            {
+                shapeEstimate += Tools.Log1p(
+                    -thetaEstimate * orderedExcesses[sampleIndex]);
+            }
+            shapeEstimate /= sampleCount;
+            double scaleEstimate = -shapeEstimate / thetaEstimate;
+            shapeEstimate = (shapeEstimate * sampleCount + 5.0) / (sampleCount + 10.0);
+
+            if (double.IsNaN(shapeEstimate))
+                return (double.PositiveInfinity, double.NaN);
+
+            return (shapeEstimate, scaleEstimate);
+        }
+
+        /// <summary>
+        /// Evaluates the zero-location generalized-Pareto quantile function.
+        /// </summary>
+        /// <param name="probability">Nonexceedance probability strictly between zero and one.</param>
+        /// <param name="scale">Positive generalized-Pareto scale.</param>
+        /// <param name="shape">Generalized-Pareto shape.</param>
+        /// <returns>The requested generalized-Pareto quantile.</returns>
+        private static double GeneralizedParetoQuantile(double probability, double scale, double shape)
+        {
+            if (double.IsNaN(scale) || scale <= 0.0)
+                return double.NaN;
+
+            double logSurvival = Tools.Log1p(-probability);
+            if (shape == 0.0)
+                return -scale * logSurvival;
+
+            return scale * ExponentialMinusOne(-shape * logSurvival) / shape;
+        }
+
+        /// <summary>
+        /// Evaluates <c>exp(x)-1</c> accurately when <paramref name="value"/> is near zero.
+        /// </summary>
+        /// <param name="value">Exponent argument.</param>
+        /// <returns><c>exp(value)-1</c>.</returns>
+        private static double ExponentialMinusOne(double value)
+        {
+            if (Math.Abs(value) > 1e-5)
+                return Math.Exp(value) - 1.0;
+
+            double valueSquared = value * value;
+            return value
+                + 0.5 * valueSquared
+                + valueSquared * value / 6.0
+                + valueSquared * valueSquared / 24.0
+                + valueSquared * valueSquared * value / 120.0;
+        }
         /// <summary>
         /// Sets custom MCMC results that were run externally.
         /// </summary>
@@ -1825,11 +1917,12 @@ namespace RMC.BestFit.Estimation
         public void SetCustomMCMCResults(MCMCResults results, bool skipInformationCriteria)
         {
             Results = results;
+            ParetoK = null;
+            _pointwiseElpdLoo = null;
             if (!skipInformationCriteria)
             {
                 ComputeDIC();
-                ComputeWAIC();
-                ComputePSISLOO();
+                ComputePredictiveInformationCriteria();
             }
             IsEstimated = true;
         }
@@ -1885,16 +1978,14 @@ namespace RMC.BestFit.Estimation
             if (ParetoK == null || ParetoK.Length == 0)
                 return new InfluenceDiagnostics();
 
-            int n = ParetoK.Length;
-
-            // Compute ELPD-LOO for each observation (recompute to get individual values)
+            // Reuse pointwise summaries retained during the default information-criterion calculation.
             var elpdLoo = ComputePointwiseElpdLoo();
 
             // Get data components for metadata
             List<DataComponent>? dataComponents = null;
             try
             {
-                var firstParams = Results.Output[0].Values;
+                var firstParams = GetModelParameterValues(Results.Output[0].Values);
                 dataComponents = Model.PointwiseDataLogLikelihoodComponents(firstParams);
             }
             catch (Exception ex)
@@ -1903,7 +1994,15 @@ namespace RMC.BestFit.Estimation
                 Debug.WriteLine($"BayesianAnalysis.GetInfluenceDiagnostics: PointwiseDataLogLikelihoodComponents unavailable: {ex.Message}");
             }
 
-            return new InfluenceDiagnostics(ParetoK, elpdLoo, dataComponents);
+            double diagnosticThreshold = ComputeParetoDiagnosticThreshold(Results.Output.Count);
+            if (double.IsNaN(diagnosticThreshold))
+            {
+                // Too few retained draws for the draw-count-specific limit; fall back to the
+                // fixed 0.7 reliability limit.
+                return new InfluenceDiagnostics(ParetoK, elpdLoo, dataComponents);
+            }
+
+            return new InfluenceDiagnostics(ParetoK, elpdLoo, dataComponents, diagnosticThreshold);
         }
 
         /// <summary>
@@ -1943,7 +2042,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <returns>
         /// A <see cref="LeverageDiagnostics"/> object containing per-observation and per-prior-component
-        /// leverage values that decompose the total information at the MAP.
+        /// fit influence, variance influence, and their combined ranking at the MAP.
         /// </returns>
         /// <remarks>
         /// <para>
@@ -1952,9 +2051,10 @@ namespace RMC.BestFit.Estimation
         /// MCMC posterior samples (<see cref="Numerics.Sampling.MCMC.MCMCResults.MAP"/>).
         /// </para>
         /// <para>
-        /// This is the Bayesian analogue of Cook's distance. The leverage of each component (observation or prior)
-        /// measures its share of the total information: l? = g?? H?� g?. All leverages sum approximately
-        /// to p (the number of parameters), providing a unified ranking across observations and priors.
+        /// Fit influence is a Cook score quadratic. Observation variance influence uses a local
+        /// curvature trace, while prior variance influence uses the finite log generalized-variance
+        /// change after removing that prior. Their sum is a combined ranking index; it is not a
+        /// hat-matrix diagonal and is not expected to sum to the number of parameters.
         /// </para>
         /// </remarks>
         /// <exception cref="InvalidOperationException">Thrown when estimation has not been completed.</exception>
@@ -1967,83 +2067,50 @@ namespace RMC.BestFit.Estimation
         }
 
         /// <summary>
-        /// Computes pointwise ELPD-LOO values for each observation.
+        /// Gets cached pointwise ELPD-LOO values for each observation.
         /// </summary>
-        /// <returns>Array of ELPD-LOO values, one per observation.</returns>
+        /// <returns>One ELPD-LOO contribution per observation.</returns>
+        /// <remarks>
+        /// Normal Bayesian completion populates this cache while the shared pointwise matrix is
+        /// available. A fresh PSIS calculation occurs only when restored or externally supplied
+        /// results do not contain transient pointwise summaries.
+        /// </remarks>
         private double[] ComputePointwiseElpdLoo()
         {
-            if (Results == null || Results.Output == null || Results.Output.Count == 0 || Model == null)
-                return Array.Empty<double>();
+            if (_pointwiseElpdLoo == null)
+                ComputePSISLOO();
 
-            int S = Results.Output.Count;
-            double[] firstPointwise = Model.PointwiseDataLogLikelihood(Results.Output[0].Values);
-            int n = firstPointwise.Length;
-
-            if (n == 0) return Array.Empty<double>();
-
-            // Allocate matrix for pointwise log-likelihoods
-            var pointwiseLogLik = new double[n, S];
-
-            for (int i = 0; i < n; i++)
-                pointwiseLogLik[i, 0] = firstPointwise[i];
-
-            Parallel.For(1, S, s =>
-            {
-                double[] logLiks = Model.PointwiseDataLogLikelihood(Results.Output[s].Values);
-                for (int i = 0; i < n; i++)
-                    pointwiseLogLik[i, s] = logLiks[i];
-            });
-
-            // PSIS tail size � Vehtari et al. (2017). Match the floor used in
-            // ComputePSISLOO so per-observation diagnostics agree across calls.
-            int M = (int)Math.Min(S / 5.0, 3.0 * Math.Sqrt(S));
-            M = Math.Max(M, 3);
-            M = Math.Min(M, S - 1);
-
-            var elpdLoo = new double[n];
-
-            Parallel.For(0, n, i =>
-            {
-                var logLiks = new double[S];
-                for (int s = 0; s < S; s++)
-                    logLiks[s] = pointwiseLogLik[i, s];
-
-                var logWeights = new double[S];
-                for (int s = 0; s < S; s++)
-                    logWeights[s] = -logLiks[s];
-
-                double maxLogWeight = logWeights.Max();
-                var shiftedLogWeights = new double[S];
-                for (int s = 0; s < S; s++)
-                    shiftedLogWeights[s] = logWeights[s] - maxLogWeight;
-
-                ParetoSmoothWeights(shiftedLogWeights, M);
-
-                var weights = new double[S];
-                for (int s = 0; s < S; s++)
-                    weights[s] = Math.Exp(shiftedLogWeights[s]);
-
-                double sumWeights = weights.Sum();
-                for (int s = 0; s < S; s++)
-                    weights[s] /= sumWeights;
-
-                double maxLL = logLiks.Max();
-                double sumWeightedExp = 0.0;
-                for (int s = 0; s < S; s++)
-                    sumWeightedExp += weights[s] * Math.Exp(logLiks[s] - maxLL);
-
-                elpdLoo[i] = maxLL + Math.Log(sumWeightedExp);
-            });
-
-            return elpdLoo;
+            return _pointwiseElpdLoo == null
+                ? Array.Empty<double>()
+                : (double[])_pointwiseElpdLoo.Clone();
         }
 
+        /// <summary>
+        /// Computes the sample-size-dependent Pareto-k reliability threshold used by R <c>loo</c>.
+        /// </summary>
+        /// <param name="drawCount">Number of retained posterior draws.</param>
+        /// <returns>
+        /// The diagnostic threshold <c>min(1 - 1 / log10(S), 0.7)</c>, or <see cref="double.NaN"/>
+        /// when fewer than eleven draws are retained and the formula has no positive value.
+        /// </returns>
+        private static double ComputeParetoDiagnosticThreshold(int drawCount)
+        {
+            if (drawCount <= MinimumDrawsForParetoDiagnosticThreshold - 1)
+                return double.NaN;
+
+            return Math.Min(1.0 - 1.0 / Math.Log10(drawCount), 0.7);
+        }
+
+        /// <summary>
+        /// The smallest retained draw count for which the draw-count-specific Pareto-k threshold is positive.
+        /// </summary>
+        private const int MinimumDrawsForParetoDiagnosticThreshold = 11;
         /// <summary>
         /// Computes the posterior covariance matrix from the MCMC output samples
         /// using <see cref="RunningCovarianceMatrix"/>.
         /// </summary>
         /// <returns>
-        /// A p x p sample covariance matrix where p is the number of model parameters,
+        /// A p x p sample covariance matrix where p is the number of stored sampler coordinates,
         /// or null if estimation has not been completed.
         /// </returns>
         /// <remarks>
@@ -2055,7 +2122,7 @@ namespace RMC.BestFit.Estimation
             if (!IsEstimated || Results == null || Results.Output == null || Results.Output.Count < 2 || Model == null)
                 return null;
 
-            int p = Model.NumberOfParameters;
+            int p = Results.Output[0].Values.Length;
             var rcm = new RunningCovarianceMatrix(p);
             foreach (var ps in Results.Output)
                 rcm.Push(ps.Values);
@@ -2068,7 +2135,7 @@ namespace RMC.BestFit.Estimation
         /// using <see cref="RunningCovarianceMatrix"/>.
         /// </summary>
         /// <returns>
-        /// A p x p sample correlation matrix where p is the number of model parameters,
+        /// A p x p sample correlation matrix where p is the number of stored sampler coordinates,
         /// or null if estimation has not been completed.
         /// </returns>
         /// <remarks>
@@ -2079,7 +2146,7 @@ namespace RMC.BestFit.Estimation
             if (!IsEstimated || Results == null || Results.Output == null || Results.Output.Count < 2 || Model == null)
                 return null;
 
-            int p = Model.NumberOfParameters;
+            int p = Results.Output[0].Values.Length;
             var rcm = new RunningCovarianceMatrix(p);
             foreach (var ps in Results.Output)
                 rcm.Push(ps.Values);
@@ -2109,7 +2176,8 @@ namespace RMC.BestFit.Estimation
                 return string.Empty;
 
             var sb = new StringBuilder();
-            int p = Model.NumberOfParameters;
+            IReadOnlyList<int> storedModelIndexes = GetStoredModelParameterIndexes();
+            int p = storedModelIndexes.Count;
 
             // Credible interval percentiles
             double ciWidth = CredibleIntervalWidth;
@@ -2148,10 +2216,36 @@ namespace RMC.BestFit.Estimation
                 sb.AppendLine();
             }
 
-            // Section 3: Acceptance Rates
+            // Section 3: Sampler Diagnostics
             double overallAcceptance = double.NaN;
             bool acceptanceWarning = false;
-            if (Results.AcceptanceRates != null && Results.AcceptanceRates.Length > 0)
+            if (Type == SamplerType.NUTS &&
+                Results.AcceptanceRates != null && Results.AcceptanceRates.Length > 0)
+            {
+                AppendReportSectionHeader(sb, "NUTS SAMPLER DIAGNOSTICS");
+                for (int i = 0; i < Results.AcceptanceRates.Length; i++)
+                {
+                    sb.AppendLine(
+                        $"  Chain {i + 1}:   {Results.AcceptanceRates[i] * 100.0:F1}% Hamiltonian acceptance");
+                }
+
+                overallAcceptance = Results.AcceptanceRates.Average();
+                double targetAcceptanceRate = Sampler is NUTS nuts
+                    ? nuts.TargetAcceptanceRate
+                    : 0.80d;
+                sb.AppendLine($"  Overall Hamiltonian Acceptance: {overallAcceptance * 100.0:F1}%");
+
+                var acceptance = AssessAcceptanceRate(overallAcceptance, Type);
+                bool chainAcceptanceWarning = AppendChainAcceptanceWarnings(sb, Results.AcceptanceRates, Type);
+                acceptanceWarning = acceptance.Status == ReportDiagnosticStatus.Warning || chainAcceptanceWarning;
+                sb.AppendLine($"  Target:    {targetAcceptanceRate * 100.0:F0}% Hamiltonian acceptance");
+                sb.AppendLine($"  Preferred: {acceptance.PreferredRangeLabel}");
+                sb.AppendLine($"  Buffer:    {acceptance.AcceptableRangeLabel}");
+                sb.AppendLine($"  Status:    {GetStatusLabel(acceptance.Status)} - {acceptance.Message}");
+                AppendAcceptanceAdvice(sb, acceptance, Type);
+                sb.AppendLine();
+            }
+            else if (Results.AcceptanceRates != null && Results.AcceptanceRates.Length > 0)
             {
                 AppendReportSectionHeader(sb, "ACCEPTANCE RATES");
                 for (int i = 0; i < Results.AcceptanceRates.Length; i++)
@@ -2184,17 +2278,18 @@ namespace RMC.BestFit.Estimation
                 {
                     double rhat = Results.ParameterResults[i].SummaryStatistics.Rhat;
                     double ess = Results.ParameterResults[i].SummaryStatistics.ESS;
-                    if (double.IsNaN(maxRhat) || rhat > maxRhat) { maxRhat = rhat; worstRhatParam = Model.Parameters[i].DisplayName; }
-                    if (double.IsNaN(minESS) || ess < minESS) { minESS = ess; worstESSParam = Model.Parameters[i].DisplayName; }
+                    int modelIndex = storedModelIndexes[i];
+                    if (double.IsNaN(maxRhat) || rhat > maxRhat) { maxRhat = rhat; worstRhatParam = Model.Parameters[modelIndex].DisplayName; }
+                    if (double.IsNaN(minESS) || ess < minESS) { minESS = ess; worstESSParam = Model.Parameters[modelIndex].DisplayName; }
                 }
             }
             int retainedDrawCount = GetRetainedDrawCount(Results, OutputLength);
             var essAssessment = AssessEffectiveSampleSize(minESS, retainedDrawCount);
-            bool rhatOk = !double.IsNaN(maxRhat) && maxRhat < 1.1;
+            bool rhatOk = !double.IsNaN(maxRhat) && maxRhat < RhatReadinessThreshold;
             bool essOk = essAssessment.Status == ReportDiagnosticStatus.OK;
             bool ready = rhatOk && essOk;
 
-            sb.AppendLine($"  Max R-hat:   {maxRhat:F4}   (target < 1.10)   {(rhatOk ? "OK" : $"WARNING ({worstRhatParam})")}");
+            sb.AppendLine($"  Max R-hat:   {maxRhat:F4}   (target < {RhatReadinessThreshold:F2})   {(rhatOk ? "OK" : $"WARNING ({worstRhatParam})")}");
             sb.AppendLine($"  Min ESS:     {FormatEssSummary(essAssessment)}");
             sb.AppendLine($"  ESS Target:  >= {EssPreferredEfficiency * 100.0:F0}% of retained draws and >= {EssDiagnosticFloor:N0} diagnostic floor");
             sb.AppendLine($"  R-hat Verdict: {GetStatusLabel(rhatOk ? ReportDiagnosticStatus.OK : ReportDiagnosticStatus.Warning)} - {(rhatOk ? "chains mixed across parameters" : $"chain mixing problem detected for {worstRhatParam}")}");
@@ -2216,7 +2311,7 @@ namespace RMC.BestFit.Estimation
             sb.AppendLine($"  {new string('-', maxNameLen)}  {new string('-', 14)}");
             for (int i = 0; i < p; i++)
             {
-                string name = Model.Parameters[i].DisplayName.PadRight(maxNameLen);
+                string name = Model.Parameters[storedModelIndexes[i]].DisplayName.PadRight(maxNameLen);
                 sb.AppendLine($"  {name}  {Results.MAP.Values[i]:G6}");
             }
             sb.AppendLine();
@@ -2232,7 +2327,7 @@ namespace RMC.BestFit.Estimation
             for (int i = 0; i < p; i++)
             {
                 var stats = Results.ParameterResults![i].SummaryStatistics;
-                string name = Model.Parameters[i].DisplayName.PadRight(maxNameLen);
+                string name = Model.Parameters[storedModelIndexes[i]].DisplayName.PadRight(maxNameLen);
                 sb.AppendLine($"  {name}  {stats.Mean,10:G6}  {stats.StandardDeviation,10:G6}  {stats.LowerCI,10:G6}  {stats.Median,10:G6}  {stats.UpperCI,10:G6}  {stats.Rhat,7:F4}  {stats.ESS,7:F0}");
             }
             sb.AppendLine();
@@ -2244,13 +2339,13 @@ namespace RMC.BestFit.Estimation
                 if (covMatrix != null)
                 {
                     AppendReportSectionHeader(sb, "POSTERIOR COVARIANCE MATRIX");
-                    AppendReportMatrix(sb, covMatrix, p, maxNameLen, "G4");
+                    AppendReportMatrix(sb, covMatrix, storedModelIndexes, maxNameLen, "G4");
 
                     var corrMatrix = GetPosteriorCorrelationMatrix();
                     if (corrMatrix != null)
                     {
                         AppendReportSectionHeader(sb, "POSTERIOR CORRELATION MATRIX");
-                        AppendReportMatrix(sb, corrMatrix, p, maxNameLen, "F3");
+                        AppendReportMatrix(sb, corrMatrix, storedModelIndexes, maxNameLen, "F3");
                     }
                 }
             }
@@ -2262,8 +2357,16 @@ namespace RMC.BestFit.Estimation
             sb.AppendLine($"  LOOIC:       {LOOIC:F2}    (p_D = {LOO_pD:F2}, SE = {LOOIC_SE:F1})");
             if (ParetoK != null && ParetoK.Length > 0)
             {
-                int nBad = ParetoK.Count(k => k > 0.7);
-                sb.AppendLine($"  Pareto k:    {nBad}/{ParetoK.Length} observations with k > 0.7");
+                double threshold = ComputeParetoDiagnosticThreshold(Results.Output.Count);
+                if (double.IsNaN(threshold))
+                {
+                    sb.AppendLine($"  Pareto k:    draw-count threshold unavailable (fewer than {MinimumDrawsForParetoDiagnosticThreshold} retained draws)");
+                }
+                else
+                {
+                    int unreliableCount = ParetoK.Count(k => double.IsNaN(k) || k >= threshold);
+                    sb.AppendLine($"  Pareto k:    {unreliableCount}/{ParetoK.Length} observations with k >= {threshold:F3}");
+                }
             }
             sb.AppendLine();
 
@@ -2271,7 +2374,7 @@ namespace RMC.BestFit.Estimation
             AppendReportSectionHeader(sb, "PRIOR CONFIGURATION");
             sb.AppendLine($"  {"Parameter".PadRight(maxNameLen)}  {"Prior",-24}  {"Bounds",-20}  Fixed");
             sb.AppendLine($"  {new string('-', maxNameLen)}  {new string('-', 24)}  {new string('-', 20)}  {new string('-', 5)}");
-            for (int i = 0; i < p; i++)
+            for (int i = 0; i < Model.Parameters.Count; i++)
             {
                 var param = Model.Parameters[i];
                 string name = param.DisplayName.PadRight(maxNameLen);
@@ -2314,24 +2417,30 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <param name="sb">The string builder.</param>
         /// <param name="matrix">The matrix to format.</param>
-        /// <param name="p">The number of parameters (matrix dimension).</param>
+        /// <param name="modelParameterIndexes">The public model indexes corresponding to the matrix coordinates.</param>
         /// <param name="maxNameLen">Maximum parameter name length for alignment.</param>
         /// <param name="format">Numeric format string (e.g., "G4" or "F3").</param>
-        private void AppendReportMatrix(StringBuilder sb, double[,] matrix, int p, int maxNameLen, string format)
+        private void AppendReportMatrix(
+            StringBuilder sb,
+            double[,] matrix,
+            IReadOnlyList<int> modelParameterIndexes,
+            int maxNameLen,
+            string format)
         {
             if (Model is null) return;
+            int p = modelParameterIndexes.Count;
             int colWidth = Math.Max(12, maxNameLen);
 
             // Column headers
             sb.Append("  " + new string(' ', maxNameLen));
             for (int j = 0; j < p; j++)
-                sb.Append($"  {Model.Parameters[j].DisplayName.PadLeft(colWidth)}");
+                sb.Append($"  {Model.Parameters[modelParameterIndexes[j]].DisplayName.PadLeft(colWidth)}");
             sb.AppendLine();
 
             // Rows
             for (int i = 0; i < p; i++)
             {
-                string rowName = Model.Parameters[i].DisplayName.PadRight(maxNameLen);
+                string rowName = Model.Parameters[modelParameterIndexes[i]].DisplayName.PadRight(maxNameLen);
                 sb.Append($"  {rowName}");
                 for (int j = 0; j < p; j++)
                     sb.Append($"  {matrix[i, j].ToString(format, CultureInfo.InvariantCulture).PadLeft(colWidth)}");
@@ -2363,12 +2472,16 @@ namespace RMC.BestFit.Estimation
 
             if (assessment.Direction == DiagnosticDirection.Low)
             {
-                sb.AppendLine("  Advice: Acceptance rate is too LOW. Proposals are too ambitious.");
+                sb.AppendLine(type == SamplerType.NUTS
+                    ? "  Advice: Hamiltonian acceptance is below the acceptable range."
+                    : "  Advice: Acceptance rate is too LOW. Proposals are too ambitious.");
                 AppendLowAcceptanceTuningAdvice(sb, type);
             }
             else if (assessment.Direction == DiagnosticDirection.High)
             {
-                sb.AppendLine("  Advice: Acceptance rate is too HIGH. Proposals are too timid.");
+                sb.AppendLine(type == SamplerType.NUTS
+                    ? "  Advice: Hamiltonian acceptance is above the acceptable range."
+                    : "  Advice: Acceptance rate is too HIGH. Proposals are too timid.");
                 AppendHighAcceptanceTuningAdvice(sb, type);
             }
         }
@@ -2473,6 +2586,11 @@ namespace RMC.BestFit.Estimation
             /// </summary>
             High
         }
+
+        /// <summary>
+        /// Readiness threshold for rank-normalized split/folded R-hat.
+        /// </summary>
+        private const double RhatReadinessThreshold = 1.01;
 
         /// <summary>
         /// The minimum effective sample size used as a diagnostic floor.
@@ -2775,6 +2893,9 @@ namespace RMC.BestFit.Estimation
             var thresholds = GetAcceptanceRateThresholds(type);
             bool hasWarnings = false;
             string bufferLabel = FormatPercentRange(thresholds.AcceptableMin, thresholds.AcceptableMax);
+            string statisticLabel = type == SamplerType.NUTS
+                ? "Hamiltonian acceptance"
+                : "acceptance";
 
             for (int i = 0; i < acceptanceRates.Length; i++)
             {
@@ -2788,7 +2909,7 @@ namespace RMC.BestFit.Estimation
                     }
 
                     string direction = rate < thresholds.AcceptableMin ? "below" : "above";
-                    sb.AppendLine($"    - Chain {i + 1} acceptance {rate * 100.0:F1}% is {direction} acceptable buffer {bufferLabel}.");
+                    sb.AppendLine($"    - Chain {i + 1} {statisticLabel} {rate * 100.0:F1}% is {direction} acceptable buffer {bufferLabel}.");
                     hasWarnings = true;
                 }
             }
@@ -2852,7 +2973,7 @@ namespace RMC.BestFit.Estimation
             else if (type == SamplerType.ARWMH)
                 sb.AppendLine("    - Decrease the Scale parameter to make smaller adaptive random-walk proposals.");
             else if (type == SamplerType.NUTS)
-                sb.AppendLine("    - NUTS is rejecting too often; inspect trace/autocorrelation plots and consider another sampler if ESS remains poor.");
+                sb.AppendLine("    - Review posterior geometry; low Hamiltonian acceptance often accompanies inaccurate trajectories.");
 
             sb.AppendLine("    - Check that priors and parameter bounds are consistent with the data.");
             sb.AppendLine("    - Review highly correlated parameters or poorly identified model structure.");
@@ -2870,7 +2991,7 @@ namespace RMC.BestFit.Estimation
             else if (type == SamplerType.ARWMH)
                 sb.AppendLine("    - Increase the Scale parameter to make larger adaptive random-walk proposals.");
             else if (type == SamplerType.NUTS)
-                sb.AppendLine("    - NUTS is accepting almost every proposal; inspect ESS and autocorrelation for slow exploration.");
+                sb.AppendLine("    - Review ESS and autocorrelation for inefficient trajectories.");
 
             sb.AppendLine("    - The chain may be exploring the posterior too slowly.");
             sb.AppendLine("    - Prefer improving proposal efficiency before increasing thinning.");
@@ -2915,7 +3036,7 @@ namespace RMC.BestFit.Estimation
         /// </summary>
         /// <remarks>
         /// The <see cref="Model"/> reference is shared by design (consistent with
-        /// the rest of the project � the model is the single source of truth and
+        /// the rest of the project — the model is the single source of truth and
         /// is not deep-copied). <see cref="Results"/> (the <c>MCMCResults</c>
         /// containing posterior samples) is also shared by reference. Callers who
         /// intend to re-fit the clone should call <c>ClearResults()</c> on it

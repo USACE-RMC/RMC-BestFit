@@ -1,0 +1,853 @@
+TYPE class RMC.BestFit.UI.AreaPoint
+  BASE System.Object
+  CTOR public RMC.BestFit.UI.AreaPoint(OxyPlot.DataPoint, OxyPlot.DataPoint)
+  PROPERTY System.Double X1 {public get;public set;}
+  PROPERTY System.Double X2 {public get;public set;}
+  PROPERTY System.Double Y1 {public get;public set;}
+  PROPERTY System.Double Y2 {public get;public set;}
+TYPE class RMC.BestFit.UI.B17CAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE RMC.BestFit.UI.IUnivariate
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.B17CAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.String GenerateGMMReport()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD public sealed-virtual RMC.BestFit.Models.IUnivariateModel GetMarginalModel()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {public get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.BootstrapDiagnostics BootstrapResults {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Analyses.UncertaintyMethod UncertaintyMethod {public get;public set;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.GeneralizedMethodOfMoments GMM {public get;}
+  PROPERTY RMC.BestFit.Models.Bulletin17CDistribution Bulletin17CDistribution {public get;}
+  PROPERTY RMC.BestFit.UI.BayesianController BayesianPlots {public get;}
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.ParameterPenalty> ParameterPenalties {public get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.QuantilePenalty> QuantilePenalties {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.Int32 PRNGSeed {public get;public set;}
+  PROPERTY System.Nullable<System.TimeSpan> ElapsedTime {public get;}
+  PROPERTY System.Nullable<System.TimeSpan> GMMElapsedTime {public get;}
+  PROPERTY System.Nullable<System.TimeSpan> UncertaintyElapsedTime {public get;}
+  PROPERTY System.String CollectionName {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String GMMReport {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.BayesianController
+  BASE System.Object
+  INTERFACE System.IDisposable
+  CTOR public RMC.BestFit.UI.BayesianController()
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void CopyTo(RMC.BestFit.UI.BayesianController)
+  METHOD public System.Void Deserialize(DatabaseManager.DataTableView, System.Int32)
+  METHOD public System.Void DisposeBridges()
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public System.Void Serialize(DatabaseManager.DataTableView, System.Int32)
+  METHOD public System.Void SetupBridges(System.Func<FrameworkInterfaces.Undo.IUndoManager>, System.Object, System.Action, RMC.BestFit.Estimation.BayesianAnalysis optional=null, System.Action optional=null)
+  METHOD public System.Void UpdateReport(RMC.BestFit.Estimation.BayesianAnalysis)
+  METHOD public sealed-virtual System.Void Dispose()
+  PROPERTY OxyPlot.Wpf.Plot AutocorrelationPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot BivariateHeatMapPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot HistogramPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot InfluenceDiagnosticsPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot KernelDensityPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot MarkovChainTracePlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot MeanLikelihoodPlot {public get;}
+  PROPERTY System.String MCMCReport {public get;}
+  FIELD public System.String[] AdvancedDefaultsProperties
+  FIELD public System.String[] AlwaysRecordProperties
+  FIELD public System.String[] SimulationDefaultsProperties
+TYPE class RMC.BestFit.UI.BestFitProject
+  BASE FrameworkInterfaces.ProjectBase
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.IProject
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD public System.Void CreateNewDummyProject()
+  METHOD public override System.Boolean IsValid()
+  METHOD public override System.Void Close()
+  METHOD public override System.Void Compact()
+  METHOD public override System.Void CreateNew(System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Optimize()
+  METHOD public override System.Void Save()
+  METHOD public static RMC.BestFit.UI.BestFitProject GetInstance()
+  PROPERTY System.Char[] InvalidNameCharacters {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String SoftwareVersion {public get;}
+  PROPERTY System.Windows.Media.ImageSource ProjectImage {public get;}
+  EVENT RMC.BestFit.UI.BestFitProject+Version1EventHandler OpenedVersion1 {public add;public remove;}
+TYPE class RMC.BestFit.UI.BestFitProject+Version1EventHandler
+  BASE System.MulticastDelegate
+  INTERFACE System.ICloneable
+  INTERFACE System.Runtime.Serialization.ISerializable
+  CTOR public RMC.BestFit.UI.BestFitProject+Version1EventHandler(System.Object, System.IntPtr)
+  METHOD public virtual System.IAsyncResult BeginInvoke(System.Boolean, ref System.Boolean, System.AsyncCallback, System.Object)
+  METHOD public virtual System.Void EndInvoke(ref System.Boolean, System.IAsyncResult)
+  METHOD public virtual System.Void Invoke(System.Boolean, ref System.Boolean)
+TYPE class RMC.BestFit.UI.BivariateAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.BivariateAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Data.UncertainOrderedPairedData XYOrdinates {public get;public set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot CopulaPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.Models.BivariateDistribution BivariateDistribution {public get;}
+  PROPERTY RMC.BestFit.UI.BayesianController BayesianPlots {public get;}
+  PROPERTY RMC.BestFit.UI.IUnivariate MarginalX {public get;public set;}
+  PROPERTY RMC.BestFit.UI.IUnivariate MarginalY {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.String CollectionName {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.BivariateAnalysisCollection
+  BASE FrameworkInterfaces.ElementCollectionBase
+  INTERFACE FrameworkInterfaces.IElementCollection
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.Collections.Generic.ICollection<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IEnumerable<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IList<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.BivariateAnalysisCollection(FrameworkInterfaces.IProject)
+  METHOD public override System.Void Add(FrameworkInterfaces.IElement)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Insert(System.Int32, FrameworkInterfaces.IElement)
+  METHOD public override System.Void InsertFromExternalProject(System.Int32, System.String, System.String, System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY System.String Name {public get;}
+TYPE class RMC.BestFit.UI.CoincidentFrequencyAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.CoincidentFrequencyAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public Numerics.Distributions.EmpiricalDistribution GetEmpiricalDistribution(System.Int32)
+  METHOD public Numerics.Distributions.EmpiricalDistribution GetPointEstimateDistribution()
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.UI.BivariateAnalysis BivariateAnalysis {public get;public set;}
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsBatchEligible {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<System.Double> XValues {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<System.Double> YValues {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.Double[,] BivariateResponse {public get;public set;}
+  PROPERTY System.Double[] ZOutputValues {public get;}
+  PROPERTY System.Int32 NumberOfBins {public get;public set;}
+  PROPERTY System.String CollectionName {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.CompositeAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE RMC.BestFit.UI.IUnivariate
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.CompositeAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void AnalysesFromXElement(System.Xml.Linq.XElement)
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD public sealed-virtual RMC.BestFit.Models.IUnivariateModel GetMarginalModel()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {public get;}
+  PROPERTY Numerics.Data.Statistics.Probability+DependencyType Dependency {public get;public set;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.AverageMethod ModelAverageMethod {public get;public set;}
+  PROPERTY RMC.BestFit.Analyses.CompositeType CompositeDistributionType {public get;public set;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;public set;}
+  PROPERTY System.Boolean AnalysesValid {public get;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsBatchEligible {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsMaximum {public get;public set;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.WeightedUnivariateAnalysis> Analyses {public get;public set;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.Double[,] CorrelationMatrix {public get;public set;}
+  PROPERTY System.String CollectionName {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.CovariateData
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IDisposable
+  CTOR public RMC.BestFit.UI.CovariateData()
+  METHOD protected virtual System.Void RaisePropertyChange(System.String)
+  METHOD public sealed-virtual System.Void Dispose()
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement TimeSeriesElement {public get;public set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged {public add;public remove;}
+TYPE class RMC.BestFit.UI.FittingAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.FittingAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public System.Void CancelAnalysis()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {public get;}
+  PROPERTY OxyPlot.Wpf.Plot CDFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot PDFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot PPPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot QQPlot {public get;}
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Collections.Generic.List<Numerics.Distributions.UnivariateDistributionBase> DistributionList {public get;}
+  PROPERTY System.Collections.Generic.List<RMC.BestFit.Models.FittedDistribution> FittedDistributions {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.FittingAnalysisCollection
+  BASE FrameworkInterfaces.ElementCollectionBase
+  INTERFACE FrameworkInterfaces.IElementCollection
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.Collections.Generic.ICollection<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IEnumerable<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IList<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.FittingAnalysisCollection(FrameworkInterfaces.IProject)
+  METHOD public override System.Void Add(FrameworkInterfaces.IElement)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Insert(System.Int32, FrameworkInterfaces.IElement)
+  METHOD public override System.Void InsertFromExternalProject(System.Int32, System.String, System.String, System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY System.String Name {public get;}
+TYPE interface RMC.BestFit.UI.IAnalysisElement
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD public abstract System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public abstract System.Void CancelAnalysis()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+TYPE interface RMC.BestFit.UI.IUnivariate
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  METHOD public abstract Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD public abstract Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD public abstract RMC.BestFit.Models.IUnivariateModel GetMarginalModel()
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;}
+TYPE class RMC.BestFit.UI.InputData
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.InputData(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.Boolean IsTimeSeriesInputValid()
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Threading.Tasks.Task CreateFromUSGS(System.Threading.CancellationToken optional=null)
+  METHOD public System.Void ClearTimeSeriesResults()
+  METHOD public System.Void CreateBlockSeries()
+  METHOD public System.Void CreatePeaksOverThresholdSeries()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public System.Void UpdateThresholdAnnotation()
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY Numerics.Data.BlockFunctionType BlockFunction {public get;public set;}
+  PROPERTY Numerics.Data.SmoothingFunctionType SmoothingFunction {public get;public set;}
+  PROPERTY Numerics.Data.TimeBlockWindow TimeBlock {public get;public set;}
+  PROPERTY OxyPlot.Wpf.Plot ACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ChronologyPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot DensityPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot HistogramPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot MRLPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ModifiedScalePlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot PACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot QQPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot SeasonalityPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ShapePlot {public get;}
+  PROPERTY RMC.BestFit.Models.DataFrame DataFrame {public get;public set;}
+  PROPERTY RMC.BestFit.UI.InputData+ExactDataEntryType ExactDataMethod {public get;public set;}
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement TimeSeriesElement {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsProcessed {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Boolean UseMultipleGrubbsBeckTest {public get;public set;}
+  PROPERTY System.Collections.Generic.Dictionary<System.String,System.Type> RequiredColumns {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.Double Threshold {public get;public set;}
+  PROPERTY System.Int32 EndMonth {public get;public set;}
+  PROPERTY System.Int32 MinStepsBetweenPeaks {public get;public set;}
+  PROPERTY System.Int32 Period {public get;public set;}
+  PROPERTY System.Int32 StartMonth {public get;public set;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String IndexLabel {public get;public set;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.String USGSSiteNumber {public get;public set;}
+  PROPERTY System.String UnitLabel {public get;public set;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE enum RMC.BestFit.UI.InputData+ExactDataEntryType
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD public RMC.BestFit.UI.InputData+ExactDataEntryType BlockSeries = 1
+  FIELD public RMC.BestFit.UI.InputData+ExactDataEntryType Manual = 0
+  FIELD public RMC.BestFit.UI.InputData+ExactDataEntryType PeaksOverThresholdSeries = 2
+  FIELD public RMC.BestFit.UI.InputData+ExactDataEntryType USGSPeakDischarge = 3
+  FIELD public RMC.BestFit.UI.InputData+ExactDataEntryType USGSPeakStage = 4
+  FIELD public System.Int32 value__
+TYPE class RMC.BestFit.UI.InputDataCollection
+  BASE FrameworkInterfaces.ElementCollectionBase
+  INTERFACE FrameworkInterfaces.IElementCollection
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.Collections.Generic.ICollection<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IEnumerable<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IList<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.InputDataCollection(FrameworkInterfaces.IProject)
+  METHOD public override System.Void Add(FrameworkInterfaces.IElement)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Insert(System.Int32, FrameworkInterfaces.IElement)
+  METHOD public override System.Void InsertFromExternalProject(System.Int32, System.String, System.String, System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY System.String Name {public get;}
+TYPE class RMC.BestFit.UI.MixtureAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE RMC.BestFit.UI.IUnivariate
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.MixtureAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD public sealed-virtual RMC.BestFit.Models.IUnivariateModel GetMarginalModel()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {public get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.Models.MixtureModel MixtureDistribution {public get;}
+  PROPERTY RMC.BestFit.UI.BayesianController BayesianPlots {public get;}
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<Numerics.Distributions.UnivariateDistributionType> Distributions {public get;public set;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.String CollectionName {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE static-class RMC.BestFit.UI.PlotAxisTitleDefaults
+  BASE System.Object
+  METHOD public static System.Boolean BindTitleIfDefault(OxyPlot.Wpf.Axis, System.Object, System.String, System.String, System.String optional=null, System.String optional=null)
+  METHOD public static System.Boolean IsDefaultManaged(OxyPlot.Wpf.Axis, System.String, System.String optional=null)
+  METHOD public static System.Boolean SetTitleIfDefault(OxyPlot.Wpf.Axis, System.String, System.String optional=null)
+TYPE class RMC.BestFit.UI.PlotUndoManager
+  BASE System.Object
+  INTERFACE System.IDisposable
+  CTOR public RMC.BestFit.UI.PlotUndoManager(OxyPlot.Wpf.Plot, System.Func<FrameworkInterfaces.Undo.IUndoManager>, System.String, System.Object, System.Action)
+  METHOD public System.IDisposable SuspendRecording()
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges()
+  METHOD public sealed-virtual System.Void Dispose()
+  PROPERTY OxyPlot.Wpf.Plot Plot {public get;}
+TYPE enum RMC.BestFit.UI.PlotUpdateStatus
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD public RMC.BestFit.UI.PlotUpdateStatus InsufficientData = 1
+  FIELD public RMC.BestFit.UI.PlotUpdateStatus MissingData = 2
+  FIELD public RMC.BestFit.UI.PlotUpdateStatus Success = 0
+  FIELD public System.Int32 value__
+TYPE class RMC.BestFit.UI.PointProcessAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE RMC.BestFit.UI.IUnivariate
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.PointProcessAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD public sealed-virtual RMC.BestFit.Models.IUnivariateModel GetMarginalModel()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {public get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.Models.PointProcessModel PointProcess {public get;}
+  PROPERTY RMC.BestFit.UI.BayesianController BayesianPlots {public get;}
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.String CollectionName {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.RatingCurveAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.RatingCurveAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.Collections.Generic.IReadOnlyList<System.ValueTuple<System.DateTime,System.Double,System.Double>> GetAlignedObservations()
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot RatingCurvePlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualHistogramPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualQQPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.Models.RatingCurve RatingCurve {public get;}
+  PROPERTY RMC.BestFit.UI.BayesianController BayesianPlots {public get;}
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement DischargeData {public get;public set;}
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement StageData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Boolean UseDefaultStageBins {public get;public set;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.Double MaxStage {public get;public set;}
+  PROPERTY System.Double MinStage {public get;public set;}
+  PROPERTY System.Int32 StageBins {public get;public set;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.RatingCurveAnalysisCollection
+  BASE FrameworkInterfaces.ElementCollectionBase
+  INTERFACE FrameworkInterfaces.IElementCollection
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.Collections.Generic.ICollection<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IEnumerable<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IList<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.RatingCurveAnalysisCollection(FrameworkInterfaces.IProject)
+  METHOD public override System.Void Add(FrameworkInterfaces.IElement)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Insert(System.Int32, FrameworkInterfaces.IElement)
+  METHOD public override System.Void InsertFromExternalProject(System.Int32, System.String, System.String, System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY System.String Name {public get;}
+TYPE class RMC.BestFit.UI.TimeSeriesAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.TimeSeriesAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualHistogramPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualPACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ResidualQQPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot TimeSeriesPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.Models.ARIMAX ARIMAX {public get;}
+  PROPERTY RMC.BestFit.Models.ARIMAX+CovariateExtensionMethod CovariateExtension {public get;public set;}
+  PROPERTY RMC.BestFit.UI.BayesianController BayesianPlots {public get;}
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement TimeSeriesData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.Boolean UseDefaultTrainingSteps {public get;public set;}
+  PROPERTY System.Collections.ObjectModel.ObservableCollection<RMC.BestFit.UI.CovariateData> Covariates {public get;public set;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.Int32 ForecastSteps {public get;public set;}
+  PROPERTY System.Int32 TrainingTimeSteps {public get;public set;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.TimeSeriesAnalysisCollection
+  BASE FrameworkInterfaces.ElementCollectionBase
+  INTERFACE FrameworkInterfaces.IElementCollection
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.Collections.Generic.ICollection<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IEnumerable<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IList<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.TimeSeriesAnalysisCollection(FrameworkInterfaces.IProject)
+  METHOD public override System.Void Add(FrameworkInterfaces.IElement)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Insert(System.Int32, FrameworkInterfaces.IElement)
+  METHOD public override System.Void InsertFromExternalProject(System.Int32, System.String, System.String, System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY System.String Name {public get;}
+TYPE class RMC.BestFit.UI.TimeSeriesCollection
+  BASE FrameworkInterfaces.ElementCollectionBase
+  INTERFACE FrameworkInterfaces.IElementCollection
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.Collections.Generic.ICollection<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IEnumerable<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IList<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.TimeSeriesCollection(FrameworkInterfaces.IProject)
+  METHOD public override System.Void Add(FrameworkInterfaces.IElement)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Insert(System.Int32, FrameworkInterfaces.IElement)
+  METHOD public override System.Void InsertFromExternalProject(System.Int32, System.String, System.String, System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY System.String Name {public get;}
+TYPE class RMC.BestFit.UI.TimeSeriesElement
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.TimeSeriesElement(System.String optional="Time Series Data", FrameworkInterfaces.IElementCollection optional=null, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Threading.Tasks.Task Download(System.Threading.CancellationToken optional=null)
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public System.Void SetIsValid()
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY Numerics.Data.TimeInterval TimeInterval {public get;public set;}
+  PROPERTY Numerics.Data.TimeSeries TimeSeries {public get;public set;}
+  PROPERTY Numerics.Data.TimeSeriesDownload+DepthUnit DepthUnit {public get;public set;}
+  PROPERTY Numerics.Data.TimeSeriesDownload+DischargeUnit DischargeUnit {public get;public set;}
+  PROPERTY Numerics.Data.TimeSeriesDownload+HeightUnit HeightUnit {public get;public set;}
+  PROPERTY Numerics.Data.TimeSeriesDownload+TimeSeriesType SeriesType {public get;public set;}
+  PROPERTY OxyPlot.Wpf.Plot ACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot PACFPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot SeasonalityPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot TimeSeriesPlot {public get;}
+  PROPERTY RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod EntryMethod {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsPeakSeasonality {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.DateTime StartDateTime {public get;public set;}
+  PROPERTY System.String ABOMSiteNumber {public get;public set;}
+  PROPERTY System.String CHMNSiteNumber {public get;public set;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String GHCNSiteNumber {public get;public set;}
+  PROPERTY System.String HECDSSDataPathname {public get;public set;}
+  PROPERTY System.String HECDSSFullFilename {public get;public set;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.String USGSRawText {public get;}
+  PROPERTY System.String USGSSiteNumber {public get;public set;}
+  PROPERTY System.String UnitLabel {public get;public set;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE enum RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod
+  BASE System.Enum
+  INTERFACE System.IComparable
+  INTERFACE System.IConvertible
+  INTERFACE System.IFormattable
+  INTERFACE System.ISpanFormattable
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod ABOM = 5
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod CHMN = 4
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod GHCN = 2
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod GHCNDailyPrecipitation = 6
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod HECDSS = 1
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod Manual = 0
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod USGS = 3
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod USGSDailyDischarge = 7
+  FIELD public RMC.BestFit.UI.TimeSeriesElement+TimeSeriesEntryMethod USGSDailyStage = 8
+  FIELD public System.Int32 value__
+TYPE class RMC.BestFit.UI.UnivariateAnalysis
+  BASE FrameworkInterfaces.ElementBase
+  INTERFACE FrameworkInterfaces.IElement
+  INTERFACE FrameworkInterfaces.IMetaData
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE FrameworkInterfaces.Undo.IUndoableElement
+  INTERFACE RMC.BestFit.Analyses.IProbabilityOrdinates
+  INTERFACE RMC.BestFit.UI.IAnalysisElement
+  INTERFACE RMC.BestFit.UI.IUnivariate
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.UnivariateAnalysis(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.IDisposable SuspendPlotBridges()
+  METHOD public System.Void ClearResults()
+  METHOD public System.Void Open(DatabaseManager.SQLiteManager)
+  METHOD public System.Void RaisePreviewSaved(ref System.Boolean)
+  METHOD public System.Void RebuildSeriesAndAnnotationBridges(OxyPlot.Wpf.Plot)
+  METHOD public override FrameworkInterfaces.IElement Copy(System.String optional="")
+  METHOD public override FrameworkInterfaces.IElement CopyFromExternal(System.String, System.String)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetDistribution(System.Int32)
+  METHOD public sealed-virtual Numerics.Distributions.UnivariateDistributionBase GetPointEstimateDistribution()
+  METHOD public sealed-virtual RMC.BestFit.Models.IUnivariateModel GetMarginalModel()
+  METHOD public sealed-virtual System.Threading.Tasks.Task RunAsync(Numerics.Utilities.SafeProgressReporter)
+  METHOD public sealed-virtual System.Void CancelAnalysis()
+  PROPERTY Numerics.Data.ProbabilityOrdinates ProbabilityOrdinates {public get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults AnalysisResults {public get;}
+  PROPERTY Numerics.Distributions.UncertaintyAnalysisResults ChronologyAnalysisResults {public get;}
+  PROPERTY OxyPlot.Wpf.Plot ChronologyPlot {public get;}
+  PROPERTY OxyPlot.Wpf.Plot FrequencyPlot {public get;}
+  PROPERTY RMC.BestFit.Analyses.IAnalysis InnerAnalysis {public get;}
+  PROPERTY RMC.BestFit.Estimation.BayesianAnalysis BayesianAnalysis {public get;}
+  PROPERTY RMC.BestFit.Models.UnivariateDistribution UnivariateDistribution {public get;}
+  PROPERTY RMC.BestFit.UI.BayesianController BayesianPlots {public get;}
+  PROPERTY RMC.BestFit.UI.InputData InputData {public get;public set;}
+  PROPERTY System.Boolean CanCopyFromExternal {public get;}
+  PROPERTY System.Boolean IsEstimated {public get;}
+  PROPERTY System.Boolean IsValid {public get;}
+  PROPERTY System.DateTime CreationDate {public get;}
+  PROPERTY System.DateTime LastModified {public get;}
+  PROPERTY System.String CollectionName {public get;}
+  PROPERTY System.String Description {public get;public set;}
+  PROPERTY System.String ElementImageResourceKey {public get;}
+  PROPERTY System.String Name {public get;public set;}
+  PROPERTY System.String NameOnDisk {public get;}
+  PROPERTY System.Windows.Media.ImageSource ElementImage {public get;}
+TYPE class RMC.BestFit.UI.UnivariateAnalysisCollection
+  BASE FrameworkInterfaces.ElementCollectionBase
+  INTERFACE FrameworkInterfaces.IElementCollection
+  INTERFACE FrameworkInterfaces.ISave
+  INTERFACE System.Collections.Generic.ICollection<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IEnumerable<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.Generic.IList<FrameworkInterfaces.IElement>
+  INTERFACE System.Collections.IEnumerable
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  CTOR public RMC.BestFit.UI.UnivariateAnalysisCollection(FrameworkInterfaces.IProject)
+  METHOD public override System.Void Add(FrameworkInterfaces.IElement)
+  METHOD public override System.Void Delete()
+  METHOD public override System.Void Insert(System.Int32, FrameworkInterfaces.IElement)
+  METHOD public override System.Void InsertFromExternalProject(System.Int32, System.String, System.String, System.String)
+  METHOD public override System.Void Open()
+  METHOD public override System.Void Save()
+  PROPERTY System.String Name {public get;}
+TYPE class RMC.BestFit.UI.ValidationMessageAdapter
+  BASE System.Object
+  CTOR public RMC.BestFit.UI.ValidationMessageAdapter(FrameworkInterfaces.Messaging.Messenger, System.Object, System.String, System.String)
+  METHOD public System.Boolean SyncValidation(System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>>, System.String)
+  METHOD public System.Void ClearAll()
+TYPE class RMC.BestFit.UI.WeightedUnivariateAnalysis
+  BASE System.Object
+  INTERFACE System.ComponentModel.INotifyPropertyChanged
+  INTERFACE System.IDisposable
+  CTOR public RMC.BestFit.UI.WeightedUnivariateAnalysis()
+  METHOD protected virtual System.Void RaisePropertyChange(System.String)
+  METHOD public System.Xml.Linq.XElement ToXElement()
+  METHOD public sealed-virtual System.Void Dispose()
+  PROPERTY RMC.BestFit.UI.IUnivariate UnivariateAnalysis {public get;public set;}
+  PROPERTY System.Double Weight {public get;public set;}
+  EVENT System.ComponentModel.PropertyChangedEventHandler PropertyChanged {public add;public remove;}

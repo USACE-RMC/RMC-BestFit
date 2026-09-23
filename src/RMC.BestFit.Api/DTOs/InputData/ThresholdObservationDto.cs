@@ -5,7 +5,7 @@ namespace RMC.BestFit.Api.DTOs
     /// <summary>
     /// A perception-threshold (censored) record: over the window from <see cref="StartIndex"/> to
     /// <see cref="EndIndex"/>, floods exceeding <see cref="Value"/> would have been observed, and
-    /// <see cref="NumberAbove"/> of them were. Years below the threshold are treated as censored.
+    /// undated aggregate exceedances can be supplied separately from explicitly dated floods.
     /// Used to incorporate historical and paleoflood information.
     /// </summary>
     public class ThresholdObservationDto
@@ -30,8 +30,9 @@ namespace RMC.BestFit.Api.DTOs
         public double Value { get; set; }
 
         /// <summary>
-        /// The number of observations above the threshold during the window. These are typically
-        /// entered separately as exact or interval observations. Default 0.
+        /// Additional aggregate exceedances NOT already entered as exact, uncertain or interval
+        /// observations. Do not recount dated floods here. Default 0. Responses contain the
+        /// effective count after model processing; the source endpoint retains the submitted count.
         /// </summary>
         [JsonPropertyName("numberAbove")]
         public int NumberAbove { get; set; }
