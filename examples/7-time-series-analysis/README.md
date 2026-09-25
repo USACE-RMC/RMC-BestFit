@@ -1,73 +1,24 @@
-# Time Series Analysis Examples
+# Time-series analysis
 
-This chapter demonstrates ARIMA / ARIMAX / regression fitting on hydrologic and economic time-series data. Unlike the univariate-frequency workflow (chapter 4), Time Series Analysis preserves the temporal structure of the observations and produces parameter estimates plus multi-step forecasts.
+Time-series models retain observation order and can describe trends, serial dependence and covariate relationships. These teaching projects contain saved Bayesian fits and predictive results. They are distinct from an annual-maximum frequency analysis.
 
-## Sub-Chapters
+## Choose an example
 
-| Sub-Chapter | Data Source | What It Demonstrates |
+| Tutorial | Saved contents | What you will learn |
 |---|---|---|
-| [1-synthetic-data-examples](1-synthetic-data-examples/) | Synthetic | Trend, AR, MA, ARMA, and log-transformed series with known ground truth |
-| [2-classic-time-series-examples](2-classic-time-series-examples/) | Box-Jenkins, NOAA GML, Cobb (1978) | Three published classics: airline passengers, Mauna Loa CO2, Nile River flows |
-| [3-time-series-regression-example](3-time-series-regression-example/) | US macroeconomic indicators | Simple and multiple linear regression with autocorrelated residuals |
+| [Synthetic models](1-synthetic-data-examples/synthetic-time-series-examples.md) | Twelve 300-observation datasets and fits. | Compare trend, autoregressive, moving-average and transformed models; identify settings that differ from element names. |
+| [Classic datasets](2-classic-time-series-examples/classic-time-series-examples.md) | Airline passengers, Nile flow and Mauna Loa CO2. | Read training/validation splits, seasonality, saved convergence limitations and the retained Nile date discrepancy. |
+| [Time-series regression](3-time-series-regression-example/time-series-regression-example.md) | Five quarterly macroeconomic series, two regression fits and 30 future steps. | Distinguish simple/multiple regression, covariate assumptions and prediction uncertainty. Both saved fits have zero ARMA orders. |
 
-## Examples
+## Follow a saved analysis
 
-| Example | Sub-Chapter | Description |
-|---|---|---|
-| [Synthetic Time Series Examples](1-synthetic-data-examples/synthetic-time-series-examples.md) | 1- | Thirteen synthetic series + matched fits for verifying parameter recovery |
-| [Classic Time Series Examples](2-classic-time-series-examples/classic-time-series-examples.md) | 2- | Three classic datasets used throughout the time-series literature |
-| [Time Series Regression Example](3-time-series-regression-example/time-series-regression-example.md) | 3- | US macro indicators fit with simple and multiple regression |
+1. Open the project's linked file and save a working copy. Inspect the response's units, interval, dates and gaps under **Time Series Data**.
+2. Select the named analysis under **Time Series Analysis**. Read its actual trend, transformation and ARIMA orders; an element name may be an older label.
+3. Identify the training observations, withheld validation observations and future steps separately. The synthetic and classic projects have zero future steps; their held-out curves are validation predictions.
+4. Inspect every parameter's trace, R-hat and effective sample size. The Airline example has weak saved diagnostics, which remain part of the lesson.
+5. Inspect residuals, autocorrelation and Q–Q views in their stated residual scale. A model can track a trend while leaving unexplained serial structure.
+6. For a future prediction with covariates, determine where future covariate values come from. Fixed means and bootstrap scenarios carry different assumptions, and separately bootstrapping covariates does not preserve their joint dependence.
 
-## Supported Models
+The plotted bands are prediction intervals: they include process/residual variability and parameter uncertainty. They are not just uncertainty about a mean trend. The vertical training boundary and the colors distinguish the fitted period from withheld or future prediction periods.
 
-| Model | Order | Use |
-|---|---|---|
-| **Constant Mean** | — | Stationary series with constant level |
-| **Linear / Quadratic / Cubic Trend** | — | Polynomial trends |
-| **Sinusoidal Trend** | — | Annual / sub-annual cycles |
-| **AR(p)** | p | Autoregressive |
-| **MA(q)** | q | Moving average |
-| **ARMA(p, q)** | p, q | Combined autoregressive + moving average |
-| **ARIMA(p, d, q)** | p, d, q | ARMA with d differencing steps |
-| **ARIMAX(p, d, q)** | p, d, q + covariates | ARIMA with exogenous covariates |
-| **Linear Regression with ARMA residuals** | — | Time-series regression on covariates |
-
-## Workflow Overview
-
-```
-Time Series Data (raw observations)
-         |
-         |  -->  Time Series Analysis (model selection + fit)
-         |          |
-         |          +-->  Parameter posterior
-         |          +-->  Residual diagnostics (ACF / PACF)
-         |          +-->  Multi-step forecast with credible band
-```
-
-Each Time Series Analysis element references **one** Time Series Data element as the response. ARIMAX and regression elements additionally reference one or more covariate Time Series Data elements.
-
-## How to Use These Examples
-
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to a sub-chapter folder.
-3. Open the `.bestfit` file.
-4. Expand **Time Series Data** to see the input series.
-5. Expand **Time Series Analysis** to see the fits.
-6. Click an analysis to view the fitted mean, residual ACF / PACF, and forecast.
-7. Open the matching `.md` tutorial for a step-by-step guide.
-
-## Training-Window Configuration
-
-By default, RMC-BestFit reserves the **last 20% of each series for validation** (`UseDefaultTrainingSteps = true`). For maximum-likelihood parity with R's `arima()` and statsmodels, set `UseDefaultTrainingSteps = false` and `TrainingTimeSteps = data length` in the Properties panel.
-
-## Screenshot Images
-
-Capture screenshots into `images/` subfolders next to each example. Naming convention: `<example-slug>-<view-name>.png` (e.g., `nile-time-series.png`, `synthetic-ts-arma11-residuals.png`).
-
-## Next Steps
-
-After fitting a time-series model:
-
-- **Use forecasts as input** to a Univariate Distribution Analysis (chapter 4) for forward-looking flood-frequency.
-- **Pair two correlated series** in a Bivariate Distribution Analysis (chapter 5) for joint inference.
-- **Re-fit with informative priors** when prior engineering judgment is available about parameter ranges.
+Read the [author issue log](../../docs/example-issues-for-haden.md) before adopting an example configuration. Saved settings and results are preserved; these figures do not constitute a new recovery or forecasting validation experiment. See [figure reproduction](../README.md#reproducing-the-figures) or return to the [example index](../README.md).

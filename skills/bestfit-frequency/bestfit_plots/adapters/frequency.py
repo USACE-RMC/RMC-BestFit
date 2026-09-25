@@ -152,7 +152,7 @@ def _frequency(restored, *, show_pot=True):
                             color="red", boundsColor="black", marker="s")
             if lower != y or upper != y:
                 prior.update(yLower=clean(lower), yUpper=clean(upper),
-                             interval={"kind": "prior"})
+                             interval={"kind": "penalty" if b17c else "prior"})
             series.append(prior)
     model = _portable_model(restored)
     if "pointprocess" in kind and model is not None:

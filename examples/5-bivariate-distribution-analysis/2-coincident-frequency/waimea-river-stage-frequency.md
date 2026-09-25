@@ -1,158 +1,131 @@
-# waimea-river-stage-frequency
+# Waimea and Makaweli: marginals, event pairing and response frequency
 
-## Overview
+Open [waimea-river-stage-frequency.bestfit](waimea-river-stage-frequency.bestfit) and save a working copy. This advanced example connects historical information and priors in marginal flow models, dependence between paired observations, and a supplied response surface. Complete the [copula](../1-bivariate-distributions/bivariate-distribution-examples.md) and [sum-of-two-Normals](sum-two-normals.md) tutorials first.
 
-Coincident peak-flow analysis for the Waimea River and Makaweli River, Kauai, Hawaii. Demonstrates joint Bayesian peak-flow estimation with regional skew, drainage-area scaling, and historical-record conditioning, then derives a coincident peak-flow distribution via the Normal copula.
+**Study context is incomplete.** The meaning of RR, Makaweli flow units, conditional event selection, and the hydraulic response's physical quantity, location, units and datum require the project author's explanation. The filename alone does not establish them. This tutorial uses the neutral term response Z and preserves the saved labels and results.
 
-## What's Inside
+## Inspect the four inputs
 
-### Input Data
+| Input | Meaning | Exact count (index span) | Other records |
+| --- | --- | --- | --- |
+| 16031000_Waimea_Peaks | Waimea annual peaks: 64 exact observations, 1914–2023, cfs. Three low flags (1973, 1984, 1987); 1919–1943 and 1997–2016 perception windows at 37,100 cfs with below counts 25/20 and above counts zero. | 64 (1914–2023) | Uncertain 0; intervals 0; windows 2; low flags 3. |
+| 16036000_Makaweli_Peaks | Makaweli annual peaks: 75 exact values, 1945–2019; saved unit label Value, physical units awaiting confirmation. No low flags or perception windows. | 75 (1945–2019) | Uncertain 0; intervals 0; windows 0; low flags 0. |
+| 16036000_Makaweli_Conditional_Peaks | 54 exact conditional Makaweli values, 1946–2019; saved unit Value. Event-selection provenance and units need confirmation. No low flags or perception windows. | 54 (1946–2019) | Uncertain 0; intervals 0; windows 0; low flags 0. |
+| Simulated Proof | 10,000 exact generic values indexed 1–10,000. Retained simulation evidence with no current CFA InputData binding; purpose and provenance require confirmation. | 10000 (1–10000) | Uncertain 0; intervals 0; windows 0; low flags 0. |
 
-| Element | Description |
-|---|---|
-| `16031000_Waimea_Peaks` | Annual peak discharge for the Waimea River at Waimea, Kauai, HI (USGS gage 16031000). |
-| `16036000_Makaweli_Peaks` | Annual peak discharge for the Makaweli River, Kauai, HI (USGS gage 16036000). |
-| `16036000_Makaweli_Conditional_Peaks` | Conditional Makaweli peak series — Makaweli peaks observed coincidentally with Waimea peaks. |
-| `Simulated Proof` | Simulated dataset used to verify the conditional copula machinery against ground truth. |
+Historical windows inform Waimea's marginal likelihood; they do not create additional measured pairs. Ordinary annual peaks share 55 exact indexes, while the conditional inputs share 54. Excluding Waimea's three flagged low values leaves **52 and 51 eligible copula pairs** under the current matching rules. Two annual maxima in the same year are not necessarily simultaneous floods.
 
-### Distribution Fitting Analysis
+## Trace the marginal information
 
-| Element | Description |
-|---|---|
-| `16031000_WaimeaPk` | Distribution-fitting comparison across LP-III, GEV, Gumbel, etc. on the Waimea peak series. |
+There are seven current LP3 alternatives. The RR alternatives enable three LogNormal quantile priors. The following parameters are in **base-10 log space**, not natural-flow means and SDs.
 
-### Bayesian Estimation Analysis
+| Site | AEP | Prior log10 mean | Prior log10 SD |
+| --- | --- | --- | --- |
+| Waimea | 0.1 | 4.3234 | 0.1758 |
+| Waimea | 0.01 | 4.6408 | 0.163401346 |
+| Waimea | 0.002 | 4.8037 | 0.1578 |
+| Makaweli | 0.1 | 4.2028 | 0.1758 |
+| Makaweli | 0.01 | 4.474 | 0.1634 |
+| Makaweli | 0.002 | 4.6175 | 0.1578 |
 
-| Element | Description |
-|---|---|
-| `16031000_WaimeaPk` | Bayesian peak-flow estimation for Waimea (legacy element — see <Univariate Distribution> for current fits). |
-| `16036000_MakaweliPk` | Bayesian peak-flow estimation for Makaweli (legacy element). |
-| `16031000_WaimeaPk_RgSkew` | Bayesian Waimea fit with regional skew prior (legacy element). |
-| `16036000_MakaweliPk_RgSkew` | Bayesian Makaweli fit with regional skew prior (legacy element). |
-| `16031000_WaimeaPk_RgSkew_MGBT` | Bayesian Waimea fit with regional skew + Multiple Grubbs-Beck Test low-outlier detection (legacy). |
-| `16036000_MakaweliPk_RgSkew_Censored` | Bayesian Makaweli fit with regional skew + low-outlier censoring (legacy). |
-| `16036000_MakaweliPk_SCALED2Waimea` | Makaweli fit drainage-area scaled to the Waimea reference area (legacy). |
-| `16031000_WaimeaPk_SCALED2Makaweli` | Waimea fit drainage-area scaled to the Makaweli reference area (legacy). |
-| `16031000_WaimeaPk_SCALED2_85sqmi` | Waimea fit drainage-area scaled to a 85-sqmi reference (legacy). |
-| `16036000_MakaweliPk_SCALED2_85sqmi` | Makaweli fit drainage-area scaled to a 85-sqmi reference (legacy). |
+The two RSkew alternatives disable default flat priors and use a Normal prior on LP3 log-skew, mean −0.157 and SD 0.46. Mean-of-log-flow and scale retain Uniform bounds approximately 0–6 and positive–2, with Jeffreys scale treatment enabled. These are Bayesian parameter priors; do not substitute the separate Bulletin 17C weighted-skew interpretation. Source and regional applicability remain to be documented.
 
-### Univariate Distribution
+## Follow the analysis connections
 
-| Element | Description |
-|---|---|
-| `MakaweliPk - Exact` | Bayesian LP-III fit on the Makaweli systematic peak record (exact data only). |
-| `WaimeaPk - Exact + Historical + RR Prior` | Bayesian LP-III fit for Waimea with historical record extension and a runoff-ratio prior. |
-| `WaimeaPk - Exact + Historical` | Bayesian LP-III fit for Waimea with historical record extension only. |
-| `MakaweliPk - Exact + RR Prior` | Bayesian LP-III fit for Makaweli using exact data and a runoff-ratio prior. |
-| `MakaweliPk - Exact + RR Prior_RSkew` | Bayesian Makaweli fit with runoff-ratio prior + regional skew weighting. |
-| `WaimeaPk - Exact + Historical + RR Prior_RSkew` | Bayesian Waimea fit with historical record + runoff-ratio prior + regional skew weighting. |
-| `MakaweliPk - Cond - Exact` | Bayesian LP-III fit on the conditional Makaweli peak series (Makaweli peaks at Waimea events). |
+1. Open WaimeaPk - Exact + Historical and compare its input chronology with the RR-prior and RR-prior/RSkew alternatives. Identify each distinct information source.
+2. Inspect the Makaweli marginal alternatives. Keep the conditional input separate from ordinary annual peaks.
+3. Open each ordinary copula. All six use WaimeaPk - Exact + Historical + RR Prior_RSkew as X and MakaweliPk - Exact + RR Prior_RSkew as Y.
+4. Open Normal Copula - Conditional. It keeps the Waimea X margin and uses MakaweliPk - Cond - Exact as Y. Different paired observations prevent a direct common-data ranking against the ordinary copulas.
+5. Open CFA - Normal - Conditional. Inspect its 10×5 response grid and 50 response outputs. Its InputData binding is empty; Simulated Proof is not an observed-response overlay for this analysis.
 
-### Bivariate Distribution
+| Analysis | Copula family | Saved dependence parameter | X marginal | Y marginal |
+| --- | --- | --- | --- | --- |
+| Normal Copula | Normal | 0.689 | WaimeaPk - Exact + Historical + RR Prior_RSkew | MakaweliPk - Exact + RR Prior_RSkew |
+| Gumbel Copula | Gumbel | 1.708 | WaimeaPk - Exact + Historical + RR Prior_RSkew | MakaweliPk - Exact + RR Prior_RSkew |
+| Clayton Copula | Clayton | 1.982 | WaimeaPk - Exact + Historical + RR Prior_RSkew | MakaweliPk - Exact + RR Prior_RSkew |
+| Joe Copula | Joe | 1.829 | WaimeaPk - Exact + Historical + RR Prior_RSkew | MakaweliPk - Exact + RR Prior_RSkew |
+| Frank Copula | Frank | 5.388 | WaimeaPk - Exact + Historical + RR Prior_RSkew | MakaweliPk - Exact + RR Prior_RSkew |
+| AMH Copula | AliMikhailHaq | 1 | WaimeaPk - Exact + Historical + RR Prior_RSkew | MakaweliPk - Exact + RR Prior_RSkew |
+| Normal Copula - Conditional | Normal | 0.167 | WaimeaPk - Exact + Historical + RR Prior_RSkew | MakaweliPk - Cond - Exact |
 
-| Element | Description |
-|---|---|
-| `Normal Copula` | Bivariate Normal copula fit linking the Waimea and Makaweli peak marginals. |
-| `Gumbel Copula` | Bivariate Gumbel copula fit linking the Waimea and Makaweli peak marginals. |
-| `Clayton Copula` | Bivariate Clayton copula fit linking the Waimea and Makaweli peak marginals. |
-| `Joe Copula` | Bivariate Joe copula fit linking the Waimea and Makaweli peak marginals. |
-| `Frank Copula` | Bivariate Frank copula fit linking the Waimea and Makaweli peak marginals. |
-| `AMH Copula` | Bivariate AMH copula fit linking the Waimea and Makaweli peak marginals. |
-| `Normal Copula - Conditional` | Conditional Normal copula fit using the conditional Makaweli marginal. |
+Every copula uses InferenceFromMargins. AMH's point estimate is about 0.999995, near its upper bound; good-looking scalar diagnostics do not resolve that boundary behavior or establish tail suitability. The saved copula query at (0,0) returns probability one and is not a useful flood-return-period result.
 
-### Coincident Frequency
+## Saved results and diagnostics
 
-| Element | Description |
-|---|---|
-| `CFA - Normal - Conditional` | Coincident frequency analysis combining the conditional copula and marginals to produce the joint Waimea + Makaweli peak-flow distribution. |
+The current MCMC fits retain DEMCzs, seed 12345, 1,750 warmup iterations, 3,500 iterations, 10,000 output draws and 90% interval width. Chain/thinning and selected point-parameter estimates are listed below. Inspect actual prior bounds, every parameter trace and autocorrelation, and uncertainty in the quantity needed for the study. R-hat and ESS summarize the saved run; successful completion alone does not establish adequacy. Composite and coincident-frequency wrappers propagate upstream results and do not represent separate MCMC fits.
+| Saved fit | Chains / thinning | Point parameters | DIC | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- |
+| Normal Copula | 4/10 | Mean | -31.426 | 0.99988 | 9,314 |
+| Gumbel Copula | 4/10 | Mode | -23.767 | 1.00109 | 9,694 |
+| Clayton Copula | 4/10 | Mode | -31.725 | 0.99991 | 9,145 |
+| Joe Copula | 4/10 | Mode | -18.594 | 1.00022 | 9,359 |
+| Frank Copula | 4/10 | Mode | -29.873 | 1.00065 | 9,767 |
+| AMH Copula | 4/10 | Mode | -24.041 | 1.00100 | 5,590 |
+| Normal Copula - Conditional | 4/10 | Mean | 0.323 | 0.99977 | 9,349 |
+| MakaweliPk - Exact | 4/20 | Mode | 1,476.621 | 1.00058 | 8,841 |
+| WaimeaPk - Exact + Historical + RR Prior | 6/30 | Mean | 1,280.318 | 1.00036 | 9,272 |
+| WaimeaPk - Exact + Historical | 4/20 | Mode | 1,280.653 | 1.00068 | 8,843 |
+| MakaweliPk - Exact + RR Prior | 4/20 | Mode | 1,476.345 | 1.00078 | 9,030 |
+| MakaweliPk - Exact + RR Prior_RSkew | 6/30 | Mode | 1,476.071 | 1.00046 | 9,258 |
+| WaimeaPk - Exact + Historical + RR Prior_RSkew | 6/30 | Mean | 1,280.42 | 1.00041 | 9,010 |
+| MakaweliPk - Cond - Exact | 6/30 | Mean | 1,060.354 | 1.00058 | 9,374 |
 
-## Step-by-Step Walkthrough
+| Analysis | Saved 1% AEP point | 90% bounds |
+| --- | --- | --- |
+| MakaweliPk - Exact | 24,635.987 | 21,434.962–36,905.435 |
+| WaimeaPk - Exact + Historical + RR Prior | 39,832.633 | 33,513.611–50,415.124 |
+| WaimeaPk - Exact + Historical | 36,587.137 | 33,339.818–51,693.798 |
+| MakaweliPk - Exact + RR Prior | 24,781.808 | 21,502.94–34,741.177 |
+| MakaweliPk - Exact + RR Prior_RSkew | 25,442.471 | 21,797.812–35,103.51 |
+| WaimeaPk - Exact + Historical + RR Prior_RSkew | 41,247.679 | 34,184.13–51,990.154 |
+| MakaweliPk - Cond - Exact | 30,308.621 | 22,039.376–50,429.454 |
 
-### Opening the Project
+Waimea values are cfs; Makaweli retains the saved Value label pending confirmation. These quantiles use **current AnalysisResults**, as read by the current univariate loader, and the configured point-parameter estimator. Seven rows also retain different legacy FrequencyAnalysisResults. Both payloads remain unchanged; they must not be combined.
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/5-bivariate-distribution-analysis/2-coincident-frequency/`.
-3. Open `waimea-river-stage-frequency.bestfit`.
+The conditional CFA saves 10,000 output draws and 90% probability bounds at fixed Z. The response surface spans 7.14–28.15, with 50 output positions. Selected existing rows are:
 
-### Exploring the Elements
+| CFA | Fixed response Z | Saved AEP point | Probability bounds | Width |
+| --- | --- | --- | --- | --- |
+| CFA - Normal - Conditional | 12.285 | 0.776525 | 0.710759–0.843447 | 90% |
+| CFA - Normal - Conditional | 17.859 | 0.208193 | 0.151021–0.27062 | 90% |
+| CFA - Normal - Conditional | 23.005 | 0.0139775 | 0.0022503–0.0321982 | 90% |
 
-For each Coincident Frequency Analysis alternative:
+## Read the current figures
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Joint Density** tab to view the bivariate fit.
-3. Open the **Frequency** tab to view the derived response-variable AEP curve.
-4. Adjust the **X / Y ordinates** in the Properties panel to refine the response surface.
+![Waimea annual peaks, low flags and retained historical perception windows.](images/waimea-river-stage-frequency-waimea-chronology.png)
 
-## Analysis Settings
+*Waimea annual peaks, low flags and retained historical perception windows.* [SVG](images/waimea-river-stage-frequency-waimea-chronology.svg) · [Plot data](images/waimea-river-stage-frequency-waimea-chronology.plotspec.json.gz)
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+![Current Waimea marginal curve with enabled quantile priors and a saved log-skew prior.](images/waimea-river-stage-frequency-waimea-priors.png)
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+*Current Waimea marginal curve with enabled quantile priors and a saved log-skew prior.* [SVG](images/waimea-river-stage-frequency-waimea-priors.svg) · [Plot data](images/waimea-river-stage-frequency-waimea-priors.plotspec.json.gz)
 
-## Expected Results
+![Current conditional Makaweli marginal result; the saved unit label is Value.](images/waimea-river-stage-frequency-makaweli-conditional.png)
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+*Current conditional Makaweli marginal result; the saved unit label is Value.* [SVG](images/waimea-river-stage-frequency-makaweli-conditional.svg) · [Plot data](images/waimea-river-stage-frequency-makaweli-conditional.plotspec.json.gz)
 
-### Parameter Estimates
+![Conditional paired data in marginal-CDF space, with 51 eligible pairs.](images/waimea-river-stage-frequency-conditional-cdf.png)
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+*Conditional paired data in marginal-CDF space, with 51 eligible pairs.* [SVG](images/waimea-river-stage-frequency-conditional-cdf.svg) · [Plot data](images/waimea-river-stage-frequency-conditional-cdf.plotspec.json.gz)
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+![Conditional joint-exceedance contours in marginal-CDF space.](images/waimea-river-stage-frequency-conditional-joint-exceedance.png)
 
-### Frequency / Quantile Table
+*Conditional joint-exceedance contours in marginal-CDF space.* [SVG](images/waimea-river-stage-frequency-conditional-joint-exceedance.svg) · [Plot data](images/waimea-river-stage-frequency-conditional-joint-exceedance.plotspec.json.gz)
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+![Saved probability bounds at fixed response Z; physical quantity and units await source confirmation.](images/waimea-river-stage-frequency-conditional-response.png)
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+*Saved probability bounds at fixed response Z; physical quantity and units await source confirmation.* [SVG](images/waimea-river-stage-frequency-conditional-response.svg) · [Plot data](images/waimea-river-stage-frequency-conditional-response.plotspec.json.gz)
 
-### Plots
+## Retained legacy material and unresolved evidence
 
-![Joint copula density contour overlaid on the X-Y scatter.](images/waimea-joint-density.png)
-*Figure: Joint copula density contour overlaid on the X-Y scatter.*
+Ten legacy Bayesian Estimation Analysis records remain in the database, including names containing RgSkew, MGBT, Censored and SCALED. Their input names do not resolve exactly to current inputs; their binary results require the compatibility loader. They are preserved records, not automatically failed runs or current drainage-area-scaling alternatives.
 
-![Marginal X frequency curve.](images/waimea-marginal-x.png)
-*Figure: Marginal X frequency curve.*
+The separate fitting analysis 16031000_WaimeaPk binds the current Waimea input and contains **15 successful, visible distribution fits**. Current AnalysisXml is estimated, while the old IsFitted flag is zero. The current loader prioritizes AnalysisXml. No populated fit or conflicting flag has been deleted or repaired.
 
-![Marginal Y frequency curve.](images/waimea-marginal-y.png)
-*Figure: Marginal Y frequency curve.*
+The author follow-up log records the prior sources, regional applicability, Makaweli units, conditional selection, hydraulic response definition, Simulated Proof role and legacy-result conflicts. These are necessary study decisions before design interpretation. A readable saved curve does not supply the missing evidence.
 
-![Derived coincident-response frequency curve (CFA only).](images/waimea-frequency.png)
-*Figure: Derived coincident-response frequency curve (CFA only).*
+## Reproduce and check
 
-### MCMC Diagnostics
+These Python figures use BestFit desktop coordinates from a disposable copy of the saved project. No original data, fitted parameters or stored uncertainty draws were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only waimea-river-stage-frequency`. SVG and compressed PlotSpec links preserve the display and its source identity.
 
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
-
-## Next Steps
-
-- Use the joint AEP table to size structures whose response depends on two correlated drivers (e.g., coincident streamflow and downstream stage).
-- Compare results against a closed-form analytical answer where one is available.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+Explain which observations support each fit, what its point curve and band represent, and which assumptions need independent study evidence before reuse.

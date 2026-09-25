@@ -52,6 +52,21 @@ def test_b17c_intervals_are_confidence_and_not_mcmc():
     assert "mean_log_likelihood" not in diagnostic_plots(restored)
 
 
+def test_quantile_annotation_semantics_distinguish_gmm_penalties():
+    from bestfit_plots.adapters.frequency import frequency_plots
+    result = NS(ModeCurve=[100.], MeanCurve=[101.], ConfidenceIntervals=[[90., 110.]])
+    analysis = NS(ProbabilityOrdinates=[.01], AnalysisResults=result,
+                  BayesianAnalysis=NS(CredibleIntervalWidth=.9, PointEstimator="PosteriorMean"))
+    for row_type, expected in (("B17CAnalysis", "penalty"), ("UnivariateAnalysis", "prior")):
+        restored = _restored(analysis)
+        restored['row'] = {'Type': 'RMC.BestFit.UI.' + row_type}
+        restored['results'] = {'quantileAnnotations': [{'aep': .001, 'value': 100., 'lowerBound': 80., 'upperBound': 120.}]}
+        annotations = [s for s in frequency_plots(restored)['frequency']['series'] if s['name'].startswith('Quantile')]
+        assert len(annotations) == 1
+        assert annotations[0]['interval']['kind'] == expected
+        assert annotations[0]['yLower'] == [80.] and annotations[0]['yUpper'] == [120.]
+
+
 def test_diagnostics_opt_in_chains_and_joint_grid_mass():
     from bestfit_plots.adapters.diagnostics import diagnostic_plots
     samples = {"output": [{"values": [0., 0.]}, {"values": [1., 1.]}, {"values": [1., 0.]}],

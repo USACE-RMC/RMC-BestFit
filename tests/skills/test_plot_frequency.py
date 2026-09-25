@@ -48,6 +48,7 @@ class PlotFrequencyTests(unittest.TestCase):
         self.assertLess(*ax.get_xlim())
         self.assertIn("90% Confidence Intervals", ax.get_legend_handles_labels()[1])
         self.assertIn("Expected Probability", ax.get_legend_handles_labels()[1])
+        self.assertIn("Quantile Penalty", ax.get_legend_handles_labels()[1])
         self.assertEqual((payload, observations), original)
         self.assertTrue(any("Low Outlier Data" in note and "1" in note for note in notes))
         marker = next(c for c in ax.collections if c.get_label() == "Low Outlier Data")
@@ -59,6 +60,7 @@ class PlotFrequencyTests(unittest.TestCase):
         self.assertIn("Posterior Mode", labels)
         self.assertIn("Posterior Predictive", labels)
         self.assertIn("90% Credible Intervals", labels)
+        self.assertIn("Quantile Prior", labels)
         with tempfile.TemporaryDirectory() as temp:
             paths = plot.save_figure(fig, Path(temp) / "frequency")
             self.assertEqual({p.suffix for p in paths}, {".png", ".svg"})

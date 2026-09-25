@@ -5,9 +5,10 @@ date encoding, colors, grids and uncertainty orientation into portable PlotSpec.
 Label corrections are recorded separately from the immutable desktop snapshot.
 """
 from datetime import datetime, timedelta
+import math
 import re
 
-from .common import axis, clean, line, plot
+from .common import area, axis, clean, line, plot
 from ..spec import validate_spec
 
 SCALES = {"LinearAxis": "linear", "CategoryAxis": "linear", "LogarithmicAxis": "log",
@@ -77,7 +78,7 @@ def desktop_plot(snapshot):
         return result
     xaxis, yaxis = make_axis(raw_x), make_axis(raw_y)
     plot_id = snapshot["plotId"]
-    corrections = []
+    corrections = list(snapshot.get("displayCorrections") or [])
     if plot_id == "fitting.qq":
         xaxis["label"], yaxis["label"] = "Quantile (Data)", "Quantile (Model)"
         corrections.append("Q-Q labels identify the exported data X and model Y coordinates.")
@@ -88,15 +89,22 @@ def desktop_plot(snapshot):
                 xaxis[key] = _date(xaxis[key])
         corrections.append("OLE observation dates are displayed on a date axis instead of the legacy response-unit axis.")
     b17c = any(value in snapshot.get("analysisKind", "").lower() for value in ("b17c", "bulletin17c")) or plot_id.startswith("b17c.")
+    predictive = plot_id in {"rating.curve", "time_series_analysis.series"}
+    if predictive:
+        corrections.append("Prediction intervals include residual/process variation as well as parameter uncertainty; exported bounds are unchanged.")
     seasonal_ranges = plot_id == "time_series_data.seasonality" and any(
         raw["type"] == "AreaSeries" for raw in snapshot["series"])
     if seasonal_ranges:
         corrections.append("Monthly sample percentile bands are labeled observed ranges, not confidence intervals for an estimated statistic.")
+    if b17c and any("Quantile Prior" in (raw.get("Title") or "") for raw in snapshot["series"]):
+        corrections.append("GMM quantile information is labeled Quantile Penalty rather than Quantile Prior.")
     def label(value):
+        if predictive:
+            value = value.replace("Credible Interval", "Prediction Interval").replace("Confidence Interval", "Prediction Interval")
         if seasonal_ranges:
             value = value.replace("Confidence Interval", "Observed Range")
         if b17c:
-            return value.replace("Posterior", "Uncertainty").replace("Credible", "Confidence")
+            return value.replace("Posterior", "Uncertainty").replace("Credible", "Confidence").replace("Quantile Prior", "Quantile Penalty")
         return value
     series, omissions, names = [], [], set()
     for raw in snapshot["series"]:
@@ -127,14 +135,14 @@ def desktop_plot(snapshot):
                     if any(v is not None for v in values):
                         item[dimension.lower() + suffix] = values
             if any(key in item for key in ("xLower", "yLower")):
-                item["interval"] = {"kind": "prior" if "Prior" in name else "measurement"}
+                item["interval"] = {"kind": "penalty" if b17c and "Quantile Penalty" in name else "prior" if "Prior" in name else "measurement"}
         elif kind == "area":
             other = raw.get("points2") or []
             if len(points) != len(other):
                 raise ValueError(f"Unaligned area boundaries for {name}")
             x2, y2 = clean([p.get("X") for p in other]), clean([p.get("Y") for p in other])
             probability = re.search(r"([\d.]+)%", name)
-            interval_kind = "confidence" if b17c or "Confidence" in name else "credible" if "Credible" in name else None
+            interval_kind = "prediction" if predictive and "Prediction Interval" in name else "confidence" if b17c or "Confidence" in name else "credible" if "Credible" in name else None
             if probability and interval_kind:
                 item.update(kind="band", interval={"kind": interval_kind, "level": float(probability[1]) / 100})
             if item["x"] == x2:
@@ -189,6 +197,30 @@ def desktop_plot(snapshot):
         x = [_date(v) for v in x] if xaxis["scale"] == "date" else x
         series.append(line(annotation.get("text") or "Reference", x, y,
                            color=_color(annotation.get("style", {}).get("Color")), linestyle="--", legend=True))
+    legacy = snapshot.get("legacySavedFrequency")
+    if legacy:
+        if not b17c or plot_id != "b17c.frequency" or not series or any(s['kind'] != 'scatter' for s in series):
+            raise ValueError("Legacy saved curves require an observation-only B17C frequency snapshot")
+        p, point, expected = legacy['probabilities'], legacy['point'], legacy['expected']
+        lower, upper, width = legacy['lower'], legacy['upper'], legacy['width']
+        if len(p) < 2 or any(len(v) != len(p) for v in (point, expected, lower, upper)):
+            raise ValueError("Legacy saved frequency arrays are misaligned")
+        if not 0 < width < 1 or any(not 0 < v < 1 for v in p) or any(
+                not math.isfinite(v) for values in (p, point, expected, lower, upper) for v in values):
+            raise ValueError("Legacy saved frequency arrays or interval width are invalid")
+        if any(lo > hi for lo, hi in zip(lower, upper)):
+            raise ValueError("Legacy saved confidence bounds are inverted")
+        series = [area(f"{100*width:g}% Confidence Intervals", p, lower, upper,
+                       {'kind': 'confidence', 'level': width}, color='#353b7a', edgecolor='#353b7a',
+                       linewidth=1, facecolor='#688caf4b', alpha=None),
+                  line('Expected Probability', p, expected, color='blue', linestyle='--'),
+                  line('Computed', p, point, color='black')] + series
+        # Extend display limits only; keep every persisted ordinate unmodified.
+        positive = [v for values in (point, expected, lower, upper) for v in values if v > 0]
+        if positive and yaxis['scale'] == 'log':
+            yaxis['minimum'] = min(yaxis.get('minimum', min(positive)), 10**math.floor(math.log10(min(positive))))
+            yaxis['maximum'] = max(yaxis.get('maximum', max(positive)), 10**math.ceil(math.log10(max(positive))))
+        corrections.append("Original legacy GMM curves and bounds are displayed directly from saved arrays because the current app loader omits this older result format; no fit, interpolation or parameter conversion was performed.")
     if not series:
         omissions.append("The desktop source contains no populated visible series.")
     spec = plot(plot_id, {"kind": "saved", "id": snapshot["element"], "runId": "sha256:" + snapshot["sourceSha256"]},
@@ -196,4 +228,9 @@ def desktop_plot(snapshot):
                 variant=snapshot["variant"], omissions=omissions)
     spec["desktopSource"] = {k: snapshot[k] for k in ("project", "element", "runtime", "appFactory", "appPopulation") if k in snapshot}
     spec["displayCorrections"] = corrections
+    if legacy:
+        spec['desktopSource']['legacyFrequencyColumns'] = list(legacy['columns'])
+    if plot_id == "shared_diagnostics.trace":
+        spec["legendLocation"] = "outside right"
+        corrections.append("Chain legend placed outside the axes so diagnostic excursions remain visible.")
     return validate_spec(spec)

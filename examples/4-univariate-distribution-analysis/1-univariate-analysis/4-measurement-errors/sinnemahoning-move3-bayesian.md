@@ -1,117 +1,99 @@
-# sinnemahoning-move3-bayesian
+# Sinnemahoning Creek: record extension with measurement uncertainty
 
-## Overview
+Three saved Bayesian LP3 fits compare a systematic flood record with two ways of entering a MOVE.3 extension. The main lesson is to separate observed peaks from estimated peaks and to carry the supplied uncertainty explicitly when it is supported by the extension study.
 
-Bayesian flood-frequency analysis for Sinnemahoning Creek (USGS gage 01543500) demonstrating record extension via MOVE.3 regression. Compares fits that ignore measurement error against fits that propagate the regression uncertainty using uncertain data points.
+## Open the saved project
 
-## What's Inside
+Open [sinnemahoning-move3-bayesian.bestfit](sinnemahoning-move3-bayesian.bestfit) with **File > Open** and save a separate working copy before editing or rerunning.
 
-### Input Data
+The figures display saved BestFit results through the shared Python renderer; no analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
 
-| Element | Description |
-|---|---|
-| `Sinnemahoning - MOVE.3 - No Errors` | The years 1914-1938 were derived from MOVE.3 record extension. Typically, errors from the regression are ignored. |
-| `Sinnemahoning - MOVE.3 - With Errors` | The years 1914-1938 were derived from MOVE.3 record extension. Errors from the regression are incorporated using uncertain data. |
-| `Sinnemahoning - No Extension` | Sinnemahoning Creek peak-flow record with no MOVE.3 extension applied (systematic record only). |
+The point curve evaluates the distribution at the selected posterior mean or mode **parameter vector**. It is not necessarily the posterior median of each quantile. The curve labeled Posterior Predictive averages over parameter uncertainty. A credible band describes uncertainty about a quantile; it is not a band containing 90% of future floods.
 
-### Univariate Distribution
+## Source and observation model
 
-| Element | Description |
-|---|---|
-| `LPIII - No Extension` | Bayesian LP-III fit on the systematic record only (no MOVE.3 extension). |
-| `LPIII - No Errors` | Bayesian LP-III fit on the MOVE.3-extended record, ignoring the regression measurement errors. |
-| `LPIII - With Errors` | Bayesian LP-III fit on the MOVE.3-extended record with regression measurement errors propagated as uncertain data. |
+The project identifies the extension as MOVE.3 and the systematic record as Sinnemahoning Creek (USGS 01543500). It stores the resulting values and uncertainty distributions, but does not establish the donor-gage selection, regression calculation or dependence among the 25 estimated years. Those study records are needed before reuse in a design analysis.
 
-## Step-by-Step Walkthrough
+The uncertain extension uses BestFit `LogNormal` distributions with a year-specific log-location and common log10 standard deviation 0.074. That value is neither 0.074 cfs nor a blanket 7.4% flow error. Keep the stored distribution type and log convention when reproducing it. This tutorial does not estimate a new MOVE.3 relationship.
 
-### Opening the Project
+| Input element | Meaning | Exact rows and index span | Other saved input rows |
+| --- | --- | --- | --- |
+| Sinnemahoning - MOVE.3 - No Errors | 104 exact-valued entries; 1914–1938 are MOVE.3 estimates treated as exact, not additional direct measurements. | 104 (1914–2017) | Uncertain: 0; intervals: 0; windows: 0; low flags: 0. |
+| Sinnemahoning - MOVE.3 - With Errors | 79 systematic peaks plus 25 LogNormal uncertain observations for 1914–1938; flow in cfs. Each retained log10-space sigma is 0.074. | 79 (1939–2017) | Uncertain: 25; intervals: 0; windows: 0; low flags: 0. |
+| Sinnemahoning - No Extension | 79 systematic peaks for 1939–2017, flow in cfs. | 79 (1939–2017) | Uncertain: 0; intervals: 0; windows: 0; low flags: 0. |
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/`.
-3. Open `sinnemahoning-move3-bayesian.bestfit`.
+Counts describe stored series entries. Threshold windows are not a count of measured floods; low flags are included in the exact-row count.
 
-### Exploring the Elements
+## Work through the example
 
-For each Univariate Distribution alternative:
+1. Open Sinnemahoning - No Extension and confirm 79 exact peaks from 1939 through 2017.
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Frequency** tab to view the AEP-vs-quantile plot.
-3. Open the **Markov Chain Trace** tab to confirm chain mixing (well-mixed traces look like fuzzy caterpillars).
-4. Open the **Autocorrelation** tab to check effective sample size.
-5. Inspect the **Properties** panel for sampler settings (iterations, warmup, point estimator, credible-interval width).
+2. Open the No Errors input. Identify the 25 extension years, 1914–1938, within its 104 exact-valued rows.
 
-## Analysis Settings
+3. Open the With Errors input. Confirm the same extension period appears in Uncertain Data and inspect each LogNormal distribution rather than replacing it with its center.
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+4. Compare LPIII - No Extension, LPIII - No Errors and LPIII - With Errors. All three use posterior mean parameters and 90% credible intervals.
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+5. Inspect all parameter diagnostics and compare the same AEP across alternatives. Keep uncertainty about extension magnitude distinct from uncertainty in the fitted frequency quantile.
 
-## Expected Results
+6. Document the donor station, concurrent calibration period, extension procedure and error dependence before using an extension in an engineering study.
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+## Saved settings and results
 
-### Parameter Estimates
+All Bayesian alternatives retain DEMCzs, six chains, thinning interval 30, seed 12345 and output length 10,000. The usual stored settings are 1,750 warmup iterations and 3,500 iterations. These are the saved setting names; output length is not a count of independent observations. Each fit retains the Jeffreys-rule setting for scale. Review parameter-prior bounds as well as named informative priors before adopting a configuration elsewhere.
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+The table reports the largest parameter R-hat and smallest parameter effective sample size (ESS) stored in each run. R-hat near one and substantial ESS are useful screening evidence. Inspect every parameter's chains, autocorrelation and tail uncertainty before accepting a result; successful completion alone does not establish convergence or model adequacy.
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+| Saved alternative | Model | Parameter estimate | 1% AEP point | Credible limits | Width | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LPIII - No Extension | LP3 | Mean | 44,801.943 | 34,688.792–63,941.632 | 90% | 1.00031 | 9,262 |
+| LPIII - No Errors | LP3 | Mean | 42,156.645 | 34,184.869–55,394.5 | 90% | 1.00029 | 9,436 |
+| LPIII - With Errors | LP3 | Mean | 41,908.746 | 33,738.768–55,712.337 | 90% | 0.99994 | 9,072 |
 
-### Frequency / Quantile Table
+Magnitudes are cfs. Values are rounded from the saved 0.01 AEP ordinate without interpolation or refitting. The selected parameter estimator and interval width are shown explicitly.
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+For **LPIII - No Extension**, the saved parameter summaries are:
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+| Parameter | Posterior mean | Posterior median | Lower credible limit | Upper credible limit |
+| --- | --- | --- | --- | --- |
+| Mean (of log) (µ) | 4.129 | 4.129 | 4.093 | 4.166 |
+| Std Dev (of log) (σ) | 0.199 | 0.197 | 0.173 | 0.23 |
+| Skew (of log) (γ) | 0.417 | 0.42 | -0.094 | 0.92 |
 
-### Plots
+These are parameter credible limits, distinct from the frequency-quantile limits above.
 
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](images/sinnemahoning-bayesian-frequency.png)
-*Figure: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
+## Read the figures
 
-![Posterior kernel density for each parameter.](images/sinnemahoning-bayesian-kernel-density.png)
-*Figure: Posterior kernel density for each parameter.*
+![Sinnemahoning chronology distinguishing uncertain extension years from exact systematic peaks.](images/sinnemahoning-move3-bayesian-uncertain-chronology.png)
 
-![Markov-chain traces for each parameter.](images/sinnemahoning-bayesian-trace.png)
-*Figure: Markov-chain traces for each parameter.*
+*Sinnemahoning chronology distinguishing uncertain extension years from exact systematic peaks.* [SVG](images/sinnemahoning-move3-bayesian-uncertain-chronology.svg) · [Plot data](images/sinnemahoning-move3-bayesian-uncertain-chronology.plotspec.json.gz)
 
-![Autocorrelation function of the chains, used to estimate effective sample size.](images/sinnemahoning-bayesian-autocorrelation.png)
-*Figure: Autocorrelation function of the chains, used to estimate effective sample size.*
+![Bayesian LP3 fit to the systematic record only.](images/sinnemahoning-move3-bayesian-no-extension.png)
 
-### MCMC Diagnostics
+*Bayesian LP3 fit to the systematic record only.* [SVG](images/sinnemahoning-move3-bayesian-no-extension.svg) · [Plot data](images/sinnemahoning-move3-bayesian-no-extension.plotspec.json.gz)
 
-Verify chain convergence before interpreting any results:
+![Bayesian LP3 fit treating the supplied extension values as exact.](images/sinnemahoning-move3-bayesian-exact-extension.png)
 
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
+*Bayesian LP3 fit treating the supplied extension values as exact.* [SVG](images/sinnemahoning-move3-bayesian-exact-extension.svg) · [Plot data](images/sinnemahoning-move3-bayesian-exact-extension.plotspec.json.gz)
 
-## Next Steps
+![Bayesian LP3 fit retaining the 25 supplied measurement-error distributions.](images/sinnemahoning-move3-bayesian-uncertain-extension.png)
 
-- Compare alternatives via the **Bayesian Model Average** element to combine results from multiple distributions.
-- Compute **return-period quantiles** (1%, 0.5%, 0.2% AEP) from the frequency-curve table.
-- Re-run with informative **quantile priors** if engineering judgment suggests specific upper-bound flood magnitudes.
-- Cross-check the LP-III fit against a **Bulletin 17C** fit on the same input data.
+*Bayesian LP3 fit retaining the 25 supplied measurement-error distributions.* [SVG](images/sinnemahoning-move3-bayesian-uncertain-extension.svg) · [Plot data](images/sinnemahoning-move3-bayesian-uncertain-extension.plotspec.json.gz)
 
-## References
+![Saved parameter trace for the model with uncertain extension data.](images/sinnemahoning-move3-bayesian-trace.png)
 
-<!-- Cite published case studies / source datasets here. Example format:
+*Saved parameter trace for the model with uncertain extension data.* [SVG](images/sinnemahoning-move3-bayesian-trace.svg) · [Plot data](images/sinnemahoning-move3-bayesian-trace.plotspec.json.gz)
 
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
+## Interpretation and limits
 
----
+Representing each extension year by a marginal measurement-error distribution does not, by itself, represent dependence arising from a shared donor record or regression coefficients. The saved study evidence is insufficient to assess that dependence. Do not describe the extension as 25 independent new measurements.
 
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+An uncertainty band is not guaranteed to widen at every AEP when uncertain data replace exact inputs; the fitted distribution also changes. Read the actual values and investigate their physical implications. Do not rank the no-extension and extended models by raw information criteria when they use different data records or observation likelihoods. The [B17C companion](../../2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.md) uses a different estimator and uncertainty construction.
+
+## Check your understanding
+
+Explain what additional evidence is needed to justify the error distributions, and why their individual variances do not settle cross-year dependence.
+
+## Reproduce the figures
+
+Follow the [shared figure instructions](../../../README.md#reproducing-the-figures) with `--only sinnemahoning-move3-bayesian`. PNG, SVG and compressed PlotSpec files come from the same desktop-owned coordinates. The manifest names the selected element for each view; a representative diagnostic figure does not replace inspection of all parameters.

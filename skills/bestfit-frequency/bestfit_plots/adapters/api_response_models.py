@@ -123,8 +123,8 @@ def _rating(snapshot):
     lower, upper, level = curve["ciLower"],curve["ciUpper"],curve["credibleIntervalWidth"]
     observed = snapshot.get("residualPlot",{}).get("alignedObservations") or []
     ox,oy=_pairs(observed)
-    series=[horizontal_band(f"{100*level:g}% Credible Intervals",mean,stage,lower,upper,level,
-                            color="#353b7a",facecolor="#688caf",alpha=75/255),
+    series=[horizontal_band(f"{100*level:g}% Prediction Intervals",mean,stage,lower,upper,level,
+                            interval_kind="prediction",color="#353b7a",facecolor="#688caf",alpha=75/255),
             line("Posterior Predictive",mean,stage,color="blue",linestyle="--"),
             line(_point_name(snapshot),mode,stage,color="black"),
             scatter("Stage-Discharge Data",ox,oy,color="red")]

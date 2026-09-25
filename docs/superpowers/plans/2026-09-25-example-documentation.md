@@ -4,7 +4,7 @@ Approved in the task conversation on 2026-09-25. Work on `documentation-verifica
 
 ## Goal and constraints
 
-Complete the example teaching collection with accurate SQLite descriptions, source-backed results tables, Python figures matching desktop plotting conventions, and portable skill references. Preserve numerical methods, inputs, settings, seeds, priors, tolerances, and saved result payloads. Use compatible saved results and rerun only missing or stale cases with their original settings. Any scientific configuration change needs Haden Smith's decision.
+Complete the example teaching collection with accurate SQLite descriptions, source-backed results tables, Python figures matching desktop plotting conventions, and portable skill references. Preserve numerical methods, inputs, settings, seeds, priors, tolerances, and saved result payloads. Haden's subsequent clarification requires preserving every saved result: do not rerun analyses or fill missing results. Log missing, failed or inconsistent cases for Haden to address after this work. Delete nothing without his permission; retain the explicit authorization record for any deletion.
 
 The initial inventory contains 41 Markdown files, 32 active projects and 152 missing image links. Remove the Susquehanna and Middle Fork Willamette tutorials and their two backups; remove ABOM's manual `Time Series_7` test element. Use Haden's existing Blakely Bayesian project once its path is supplied; do not invent a replacement.
 
@@ -35,6 +35,10 @@ Run relevant Python, exporter, packaging and documentation checks; all four fast
 
 ## Consultation checkpoints
 
-Blakely Bayesian source path is pending. Obtain missing study rationale for Blakely penalties, MOVE.3 provenance/dependence, Brays/OC Fisher trend interpretation, and Waimea response-surface/RR-prior provenance when primary sources do not resolve them. Preserve the mixed-method Bulletin 17C project as a documented comparison unless directed otherwise. Preserve and disclose Nile's source-date discrepancy and Airline's diagnostic limitations; do not tune them to make examples appear successful.
+Blakely Bayesian source path is pending. Obtain missing study rationale for Blakely penalties, MOVE.3 provenance/dependence, Brays/OC Fisher trend interpretation, and Waimea response-surface/RR-prior provenance when primary sources do not resolve them. Haden subsequently requested restoration of the existing Back Creek analysis to the mixed-method Bulletin 17C project tree; its original numerical cells remain unchanged. Preserve and disclose Nile's source-date discrepancy and Airline's diagnostic limitations; do not tune them to make examples appear successful.
 
 Each session ends in validated local commits and a handoff stating branch/HEAD, checks, completed examples and unresolved questions. Preserve unrelated work, including `graphify-out/`.
+
+## Completion record
+
+The [progress record](../../example-documentation-progress.md) consolidates all eight work packages and validation. The available collection contains 39 updated Markdown files, 32 audited active projects and 163 individually reviewed Python figures. The intended Blakely Bayesian project remains unavailable; its page is explicitly a study reference pending that source. Remaining source, scientific and application issues are listed in [Haden's issue log](../../example-issues-for-haden.md). No missing analysis result was generated and no existing result was changed.

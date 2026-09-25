@@ -1,5 +1,10 @@
 # Reproducible agentic FFA studies
 
+First select a [worked tutorial](examples.md) matching the evidence and analysis
+type. Consult its source/observation tables, settings, diagnostics and limitations
+while constructing the study; preserve study-specific judgments as decisions,
+not values copied from a teaching project.
+
 Start from `assets/synthetic-study.json`, a runnable synthetic demonstration, not
 real Blakely, Kamp or regional evidence. Its schema has:
 

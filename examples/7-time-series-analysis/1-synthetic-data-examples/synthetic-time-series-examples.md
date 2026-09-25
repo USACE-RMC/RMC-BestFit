@@ -1,132 +1,118 @@
-# synthetic-time-series-examples
+# Synthetic time series: model structure and withheld validation
 
-## Overview
+Open [synthetic-time-series-examples.bestfit](synthetic-time-series-examples.bestfit) and save a working copy. Twelve same-named input/analysis pairs demonstrate intercepts, trends, autoregressive (AR) terms, moving-average (MA) terms and a log transform. Each input contains 300 finite monthly observations from January 1949 through December 1973 in generic Value units.
 
-Synthetic time-series datasets covering trend (linear, quadratic, cubic, sinusoidal), AR / MA / ARMA processes, and a log-transformed series with linear trend. Each series has a paired Time Series Analysis fit using the corresponding model for verifying parameter recovery.
+## Read the actual configurations
 
-## What's Inside
+AR terms use lagged responses; MA terms use lagged errors. In ARIMA(p,d,q), p is AR order, d is differencing order and q is MA order. All these examples include an intercept, use d=0, disable deterministic seasonality and have no exogenous covariates.
 
-### Time Series Data
+| Analysis | p,d,q | Trend | Transform | Seasonality | Training / validation / future |
+| --- | --- | --- | --- | --- | --- |
+| Intercept | 0,0,0 | None | None | False | 240 / 60 / 0 |
+| Intercept + Linear Trend | 0,0,0 | Linear | None | False | 240 / 60 / 0 |
+| Intercept + Quadratic Trend | 0,0,0 | Quadratic | None | False | 240 / 60 / 0 |
+| Intercept + Cubic Trend | 0,0,0 | Cubic | None | False | 280 / 20 / 0 |
+| AR(1) | 1,0,0 | None | None | False | 280 / 20 / 0 |
+| AR(3) | 3,0,0 | None | None | False | 280 / 20 / 0 |
+| MA(1) | 0,0,1 | None | None | False | 280 / 20 / 0 |
+| MA(3) | 0,0,3 | None | None | False | 280 / 20 / 0 |
+| ARMA(1,1) | 1,0,1 | None | None | False | 280 / 20 / 0 |
+| ARMA(2,2) | 2,0,1 | None | None | False | 280 / 20 / 0 |
+| Intercept + Linear Trend + ARMA(1,1) | 1,0,1 | Linear | None | False | 275 / 25 / 0 |
+| Intercept + Linear Trend + LogTransform | 1,0,0 | Linear | Logarithmic | False | 275 / 25 / 0 |
 
-| Element | Description |
-|---|---|
-| `Intercept` | Synthetic series with constant mean only (no trend, no autocorrelation). |
-| `Intercept + Linear Trend` | Synthetic series with constant mean + linear trend. |
-| `Intercept + Quadratic Trend` | Synthetic series with constant mean + quadratic trend. |
-| `Intercept + Cubic Trend` | Synthetic series with constant mean + cubic trend. |
-| `Intercept + Sinusoidal Trend` | Synthetic series with constant mean + sinusoidal (annual cycle) trend. |
-| `AR(1)` | Synthetic AR(1) series for AR-fit verification. |
-| `AR(3)` | Synthetic AR(3) series for AR-fit verification. |
-| `MA(1)` | Synthetic MA(1) series for MA-fit verification. |
-| `MA(3)` | Synthetic MA(3) series for MA-fit verification. |
-| `ARMA(1,1)` | Synthetic ARMA(1,1) series for ARMA-fit verification. |
-| `ARMA(2,2)` | Synthetic ARMA(2,2) series for ARMA-fit verification. |
-| `Intercept + Linear Trend + ARMA(1,1)` | Synthetic series with constant mean + linear trend + ARMA(1,1) residuals. |
-| `Intercept + Linear Trend + LogTransform` | Log-normal synthetic series with constant mean + linear trend (in log space). |
+The analysis named **ARMA(2,2) actually stores p=2, q=1**. Its name and settings remain unchanged for the author to resolve. The logarithmic case also has AR(1). There is no thirteenth sinusoidal example in this project.
 
-### Time Series Analysis
+## Work through the models
 
-| Element | Description |
-|---|---|
-| `Intercept` | Constant-mean fit on the intercept-only synthetic series. |
-| `Intercept + Linear Trend` | Linear-trend fit on the intercept + linear trend synthetic series. |
-| `Intercept + Quadratic Trend` | Quadratic-trend fit on the intercept + quadratic trend synthetic series. |
-| `Intercept + Cubic Trend` | Cubic-trend fit on the intercept + cubic trend synthetic series. |
-| `Intercept + Sinusoidal Trend` | Sinusoidal-trend fit on the intercept + sinusoidal trend synthetic series. |
-| `AR(1)` | AR(1) fit on the AR(1) synthetic series. |
-| `AR(3)` | AR(3) fit on the AR(3) synthetic series. |
-| `MA(1)` | MA(1) fit on the MA(1) synthetic series. |
-| `MA(3)` | MA(3) fit on the MA(3) synthetic series. |
-| `ARMA(1,1)` | ARMA(1,1) fit on the ARMA(1,1) synthetic series. |
-| `ARMA(2,2)` | ARMA(2,2) fit on the ARMA(2,2) synthetic series. |
-| `Intercept + Linear Trend + ARMA(1,1)` | Linear-trend + ARMA(1,1) fit on the corresponding synthetic series. |
-| `Intercept + Linear Trend + LogTransform` | Linear-trend fit with logarithmic transform on the log-normal synthetic series. |
+1. Start with Intercept, then compare the linear, quadratic and cubic trend cases. They are separate datasets with different scales; do not rank all examples by DIC.
+2. Compare AR(1), AR(3), MA(1) and MA(3). Inspect residual ACF and PACF after reading each model's actual order.
+3. Compare ARMA(1,1) with the model named ARMA(2,2), keeping its stored (2,1) orders explicit.
+4. Inspect the combined trend/ARMA and trend/logarithmic cases. A transform changes the model's scale and uncertainty interpretation.
+5. Locate the training boundary and withheld observations. **Every future horizon is zero**: the prediction segment is validation within the observed record, not a forecast beyond December 1973.
 
-## Step-by-Step Walkthrough
+Default training uses 240 observations; several examples instead retain manual 280/20 or 275/25 splits. The saved BlockBootstrap covariate option is dormant because these fits have no exogenous covariates. The [source workbook](Synthetic%20Data.xlsx) is a generator-provenance lead; the saved fit alone does not establish known-truth parameter recovery.
 
-### Opening the Project
+## Saved diagnostics
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/7-time-series-analysis/1-synthetic-data-examples/`.
-3. Open `synthetic-time-series-examples.bestfit`.
+All fits retain DEMCzs, seed 12345, warmup 1,750, iterations 3,500, 10,000 output draws and 90% interval width. The chain/thinning settings and chosen posterior mean or mode parameter vector remain as saved. Inspect the actual prior bounds, parameter chains, autocorrelation and tail uncertainty. Scalar diagnostics describe the retained run; they do not substitute for scientific validation.
+| Saved analysis | Chains / thinning | Point parameters | DIC | Saved RMSE | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- |
+| Intercept | 4/20 | Mean | 2,309.347 | 29.484 | 1.00022 | 9,460 |
+| Intercept + Linear Trend | 6/30 | Mean | 2,309.799 | 29.389 | 1.00032 | 9,310 |
+| Intercept + Quadratic Trend | 8/40 | Mean | 2,311.657 | 29.376 | 1.00032 | 9,488 |
+| Intercept + Cubic Trend | 10/50 | Mean | 3,982.031 | 291.901 | 1.00036 | 9,548 |
+| AR(1) | 6/30 | Mean | 2,679.008 | 29.106 | 1.00017 | 8,646 |
+| AR(3) | 10/50 | Mean | 2,663.679 | 28.989 | 1.00021 | 9,190 |
+| MA(1) | 6/30 | Mean | 2,685.58 | 29.441 | 1.00011 | 8,851 |
+| MA(3) | 10/50 | Mean | 2,893.455 | 43.901 | 1.00043 | 9,010 |
+| ARMA(1,1) | 8/40 | Mean | 2,683.309 | 29.225 | 1.00034 | 9,476 |
+| ARMA(2,2) | 10/50 | Mean | 2,676.643 | 29.238 | 1.00011 | 9,257 |
+| Intercept + Linear Trend + ARMA(1,1) | 10/50 | Mean | 2,636.647 | 29.137 | 1.00030 | 9,407 |
+| Intercept + Linear Trend + LogTransform | 8/40 | Mean | 3,475.122 | 153.941 | 1.00010 | 9,377 |
 
-### Exploring the Elements
+Saved RMSE describes the training-window fit, not held-out forecast error. The prediction bands include process/error variation and parameter uncertainty. Inspect residual diagnostics and actual held-out behavior before accepting a model; a narrow-looking fit is not sufficient.
 
-For each Time Series Analysis alternative:
+## Read the twelve fitted-series views
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Time Series** tab to view the fitted mean (and trend, if any) overlaid on the observations.
-3. Open the **Residual ACF / PACF** tabs to confirm white-noise residuals.
-4. Adjust **ForecastSteps** in the Properties panel to extend the forecast horizon.
+![Intercept: training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-01.png)
 
-## Analysis Settings
+*Intercept: training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-01.svg) · [Plot data](images/synthetic-time-series-examples-model-01.plotspec.json.gz)
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+![Intercept + Linear Trend: training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-02.png)
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+*Intercept + Linear Trend: training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-02.svg) · [Plot data](images/synthetic-time-series-examples-model-02.plotspec.json.gz)
 
-## Expected Results
+![Intercept + Quadratic Trend: training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-03.png)
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+*Intercept + Quadratic Trend: training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-03.svg) · [Plot data](images/synthetic-time-series-examples-model-03.plotspec.json.gz)
 
-### Parameter Estimates
+![Intercept + Cubic Trend: training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-04.png)
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+*Intercept + Cubic Trend: training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-04.svg) · [Plot data](images/synthetic-time-series-examples-model-04.plotspec.json.gz)
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+![AR(1): training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-05.png)
 
-### Frequency / Quantile Table
+*AR(1): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-05.svg) · [Plot data](images/synthetic-time-series-examples-model-05.plotspec.json.gz)
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+![AR(3): training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-06.png)
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+*AR(3): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-06.svg) · [Plot data](images/synthetic-time-series-examples-model-06.plotspec.json.gz)
 
-### Plots
+![MA(1): training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-07.png)
 
-![Time-series fit overlaid on the observations, with credible band.](images/synthetic-ts-time-series.png)
-*Figure: Time-series fit overlaid on the observations, with credible band.*
+*MA(1): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-07.svg) · [Plot data](images/synthetic-time-series-examples-model-07.plotspec.json.gz)
 
-![Multi-step forecast extension with credible band.](images/synthetic-ts-forecast.png)
-*Figure: Multi-step forecast extension with credible band.*
+![MA(3): training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-08.png)
 
-![Residual autocorrelation function.](images/synthetic-ts-acf.png)
-*Figure: Residual autocorrelation function.*
+*MA(3): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-08.svg) · [Plot data](images/synthetic-time-series-examples-model-08.plotspec.json.gz)
 
-### MCMC Diagnostics
+![ARMA(1,1): training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-09.png)
 
-Verify chain convergence before interpreting any results:
+*ARMA(1,1): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-09.svg) · [Plot data](images/synthetic-time-series-examples-model-09.plotspec.json.gz)
 
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
+![ARMA(2,2): training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-10.png)
 
-## Next Steps
+*ARMA(2,2): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-10.svg) · [Plot data](images/synthetic-time-series-examples-model-10.plotspec.json.gz)
 
-- Use the fitted ARIMA / regression model for **multi-step forecasting** with credible bands.
-- Inspect residual ACF / PACF to confirm no remaining temporal structure.
-- For non-stationary trend cases, project the trend function out beyond the observation window.
+![Intercept + Linear Trend + ARMA(1,1): training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-11.png)
 
-## References
+*Intercept + Linear Trend + ARMA(1,1): training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-11.svg) · [Plot data](images/synthetic-time-series-examples-model-11.plotspec.json.gz)
 
-<!-- Cite published case studies / source datasets here. Example format:
+![Intercept + Linear Trend + LogTransform: training and withheld validation. No future observations beyond the saved record are predicted.](images/synthetic-time-series-examples-model-12.png)
 
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
+*Intercept + Linear Trend + LogTransform: training and withheld validation. No future observations beyond the saved record are predicted.* [SVG](images/synthetic-time-series-examples-model-12.svg) · [Plot data](images/synthetic-time-series-examples-model-12.plotspec.json.gz)
 
----
+![Residual autocorrelation for the saved ARMA(1,1) fit.](images/synthetic-time-series-examples-arma-residual-acf.png)
 
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+*Residual autocorrelation for the saved ARMA(1,1) fit.* [SVG](images/synthetic-time-series-examples-arma-residual-acf.svg) · [Plot data](images/synthetic-time-series-examples-arma-residual-acf.plotspec.json.gz)
+
+![Residual Q–Q view for ARMA(1,1); examine distributional departures separately from autocorrelation.](images/synthetic-time-series-examples-arma-residual-qq.png)
+
+*Residual Q–Q view for ARMA(1,1); examine distributional departures separately from autocorrelation.* [SVG](images/synthetic-time-series-examples-arma-residual-qq.svg) · [Plot data](images/synthetic-time-series-examples-arma-residual-qq.plotspec.json.gz)
+
+## Reproduce and check
+
+The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only synthetic-time-series-examples`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
+
+Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.

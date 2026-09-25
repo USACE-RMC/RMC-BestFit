@@ -19,6 +19,14 @@ documented Nile date correction are described in `saved-plots.md`.
 For a new analysis, use the workflow below. Preserve existing saved inputs and
 results when preparing a separately requested run.
 
+Before configuring a frequency analysis, read the relevant tutorial selected by
+[examples.md](references/examples.md). It routes data entry, stationary Bayesian
+fits, historical evidence, GMM penalties, measurement error, trends, point processes
+and joint analyses to worked projects. Use its evidence and interpretation checks;
+do not transfer a teaching case's priors, thresholds or engineering judgments to
+another study. Prefer the matching local checkout because published examples can
+lag local updates. The guide is bundled with both skill and plugin packages.
+
 Use the headless BestFit API and its model-derived results. Default to stationary
 Bayesian LP3 when unspecified; preserve requested distributions and numerical
 settings. Select B17C estimation only when requested. Never replace estimation,

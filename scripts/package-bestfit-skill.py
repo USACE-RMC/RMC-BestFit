@@ -12,7 +12,7 @@ FILES = (
     "scripts/plot_chronology.py", "scripts/prepare_study.py", "scripts/capture_source.py", "scripts/run_study.py",
     "references/historical-data.md", "references/regional-information.md", "references/information-recipes.md",
     "references/study-workflow.md", "assets/synthetic-study.json",
-    "references/app-plot-map.json", "references/saved-plots.md",
+    "references/app-plot-map.json", "references/saved-plots.md", "references/examples.md",
     "bestfit_plots/__init__.py", "bestfit_plots/spec.py", "bestfit_plots/render.py",
     "bestfit_plots/legacy_frequency.py", "bestfit_plots/source.py",
     "bestfit_plots/adapters/__init__.py", "bestfit_plots/adapters/common.py",

@@ -60,6 +60,14 @@ retains both run identities. Python callers can use
 
 ## Frozen teaching cases
 
+The repository's maintained [worked examples](examples.md) are the first reference
+for a matching engineering workflow. Their Markdown embeds Python PNGs and links
+SVG plus compressed PlotSpec. Follow the repository's
+[build and reproduction prerequisites](https://github.com/USACE-RMC/RMC-BestFit/blob/main/examples/README.md#reproducing-the-figures),
+then run `python tools/ExampleDocumentation/render_examples.py --only <tutorial-stem>`
+from that checkout to reproduce one example using disposable source copies.
+The exporter is a repository tool, not a bundled standalone-skill executable.
+
 Use the compatible BestFit-Python-Examples checkout's README and its twelve
 notebooks. `saved_case(project_slug, analysis_name)` uses checksum-checked saved
 results by default; `case.show(view_name)` calls this same renderer. Full-settings
@@ -80,13 +88,28 @@ comparisons against independently exported WPF geometry. Default data, scales,
 curves, intervals and markers are the target; font rasterization, interaction,
 and user-customized desktop styles are outside the contract.
 
-The Python figures make three explicit display corrections to inherited desktop
-labels: time-series residuals use a Date axis for the same stored observation
-dates; fitting Q–Q plots label observed X and model Y quantiles correctly; B17C/GMM
-ensembles are labeled as frequentist uncertainty. Seasonality shows month names
-without implying observations occurred in the plotting anchor year. Original
-desktop geometry remains unchanged, and desktop-derived PlotSpec records its
-axis corrections. Contour lines include their numeric levels.
+Python records display corrections in the PlotSpec: time-series residuals use a
+Date axis; fitting Q–Q labels identify observed X and model Y; GMM ensembles and
+quantile penalties use frequentist labels. Rating/time-series result bands are
+prediction intervals because they include residual/process variation. Monthly
+sample percentiles are observed ranges, and month labels do not imply observations
+occurred in the plotting anchor year. Contours include numeric levels. Trace
+legends sit outside the axes; other legends can move after visual inspection.
+
+The repository exporter also handles a documented regression-loading issue:
+covariate hydration resets live parameter values. For affected residual views it
+reads the saved coefficient vector without modifying it and calls BestFit's
+existing residual calculation. This display correction is recorded in the source
+snapshot and PlotSpec. The source database and saved fitted/prediction arrays are
+unchanged. Do not silently treat an arbitrary API snapshot's residuals as corrected;
+check the matching source version and saved-fit consistency.
+
+The restored Back Creek teaching row is another disclosed legacy-loading case.
+Its tutorial overlays the exact stored probability, point, expected-probability
+and confidence-bound arrays on desktop-owned observation positions. The snapshot's
+`legacySavedFrequency` data enables this only for an observation-only B17C view;
+its source columns and correction are retained in PlotSpec. This does not migrate
+the project or establish that the current app can display that legacy fit.
 
 Raw-series/input-data preparation uses the portable BestFit/Numerics runtime when
 building fixtures. Cached PlotSpec display and API-source display use Python only.

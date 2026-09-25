@@ -84,6 +84,10 @@ def test_rating_four_plots_preserve_stage_discharge_and_residual_qq():
             "credibleIntervalWidth": .9}}})
     assert set(plots) == {"curve", "residuals", "residual_histogram", "residual_qq"}
     assert plots["curve"]["series"][-1]["x"] == [10., 20.]
+    band = plots["curve"]["series"][0]
+    assert band["interval"] == {"kind": "prediction", "level": .9}
+    assert band["name"] == "90% Prediction Intervals"
+    assert band["xLower"] == [9., 19.] and band["xUpper"] == [12., 22.]
     assert plots["residual_qq"]["series"][0]["y"] == [-1., 1.]
     assert plots["residual_histogram"]["series"][0]["y"] == [.25, .25]
     _validate(plots)

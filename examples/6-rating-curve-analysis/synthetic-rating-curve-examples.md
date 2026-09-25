@@ -1,115 +1,103 @@
-# synthetic-rating-curve-examples
+# Synthetic rating curves: additive controls and parameter uncertainty
 
-## Overview
+Open [synthetic-rating-curve-examples.bestfit](synthetic-rating-curve-examples.bestfit) and save a working copy. A rating curve relates stage h to discharge Q. These models use BaRatin-style **addition of active controls**: each term contributes alpha × (h − h0)^beta above its activation stage and adds to controls already active. They are not replacement piecewise power laws.
 
-Synthetic stage-discharge rating curve fits using one-, two-, and three-segment piecewise power-law models. Used to verify the rating-curve solver against ground-truth synthetic data.
+## Inspect the paired data
 
-## What's Inside
+| Input series | Meaning | Saved units | Count and dates |
+| --- | --- | --- | --- |
+| Stage Data | Synthetic stage shared by the three generated discharge series; stage range 1.1425–19.8940 ft. | Stage (ft) | 300 (2000-01-01–2000-10-26) |
+| 1 Segment - Flow Data | Distinct synthetic discharge response for one additive hydraulic control. The other response series are different data, not competing fits to the same discharge sample. | Discharge (cfs) | 300 (2000-01-01–2000-10-26) |
+| 2 Segment - Flow Data | Distinct synthetic discharge response for 2 additive hydraulic controls. The other response series are different data, not competing fits to the same discharge sample. | Discharge (cfs) | 300 (2000-01-01–2000-10-26) |
+| 3 Segment - Flow Data | Distinct synthetic discharge response for 3 additive hydraulic controls. The other response series are different data, not competing fits to the same discharge sample. | Discharge (cfs) | 300 (2000-01-01–2000-10-26) |
 
-### Time Series Data
+All 300 values in each series are finite. The generic saved SeriesType on Stage Data does not override its Stage (ft) unit label. Each analysis pairs that stage series with its corresponding discharge series.
 
-| Element | Description |
-|---|---|
-| `Stage Data` | Synthetic stage time series used to drive all three rating-curve verification cases. |
-| `1 Segment - Flow Data` | Synthetic discharge time series generated from a known one-segment power-law rating curve. |
-| `2 Segment - Flow Data` | Synthetic discharge time series generated from a known two-segment power-law rating curve. |
-| `3 Segment - Flow Data` | Synthetic discharge time series generated from a known three-segment power-law rating curve. |
+## Work through the controls
 
-### Rating Curve Analysis
+1. Open 1 Segment Rating Curve. Read its zero-flow stage, coefficient, exponent and error scale, then compare the curve with the observations.
+2. Open the two- and three-control analyses. Identify each activation stage and remember that active terms add.
+3. Read a stored Coefficient value as **log10(alpha)**. Convert only for interpretation; do not mistake the saved log coefficient for the positive physical multiplier.
+4. Inspect the residual plots and their log10 discharge-error context. The error sigma is in log10 discharge space.
+5. Compare parameter uncertainty with curve uncertainty. A curve can be well constrained while individual parameters trade off or are weakly identified.
 
-| Element | Description |
-|---|---|
-| `1 Segment Rating Curve` | One-segment power-law rating-curve fit on the corresponding synthetic data — should recover the ground-truth parameters. |
-| `2 Segment Rating Curve` | Two-segment power-law rating-curve fit on the corresponding synthetic data — should recover the ground-truth parameters. |
-| `3 Segment Rating Curve` | Three-segment power-law rating-curve fit on the corresponding synthetic data — should recover the ground-truth parameters. |
+## Generating evidence and saved parameters
 
-## Step-by-Step Walkthrough
+The [source workbook](Synthetic%20Data.xlsx), [archived fixture](../../verification/data/rating-curve/rating-curve-example-fixtures.json) and [verification discussion](../../docs/verification/rating-curve.md) document the construction. Stage uses 1 + 19 r1; generated log10 discharge adds 0.05 times a standard-Normal quantile to the log10 additive rating. Stored workbook draws supply r1 and the error draw.
 
-### Opening the Project
+The recorded generating controls are (h0, log10(alpha), beta): (1, 0.2438965653, 2.6666666667), then (10, 2.9462998886, 1.67), then (15, 3.6095332363, 1.67). Error sigma is 0.05. The fixture's project hash refers to its historical snapshot. The 300-observation saved examples are distinct from the 1,000-observation recovery tests in verification; this tutorial has not rerun those tests.
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/6-rating-curve-analysis/`.
-3. Open `synthetic-rating-curve-examples.bestfit`.
+| Analysis | Parameter / stored space | Saved point value |
+| --- | --- | --- |
+| 1 Segment Rating Curve | Zero-Flow Stage (h₁) | 0.987 |
+| 1 Segment Rating Curve | log10 coefficient (α₁) | 0.221 |
+| 1 Segment Rating Curve | Exponent (β₁) | 2.693 |
+| 1 Segment Rating Curve | Scale (σ) | 0.051 |
+| 2 Segment Rating Curve | Zero-Flow Stage (h₁) | 0.984 |
+| 2 Segment Rating Curve | log10 coefficient (α₁) | 0.215 |
+| 2 Segment Rating Curve | Exponent (β₁) | 2.701 |
+| 2 Segment Rating Curve | Activation Stage (h₂) | 9.847 |
+| 2 Segment Rating Curve | log10 coefficient (α₂) | 2.838 |
+| 2 Segment Rating Curve | Exponent (β₂) | 1.788 |
+| 2 Segment Rating Curve | Scale (σ) | 0.051 |
+| 3 Segment Rating Curve | Zero-Flow Stage (h₁) | 0.985 |
+| 3 Segment Rating Curve | log10 coefficient (α₁) | 0.217 |
+| 3 Segment Rating Curve | Exponent (β₁) | 2.699 |
+| 3 Segment Rating Curve | Activation Stage (h₂) | 9.705 |
+| 3 Segment Rating Curve | log10 coefficient (α₂) | 2.717 |
+| 3 Segment Rating Curve | Exponent (β₂) | 1.953 |
+| 3 Segment Rating Curve | Activation Stage (h₃) | 14.648 |
+| 3 Segment Rating Curve | log10 coefficient (α₃) | 3.156 |
+| 3 Segment Rating Curve | Exponent (β₃) | 2.172 |
+| 3 Segment Rating Curve | Scale (σ) | 0.051 |
 
-### Exploring the Elements
+All fits retain DEMCzs, seed 12345, warmup 1,750, iterations 3,500, 10,000 output draws and 90% interval width. The chain/thinning settings and chosen posterior mean or mode parameter vector remain as saved. Inspect the actual prior bounds, parameter chains, autocorrelation and tail uncertainty. Scalar diagnostics describe the retained run; they do not substitute for scientific validation.
+| Saved analysis | Chains / thinning | Point parameters | DIC | Saved RMSE | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 Segment Rating Curve | 8/40 | Mean | 3,156.371 | 224.365 | 1.00059 | 9,453 |
+| 2 Segment Rating Curve | 14/70 | Mean | 3,699.86 | 2,036.623 | 1.00032 | 9,190 |
+| 3 Segment Rating Curve | 20/100 | Mean | 3,774.226 | 4,042.051 | 1.00117 | 2,121 |
 
-For each Rating Curve Analysis alternative:
+Archived independent evidence identifies weak third-control precision: beta3 standard error is about 0.37, or 22% relative. Preserve that limitation instead of treating approximate curve agreement as precise parameter recovery. DIC does not rank the three control counts here because their discharge datasets differ.
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Rating Curve** tab to view the fit overlaid on the measured stage / discharge pairs.
-3. Adjust **MinStage**, **MaxStage**, and **StageBins** in the Properties panel to set the prediction range.
-4. Inspect breakpoints (h2, h3) for multi-segment fits.
+## Saved prediction rows and figures
 
-## Analysis Settings
+| Analysis | Stage (ft) | Best fit discharge (cfs) | 90% prediction limits (cfs) |
+| --- | --- | --- | --- |
+| 1 Segment Rating Curve | -0.733 | 0 | 0–0 |
+| 1 Segment Rating Curve | 10.632 | 742.883 | 612.908–901.253 |
+| 1 Segment Rating Curve | 21.769 | 5,868.95 | 4,841.11–7,124.382 |
+| 2 Segment Rating Curve | -0.733 | 0 | 0–0 |
+| 2 Segment Rating Curve | 10.632 | 1,195.25 | 983.508–1,456.408 |
+| 2 Segment Rating Curve | 21.769 | 63,863.454 | 52,565.255–77,750.421 |
+| 3 Segment Rating Curve | -0.733 | 0 | 0–0 |
+| 3 Segment Rating Curve | 10.632 | 1,196.544 | 984.276–1,458.056 |
+| 3 Segment Rating Curve | 21.769 | 175,201.576 | 142,285.178–238,730.224 |
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+The 100 saved stage bins run from −0.7327 to 21.7691 ft, beyond the measured range at both ends. Zero discharge below activation remains zero. These **prediction intervals include residual variation and parameter uncertainty**; they are not confidence bounds for the mean curve alone. Extrapolation is not independently validated by a finite interval.
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+![1-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.](images/synthetic-rating-curve-examples-1-control.png)
 
-## Expected Results
+*1-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.* [SVG](images/synthetic-rating-curve-examples-1-control.svg) · [Plot data](images/synthetic-rating-curve-examples-1-control.plotspec.json.gz)
 
-The verification program replicates these three cases in `RMC.BestFit.Verification` (`RatingCurveExampleRecoveryTests`, recipe applied at 1,000 observations, production defaults) and compares BestFit's maximum-likelihood and Bayesian results with an independent SciPy optimum; the generating parameters, independent optima, and standard errors are committed in `verification/data/rating-curve/rating-curve-example-fixtures.json`, and the results are recorded in `docs/verification/rating-curve.md`. At the 300 observations of this project the third control of the three-segment case is weakly identified (its exponent's standard error is about 22%), so individual third-control parameters recover only approximately while the curve recovers.
+![2-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.](images/synthetic-rating-curve-examples-2-control.png)
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+*2-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.* [SVG](images/synthetic-rating-curve-examples-2-control.svg) · [Plot data](images/synthetic-rating-curve-examples-2-control.plotspec.json.gz)
 
-### Parameter Estimates
+![3-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.](images/synthetic-rating-curve-examples-3-control.png)
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+*3-control additive rating with saved predictive uncertainty. Observed stages span 1.1425–19.8940 ft; the curve extends beyond them.* [SVG](images/synthetic-rating-curve-examples-3-control.svg) · [Plot data](images/synthetic-rating-curve-examples-3-control.plotspec.json.gz)
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+![Residuals for the three-control fit, using the desktop error convention.](images/synthetic-rating-curve-examples-three-control-residuals.png)
 
-### Frequency / Quantile Table
+*Residuals for the three-control fit, using the desktop error convention.* [SVG](images/synthetic-rating-curve-examples-three-control-residuals.svg) · [Plot data](images/synthetic-rating-curve-examples-three-control-residuals.plotspec.json.gz)
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+![Three-control residual Q–Q diagnostic; inspect departures without assuming a satisfactory fit.](images/synthetic-rating-curve-examples-three-control-qq.png)
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+*Three-control residual Q–Q diagnostic; inspect departures without assuming a satisfactory fit.* [SVG](images/synthetic-rating-curve-examples-three-control-qq.svg) · [Plot data](images/synthetic-rating-curve-examples-three-control-qq.plotspec.json.gz)
 
-### Plots
+## Reproduce and check
 
-![Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.](images/synthetic-rc-rating-curve.png)
-*Figure: Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.*
+The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../README.md#reproducing-the-figures) with `--only synthetic-rating-curve-examples`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
 
-![Residuals of measured discharge minus rating-curve estimate, plotted against stage.](images/synthetic-rc-residuals.png)
-*Figure: Residuals of measured discharge minus rating-curve estimate, plotted against stage.*
-
-![Markov-chain traces for the rating-curve parameters.](images/synthetic-rc-trace.png)
-*Figure: Markov-chain traces for the rating-curve parameters.*
-
-### MCMC Diagnostics
-
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
-
-## Next Steps
-
-- Use the Bayesian credible intervals to bound the rating curve at extreme stages.
-- Apply the rating curve to a stage time series (Time Series Data element) to derive a discharge time series.
-- Refit with **more segments** if structural breaks in the data are visible in the residual plot.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.

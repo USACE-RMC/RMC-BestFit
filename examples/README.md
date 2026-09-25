@@ -28,13 +28,15 @@ For a first flood-frequency study, read the USGS annual-peak tutorial, then a st
 4. For Bayesian results, inspect chains, R-hat, effective sample size and uncertainty as well as the fitted curve. A completed run alone does not establish convergence or suitability.
 5. Record any change you make to the data, assumptions or settings, and retain the original project for comparison.
 
-The saved projects are teaching records, not accepted design studies. Known limitations are explained in the relevant tutorial. In particular, the GHCN snowfall scale, Nile dates, some study-specific prior provenance and several saved diagnostics require attention. [The guidance register](../docs/example-guidance-questions.md) tracks the remaining author decisions.
+The saved projects are teaching records, not accepted design studies. Known limitations are explained in the relevant tutorial. In particular, the GHCN snowfall scale, Nile dates, some study-specific prior provenance and several saved diagnostics require attention. [The guidance register](../docs/example-guidance-questions.md) lists source questions; [the author issue log](../docs/example-issues-for-haden.md) records all follow-up items.
 
 ## Reading the figures
 
 Figures are Python plots generated from BestFit desktop geometry. Their observations, curves, interval bounds and diagnostics come from BestFit.UI and BestFit.App. Matplotlib supplies the drawing, using the shared plotting package shipped with the frequency-analysis skill. PNG is embedded in each guide; SVG and compressed PlotSpec files accompany the figure for inspection and reuse.
 
 Frequency plots distinguish a Bayesian credible interval from a Bulletin 17C confidence interval. Plotting positions describe the sample; they are not fitted probabilities. Logarithmic plots cannot display zero or negative magnitudes, so also inspect the chronology and the original data. Each figure's PlotSpec identifies its project hash and selected element.
+
+Two source-preserving display exceptions are documented: the restored Back Creek GMM figure overlays its original saved arrays because the current app omits that legacy result format; regression residual figures pass saved coefficients to BestFit's residual method because covariate loading resets live model values. These do not repair the underlying app-loading issues or change any database result. Rating/time-series prediction bands include residual/process variation.
 
 ## Reproducing the figures
 

@@ -1,170 +1,79 @@
-# Manual Data Entry Example
+# Classic time series: stored models and diagnostic limitations
 
-## Overview
+Open [classic-time-series-examples.bestfit](classic-time-series-examples.bestfit) and save a working copy. These analyses use three familiar datasets to teach inspection of the model actually stored, validation boundaries and diagnostic problems. A textbook's usual model for a dataset is not necessarily the model in this project.
 
-This example demonstrates how to enter time series data manually in RMC-BestFit by copy-pasting from CSV files. The project contains three classic datasets widely used in time series analysis textbooks and statistical software documentation.
+## Inspect the records
 
-Manual entry is useful when your data comes from published tables, spreadsheets, or other sources not covered by the built-in download options (USGS, GHCN, CHMN, ABOM, HEC-DSS).
+| Input series | Meaning | Saved units | Count and dates |
+| --- | --- | --- | --- |
+| Airline Passengers | Classic monthly international-airline passenger counts in thousands, 1949–1960. Retains the supplied data and nonseasonal, untransformed ARIMA fit; saved chain diagnostics are poor. | Passengers (thousands) | 144 (1949-01-01–1960-12-01) |
+| Nile River Flows | Classic annual Nile series. All 100 values match the source CSV in order, but saved dates 1897–1996 are offset 26 years from source dates 1871–1970. Original calendar retained and disclosed; do not attach historical events to the shifted axis. | Flow (10⁸ m³) | 100 (1897-01-01–1996-01-01) |
+| Mauna Loa CO2 | Saved monthly Mauna Loa atmospheric CO2 observations in ppm; fitted quadratic trend plus deterministic seasonal terms, with no AR/MA residual terms. | CO2 (ppm) | 790 (1958-03-01–2023-12-01) |
 
-## Datasets
+The supplied [Airline](airline-passengers.csv), [Nile](nile-river-flow.csv) and [CO2](mauna-loa-co2.csv) CSV files provide source snapshots. All stored observations are finite. The Nile values match the CSV in order, but its saved 1897–1996 dates differ from the source 1871–1970 dates. The [manual-entry tutorial](../../1-time-series-data/6-manual-entry/manual-entry-example.md) explains the same discrepancy. Dates remain unchanged; historical event labels would be misleading on the shifted axis.
 
-| Element | Dataset | Frequency | Period | Unit Label | Source |
-|---------|---------|-----------|--------|------------|--------|
-| Airline Passengers | Box-Jenkins airline data | Monthly | 1949--1960 | Passengers (thousands) | Box & Jenkins (1970) |
-| Nile River Flows | Nile annual flow at Aswan | Annual | 1871--1970 | Flow (10⁸ m³) | Cobb (1978) |
-| Mauna Loa CO2 | Atmospheric CO2 at Mauna Loa | Monthly | 1958--2023 | CO2 (ppm) | NOAA GML |
+## Work through the actual models
 
-### Airline Passengers
+1. Open Airline Passengers - TSA. It is untransformed ARIMA(1,1,1), with an intercept and no seasonal term. It is not a seasonal log-ARIMA textbook fit.
+2. Inspect every Airline parameter's chains and diagnostics before interpreting its prediction band. The retained run has material mixing limitations, detailed below.
+3. Open Nile River Flows - TSA. Its stored ARIMA(1,1,0) is not a change-point model; keep the date discrepancy explicit.
+4. Open Mauna Loa - CO2. It has an intercept, quadratic trend and deterministic seasonality, with p=d=q=0; it is not seasonal ARMA.
+5. Identify the withheld segments. All future horizons are zero, so these predictions stop at the last observed dates.
 
-The Box-Jenkins airline passenger dataset records monthly totals of international airline passengers from 1949 to 1960. It is one of the most widely used examples in time series analysis, originally published in *Time Series Analysis: Forecasting and Control* (Box & Jenkins, 1970). The series exhibits:
+| Analysis | p,d,q | Trend | Transform | Seasonality | Training / validation / future |
+| --- | --- | --- | --- | --- | --- |
+| Airline Passengers - TSA | 1,1,1 | None | None | False | 120 / 24 / 0 |
+| Nile River Flows - TSA | 1,1,0 | None | None | False | 80 / 20 / 0 |
+| Mauna Loa - CO2 | 0,0,0 | Quadratic | None | True | 632 / 158 / 0 |
 
-- **Strong seasonality** with peaks in summer months (June--August)
-- **Multiplicative trend** -- the seasonal amplitude grows proportionally with the level
-- **Upward trend** reflecting growth in commercial aviation
+## Saved diagnostics and the Airline limitation
 
-This dataset is commonly used to demonstrate seasonal ARIMA (SARIMA) modeling, seasonal differencing, and log transformations for variance stabilization.
+All fits retain DEMCzs, seed 12345, warmup 1,750, iterations 3,500, 10,000 output draws and 90% interval width. The chain/thinning settings and chosen posterior mean or mode parameter vector remain as saved. Inspect the actual prior bounds, parameter chains, autocorrelation and tail uncertainty. Scalar diagnostics describe the retained run; they do not substitute for scientific validation.
+| Saved analysis | Chains / thinning | Point parameters | DIC | Saved RMSE | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- |
+| Airline Passengers - TSA | 8/40 | Mean | 1,115.279 | 26.65 | 1.26202 | 52 |
+| Nile River Flows - TSA | 6/30 | Mean | 1,016.319 | 156.318 | 1.00041 | 6,166 |
+| Mauna Loa - CO2 | 12/60 | Mean | 1,720.184 | 0.935 | 1.00031 | 9,256 |
 
-### Nile River Flows
+Every Airline parameter has R-hat greater than 1.08; the MA parameter reaches about 1.262 with ESS about 52. These results do not support a well-mixed-chain claim. They are preserved as a diagnostic example for the author to address, not tuned or rerun to improve the table.
 
-The Nile River dataset records annual flow volumes at Aswan from 1871 to 1970, measured in units of 10⁸ cubic meters. Published by Cobb (1978) and widely used in the R `datasets` package, the series is notable for:
+| Airline parameter | Saved point value | R-hat | ESS |
+| --- | --- | --- | --- |
+| Intercept | 3.364345 | 1.081351 | 1469.44 |
+| AR coefficient | -0.368327 | 1.158785 | 126.81 |
+| MA coefficient | 0.728826 | 1.262019 | 51.56 |
+| Error scale | 27.131068 | 1.161593 | 217.67 |
 
-- **A level shift around 1898** coinciding with the construction of the first Aswan Dam
-- **Low-order autocorrelation** suitable for AR(1) modeling
-- **Change-point detection** -- the abrupt shift makes this a classic example for structural break analysis
+RMSE is training fit, not held-out skill. Prediction intervals include process/error variation; their appearance does not override weak MCMC diagnostics. The appropriate future model and the Nile date correction are separate author decisions.
 
-The annual frequency and level shift make this dataset ideal for introducing autoregressive models and change-point methods.
+## Read the figures
 
-### Mauna Loa CO2
+![Retained Airline training/validation result; weak saved MCMC diagnostics limit interpretation.](images/classic-time-series-examples-airline-validation.png)
 
-Monthly average atmospheric CO2 concentrations recorded at the Mauna Loa Observatory in Hawaii, maintained by the NOAA Global Monitoring Laboratory (GML). This is the longest continuous record of directly measured atmospheric CO2 and is widely known as the Keeling Curve. The series exhibits:
+*Retained Airline training/validation result; weak saved MCMC diagnostics limit interpretation.* [SVG](images/classic-time-series-examples-airline-validation.svg) · [Plot data](images/classic-time-series-examples-airline-validation.plotspec.json.gz)
 
-- **Strong upward trend** driven by fossil fuel emissions
-- **Regular seasonal cycle** caused by Northern Hemisphere vegetation uptake in spring/summer
-- **Nonlinear trend** -- the rate of increase accelerates over the record
+![Nile validation view uses the saved 1897–1996 calendar, which is offset from the CSV source.](images/classic-time-series-examples-nile-validation.png)
 
-This dataset is commonly used to demonstrate seasonal decomposition, trend-cycle separation, and ARIMAX modeling with deterministic seasonal components.
+*Nile validation view uses the saved 1897–1996 calendar, which is offset from the CSV source.* [SVG](images/classic-time-series-examples-nile-validation.svg) · [Plot data](images/classic-time-series-examples-nile-validation.plotspec.json.gz)
 
-## What's Inside
+![CO2 quadratic trend and deterministic seasonality through withheld validation.](images/classic-time-series-examples-co2-validation.png)
 
-Open `manual-entry-example.bestfit` in RMC-BestFit. The Project Explorer shows three Time Series Data elements:
+*CO2 quadratic trend and deterministic seasonality through withheld validation.* [SVG](images/classic-time-series-examples-co2-validation.svg) · [Plot data](images/classic-time-series-examples-co2-validation.plotspec.json.gz)
 
-![Project Explorer showing the three manual entry elements: Airline Passengers, Nile River Flows, and Mauna Loa CO2](../images/manual-entry-project-explorer.png)
-*Figure 1: Project Explorer with three manually entered time series*
+![First Airline parameter trace; inspect all parameters, especially the MA coefficient with ESS about 52.](images/classic-time-series-examples-airline-trace.png)
 
-Each element contains the full dataset already entered. Click on any element to view the time series plot and explore its statistical properties.
+*First Airline parameter trace; inspect all parameters, especially the MA coefficient with ESS about 52.* [SVG](images/classic-time-series-examples-airline-trace.svg) · [Plot data](images/classic-time-series-examples-airline-trace.plotspec.json.gz)
 
-## Step-by-Step Guide
+![Airline residual autocorrelation; residual structure is separate from MCMC mixing.](images/classic-time-series-examples-airline-residual-acf.png)
 
-### Opening the Project
+*Airline residual autocorrelation; residual structure is separate from MCMC mixing.* [SVG](images/classic-time-series-examples-airline-residual-acf.svg) · [Plot data](images/classic-time-series-examples-airline-residual-acf.plotspec.json.gz)
 
-1. Launch RMC-BestFit 2.0
-2. Select **File > Open** and navigate to this folder
-3. Open `manual-entry-example.bestfit`
-4. Expand **Time Series Data** in the Project Explorer
+![CO2 residuals on the actual saved dates.](images/classic-time-series-examples-co2-residuals.png)
 
-### Exploring the Time Series Tabs
+*CO2 residuals on the actual saved dates.* [SVG](images/classic-time-series-examples-co2-residuals.svg) · [Plot data](images/classic-time-series-examples-co2-residuals.plotspec.json.gz)
 
-Click on an element to open it. The main view shows four tabs:
+## Reproduce and check
 
-1. **Time Series** -- The raw data plotted against time. Look for trend, seasonality, and level shifts.
-2. **Seasonality** -- A seasonal subseries plot showing data grouped by month (or other period). Useful for identifying recurring patterns.
-3. **ACF** -- Autocorrelation function. Slowly decaying ACF suggests trend or nonstationarity; periodic peaks suggest seasonality.
-4. **PACF** -- Partial autocorrelation function. Helps identify AR order -- significant spikes at lags 1 through *p* suggest an AR(*p*) model.
+The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only classic-time-series-examples`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
 
-![Time series plot of Airline Passengers showing upward trend with growing seasonal amplitude](../images/manual-entry-airline-ts-plot.png)
-*Figure 2: Airline Passengers time series showing multiplicative seasonal pattern*
-
-![ACF plot of Airline Passengers showing slowly decaying autocorrelation with seasonal peaks](../images/manual-entry-airline-acf.png)
-*Figure 3: ACF of Airline Passengers -- periodic peaks at lags 12, 24, 36 indicate seasonality*
-
-![Time series plot of Nile River Flows showing level shift around 1898](../images/manual-entry-nile-ts-plot.png)
-*Figure 4: Nile River annual flows with visible level shift*
-
-![Time series plot of Mauna Loa CO2 showing upward trend with seasonal cycle](../images/manual-entry-co2-ts-plot.png)
-*Figure 5: Mauna Loa CO2 with accelerating trend and annual seasonal cycle*
-
-### Viewing the Properties Panel
-
-Open the Properties panel (click **Properties** in the toolbar or press **F4**) to see the configuration for each element:
-
-- **Entry Method** -- Set to *Manual* for all three elements
-- **Time Interval** -- *One Month* for Airline Passengers and Mauna Loa CO2; *One Year* for Nile River Flows
-- **Unit Label** -- Displayed on the Y-axis of the time series plot
-- **Start Date** -- The date of the first observation
-
-![Properties panel showing Entry Method = Manual, Time Interval = One Month, and Unit Label for Airline Passengers](../images/manual-entry-properties.png)
-*Figure 6: Properties panel for a manually entered time series*
-
-## Creating Your Own Manual Entry Element
-
-To enter a new time series manually from a CSV file:
-
-### 1. Create the Element
-
-1. Right-click **Time Series Data** in the Project Explorer
-2. Select **Create New**
-3. Enter a descriptive name for the element
-
-### 2. Configure the Properties
-
-In the Properties panel:
-
-1. Set **Entry Method** to *Manual*
-2. Set **Time Interval** to match your data frequency (e.g., *One Month*, *One Year*, *One Day*)
-3. Set **Start Date** to the date of the first observation
-4. Set **Unit Label** to describe the data units (e.g., "Discharge (cfs)", "Precipitation (mm)")
-
-### 3. Paste the Data
-
-1. Open the CSV file in a spreadsheet application or text editor
-2. Select the **value column only** (not the date column -- dates are computed from the Start Date and Time Interval)
-3. Copy the values to the clipboard
-4. In RMC-BestFit, click on the data grid in the Time Series tab
-5. Select the first cell in the **Value** column
-6. Paste (**Ctrl+V**)
-
-The dates are automatically generated based on the Start Date and Time Interval settings. For regular-interval data (monthly, annual, daily), you only need to paste the values.
-
-### 4. Verify
-
-After pasting, check:
-
-- The time series plot updates to show your data
-- The date range matches your expected period of record
-- The number of observations matches your source data
-- The Y-axis label shows your Unit Label
-
-## CSV Files Provided
-
-Three CSV files are included in this folder for reference and practice:
-
-| File | Columns | Rows |
-|------|---------|------|
-| `airline-passengers.csv` | Date, Passengers | 144 |
-| `nile-river-flow.csv` | Date, Flow | 100 |
-| `mauna-loa-co2.csv` | Date, CO2 | 790 |
-
-Each file uses a simple two-column format with ISO date strings (YYYY-MM-DD) and numeric values. The Date column is provided for reference -- when pasting into RMC-BestFit, you only need the value column.
-
-## Key Settings Reference
-
-| Setting | Purpose | Example Values |
-|---------|---------|---------------|
-| Entry Method | How data is entered | Manual, USGS, GHCN, CHMN, ABOM, HEC-DSS |
-| Time Interval | Spacing between observations | One Month, One Year, One Day, One Hour |
-| Start Date | Date of the first observation | 1949-01-01, 1871-01-01 |
-| Unit Label | Y-axis label and data description | Passengers (thousands), Flow (10⁸ m³), CO2 (ppm) |
-
-## Next Steps
-
-After entering time series data, continue with:
-
-1. **Input Data** -- Create an Input Data element that references a time series, apply a block function (e.g., annual maximum), and extract the sample for frequency analysis
-2. **Time Series Analysis** -- Fit ARIMA/ARIMAX models to the raw time series for forecasting and trend analysis (see examples in `../../7-time-series-analysis/`)
-3. **Distribution Fitting** -- Fit multiple distributions to the extracted sample and compare goodness-of-fit
-
-## References
-
-- Box, G. E. P., & Jenkins, G. M. (1970). *Time Series Analysis: Forecasting and Control*. Holden-Day.
-- Cobb, G. W. (1978). The Problem of the Nile: Conditional Solution to a Changepoint Problem. *Biometrika*, 65(2), 243--251.
-- NOAA Global Monitoring Laboratory. Trends in Atmospheric Carbon Dioxide. https://gml.noaa.gov/ccgg/trends/
+Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.

@@ -14,6 +14,11 @@ CDF. Time-series chronology retains actual dates and the training boundary.
 Histogram bar height is density per unit width when that is the app contract.
 Nonfinite coordinates become explicit gaps; source observations are not altered.
 
+The desktop adapter labels GMM quantile information **Quantile Penalty** and
+records its bounds as `interval.kind: penalty`. Bayesian annotations retain
+**Quantile Prior** and `interval.kind: prior`. This corrects an ambiguous legacy
+desktop legend without changing coordinates or the saved report text.
+
 Desktop snapshots also preserve explicit or resolved axis `minimum` and `maximum`
 bounds in source units, and a boolean `reversed` flag for display direction after
 the axis transform. Date bounds use ISO 8601. The desktop adapter accounts for
@@ -68,7 +73,7 @@ reruns MGBT, or reconstructs plotting positions.
 | Low outliers | Red crosses for exact records with `isLowOutlier:true`. |
 | Uncertain data | Green diamonds with black bounds from API `lowerBound`/`upperBound`. |
 | Interval data | Cyan circles with black interval endpoints. |
-| Quantile annotations | Red squares with model-computed bounds from `quantileAnnotations`; desktop legend `Quantile Prior` also used for B17C penalties. |
+| Quantile annotations | Red squares with model-computed bounds from `quantileAnnotations`; Python says `Quantile Prior` for Bayesian priors and `Quantile Penalty` for GMM penalties. |
 | Layout | White background, legend upper left, title `Frequency`; axis title/tick fonts 16/12 pt. PNG and SVG exports. |
 
 The API returns probabilities and aligned curve arrays; a stable display ordering
@@ -108,5 +113,31 @@ invalid log bounds explicitly. Custom desktop axis/series settings are outside
 this contract.
 
 PlotSpec may set `legendLocation` to `best` (default), `upper left`, `upper right`,
-`lower left` or `lower right`. Use a fixed corner after visual review if automatic
+`lower left`, `lower right` or `outside right`. Traces default to an outside-right
+legend so excursions remain visible. Use a fixed corner after visual review if automatic
 placement covers an observation; this must not change coordinates or axis bounds.
+
+Rating-curve and time-series bands use `interval.kind = "prediction"` and
+**Prediction Intervals** in all adapters. BestFit's prediction methods include
+residual/process variation; the legacy `ConfidenceIntervals`/`CredibleIntervals`
+field or series name does not turn these into mean-curve uncertainty. Coincident
+frequency bounds retain `credible` and their horizontal probability orientation.
+GMM quantile annotations use `penalty`, while Bayesian annotations use `prior`.
+
+The desktop adapter carries exporter `displayCorrections` into each PlotSpec.
+For covariate-model residual views, the repository exporter bypasses reset live
+parameter values by passing the persisted vector to the existing BestFit residual
+method. It never estimates parameters or rewrites source cells. The example
+regression check independently compares residuals with observed minus saved
+ModeCurve and the saved RMSE.
+
+For figure interpretation and known source limitations, consult the
+[worked-example guide](examples.md).
+
+An explicit desktop snapshot `legacySavedFrequency` payload may supply original
+saved GMM probability/point/expected/lower/upper arrays and the stored confidence
+width when an older model format fails current app loading. The adapter accepts
+this only for an observation-only B17C frequency view. It preserves the arrays,
+adds standard Computed/Expected Probability/Confidence labels, expands logarithmic
+display limits when necessary, and records the original source columns. It never
+replaces an existing fitted plot or derives missing uncertainty values.

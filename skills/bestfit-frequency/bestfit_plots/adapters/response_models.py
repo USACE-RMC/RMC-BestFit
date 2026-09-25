@@ -81,9 +81,9 @@ def bivariate_plots(restored):
     return output
 
 
-def horizontal_band(name, center, y, lower, upper, level, **style):
+def horizontal_band(name, center, y, lower, upper, level, *, interval_kind="credible", **style):
     return dict(name=name, kind="band", x=clean(center), y=clean(y), xLower=clean(lower), xUpper=clean(upper),
-                interval={"kind":"credible", "level":level}, style=style)
+                interval={"kind":interval_kind, "level":level}, style=style)
 
 
 def response_frequency_spec(source, response, mode, predictive, lower, upper, level, point_name, unit="Response"):
@@ -156,9 +156,9 @@ def rating_plots(restored):
     stage = column(r.ConfidenceIntervals,0)
     level = float(analysis.BayesianAnalysis.CredibleIntervalWidth)
     pairs = list(model.GetAlignedObservations())
-    data = [horizontal_band(f"{100*level:g}% Credible Intervals", list(r.MeanCurve), stage,
+    data = [horizontal_band(f"{100*level:g}% Prediction Intervals", list(r.MeanCurve), stage,
                             column(r.ConfidenceIntervals,1), column(r.ConfidenceIntervals,2), level,
-                            color="#353b7a", facecolor="#688caf", alpha=75/255),
+                            interval_kind="prediction", color="#353b7a", facecolor="#688caf", alpha=75/255),
             line("Posterior Predictive", list(r.MeanCurve), stage, color="blue", linestyle="--"),
             line(_point_name(analysis), list(r.ModeCurve), stage, color="black"),
             scatter("Stage-Discharge Data", [float(p.Item3) for p in pairs], [float(p.Item2) for p in pairs], color="red")]
@@ -193,8 +193,8 @@ def time_series_curve_spec(source, dates, observed, mode_dates, mode, prediction
                                     ("Prediction", slice(split,None), "crimson")):
         if name == "Prediction" and split == len(prediction_dates)-1:
             continue
-        intervals.append(area(f"{100*level:g}% Credible Intervals — {name}", prediction_dates[selection], lower[selection], upper[selection],
-                              {"kind":"credible", "level":level}, color="#353b7a" if name=="Training" else "red", facecolor=color, alpha=75/255))
+        intervals.append(area(f"{100*level:g}% Prediction Intervals — {name}", prediction_dates[selection], lower[selection], upper[selection],
+                              {"kind":"prediction", "level":level}, color="#353b7a" if name=="Training" else "red", facecolor=color, alpha=75/255))
     data = intervals+[line("Posterior Predictive", prediction_dates, predictive, color="blue", linestyle="--"),
                       line(point_name, mode_dates, mode, color="black"),
                       line("Time Series", dates, observed, color="red", linestyle=":")]

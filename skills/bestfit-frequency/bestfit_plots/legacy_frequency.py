@@ -173,7 +173,7 @@ def build_figure(results, input_data, *, title="Frequency", ylabel=""):
             draw_observations(ax, [r for r in exact if r.get("isLowOutlier", False)], "Low Outlier Data", "x", "red", notes)
             draw_observations(ax, input_data.get("uncertainData"), "Uncertain Data", "D", "green", notes, bounds=True)
             draw_observations(ax, input_data.get("intervalData"), "Interval Data", "o", "cyan", notes, bounds=True)
-            draw_observations(ax, results.get("quantileAnnotations"), "Quantile Prior", "s", "red", notes, bounds=True, probability_key="aep")
+            draw_observations(ax, results.get("quantileAnnotations"), "Quantile Penalty" if b17c else "Quantile Prior", "s", "red", notes, bounds=True, probability_key="aep")
             ax.margins(x=0.03)
             y_min, y_max = ax.dataLim.intervaly
             bottom, top = 10 ** math.floor(math.log10(y_min)), 10 ** math.ceil(math.log10(y_max))

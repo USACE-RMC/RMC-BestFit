@@ -22,7 +22,7 @@ class PackageTests(unittest.TestCase):
                 self.assertIsNone(archive.testzip())
                 for name in ("scripts/plot_chronology.py", "scripts/run_study.py", "scripts/prepare_study.py",
                              "scripts/capture_source.py", "references/historical-data.md", "references/information-recipes.md",
-                             "references/regional-information.md", "references/study-workflow.md", "assets/synthetic-study.json"):
+                             "references/regional-information.md", "references/study-workflow.md", "references/examples.md", "assets/synthetic-study.json"):
                     self.assertEqual(archive.read("bestfit-frequency/" + name),
                                      (ROOT / "skills/bestfit-frequency" / name).read_bytes())
 
@@ -44,6 +44,8 @@ class PackageTests(unittest.TestCase):
                 self.assertNotIn("mcpServers", manifest)
                 self.assertEqual(archive.read(root + "skills/bestfit-frequency/SKILL.md"),
                                  (ROOT / "skills/bestfit-frequency/SKILL.md").read_bytes())
+                self.assertEqual(archive.read(root + "skills/bestfit-frequency/references/examples.md"),
+                                 (ROOT / "skills/bestfit-frequency/references/examples.md").read_bytes())
                 self.assertFalse(any("__pycache__" in name or name.endswith(".pyc") for name in archive.namelist()))
 
 

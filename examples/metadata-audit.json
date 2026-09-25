@@ -60,8 +60,844 @@
       "rowid": 7,
       "name": "Time Series_7"
     },
-    "preservedCellCount": 159,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 159
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+    "beforeSha256": "93fda729502811dc0fbfde00a29c0b0aaf0d329816222430ea3742b773874255",
+    "afterSha256": "ee9075603aa5a1cde50de3e34a30cdfd39c8269f2dd20850311c83b4c4d93b8d",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "Example #3",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #3'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit replicating ARR Example #3 (Hunter River at Singleton)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "Example #4",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #4'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit replicating ARR Example #4."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "Example #5",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #3'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. Informative Normal skew prior: mean 0, standard deviation 0.30. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit replicating ARR Example #5"
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "Example #6a",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Example #6a'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian GEV fit replicating ARR Example #6a (Wimmera River at Glynwylin)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "Example #6b",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Example #6b'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian GEV fit replicating ARR Example #6b (Wimmera River, low outlier censoring)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Example #3",
+        "description": "Hunter River at Singleton: 31 annual peaks in m³/s.",
+        "oldDescription": "Hunter River at Singleton"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Example #4",
+        "description": "Hunter River systematic sample plus 1820–1937 historical counts at 12,525 m³/s: 117 below and one above.",
+        "oldDescription": "ARR Example #4 input data (peak-flow record from the Australian Rainfall and Runoff worked examples)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Example #6a",
+        "description": "Wimmera River at Glynwylin: 56 flows supplied in descending order without event years; stored 1960–2015 indexes are artificial.",
+        "oldDescription": "I do not have the source data for this gauge. I am using the table of flows provided in ARR for the Wimmera River at Glynwylin. The flows are provided in descending order, with no years. This is why the chronology plot looks odd. "
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Example #6b",
+        "description": "Same Wimmera teaching sample with 27 saved low-outlier flags; artificial indexes do not support chronology or trend analysis.",
+        "oldDescription": "I do not have the source data for this gauge. I am using the table of flows provided in ARR for the Wimmera River at Glynwylin. The flows are provided in descending order, with no years. This is why the chronology plot looks odd. "
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "arr-flike-examples",
+        "description": "ARR/FLIKE teaching comparisons: Bayesian LP3 fits for Hunter River examples 3–5 and GEV fits for Wimmera examples 6a/6b. Example 4 adds binomial historical counts; example 5 adds a Normal skew prior; 6b includes 27 low-outlier flags. Synthetic year ordering in the Wimmera input is not chronology. No B17C analyses are present in this active project.",
+        "oldDescription": "Bayesian replication of the Australian Rainfall and Runoff (ARR) flood-frequency worked examples. Demonstrates the LP-III distribution applied to systematic, censored, and historical flood records following the FLIKE software conventions."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 249
+  },
+  {
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "beforeSha256": "56f9408158fea1b2a75e5fb220cde52d4c2e8a5abbc913835026684b2cec12ec",
+    "afterSha256": "66b7cd53407227671a2ecf4f112d0c6624ad929dd19b10b6a302bef59461fece",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 1,
+        "name": "AMH Copula",
+        "description": "Saved Bayesian AliMikhailHaq copula using InferenceFromMargins; X marginal 'AMH - Marginal X', Y marginal 'AMH - Marginal Y'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate fit using the AMH (Ali-Mikhail-Haq) copula on the AMH marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 2,
+        "name": "Clayton Copula",
+        "description": "Saved Bayesian Clayton copula using InferenceFromMargins; X marginal 'Clayton - Marginal X', Y marginal 'Clayton - Marginal Y'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate fit using the Clayton copula on the Clayton marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 3,
+        "name": "Frank Copula",
+        "description": "Saved Bayesian Frank copula using InferenceFromMargins; X marginal 'Frank - Marginal X', Y marginal 'Frank - Marginal Y'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate fit using the Frank copula on the Frank marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 4,
+        "name": "Gumbel Copula",
+        "description": "Saved Bayesian Gumbel copula using InferenceFromMargins; X marginal 'Gumbel - Marginal X', Y marginal 'Gumbel - Marginal Y'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate fit using the Gumbel copula on the Gumbel marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 5,
+        "name": "Joe Copula",
+        "description": "Saved Bayesian Joe copula using InferenceFromMargins; X marginal 'Joe - Marginal X', Y marginal 'Joe - Marginal Y'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate fit using the Joe copula on the Joe marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 6,
+        "name": "Normal Copula",
+        "description": "Saved Bayesian Normal copula using InferenceFromMargins; X marginal 'Normal - Marginal X', Y marginal 'Normal - Marginal Y'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate fit using the Normal (Gaussian) copula on the Normal marginals."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "AMH - Marginal X",
+        "description": "Saved Bayesian Normal marginal using 'AMH - X Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the X-margin for the AMH copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "AMH - Marginal Y",
+        "description": "Saved Bayesian Normal marginal using 'AMH - Y Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the Y-margin for the AMH copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "Clayton - Marginal X",
+        "description": "Saved Bayesian Normal marginal using 'Clayton - X Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the X-margin for the Clayton copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "Clayton - Marginal Y",
+        "description": "Saved Bayesian Normal marginal using 'Clayton - Y Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the Y-margin for the Clayton copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "Frank - Marginal X",
+        "description": "Saved Bayesian Normal marginal using 'Frank - X Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the X-margin for the Frank copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 6,
+        "name": "Frank - Marginal Y",
+        "description": "Saved Bayesian Normal marginal using 'Frank - Y Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the Y-margin for the Frank copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 7,
+        "name": "Gumbel - Marginal X",
+        "description": "Saved Bayesian Normal marginal using 'Gumbel - X Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the X-margin for the Gumbel copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 8,
+        "name": "Gumbel - Marginal Y",
+        "description": "Saved Bayesian Normal marginal using 'Gumbel - Y Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the Y-margin for the Gumbel copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 9,
+        "name": "Joe - Marginal X",
+        "description": "Saved Bayesian Normal marginal using 'Joe - X Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the X-margin for the Joe copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 10,
+        "name": "Joe - Marginal Y",
+        "description": "Saved Bayesian Normal marginal using 'Joe - Y Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the Y-margin for the Joe copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 11,
+        "name": "Normal - Marginal X",
+        "description": "Saved Bayesian Normal marginal using 'Normal - X Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the X-margin for the Normal copula example."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 12,
+        "name": "Normal - Marginal Y",
+        "description": "Saved Bayesian Normal marginal using 'Normal - Y Data', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate fit of the Y-margin for the Normal copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "AMH - X Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic X-margin data for the AMH copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "AMH - Y Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic Y-margin data for the AMH copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Clayton - X Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic X-margin data for the Clayton copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Clayton - Y Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic Y-margin data for the Clayton copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 5,
+        "name": "Frank - X Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic X-margin data for the Frank copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 6,
+        "name": "Frank - Y Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic Y-margin data for the Frank copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 7,
+        "name": "Gumbel - X Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic X-margin data for the Gumbel copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 8,
+        "name": "Gumbel - Y Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic Y-margin data for the Gumbel copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 9,
+        "name": "Joe - X Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic X-margin data for the Joe copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 10,
+        "name": "Joe - Y Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic Y-margin data for the Joe copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 11,
+        "name": "Normal - X Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic X-margin data for the Normal copula example."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 12,
+        "name": "Normal - Y Data",
+        "description": "One margin of a separate synthetic paired dataset: 100 exact generic values, index 1–100. Pair X and Y within the same named family; no uncertain/censored or low-flagged records. Known generator parameters are not established here.",
+        "oldDescription": "Synthetic Y-margin data for the Normal copula example."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "bivariate-distribution-examples",
+        "description": "Six synthetic copula teaching datasets, each with two saved Normal marginal fits and one Bayesian copula fit using inference from margins. Covers AMH, Clayton, Frank, Gumbel, Joe and Normal. Separate datasets preclude common-data family ranking; preserves all saved diagnostics and query results.",
+        "oldDescription": "Bivariate distribution fitting using six copula families (AMH, Clayton, Frank, Gumbel, Joe, Normal) on synthetic paired data. Demonstrates marginal estimation followed by copula selection across the standard Archimedean and elliptical families."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 777
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/Case Study/blakely-mountain-dam-b17c-metric.bestfit",
+    "beforeSha256": "fbd59c7a61fee22af4ffae0dfe4c41d6538320da9f2af939a51a90751dcda654",
+    "afterSha256": "3ec050c2c791144297845a3c9d0b720f7edae4153f69e04bdcaca04ca8982ef7",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 1,
+        "name": "Systematic",
+        "description": "GMM LP3 fit of 'Systematic - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit using the systematic record only."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 2,
+        "name": "Systematic + Historical",
+        "description": "GMM LP3 fit of 'Systematic + Historical - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit incorporating historical record extension."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 3,
+        "name": "Systematic + Historical + Paleo",
+        "description": "GMM LP3 fit of 'Systematic + Historical + Paleo - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit incorporating historical and paleoflood records."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 4,
+        "name": "Systematic + Reg Skew",
+        "description": "GMM LP3 fit of 'Systematic - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Skew (of log) (γ) penalty: mean -0.17, MSE 0.12.",
+        "oldDescription": "B17C fit on the systematic record with regional skew weighting."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 5,
+        "name": "Systematic + Historical + Reg Skew",
+        "description": "GMM LP3 fit of 'Systematic + Historical - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Skew (of log) (γ) penalty: mean -0.17, MSE 0.12.",
+        "oldDescription": "B17C fit with historical record + regional skew weighting."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 6,
+        "name": "Systematic + Historical + Paleo + Reg Skew",
+        "description": "GMM LP3 fit of 'Systematic + Historical + Paleo - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Skew (of log) (γ) penalty: mean -0.17, MSE 0.12.",
+        "oldDescription": "B17C fit with historical + paleoflood records + regional skew weighting."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 8,
+        "name": "Systematic + Historical + Paleo + Reg Skew + QPen",
+        "description": "GMM LP3 fit of 'Systematic + Historical + Paleo - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Skew (of log) (γ) penalty: mean -0.17, MSE 0.12; Quantile penalty: AEP 0.0001, log10-space mean 3.92095, MSE 0.016.",
+        "oldDescription": "B17C fit with full information expansion + quantile-penalty prior."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 9,
+        "name": "Systematic + QPen",
+        "description": "GMM LP3 fit of 'Systematic - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Quantile penalty: AEP 0.0001, log10-space mean 3.92095, MSE 0.016.",
+        "oldDescription": "B17C fit using the systematic record only."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 10,
+        "name": "Systematic + Historical + QPen",
+        "description": "GMM LP3 fit of 'Systematic + Historical - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Quantile penalty: AEP 0.0001, log10-space mean 3.92095, MSE 0.016.",
+        "oldDescription": "B17C fit incorporating historical record extension."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 11,
+        "name": "Systematic + Historical + Paleo + QPen",
+        "description": "GMM LP3 fit of 'Systematic + Historical + Paleo - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Quantile penalty: AEP 0.0001, log10-space mean 3.92095, MSE 0.016.",
+        "oldDescription": "B17C fit incorporating historical and paleoflood records."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 12,
+        "name": "Systematic + Reg Skew + QPen",
+        "description": "GMM LP3 fit of 'Systematic - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Skew (of log) (γ) penalty: mean -0.17, MSE 0.12; Quantile penalty: AEP 0.0001, log10-space mean 3.92095, MSE 0.016.",
+        "oldDescription": "B17C fit on the systematic record with regional skew weighting."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 13,
+        "name": "Systematic + Historical + Reg Skew + QPen",
+        "description": "GMM LP3 fit of 'Systematic + Historical - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Skew (of log) (γ) penalty: mean -0.17, MSE 0.12; Quantile penalty: AEP 0.0001, log10-space mean 3.92095, MSE 0.016.",
+        "oldDescription": "B17C fit with historical record + regional skew weighting."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Systematic - 1Day",
+        "description": "Annual maximum one-day inflow for Blakely Mountain Dam, m³/s. Contains 91 systematic peaks during 1923–2018, 0 historical/paleoflood interval events and 1 perception windows, including the 1931–1935 gap. Preserve the saved conversion/rounding; this is not the published three-day Bayesian case.",
+        "oldDescription": "Systematic 1-day annual peak inflow record for Blakely Mountain Dam."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Systematic + Historical - 1Day",
+        "description": "Annual maximum one-day inflow for Blakely Mountain Dam, m³/s. Contains 91 systematic peaks during 1923–2018, 1 historical/paleoflood interval events and 2 perception windows, including the 1931–1935 gap. Preserve the saved conversion/rounding; this is not the published three-day Bayesian case.",
+        "oldDescription": "Systematic + historical 1-day annual peak inflow record for Blakely Mountain Dam."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Systematic + Historical + Paleo - 1Day",
+        "description": "Annual maximum one-day inflow for Blakely Mountain Dam, m³/s. Contains 91 systematic peaks during 1923–2018, 2 historical/paleoflood interval events and 4 perception windows, including the 1931–1935 gap. Preserve the saved conversion/rounding; this is not the published three-day Bayesian case.",
+        "oldDescription": "Systematic + historical + paleoflood 1-day annual peak inflow record for Blakely Mountain Dam."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "blakely-mountain-dam-b17c-metric",
+        "description": "Blakely Mountain Dam one-day inflow GMM LP3 information-expansion examples in m³/s; systematic, historical/paleoflood, regional-skew and quantile-penalty alternatives. Retains independently saved linked-MVN uncertainty results and diagnostic status; consult the companion tutorial for the distinction from the three-day study and engineering provenance.",
+        "oldDescription": "B17C-method flood-frequency analysis for Blakely Mountain Dam, Arkansas. Demonstrates incorporating historical data, paleoflood records, regional skew, quantile penalties, and bias-corrected bootstrap confidence intervals using the Bulletin 17C method."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 327
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+    "beforeSha256": "fdb8f81b39ee745e4a4b10aa9811707f85438f7abed34b31ae3f752fa4f7b108",
+    "afterSha256": "78a1df3913fda1d9d7d24ed50aedf174043fd7242421cf8ee14107f0d4360f0c",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 1,
+        "name": "Systematic",
+        "description": "GMM LP3 fit of 'Systematic - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit using the systematic record only."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 2,
+        "name": "Systematic + Historical",
+        "description": "GMM LP3 fit of 'Systematic + Historical - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit incorporating historical record extension."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 3,
+        "name": "Systematic + Historical + Paleo",
+        "description": "GMM LP3 fit of 'Systematic + Historical + Paleo - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit incorporating historical and paleoflood records."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 4,
+        "name": "Systematic + Reg Skew",
+        "description": "GMM LP3 fit of 'Systematic - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: B17C Skew (of log) (γ) penalty: mean -0.17, MSE 0.12.",
+        "oldDescription": "B17C fit on the systematic record with regional skew weighting."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 5,
+        "name": "Systematic + Historical + Reg Skew",
+        "description": "GMM LP3 fit of 'Systematic + Historical - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: B17C Skew (of log) (γ) penalty: mean -0.17, MSE 0.12.",
+        "oldDescription": "B17C fit with historical record + regional skew weighting."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 6,
+        "name": "Systematic + Historical + Paleo + Reg Skew",
+        "description": "GMM LP3 fit of 'Systematic + Historical + Paleo - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: MaximumFunctionEvaluationsReached. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: B17C Skew (of log) (γ) penalty: mean -0.17, MSE 0.12.",
+        "oldDescription": "B17C fit with historical + paleoflood records + regional skew weighting."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 8,
+        "name": "Systematic + Historical + Paleo + Reg Skew + QPen",
+        "description": "GMM LP3 fit of 'Systematic + Historical + Paleo - 1Day' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 2000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: B17C Skew (of log) (γ) penalty: mean -0.17, MSE 0.12; Quantile penalty: AEP 0.0001, log10-space mean 5.4689, MSE 0.016.",
+        "oldDescription": "B17C fit with full information expansion + quantile-penalty prior."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Systematic - 1Day",
+        "description": "Annual maximum one-day inflow for Blakely Mountain Dam, cfs. Contains 91 systematic peaks during 1923–2018, 0 historical/paleoflood interval events and 1 perception windows, including the 1931–1935 gap. Preserve the saved conversion/rounding; this is not the published three-day Bayesian case.",
+        "oldDescription": "Systematic 1-day annual peak inflow record for Blakely Mountain Dam."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Systematic + Historical - 1Day",
+        "description": "Annual maximum one-day inflow for Blakely Mountain Dam, cfs. Contains 91 systematic peaks during 1923–2018, 1 historical/paleoflood interval events and 2 perception windows, including the 1931–1935 gap. Preserve the saved conversion/rounding; this is not the published three-day Bayesian case.",
+        "oldDescription": "Systematic + historical 1-day annual peak inflow record for Blakely Mountain Dam."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Systematic + Historical + Paleo - 1Day",
+        "description": "Annual maximum one-day inflow for Blakely Mountain Dam, cfs. Contains 91 systematic peaks during 1923–2018, 2 historical/paleoflood interval events and 4 perception windows, including the 1931–1935 gap. Preserve the saved conversion/rounding; this is not the published three-day Bayesian case.",
+        "oldDescription": "Systematic + historical + paleoflood 1-day annual peak inflow record for Blakely Mountain Dam."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "blakely-mountain-dam-b17c",
+        "description": "Blakely Mountain Dam one-day inflow GMM LP3 information-expansion examples in cfs; systematic, historical/paleoflood, regional-skew and quantile-penalty alternatives. Retains independently saved linked-MVN uncertainty results and diagnostic status; consult the companion tutorial for the distinction from the three-day study and engineering provenance.",
+        "oldDescription": "B17C-method flood-frequency analysis for Blakely Mountain Dam, Arkansas. Demonstrates incorporating historical data, paleoflood records, regional skew, quantile penalties, and bias-corrected bootstrap confidence intervals using the Bulletin 17C method."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 232
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+    "beforeSha256": "98996b63ecc613227de7295503a6b8276741e3569cfb357b1e76e20c7a4b6276",
+    "afterSha256": "0c38589f2a6c4034973178c69bb6d6826cf3af9fecedbeb05cb7e3eb7a0954a8",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 1,
+        "name": "B17C Example #3",
+        "description": "Back Creek near Jones Springs, WV: saved GMM LP3 fit to Example #3, with multivariate-normal uncertainty, 10,000 output draws, seed 12345 and 90% confidence limits. The existing analysis was restored to the project-tree index by explicit author approval without refitting or changing any saved result.",
+        "oldDescription": "B17C fit of Example #3 (Back Creek broken record)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "Bayes Example #1",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #1'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit of Example #1 (Moose River systematic record)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "Bayes Example #2",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #2'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit of Example #2 (Orestimba Creek with low outliers)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "Bayes Example #4",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #4'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit of Example #4 (Arkansas River with historical data)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "Bayes Example #5",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #5'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit of Example #5 (Bear Creek crest-stage gage censored data)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "Bayes Example #6",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #6'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit of Example #6 (Santa Cruz River with historic data and low outliers)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 6,
+        "name": "Bayes Example #7",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Example #7'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit of Example #7 (American River paleoflood record)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Example #1",
+        "description": "Moose River at Victory, VT; systematic peaks, cfs.",
+        "oldDescription": "Systematic Record – Moose River at Victory, VT"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Example #2",
+        "description": "Orestimba Creek near Newman, CA; peaks with 30 saved low-outlier flags, cfs.",
+        "oldDescription": "Analysis with Low Outliers – Orestimba Creek near Newman, CA"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Example #3",
+        "description": "Back Creek near Jones Springs, WV; broken record with three perception windows, cfs.",
+        "oldDescription": "Broken Record – Back Creek near Jones Springs, WV"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Example #4",
+        "description": "Arkansas River at Pueblo, CO; four historical intervals and four threshold windows, cfs.",
+        "oldDescription": "Historical Data – Arkansas River at Pueblo, CO"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 5,
+        "name": "Example #5",
+        "description": "Bear Creek at Ottumwa, IA; crest-stage observation thresholds and nine low flags, cfs.",
+        "oldDescription": "Crest Stage Gage Censored Data – Bear Creek at Ottumwa, IA"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 6,
+        "name": "Example #6",
+        "description": "Santa Cruz River at Lochiel, AZ; historical threshold and ten low flags, cfs.",
+        "oldDescription": "Historic Data and Low Outliers – Santa Cruz River at Lochiel, AZ"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 7,
+        "name": "Example #7",
+        "description": "American River at Fair Oaks, CA; five historical/paleoflood intervals and ten threshold windows, cfs.",
+        "oldDescription": "Paleoflood Record Example – American River at Fair Oaks, California"
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "bulletin-17c-bayesian-examples",
+        "description": "Seven selectable teaching analyses of Bulletin 17C datasets: six Bayesian LP3 fits and the existing Back Creek GMM LP3 fit with multivariate-normal uncertainty. Back Creek was restored to the project tree by explicit author approval. All saved observations, numerical settings and results are preserved; the tutorial distinguishes estimators and interval meanings.",
+        "oldDescription": "Bayesian re-fits of the seven Bulletin 17C example datasets (Moose River, Orestimba Creek, Back Creek, Arkansas River, Bear Creek, Santa Cruz River, American River) using the Log-Pearson Type III distribution. Companion to bulletin-17c-examples."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": {
+      "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+      "authorization": "Haden: Restore the existing Back Creek analysis",
+      "beforeSha256": "7495eb91940b6fe8e37216dd62e6d3824937cf0ad6f2b592f1ae5c31f40c7a38",
+      "afterSha256": "0c38589f2a6c4034973178c69bb6d6826cf3af9fecedbeb05cb7e3eb7a0954a8",
+      "insertedIndexRow": {
+        "_rowid_": 7,
+        "Name": "B17C Example #3",
+        "Type": "RMC.BestFit.UI.B17CAnalysis"
+      },
+      "changedCells": [
+        {
+          "table": "Project",
+          "rowid": 1,
+          "column": "ProjectExplorerLayout",
+          "beforeDigest": "8174df2358bd9407acccc64e9e4c1bb0f4ecd19054545a8b1d7f92e6d1057255",
+          "afterDigest": "7fa8c75e2cc92c0a217afdf568a03f6f3b3c230b53cfad04cc6e4fbb41381ddc"
+        },
+        {
+          "table": "Project",
+          "rowid": 1,
+          "column": "Description",
+          "beforeDigest": "bfa5ecea8b38f8fe67859c35426226320411f1e86dfaf37533819cfed768076b",
+          "afterDigest": "8ecb19e06f7e43f1a791f9e0812adb8ac6629eff6985f9792bb9bc3507d2b5a9"
+        },
+        {
+          "table": "<Bulletin 17C>",
+          "rowid": 1,
+          "column": "Description",
+          "beforeDigest": "3b9531e4d70c054403527ca2f0e14201a0f6c7c4c5fe1aa5bef40796df0300df",
+          "afterDigest": "f543fde8855e21b45f635971e598729b154044aef41ceffbdaf01553b5fbc910"
+        }
+      ],
+      "allOtherCellsPreserved": true,
+      "analysisResultsChanged": false
+    },
+    "preservedCellCount": 362
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+    "beforeSha256": "2e55826d0492643cbb340ac9785a15161dbac0771048a932f51e88db0b2098a3",
+    "afterSha256": "1ca426ab89f2ad564a583c45849a8d4f1195b106d8004ac4337d0d6bf77e1d24",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 1,
+        "name": "Example #1",
+        "description": "GMM LP3 fit of 'Example #1 - Data' with MultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: Skew (of log) (γ) penalty: mean 0.44, MSE 0.078.",
+        "oldDescription": "B17C fit of Example #1 (Moose River systematic record) using MVN quantile confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 2,
+        "name": "Example #2",
+        "description": "GMM LP3 fit of 'Example #2 - Data' with MultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #2 (Orestimba Creek with low outliers) using MVN quantile confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 3,
+        "name": "Example #3",
+        "description": "GMM LP3 fit of 'Example #3 - Data' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #3 (Back Creek broken record) using MVN quantile confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 4,
+        "name": "Example #4",
+        "description": "GMM LP3 fit of 'Example #4 - Data' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #4 (Arkansas River with historical data) using MVN quantile confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 5,
+        "name": "Example #5",
+        "description": "GMM LP3 fit of 'Example #5 - Data' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #5 (Bear Creek crest-stage censored data) using MVN quantile confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 6,
+        "name": "Example #6",
+        "description": "GMM LP3 fit of 'Example #6 - Data' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #6 (Santa Cruz River with historic data and low outliers) using MVN quantile confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 7,
+        "name": "Example #7",
+        "description": "GMM LP3 fit of 'Example #7 - Data' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #7 (American River paleoflood record) using MVN quantile confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 8,
+        "name": "Example #1 - BCB",
+        "description": "GMM LP3 fit of 'Example #1 - Data' with BiasCorrectedBootstrap uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior. Enabled information terms: B17C Skew (of log) (γ) penalty: mean 0.44, MSE 0.078.",
+        "oldDescription": "B17C fit of Example #1 using bias-corrected bootstrap (BCB) confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 9,
+        "name": "Example #2 - BCB",
+        "description": "GMM LP3 fit of 'Example #2 - Data' with BiasCorrectedBootstrap uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #2 using bias-corrected bootstrap (BCB) confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 10,
+        "name": "Example #3 - BCB",
+        "description": "GMM LP3 fit of 'Example #3 - Data' with BiasCorrectedBootstrap uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #3 using bias-corrected bootstrap (BCB) confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 11,
+        "name": "Example #4 - BCB",
+        "description": "GMM LP3 fit of 'Example #4 - Data' with BiasCorrectedBootstrap uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #4 using bias-corrected bootstrap (BCB) confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 12,
+        "name": "Example #5 - BCB",
+        "description": "GMM LP3 fit of 'Example #5 - Data' with BiasCorrectedBootstrap uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #5 using bias-corrected bootstrap (BCB) confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 13,
+        "name": "Example #6 - BCB",
+        "description": "GMM LP3 fit of 'Example #6 - Data' with BiasCorrectedBootstrap uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #6 using bias-corrected bootstrap (BCB) confidence intervals."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 14,
+        "name": "Example #7 - BCB",
+        "description": "GMM LP3 fit of 'Example #7 - Data' with BiasCorrectedBootstrap uncertainty, 90% confidence limits and 1000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit of Example #7 using bias-corrected bootstrap (BCB) confidence intervals."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Example #1 - Data",
+        "description": "Systematic Record – Moose River at Victory, VT Saved input magnitudes are in cfs; retain the documented manual screening and perception assumptions.",
+        "oldDescription": "Systematic Record – Moose River at Victory, VT"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Example #2 - Data",
+        "description": "Analysis with Low Outliers – Orestimba Creek near Newman, CA Saved input magnitudes are in cfs; retain the documented manual screening and perception assumptions.",
+        "oldDescription": "Analysis with Low Outliers – Orestimba Creek near Newman, CA"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Example #3 - Data",
+        "description": "Broken Record – Back Creek near Jones Springs, WV.  Manual threshold value is used to match PeakFQ because PeakFQ treated historical data and systematic data differently, even though both were exact data types. The 1936 flood is coded as historical in PeakFQ even though it is entered as exact data. Saved input magnitudes are in cfs; retain the documented manual screening and perception assumptions.",
+        "oldDescription": "Broken Record – Back Creek near Jones Springs, WV.  Manual threshold value is used to match PeakFQ because PeakFQ treated historical data and systematic data differently, even though both were exact data types. The 1936 flood is coded as historical in PeakFQ even though it is entered as exact data. "
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Example #4 - Data",
+        "description": "Historical Data — Arkansas River at Pueblo, CO (Bulletin 17C Example #4). Saved input magnitudes are in cfs; retain the documented manual screening and perception assumptions.",
+        "oldDescription": "Historical Data — Arkansas River at Pueblo, CO (Bulletin 17C Example #4)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 5,
+        "name": "Example #5 - Data",
+        "description": "Crest Stage Gage Censored Data – Bear Creek at Ottumwa, IA.  Manual threshold is used to match PeakFQ, which uses different data types. In PeakFQ several systematic values are coded with lower bound = 0, which results in different data being used in the MGBT test. Saved input magnitudes are in cfs; retain the documented manual screening and perception assumptions.",
+        "oldDescription": "Crest Stage Gage Censored Data – Bear Creek at Ottumwa, IA.  Manual threshold is used to match PeakFQ, which uses different data types. In PeakFQ several systematic values are coded with lower bound = 0, which results in different data being used in the MGBT test. "
+      },
+      {
+        "table": "Input Data",
+        "rowid": 6,
+        "name": "Example #6 - Data",
+        "description": "Historic Data and Low Outliers – Santa Cruz River at Lochiel, AZ Saved input magnitudes are in cfs; retain the documented manual screening and perception assumptions.",
+        "oldDescription": "Historic Data and Low Outliers – Santa Cruz River at Lochiel, AZ"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 7,
+        "name": "Example #7 - Data",
+        "description": "Paleoflood Record Example – American River at Fair Oaks, California Saved input magnitudes are in cfs; retain the documented manual screening and perception assumptions.",
+        "oldDescription": "Paleoflood Record Example – American River at Fair Oaks, California"
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "bulletin-17c-examples",
+        "description": "Fourteen saved GMM LP3 analyses of seven Bulletin 17C teaching datasets compare natural/linked multivariate-normal and bias-corrected-bootstrap uncertainty. Retains source-specific censoring, the Example 1 regional skew penalty, and complete bootstrap diagnostics. Not Bayesian MCMC or a new EMA replication.",
+        "oldDescription": "B17C-method fits of the seven Bulletin 17C example datasets, including both multivariate-normal (MVN) quantile confidence intervals and bias-corrected bootstrap (BCB) intervals. Companion to bulletin-17c-bayesian-examples."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 485
   },
   {
     "project": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
@@ -120,8 +956,100 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 159,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 159
+  },
+  {
+    "project": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+    "beforeSha256": "9eca00ee4cf0f1b06b79c0dd1257ceac9f444192b9ce50a3272ecf6d9852cfeb",
+    "afterSha256": "cc227c72b14d6bc1a5c93f53552c6d502a03c8990557accd5176467e0ddbb8a6",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "classic-time-series-examples",
+        "description": "Three classic time-series fits: Airline ARIMA(1,1,1), Nile ARIMA(1,1,0), and Mauna Loa quadratic trend with deterministic seasonality. Preserves poor Airline MCMC diagnostics, Nile calendar discrepancy and all saved validation predictions. No future steps beyond observed data.",
+        "oldDescription": "Demonstrates manual time series data entry using copy-paste from CSV files. Contains three classic datasets commonly used in time series analysis: airline passengers, Nile River annual flows, and atmospheric CO2 concentrations."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 1,
+        "name": "Airline Passengers - TSA",
+        "description": "Saved Bayesian time-series fit of 'Airline Passengers', ARIMA(1,1,1), trend None, transform None, deterministic seasonality False. Training 120, future steps 0. No exogenous covariates. Saved MCMC warning: maximum R-hat 1.262 and minimum ESS about 52. Not a demonstrated well-mixed fit; no tuning or rerun performed.",
+        "oldDescription": ""
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 2,
+        "name": "Nile River Flows - TSA",
+        "description": "Saved Bayesian time-series fit of 'Nile River Flows', ARIMA(1,1,0), trend None, transform None, deterministic seasonality False. Training 80, future steps 0. No exogenous covariates. Saved dates are 26 years later than the matching source CSV; do not infer historical causes from this shifted chronology.",
+        "oldDescription": ""
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 3,
+        "name": "Mauna Loa - CO2",
+        "description": "Saved Bayesian time-series fit of 'Mauna Loa CO2', ARIMA(0,0,0), trend Quadratic, transform None, deterministic seasonality True. Training 632, future steps 0. No exogenous covariates.",
+        "oldDescription": ""
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "Airline Passengers",
+        "description": "Classic monthly international-airline passenger counts in thousands, 1949–1960. Retains the supplied data and nonseasonal, untransformed ARIMA fit; saved chain diagnostics are poor. Saved 144 observations, 1949-01-01 through 1960-12-01, Passengers (thousands); 0 stored missing values.",
+        "oldDescription": "Monthly airline passenger totals (Box-Jenkins, 1970). A classic dataset for seasonal ARIMA modeling, exhibiting strong seasonality and multiplicative trend."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "Nile River Flows",
+        "description": "Classic annual Nile series. All 100 values match the source CSV in order, but saved dates 1897–1996 are offset 26 years from source dates 1871–1970. Original calendar retained and disclosed; do not attach historical events to the shifted axis. Saved 100 observations, 1897-01-01 through 1996-01-01, Flow (10⁸ m³); 0 stored missing values.",
+        "oldDescription": "Annual flow volume of the Nile River at Aswan (Cobb, 1978). A classic dataset for change-point detection and AR modeling, with a notable level shift around 1898."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "Mauna Loa CO2",
+        "description": "Saved monthly Mauna Loa atmospheric CO2 observations in ppm; fitted quadratic trend plus deterministic seasonal terms, with no AR/MA residual terms. Saved 790 observations, 1958-03-01 through 2023-12-01, CO2 (ppm); 0 stored missing values.",
+        "oldDescription": "Monthly atmospheric CO2 concentrations from Mauna Loa Observatory, Hawaii (NOAA GML). A classic dataset for seasonal decomposition with strong upward trend and annual cycle."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 159
+  },
+  {
+    "project": "examples/1-time-series-data/2-ghcn-download/ghcn-download-example.bestfit",
+    "beforeSha256": "c81ad309d2bacc676da052cc2dcbf0ed46d5110aa5cea1961b7a693e2a34349e",
+    "afterSha256": "089a2350365824ea4ea52e167f0e619341a2c4a3ec65132e50c59820763d718c",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "ghcn-download-example",
+        "description": "Saved NOAA GHCN-Daily precipitation at Big Bear Lake and snowfall at Paradise, California. Data-preparation and source-unit teaching example; no fitted analyses. Paradise snowfall retains a verified factor-of-ten conversion error in all 38 nonzero observations. See the tutorial before using magnitudes; no input correction was made.",
+        "oldDescription": "Demonstrates downloading daily climate observations from the NOAA Global Historical Climatology Network (GHCN). Includes precipitation and snowfall series from cooperative observer stations in California."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "GHCN - USC00040741 - Daily Precipitation",
+        "description": "NOAA GHCN-Daily PRCP at Big Bear Lake, California, USC00040741, in inches. Saved daily record 1960-07-01 through 2026-06-30: 24,106 positions, 482 missing. Source precipitation uses tenths of millimetres; retained snapshot, no download refresh.",
+        "oldDescription": "Daily precipitation for Big Bear Lake, CA. Record begins 1960."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "GHCN - USC00046685 - Daily Snow",
+        "description": "NOAA GHCN-Daily SNOW at Paradise, California, USC00046685. Saved daily record 1957-05-01 through 2022-05-31: 23,772 positions, 2,197 missing. All 38 nonzero stored inches are one-tenth of the NOAA millimetre amounts converted to inches. Original values retained for source-unit review; do not use as correctly scaled snowfall. SNOW is snowfall, not snow depth.",
+        "oldDescription": "Daily snowfall for Paradise, CA. Record begins 1960."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 59
   },
   {
     "project": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
@@ -152,8 +1080,8 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 64,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 64
   },
   {
     "project": "examples/1-time-series-data/5-hec-dss-import/hec-dss-import-example.bestfit",
@@ -184,8 +1112,8 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 59,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 59
   },
   {
     "project": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
@@ -223,8 +1151,1243 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 84,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 84
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+    "beforeSha256": "fe44dd30ef55fbd5dac151657d299d50033a287f9e3efd87bfb92efdcbd906f6",
+    "afterSha256": "d39ee7454daebbb3802841b0808773855a66ddfaf11dda465dc74224e8b5664d",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Composite Distribution>",
+        "rowid": 1,
+        "name": "Competing Flood Types",
+        "description": "Independent competing-maximum combination of Full POR Snow Driven and Full POR Rainfall Driven LogNormal fits. Input Full POR Annual Max Series is the index-wise maximum. Product of component CDFs; inactive DIC and zero weight fields do not define this formulation. Saved frequency results retained.",
+        "oldDescription": "Composite distribution combining the two population fits via the competing-risks (max of two CDFs) formulation."
+      },
+      {
+        "table": "<Composite Distribution>",
+        "rowid": 2,
+        "name": "Mixture of Flood Types",
+        "description": "Fixed-weight mixture of Sub-Sample Snow Driven and Rain Driven LogNormal fits, with explicit weights 0.75/0.25. Its pooled input uses separate realizations from the full-POR demonstration; empirical counts are 74/26. Inactive ModelAverageMethod=DIC does not make this a Bayesian model average.",
+        "oldDescription": "Composite distribution combining the two population fits via the AMS-mixture (weighted-sum of CDFs) formulation."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "Full POR Snow Driven",
+        "description": "Saved Bayesian LogNormal marginal using 'Full POR - Snow Driven Floods', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Bayesian LP-III fit on the full POR snow-driven flood series."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "Full POR Rainfall Driven",
+        "description": "Saved Bayesian LogNormal marginal using 'Full POR - Rainfall Driven Floods', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Bayesian LP-III fit on the full POR rainfall-driven flood series."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "Sub-Sample - Snow Driven",
+        "description": "Saved Bayesian LogNormal marginal using 'AMS Sub-Sample - Snow Driven Floods', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Bayesian LP-III fit on the sub-sampled snow-driven AMS."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "Sub-Sample - Rain Driven",
+        "description": "Saved Bayesian LogNormal marginal using 'AMS Sub-Sample - Rain Driven Floods', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Bayesian LP-III fit on the sub-sampled rain-driven AMS."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "AMS Sub-Sample - Snow Driven Floods",
+        "description": "74 synthetic snow-type values in cfs; part of the separate pooled mixture sample, not a subset of the saved full snow realizations.",
+        "oldDescription": "Sub-sampled annual maximum series of snow-driven floods (subset of the full POR record)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Full POR - Snow Driven Floods",
+        "description": "Full synthetic snow-population series, cfs; 100 values.",
+        "oldDescription": "100 years of annual max snow-driven flood data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Full POR - Rainfall Driven Floods",
+        "description": "Full synthetic rain-population series, cfs; 100 values.",
+        "oldDescription": "100-years of annual max rain-driven data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Full POR - Annual Max Series",
+        "description": "Index-wise maximum of the two full component series, cfs; equality checked for all 100 rows.",
+        "oldDescription": "The annual max of the rain and snow data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 5,
+        "name": "AMS Sub-Sample - Rain Driven Floods",
+        "description": "26 synthetic rain-type values in cfs; part of the separate pooled mixture sample, not a subset of the saved full rain realizations.",
+        "oldDescription": "Sub-sampled annual maximum series of rainfall-driven floods (subset of the full POR record)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 6,
+        "name": "AMS Mixture of Flood Types",
+        "description": "Exact union of the 74/26 separate sub-samples. Saved unit label is Value; physical units need confirmation. Differs from Full POR AMS at every index.",
+        "oldDescription": "Pooled annual maximum series combining both snow-driven and rainfall-driven floods."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "mixed-population-examples",
+        "description": "Two synthetic flood-population demonstrations: independent competing maxima from full component records, and a fixed 0.75/0.25 mixture from a separate pooled sample. Four saved component fits are base-10 LogNormal, not LP3. Preserves distinct realizations, units and composite results.",
+        "oldDescription": "Composite-distribution analysis on a synthetic mixed-population annual maximum series (snow-driven and rainfall-driven floods). Demonstrates both the competing-risks formulation (max of two populations) and the AMS-mixture formulation."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 315
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+    "beforeSha256": "8368ec937d842879033a2976bcaafb257b8d12539024436194b1c8cd6c579ab1",
+    "afterSha256": "24a4b1c4a83764cea27cec08bbc76ae8419fe15f008458b5f078f7d13fb96e87",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Mixture Distribution>",
+        "rowid": 1,
+        "name": "Mixture Distribution - 2 Normals",
+        "description": "Bayesian mixture of 2 Normal components fitted to 'Mixture of 2 Normals - Data'. Saved component order and weights retained; no quantile priors. Separate synthetic input; do not rank it against the other datasets by information criteria.",
+        "oldDescription": "Bayesian fit of a two-component normal mixture to the corresponding synthetic sample."
+      },
+      {
+        "table": "<Mixture Distribution>",
+        "rowid": 2,
+        "name": "Mixture Distribution - 3 Normals",
+        "description": "Bayesian mixture of 3 Normal components fitted to 'Mixture of 3 Normals - Data'. Saved component order and weights retained; no quantile priors. Separate synthetic input; do not rank it against the other datasets by information criteria.",
+        "oldDescription": "Bayesian fit of a three-component normal mixture to the corresponding synthetic sample."
+      },
+      {
+        "table": "<Mixture Distribution>",
+        "rowid": 3,
+        "name": "Mixture Distribution - 2 Normals - Zero-Inflated",
+        "description": "Bayesian mixture of 2 Normal components fitted to 'Mixture of 2 Normals and Zero Inflated - Data'. Saved component order and weights retained; no quantile priors. Zero mass is fixed at 0.10 from ten exact zeros, not sampled as a probability parameter. Separate synthetic input; do not rank it against the other datasets by information criteria.",
+        "oldDescription": "Bayesian fit of a zero-inflated two-component normal mixture to the corresponding synthetic sample."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Mixture of 2 Normals - Data",
+        "description": "Separate synthetic dataset of 100 exact generic values indexed 1–100. All observations are positive; no censored, uncertain or low-flagged rows. Generator recipe/seed not established by the saved fit.",
+        "oldDescription": "Synthetic data from the mixture of two normal distributions."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Mixture of 3 Normals - Data",
+        "description": "Separate synthetic dataset of 100 exact generic values indexed 1–100. All observations are positive; no censored, uncertain or low-flagged rows. Generator recipe/seed not established by the saved fit.",
+        "oldDescription": "Synthetic data drawn from a three-component normal mixture."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Mixture of 2 Normals and Zero Inflated - Data",
+        "description": "Separate synthetic dataset of 100 exact generic values indexed 1–100. Contains ten exact zeros and 90 positive values; the zero probability mass is fixed at the empirical 0.10. Generator recipe/seed not established by the saved fit.",
+        "oldDescription": "Synthetic data drawn from a two-component normal mixture with a zero-inflated component."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "mixture-distribution-examples",
+        "description": "Three separate synthetic Normal-mixture teaching datasets and saved Bayesian fits, including a two-component zero-inflated case with fixed empirical zero mass 0.10. Distinguishes latent components, posterior parameter diagnostics and model alternatives. No numerical results changed.",
+        "oldDescription": "Mixture-distribution fitting on synthetic samples from two- and three-component normal mixtures, including a zero-inflated variant. Demonstrates Bayesian estimation of mixture weights, location, and scale parameters."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 165
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+    "beforeSha256": "9c513e3b1dbea681edd74ba2c67bba0647767700fefbb90b61331807598b5b31",
+    "afterSha256": "831a7d57b39cd47177b7ddaf9cbcb5b63b7bc584cf8848e7f7a47bc033fcf107",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Composite Distribution>",
+        "rowid": 1,
+        "name": "Bayesian Model Average",
+        "description": "Saved DIC-weighted average of NSFFA - Linear - Logistic, NSFFA - Logistic - Logistic, and NSFFA - Step - Logistic, evaluated for the configured 2024 condition. Contains a saved frequency result; not an average of all seven alternatives or a time-integrated curve.",
+        "oldDescription": "Bayesian model average over the seven NSFFA alternatives, weighted by DIC / WAIC."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "NSFFA - Constant",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'USGS 08075000 Brays Bayou - Metric'. Saved parameter trends: Constant, Constant, Constant; conditional evaluation index 2024. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Stationary LP-III fit (constant trend on all parameters) — baseline for the non-stationary comparisons."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "NSFFA - Linear",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'USGS 08075000 Brays Bayou - Metric'. Saved parameter trends: Linear, Constant, Constant; conditional evaluation index 2024. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary LP-III fit with a linear trend on the location parameter."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "NSFFA - Logistic",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'USGS 08075000 Brays Bayou - Metric'. Saved parameter trends: Logistic, Constant, Constant; conditional evaluation index 2024. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary LP-III fit with a logistic trend on the location parameter."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "NSFFA - Step",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'USGS 08075000 Brays Bayou - Metric'. Saved parameter trends: StepFunction, Constant, Constant; conditional evaluation index 2024. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary LP-III fit with a step-change trend on the location parameter."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "NSFFA - Linear - Logistic",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'USGS 08075000 Brays Bayou - Metric'. Saved parameter trends: Linear, Logistic, Constant; conditional evaluation index 2024. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary LP-III fit with a linear trend on location and a logistic trend on scale."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 6,
+        "name": "NSFFA - Logistic - Logistic",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'USGS 08075000 Brays Bayou - Metric'. Saved parameter trends: Logistic, Logistic, Constant; conditional evaluation index 2024. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary LP-III fit with a logistic trend on both location and scale."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 7,
+        "name": "NSFFA - Step - Logistic",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'USGS 08075000 Brays Bayou - Metric'. Saved parameter trends: StepFunction, Logistic, Constant; conditional evaluation index 2024. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary LP-III fit with a step-change on location and a logistic trend on scale."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "USGS 08075000 Brays Bayou",
+        "description": "Brays Bayou annual peaks, 90 exact observations during 1929–2024, cfs. The 1930–1935 gap is represented by six nonexceedances below 35,100 cfs. Retained source copy; the seven fits use the metric input.",
+        "oldDescription": "Annual peak discharge for Brays Bayou at Houston, TX (USGS gage 08075000), in cubic feet per second."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "USGS 08075000 Brays Bayou - Metric",
+        "description": "Brays Bayou annual peaks, 90 exact observations during 1929–2024, m³/s. The 1930–1935 gap is represented by six nonexceedances below 994 m³/s. Input used by all seven saved LP3 fits.",
+        "oldDescription": "Annual peak discharge for Brays Bayou at Houston, TX, converted to metric units (cubic meters per second)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "USGS 08075000 Brays Bayou_copy",
+        "description": "Brays Bayou annual peaks, 90 exact observations during 1929–2024, cfs. The 1930–1935 gap is represented by six nonexceedances below 35,100 cfs. Retained source copy; the seven fits use the metric input.",
+        "oldDescription": "Annual peak discharge for Brays Bayou at Houston, TX (USGS gage 08075000), in cubic feet per second."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "USGS 08075000 Brays Bayou_copy_copy",
+        "description": "Brays Bayou annual peaks, 90 exact observations during 1929–2024, cfs. The 1930–1935 gap is represented by six nonexceedances below 35,100 cfs. Retained source copy; the seven fits use the metric input.",
+        "oldDescription": "Annual peak discharge for Brays Bayou at Houston, TX (USGS gage 08075000), in cubic feet per second."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "nsffa-brays-bayou-texas",
+        "description": "Brays Bayou nonstationary LP3 teaching project: seven saved trend alternatives fitted to metric annual peaks and a three-component DIC model average. Preserves threshold assumptions, all four input copies and results. Conditional frequency evaluated at 2024; causal attribution is not established by fitted trends.",
+        "oldDescription": "Nonstationary flood-frequency analysis (NSFFA) for Brays Bayou (USGS gage 08075000), Texas. Compares constant, linear, logistic, and step trend functions on the LP-III parameters and aggregates results via Bayesian model averaging."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 307
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+    "beforeSha256": "4a38f6e7b22e600ddbf73354e2065e13733c51dce064220b9f9cfca9543127af",
+    "afterSha256": "c5bdd8a2239c88a48046555a89df576659bd1ac715dc6bf4f1addcf86966a36d",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Composite Distribution>",
+        "rowid": 1,
+        "name": "Bayesian Model Average",
+        "description": "Configured DIC average of Linear Trend, Sinusoidal Trend and Step Function. Its saved AnalysisResults cell is empty; no model-average curve is available. Component results and weights are retained without filling or rerunning this analysis.",
+        "oldDescription": "Bayesian model average over the five NSFFA alternatives, weighted by DIC / WAIC."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "SFFA",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'OC Fisher Inflows'. Stationary model. Enabled quantile priors retained. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Stationary frequency analysis (LP-III) — baseline for comparison with the non-stationary alternatives."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "NSFFA - Constant",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'OC Fisher Inflows'. Saved parameter trends: Constant, Constant, Constant; conditional evaluation index 2021. Enabled quantile priors retained. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary fit with a constant trend (functionally equivalent to SFFA, kept for explicit comparison)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "NSFFA - Linear Trend",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'OC Fisher Inflows'. Saved parameter trends: Linear, Constant, Constant; conditional evaluation index 2021. Enabled quantile priors retained. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary fit with a linear trend on the location parameter."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "NSFFA - Step Function",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'OC Fisher Inflows'. Saved parameter trends: StepFunction, Constant, Constant; conditional evaluation index 2021. Enabled quantile priors retained. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary fit with a step-change on the location parameter."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "NSFFA - Sinusoidal Trend",
+        "description": "Bayesian LogPearsonTypeIII analysis using 'OC Fisher Inflows'. Saved parameter trends: Sinusoidal, Constant, Constant; conditional evaluation index 2021. Enabled quantile priors retained. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Non-stationary fit with a sinusoidal (annual cycle) trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "OC Fisher Inflows",
+        "description": "OC Fisher inflow record in m³/s: 106 exact annual values, 1916–2021, plus a 1,150 m³/s threshold during 1853–1915 with 62 nonexceedances and one additional undated exceedance. Inflow duration and study/prior provenance need confirmation.",
+        "oldDescription": "Annual peak inflow series to OC Fisher Dam, Texas."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "nsffa-oc-fisher-dam",
+        "description": "OC Fisher LP3 stationary/nonstationary teaching comparison with historical threshold information and three LnNormal quantile priors. Five individual saved fits are present; the configured three-component DIC average has no saved result. Preserves differing SFFA/NSFFA prior means and all results.",
+        "oldDescription": "Nonstationary flood-frequency analysis (NSFFA) for inflows to OC Fisher Dam, Texas. Compares constant, linear, step, and sinusoidal trend functions on the LP-III parameters and combines them via Bayesian model averaging."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 171
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "beforeSha256": "b91cba56e63b0c06d577f018a26d06b5baec56805603f8559f4dfbf83f4272e7",
+    "afterSha256": "56e8c8b82bb22278b7e2485eb226f159bda8ed37b624832572830ed801b282ea",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "NSFFA - Constant Trend",
+        "description": "Bayesian Normal analysis using 'Constant Trend Data'. Saved parameter trends: Constant, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a constant trend on the constant-trend synthetic data — should recover the ground-truth parameters."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "NSFFA - Cubic Trend",
+        "description": "Bayesian Normal analysis using 'Cubic Trend Data'. Saved parameter trends: Cubic, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a cubic trend on the cubic-trend synthetic data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "NSFFA - Exponential Trend",
+        "description": "Bayesian Normal analysis using 'Exponential Trend Data'. Saved parameter trends: Exponential, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with an exponential trend on the exponential-trend synthetic data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "NSFFA - Linear Trend",
+        "description": "Bayesian Normal analysis using 'Linear Trend Data'. Saved parameter trends: Linear, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a linear trend on the linear-trend synthetic data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "NSFFA - Logistic Trend",
+        "description": "Bayesian Normal analysis using 'Logistic Trend Data'. Saved parameter trends: Logistic, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a logistic trend on the logistic-trend synthetic data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 6,
+        "name": "NSFFA - Power Trend",
+        "description": "Bayesian Normal analysis using 'Power Trend Data'. Saved parameter trends: Power, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a power-law trend on the power-trend synthetic data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 7,
+        "name": "NSFFA - Quadratic Trend",
+        "description": "Bayesian Normal analysis using 'Quadratic Trend Data'. Saved parameter trends: Quadratic, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a quadratic trend on the quadratic-trend synthetic data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 8,
+        "name": "NSFFA - Sinusoidal Trend",
+        "description": "Bayesian Normal analysis using 'Sinusoidal Trend Data'. Saved parameter trends: Sinusoidal, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a sinusoidal trend on the sinusoidal-trend synthetic data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 9,
+        "name": "NSFFA - Step Function",
+        "description": "Bayesian Normal analysis using 'Step Function Data'. Saved parameter trends: StepFunction, Constant; conditional evaluation index 51. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "NSFFA fit with a step-change trend on the step-function synthetic data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Constant Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Constant mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a constant location parameter (no trend) — control case."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Cubic Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Cubic mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a cubic trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Exponential Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Exponential mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with an exponential trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Linear Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Linear mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a linear trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 5,
+        "name": "Logistic Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Logistic mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a logistic trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 6,
+        "name": "Power Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Power mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a power-law trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 7,
+        "name": "Quadratic Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Quadratic mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a quadratic trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 8,
+        "name": "Sinusoidal Trend Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Sinusoidal mean trend. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a sinusoidal (annual cycle) trend on the location parameter."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 9,
+        "name": "Step Function Data",
+        "description": "Synthetic teaching series with 100 exact values indexed 1–100 in generic Value units. The associated saved fit is Normal with a Step Function. Generator parameters are not established by the saved fit; consult Synthetic Test Data.xlsx before making recovery claims.",
+        "oldDescription": "Synthetic LP-III sample with a step-change on the location parameter."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "nsffa-synthetic-data",
+        "description": "Nine separate synthetic datasets and saved nonstationary Normal fits demonstrate mean-trend shapes with constant standard deviation. Evaluation index 51, generic values, no quantile priors and no model average. This is a visualization example, not a verified parameter-recovery study.",
+        "oldDescription": "Synthetic NSFFA datasets covering nine trend types (constant, cubic, exponential, linear, logistic, power, quadratic, sinusoidal, step). Each dataset has a paired NSFFA fit using the matching trend function for verifying nonstationary parameter recovery."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 486
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "beforeSha256": "97cbda9e1747c6996af85ecadcf52a2ba02f28e0863c9d9e0d2c8305e1594514",
+    "afterSha256": "078a0343f9b4245228e0f70b91c89112e8c9c1c9eda2729ca4e640fd77387b12",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Point Process>",
+        "rowid": 1,
+        "name": "USC00040741 - Point Process",
+        "description": "Bayesian stationary GEV point-process analysis of 'USC00040741 - POT'. Threshold 1 in; inferred exposure 67 years; water-year start month 10. Saved posterior results retained. Threshold, independence and missing-exposure assumptions require engineering review.",
+        "oldDescription": "Stationary non-homogeneous Poisson point-process fit on the POT series at USC00040741."
+      },
+      {
+        "table": "<Point Process>",
+        "rowid": 2,
+        "name": "USC00042402 - Point Process",
+        "description": "Bayesian stationary GEV point-process analysis of 'USC00042402 - POT'. Threshold 2.5 in; inferred exposure 120 years; water-year start month 10. Saved posterior results retained. Threshold, independence and missing-exposure assumptions require engineering review.",
+        "oldDescription": "Stationary non-homogeneous Poisson point-process fit on the POT series at USC00042402."
+      },
+      {
+        "table": "<Point Process>",
+        "rowid": 3,
+        "name": "USC00040741 - Seasonal Point Process",
+        "description": "Bayesian two-season GEV point-process analysis of 'USC00040741 - POT'. Threshold 1 in; inferred exposure 67 years; water-year start month 8. Saved posterior results retained. Threshold, independence and missing-exposure assumptions require engineering review.",
+        "oldDescription": "Seasonal (sinusoidal-rate) Poisson point-process fit on the POT series at USC00040741."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "USC00040741 - GEV",
+        "description": "Bayesian GeneralizedExtremeValue analysis using 'USC00040741 - AMS'. Stationary model. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Bayesian GEV fit on the AMS series at USC00040741 — comparison baseline for the point-process fits."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "USC00042402 - GEV",
+        "description": "Bayesian GeneralizedExtremeValue analysis using 'USC00042402 - AMS'. Stationary model. No enabled quantile priors. Saved posterior-mean parameters and 90% credible limits; no refit. Read the tutorial for prior bounds, diagnostics and interpretation.",
+        "oldDescription": "Bayesian GEV fit on the AMS series at USC00042402 — comparison baseline for the point-process fits."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "USC00040741 - POT",
+        "description": "Big Bear Lake (USC00040741) daily precipitation in inches, POT sample: 253 events above 1 in, minimum separation one source time step, inferred exposure 67 years. Source record has missing positions and partial endpoint years; inferred exposure is not verified complete coverage.",
+        "oldDescription": "Peaks-over-threshold precipitation series extracted from USC00040741."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "USC00040741 - AMS",
+        "description": "Big Bear Lake (USC00040741) daily precipitation in inches, annual maxima: 67 values, water-year start October. Source record has missing positions and partial endpoint years; inferred exposure is not verified complete coverage.",
+        "oldDescription": "Annual maximum precipitation series extracted from USC00040741."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "USC00042402 - POT",
+        "description": "De Sabla (USC00042402) daily precipitation in inches, POT sample: 439 events above 2.5 in, minimum separation one source time step, inferred exposure 120 years. Source record has missing positions and partial endpoint years; inferred exposure is not verified complete coverage.",
+        "oldDescription": "Peaks-over-threshold precipitation series extracted from USC00042402."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "USC00042402 - AMS",
+        "description": "De Sabla (USC00042402) daily precipitation in inches, annual maxima: 120 values, water-year start September. Source record has missing positions and partial endpoint years; inferred exposure is not verified complete coverage.",
+        "oldDescription": "Annual maximum precipitation series extracted from USC00042402."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "point-process-examples",
+        "description": "Bayesian precipitation-frequency examples for NOAA GHCN-D Big Bear Lake and De Sabla: two GEV annual-maxima fits, two stationary GEV point-process fits and a two-season Big Bear fit. Preserves distinct thresholds, missing exposure and block-year conventions; all saved numerical results unchanged.",
+        "oldDescription": "Peaks-over-threshold (POT) modeling using non-homogeneous Poisson point processes for daily precipitation at two GHCN stations (USC00040741 Big Bear Lake CA, USC00042402). Compares stationary and seasonal point-process fits against GEV block-maximum analyses on the same record."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "USC00040741",
+        "description": "NOAA GHCN-D daily precipitation at Big Bear Lake, USC00040741; 24,106 positions from 1960-07-01 through 2026-06-30, with 482 missing. Saved values are inches. Retained historical download; no refresh or gap filling.",
+        "oldDescription": "Daily precipitation for GHCN station USC00040741 (Big Bear Lake, CA)."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "USC00042402",
+        "description": "NOAA GHCN-D daily precipitation at De Sabla, USC00042402; 43,496 positions from 1906-03-01 through 2025-03-31, with 1,684 missing. Saved values are inches. Retained historical download; no refresh or gap filling.",
+        "oldDescription": "Daily precipitation for GHCN station USC00042402."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 288
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+    "beforeSha256": "d76de5dd125286f88e610db435c9047f725bb1e348b3a6d67c0346b06fc4ddaf",
+    "afterSha256": "786d67c7397a8afb2915107a022358a0061a202ef38ff1f445e603facd54d76b",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 1,
+        "name": "B17C - LPIII - No Extension",
+        "description": "GMM LP3 fit of 'Sinnemahoning - No Extension' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit on the systematic record only (no MOVE.3 extension)."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 2,
+        "name": "B17C - LPIII - No Errors",
+        "description": "GMM LP3 fit of 'Sinnemahoning - MOVE.3 - No Errors' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit on the MOVE.3-extended record, ignoring the regression measurement errors."
+      },
+      {
+        "table": "<Bulletin 17C>",
+        "rowid": 3,
+        "name": "B17C - LPIII - With Errors",
+        "description": "GMM LP3 fit of 'Sinnemahoning - MOVE.3 - With Errors' with LinkedMultivariateNormal uncertainty, 90% confidence limits and 10000 retained draws. Saved optimizer status: Success. Frequentist estimation and uncertainty; shared Bayesian storage fields do not indicate an MCMC posterior.",
+        "oldDescription": "B17C fit on the MOVE.3-extended record with regression measurement errors propagated as uncertain data."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "LPIII - No Extension",
+        "description": "Saved Bayesian LP3 comparison using input 'Sinnemahoning - No Extension', separate from the B17C-prefixed GMM alternatives in this same project. Preserve its posterior results; inspect MCMC diagnostics before interpretation.",
+        "oldDescription": "Bayesian LP-III fit on the systematic record only (no MOVE.3 extension)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "LPIII - No Errors",
+        "description": "Saved Bayesian LP3 comparison using input 'Sinnemahoning - MOVE.3 - No Errors', separate from the B17C-prefixed GMM alternatives in this same project. Preserve its posterior results; inspect MCMC diagnostics before interpretation.",
+        "oldDescription": "Bayesian LP-III fit on the MOVE.3-extended record, ignoring the regression measurement errors."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "LPIII - With Errors",
+        "description": "Saved Bayesian LP3 comparison using input 'Sinnemahoning - MOVE.3 - With Errors', separate from the B17C-prefixed GMM alternatives in this same project. Preserve its posterior results; inspect MCMC diagnostics before interpretation.",
+        "oldDescription": "Bayesian LP-III fit on the MOVE.3-extended record with regression measurement errors propagated as uncertain data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Sinnemahoning - MOVE.3 - No Errors",
+        "description": "104 exact-valued peaks during 1914–2017, cfs; the 25 MOVE.3 reconstructed years 1914–1938 are treated as exact, not direct measurements.",
+        "oldDescription": "The years 1914-1938 were derived from MOVE.3 record extension. Typically, errors from the regression are ignored. "
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Sinnemahoning - MOVE.3 - With Errors",
+        "description": "79 systematic peaks plus 25 LogNormal uncertain observations for the 1914–1938 MOVE.3 extension, cfs. Retains supplied log10 sigma 0.074; donor/regression-error dependence provenance remains to be established.",
+        "oldDescription": "The years 1914-1938 were derived from MOVE.3 record extension. Errors from the regression are incorporated using uncertain data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Sinnemahoning - No Extension",
+        "description": "Sinnemahoning Creek systematic annual peaks: 79 exact observations during 1939–2017, cfs.",
+        "oldDescription": "Sinnemahoning Creek peak-flow record with no MOVE.3 extension applied (systematic record only)."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "sinnemahoning-move3-b17c",
+        "description": "Sinnemahoning Creek record-extension comparison: three GMM LP3 analyses with linked-MVN confidence limits and three separate Bayesian LP3 companions with posterior results. Compares the systematic record, exact-valued MOVE.3 extension and uncertain extension. Current GMM incorporates uncertain-data moments and covariance; no claim of EMA equivalence. All saved results are retained.",
+        "oldDescription": "B17C-method flood-frequency analysis for Sinnemahoning Creek (USGS gage 01543500) demonstrating record extension via MOVE.3 regression. Companion to sinnemahoning-move3-bayesian."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 225
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+    "beforeSha256": "6f1832e8473f221a2046eab6330a9b6181eb4ec87f3bf4453234b09e1a888fc2",
+    "afterSha256": "b1bec39b00e7507cf6314fffbc41a225eb4456b215260f80395b5bf3fc446800",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "LPIII - No Extension",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Sinnemahoning - No Extension'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit on the systematic record only (no MOVE.3 extension)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "LPIII - No Errors",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Sinnemahoning - MOVE.3 - No Errors'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit on the MOVE.3-extended record, ignoring the regression measurement errors."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "LPIII - With Errors",
+        "description": "Bayesian LogPearsonTypeIII analysis of input 'Sinnemahoning - MOVE.3 - With Errors'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian LP-III fit on the MOVE.3-extended record with regression measurement errors propagated as uncertain data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Sinnemahoning - MOVE.3 - No Errors",
+        "description": "104 exact-valued entries; 1914–1938 are MOVE.3 estimates treated as exact, not additional direct measurements.",
+        "oldDescription": "The years 1914-1938 were derived from MOVE.3 record extension. Typically, errors from the regression are ignored. "
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Sinnemahoning - MOVE.3 - With Errors",
+        "description": "79 systematic peaks plus 25 LogNormal uncertain observations for 1914–1938; flow in cfs. Each retained log-space sigma is 0.074.",
+        "oldDescription": "The years 1914-1938 were derived from MOVE.3 record extension. Errors from the regression are incorporated using uncertain data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Sinnemahoning - No Extension",
+        "description": "79 systematic peaks for 1939–2017, flow in cfs.",
+        "oldDescription": "Sinnemahoning Creek peak-flow record with no MOVE.3 extension applied (systematic record only)."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "sinnemahoning-move3-bayesian",
+        "description": "Sinnemahoning Creek Bayesian LP3 comparison: 79 systematic peaks (1939–2017), an exact-valued MOVE.3 extension to 1914, and the same extension represented by 25 LogNormal uncertain observations. Preserve the supplied error distributions; donor-gage and regression-error provenance remain to be documented.",
+        "oldDescription": "Bayesian flood-frequency analysis for Sinnemahoning Creek (USGS gage 01543500) demonstrating record extension via MOVE.3 regression. Compares fits that ignore measurement error against fits that propagate the regression uncertainty using uncertain data points."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 168
+  },
+  {
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+    "beforeSha256": "dc63d9466446e8e659176032f6665cc85ed8f08addfa8567616737999e9647d3",
+    "afterSha256": "8af713a0e73eb0bc25f3333f16a23146a59416732ade6234c280e60a16479169",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 1,
+        "name": "Normal Copula - Rho = 0.0",
+        "description": "Saved Bayesian Normal copula using InferenceFromMargins; X marginal 'X Marginal - Rho = 0.0', Y marginal 'Y Marginal - Rho = 0.0'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Normal copula fit with rho = 0.0 (independence baseline)."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 2,
+        "name": "Normal Copula - Rho = -0.5",
+        "description": "Saved Bayesian Normal copula using InferenceFromMargins; X marginal 'X Marginal - Rho = -0.5', Y marginal 'Y Marginal - Rho = -0.5'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Normal copula fit with rho = -0.5 (negative correlation)."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 3,
+        "name": "Normal Copula - Rho =+0.5",
+        "description": "Saved Bayesian Normal copula using InferenceFromMargins; X marginal 'X Marginal - Rho = +0.5', Y marginal 'Y Marginal - Rho =+0.5'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Normal copula fit with rho = +0.5 (positive correlation)."
+      },
+      {
+        "table": "<Coincident Frequency>",
+        "rowid": 1,
+        "name": "CFA - Rho = 0.0",
+        "description": "Saved response-frequency propagation from 'Normal Copula - Rho = 0.0', 20 fixed response bins and 95% probability bounds. Results are AEP at fixed response, not response quantiles at fixed AEP. Observed response input: 'X+Y Data - Rho = 0.0'.",
+        "oldDescription": "Coincident frequency analysis using the rho = 0.0 Normal copula — should match the analytical X+Y distribution."
+      },
+      {
+        "table": "<Coincident Frequency>",
+        "rowid": 2,
+        "name": "CFA - Rho = -0.5",
+        "description": "Saved response-frequency propagation from 'Normal Copula - Rho = -0.5', 50 fixed response bins and 90% probability bounds. Results are AEP at fixed response, not response quantiles at fixed AEP. Observed response input: 'X+Y Data - Rho = -0.5'.",
+        "oldDescription": "Coincident frequency analysis using the rho = -0.5 Normal copula — should match the analytical X+Y distribution."
+      },
+      {
+        "table": "<Coincident Frequency>",
+        "rowid": 3,
+        "name": "CFA - Rho = +0.5",
+        "description": "Saved response-frequency propagation from 'Normal Copula - Rho =+0.5', 50 fixed response bins and 90% probability bounds. Results are AEP at fixed response, not response quantiles at fixed AEP. Observed response input: 'X+Y Data - Rho = +0.5'.",
+        "oldDescription": "Coincident frequency analysis using the rho = +0.5 Normal copula — should match the analytical X+Y distribution."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "X Marginal - Rho = 0.0",
+        "description": "Saved Bayesian Normal marginal using 'X Data - Rho = 0.0', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate Normal fit of the X-margin (rho = 0.0 case)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "Y Marginal - Rho = 0.0",
+        "description": "Saved Bayesian Normal marginal using 'Y Data - Rho = 0.0', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate Normal fit of the Y-margin (rho = 0.0 case)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "X Marginal - Rho = -0.5",
+        "description": "Saved Bayesian Normal marginal using 'X Data - Rho = -0.5', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate Normal fit of the X-margin (rho = -0.5 case)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "Y Marginal - Rho = -0.5",
+        "description": "Saved Bayesian Normal marginal using 'Y Data - Rho = -0.5', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate Normal fit of the Y-margin (rho = -0.5 case)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "X Marginal - Rho = +0.5",
+        "description": "Saved Bayesian Normal marginal using 'X Data - Rho = +0.5', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate Normal fit of the X-margin (rho = +0.5 case)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 6,
+        "name": "Y Marginal - Rho =+0.5",
+        "description": "Saved Bayesian Normal marginal using 'Y Data - Rho = +0.5', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. ",
+        "oldDescription": "Univariate Normal fit of the Y-margin (rho = +0.5 case)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "X Data - Rho = 0.0",
+        "description": "Synthetic Normal margin X, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic X-margin data with correlation rho = 0.0 between X and Y."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Y Data - Rho = 0.0",
+        "description": "Synthetic Normal margin Y, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic Y-margin data with correlation rho = 0.0 between X and Y."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "X+Y Data - Rho = 0.0",
+        "description": "Synthetic sum response X+Y, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic sum X+Y for the rho = 0.0 case (closed-form Normal with combined variance)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "X Data - Rho = -0.5",
+        "description": "Synthetic Normal margin X, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic X-margin data with correlation rho = -0.5 between X and Y."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 5,
+        "name": "Y Data - Rho = -0.5",
+        "description": "Synthetic Normal margin Y, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic Y-margin data with correlation rho = -0.5 between X and Y."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 6,
+        "name": "X+Y Data - Rho = -0.5",
+        "description": "Synthetic sum response X+Y, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic sum X+Y for the rho = -0.5 case (analytical comparison reference)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 7,
+        "name": "X Data - Rho = +0.5",
+        "description": "Synthetic Normal margin X, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic X-margin data with correlation rho = +0.5 between X and Y."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 8,
+        "name": "Y Data - Rho = +0.5",
+        "description": "Synthetic Normal margin Y, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic Y-margin data with correlation rho = +0.5 between X and Y."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 9,
+        "name": "X+Y Data - Rho = +0.5",
+        "description": "Synthetic sum response X+Y, 100 exact generic values indexed 1–100, for the nominal dependence scenario in the name. The fitted correlation differs from the nominal label; retain this scenario binding.",
+        "oldDescription": "Synthetic sum X+Y for the rho = +0.5 case (analytical comparison reference)."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "sum-two-normals",
+        "description": "Three synthetic sum-of-two-Normals scenarios with six saved Normal margins, three fitted Normal copulas and three coincident-frequency results. Response grids are exactly X+Y. Nominal rho labels differ from fitted dependence; CFA grids/bins and 95% (near-zero) versus 90% (negative/positive) probability intervals are retained.",
+        "oldDescription": "Coincident frequency analysis (CFA) verification using the sum of two correlated normals. Tests the bivariate copula machinery against the closed-form analytical answer for three correlation coefficients (-0.5, 0, +0.5)."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 528
+  },
+  {
+    "project": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+    "beforeSha256": "e18dd2f001c4fa16add8e66162ed80ac5dd2057b6d915f106ec5c799cab1bb17",
+    "afterSha256": "caf84ec5a0c2af3ef57053ebd451532045f19ddd92962a75fe52cfc6a41d6463",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "synthetic-rating-curve-examples",
+        "description": "Synthetic Bayesian rating examples with one, two and three additive active controls, 300 paired stage/discharge observations per fit and saved predictive results. Coefficients are stored in log10 space. Archived generator evidence exists, but the third control is weakly identified; no recovery tests rerun.",
+        "oldDescription": "Synthetic stage-discharge rating curve fits using one-, two-, and three-segment piecewise power-law models. Used to verify the rating-curve solver against ground-truth synthetic data."
+      },
+      {
+        "table": "Rating Curve Analysis",
+        "rowid": 1,
+        "name": "1 Segment Rating Curve",
+        "description": "Bayesian additive-control rating with 1 active-control terms using 'Stage Data' and '1 Segment - Flow Data'. PosteriorMean parameters; log10 coefficient storage and log10 discharge error. Saved 90% predictive intervals include residual variation; stage range extends beyond measurements.",
+        "oldDescription": "One-segment power-law rating-curve fit on the corresponding synthetic data — should recover the ground-truth parameters."
+      },
+      {
+        "table": "Rating Curve Analysis",
+        "rowid": 2,
+        "name": "2 Segment Rating Curve",
+        "description": "Bayesian additive-control rating with 2 active-control terms using 'Stage Data' and '2 Segment - Flow Data'. PosteriorMean parameters; log10 coefficient storage and log10 discharge error. Saved 90% predictive intervals include residual variation; stage range extends beyond measurements.",
+        "oldDescription": "Two-segment power-law rating-curve fit on the corresponding synthetic data — should recover the ground-truth parameters."
+      },
+      {
+        "table": "Rating Curve Analysis",
+        "rowid": 3,
+        "name": "3 Segment Rating Curve",
+        "description": "Bayesian additive-control rating with 3 active-control terms using 'Stage Data' and '3 Segment - Flow Data'. PosteriorMean parameters; log10 coefficient storage and log10 discharge error. Saved 90% predictive intervals include residual variation; stage range extends beyond measurements. The third control is weakly identified in this 300-point sample; a visually close curve does not establish precise individual control parameters.",
+        "oldDescription": "Three-segment power-law rating-curve fit on the corresponding synthetic data — should recover the ground-truth parameters."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "Stage Data",
+        "description": "Synthetic stage shared by the three generated discharge series; stage range 1.1425–19.8940 ft. Saved 300 observations, 2000-01-01 through 2000-10-26, Stage (ft); 0 stored missing values.",
+        "oldDescription": "Synthetic stage time series used to drive all three rating-curve verification cases."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "1 Segment - Flow Data",
+        "description": "Distinct synthetic discharge response for 1 additive hydraulic controls. The other response series are different data, not competing fits to the same discharge sample. Saved 300 observations, 2000-01-01 through 2000-10-26, Discharge (cfs); 0 stored missing values.",
+        "oldDescription": "Synthetic discharge time series generated from a known one-segment power-law rating curve."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "2 Segment - Flow Data",
+        "description": "Distinct synthetic discharge response for 2 additive hydraulic controls. The other response series are different data, not competing fits to the same discharge sample. Saved 300 observations, 2000-01-01 through 2000-10-26, Discharge (cfs); 0 stored missing values.",
+        "oldDescription": "Synthetic discharge time series generated from a known two-segment power-law rating curve."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 4,
+        "name": "3 Segment - Flow Data",
+        "description": "Distinct synthetic discharge response for 3 additive hydraulic controls. The other response series are different data, not competing fits to the same discharge sample. Saved 300 observations, 2000-01-01 through 2000-10-26, Discharge (cfs); 0 stored missing values.",
+        "oldDescription": "Synthetic discharge time series generated from a known three-segment power-law rating curve."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 197
+  },
+  {
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "beforeSha256": "0fa80a07bb3ec361535688c53ac9d1a413fc553d97f53fa824927650ee82757b",
+    "afterSha256": "28d259f43e5ebc2bb1587a50d45aff86e394844df247506e75314b3172d3b3f6",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "synthetic-time-series-examples",
+        "description": "Twelve saved synthetic monthly time-series examples, each with 300 observations and its own Bayesian fit. Demonstrates intercept/trends/AR/MA/log transform and withheld validation; future steps are zero. ARMA(2,2) name disagrees with saved p=2,q=1; preserves this discrepancy and all results.",
+        "oldDescription": "Synthetic time-series datasets covering trend (linear, quadratic, cubic, sinusoidal), AR / MA / ARMA processes, and a log-transformed series with linear trend. Each series has a paired Time Series Analysis fit using the corresponding model for verifying parameter recovery."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 1,
+        "name": "Intercept",
+        "description": "Saved Bayesian time-series fit of 'Intercept', ARIMA(0,0,0), trend None, transform None, deterministic seasonality False. Training 240, future steps 0. No exogenous covariates.",
+        "oldDescription": "Constant-mean fit on the intercept-only synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 2,
+        "name": "Intercept + Linear Trend",
+        "description": "Saved Bayesian time-series fit of 'Intercept + Linear Trend', ARIMA(0,0,0), trend Linear, transform None, deterministic seasonality False. Training 240, future steps 0. No exogenous covariates.",
+        "oldDescription": "Linear-trend fit on the intercept + linear trend synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 3,
+        "name": "Intercept + Quadratic Trend",
+        "description": "Saved Bayesian time-series fit of 'Intercept + Quadratic Trend', ARIMA(0,0,0), trend Quadratic, transform None, deterministic seasonality False. Training 240, future steps 0. No exogenous covariates.",
+        "oldDescription": "Quadratic-trend fit on the intercept + quadratic trend synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 4,
+        "name": "Intercept + Cubic Trend",
+        "description": "Saved Bayesian time-series fit of 'Intercept + Cubic Trend', ARIMA(0,0,0), trend Cubic, transform None, deterministic seasonality False. Training 280, future steps 0. No exogenous covariates.",
+        "oldDescription": "Cubic-trend fit on the intercept + cubic trend synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 5,
+        "name": "AR(1)",
+        "description": "Saved Bayesian time-series fit of 'AR(1)', ARIMA(1,0,0), trend None, transform None, deterministic seasonality False. Training 280, future steps 0. No exogenous covariates.",
+        "oldDescription": "AR(1) fit on the AR(1) synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 6,
+        "name": "AR(3)",
+        "description": "Saved Bayesian time-series fit of 'AR(3)', ARIMA(3,0,0), trend None, transform None, deterministic seasonality False. Training 280, future steps 0. No exogenous covariates.",
+        "oldDescription": "AR(3) fit on the AR(3) synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 7,
+        "name": "MA(1)",
+        "description": "Saved Bayesian time-series fit of 'MA(1)', ARIMA(0,0,1), trend None, transform None, deterministic seasonality False. Training 280, future steps 0. No exogenous covariates.",
+        "oldDescription": "MA(1) fit on the MA(1) synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 8,
+        "name": "MA(3)",
+        "description": "Saved Bayesian time-series fit of 'MA(3)', ARIMA(0,0,3), trend None, transform None, deterministic seasonality False. Training 280, future steps 0. No exogenous covariates.",
+        "oldDescription": "MA(3) fit on the MA(3) synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 9,
+        "name": "ARMA(1,1)",
+        "description": "Saved Bayesian time-series fit of 'ARMA(1,1)', ARIMA(1,0,1), trend None, transform None, deterministic seasonality False. Training 280, future steps 0. No exogenous covariates.",
+        "oldDescription": "ARMA(1,1) fit on the ARMA(1,1) synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 10,
+        "name": "ARMA(2,2)",
+        "description": "Saved Bayesian time-series fit of 'ARMA(2,2)', ARIMA(2,0,1), trend None, transform None, deterministic seasonality False. Training 280, future steps 0. No exogenous covariates. Name/settings discrepancy retained: actual AR order 2 and MA order 1, not MA order 2.",
+        "oldDescription": "ARMA(2,2) fit on the ARMA(2,2) synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 11,
+        "name": "Intercept + Linear Trend + ARMA(1,1)",
+        "description": "Saved Bayesian time-series fit of 'Intercept + Linear Trend + ARMA(1,1)', ARIMA(1,0,1), trend Linear, transform None, deterministic seasonality False. Training 275, future steps 0. No exogenous covariates.",
+        "oldDescription": "Linear-trend + ARMA(1,1) fit on the corresponding synthetic series."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 12,
+        "name": "Intercept + Linear Trend + LogTransform",
+        "description": "Saved Bayesian time-series fit of 'Intercept + Linear Trend + LogTransform', ARIMA(1,0,0), trend Linear, transform Logarithmic, deterministic seasonality False. Training 275, future steps 0. No exogenous covariates. Also contains AR(1); do not describe this as trend plus log transform alone.",
+        "oldDescription": "Linear-trend fit with logarithmic transform on the log-normal synthetic series."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "Intercept",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic series with constant mean only (no trend, no autocorrelation)."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "Intercept + Linear Trend",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic series with constant mean + linear trend."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "Intercept + Quadratic Trend",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic series with constant mean + quadratic trend."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 4,
+        "name": "Intercept + Cubic Trend",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic series with constant mean + cubic trend."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 5,
+        "name": "AR(1)",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic AR(1) series for AR-fit verification."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 6,
+        "name": "AR(3)",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic AR(3) series for AR-fit verification."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 7,
+        "name": "MA(1)",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic MA(1) series for MA-fit verification."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 8,
+        "name": "MA(3)",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic MA(3) series for MA-fit verification."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 9,
+        "name": "ARMA(1,1)",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic ARMA(1,1) series for ARMA-fit verification."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 10,
+        "name": "ARMA(2,2)",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic ARMA(2,2) series for ARMA-fit verification."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 11,
+        "name": "Intercept + Linear Trend + ARMA(1,1)",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Synthetic series with constant mean + linear trend + ARMA(1,1) residuals."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 12,
+        "name": "Intercept + Linear Trend + LogTransform",
+        "description": "Synthetic monthly teaching series for the same-named analysis. Generic Value units and manual entry; the saved generic DailyDischarge type does not make these daily hydrologic observations. Saved 300 observations, 1949-01-01 through 1973-12-01, Value; 0 stored missing values.",
+        "oldDescription": "Log-normal synthetic series with constant mean + linear trend (in log space)."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 537
+  },
+  {
+    "project": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+    "beforeSha256": "d84276fb50bcb6fc9bde46f361917abedada3398b3b5bacde42dfc01889a6115",
+    "afterSha256": "aafc08b08b45b8015743d03f314ca6a6bba58eb009be46681fd868241cfb51e1",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "time-series-regression-example",
+        "description": "Two Bayesian regressions for quarterly consumption changes: income-only and income/production/savings/unemployment. Both have p=d=q=B=0, 149 training, 38 validation and 30 future steps. Saved BlockBootstrap future-covariate treatment does not preserve joint multivariate dependence; all predictions retained.",
+        "oldDescription": "Multivariate time-series regression on classic US macroeconomic indicators (consumption, income, production, savings, unemployment). Demonstrates simple and multiple linear regression with autocorrelated residuals."
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 1,
+        "name": "Simple Linear Regression",
+        "description": "Saved Bayesian time-series fit of 'Consumption', ARIMA(0,0,0), trend None, transform None, deterministic seasonality False. Training 149, future steps 30. Covariates Income; extension BlockBootstrap. No ARMA residual terms. Deterministic future covariates use empirical means; stochastic extensions are separately resampled. Intervals include residual and covariate variation.",
+        "oldDescription": "Simple linear regression of consumption on income"
+      },
+      {
+        "table": "Time Series Analysis",
+        "rowid": 2,
+        "name": "Multiple Linear Regression",
+        "description": "Saved Bayesian time-series fit of 'Consumption', ARIMA(0,0,0), trend None, transform None, deterministic seasonality False. Training 149, future steps 30. Covariates Income|Production|Savings|Unemployment; extension BlockBootstrap. Covariate order: Income, Production, Savings, Unemployment. No ARMA residual terms. Separate stochastic covariate resampling does not preserve joint future dependence; results unchanged.",
+        "oldDescription": "Multiple linear regression of consumption on income, production, savings, and unemployment"
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "Consumption",
+        "description": "Quarterly consumption change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. Saved 187 observations, 1970-01-01 through 2016-07-01, % Change in Consumption; 0 stored missing values.",
+        "oldDescription": "Quarterly US personal consumption expenditures (response variable for the regression examples)."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "Income",
+        "description": "Quarterly income change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. Saved 187 observations, 1970-01-01 through 2016-07-01, % Change in Income; 0 stored missing values.",
+        "oldDescription": "Quarterly US personal disposable income (regressor)."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "Production",
+        "description": "Quarterly production change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. Saved 187 observations, 1970-01-01 through 2016-07-01, % Change in Production; 0 stored missing values.",
+        "oldDescription": "Quarterly US industrial production index (regressor)."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 4,
+        "name": "Savings",
+        "description": "Quarterly savings change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. Saved 187 observations, 1970-01-01 through 2016-07-01, % Change in Savings; 0 stored missing values.",
+        "oldDescription": "Quarterly US personal savings rate (regressor)."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 5,
+        "name": "Unemployment",
+        "description": "Quarterly unemployment change series used in the supplied regression example. Source/vintage and exact transform need confirmation; verify percentage-point change versus percent growth. These values are not economic levels. Saved 187 observations, 1970-01-01 through 2016-07-01, % Change in Unemployment; 0 stored missing values.",
+        "oldDescription": "Quarterly US unemployment rate (regressor)."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 193
+  },
+  {
+    "project": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+    "beforeSha256": "997fe961e233f540cf64171dfd5b2475b23b9f4ac8cc51459dd545b242a24ece",
+    "afterSha256": "8319dc373aec6a040391ae27a4d0e4659b50c12a32e368a59f64cf02ddcd5217",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "usgs-07024175-mississippi-rating-curve",
+        "description": "One-control Bayesian rating teaching example for 96 paired USGS measurements at Mississippi River at New Madrid, 07024175. Uses posterior-mode parameters and 90% predictive intervals. Preserves measurement timestamps, stage datum labels and saved extrapolation; not an adopted USGS operational rating.",
+        "oldDescription": "Stage-discharge rating curve for the Mississippi River at New Madrid, MO (USGS gage 07024175), fit using the piecewise power-law rating curve model with Bayesian MCMC."
+      },
+      {
+        "table": "Rating Curve Analysis",
+        "rowid": 1,
+        "name": "USGS 07024175 Rating Curve",
+        "description": "Bayesian additive-control rating with 1 active-control terms using 'USGS 07024175 Measured Stage' and 'USGS 07024175 Measured Discharge'. PosteriorMode parameters; log10 coefficient storage and log10 discharge error. Saved 90% predictive intervals include residual variation; stage range extends beyond measurements.",
+        "oldDescription": "Bayesian piecewise power-law rating-curve fit to the field-measured stage-discharge pairs at the Mississippi River at New Madrid, MO."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "USGS 07024175 Measured Stage",
+        "description": "USGS field-measurement gage height for the Mississippi River at New Madrid; datum-relative stage, range −5.63–41.27 ft. Negative gage height is not negative water depth. Saved 96 observations, 2017-02-08 through 2026-03-19, Gage Height (ft); 0 stored missing values.",
+        "oldDescription": "Field-measured (rated) gage height for the Mississippi River at New Madrid, MO (USGS gage 07024175)."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "USGS 07024175 Measured Discharge",
+        "description": "USGS measured discharge paired with the stage measurements, range 148,000–1,440,000 cfs. These are measurements, not rating-derived continuous flow values. Saved 96 observations, 2017-02-08 through 2026-03-19, Flow (cfs); 0 stored missing values.",
+        "oldDescription": "Field-measured (rated) discharge for the Mississippi River at New Madrid, MO (USGS gage 07024175)."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 89
   },
   {
     "project": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
@@ -262,8 +2425,8 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 94,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 94
   },
   {
     "project": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
@@ -336,8 +2499,8 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 217,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 217
   },
   {
     "project": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
@@ -368,8 +2531,8 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 69,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 69
   },
   {
     "project": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
@@ -400,7 +2563,372 @@
       }
     ],
     "deletedRow": null,
-    "preservedCellCount": 64,
-    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+    "treeRestoration": null,
+    "preservedCellCount": 64
+  },
+  {
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+    "beforeSha256": "6f6f984f8d0357d490ffde9d394601ae77324a0f293a84a3993afaf7e9762e86",
+    "afterSha256": "3b4432ba9ca5c304c960a48bac90fa2347d8cdf3f08b6f63eb17515fbfad34d8",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "MCMC - Systematic (1951-2001)",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2001)'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit of the LP-III distribution using only the 1951-2001 systematic record."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "MCMC - Systematic (1951-2005)",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2005)'. Saved DEMCzs fit; PosteriorMode parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit using the 1951-2005 systematic record (includes the August 2002 flood)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "MCMC - Systematic (1951-2001) + Temporal",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2001) + Temporal Expansion'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit incorporating temporal information expansion (historical record extension)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "MCMC - Systematic (1951-2005) + Temporal",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2005) + Temporal Expansion'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit on the 1951-2005 record with temporal information expansion."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "MCMC - Systematic (1951-2001) + Causal",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2001)'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. Enabled quantile priors are retained. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit incorporating causal information expansion (atmospheric / hydrologic covariate prior)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 6,
+        "name": "MCMC - Systematic (1951-2005) + Causal",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2005)'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. Enabled quantile priors are retained. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit on the 1951-2005 record with causal information expansion."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 7,
+        "name": "MCMC - Systematic (1951-2001) + Temporal + Causal",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2001) + Temporal Expansion'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. Enabled quantile priors are retained. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit combining temporal and causal information expansion on the 1951-2001 record."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 8,
+        "name": "MCMC - Systematic (1951-2005) + Temporal + Causal",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2005) + Temporal Expansion'. Saved DEMCzs fit; PosteriorMean parameters and 90% credible interval. Enabled quantile priors are retained. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit combining temporal and causal information expansion on the 1951-2005 record."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 9,
+        "name": "MCMC - Systematic (1951-2001) + 3 Quantile Priors",
+        "description": "Bayesian GeneralizedExtremeValue analysis of input 'Systematic (1951-2001)'. Saved DEMCzs fit; PosteriorMean parameters and 95% credible interval. Enabled quantile priors are retained. See the companion tutorial for provenance and limits.",
+        "oldDescription": "Bayesian MCMC fit using three quantile priors for engineering-judgement information expansion."
+      },
+      {
+        "table": "Distribution Fitting Analysis",
+        "rowid": 1,
+        "name": "Fit - Systematic (1951-2001)",
+        "description": "Saved distribution-fitting comparison using input 'Systematic (1951-2001)'. Review the fitted distributions and criteria on this same input; this element is separate from the Bayesian GEV information-expansion alternatives.",
+        "oldDescription": "Distribution-fitting comparison across LP-III, GEV, Gumbel, and other distributions on the 1951-2001 systematic record."
+      },
+      {
+        "table": "Distribution Fitting Analysis",
+        "rowid": 2,
+        "name": "Fit - Systematic (1951-2005)",
+        "description": "Saved distribution-fitting comparison using input 'Systematic (1951-2005)'. Review the fitted distributions and criteria on this same input; this element is separate from the Bayesian GEV information-expansion alternatives.",
+        "oldDescription": "Distribution-fitting comparison on the 1951-2005 systematic record."
+      },
+      {
+        "table": "Distribution Fitting Analysis",
+        "rowid": 3,
+        "name": "Fit - Systematic (1951-2001) + Temporal Expansion",
+        "description": "Saved distribution-fitting comparison using input 'Systematic (1951-2001) + Temporal Expansion'. Review the fitted distributions and criteria on this same input; this element is separate from the Bayesian GEV information-expansion alternatives.",
+        "oldDescription": "Distribution-fitting comparison with the 1951-2001 record extended via historical / paleoflood data."
+      },
+      {
+        "table": "Distribution Fitting Analysis",
+        "rowid": 4,
+        "name": "Fit - Systematic (1951-2005) + Temporal Expansion",
+        "description": "Saved distribution-fitting comparison using input 'Systematic (1951-2005) + Temporal Expansion'. Review the fitted distributions and criteria on this same input; this element is separate from the Bayesian GEV information-expansion alternatives.",
+        "oldDescription": "Distribution-fitting comparison with the 1951-2005 record extended via historical / paleoflood data."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "Systematic (1951-2001)",
+        "description": "Kamp annual peak discharge, m³/s; systematic period before the 2002 flood.",
+        "oldDescription": "Kamp at Zwettl, 1951-2001"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "Systematic (1951-2005)",
+        "description": "Kamp annual peak discharge, m³/s; extended systematic period including 2002. The retained axis label is Value.",
+        "oldDescription": "Kamp at Zwettl, 1951-2005"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "Systematic (1951-2001) + Temporal Expansion",
+        "description": "1951–2001 systematic peaks plus three historical intervals and one perception window; m³/s.",
+        "oldDescription": "Kamp at Zwettl, 1951-2001"
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Systematic (1951-2005) + Temporal Expansion",
+        "description": "1951–2005 systematic peaks plus the same historical evidence; m³/s. The retained axis label is Value.",
+        "oldDescription": "Kamp at Zwettl, 1951-2005"
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "viglione-et-al-2013",
+        "description": "Nine Bayesian GEV alternatives for Kamp at Zwettl compare the 1951–2001 and 1951–2005 systematic records, historical interval/perception evidence, and enabled quantile priors. Four saved distribution-fitting elements provide additional comparisons. Numerical inputs and fitted results are retained.",
+        "oldDescription": "Replicates the systematic, temporal-expansion, and causal-information examples from Viglione et al. (2013). Compares Bayesian MCMC fits at the Kamp at Zwettl, Austria gage with and without quantile priors and historical record extensions."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 397
+  },
+  {
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+    "beforeSha256": "b05ed96b6ee4951a606cf6233c261f045a7c251590c145d7e67ec79754870914",
+    "afterSha256": "a2f826f8f40581ba6607d94c5bba77acd88239f253b34125b68a13dfd02ee2a7",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 1,
+        "name": "Normal Copula",
+        "description": "Saved Bayesian Normal copula using InferenceFromMargins; X marginal 'WaimeaPk - Exact + Historical + RR Prior_RSkew', Y marginal 'MakaweliPk - Exact + RR Prior_RSkew'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate Normal copula fit linking the Waimea and Makaweli peak marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 2,
+        "name": "Gumbel Copula",
+        "description": "Saved Bayesian Gumbel copula using InferenceFromMargins; X marginal 'WaimeaPk - Exact + Historical + RR Prior_RSkew', Y marginal 'MakaweliPk - Exact + RR Prior_RSkew'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate Gumbel copula fit linking the Waimea and Makaweli peak marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 3,
+        "name": "Clayton Copula",
+        "description": "Saved Bayesian Clayton copula using InferenceFromMargins; X marginal 'WaimeaPk - Exact + Historical + RR Prior_RSkew', Y marginal 'MakaweliPk - Exact + RR Prior_RSkew'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate Clayton copula fit linking the Waimea and Makaweli peak marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 4,
+        "name": "Joe Copula",
+        "description": "Saved Bayesian Joe copula using InferenceFromMargins; X marginal 'WaimeaPk - Exact + Historical + RR Prior_RSkew', Y marginal 'MakaweliPk - Exact + RR Prior_RSkew'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate Joe copula fit linking the Waimea and Makaweli peak marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 5,
+        "name": "Frank Copula",
+        "description": "Saved Bayesian Frank copula using InferenceFromMargins; X marginal 'WaimeaPk - Exact + Historical + RR Prior_RSkew', Y marginal 'MakaweliPk - Exact + RR Prior_RSkew'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate Frank copula fit linking the Waimea and Makaweli peak marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 6,
+        "name": "AMH Copula",
+        "description": "Saved Bayesian AliMikhailHaq copula using InferenceFromMargins; X marginal 'WaimeaPk - Exact + Historical + RR Prior_RSkew', Y marginal 'MakaweliPk - Exact + RR Prior_RSkew'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Bivariate AMH copula fit linking the Waimea and Makaweli peak marginals."
+      },
+      {
+        "table": "<Bivariate Distribution>",
+        "rowid": 7,
+        "name": "Normal Copula - Conditional",
+        "description": "Saved Bayesian Normal copula using InferenceFromMargins; X marginal 'WaimeaPk - Exact + Historical + RR Prior_RSkew', Y marginal 'MakaweliPk - Cond - Exact'. Paired observations inform dependence; marginal historical windows are not extra pairs. Saved point estimate and MCMC results retained.",
+        "oldDescription": "Conditional Normal copula fit using the conditional Makaweli marginal."
+      },
+      {
+        "table": "<Coincident Frequency>",
+        "rowid": 1,
+        "name": "CFA - Normal - Conditional",
+        "description": "Saved response-frequency propagation from 'Normal Copula - Conditional', 50 fixed response bins and 90% probability bounds. Results are AEP at fixed response, not response quantiles at fixed AEP. No observed-response InputData binding. Response units and hydraulic provenance require confirmation; Simulated Proof is not bound here.",
+        "oldDescription": "Coincident frequency analysis combining the conditional copula and marginals to produce the joint Waimea + Makaweli peak-flow distribution."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 1,
+        "name": "MakaweliPk - Exact",
+        "description": "Saved Bayesian LogPearsonTypeIII marginal using '16036000_Makaweli_Peaks', PosteriorMode parameters and 90% credible intervals. No enabled quantile priors. Current AnalysisResults is the display source; differing legacy FrequencyAnalysisResults is retained unchanged.",
+        "oldDescription": "Bayesian LP-III fit on the Makaweli systematic peak record (exact data only)."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 2,
+        "name": "WaimeaPk - Exact + Historical + RR Prior",
+        "description": "Saved Bayesian LogPearsonTypeIII marginal using '16031000_Waimea_Peaks', PosteriorMean parameters and 90% credible intervals. Three enabled quantile priors; see the tutorial for their units and source limitations. Current AnalysisResults is the display source; differing legacy FrequencyAnalysisResults is retained unchanged.",
+        "oldDescription": "Bayesian LP-III fit for Waimea with historical record extension and a runoff-ratio prior."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 3,
+        "name": "WaimeaPk - Exact + Historical",
+        "description": "Saved Bayesian LogPearsonTypeIII marginal using '16031000_Waimea_Peaks', PosteriorMode parameters and 90% credible intervals. No enabled quantile priors. Current AnalysisResults is the display source; differing legacy FrequencyAnalysisResults is retained unchanged.",
+        "oldDescription": "Bayesian LP-III fit for Waimea with historical record extension only."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 4,
+        "name": "MakaweliPk - Exact + RR Prior",
+        "description": "Saved Bayesian LogPearsonTypeIII marginal using '16036000_Makaweli_Peaks', PosteriorMode parameters and 90% credible intervals. Three enabled quantile priors; see the tutorial for their units and source limitations. Current AnalysisResults is the display source; differing legacy FrequencyAnalysisResults is retained unchanged.",
+        "oldDescription": "Bayesian LP-III fit for Makaweli using exact data and a runoff-ratio prior."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 5,
+        "name": "MakaweliPk - Exact + RR Prior_RSkew",
+        "description": "Saved Bayesian LogPearsonTypeIII marginal using '16036000_Makaweli_Peaks', PosteriorMode parameters and 90% credible intervals. Three enabled quantile priors; see the tutorial for their units and source limitations. Log-skew prior Normal(-0.157, SD 0.46), with Jeffreys scale treatment; regional applicability requires source confirmation. Current AnalysisResults is the display source; differing legacy FrequencyAnalysisResults is retained unchanged.",
+        "oldDescription": "Bayesian Makaweli fit with runoff-ratio prior + regional skew weighting."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 6,
+        "name": "WaimeaPk - Exact + Historical + RR Prior_RSkew",
+        "description": "Saved Bayesian LogPearsonTypeIII marginal using '16031000_Waimea_Peaks', PosteriorMean parameters and 90% credible intervals. Three enabled quantile priors; see the tutorial for their units and source limitations. Log-skew prior Normal(-0.157, SD 0.46), with Jeffreys scale treatment; regional applicability requires source confirmation. Current AnalysisResults is the display source; differing legacy FrequencyAnalysisResults is retained unchanged.",
+        "oldDescription": "Bayesian Waimea fit with historical record + runoff-ratio prior + regional skew weighting."
+      },
+      {
+        "table": "<Univariate Distribution>",
+        "rowid": 7,
+        "name": "MakaweliPk - Cond - Exact",
+        "description": "Saved Bayesian LogPearsonTypeIII marginal using '16036000_Makaweli_Conditional_Peaks', PosteriorMean parameters and 90% credible intervals. No enabled quantile priors. Current AnalysisResults is the display source; differing legacy FrequencyAnalysisResults is retained unchanged.",
+        "oldDescription": "Bayesian LP-III fit on the conditional Makaweli peak series (Makaweli peaks at Waimea events)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 1,
+        "name": "16031000_WaimeaPk",
+        "description": "Retained legacy Bayesian LP3 record '16031000_WaimeaPk', separate from current typed analysis rows. Legacy input name '16031000_WaimeaPk' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Bayesian peak-flow estimation for Waimea (legacy element — see <Univariate Distribution> for current fits)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 2,
+        "name": "16036000_MakaweliPk",
+        "description": "Retained legacy Bayesian LP3 record '16036000_MakaweliPk', separate from current typed analysis rows. Legacy input name '16036000_MakaweliPk' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Bayesian peak-flow estimation for Makaweli (legacy element)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 3,
+        "name": "16031000_WaimeaPk_RgSkew",
+        "description": "Retained legacy Bayesian LP3 record '16031000_WaimeaPk_RgSkew', separate from current typed analysis rows. Legacy input name '16031000_WaimeaPk' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Bayesian Waimea fit with regional skew prior (legacy element)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 4,
+        "name": "16036000_MakaweliPk_RgSkew",
+        "description": "Retained legacy Bayesian LP3 record '16036000_MakaweliPk_RgSkew', separate from current typed analysis rows. Legacy input name '16036000_MakaweliPk' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Bayesian Makaweli fit with regional skew prior (legacy element)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 5,
+        "name": "16031000_WaimeaPk_RgSkew_MGBT",
+        "description": "Retained legacy Bayesian LP3 record '16031000_WaimeaPk_RgSkew_MGBT', separate from current typed analysis rows. Legacy input name '16031000_WaimeaPk_MGBT' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Bayesian Waimea fit with regional skew + Multiple Grubbs-Beck Test low-outlier detection (legacy)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 6,
+        "name": "16036000_MakaweliPk_RgSkew_Censored",
+        "description": "Retained legacy Bayesian LP3 record '16036000_MakaweliPk_RgSkew_Censored', separate from current typed analysis rows. Legacy input name '16036000_MakaweliPk_CensoredLowest2' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Bayesian Makaweli fit with regional skew + low-outlier censoring (legacy)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 7,
+        "name": "16036000_MakaweliPk_SCALED2Waimea",
+        "description": "Retained legacy Bayesian LP3 record '16036000_MakaweliPk_SCALED2Waimea', separate from current typed analysis rows. Legacy input name '16036000_MakaweliPk_SCALED2Waimea' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Makaweli fit drainage-area scaled to the Waimea reference area (legacy)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 8,
+        "name": "16031000_WaimeaPk_SCALED2Makaweli",
+        "description": "Retained legacy Bayesian LP3 record '16031000_WaimeaPk_SCALED2Makaweli', separate from current typed analysis rows. Legacy input name '16031000_WaimeaPk_SCALED2Makaweli' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Waimea fit drainage-area scaled to the Makaweli reference area (legacy)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 9,
+        "name": "16031000_WaimeaPk_SCALED2_85sqmi",
+        "description": "Retained legacy Bayesian LP3 record '16031000_WaimeaPk_SCALED2_85sqmi', separate from current typed analysis rows. Legacy input name '16031000_WaimeaPk_SCALED2_85sqmi' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Waimea fit drainage-area scaled to a 85-sqmi reference (legacy)."
+      },
+      {
+        "table": "Bayesian Estimation Analysis",
+        "rowid": 10,
+        "name": "16036000_MakaweliPk_SCALED2_85sqmi",
+        "description": "Retained legacy Bayesian LP3 record '16036000_MakaweliPk_SCALED2_85sqmi', separate from current typed analysis rows. Legacy input name '16036000_MakaweliPk_SCALED2_85sqmi' does not resolve to a current input by exact name. Original binary results/settings retained; inspect through the compatibility loader before interpreting. The row is not newly rerun or repaired.",
+        "oldDescription": "Makaweli fit drainage-area scaled to a 85-sqmi reference (legacy)."
+      },
+      {
+        "table": "Distribution Fitting Analysis",
+        "rowid": 1,
+        "name": "16031000_WaimeaPk",
+        "description": "Saved distribution-fitting comparison for current input 16031000_Waimea_Peaks, with 15 populated successful/visible fits. Current AnalysisXml reports estimated; legacy IsFitted=0 is inconsistent and retained. Do not call this element empty or equate its fits to Bayesian posterior results.",
+        "oldDescription": "Distribution-fitting comparison across LP-III, GEV, Gumbel, etc. on the Waimea peak series."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "16031000_Waimea_Peaks",
+        "description": "Waimea annual peaks: 64 exact observations, 1914–2023, cfs. Three low flags (1973, 1984, 1987); 1919–1943 and 1997–2016 perception windows at 37,100 cfs with below counts 25/20 and above counts zero.",
+        "oldDescription": "Annual peak discharge for the Waimea River at Waimea, Kauai, HI (USGS gage 16031000)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "16036000_Makaweli_Peaks",
+        "description": "Makaweli annual peaks: 75 exact values, 1945–2019; saved unit label Value, physical units awaiting confirmation. No low flags or perception windows.",
+        "oldDescription": "Annual peak discharge for the Makaweli River, Kauai, HI (USGS gage 16036000)."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 3,
+        "name": "16036000_Makaweli_Conditional_Peaks",
+        "description": "54 exact conditional Makaweli values, 1946–2019; saved unit Value. Event-selection provenance and units need confirmation. No low flags or perception windows.",
+        "oldDescription": "Conditional Makaweli peak series — Makaweli peaks observed coincidentally with Waimea peaks."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 4,
+        "name": "Simulated Proof",
+        "description": "10,000 exact generic values indexed 1–10,000. Retained simulation evidence with no current CFA InputData binding; purpose and provenance require confirmation.",
+        "oldDescription": "Simulated dataset used to verify the conditional copula machinery against ground truth."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "waimea-river-stage-frequency",
+        "description": "Waimea/Makaweli teaching project with seven current Bayesian LP3 margins, seven copulas and one conditional response-frequency result. Also preserves ten legacy Bayesian records, differing old/current frequency payloads and 15 populated distribution fits with an old flag inconsistency. RR meaning, conditional-event selection and response units/provenance remain unresolved; no results repaired.",
+        "oldDescription": "Coincident peak-flow analysis for the Waimea River and Makaweli River, Kauai, Hawaii. Demonstrates joint Bayesian peak-flow estimation with regional skew, drainage-area scaling, and historical-record conditioning, then derives a coincident peak-flow distribution via the Normal copula."
+      }
+    ],
+    "deletedRow": null,
+    "treeRestoration": null,
+    "preservedCellCount": 870
   }
 ]

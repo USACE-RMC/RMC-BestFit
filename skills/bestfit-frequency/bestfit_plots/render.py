@@ -150,7 +150,9 @@ def render_plot(spec, ax=None):
             ax.set_xticks([position for position, _ in ticks], [f"{p:g}" for _, p in ticks])
             ax.set_xlim(left, right)
         if any(item["kind"] in {"line", "scatter", "band", "area", "bars"} for item in spec["series"]):
-            ax.legend(loc=spec.get("legendLocation", "best"), facecolor="white", edgecolor="#999999")
+            location = spec.get("legendLocation", "outside right" if spec["plotId"] == "shared_diagnostics.trace" else "best")
+            placement = {"loc": "upper left", "bbox_to_anchor": (1.01, 1)} if location == "outside right" else {"loc": location}
+            ax.legend(**placement, facecolor="white", edgecolor="#999999")
         fig.bestfit_omissions = omissions
         return fig
     except Exception:

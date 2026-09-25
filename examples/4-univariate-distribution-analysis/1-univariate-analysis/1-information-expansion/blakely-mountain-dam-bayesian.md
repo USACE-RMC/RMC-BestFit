@@ -1,107 +1,22 @@
-# blakely-mountain-dam-bayesian
+# Blakely Mountain Dam: Bayesian study reference awaiting its saved project
 
-## Overview
+The intended Bayesian `.bestfit` project is not present in this checkout. This page records the study scope and reading path; it cannot yet provide a reproducible saved-result walkthrough or Python figures for that project. The project author has been asked for the existing file. No replacement fit, assumed sampler settings or numerical results have been created.
 
-Bayesian flood frequency analysis for inflows to Blakely Mountain Dam, Arkansas. Demonstrates information expansion using systematic, historical, and paleoflood records with the Log-Pearson Type III distribution.
+## Understand the intended study
 
-## What's Inside
+The supplied [Hydrologic Hazard Report, Appendix E2](../../2-bulletin-17C-analysis/2-information-expansion/Case%20Study/IES%20Appendix%20E2%20Hydrologic%20Hazard%20Report.pdf), section 4.3, describes Bayesian information expansion for annual maximum three-day inflows. Systematic, historical/paleoflood, regional-skew and rainfall-runoff information play distinct roles. Flow duration, units and the evidence behind each information term must match before comparing curves.
 
-### Input Data
+The available [one-day GMM tutorial](../../2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.md) covers different saved projects and a different estimator. Its figures are not substitutes for the missing three-day Bayesian results. The imperial and metric GMM projects remain available with their original results.
 
-| Element | Description |
-|---|---|
-| `Input Data_1` | Annual peak inflow series for Blakely Mountain Dam, Arkansas — placeholder element to be populated with the systematic + historical + paleoflood record. |
+## A useful reading sequence
 
-## Step-by-Step Walkthrough
+1. Work through [Kamp at Zwettl: historical evidence and quantile priors](viglione-et-al-2013.md) to learn the information-expansion workflow using a complete saved Bayesian project.
+2. Read section 4.3 of the Blakely report. Identify the duration and units of the target inflow before reading a frequency ordinate.
+3. Keep dated flood intervals separate from perception windows, regional parameter information and quantile priors. Record the source and dependence of each contribution.
+4. Use the available one-day GMM tutorial to inspect the Blakely chronology, while retaining the duration and estimator distinctions.
 
-### Opening the Project
+## What is required to finish this example
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/`.
-3. Open `blakely-mountain-dam-bayesian.bestfit`.
+The existing Bayesian project must establish the actual input elements, fitted alternatives, prior distributions, saved sampler settings, diagnostics and results. The author should identify the duration-specific basis for the adopted regional and rainfall-runoff information. Once supplied, figures can be rendered from those saved results without replacing them or rerunning the analyses.
 
-### Exploring the Elements
-
-For each Univariate Distribution alternative:
-
-1. Click the alternative in the Project Explorer.
-2. Open the **Frequency** tab to view the AEP-vs-quantile plot.
-3. Open the **Markov Chain Trace** tab to confirm chain mixing (well-mixed traces look like fuzzy caterpillars).
-4. Open the **Autocorrelation** tab to check effective sample size.
-5. Inspect the **Properties** panel for sampler settings (iterations, warmup, point estimator, credible-interval width).
-
-## Analysis Settings
-
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
-
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
-
-## Expected Results
-
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
-
-### Parameter Estimates
-
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
-
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
-
-### Frequency / Quantile Table
-
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
-
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
-
-### Plots
-
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](images/blakely-mountain-dam-bayesian-frequency.png)
-*Figure: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
-
-![Posterior kernel density for each parameter.](images/blakely-mountain-dam-bayesian-kernel-density.png)
-*Figure: Posterior kernel density for each parameter.*
-
-![Markov-chain traces for each parameter.](images/blakely-mountain-dam-bayesian-trace.png)
-*Figure: Markov-chain traces for each parameter.*
-
-![Autocorrelation function of the chains, used to estimate effective sample size.](images/blakely-mountain-dam-bayesian-autocorrelation.png)
-*Figure: Autocorrelation function of the chains, used to estimate effective sample size.*
-
-### MCMC Diagnostics
-
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
-
-## Next Steps
-
-- Compare alternatives via the **Bayesian Model Average** element to combine results from multiple distributions.
-- Compute **return-period quantiles** (1%, 0.5%, 0.2% AEP) from the frequency-curve table.
-- Re-run with informative **quantile priors** if engineering judgment suggests specific upper-bound flood magnitudes.
-- Cross-check the LP-III fit against a **Bulletin 17C** fit on the same input data.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+Until then, this is a study-reference page, not a completed numerical example. The missing project and required source context are listed in the [author follow-up log](../../../../docs/example-issues-for-haden.md).

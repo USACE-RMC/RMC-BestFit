@@ -1,13 +1,13 @@
 {
   "name": "bestfit-frequency",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Evidence-backed flood frequency analysis with the local BestFit API.",
   "author": { "name": "USACE Risk Management Center" },
   "skills": "./skills/",
   "interface": {
     "displayName": "BestFit Flood Frequency",
     "shortDescription": "Research flood evidence and run BestFit FFA.",
-    "longDescription": "Collect and justify historical, regional and causal flood information, inspect input chronology and compare documented BestFit analysis candidates.",
+    "longDescription": "Collect and justify flood evidence, consult worked engineering examples, inspect chronology and render saved BestFit results with the shared Python plotting utilities.",
     "developerName": "USACE Risk Management Center",
     "category": "Productivity",
     "capabilities": [],

@@ -33,4 +33,6 @@ def test_training_prediction_bands_share_exact_boundary():
     training,prediction=s["series"][:2]
     assert training["x"][-1] == prediction["x"][0] == dates[1]
     assert training["yLower"][-1] == prediction["yLower"][0] == 9
+    assert training["interval"] == prediction["interval"] == {"kind": "prediction", "level": .9}
+    assert "Prediction Intervals" in training["name"]
     assert s["series"][3]["name"] == "Posterior Mean"

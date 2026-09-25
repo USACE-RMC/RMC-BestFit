@@ -37,6 +37,37 @@ def test_requested_legend_position_can_leave_a_peak_visible():
             render_plot(spec)
 
 
+def test_trace_legend_does_not_cover_diagnostic_excursions():
+    import matplotlib.pyplot as plt
+    from bestfit_plots.adapters.desktop import desktop_plot
+    from bestfit_plots.render import render_plot
+    data = snapshot()
+    data['plotId'] = 'shared_diagnostics.trace'
+    figure = render_plot(desktop_plot(data))
+    try:
+        figure.canvas.draw()
+        axes = figure.axes[0]
+        assert axes.get_legend().get_window_extent().x0 > axes.get_window_extent().x1
+    finally:
+        plt.close(figure)
+
+
+def test_gmm_quantile_information_is_labeled_as_a_penalty():
+    from bestfit_plots.adapters.desktop import desktop_plot
+    data = snapshot()
+    data['plotId'] = 'b17c.frequency'
+    data['series'][0]['type'] = 'ScatterSeries'
+    data['series'][0]['Title'] = 'Quantile Prior'
+    data['series'][0]['points'][0]['LowerErrorY'] = 6.
+    data['series'][0]['points'][0]['UpperErrorY'] = 8.
+    spec = desktop_plot(data)
+    assert spec['series'][0]['name'] == 'Quantile Penalty'
+    assert spec['series'][0]['y'] == [7., None, 9.]
+    assert spec['series'][0]['interval']['kind'] == 'penalty'
+    data['plotId'] = 'univariate.frequency'
+    assert desktop_plot(data)['series'][0]['name'] == 'Quantile Prior'
+
+
 def test_desktop_dates_gaps_and_source_hash_are_retained_without_managed_runtime():
     from bestfit_plots.adapters.desktop import desktop_plot
     original = snapshot()
@@ -46,6 +77,33 @@ def test_desktop_dates_gaps_and_source_hash_are_retained_without_managed_runtime
     assert spec["series"][0]["y"] == [7., None, 9.]
     assert spec["source"]["runId"] == "sha256:abc"
     assert original == before
+
+
+def test_legacy_saved_frequency_overlay_keeps_exact_arrays_and_rejects_replacement():
+    import pytest
+    from bestfit_plots.adapters.desktop import desktop_plot
+    data = snapshot()
+    data['plotId'] = 'b17c.frequency'
+    data['axes'][0].update(type='NormalProbabilityAxis')
+    data['axes'][1].update(type='LogarithmicAxis', Minimum=1., Maximum=100.)
+    data['series'][0].update(type='ScatterSeries', Title='Exact Data', points=[{'X': .5, 'Y': 7.}])
+    data['legacySavedFrequency'] = dict(probabilities=[.5, .01], point=[8., 110.], expected=[9., 120.],
+                                      lower=[6., 90.], upper=[11., 150.], width=.9,
+                                      columns=['ProbabilityOrdinates', 'AnalysisResults', 'ConfidenceIntervalWidth'])
+    before = copy.deepcopy(data)
+    spec = desktop_plot(data)
+    assert [s['name'] for s in spec['series']] == ['90% Confidence Intervals', 'Expected Probability', 'Computed', 'Exact Data']
+    assert spec['series'][0]['yLower'] == [6., 90.]
+    assert spec['series'][0]['yUpper'] == [11., 150.]
+    assert spec['series'][2]['x'] == [.5, .01] and spec['series'][2]['y'] == [8., 110.]
+    assert spec['series'][3]['y'] == [7.]
+    assert spec['axes']['y']['maximum'] == 1000.
+    assert spec['source']['runId'] == 'sha256:abc'
+    assert any('legacy' in note for note in spec['displayCorrections'])
+    assert data == before
+    data['series'][0]['type'] = 'LineSeries'
+    with pytest.raises(ValueError, match='observation-only'):
+        desktop_plot(data)
 
 
 def test_horizontal_probability_bounds_stay_at_their_response_ordinates():
@@ -70,6 +128,25 @@ def test_unknown_visible_series_cannot_silently_disappear():
     data["series"][0]["type"] = "NewUnsupportedSeries"
     with pytest.raises(ValueError, match="Unsupported"):
         desktop_plot(data)
+
+
+def test_response_prediction_intervals_retain_geometry_and_leave_frequency_credible():
+    from bestfit_plots.adapters.desktop import desktop_plot
+    data = snapshot()
+    data['axes'][0].update(type='LinearAxis')
+    data['series'] = [{'type': 'AreaSeries', 'Title': '90% Credible Intervals',
+                       'points': [{'X': 1., 'Y': 2.}, {'X': 2., 'Y': 3.}],
+                       'points2': [{'X': 1., 'Y': 4.}, {'X': 2., 'Y': 5.}], 'style': {}}]
+    for plot_id in ('rating.curve', 'time_series_analysis.series'):
+        data['plotId'] = plot_id
+        spec = desktop_plot(data)
+        band = spec['series'][0]
+        assert band['name'] == '90% Prediction Intervals'
+        assert band['interval'] == {'kind': 'prediction', 'level': .9}
+        assert band['yLower'] == [2., 3.] and band['yUpper'] == [4., 5.]
+        assert any('residual' in note for note in spec['displayCorrections'])
+    data['plotId'] = 'univariate.frequency'
+    assert desktop_plot(data)['series'][0]['interval']['kind'] == 'credible'
 
 
 def test_desktop_fill_keeps_original_transparency():

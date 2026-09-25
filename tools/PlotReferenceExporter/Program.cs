@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.SQLite;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -7,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml.Linq;
 using FrameworkInterfaces;
 using OxyPlot;
 using OxyPlot.Wpf;
@@ -77,20 +80,21 @@ internal static class Program
             BestFitProject project = BestFitProject.GetInstance();
             project.FullFileName = copyPath;
             project.Open();
-            IElement element = FindElement(project, options["element"]);
             string population = slot.GetProperty("appPopulation").GetString()!;
             string controlName = Path.GetFileName(population.Split("::")[0]).Split('.')[0];
             string updateMethod = population.Split("::")[1];
             string factory = slot.GetProperty("appFactory").GetString()!.Split("::")[1];
             string propertyName = factory["CreateDefault".Length..];
             bool sharedDiagnostic = options["plot-id"].StartsWith("shared_diagnostics.", StringComparison.Ordinal);
+            Type controlType = typeof(RMC_BestFit.InputDataControl).Assembly.GetType("RMC_BestFit." + controlName)
+                ?? throw new NotSupportedException($"App control {controlName} was not found.");
+            IElement element = FindElement(project, options["element"], controlType, sharedDiagnostic);
+            var displayCorrections = new List<string>();
             object plotOwner = sharedDiagnostic
                 ? element.GetType().GetProperty("BayesianPlots")?.GetValue(element)
                     ?? throw new NotSupportedException($"Element {element.Name} has no saved Bayesian plot controller.")
                 : element;
             Plot plot = ResetFactoryPlot(plotOwner, factory, propertyName);
-            Type controlType = typeof(RMC_BestFit.InputDataControl).Assembly.GetType("RMC_BestFit." + controlName)
-                ?? throw new NotSupportedException($"App control {controlName} was not found.");
             object control = Activator.CreateInstance(controlType)!;
             if (sharedDiagnostic)
             {
@@ -138,7 +142,15 @@ internal static class Program
             if (options["plot-id"].StartsWith("rating.residual", StringComparison.Ordinal)
                 || options["plot-id"].StartsWith("time_series_analysis.residual", StringComparison.Ordinal))
             {
-                controlType.GetMethod("GetResiduals", InstanceMembers)?.Invoke(control, null);
+                if (element is TimeSeriesAnalysis timeSeries && timeSeries.Covariates.Count > 0)
+                {
+                    PopulateSavedTimeSeriesResiduals(control, timeSeries, sourcePath);
+                    displayCorrections.Add("Residual diagnostics use the saved parameter vector because covariate hydration resets live model values; no estimation or source mutation was performed.");
+                }
+                else
+                {
+                    controlType.GetMethod("GetResiduals", InstanceMembers)?.Invoke(control, null);
+                }
             }
             if (options["plot-id"].StartsWith("input_data.mean_", StringComparison.Ordinal)
                 || options["plot-id"] is "input_data.modified_scale" or "input_data.shape")
@@ -247,6 +259,7 @@ internal static class Program
                 variantSelection,
                 appFactory = slot.GetProperty("appFactory").GetString(),
                 factoryReset = true,
+                displayCorrections,
                 appPopulation = population,
                 title = plot.Title,
                 axes,
@@ -262,6 +275,40 @@ internal static class Program
         }
     }
 
+    /// <summary>Populates diagnostic residuals from persisted coefficients after covariate hydration.</summary>
+    /// <param name="control">The disposable time-series plotting control.</param>
+    /// <param name="analysis">The loaded analysis with its aligned response and covariates.</param>
+    /// <param name="sourcePath">The original project, opened read-only for saved parameter values.</param>
+    /// <exception cref="InvalidOperationException">Saved parameters are absent, invalid or do not match the loaded model.</exception>
+    /// <remarks>
+    /// TimeSeriesAnalysis.Open calls SetCovariates, which resets live parameter values.
+    /// This display-only bridge calls the existing residual method with the persisted
+    /// vector; it does not change the model, its priors, the estimator or any database cell.
+    /// </remarks>
+    private static void PopulateSavedTimeSeriesResiduals(object control, TimeSeriesAnalysis analysis, string sourcePath)
+    {
+        var builder = new SQLiteConnectionStringBuilder { DataSource = sourcePath, ReadOnly = true, FailIfMissing = true };
+        using var connection = new SQLiteConnection(builder.ConnectionString);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT ARIMAX FROM \"Time Series Analysis\" WHERE Name=@name";
+        command.Parameters.AddWithValue("@name", analysis.Name);
+        string xml = command.ExecuteScalar() as string
+            ?? throw new InvalidOperationException("Saved ARIMAX parameters are unavailable.");
+        var saved = XElement.Parse(xml).Element("Parameters")?.Elements("ModelParameter").ToArray()
+            ?? throw new InvalidOperationException("Saved ARIMAX parameter vector is absent.");
+        var model = analysis.ARIMAX;
+        if (saved.Length != model.Parameters.Count || saved.Where((p, i) => (string?)p.Attribute("Name") != model.Parameters[i].Name).Any())
+            throw new InvalidOperationException("Saved parameter order does not match the loaded ARIMAX model.");
+        var values = saved.Select(p => double.Parse((string?)p.Attribute("Value")
+            ?? throw new InvalidOperationException("Saved parameter value is absent."), CultureInfo.InvariantCulture)).ToArray();
+        if (values.Any(value => !double.IsFinite(value)))
+            throw new InvalidOperationException("Saved parameter values must be finite.");
+        FieldInfo field = control.GetType().GetField("_residuals", InstanceMembers)
+            ?? throw new InvalidOperationException("Time-series control has no residual display buffer.");
+        field.SetValue(control, model.Residuals(values));
+    }
+
     private static void InitializeWpf()
     {
         if (Application.Current == null) _ = new Application();
@@ -275,17 +322,32 @@ internal static class Program
         Application.Current.Resources["DataGridEditingTextBoxStyle"] = new Style(typeof(TextBox));
     }
 
-    private static IElement FindElement(BestFitProject project, string name)
+    /// <summary>Resolves a named source in the collection compatible with the requested plot.</summary>
+    /// <param name="project">The disposable opened project.</param>
+    /// <param name="name">The exact saved element name.</param>
+    /// <param name="controlType">The desktop control that populates the plot.</param>
+    /// <param name="sharedDiagnostic">Whether an analysis diagnostic controller is required.</param>
+    /// <returns>The unique compatible element.</returns>
+    /// <exception cref="ArgumentException">No unique compatible element exists.</exception>
+    /// <remarks>Input and analysis collections may legitimately contain the same display name.</remarks>
+    private static IElement FindElement(BestFitProject project, string name, Type controlType, bool sharedDiagnostic)
     {
         var collections = project.ElementCollections
             ?? throw new InvalidOperationException("Project has no element collections.");
+        Type? requiredType = controlType.GetProperty("Element")?.PropertyType;
+        var matches = new List<IElement>();
         foreach (IElementCollection collection in collections)
             for (int index = 0; index < collection.Count; index++)
             {
                 IElement? candidate = collection[index];
-                if (candidate?.Name == name) return candidate;
+                if (candidate?.Name != name) continue;
+                bool compatible = sharedDiagnostic
+                    ? candidate.GetType().GetProperty("BayesianPlots") != null
+                    : requiredType?.IsInstanceOfType(candidate) == true;
+                if (compatible) matches.Add(candidate);
             }
-        throw new ArgumentException($"No element named {name} in saved project.");
+        if (matches.Count == 1) return matches[0];
+        throw new ArgumentException($"Expected one compatible element named {name}; found {matches.Count} for {controlType.Name}.");
     }
 
     private static List<Dictionary<string, object?>> SnapshotPoints(object series, string propertyName = "ActualPoints")
@@ -464,7 +526,7 @@ internal static class Program
         if (plotId is ("univariate.frequency" or "coincident.frequency") && variant == "comparison")
             return "AlternativeSelector checked " + SelectSavedAlternative(control, element);
         if (plotId == "univariate.frequency" && variant == "quantile_prior"
-            && element.Name.Contains("Quantile Priors", StringComparison.Ordinal))
+            && element is UnivariateAnalysis univariate && univariate.UnivariateDistribution.EnableQuantilePriors)
             return "saved enabled quantile prior source";
         if (plotId == "univariate.frequency" && variant == "nonstationary"
             && element.Name.StartsWith("NSFFA", StringComparison.Ordinal))

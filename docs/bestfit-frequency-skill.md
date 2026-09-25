@@ -16,6 +16,15 @@ and [platform installation steps](../skills/bestfit-frequency/references/install
 `run_study.py` compares documented candidates and retains failed runs and diagnostics.
 No scientific algorithms or numerical defaults are changed.
 
+The bundled [worked-example guide](../skills/bestfit-frequency/references/examples.md)
+routes frequency-analysis prompts to the repository's junior-engineer tutorials.
+It covers data entry, historical evidence, Bayesian fits, GMM penalties, measurement
+error, trends and joint models. Both package formats include the guide and the
+same updated Python renderer. Examples supply a standard for explanation and
+source review, not numerical assumptions to copy into another study. Consult the
+[example issue log](example-issues-for-haden.md) for unresolved source/engineering
+questions and saved-result limitations.
+
 For a ChatGPT or Claude web session with execution tools, provide the
 [repository link](https://github.com/USACE-RMC/RMC-BestFit) and ask it to clone the
 source, read `skills/bestfit-frequency/SKILL.md`, and build/run only the headless

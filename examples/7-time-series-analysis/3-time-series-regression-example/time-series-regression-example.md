@@ -1,113 +1,83 @@
-# time-series-regression-example
+# Time-series regression: validation and future covariate assumptions
 
-## Overview
+Open [time-series-regression-example.bestfit](time-series-regression-example.bestfit) and save a working copy. Two Bayesian regressions predict Consumption using either Income alone or Income, Production, Savings and Unemployment. The lesson is to distinguish fitted association, validation using observed covariates, and future prediction requiring covariate assumptions.
 
-Multivariate time-series regression on classic US macroeconomic indicators (consumption, income, production, savings, unemployment). Demonstrates simple and multiple linear regression with autocorrelated residuals.
+## Inspect the aligned quarterly data
 
-## What's Inside
+| Input series | Meaning | Saved units | Count and dates |
+| --- | --- | --- | --- |
+| Consumption | Quarterly consumption change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. | % Change in Consumption | 187 (1970-01-01–2016-07-01) |
+| Income | Quarterly income change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. | % Change in Income | 187 (1970-01-01–2016-07-01) |
+| Production | Quarterly production change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. | % Change in Production | 187 (1970-01-01–2016-07-01) |
+| Savings | Quarterly savings change series used in the supplied regression example. Source/vintage and exact transform need confirmation. These values are not economic levels. | % Change in Savings | 187 (1970-01-01–2016-07-01) |
+| Unemployment | Quarterly unemployment change series used in the supplied regression example. Source/vintage and exact transform need confirmation; verify percentage-point change versus percent growth. These values are not economic levels. | % Change in Unemployment | 187 (1970-01-01–2016-07-01) |
 
-### Time Series Data
+All five series contain 187 finite, aligned quarterly values from January 1970 through July 2016. Saved unit labels say percent change. The exact source/vintage/transforms are not supplied here, and Unemployment may require a percentage-point interpretation; verify that before interpreting coefficient units.
 
-| Element | Description |
-|---|---|
-| `Consumption` | Quarterly US personal consumption expenditures (response variable for the regression examples). |
-| `Income` | Quarterly US personal disposable income (regressor). |
-| `Production` | Quarterly US industrial production index (regressor). |
-| `Savings` | Quarterly US personal savings rate (regressor). |
-| `Unemployment` | Quarterly US unemployment rate (regressor). |
+## Work through the regressions
 
-### Time Series Analysis
+1. Open Simple Linear Regression and confirm Consumption as response and Income as its single covariate.
+2. Open Multiple Linear Regression. Read coefficients in the saved covariate order: Income, Production, Savings, Unemployment.
+3. Confirm p=d=q=B=0, intercept enabled, no transform, trend or seasonality. Despite use of the ARIMAX framework, these fits contain **no ARMA residual terms**.
+4. Locate the 149/38 training/validation split and the 30 future quarters. Validation uses observed covariates; future periods require the stored extension rule.
+5. Inspect residuals, residual autocorrelation and predictive bands before drawing conclusions about performance. Regression coefficients are conditional associations, not established causal effects.
 
-| Element | Description |
-|---|---|
-| `Simple Linear Regression` | Simple linear regression of consumption on income, with autocorrelated residuals modeled as ARMA. |
-| `Multiple Linear Regression` | Multiple linear regression of consumption on income, production, savings, and unemployment, with autocorrelated residuals modeled as ARMA. |
+## Saved coefficients and diagnostics
 
-## Step-by-Step Walkthrough
+| Analysis | Parameter / stored space | Saved point value |
+| --- | --- | --- |
+| Simple Linear Regression | Intercept (μ) | 0.581 |
+| Simple Linear Regression | Covariate (β₁) | 0.325 |
+| Simple Linear Regression | Scale (σ) | 0.605 |
+| Multiple Linear Regression | Intercept (μ) | 0.305 |
+| Multiple Linear Regression | Covariate (β₁) | 0.704 |
+| Multiple Linear Regression | Covariate (β₂) | 0.037 |
+| Multiple Linear Regression | Covariate (β₃) | -0.047 |
+| Multiple Linear Regression | Covariate (β₄) | -0.274 |
+| Multiple Linear Regression | Scale (σ) | 0.349 |
 
-### Opening the Project
+All fits retain DEMCzs, seed 12345, warmup 1,750, iterations 3,500, 10,000 output draws and 90% interval width. The chain/thinning settings and chosen posterior mean or mode parameter vector remain as saved. Inspect the actual prior bounds, parameter chains, autocorrelation and tail uncertainty. Scalar diagnostics describe the retained run; they do not substitute for scientific validation.
+| Saved analysis | Chains / thinning | Point parameters | DIC | Saved RMSE | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- |
+| Simple Linear Regression | 6/30 | Mean | 275.582 | 0.598 | 1.00030 | 8,863 |
+| Multiple Linear Regression | 12/60 | Mean | 114.447 | 0.341 | 1.00012 | 9,625 |
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/7-time-series-analysis/3-time-series-regression-example/`.
-3. Open `time-series-regression-example.bestfit`.
+The lower Multiple DIC and training RMSE describe the same response/training period, but do not establish held-out forecast skill. Compare held-out prediction errors separately before claiming a forecasting improvement.
 
-### Exploring the Elements
+## Understand future predictions
 
-For each Time Series Analysis alternative:
+Both models retain CovariateExtension = BlockBootstrap. The current implementation keeps observed covariates, fills the deterministic future tail with each covariate's empirical mean, and separately resamples stochastic future covariates with distinct seeds. It is not synchronized multivariate block resampling and does not preserve joint future-covariate dependence. It is also not an externally supplied economic scenario.
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Time Series** tab to view the fitted mean (and trend, if any) overlaid on the observations.
-3. Open the **Residual ACF / PACF** tabs to confirm white-noise residuals.
-4. Adjust **ForecastSteps** in the Properties panel to extend the forecast horizon.
+There are 217 output positions: 149 training, 38 withheld observed quarters and 30 future quarters. The first future point is position 188. At position 217, the saved Simple best-fit value is 0.814343 with 90% limits −0.308802 to 1.942928; Multiple is 0.769074 with limits −0.877415 to 2.360722. Those wider future bands include residual and covariate variation. A constant deterministic future line does not mean zero uncertainty.
 
-## Analysis Settings
+## Read the figures
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+![Income-only regression: training, observed validation and 30 future quarters after July 2016.](images/time-series-regression-example-simple-prediction.png)
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+*Income-only regression: training, observed validation and 30 future quarters after July 2016.* [SVG](images/time-series-regression-example-simple-prediction.svg) · [Plot data](images/time-series-regression-example-simple-prediction.plotspec.json.gz)
 
-## Expected Results
+![Four-covariate regression with saved future-extension uncertainty after July 2016.](images/time-series-regression-example-multiple-prediction.png)
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+*Four-covariate regression with saved future-extension uncertainty after July 2016.* [SVG](images/time-series-regression-example-multiple-prediction.svg) · [Plot data](images/time-series-regression-example-multiple-prediction.plotspec.json.gz)
 
-### Parameter Estimates
+![Multiple-regression residuals at the saved observation dates.](images/time-series-regression-example-multiple-residuals.png)
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+*Multiple-regression residuals at the saved observation dates.* [SVG](images/time-series-regression-example-multiple-residuals.svg) · [Plot data](images/time-series-regression-example-multiple-residuals.plotspec.json.gz)
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+![Residual autocorrelation; this fitted model has no ARMA residual terms.](images/time-series-regression-example-multiple-residual-acf.png)
 
-### Frequency / Quantile Table
+*Residual autocorrelation; this fitted model has no ARMA residual terms.* [SVG](images/time-series-regression-example-multiple-residual-acf.svg) · [Plot data](images/time-series-regression-example-multiple-residual-acf.plotspec.json.gz)
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+![Multiple-regression residual Q–Q diagnostic.](images/time-series-regression-example-multiple-residual-qq.png)
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+*Multiple-regression residual Q–Q diagnostic.* [SVG](images/time-series-regression-example-multiple-residual-qq.svg) · [Plot data](images/time-series-regression-example-multiple-residual-qq.plotspec.json.gz)
 
-### Plots
+## Reproduce and check
 
-![Time-series fit overlaid on the observations, with credible band.](images/ts-regression-time-series.png)
-*Figure: Time-series fit overlaid on the observations, with credible band.*
+The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../../README.md#reproducing-the-figures) with `--only time-series-regression-example`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
 
-![Multi-step forecast extension with credible band.](images/ts-regression-forecast.png)
-*Figure: Multi-step forecast extension with credible band.*
+Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.
 
-![Residual autocorrelation function.](images/ts-regression-acf.png)
-*Figure: Residual autocorrelation function.*
+## Saved-fit residual display
 
-### MCMC Diagnostics
-
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
-
-## Next Steps
-
-- Use the fitted ARIMA / regression model for **multi-step forecasting** with credible bands.
-- Inspect residual ACF / PACF to confirm no remaining temporal structure.
-- For non-stationary trend cases, project the trend function out beyond the observation window.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+The current app loader attaches covariates after reading ARIMAX parameters, which resets its live coefficients. Its ordinary residual views can therefore disagree with the saved fitted curve. The figures here read the original coefficient vector and pass it to BestFit's existing residual method without changing the model or database. All 149 displayed residuals agree with observed Consumption minus the saved ModeCurve; their RMS is 0.3411468296, matching the stored RMSE. This source-preserving display correction is recorded in PlotSpec. The underlying app-loading defect remains in the [author issue log](../../../docs/example-issues-for-haden.md).

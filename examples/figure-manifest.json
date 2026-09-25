@@ -271,5 +271,1048 @@
     "plotId": "input_data.modified_scale",
     "variant": "default",
     "output": "examples/2-input-data/3-peaks-over-threshold/images/ghcn-peaks-over-threshold-example-modified-scale"
+  },
+  {
+    "id": "viglione-et-al-2013-historical-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+    "element": "Systematic (1951-2001) + Temporal Expansion",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/images/viglione-et-al-2013-historical-chronology"
+  },
+  {
+    "id": "viglione-et-al-2013-systematic-2001",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/images/viglione-et-al-2013-systematic-2001"
+  },
+  {
+    "id": "viglione-et-al-2013-systematic-2005",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2005)",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/images/viglione-et-al-2013-systematic-2005"
+  },
+  {
+    "id": "viglione-et-al-2013-temporal-causal",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001) + Temporal + Causal",
+    "plotId": "univariate.frequency",
+    "variant": "quantile_prior",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/images/viglione-et-al-2013-temporal-causal"
+  },
+  {
+    "id": "viglione-et-al-2013-three-priors",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001) + 3 Quantile Priors",
+    "plotId": "univariate.frequency",
+    "variant": "quantile_prior",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/images/viglione-et-al-2013-three-priors"
+  },
+  {
+    "id": "viglione-et-al-2013-trace",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/viglione-et-al-2013.bestfit",
+    "element": "MCMC - Systematic (1951-2001)",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/1-information-expansion/images/viglione-et-al-2013-trace"
+  },
+  {
+    "id": "arr-flike-examples-example-3",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+    "element": "Example #3",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/images/arr-flike-examples-example-3"
+  },
+  {
+    "id": "arr-flike-examples-example-4",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+    "element": "Example #4",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/images/arr-flike-examples-example-4"
+  },
+  {
+    "id": "arr-flike-examples-example-5",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+    "element": "Example #5",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/images/arr-flike-examples-example-5"
+  },
+  {
+    "id": "arr-flike-examples-example-6a",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+    "element": "Example #6a",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/images/arr-flike-examples-example-6a"
+  },
+  {
+    "id": "arr-flike-examples-example-6b",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+    "element": "Example #6b",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/images/arr-flike-examples-example-6b"
+  },
+  {
+    "id": "arr-flike-examples-trace",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/arr-flike-examples.bestfit",
+    "element": "Example #3",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/images/arr-flike-examples-trace"
+  },
+  {
+    "id": "bulletin-17c-bayesian-examples-moose",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+    "element": "Bayes Example #1",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/images/bulletin-17c-bayesian-examples-moose"
+  },
+  {
+    "id": "bulletin-17c-bayesian-examples-orestimba",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+    "element": "Bayes Example #2",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/images/bulletin-17c-bayesian-examples-orestimba"
+  },
+  {
+    "id": "bulletin-17c-bayesian-examples-american-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+    "element": "Example #7",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/images/bulletin-17c-bayesian-examples-american-chronology"
+  },
+  {
+    "id": "bulletin-17c-bayesian-examples-american-frequency",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+    "element": "Bayes Example #7",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/images/bulletin-17c-bayesian-examples-american-frequency"
+  },
+  {
+    "id": "bulletin-17c-bayesian-examples-trace",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+    "element": "Bayes Example #1",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/images/bulletin-17c-bayesian-examples-trace"
+  },
+  {
+    "id": "sinnemahoning-move3-bayesian-uncertain-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+    "element": "Sinnemahoning - MOVE.3 - With Errors",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/images/sinnemahoning-move3-bayesian-uncertain-chronology"
+  },
+  {
+    "id": "sinnemahoning-move3-bayesian-no-extension",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+    "element": "LPIII - No Extension",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/images/sinnemahoning-move3-bayesian-no-extension"
+  },
+  {
+    "id": "sinnemahoning-move3-bayesian-exact-extension",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+    "element": "LPIII - No Errors",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/images/sinnemahoning-move3-bayesian-exact-extension"
+  },
+  {
+    "id": "sinnemahoning-move3-bayesian-uncertain-extension",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+    "element": "LPIII - With Errors",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/images/sinnemahoning-move3-bayesian-uncertain-extension"
+  },
+  {
+    "id": "sinnemahoning-move3-bayesian-trace",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.bestfit",
+    "element": "LPIII - With Errors",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/4-measurement-errors/images/sinnemahoning-move3-bayesian-trace"
+  },
+  {
+    "id": "bulletin-17c-examples-moose-mvn",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+    "element": "Example #1",
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/images/bulletin-17c-examples-moose-mvn"
+  },
+  {
+    "id": "bulletin-17c-examples-moose-bootstrap",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+    "element": "Example #1 - BCB",
+    "plotId": "b17c.frequency",
+    "variant": "bcb",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/images/bulletin-17c-examples-moose-bootstrap"
+  },
+  {
+    "id": "bulletin-17c-examples-american-chronology",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+    "element": "Example #7 - Data",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/images/bulletin-17c-examples-american-chronology"
+  },
+  {
+    "id": "bulletin-17c-examples-american-linked-mvn",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+    "element": "Example #7",
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/images/bulletin-17c-examples-american-linked-mvn"
+  },
+  {
+    "id": "bulletin-17c-examples-american-bootstrap",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+    "element": "Example #7 - BCB",
+    "plotId": "b17c.frequency",
+    "variant": "bcb",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/images/bulletin-17c-examples-american-bootstrap"
+  },
+  {
+    "id": "bulletin-17c-examples-parameter-ensemble",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/bulletin-17c-examples.bestfit",
+    "element": "Example #1",
+    "plotId": "shared_diagnostics.histogram",
+    "variant": "posterior",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/1-bulletin17C-examples/images/bulletin-17c-examples-parameter-ensemble"
+  },
+  {
+    "id": "blakely-mountain-dam-b17c-paleo-chronology",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+    "element": "Systematic + Historical + Paleo - 1Day",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/images/blakely-mountain-dam-b17c-paleo-chronology"
+  },
+  {
+    "id": "blakely-mountain-dam-b17c-systematic-frequency",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+    "element": "Systematic",
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/images/blakely-mountain-dam-b17c-systematic-frequency"
+  },
+  {
+    "id": "blakely-mountain-dam-b17c-paleo-frequency",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+    "element": "Systematic + Historical + Paleo",
+    "plotId": "b17c.frequency",
+    "variant": "historical_interval",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/images/blakely-mountain-dam-b17c-paleo-frequency"
+  },
+  {
+    "id": "blakely-mountain-dam-b17c-penalty-frequency",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/blakely-mountain-dam-b17c.bestfit",
+    "element": "Systematic + Historical + Paleo + Reg Skew + QPen",
+    "plotId": "b17c.frequency",
+    "variant": "historical_interval",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/images/blakely-mountain-dam-b17c-penalty-frequency"
+  },
+  {
+    "id": "blakely-mountain-dam-b17c-metric-penalty-frequency",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/Case Study/blakely-mountain-dam-b17c-metric.bestfit",
+    "element": "Systematic + Historical + Paleo + Reg Skew + QPen",
+    "plotId": "b17c.frequency",
+    "variant": "historical_interval",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/2-information-expansion/Case Study/images/blakely-mountain-dam-b17c-metric-penalty-frequency"
+  },
+  {
+    "id": "sinnemahoning-move3-b17c-uncertain-chronology",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+    "element": "Sinnemahoning - MOVE.3 - With Errors",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/images/sinnemahoning-move3-b17c-uncertain-chronology"
+  },
+  {
+    "id": "sinnemahoning-move3-b17c-no-extension",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+    "element": "B17C - LPIII - No Extension",
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/images/sinnemahoning-move3-b17c-no-extension"
+  },
+  {
+    "id": "sinnemahoning-move3-b17c-no-errors",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+    "element": "B17C - LPIII - No Errors",
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/images/sinnemahoning-move3-b17c-no-errors"
+  },
+  {
+    "id": "sinnemahoning-move3-b17c-with-errors",
+    "project": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/sinnemahoning-move3-b17c.bestfit",
+    "element": "B17C - LPIII - With Errors",
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "output": "examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/images/sinnemahoning-move3-b17c-with-errors"
+  },
+  {
+    "id": "nsffa-brays-bayou-texas-input-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+    "element": "USGS 08075000 Brays Bayou - Metric",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-brays-bayou-texas-input-chronology",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "nsffa-brays-bayou-texas-linear-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+    "element": "NSFFA - Linear",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-brays-bayou-texas-linear-chronology"
+  },
+  {
+    "id": "nsffa-brays-bayou-texas-step-logistic-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+    "element": "NSFFA - Step - Logistic",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-brays-bayou-texas-step-logistic-chronology",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "nsffa-brays-bayou-texas-step-logistic-frequency",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+    "element": "NSFFA - Step - Logistic",
+    "plotId": "univariate.frequency",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-brays-bayou-texas-step-logistic-frequency"
+  },
+  {
+    "id": "nsffa-brays-bayou-texas-model-average",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-brays-bayou-texas.bestfit",
+    "element": "Bayesian Model Average",
+    "plotId": "composite.frequency",
+    "variant": "competing_risk",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-brays-bayou-texas-model-average"
+  },
+  {
+    "id": "nsffa-oc-fisher-dam-historical-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+    "element": "OC Fisher Inflows",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-oc-fisher-dam-historical-chronology"
+  },
+  {
+    "id": "nsffa-oc-fisher-dam-sinusoidal-chronology",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+    "element": "NSFFA - Sinusoidal Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-oc-fisher-dam-sinusoidal-chronology"
+  },
+  {
+    "id": "nsffa-oc-fisher-dam-stationary-priors",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+    "element": "SFFA",
+    "plotId": "univariate.frequency",
+    "variant": "quantile_prior",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-oc-fisher-dam-stationary-priors"
+  },
+  {
+    "id": "nsffa-oc-fisher-dam-sinusoidal-frequency",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+    "element": "NSFFA - Sinusoidal Trend",
+    "plotId": "univariate.frequency",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-oc-fisher-dam-sinusoidal-frequency"
+  },
+  {
+    "id": "nsffa-oc-fisher-dam-sinusoidal-trace",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-oc-fisher-dam.bestfit",
+    "element": "NSFFA - Sinusoidal Trend",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-oc-fisher-dam-sinusoidal-trace"
+  },
+  {
+    "id": "nsffa-synthetic-data-constant-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Constant Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-constant-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-cubic-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Cubic Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-cubic-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-exponential-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Exponential Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-exponential-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-linear-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Linear Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-linear-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-logistic-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Logistic Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-logistic-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-power-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Power Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-power-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-quadratic-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Quadratic Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-quadratic-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-sinusoidal-trend",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Sinusoidal Trend",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-sinusoidal-trend"
+  },
+  {
+    "id": "nsffa-synthetic-data-step-function",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Step Function",
+    "plotId": "univariate.chronology",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-step-function"
+  },
+  {
+    "id": "nsffa-synthetic-data-index-51-frequency",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/nsffa-synthetic-data.bestfit",
+    "element": "NSFFA - Linear Trend",
+    "plotId": "univariate.frequency",
+    "variant": "nonstationary",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/images/nsffa-synthetic-data-index-51-frequency"
+  },
+  {
+    "id": "point-process-examples-big-bear-pot-chronology",
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "element": "USC00040741 - POT",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/3-point-process-analysis/images/point-process-examples-big-bear-pot-chronology"
+  },
+  {
+    "id": "point-process-examples-big-bear-seasonality",
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "element": "USC00040741 - POT",
+    "plotId": "input_data.seasonality",
+    "variant": "default",
+    "output": "examples/4-univariate-distribution-analysis/3-point-process-analysis/images/point-process-examples-big-bear-seasonality"
+  },
+  {
+    "id": "point-process-examples-big-bear-ams",
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "element": "USC00040741 - GEV",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/3-point-process-analysis/images/point-process-examples-big-bear-ams"
+  },
+  {
+    "id": "point-process-examples-big-bear-point-process",
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "element": "USC00040741 - Point Process",
+    "plotId": "point_process.frequency",
+    "variant": "pot",
+    "output": "examples/4-univariate-distribution-analysis/3-point-process-analysis/images/point-process-examples-big-bear-point-process"
+  },
+  {
+    "id": "point-process-examples-de-sabla-ams",
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "element": "USC00042402 - GEV",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/3-point-process-analysis/images/point-process-examples-de-sabla-ams"
+  },
+  {
+    "id": "point-process-examples-de-sabla-point-process",
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "element": "USC00042402 - Point Process",
+    "plotId": "point_process.frequency",
+    "variant": "pot",
+    "output": "examples/4-univariate-distribution-analysis/3-point-process-analysis/images/point-process-examples-de-sabla-point-process"
+  },
+  {
+    "id": "point-process-examples-big-bear-seasonal",
+    "project": "examples/4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.bestfit",
+    "element": "USC00040741 - Seasonal Point Process",
+    "plotId": "point_process.frequency",
+    "variant": "seasonal",
+    "output": "examples/4-univariate-distribution-analysis/3-point-process-analysis/images/point-process-examples-big-bear-seasonal"
+  },
+  {
+    "id": "mixture-distribution-examples-zero-input-histogram",
+    "project": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+    "element": "Mixture of 2 Normals and Zero Inflated - Data",
+    "plotId": "input_data.histogram",
+    "variant": "default",
+    "output": "examples/4-univariate-distribution-analysis/4-mixture-analysis/images/mixture-distribution-examples-zero-input-histogram"
+  },
+  {
+    "id": "mixture-distribution-examples-two-normal-frequency",
+    "project": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+    "element": "Mixture Distribution - 2 Normals",
+    "plotId": "mixture.frequency",
+    "variant": "mixture",
+    "output": "examples/4-univariate-distribution-analysis/4-mixture-analysis/images/mixture-distribution-examples-two-normal-frequency"
+  },
+  {
+    "id": "mixture-distribution-examples-three-normal-frequency",
+    "project": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+    "element": "Mixture Distribution - 3 Normals",
+    "plotId": "mixture.frequency",
+    "variant": "mixture",
+    "output": "examples/4-univariate-distribution-analysis/4-mixture-analysis/images/mixture-distribution-examples-three-normal-frequency"
+  },
+  {
+    "id": "mixture-distribution-examples-zero-inflated-frequency",
+    "project": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+    "element": "Mixture Distribution - 2 Normals - Zero-Inflated",
+    "plotId": "mixture.frequency",
+    "variant": "zero_inflated",
+    "output": "examples/4-univariate-distribution-analysis/4-mixture-analysis/images/mixture-distribution-examples-zero-inflated-frequency"
+  },
+  {
+    "id": "mixture-distribution-examples-three-normal-trace",
+    "project": "examples/4-univariate-distribution-analysis/4-mixture-analysis/mixture-distribution-examples.bestfit",
+    "element": "Mixture Distribution - 3 Normals",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/4-univariate-distribution-analysis/4-mixture-analysis/images/mixture-distribution-examples-three-normal-trace"
+  },
+  {
+    "id": "mixed-population-examples-full-maximum-chronology",
+    "project": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+    "element": "Full POR - Annual Max Series",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/4-univariate-distribution-analysis/5-composite-analysis/images/mixed-population-examples-full-maximum-chronology"
+  },
+  {
+    "id": "mixed-population-examples-snow-component",
+    "project": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+    "element": "Full POR Snow Driven",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/5-composite-analysis/images/mixed-population-examples-snow-component"
+  },
+  {
+    "id": "mixed-population-examples-rain-component",
+    "project": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+    "element": "Full POR Rainfall Driven",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/4-univariate-distribution-analysis/5-composite-analysis/images/mixed-population-examples-rain-component"
+  },
+  {
+    "id": "mixed-population-examples-competing-maximum",
+    "project": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+    "element": "Competing Flood Types",
+    "plotId": "composite.frequency",
+    "variant": "competing_risk",
+    "output": "examples/4-univariate-distribution-analysis/5-composite-analysis/images/mixed-population-examples-competing-maximum"
+  },
+  {
+    "id": "mixed-population-examples-fixed-mixture",
+    "project": "examples/4-univariate-distribution-analysis/5-composite-analysis/mixed-population-examples.bestfit",
+    "element": "Mixture of Flood Types",
+    "plotId": "composite.frequency",
+    "variant": "competing_risk",
+    "output": "examples/4-univariate-distribution-analysis/5-composite-analysis/images/mixed-population-examples-fixed-mixture"
+  },
+  {
+    "id": "bivariate-distribution-examples-amh-cdf",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "AMH Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-amh-cdf"
+  },
+  {
+    "id": "bivariate-distribution-examples-clayton-cdf",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Clayton Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-clayton-cdf"
+  },
+  {
+    "id": "bivariate-distribution-examples-frank-cdf",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Frank Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-frank-cdf"
+  },
+  {
+    "id": "bivariate-distribution-examples-gumbel-cdf",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Gumbel Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-gumbel-cdf"
+  },
+  {
+    "id": "bivariate-distribution-examples-joe-cdf",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Joe Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-joe-cdf"
+  },
+  {
+    "id": "bivariate-distribution-examples-normal-cdf",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-normal-cdf"
+  },
+  {
+    "id": "bivariate-distribution-examples-normal-density",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "density_values",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-normal-density"
+  },
+  {
+    "id": "bivariate-distribution-examples-normal-joint-exceedance",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "plotId": "bivariate.distribution",
+    "variant": "joint_exceedance_values",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-normal-joint-exceedance"
+  },
+  {
+    "id": "bivariate-distribution-examples-normal-trace",
+    "project": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/bivariate-distribution-examples.bestfit",
+    "element": "Normal Copula",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/5-bivariate-distribution-analysis/1-bivariate-distributions/images/bivariate-distribution-examples-normal-trace"
+  },
+  {
+    "id": "sum-two-normals-near-zero-response",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+    "element": "CFA - Rho = 0.0",
+    "plotId": "coincident.frequency",
+    "variant": "default",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/sum-two-normals-near-zero-response"
+  },
+  {
+    "id": "sum-two-normals-negative-response",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+    "element": "CFA - Rho = -0.5",
+    "plotId": "coincident.frequency",
+    "variant": "default",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/sum-two-normals-negative-response"
+  },
+  {
+    "id": "sum-two-normals-positive-response",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+    "element": "CFA - Rho = +0.5",
+    "plotId": "coincident.frequency",
+    "variant": "default",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/sum-two-normals-positive-response"
+  },
+  {
+    "id": "sum-two-normals-positive-scatter",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+    "element": "Normal Copula - Rho =+0.5",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_values",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/sum-two-normals-positive-scatter"
+  },
+  {
+    "id": "sum-two-normals-negative-scatter",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/sum-two-normals.bestfit",
+    "element": "Normal Copula - Rho = -0.5",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_values",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/sum-two-normals-negative-scatter"
+  },
+  {
+    "id": "waimea-river-stage-frequency-waimea-chronology",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+    "element": "16031000_Waimea_Peaks",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/waimea-river-stage-frequency-waimea-chronology"
+  },
+  {
+    "id": "waimea-river-stage-frequency-waimea-priors",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+    "element": "WaimeaPk - Exact + Historical + RR Prior_RSkew",
+    "plotId": "univariate.frequency",
+    "variant": "quantile_prior",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/waimea-river-stage-frequency-waimea-priors"
+  },
+  {
+    "id": "waimea-river-stage-frequency-makaweli-conditional",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+    "element": "MakaweliPk - Cond - Exact",
+    "plotId": "univariate.frequency",
+    "variant": "stationary",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/waimea-river-stage-frequency-makaweli-conditional"
+  },
+  {
+    "id": "waimea-river-stage-frequency-conditional-cdf",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+    "element": "Normal Copula - Conditional",
+    "plotId": "bivariate.distribution",
+    "variant": "scatter_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/waimea-river-stage-frequency-conditional-cdf"
+  },
+  {
+    "id": "waimea-river-stage-frequency-conditional-joint-exceedance",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+    "element": "Normal Copula - Conditional",
+    "plotId": "bivariate.distribution",
+    "variant": "joint_exceedance_cdf",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/waimea-river-stage-frequency-conditional-joint-exceedance"
+  },
+  {
+    "id": "waimea-river-stage-frequency-conditional-response",
+    "project": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/waimea-river-stage-frequency.bestfit",
+    "element": "CFA - Normal - Conditional",
+    "plotId": "coincident.frequency",
+    "variant": "linear_response",
+    "output": "examples/5-bivariate-distribution-analysis/2-coincident-frequency/images/waimea-river-stage-frequency-conditional-response"
+  },
+  {
+    "id": "synthetic-rating-curve-examples-1-control",
+    "project": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+    "element": "1 Segment Rating Curve",
+    "plotId": "rating.curve",
+    "variant": "default",
+    "output": "examples/6-rating-curve-analysis/images/synthetic-rating-curve-examples-1-control"
+  },
+  {
+    "id": "synthetic-rating-curve-examples-2-control",
+    "project": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+    "element": "2 Segment Rating Curve",
+    "plotId": "rating.curve",
+    "variant": "segmented",
+    "output": "examples/6-rating-curve-analysis/images/synthetic-rating-curve-examples-2-control"
+  },
+  {
+    "id": "synthetic-rating-curve-examples-3-control",
+    "project": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+    "element": "3 Segment Rating Curve",
+    "plotId": "rating.curve",
+    "variant": "segmented",
+    "output": "examples/6-rating-curve-analysis/images/synthetic-rating-curve-examples-3-control"
+  },
+  {
+    "id": "synthetic-rating-curve-examples-three-control-residuals",
+    "project": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+    "element": "3 Segment Rating Curve",
+    "plotId": "rating.residuals",
+    "variant": "default",
+    "output": "examples/6-rating-curve-analysis/images/synthetic-rating-curve-examples-three-control-residuals"
+  },
+  {
+    "id": "synthetic-rating-curve-examples-three-control-qq",
+    "project": "examples/6-rating-curve-analysis/synthetic-rating-curve-examples.bestfit",
+    "element": "3 Segment Rating Curve",
+    "plotId": "rating.residual_qq",
+    "variant": "default",
+    "output": "examples/6-rating-curve-analysis/images/synthetic-rating-curve-examples-three-control-qq"
+  },
+  {
+    "id": "usgs-07024175-mississippi-rating-curve-rating",
+    "project": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "plotId": "rating.curve",
+    "variant": "default",
+    "output": "examples/6-rating-curve-analysis/images/usgs-07024175-mississippi-rating-curve-rating"
+  },
+  {
+    "id": "usgs-07024175-mississippi-rating-curve-residuals",
+    "project": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "plotId": "rating.residuals",
+    "variant": "default",
+    "output": "examples/6-rating-curve-analysis/images/usgs-07024175-mississippi-rating-curve-residuals"
+  },
+  {
+    "id": "usgs-07024175-mississippi-rating-curve-residual-histogram",
+    "project": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "plotId": "rating.residual_histogram",
+    "variant": "default",
+    "output": "examples/6-rating-curve-analysis/images/usgs-07024175-mississippi-rating-curve-residual-histogram"
+  },
+  {
+    "id": "usgs-07024175-mississippi-rating-curve-residual-qq",
+    "project": "examples/6-rating-curve-analysis/usgs-07024175-mississippi-rating-curve.bestfit",
+    "element": "USGS 07024175 Rating Curve",
+    "plotId": "rating.residual_qq",
+    "variant": "default",
+    "output": "examples/6-rating-curve-analysis/images/usgs-07024175-mississippi-rating-curve-residual-qq",
+    "legendLocation": "upper left"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-01",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "Intercept",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-01",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-02",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "Intercept + Linear Trend",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-02"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-03",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "Intercept + Quadratic Trend",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-03"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-04",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "Intercept + Cubic Trend",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-04"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-05",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "AR(1)",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-05",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-06",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "AR(3)",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-06",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-07",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "MA(1)",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-07",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-08",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "MA(3)",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-08",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-09",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "ARMA(1,1)",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-09",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-10",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "ARMA(2,2)",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-10",
+    "legendLocation": "outside right"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-11",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "Intercept + Linear Trend + ARMA(1,1)",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-11"
+  },
+  {
+    "id": "synthetic-time-series-examples-model-12",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "Intercept + Linear Trend + LogTransform",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-model-12"
+  },
+  {
+    "id": "synthetic-time-series-examples-arma-residual-acf",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "ARMA(1,1)",
+    "plotId": "time_series_analysis.residual_acf",
+    "variant": "default",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-arma-residual-acf"
+  },
+  {
+    "id": "synthetic-time-series-examples-arma-residual-qq",
+    "project": "examples/7-time-series-analysis/1-synthetic-data-examples/synthetic-time-series-examples.bestfit",
+    "element": "ARMA(1,1)",
+    "plotId": "time_series_analysis.residual_qq",
+    "variant": "default",
+    "output": "examples/7-time-series-analysis/1-synthetic-data-examples/images/synthetic-time-series-examples-arma-residual-qq"
+  },
+  {
+    "id": "classic-time-series-examples-airline-validation",
+    "project": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/2-classic-time-series-examples/images/classic-time-series-examples-airline-validation"
+  },
+  {
+    "id": "classic-time-series-examples-nile-validation",
+    "project": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+    "element": "Nile River Flows - TSA",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/2-classic-time-series-examples/images/classic-time-series-examples-nile-validation"
+  },
+  {
+    "id": "classic-time-series-examples-co2-validation",
+    "project": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+    "element": "Mauna Loa - CO2",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/2-classic-time-series-examples/images/classic-time-series-examples-co2-validation"
+  },
+  {
+    "id": "classic-time-series-examples-airline-trace",
+    "project": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "plotId": "shared_diagnostics.trace",
+    "variant": "chain",
+    "output": "examples/7-time-series-analysis/2-classic-time-series-examples/images/classic-time-series-examples-airline-trace"
+  },
+  {
+    "id": "classic-time-series-examples-airline-residual-acf",
+    "project": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+    "element": "Airline Passengers - TSA",
+    "plotId": "time_series_analysis.residual_acf",
+    "variant": "default",
+    "output": "examples/7-time-series-analysis/2-classic-time-series-examples/images/classic-time-series-examples-airline-residual-acf"
+  },
+  {
+    "id": "classic-time-series-examples-co2-residuals",
+    "project": "examples/7-time-series-analysis/2-classic-time-series-examples/classic-time-series-examples.bestfit",
+    "element": "Mauna Loa - CO2",
+    "plotId": "time_series_analysis.residuals",
+    "variant": "default",
+    "output": "examples/7-time-series-analysis/2-classic-time-series-examples/images/classic-time-series-examples-co2-residuals"
+  },
+  {
+    "id": "time-series-regression-example-simple-prediction",
+    "project": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+    "element": "Simple Linear Regression",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/3-time-series-regression-example/images/time-series-regression-example-simple-prediction"
+  },
+  {
+    "id": "time-series-regression-example-multiple-prediction",
+    "project": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+    "element": "Multiple Linear Regression",
+    "plotId": "time_series_analysis.series",
+    "variant": "forecast",
+    "output": "examples/7-time-series-analysis/3-time-series-regression-example/images/time-series-regression-example-multiple-prediction"
+  },
+  {
+    "id": "time-series-regression-example-multiple-residuals",
+    "project": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+    "element": "Multiple Linear Regression",
+    "plotId": "time_series_analysis.residuals",
+    "variant": "default",
+    "output": "examples/7-time-series-analysis/3-time-series-regression-example/images/time-series-regression-example-multiple-residuals"
+  },
+  {
+    "id": "time-series-regression-example-multiple-residual-acf",
+    "project": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+    "element": "Multiple Linear Regression",
+    "plotId": "time_series_analysis.residual_acf",
+    "variant": "default",
+    "output": "examples/7-time-series-analysis/3-time-series-regression-example/images/time-series-regression-example-multiple-residual-acf"
+  },
+  {
+    "id": "time-series-regression-example-multiple-residual-qq",
+    "project": "examples/7-time-series-analysis/3-time-series-regression-example/time-series-regression-example.bestfit",
+    "element": "Multiple Linear Regression",
+    "plotId": "time_series_analysis.residual_qq",
+    "variant": "default",
+    "output": "examples/7-time-series-analysis/3-time-series-regression-example/images/time-series-regression-example-multiple-residual-qq"
+  },
+  {
+    "id": "bulletin-17c-bayesian-examples-back-creek-gmm",
+    "project": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/bulletin-17c-bayesian-examples.bestfit",
+    "element": "B17C Example #3",
+    "plotId": "b17c.frequency",
+    "variant": "mv_normal",
+    "output": "examples/4-univariate-distribution-analysis/1-univariate-analysis/3-bulletin17C-examples/images/bulletin-17c-bayesian-examples-back-creek-gmm",
+    "legacySavedFrequency": true
   }
 ]

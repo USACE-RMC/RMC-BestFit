@@ -1,109 +1,68 @@
-# usgs-07024175-mississippi-rating-curve
+# Mississippi River at New Madrid: a rating from paired measurements
 
-## Overview
+Open [usgs-07024175-mississippi-rating-curve.bestfit](usgs-07024175-mississippi-rating-curve.bestfit) and save a working copy. The example fits **one hydraulic control** to 96 field-measurement pairs at USGS 07024175. It teaches the distinction between measured data, a statistical rating and extrapolation beyond measurements.
 
-Stage-discharge rating curve for the Mississippi River at New Madrid, MO (USGS gage 07024175), fit using the piecewise power-law rating curve model with Bayesian MCMC.
+## Inspect measurement pairing and units
 
-## What's Inside
+| Input series | Meaning | Saved units | Count and dates |
+| --- | --- | --- | --- |
+| USGS 07024175 Measured Stage | USGS field-measurement gage height for the Mississippi River at New Madrid; datum-relative stage, range −5.63–41.27 ft. Negative gage height is not negative water depth. | Gage Height (ft) | 96 (2017-02-08–2026-03-19) |
+| USGS 07024175 Measured Discharge | USGS measured discharge paired with the stage measurements, range 148,000–1,440,000 cfs. These are measurements, not rating-derived continuous flow values. | Flow (cfs) | 96 (2017-02-08–2026-03-19) |
 
-### Time Series Data
+All 96 timestamps match between stage and discharge, with no duplicate timestamps or stored missing values. Measurements span 2017-02-08 16:05:08 UTC through 2026-03-19 16:02:34 UTC. Negative gage heights are relative to the station datum. Measurement quality codes, datum changes, rating shifts and filtering history remain source questions; the saved series alone does not establish them.
 
-| Element | Description |
-|---|---|
-| `USGS 07024175 Measured Stage` | Field-measured (rated) gage height for the Mississippi River at New Madrid, MO (USGS gage 07024175). |
-| `USGS 07024175 Measured Discharge` | Field-measured (rated) discharge for the Mississippi River at New Madrid, MO (USGS gage 07024175). |
+## Work through the fit
 
-### Rating Curve Analysis
+1. Select both measurement series and verify their units, source settings and timestamps.
+2. Open USGS 07024175 Rating Curve. Confirm one control; there are no second or third activation stages to interpret.
+3. Inspect the posterior-mode parameters below. The coefficient is stored in log10 space, so a negative log coefficient still corresponds to a positive multiplier.
+4. Compare residuals across stage and observation time. A single stationary relation across nine years requires hydraulic justification.
+5. Separate the measured range, −5.63–41.27 ft, from the saved prediction grid, −10.32–45.96 ft.
 
-| Element | Description |
-|---|---|
-| `USGS 07024175 Rating Curve` | Bayesian piecewise power-law rating-curve fit to the field-measured stage-discharge pairs at the Mississippi River at New Madrid, MO. |
+| Analysis | Parameter / stored space | Saved point value |
+| --- | --- | --- |
+| USGS 07024175 Rating Curve | Zero-Flow Stage (h₁) | -52.471 |
+| USGS 07024175 Rating Curve | log10 coefficient (α₁) | -0.413 |
+| USGS 07024175 Rating Curve | Exponent (β₁) | 3.328 |
+| USGS 07024175 Rating Curve | Scale (σ) | 0.023 |
 
-## Step-by-Step Walkthrough
+The inferred zero-flow stage near −52.47 ft is far below the observations and is a fitted parameter, not a surveyed zero-flow datum. The error scale is log10 discharge sigma. Default flat parameter priors and Jeffreys scale treatment remain enabled.
 
-### Opening the Project
+## Saved results
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/6-rating-curve-analysis/`.
-3. Open `usgs-07024175-mississippi-rating-curve.bestfit`.
+All fits retain DEMCzs, seed 12345, warmup 1,750, iterations 3,500, 10,000 output draws and 90% interval width. The chain/thinning settings and chosen posterior mean or mode parameter vector remain as saved. Inspect the actual prior bounds, parameter chains, autocorrelation and tail uncertainty. Scalar diagnostics describe the retained run; they do not substitute for scientific validation.
+| Saved analysis | Chains / thinning | Point parameters | DIC | Saved RMSE | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- |
+| USGS 07024175 Rating Curve | 8/40 | Mode | 2,233.321 | 30,328.582 | 1.00019 | 8,266 |
 
-### Exploring the Elements
+| Analysis | Stage (ft) | Best fit discharge (cfs) | 90% prediction limits (cfs) |
+| --- | --- | --- | --- |
+| USGS 07024175 Rating Curve | -10.32 | 98,812.152 | 89,163.094–107,222.979 |
+| USGS 07024175 Rating Curve | 18.104 | 549,275.844 | 503,670.856–600,438.657 |
+| USGS 07024175 Rating Curve | 45.96 | 1,662,011.799 | 1,513,008.617–1,812,674.396 |
 
-For each Rating Curve Analysis alternative:
+The 90% prediction limits include parameter and residual uncertainty. They do not include every possible datum, measurement, morphology or flow-regime uncertainty. This teaching fit is not evidence of adoption as an official USGS operational rating.
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Rating Curve** tab to view the fit overlaid on the measured stage / discharge pairs.
-3. Adjust **MinStage**, **MaxStage**, and **StageBins** in the Properties panel to set the prediction range.
-4. Inspect breakpoints (h2, h3) for multi-segment fits.
+## Read the figures
 
-## Analysis Settings
+![Saved New Madrid rating view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.](images/usgs-07024175-mississippi-rating-curve-rating.png)
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+*Saved New Madrid rating view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.* [SVG](images/usgs-07024175-mississippi-rating-curve-rating.svg) · [Plot data](images/usgs-07024175-mississippi-rating-curve-rating.plotspec.json.gz)
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+![Saved New Madrid residuals view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.](images/usgs-07024175-mississippi-rating-curve-residuals.png)
 
-## Expected Results
+*Saved New Madrid residuals view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.* [SVG](images/usgs-07024175-mississippi-rating-curve-residuals.svg) · [Plot data](images/usgs-07024175-mississippi-rating-curve-residuals.plotspec.json.gz)
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+![Saved New Madrid residual histogram view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.](images/usgs-07024175-mississippi-rating-curve-residual-histogram.png)
 
-### Parameter Estimates
+*Saved New Madrid residual histogram view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.* [SVG](images/usgs-07024175-mississippi-rating-curve-residual-histogram.svg) · [Plot data](images/usgs-07024175-mississippi-rating-curve-residual-histogram.plotspec.json.gz)
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+![Saved New Madrid residual Q–Q view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.](images/usgs-07024175-mississippi-rating-curve-residual-qq.png)
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+*Saved New Madrid residual Q–Q view. Measured stages span −5.63–41.27 ft; the rating grid extends outside that range.* [SVG](images/usgs-07024175-mississippi-rating-curve-residual-qq.svg) · [Plot data](images/usgs-07024175-mississippi-rating-curve-residual-qq.plotspec.json.gz)
 
-### Frequency / Quantile Table
+## Reproduce and check
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+The figures render saved BestFit desktop coordinates through the shared Python plotting package. No data, parameters, diagnostics or predictions were replaced. Follow the [figure-generation instructions](../README.md#reproducing-the-figures) with `--only usgs-07024175-mississippi-rating-curve`. Each figure links an SVG and the exact display inputs in a compressed PlotSpec.
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
-
-### Plots
-
-![Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.](images/mississippi-rating-curve.png)
-*Figure: Stage-discharge rating curve fit, with measured pairs and Bayesian credible band.*
-
-![Residuals of measured discharge minus rating-curve estimate, plotted against stage.](images/mississippi-residuals.png)
-*Figure: Residuals of measured discharge minus rating-curve estimate, plotted against stage.*
-
-![Markov-chain traces for the rating-curve parameters.](images/mississippi-trace.png)
-*Figure: Markov-chain traces for the rating-curve parameters.*
-
-### MCMC Diagnostics
-
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
-
-## Next Steps
-
-- Use the Bayesian credible intervals to bound the rating curve at extreme stages.
-- Apply the rating curve to a stage time series (Time Series Data element) to derive a discharge time series.
-- Refit with **more segments** if structural breaks in the data are visible in the residual plot.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+Explain the input units, the model actually stored, the observations used for fitting, and the assumptions behind extrapolation and uncertainty before reusing an example.

@@ -4,6 +4,11 @@ The examples assume the API setup in `setup.md` and commands executed from the
 installed skill directory. Use absolute script paths when working elsewhere.
 `run_frequency.py` speaks ordinary local HTTP; MCP is optional.
 
+Read the matching [worked example](examples.md) before configuring an unfamiliar
+input or estimator. Its tutorial establishes the expected observation audit,
+diagnostics and interpretation; its saved numerical choices are not defaults for
+a new watershed.
+
 For supplied annual peaks, write a UTF-8 input request JSON with explicit annual
 indexes under the declared convention. Date-only API inputs use calendar years.
 Preserve all supplied values, including zeros; confirm the data's meaning
@@ -57,7 +62,7 @@ omitting `inputDataId` (linked automatically). For example:
 ```
 
 Omitting options preserves the 25 model-default ordinates and the default
-distribution/uncertainty/simulation settings. B17C uses GMM/EMA with default
+distribution/uncertainty/simulation settings. BestFit B17C uses GMM with default
 `linkedMultivariateNormal` uncertainty. Bayesian univariate analysis uses the
 existing automatic MCMC configuration. For advanced priors, historical/interval
 records, measurement error, or uncertainty choices, first read

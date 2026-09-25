@@ -6,7 +6,7 @@ from numbers import Real
 
 
 SERIES_KINDS = {"line", "scatter", "band", "area", "bars", "heatmap", "contour"}
-INTERVAL_KINDS = {"confidence", "credible", "prediction", "measurement", "prior"}
+INTERVAL_KINDS = {"confidence", "credible", "prediction", "measurement", "prior", "penalty"}
 SCALES = {"linear", "log", "normal_probability", "date"}
 
 
@@ -56,7 +56,7 @@ def validate_spec(spec):
         raise ValueError("PlotSpec must be an object")
     if spec.get("version") != 1 or isinstance(spec.get("version"), bool):
         raise ValueError("Unsupported PlotSpec version")
-    if not isinstance(spec.get("legendLocation", "best"), str) or spec.get("legendLocation", "best") not in {"best", "upper left", "upper right", "lower left", "lower right"}:
+    if not isinstance(spec.get("legendLocation", "best"), str) or spec.get("legendLocation", "best") not in {"best", "upper left", "upper right", "lower left", "lower right", "outside right"}:
         raise ValueError("legendLocation must name a supported legend position")
     for key in ("plotId", "variant", "title"):
         if not isinstance(spec.get(key), str) or not spec[key].strip():

@@ -1,123 +1,66 @@
-# sinnemahoning-move3-b17c
+# Sinnemahoning Creek: GMM with an uncertain MOVE.3 extension
 
-## Overview
+Open [sinnemahoning-move3-b17c.bestfit](sinnemahoning-move3-b17c.bestfit) and save a working copy. The three B17C-prefixed alternatives isolate how the supplied record extension is represented. The same project also retains three Bayesian alternatives without that prefix; their posterior results are separate and unchanged. Compare them with the [Bayesian companion](../../1-univariate-analysis/4-measurement-errors/sinnemahoning-move3-bayesian.md) only after checking the estimator and uncertainty interpretation.
 
-B17C-method flood-frequency analysis for Sinnemahoning Creek (USGS gage 01543500) demonstrating record extension via MOVE.3 regression. Companion to sinnemahoning-move3-bayesian.
+The computed curve comes from BestFit's Generalized Method of Moments (GMM) LP3 fit. Uncertainty is represented by a frequentist parameter ensemble or bootstrap. These are **confidence limits**, not Bayesian credible limits. Shared storage names such as BayesianAnalysis or ModeCurve do not change that interpretation. Some saved GMM reports also retain the legacy label “Credible Interval”; for these frequentist results, read it as the stated confidence level. This tutorial does not claim that BestFit ran the USGS Expected Moments Algorithm (EMA).
 
-## What's Inside
+Inspect GMM optimizer status, convergence, the objective and uncertainty diagnostics before interpreting a curve. R-hat, chain mixing and posterior ESS are not acceptance measures for these GMM ensembles. An empty or NaN diagnostic means it is unavailable or inapplicable, not zero.
+## Inspect the extension
 
-### Input Data
+| Input element | Meaning | Exact rows and index span | Other saved input rows |
+| --- | --- | --- | --- |
+| Sinnemahoning - MOVE.3 - No Errors | 104 exact-valued peaks during 1914–2017, cfs; the 25 MOVE.3 reconstructed years 1914–1938 are treated as exact, not direct measurements. | 104 (1914–2017) | Uncertain: 0; intervals: 0; windows: 0; low flags: 0. |
+| Sinnemahoning - MOVE.3 - With Errors | 79 systematic peaks plus 25 LogNormal uncertain observations for the 1914–1938 MOVE.3 extension, cfs. Retains supplied log10 sigma 0.074; donor/regression-error dependence provenance remains to be established. | 79 (1939–2017) | Uncertain: 25; intervals: 0; windows: 0; low flags: 0. |
+| Sinnemahoning - No Extension | Sinnemahoning Creek systematic annual peaks: 79 exact observations during 1939–2017, cfs. | 79 (1939–2017) | Uncertain: 0; intervals: 0; windows: 0; low flags: 0. |
 
-| Element | Description |
-|---|---|
-| `Sinnemahoning - MOVE.3 - No Errors` | The years 1914-1938 were derived from MOVE.3 record extension. Typically, errors from the regression are ignored. |
-| `Sinnemahoning - MOVE.3 - With Errors` | The years 1914-1938 were derived from MOVE.3 record extension. Errors from the regression are incorporated using uncertain data. |
-| `Sinnemahoning - No Extension` | Sinnemahoning Creek peak-flow record with no MOVE.3 extension applied (systematic record only). |
+The 1914–1938 extension uses 25 year-specific LogNormal distributions with common sigma 0.074 in log10 space. This is not 0.074 cfs or a generic 7.4% error. The project preserves these distributions, but does not provide enough evidence to reconstruct the donor-gage regression or its cross-year error dependence. The original MOVE.3 calculation/report remains a required study reference.
 
-### Univariate Distribution
+## Work through the example
 
-| Element | Description |
-|---|---|
-| `LPIII - No Extension` | Bayesian LP-III fit on the systematic record only (no MOVE.3 extension). |
-| `LPIII - No Errors` | Bayesian LP-III fit on the MOVE.3-extended record, ignoring the regression measurement errors. |
-| `LPIII - With Errors` | Bayesian LP-III fit on the MOVE.3-extended record with regression measurement errors propagated as uncertain data. |
+1. Inspect Sinnemahoning - No Extension and its 79 measured-period peaks.
+2. Compare the No Errors and With Errors inputs. Identify the 25 reconstructed years in Exact Data versus Uncertain Data.
+3. Open the three B17C analyses and read their GMM reports. All use linked-MVN uncertainty and a 90% confidence interval.
+4. Compare the computed quantile at the same AEP. Then compare interval width and shape without assuming a particular direction of change.
+5. Review provenance and dependence before accepting the extension. Marginal error distributions do not by themselves represent uncertainty shared through a common donor gage or regression model.
 
-### Bulletin 17C
+Current BestFit GMM integrates the moments and covariance contributed by uncertain observations. Do not discard the uncertain series or apply the obsolete limitation that B17C analyses ignore it. This does not establish equivalence with an external EMA treatment.
 
-| Element | Description |
-|---|---|
-| `B17C - LPIII - No Extension` | B17C fit on the systematic record only (no MOVE.3 extension). |
-| `B17C - LPIII - No Errors` | B17C fit on the MOVE.3-extended record, ignoring the regression measurement errors. |
-| `B17C - LPIII - With Errors` | B17C fit on the MOVE.3-extended record with regression measurement errors propagated as uncertain data. |
+## Saved results
 
-## Step-by-Step Walkthrough
+| Analysis | Uncertainty method | Draws | Saved optimizer status | 1% AEP computed | 90% confidence limits |
+| --- | --- | --- | --- | --- | --- |
+| B17C - LPIII - No Extension | LinkedMultivariateNormal | 10000 | Success | 41,820.971 | 33,375.658–60,873.539 |
+| B17C - LPIII - No Errors | LinkedMultivariateNormal | 10000 | Success | 40,221.255 | 33,284.916–54,271.765 |
+| B17C - LPIII - With Errors | LinkedMultivariateNormal | 10000 | Success | 40,862.386 | 33,336.625–56,521.083 |
 
-### Opening the Project
+Magnitudes are cfs. All three parent fits report Success and convergence within tolerance, and retain seed 12345 and 10,000 uncertainty draws. Settings and results are preserved; this tutorial does not recalculate the extension or adjust the model.
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/4-univariate-distribution-analysis/2-bulletin-17C-analysis/3-measurement-errors/`.
-3. Open `sinnemahoning-move3-b17c.bestfit`.
+## Read the figures
 
-### Exploring the Elements
+![Exact systematic peaks and uncertain reconstructed years in the GMM input.](images/sinnemahoning-move3-b17c-uncertain-chronology.png)
 
-For each B17C alternative:
+*Exact systematic peaks and uncertain reconstructed years in the GMM input.* [SVG](images/sinnemahoning-move3-b17c-uncertain-chronology.svg) · [Plot data](images/sinnemahoning-move3-b17c-uncertain-chronology.plotspec.json.gz)
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Frequency** tab — the central LP-III curve plus the chosen confidence intervals are shown.
-3. Switch the confidence-interval type in the Properties panel between **MVN** and **BCB** (Bias-Corrected Bootstrap) to compare.
-4. Use the **Information Expansion** Properties pane to add or remove historical and paleoflood records.
+![B17C - LPIII - No Extension: computed GMM curve and linked-MVN confidence band.](images/sinnemahoning-move3-b17c-no-extension.png)
 
-## Analysis Settings
+*B17C - LPIII - No Extension: computed GMM curve and linked-MVN confidence band.* [SVG](images/sinnemahoning-move3-b17c-no-extension.svg) · [Plot data](images/sinnemahoning-move3-b17c-no-extension.plotspec.json.gz)
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+![B17C - LPIII - No Errors: computed GMM curve and linked-MVN confidence band.](images/sinnemahoning-move3-b17c-no-errors.png)
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+*B17C - LPIII - No Errors: computed GMM curve and linked-MVN confidence band.* [SVG](images/sinnemahoning-move3-b17c-no-errors.svg) · [Plot data](images/sinnemahoning-move3-b17c-no-errors.plotspec.json.gz)
 
-## Expected Results
+![B17C - LPIII - With Errors: computed GMM curve and linked-MVN confidence band.](images/sinnemahoning-move3-b17c-with-errors.png)
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+*B17C - LPIII - With Errors: computed GMM curve and linked-MVN confidence band.* [SVG](images/sinnemahoning-move3-b17c-with-errors.svg) · [Plot data](images/sinnemahoning-move3-b17c-with-errors.plotspec.json.gz)
 
-### Parameter Estimates
+## Interpretation and checks
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+An error-aware fit can change both the central curve and its uncertainty. The credible bands in the Bayesian companion and confidence bands here answer different statistical questions. Neither an attractive curve nor a successful parent fit establishes the validity of the supplied extension assumptions.
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+Explain why 104 rows do not mean 104 directly measured floods, which uncertainty is represented by each LogNormal input, and which dependence questions still require the MOVE.3 study record.
 
-### Frequency / Quantile Table
+## Reading and reproducing the figures
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+AEP is annual exceedance probability; 0.01 means 1% per year under the model. Plotting positions summarize observations and are not fitted probabilities. A 90% confidence band describes uncertainty in a flood quantile, not the range containing 90% of future floods.
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
-
-### Plots
-
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](images/sinnemahoning-b17c-frequency.png)
-*Figure: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
-
-![Posterior kernel density for each parameter.](images/sinnemahoning-b17c-kernel-density.png)
-*Figure: Posterior kernel density for each parameter.*
-
-![Markov-chain traces for each parameter.](images/sinnemahoning-b17c-trace.png)
-*Figure: Markov-chain traces for each parameter.*
-
-![Autocorrelation function of the chains, used to estimate effective sample size.](images/sinnemahoning-b17c-autocorrelation.png)
-*Figure: Autocorrelation function of the chains, used to estimate effective sample size.*
-
-### MCMC Diagnostics
-
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
-
-## Next Steps
-
-- Compare MVN-quantile and bias-corrected bootstrap (BCB) confidence intervals on the same dataset.
-- Re-run on the same input data using the **Bayesian Univariate** workflow and compare AEPs and confidence intervals.
-- Add a **regional skew** weighting if a regional skew estimate is available.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+The shared Python renderer draws coordinates from the saved project's desktop plotting routines. Follow the [figure-generation instructions](../../../README.md#reproducing-the-figures) with the tutorial filename stem as `--only`. No original observations, fitted parameters or uncertainty draws are replaced. The figures retain source hashes and exact display coordinates in their compressed PlotSpec files.

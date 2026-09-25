@@ -1,71 +1,25 @@
-# Bivariate Distribution Analysis Examples
+# Bivariate and coincident frequency analysis
 
-This chapter covers two-variable joint analyses using **copulas**, with two workflows:
+A marginal distribution describes one variable. A copula describes dependence between two variables after their marginal behavior has been specified. Coincident frequency analysis combines that joint model with a response surface to estimate a response's exceedance probability.
 
-- **Bivariate Distribution Fitting** — fit a copula to paired data after fitting marginals separately, to estimate joint AEPs (AND / OR / Kendall return periods).
-- **Coincident Frequency Analysis (CFA)** — derive a univariate response distribution from the joint, e.g., the sum, difference, or maximum of two correlated processes.
+## Choose an example
 
-RMC-BestFit supports six copula families: **AMH, Clayton, Frank, Gumbel, Joe, and Normal (Gaussian)**.
-
-## Sub-Chapters
-
-| Sub-Chapter | Workflow | What It Demonstrates |
+| Tutorial | What you will learn | Important distinction |
 |---|---|---|
-| [1-bivariate-distributions](1-bivariate-distributions/) | Bivariate fitting | Fitting all six copula families to synthetic paired data |
-| [2-coincident-frequency](2-coincident-frequency/) | CFA | Deriving a univariate response from a bivariate fit |
+| [Six copula families](1-bivariate-distributions/bivariate-distribution-examples.md) | Inspect paired observations, simulation, log-density contours and joint exceedance contours. | Each family uses a separate synthetic dataset; information criteria do not rank families across those different samples. |
+| [Sum of two Normals](2-coincident-frequency/sum-two-normals.md) | Follow margins, dependence and an X + Y response surface through three cases. | Generating correlation and fitted correlation differ; saved response bands use 95% in the near-zero case and 90% in the other two. |
+| [Waimea response frequency](2-coincident-frequency/waimea-river-stage-frequency.md) | Inspect an existing study with marginal alternatives, copulas and a response surface. | Hydraulic provenance and response units remain unresolved; the filename alone does not define stage or discharge. |
 
-## Examples
+## Follow the dependencies
 
-| Example | Sub-Chapter | Description |
-|---|---|---|
-| [Bivariate Distribution Examples](1-bivariate-distributions/bivariate-distribution-examples.md) | 1- | Fits all six copula families on six synthetic paired datasets |
-| [Sum of Two Normals](2-coincident-frequency/sum-two-normals.md) | 2- | CFA verification using the sum of two correlated normals (closed-form analytical reference for rho = -0.5, 0, +0.5) |
-| [Waimea River Stage Frequency](2-coincident-frequency/waimea-river-stage-frequency.md) | 2- | Coincident peak-flow analysis for the Waimea and Makaweli Rivers, Kauai, HI |
+1. Open the saved project and retain a separate working copy.
+2. Inspect the two input records: units, timestamps/indexes, low-outlier flags and common observations matter. Pairing by index can use fewer observations than either marginal fit.
+3. Review the selected marginal fits under **Univariate Distribution Analysis**. Confirm their observations, priors and diagnostics.
+4. Open the named copula under **Bivariate Distribution Analysis**. Compare observed pairs, simulations and the requested joint probability. “Both exceed” and “either exceeds” answer different questions.
+5. For a coincident analysis, inspect the full response grid, its units, range and bins. A numerical response surface needs a physical interpretation before its output can support a study.
 
-## Workflow Overview
+Contour labels in the density view are natural logarithms of joint density, while joint-exceedance contours are probabilities. CDF-axis views change the coordinates used to draw the same model; check the tutorial before interpreting a label. Coincident plots place response on the vertical axis and AEP on the horizontal axis, with uncertainty bounds in probability at fixed response.
 
-```
-        +---------------------+
-        |  Input Data X       |  -->  Univariate fit X (margin)
-        +---------------------+                                       \
-                                                                       \
-        +---------------------+                                       --->  Bivariate copula fit  -->  Coincident Frequency Analysis (optional)
-        |  Input Data Y       |  -->  Univariate fit Y (margin)       /
-        +---------------------+                                       /
-```
+A chosen copula is a modeling assumption requiring evidence about the relevant dependence and tails. None of these examples establishes a universally preferred family. Read the [author issue log](../../docs/example-issues-for-haden.md) for unresolved source questions.
 
-Each Bivariate Distribution Analysis element references two existing Univariate Distribution alternatives (marginal X and marginal Y). Each Coincident Frequency Analysis element references one Bivariate Distribution alternative.
-
-## How to Use These Examples
-
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to a sub-chapter folder.
-3. Open the `.bestfit` file.
-4. Expand the **Univariate Distribution** collection first to see the marginal fits.
-5. Expand the **Bivariate Distribution** collection to see the copula fits.
-6. (Sub-chapter 2 only) Expand the **Coincident Frequency** collection to see the derived univariate response.
-7. Open the matching `.md` tutorial for a step-by-step guide.
-
-## Choosing a Copula Family
-
-| Family | Tail Behavior | Typical Hydrologic Use |
-|---|---|---|
-| **Normal (Gaussian)** | No tail dependence | Default when correlation is moderate and tails behave normally |
-| **Gumbel** | Upper tail dependence | Concurrent extreme floods, tropical cyclone wind / rain |
-| **Clayton** | Lower tail dependence | Concurrent low-flow / drought events |
-| **Frank** | Symmetric, no tail dependence | Mid-range correlation without heavy joint tails |
-| **Joe** | Strong upper tail dependence | Rarely used; similar niche to Gumbel |
-| **AMH** | Limited dependence range | Pedagogical / verification; low-correlation cases |
-
-Compare candidates by AIC / BIC; Gumbel and Frank are the typical winners for hydrologic peaks.
-
-## Screenshot Images
-
-Capture screenshots into `images/` subfolders next to each example. Naming convention: `<example-slug>-<view-name>.png` (e.g., `waimea-joint-density.png`, `sum-two-normals-marginal-x.png`).
-
-## Next Steps
-
-After bivariate / CFA analysis:
-
-- **Rating Curve:** [examples/6-rating-curve-analysis/](../6-rating-curve-analysis/) — pair a CFA-derived stage with a rating curve for derived discharge frequency.
-- **Time Series Analysis:** [examples/7-time-series-analysis/](../7-time-series-analysis/) — model the joint temporal structure of two correlated time series.
+Figures use the maintained Python renderer. See [reproduction instructions](../README.md#reproducing-the-figures) or return to the [example index](../README.md).

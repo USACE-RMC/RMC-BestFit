@@ -19,7 +19,7 @@ main{max-width:1000px;margin:auto;padding:42px 42px 70px;background:white}
 h1{font-size:34px;line-height:1.2}h2{font-size:25px;margin-top:36px}h3{font-size:21px}
 a{color:#165786}img{display:block;width:100%;height:auto;margin:24px auto 10px}
 table{border-collapse:collapse;font-size:14px;width:100%;margin:22px 0}
-td,th{border:1px solid #cad2d9;padding:9px;text-align:left;overflow-wrap:anywhere}
+td,th{border:1px solid #cad2d9;padding:9px;text-align:left;overflow-wrap:normal}
 th{background:#edf2f6}pre{padding:16px;background:#f2f5f7;overflow:auto;font-size:14px}
 code{font-size:.88em}li{margin-bottom:12px}blockquote{border-left:4px solid #547c98;padding-left:18px}
 p{overflow-wrap:anywhere}nav{font-size:14px;border-bottom:1px solid #cad2d9;padding-bottom:15px}
@@ -32,14 +32,28 @@ def slug(text):
     return re.sub(r"[^\w\- ]", "", text.lower()).replace(" ", "-")
 
 
+def headings(tokens):
+    """Assign unique heading IDs and return the anchors used by this preview."""
+    anchors, duplicates = set(), {}
+    for i, token in enumerate(tokens):
+        if token.type != "heading_open":
+            continue
+        base = slug(tokens[i + 1].content)
+        occurrence = duplicates.get(base, 0)
+        duplicates[base] = occurrence + 1
+        anchor = f"{base}-{occurrence}" if occurrence else base
+        token.attrSet("id", anchor)
+        anchors.add(anchor)
+    return anchors
+
+
 def render(path):
     """Render one page and return local-link failures and figure count."""
     parser = MarkdownIt("commonmark", {"html": True}).enable("table")
     tokens = parser.parse(path.read_text(encoding="utf-8"))
+    anchors = headings(tokens)
     failures, count = [], 0
-    for i, token in enumerate(tokens):
-        if token.type == "heading_open":
-            token.attrSet("id", slug(tokens[i + 1].content))
+    for token in tokens:
         for child in token.children or []:
             key = "src" if child.type == "image" else "href" if child.type == "link_open" else None
             if key is None:
@@ -48,13 +62,19 @@ def render(path):
                 count += 1
             value = child.attrGet(key)
             parts = urlsplit(value)
-            if parts.scheme or parts.netloc or not parts.path:
+            if parts.scheme or parts.netloc:
                 continue
-            target = (path.parent / unquote(parts.path)).resolve()
+            target = (path.parent / unquote(parts.path)).resolve() if parts.path else path.resolve()
             if not target.is_relative_to(ROOT) or not target.exists():
                 failures.append(value)
                 continue
-            if target.suffix == ".md":
+            if parts.fragment and target.suffix == ".md":
+                target_anchors = anchors if target == path.resolve() else headings(parser.parse(target.read_text(encoding="utf-8")))
+                if unquote(parts.fragment) not in target_anchors:
+                    failures.append(value)
+            # Only examples are built here. Keep other Markdown links pointing
+            # at their actual source files instead of nonexistent HTML previews.
+            if target.suffix == ".md" and target.is_relative_to(ROOT / "examples"):
                 target = OUTPUT / target.relative_to(ROOT).with_suffix(".html")
             child.attrSet(key, "/" + target.relative_to(ROOT).as_posix() + ("#" + parts.fragment if parts.fragment else ""))
     body = parser.renderer.render(tokens, parser.options, {})

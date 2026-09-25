@@ -1,62 +1,24 @@
-# Rating Curve Analysis Examples
+# Rating curve analysis
 
-This chapter demonstrates Bayesian fitting of stage-discharge rating curves using a piecewise power-law model:
+A rating curve relates measured stage to discharge at a location. These projects use Bayesian estimation of an additive hydraulic-control model. For each active control, discharge contributes alpha times (stage minus activation stage) raised to beta; the active contributions add. A new control does not replace the earlier controls.
 
-$$Q = \alpha (h - \xi)^\beta$$
+## Choose an example
 
-where Q is discharge, h is stage, $\xi$ is the gauge zero offset, and $\alpha$, $\beta$ are segment-specific power-law parameters. Multi-segment models extend this with breakpoints $h_2$, $h_3$ between segments.
-
-## Examples
-
-| Example | Site | Description |
+| Tutorial | Data | What to inspect |
 |---|---|---|
-| [Synthetic Rating Curve Examples](synthetic-rating-curve-examples.md) | Synthetic | One-, two-, and three-segment fits on synthetic data with known ground truth — verifies the rating-curve solver |
-| [Susquehanna River at Harrisburg, PA](usgs-01570500-susquehanna-rating-curve.md) | USGS 01570500 | Rating curve fit to field-measured stage-discharge pairs |
-| [Mississippi River at New Madrid, MO](usgs-07024175-mississippi-rating-curve.md) | USGS 07024175 | Rating curve fit to field-measured stage-discharge pairs |
-| [MF Willamette River](usgs-14145000-willamette-rating-curve.md) | USGS 14145000 | Rating curve fit to field-measured stage-discharge pairs |
+| [Synthetic rating curves](synthetic-rating-curve-examples.md) | One stage series and three distinct generated discharge series, 300 observations each. | One, two and three additive controls, stored log10 coefficients, parameter uncertainty and weak third-control precision. |
+| [Mississippi River at New Madrid](usgs-07024175-mississippi-rating-curve.md) | 96 paired stage/discharge measurements at USGS 07024175. | A saved single-control fit, extrapolation beyond measurements and predictive uncertainty. |
 
-## Parameter Layout
+The field example is a teaching fit, not an official USGS rating or an adopted hydraulic relationship. Confirm stage datum, measurement quality, channel changes and applicability before using it in another study.
 
-Rating-curve parameter vectors are arranged as:
+## Read the model and results
 
-| Segments | Parameter Vector |
-|---|---|
-| 1 | [$\xi$, log10($\alpha$), $\beta$, $\sigma$] |
-| 2 | [$\xi$, log10($\alpha_1$), $\beta_1$, $h_2$, log10($\alpha_2$), $\beta_2$, $\sigma$] |
-| 3 | [$\xi$, log10($\alpha_1$), $\beta_1$, $h_2$, log10($\alpha_2$), $\beta_2$, $h_3$, log10($\alpha_3$), $\beta_3$, $\sigma$] |
+1. Open the linked `.bestfit` project and save a separate working copy.
+2. Under **Time Series Data**, check stage/discharge units and matching timestamps. Generic series labels do not supersede the documented units.
+3. Under **Rating Curve Analysis**, select the named alternative. Read each activation stage, stored log10(alpha), exponent and error scale. Sigma describes residual variability in log10 discharge space.
+4. Inspect parameter chains and uncertainty, then the rating curve and residual diagnostics. Curves that look similar can arise from poorly identified parameter combinations.
+5. Compare the prediction grid with the observed stage range. Values beyond that range are extrapolations. Prediction bands include residual variation as well as parameter uncertainty.
 
-The error term $\sigma$ is the standard deviation of log-discharge (log-normal residual model).
+The plots follow the desktop orientation: discharge is horizontal and stage is vertical. The Python legend identifies prediction intervals explicitly; saved result cells retain their original field names. No estimator was rerun to produce these figures.
 
-## How to Use These Examples
-
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to this folder.
-3. Open the `.bestfit` file.
-4. Expand **Time Series Data** to see the measured stage and discharge series.
-5. Expand **Rating Curve Analysis** to see the fitted rating curve(s).
-6. Click an analysis to view the **Rating Curve** plot and **Properties** pane.
-7. Open the matching `.md` tutorial for a step-by-step guide.
-
-## Required Data
-
-Each Rating Curve Analysis element needs **two paired Time Series Data elements** of the **MeasuredStage** and **MeasuredDischarge** entry methods (or any time series with synchronized timestamps). The user selects the two time series in the Properties panel of the analysis.
-
-## Output
-
-A fitted rating curve produces:
-
-- **Posterior parameter samples** for $\xi$, $\alpha_i$, $\beta_i$, $h_i$, $\sigma$.
-- **Posterior predictive bands** at user-selected stage ordinates (controlled via `MinStage`, `MaxStage`, `StageBins` in the Properties panel).
-- **Application output**: feeding a stage Time Series Data element through the fitted rating curve produces a discharge time series with credible bands.
-
-## Screenshot Images
-
-Capture screenshots into an `images/` subfolder next to each example. Naming convention: `<example-slug>-<view-name>.png` (e.g., `susquehanna-rating-curve.png`, `synthetic-rc-residuals.png`).
-
-## Next Steps
-
-After fitting a rating curve:
-
-- Apply it to a **continuous stage time series** to derive a continuous discharge time series.
-- Use the derived discharge series in [examples/2-input-data/](../2-input-data/) to extract a flood-frequency sample.
-- Pair upstream and downstream rating curves with [examples/5-bivariate-distribution-analysis/](../5-bivariate-distribution-analysis/) for joint reach-scale analyses.
+See the [author issue log](../../docs/example-issues-for-haden.md), [figure reproduction instructions](../README.md#reproducing-the-figures) and [input-data chapter](../2-input-data/README.md). Converting a continuous stage record into discharge requires a separately justified applicable rating; these examples do not perform that conversion automatically.

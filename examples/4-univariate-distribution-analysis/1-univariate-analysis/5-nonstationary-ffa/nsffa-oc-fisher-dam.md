@@ -1,121 +1,89 @@
-# nsffa-oc-fisher-dam
+# OC Fisher Dam: trend assumptions and quantile priors
 
-## Overview
+Open [nsffa-oc-fisher-dam.bestfit](nsffa-oc-fisher-dam.bestfit) and save a working copy. Five saved LP3 fits compare a stationary model with constant, linear, step and sinusoidal mean-of-log-flow trends. The example also shows why prior differences and incomplete outputs must be checked before interpreting a comparison.
 
-Nonstationary flood-frequency analysis (NSFFA) for inflows to OC Fisher Dam, Texas. Compares constant, linear, step, and sinusoidal trend functions on the LP-III parameters and combines them via Bayesian model averaging.
+## Inspect the evidence
 
-## What's Inside
+| Input element | Meaning | Exact rows and index span | Other saved input rows |
+| --- | --- | --- | --- |
+| OC Fisher Inflows | OC Fisher inflow record in m³/s: 106 exact annual values, 1916–2021, plus a 1,150 m³/s threshold during 1853–1915 with 62 nonexceedances and one additional undated exceedance. Inflow duration and study/prior provenance need confirmation. | 106 (1916–2021) | Uncertain: 0; intervals: 0; windows: 1; low flags: 0. |
 
-### Input Data
+The historical window has one aggregate exceedance whose year is not supplied. Do not invent a dated historical flood or add it to the count twice. The accompanying README mentions an ANCOLD approach but does not identify a complete citation. The exact study/report, inflow duration, threshold evidence and quantile-prior derivation remain required references.
 
-| Element | Description |
-|---|---|
-| `OC Fisher Inflows` | Annual peak inflow series to OC Fisher Dam, Texas. |
+## Work through the alternatives
 
-### Univariate Distribution
+1. Inspect OC Fisher Inflows, including the historical threshold and its below/above counts.
+2. Open SFFA and inspect its quantile priors. Then open NSFFA - Constant and compare those priors before comparing curves: these are not otherwise identical cases.
+3. Inspect the mean-of-log-flow trends in the four NSFFA analyses. The standard deviation and skew of log flow remain constant.
+4. Read each conditional frequency plot at its saved evaluation index, **2021**. SFFA is stationary and has no time conditioning.
+5. Inspect the sinusoidal trace and all parameter diagnostics. Its saved frequency coefficient is about 0.0064835 cycles/year, a period of roughly 154 years. It is not an annual seasonal cycle.
+6. Inspect the configured model-average components, but do not expect a saved composite curve: **its AnalysisResults cell is empty**. The individual fits below remain available.
 
-| Element | Description |
-|---|---|
-| `SFFA` | Stationary frequency analysis (LP-III) — baseline for comparison with the non-stationary alternatives. |
-| `NSFFA - Constant` | Non-stationary fit with a constant trend (functionally equivalent to SFFA, kept for explicit comparison). |
-| `NSFFA - Linear Trend` | Non-stationary fit with a linear trend on the location parameter. |
-| `NSFFA - Step Function` | Non-stationary fit with a step-change on the location parameter. |
-| `NSFFA - Sinusoidal Trend` | Non-stationary fit with a sinusoidal (annual cycle) trend on the location parameter. |
+| Alternative | Parameter trend types in model order | Trend start index | Evaluation index |
+| --- | --- | --- | --- |
+| SFFA | Constant / Constant / Constant | 1853 | 0 |
+| NSFFA - Constant | Constant / Constant / Constant | 1853 | 2021 |
+| NSFFA - Linear Trend | Linear / Constant / Constant | 1853 | 2021 |
+| NSFFA - Step Function | StepFunction / Constant / Constant | 1853 | 2021 |
+| NSFFA - Sinusoidal Trend | Sinusoidal / Constant / Constant | 1853 | 2021 |
 
-### Composite Distribution
+## Quantile-prior assumptions
 
-| Element | Description |
-|---|---|
-| `Bayesian Model Average` | Bayesian model average over the five NSFFA alternatives, weighted by DIC / WAIC. |
+All five fits enable LnNormal priors at the same AEPs. These parameters are the prior distribution's natural-space mean and standard deviation in m³/s, not log-space parameters.
 
-## Step-by-Step Walkthrough
+| AEP | SFFA prior mean | NSFFA prior mean | Prior SD for both |
+| --- | --- | --- | --- |
+| 0.1 | 275 | 261 | 164 |
+| 0.01 | 1014 | 963 | 550 |
+| 0.001 | 2330 | 2214 | 1252 |
 
-### Opening the Project
+The source of the prior information, its dependence across quantiles and the reason for the two sets of means must be justified independently. Do not attribute the entire SFFA/NSFFA difference to trend structure.
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/4-univariate-distribution-analysis/1-univariate-analysis/5-nonstationary-ffa/`.
-3. Open `nsffa-oc-fisher-dam.bestfit`.
+## Saved individual results
 
-### Exploring the Elements
+All listed Bayesian fits retain DEMCzs, seed 12345, posterior-mean point parameters and 90% credible intervals. The table shows the saved chain count, thinning interval and output length. Draw count is not effective sample size (ESS). Read warmup, iteration settings and every parameter prior in the saved properties before copying a model.
 
-For each NSFFA alternative:
+R-hat near one and adequate ESS are useful screening evidence, not proof of convergence or model adequacy. Inspect every parameter's trace and autocorrelation, then check the stability of the tail quantities needed for the study. No saved results were rerun for these figures.
+| Saved alternative | Chains / thinning / draws | DIC | 1% AEP point | 90% credible limits | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- |
+| SFFA | 6/30/10000 | 1,051.796 | 944.552 | 624.787–1,408.868 | 1.00020 | 9,545 |
+| NSFFA - Constant | 6/30/10000 | 1,051.838 | 933.205 | 619.449–1,396.259 | 1.00050 | 9,373 |
+| NSFFA - Linear Trend | 8/40/10000 | 1,034.034 | 401.6 | 209.852–747.362 | 1.00032 | 9,796 |
+| NSFFA - Step Function | 10/50/10000 | 1,029.198 | 426.637 | 235.543–767.055 | 1.00026 | 5,935 |
+| NSFFA - Sinusoidal Trend | 12/60/10000 | 1,022.595 | 286.469 | 240.879–879.679 | 1.00426 | 553 |
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Frequency** tab. The displayed curve is conditional on the time index in the **Properties** panel — change it to see how the curve evolves.
-3. Open the **Chronology** tab to view the time-varying location / scale through the record.
-4. Use the **Bayesian Model Average** Composite Distribution element to view the trend-marginalized AEP curve.
+Values are m³/s; the nonstationary quantiles are conditional on 2021. The sinusoidal fit retains a minimum ESS near 553 and maximum R-hat 1.00426. These diagnostics deserve attention before using its tail estimate. The configured model average contains Linear, Sinusoidal and Step only, with DIC weights 0.003153451, 0.961453939 and 0.035392610. There is no calculated composite result to display, and an unestimated wrapper's DIC=0 is not a model-selection result.
 
-## Analysis Settings
+All saved nonstationary models set Alpha = 0.5. Their Chronology curve is the **50% AEP return level (the conditional median)** and its posterior uncertainty; the band does not contain 90% of annual observations. Frequency plots instead show a range of AEPs at the specified evaluation index. Black observation plotting positions describe the full record, not a sample drawn only under the selected evaluation-index condition.
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+## Read the figures
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+![Systematic inflows and historical perception information; no event year is invented for the aggregate exceedance.](images/nsffa-oc-fisher-dam-historical-chronology.png)
 
-## Expected Results
+*Systematic inflows and historical perception information; no event year is invented for the aggregate exceedance.* [SVG](images/nsffa-oc-fisher-dam-historical-chronology.svg) · [Plot data](images/nsffa-oc-fisher-dam-historical-chronology.plotspec.json.gz)
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+![Saved long-period sinusoidal trend through the inflow record.](images/nsffa-oc-fisher-dam-sinusoidal-chronology.png)
 
-### Parameter Estimates
+*Saved long-period sinusoidal trend through the inflow record.* [SVG](images/nsffa-oc-fisher-dam-sinusoidal-chronology.svg) · [Plot data](images/nsffa-oc-fisher-dam-sinusoidal-chronology.plotspec.json.gz)
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+![Stationary LP3 frequency curve and its enabled quantile priors.](images/nsffa-oc-fisher-dam-stationary-priors.png)
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+*Stationary LP3 frequency curve and its enabled quantile priors.* [SVG](images/nsffa-oc-fisher-dam-stationary-priors.svg) · [Plot data](images/nsffa-oc-fisher-dam-stationary-priors.plotspec.json.gz)
 
-### Frequency / Quantile Table
+![Conditional LP3 frequency at 2021 under the sinusoidal model.](images/nsffa-oc-fisher-dam-sinusoidal-frequency.png)
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+*Conditional LP3 frequency at 2021 under the sinusoidal model.* [SVG](images/nsffa-oc-fisher-dam-sinusoidal-frequency.svg) · [Plot data](images/nsffa-oc-fisher-dam-sinusoidal-frequency.plotspec.json.gz)
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+![Saved first-parameter trace for the sinusoidal fit; inspect the other parameters in the app as well.](images/nsffa-oc-fisher-dam-sinusoidal-trace.png)
 
-### Plots
+*Saved first-parameter trace for the sinusoidal fit; inspect the other parameters in the app as well.* [SVG](images/nsffa-oc-fisher-dam-sinusoidal-trace.svg) · [Plot data](images/nsffa-oc-fisher-dam-sinusoidal-trace.plotspec.json.gz)
 
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](images/nsffa-oc-fisher-frequency.png)
-*Figure: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
+## Interpretation
 
-![Posterior kernel density for each parameter.](images/nsffa-oc-fisher-kernel-density.png)
-*Figure: Posterior kernel density for each parameter.*
+A long-period fitted oscillation over a limited record does not establish a repeatable physical cycle. Require independent evidence for its mechanism and extrapolation. The missing composite output and unresolved prior sources are recorded for the project author; no output has been filled or replaced.
 
-![Markov-chain traces for each parameter.](images/nsffa-oc-fisher-trace.png)
-*Figure: Markov-chain traces for each parameter.*
+## Reproduce and check your understanding
 
-![Autocorrelation function of the chains, used to estimate effective sample size.](images/nsffa-oc-fisher-autocorrelation.png)
-*Figure: Autocorrelation function of the chains, used to estimate effective sample size.*
+The shared Python renderer uses BestFit desktop plot coordinates from a disposable copy of the saved project. See the [figure-generation instructions](../../../README.md#reproducing-the-figures); use this tutorial's filename stem with `--only`. Each figure includes an SVG and compressed PlotSpec containing its source identity and displayed values.
 
-### MCMC Diagnostics
-
-Verify chain convergence before interpreting any results:
-
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
-
-## Next Steps
-
-- Compare alternatives by **DIC**, **WAIC**, and **LOO-CV** information criteria.
-- Average results across alternatives via the **Bayesian Model Average** Composite Distribution element.
-- Project **conditional return-period quantiles** for future time indices using the trend functions.
-
-## References
-
-<!-- Cite published case studies / source datasets here. Example format:
-
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
-
----
-
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+Before using a result in a study, explain the target variable, the represented observation period, the information added through thresholds or priors, and what the plotted interval means. Separate a teaching example's saved settings from a justified engineering choice for another site.

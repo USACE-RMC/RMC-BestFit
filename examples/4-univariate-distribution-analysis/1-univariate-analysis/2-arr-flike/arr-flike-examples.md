@@ -1,130 +1,104 @@
-# arr-flike-examples
+# ARR and FLIKE: systematic records, historical counts and regional skew
 
-## Overview
+Five saved Bayesian fits demonstrate distinct information choices in the Australian Rainfall and Runoff examples. Examples 3–5 use Log-Pearson Type III (LP3); examples 6a and 6b use GEV. Start with the Hunter River baseline, then change one source of information at a time when interpreting the alternatives.
 
-Bayesian replication of the Australian Rainfall and Runoff (ARR) flood-frequency worked examples. Demonstrates the LP-III distribution applied to systematic, censored, and historical flood records following the FLIKE software conventions.
+## Open the saved project
 
-## What's Inside
+Open [arr-flike-examples.bestfit](arr-flike-examples.bestfit) with **File > Open** and save a separate working copy before editing or rerunning.
 
-### Input Data
+The figures display saved BestFit results through the shared Python renderer; no analysis was refitted for this tutorial. AEP is annual exceedance probability: 0.01 is 1% per year under the model, not a schedule of one flood every 100 years.
 
-| Element | Description |
-|---|---|
-| `Example #3` | Hunter River at Singleton |
-| `Example #4` | ARR Example #4 input data (peak-flow record from the Australian Rainfall and Runoff worked examples). |
-| `Example #6a` | I do not have the source data for this gauge. I am using the table of flows provided in ARR for the Wimmera River at Glynwylin. The flows are provided in descending order, with no years. This is why the chronology plot looks odd. |
-| `Example #6b` | I do not have the source data for this gauge. I am using the table of flows provided in ARR for the Wimmera River at Glynwylin. The flows are provided in descending order, with no years. This is why the chronology plot looks odd. |
+The point curve evaluates the distribution at the selected posterior mean or mode **parameter vector**. It is not necessarily the posterior median of each quantile. The curve labeled Posterior Predictive averages over parameter uncertainty. A credible band describes uncertainty about a quantile; it is not a band containing 90% of future floods.
 
-### Univariate Distribution
+## Source and observation model
 
-| Element | Description |
-|---|---|
-| `Example #3` | Bayesian LP-III fit replicating ARR Example #3 (Hunter River at Singleton). |
-| `Example #4` | Bayesian LP-III fit replicating ARR Example #4. |
-| `Example #5` | Bayesian LP-III fit replicating ARR Example #5 (with low-outlier censoring). |
-| `Example #6a` | Bayesian LP-III fit replicating ARR Example #6a (Wimmera River at Glynwylin, with historical record extension). |
-| `Example #6b` | Bayesian LP-III fit replicating ARR Example #6b (Wimmera River, alternative historical interpretation). |
+See [ARR Book 3, At-Site Flood Frequency Analysis](https://www.arr-software.org/pdfs/ARR_190514_Book3_V4.2.pdf) and the supplied [BestFit–FLIKE verification comparison](Comparison%20with%20Flike%20-%20Verification%20Report.pdf). The local `ARR-FLIKE Example #3.xlsb` through `#6b.xlsb` files are supporting workbooks. The earlier report describes an old workaround for above-threshold historical information; the current Example 4 directly stores a threshold window with `NumberAbove = 1`. Do not recreate an artificial extreme upper bound from the old instructions.
 
-### Bulletin 17C
+Example 5 uses input Example #3, not a fifth input element. Its skew prior is Normal with mean 0 and standard deviation 0.30 (variance 0.09); it illustrates regional information rather than low-outlier censoring. Default-flat-prior mode is disabled for this alternative. Examples 6a/6b contrast the treatment of low observations in the same supplied magnitude sample. The active SQLite file contains five Bayesian alternatives and no Bulletin 17C alternatives; the B17C items listed in older prose are absent.
 
-| Element | Description |
-|---|---|
-| `B17C - Example 5 - MVN` | B17C fit of ARR Example #5 using multivariate-normal quantile confidence intervals. |
-| `B17C - Example 5 - Bootstrap` | B17C fit of ARR Example #5 using bias-corrected bootstrap confidence intervals. |
-| `B17C - Example 3 - MVN` | B17C fit of ARR Example #3 using multivariate-normal quantile confidence intervals. |
-| `B17C - Example 3 - Bootstrap` | B17C fit of ARR Example #3 using bias-corrected bootstrap confidence intervals. |
-| `B17C - Example 5 - Bootstrap_copy` | Duplicate of the Example #5 bootstrap fit (kept for comparison; safe to delete). |
+| Input element | Meaning | Exact rows and index span | Other saved input rows |
+| --- | --- | --- | --- |
+| Example #3 | Hunter River at Singleton: 31 annual peaks in m³/s. | 31 (1938–1968) | Uncertain: 0; intervals: 0; windows: 0; low flags: 0. |
+| Example #4 | Hunter River systematic sample plus 1820–1937 historical counts at 12,525 m³/s: 117 below and one above. | 31 (1938–1968) | Uncertain: 0; intervals: 0; windows: 1; low flags: 0. |
+| Example #6a | Wimmera River at Glynwylin: 56 flows supplied in descending order without event years; stored 1960–2015 indexes are artificial. | 56 (1960–2015) | Uncertain: 0; intervals: 0; windows: 0; low flags: 0. |
+| Example #6b | Same Wimmera teaching sample with 27 saved low-outlier flags; artificial indexes do not support chronology or trend analysis. | 56 (1960–2015) | Uncertain: 0; intervals: 0; windows: 0; low flags: 27. |
 
-## Step-by-Step Walkthrough
+Counts describe stored series entries. Threshold windows are not a count of measured floods; low flags are included in the exact-row count.
 
-### Opening the Project
+## Work through the example
 
-1. Open RMC-BestFit 2.0.
-2. Select **File > Open** and navigate to `examples/4-univariate-distribution-analysis/1-univariate-analysis/2-arr-flike/`.
-3. Open `arr-flike-examples.bestfit`.
+1. Select input Example #3 and confirm 31 exact annual flows in m³/s. Open analysis Example #3 as the LP3 baseline.
 
-### Exploring the Elements
+2. Open input Example #4 and inspect the historical window: 1820–1937, threshold 12,525 m³/s, 117 below and one unentered event above. Compare its analysis with Example #3.
 
-For each Univariate Distribution alternative:
+3. Open analysis Example #5. It references Example #3 and changes the skew prior to Normal(0, 0.30), with 0.30 expressed as a standard deviation.
 
-1. Click the alternative in the Project Explorer.
-2. Open the **Frequency** tab to view the AEP-vs-quantile plot.
-3. Open the **Markov Chain Trace** tab to confirm chain mixing (well-mixed traces look like fuzzy caterpillars).
-4. Open the **Autocorrelation** tab to check effective sample size.
-5. Inspect the **Properties** panel for sampler settings (iterations, warmup, point estimator, credible-interval width).
+4. Compare Example #6a with #6b in frequency space. Both are GEV fits to 56 supplied Wimmera magnitudes; #6b retains 27 flagged low observations.
 
-## Analysis Settings
+5. Inspect the saved posterior diagnostics for each model. Do not interpret the artificial Wimmera index ordering as a physical trend, or delete low observations from the source sample.
 
-Each Bayesian analysis in this project uses the DEMCzs sampler with project-specific iteration / warm-up settings. Open the **Properties** panel of any alternative to inspect:
+## Saved settings and results
 
-- **Sampler type** (DEMCz, DEMCzs, ARWMH, NUTS).
-- **Iterations / Warm-up Iterations** — total post-warmup samples per chain.
-- **Number of Chains** — typically 6 for routine work.
-- **Thinning Interval** — keeps every Nth sample to reduce storage / autocorrelation.
-- **Point Estimator** — Posterior Mean (default), Posterior Median, or Posterior Mode (MAP).
-- **Credible Interval Width** — typically 0.90 or 0.95.
+All Bayesian alternatives retain DEMCzs, six chains, thinning interval 30, seed 12345 and output length 10,000. The usual stored settings are 1,750 warmup iterations and 3,500 iterations. These are the saved setting names; output length is not a count of independent observations. Each fit retains the Jeffreys-rule setting for scale. Review parameter-prior bounds as well as named informative priors before adopting a configuration elsewhere.
 
-## Expected Results
+The table reports the largest parameter R-hat and smallest parameter effective sample size (ESS) stored in each run. R-hat near one and substantial ESS are useful screening evidence. Inspect every parameter's chains, autocorrelation and tail uncertainty before accepting a result; successful completion alone does not establish convergence or model adequacy.
 
-<!-- Replace placeholder content as you capture screenshots and copy values out of the BestFit GUI. -->
+| Saved alternative | Model | Parameter estimate | 1% AEP point | Credible limits | Width | Max R-hat | Min ESS |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Example #3 | LP3 | Mean | 19,933.992 | 7,239.394–102,334.579 | 90% | 1.00043 | 9,157 |
+| Example #4 | LP3 | Mean | 13,787.128 | 7,754.179–27,214.116 | 90% | 1.00031 | 8,745 |
+| Example #5 | LP3 | Mean | 15,931.58 | 7,180.378–45,324.538 | 90% | 1.00022 | 9,715 |
+| Example #6a | GEV | Mean | 2,590.881 | 741.838–12,838.827 | 90% | 1.00009 | 9,079 |
+| Example #6b | GEV | Mean | 546.057 | 354.35–1,141.581 | 90% | 1.00062 | 8,439 |
 
-### Parameter Estimates
+Magnitudes are m³/s. Values are rounded from the saved 0.01 AEP ordinate without interpolation or refitting. The selected parameter estimator and interval width are shown explicitly.
 
-<!-- TODO: paste the parameter-estimate table from the MCMC report (right-click the alternative > Open MCMC Report) -->
+For **Example #3**, the saved parameter summaries are:
 
-| Alternative | Parameter | Mean | Median | Lower CI | Upper CI | R-hat | ESS |
-|---|---|---|---|---|---|---|---|
-| _(placeholder)_ |  |  |  |  |  |  |  |
+| Parameter | Posterior mean | Posterior median | Lower credible limit | Upper credible limit |
+| --- | --- | --- | --- | --- |
+| Mean (of log) (µ) | 2.79 | 2.79 | 2.605 | 2.974 |
+| Std Dev (of log) (σ) | 0.626 | 0.614 | 0.497 | 0.795 |
+| Skew (of log) (γ) | 0.116 | 0.099 | -0.666 | 0.932 |
 
-### Frequency / Quantile Table
+These are parameter credible limits, distinct from the frequency-quantile limits above.
 
-<!-- TODO: paste the AEP / return-period table from the Frequency tab (right-click the chart > Copy Table). -->
+## Read the figures
 
-| AEP (%) | Return Period (yr) | Median | Lower CI | Upper CI |
-|---|---|---|---|---|
-| 50    | 2     |  |  |  |
-| 10    | 10    |  |  |  |
-| 1     | 100   |  |  |  |
-| 0.5   | 200   |  |  |  |
-| 0.2   | 500   |  |  |  |
+![Hunter River baseline LP3 fit, Example 3.](images/arr-flike-examples-example-3.png)
 
-### Plots
+*Hunter River baseline LP3 fit, Example 3.* [SVG](images/arr-flike-examples-example-3.svg) · [Plot data](images/arr-flike-examples-example-3.plotspec.json.gz)
 
-![Frequency curve (AEP versus quantile) for each alternative, with the credible band.](images/arr-flike-examples-frequency.png)
-*Figure: Frequency curve (AEP versus quantile) for each alternative, with the credible band.*
+![Hunter River LP3 fit including the historical exceedance count, Example 4.](images/arr-flike-examples-example-4.png)
 
-![Posterior kernel density for each parameter.](images/arr-flike-examples-kernel-density.png)
-*Figure: Posterior kernel density for each parameter.*
+*Hunter River LP3 fit including the historical exceedance count, Example 4.* [SVG](images/arr-flike-examples-example-4.svg) · [Plot data](images/arr-flike-examples-example-4.plotspec.json.gz)
 
-![Markov-chain traces for each parameter.](images/arr-flike-examples-trace.png)
-*Figure: Markov-chain traces for each parameter.*
+![Hunter River LP3 fit with an informative skew prior, Example 5.](images/arr-flike-examples-example-5.png)
 
-![Autocorrelation function of the chains, used to estimate effective sample size.](images/arr-flike-examples-autocorrelation.png)
-*Figure: Autocorrelation function of the chains, used to estimate effective sample size.*
+*Hunter River LP3 fit with an informative skew prior, Example 5.* [SVG](images/arr-flike-examples-example-5.svg) · [Plot data](images/arr-flike-examples-example-5.plotspec.json.gz)
 
-### MCMC Diagnostics
+![Wimmera GEV fit without saved low-outlier flags, Example 6a.](images/arr-flike-examples-example-6a.png)
 
-Verify chain convergence before interpreting any results:
+*Wimmera GEV fit without saved low-outlier flags, Example 6a.* [SVG](images/arr-flike-examples-example-6a.svg) · [Plot data](images/arr-flike-examples-example-6a.plotspec.json.gz)
 
-- **R-hat** — should be < 1.01 for every parameter.
-- **Effective Sample Size (ESS)** — at least a few hundred per parameter.
-- **Trace plots** — should look like fuzzy, well-mixed caterpillars (no drift, no sticking).
-- **Posterior** — overall posterior log-likelihood should be visually stationary in the mean-likelihood plot.
+![Wimmera GEV fit with 27 low-outlier flags, Example 6b.](images/arr-flike-examples-example-6b.png)
 
-## Next Steps
+*Wimmera GEV fit with 27 low-outlier flags, Example 6b.* [SVG](images/arr-flike-examples-example-6b.svg) · [Plot data](images/arr-flike-examples-example-6b.plotspec.json.gz)
 
-- Compare alternatives via the **Bayesian Model Average** element to combine results from multiple distributions.
-- Compute **return-period quantiles** (1%, 0.5%, 0.2% AEP) from the frequency-curve table.
-- Re-run with informative **quantile priors** if engineering judgment suggests specific upper-bound flood magnitudes.
-- Cross-check the LP-III fit against a **Bulletin 17C** fit on the same input data.
+![Saved Hunter River baseline parameter trace.](images/arr-flike-examples-trace.png)
 
-## References
+*Saved Hunter River baseline parameter trace.* [SVG](images/arr-flike-examples-trace.svg) · [Plot data](images/arr-flike-examples-trace.plotspec.json.gz)
 
-<!-- Cite published case studies / source datasets here. Example format:
+## Interpretation and limits
 
-> Viglione, A., Merz, R., Salinas, J. L., & Bloeschl, G. (2013). Flood frequency hooves of a galloping horse. *Water Resources Research*, 49(2), 675-692.
--->
+The Wimmera values were supplied without observation years and entered in descending order. The 1960–2015 indexes are storage labels; a downward chronology would be an input-order artifact. Use frequency plots for this comparison.
 
----
+The historical report compares selected outputs from earlier BestFit and FLIKE runs. This tutorial reports the current saved BestFit results and does not certify a new cross-software replication. Differences in parameter priors, selected point estimators and uncertainty definitions must be reconciled before comparing tables. These are two different catchments; information criteria do not rank the Hunter and Wimmera models against one another.
 
-_This tutorial was generated from the project's `.bestfit` file metadata. The narrative and figure / table sections are placeholders — capture screenshots from the BestFit GUI and paste output tables to complete the guide._
+## Check your understanding
+
+Explain the different roles of the single historical exceedance in Example 4, the skew prior in Example 5 and the low-outlier flags in Example 6b.
+
+## Reproduce the figures
+
+Follow the [shared figure instructions](../../../README.md#reproducing-the-figures) with `--only arr-flike-examples`. PNG, SVG and compressed PlotSpec files come from the same desktop-owned coordinates. The manifest names the selected element for each view; a representative diagnostic figure does not replace inspection of all parameters.

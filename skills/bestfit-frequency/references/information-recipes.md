@@ -108,3 +108,9 @@ Save analysis-created/get `configuration` before and after execution: parent
 distribution, ordinates, priors/penalties, Jeffreys setting and exposed MCMC options
 come from the actual model. Automatic simulation defaults may change at run time.
 This records applied settings, not scientific appropriateness.
+## Worked-study references
+
+Use the [examples guide](examples.md) to pair these recipes with the Viglione,
+Blakely, Sinnemahoning and nonstationary tutorials. The examples demonstrate how
+to explain evidence, uncertainty units and unresolved assumptions; their numerical
+information terms require independent justification at a new site.

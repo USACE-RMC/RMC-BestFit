@@ -14,7 +14,9 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sqlite3
 import sys
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "skills/bestfit-frequency"))
@@ -24,8 +26,11 @@ from bestfit_plots.render import export_plot
 
 def file_hash(path):
     """Return the exact source or figure SHA-256."""
+    digest = hashlib.sha256()
     with path.open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def render_entry(entry, exporter, cache, refresh=False):
@@ -52,6 +57,23 @@ def render_entry(entry, exporter, cache, refresh=False):
     if any(saved.get(k) != value for k, value in identity.items()):
         raise ValueError("Desktop export does not match the requested source and view")
     saved["project"] = entry["project"]
+    if entry.get('legacySavedFrequency'):
+        # One explicitly identified legacy GMM row has intact arrays but an older
+        # model-column name that current desktop hydration does not recognize.
+        with sqlite3.connect(source.as_uri() + '?mode=ro&immutable=1', uri=True) as connection:
+            row = connection.execute('SELECT ProbabilityOrdinates,AnalysisResults,ConfidenceIntervalWidth FROM "<Bulletin 17C>" WHERE Name=?',
+                                     (entry['element'],)).fetchone()
+        if row is None:
+            raise ValueError('Requested legacy GMM saved row is absent')
+        result = ET.fromstring(row[1])
+        bounds = [[float(v) for v in pair.split(',')] for pair in result.attrib['ConfidenceIntervals'].split('|')]
+        if any(len(pair) != 2 for pair in bounds):
+            raise ValueError('Legacy GMM confidence bounds must have two columns')
+        saved['legacySavedFrequency'] = dict(probabilities=[float(v) for v in row[0].split('|')],
+            point=[float(v) for v in result.attrib['ModeCurve'].split('|')],
+            expected=[float(v) for v in result.attrib['MeanCurve'].split('|')],
+            lower=[pair[0] for pair in bounds], upper=[pair[1] for pair in bounds], width=float(row[2]),
+            columns=['<Bulletin 17C>.ProbabilityOrdinates', '<Bulletin 17C>.AnalysisResults', '<Bulletin 17C>.ConfidenceIntervalWidth'])
     spec = desktop_plot(saved)
     if "legendLocation" in entry:
         spec["legendLocation"] = entry["legendLocation"]

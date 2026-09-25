@@ -3,11 +3,61 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import math
+
+import pytest
 
 
 REPO = Path(__file__).resolve().parents[2]
 EXE = REPO / "tools/PlotReferenceExporter/bin/Debug/net10.0-windows/PlotReferenceExporter.exe"
 PROJECT = REPO / "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit"
+
+
+def test_regression_residuals_use_the_saved_coefficients_without_refitting(tmp_path):
+    source = next((REPO / "examples").rglob("time-series-regression-example.bestfit"))
+    before = hashlib.sha256(source.read_bytes()).hexdigest()
+    prefix = tmp_path / "regression-residuals"
+    result = subprocess.run([str(EXE), "--project", str(source), "--element", "Multiple Linear Regression",
+                             "--plot-id", "time_series_analysis.residuals", "--variant", "default", "--output", str(prefix)],
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr
+    geometry = json.loads(prefix.with_suffix('.json').read_text(encoding='utf8'))
+    residuals = next(s['points'] for s in geometry['series'] if s['name'] == 'Residuals')
+    # Independent observed-minus-saved-curve arithmetic, not reset live parameters.
+    assert len(residuals) == 149
+    assert residuals[0]['Y'] == pytest.approx(.1900051893782668, abs=1e-12)
+    assert residuals[41]['Y'] == pytest.approx(-.6470923247633205, abs=1e-12)
+    assert math.sqrt(sum(p['Y']**2 for p in residuals)/149) == pytest.approx(.3411468296454542, abs=1e-12)
+    assert any('saved parameter' in note for note in geometry['displayCorrections'])
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == before
+
+
+def test_same_named_input_and_analysis_resolve_by_requested_view(tmp_path):
+    source = next((REPO / "examples").rglob("arr-flike-examples.bestfit"))
+    before = hashlib.sha256(source.read_bytes()).hexdigest()
+    for slot, variant, kind in (("input_data.frequency", "default", "InputData"),
+                                ("univariate.frequency", "stationary", "UnivariateAnalysis"),
+                                ("shared_diagnostics.trace", "chain", "UnivariateAnalysis")):
+        prefix = tmp_path / slot
+        result = subprocess.run([str(EXE), "--project", str(source), "--element", "Example #3",
+                                 "--plot-id", slot, "--variant", variant, "--output", str(prefix)],
+                                capture_output=True, text=True, timeout=120)
+        assert result.returncode == 0, result.stderr
+        geometry = json.loads(Path(str(prefix) + ".json").read_text(encoding="utf-8"))
+        assert geometry["analysisKind"] == kind
+        assert any(s.get("points") for s in geometry["series"])
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == before
+
+
+def test_enabled_quantile_prior_does_not_require_a_magic_element_name(tmp_path):
+    source = next((REPO / "examples").rglob("viglione-et-al-2013.bestfit"))
+    prefix = tmp_path / "causal"
+    result = subprocess.run([str(EXE), "--project", str(source), "--element", "MCMC - Systematic (1951-2001) + Temporal + Causal",
+                             "--plot-id", "univariate.frequency", "--variant", "quantile_prior", "--output", str(prefix)],
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr
+    geometry = json.loads(prefix.with_suffix(".json").read_text(encoding="utf-8"))
+    assert any('prior' in str(s.get('Title','')).lower() and s.get('points') for s in geometry['series'])
 
 
 def test_exports_app_geometry_without_touching_source(tmp_path):
