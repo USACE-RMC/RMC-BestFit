@@ -1,0 +1,406 @@
+[
+  {
+    "project": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+    "beforeSha256": "a6705976510c3370cc90acd309958615726ddf538f771899c4c9cd718591a59c",
+    "afterSha256": "18ed33933930d5b9d627ba1acb7f1482e9e85b71e739a13e073b8fe0b57684f6",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "abom-download-example",
+        "description": "Six saved Australian Water Data Online series from Cotter River, Murrumbidgee River and Murray River stations. Demonstrates precipitation, daily and instantaneous discharge, stage, units and missing-data inspection. The unrelated manual test series is excluded.",
+        "oldDescription": "Demonstrates downloading hydrological data from the Australian Bureau of Meteorology (BOM) Water Data Online API. Includes daily and instantaneous series for discharge, stage, and precipitation from stations in the ACT and NSW."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "ABOM - 410730 - Daily Precipitation",
+        "description": "Daily precipitation for Cotter River at Gingera, ACT. Saved coverage: 2003-01-31 through 2026-07-15; 8,567 ordinates, 56 missing; interval setting OneDay.",
+        "oldDescription": "Daily precipitation for Cotter River at Gingera, ACT."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "ABOM - 410730 - Daily Discharge",
+        "description": "Daily mean discharge for Cotter River at Gingera, ACT. Saved coverage: 1963-07-03 through 2026-07-15; 23,024 ordinates, 0 missing; interval setting OneDay.",
+        "oldDescription": "Daily mean discharge for Cotter River at Gingera, ACT."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "ABOM - 410761 - Daily Discharge",
+        "description": "Daily mean discharge for Murrumbidgee River below Lobbs Hole Creek, ACT/NSW. Saved coverage: 1974-11-13 through 2026-07-15; 18,873 ordinates, 98 missing; interval setting OneDay.",
+        "oldDescription": "Daily mean discharge for Murrumbidgee River below Lobbs Hole Creek, ACT/NSW."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 4,
+        "name": "ABOM - 409202 - Daily Stage",
+        "description": "Daily mean water level for Murray River at Tocumwal, NSW. Saved coverage: 1974-12-10 through 2026-07-15; 18,846 ordinates, 39 missing; interval setting OneDay.",
+        "oldDescription": "Daily mean water level for Murray River at Tocumwal, NSW."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 5,
+        "name": "ABOM - 410730 - Instantaneous Discharge",
+        "description": "Instantaneous discharge for Cotter River at Gingera, ACT. Saved coverage: 1963-07-03 through 2026-07-15; 222,246 ordinates, 1 missing; interval setting Irregular.",
+        "oldDescription": "Instantaneous discharge for Cotter River at Gingera, ACT."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 6,
+        "name": "ABOM - 409202 - Instantaneous Stage",
+        "description": "Instantaneous water level for Murray River at Tocumwal, NSW. Saved coverage: 1974-12-10 through 2026-07-15; 669,279 ordinates, 46 missing; interval setting Irregular.",
+        "oldDescription": "Instantaneous water level for Murray River at Tocumwal, NSW."
+      }
+    ],
+    "deletedRow": {
+      "table": "Time Series Data",
+      "rowid": 7,
+      "name": "Time Series_7"
+    },
+    "preservedCellCount": 159,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
+    "beforeSha256": "ab8989e41d84685ac09f4d1661699d7acdadc681714f7cc498251b397d3288b3",
+    "afterSha256": "04103c81d60a39125004a67a923b333eca35e450257dee563b90a076daec61d9",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "chmn-download-example",
+        "description": "Six saved Water Survey of Canada series for Lillooet River near Pemberton (08MG005), comparing daily, instantaneous and annual peak discharge and stage. Demonstrates differing coverage, metric units and sampling definitions before analysis.",
+        "oldDescription": "Demonstrates downloading hydrometric data from the Water Survey of Canada (Canadian Hydrometric Monitoring Network). Includes daily, instantaneous, and peak series types for Lillooet River near Pemberton, BC."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "CHMN - 08MG005 - Daily Discharge",
+        "description": "Daily mean discharge for Lillooet River near Pemberton, BC. Record begins 1914. Saved coverage: 1914-01-01 through 2025-02-20; 40,594 ordinates, 2,656 missing; interval setting OneDay.",
+        "oldDescription": "Daily mean discharge for Lillooet River near Pemberton, BC. Record begins 1914."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "CHMN - 08MG005 - Daily Stage",
+        "description": "Daily mean water level for Lillooet River near Pemberton, BC. Saved coverage: 2011-03-10 through 2025-02-20; 5,097 ordinates, 159 missing; interval setting OneDay.",
+        "oldDescription": "Daily mean water level for Lillooet River near Pemberton, BC."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "CHMN - 08MG005 - Instantaneous Discharge",
+        "description": "Instantaneous discharge (saved interval setting: five minutes) for Lillooet River near Pemberton, BC. Saved coverage: 2025-01-15 through 2026-07-15; 157,213 ordinates, 0 missing; interval setting FiveMinute.",
+        "oldDescription": "Instantaneous (5-minute) discharge for Lillooet River near Pemberton, BC."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 4,
+        "name": "CHMN - 08MG005 - Instantaneous Stage",
+        "description": "Instantaneous water level (saved interval setting: five minutes) for Lillooet River near Pemberton, BC. Saved coverage: 2025-01-15 through 2026-07-15; 157,213 ordinates, 0 missing; interval setting FiveMinute.",
+        "oldDescription": "Instantaneous (5-minute) water level for Lillooet River near Pemberton, BC."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 5,
+        "name": "CHMN - 08MG005 - Peak Discharge",
+        "description": "Annual peak instantaneous discharge for Lillooet River near Pemberton, BC. Saved coverage: 1949-08-17 through 2024-01-30; 64 ordinates, 0 missing; interval setting Irregular.",
+        "oldDescription": "Annual peak instantaneous discharge for Lillooet River near Pemberton, BC."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 6,
+        "name": "CHMN - 08MG005 - Peak Stage",
+        "description": "Annual peak water level for Lillooet River near Pemberton, BC. Saved coverage: 2012-07-17 through 2024-01-30; 13 ordinates, 0 missing; interval setting Irregular.",
+        "oldDescription": "Annual peak water level for Lillooet River near Pemberton, BC."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 159,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+    "beforeSha256": "a69775d7f270163fa3d819b7a804d755e92e7784c6aad67ad8035fde92041686",
+    "afterSha256": "6c1531ac615ab8b580ecd0ca7865c0932db05f8e3737e9e489bc6291c1b6face",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "GHCN-USC00040741-POT",
+        "description": "GHCN-USC00040741-POT: 233 saved observations indexed 1960–2026, with 0 low-outlier flags. Big Bear Lake GHCN daily precipitation POT example, USC00040741, in inches. Threshold 1.0 inch, separation 5 daily steps, no smoothing, 233 events, stored exposure 67 inclusive calendar years and Lambda 3.4776119403. Daily source has 482 missing values and partial boundary years; assess effective exposure and independence before annual-frequency use.",
+        "oldDescription": "Peaks-Over-Threshold (POT) series extracted from daily precipitation at GHCN station USC00040741 (Big Bear Lake, CA). Uses a threshold of 1.0 inch with a minimum separation of 5 days between peaks."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "ghcn-peaks-over-threshold-example",
+        "description": "Big Bear Lake GHCN daily precipitation POT example, USC00040741, in inches. Threshold 1.0 inch, separation 5 daily steps, no smoothing, 233 events, stored exposure 67 inclusive calendar years and Lambda 3.4776119403. Daily source has 482 missing values and partial boundary years; assess effective exposure and independence before annual-frequency use.",
+        "oldDescription": "Demonstrates Peaks-Over-Threshold (POT) analysis using daily precipitation data from NOAA GHCN station USC00040741 (Big Bear Lake, CA). A threshold of 1.0 inch is applied to extract independent precipitation events, with a minimum of 5 days between events to ensure independence."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "GHCN-USC00040741-Precipitation",
+        "description": "Saved source for ghcn-peaks-over-threshold-example: GHCN-USC00040741-Precipitation; depth (in). 24,106 daily ordinates from 1960-07-01 through 2026-06-30, including 482 missing values. Inspect source coverage before deriving frequency inputs.",
+        "oldDescription": "Daily precipitation for Big Bear Lake, CA (GHCN station USC00040741). Record begins 1960."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 64,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/1-time-series-data/5-hec-dss-import/hec-dss-import-example.bestfit",
+    "beforeSha256": "7c81e45c84380b0874800373fa264e3cab04a6526efdd360b22b2f4154c0d0df",
+    "afterSha256": "8c8e19ab48e900187a278a8fea7abf969fc7a6f876f6ddb50c680a3cf133ed2a",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "hec-dss-import-example",
+        "description": "Hourly Grapevine Dam inflow and release series from the supplied dss-example-data.dss file, March 16–July 10, 2007, in CFS. Demonstrates pathname selection and hydrograph comparison; the saved run pathname does not establish measurement or model provenance.",
+        "oldDescription": "Demonstrates importing time series data from a HEC-DSS file. Contains hourly inflow and outflow hydrographs for Grapevine Dam, which can be plotted together using the Alternative Time Series feature."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "Grapevine Dam - Inflow",
+        "description": "Hourly Grapevine Dam inflow from the supplied dss-example-data.dss, in CFS. Pathname: //GRAPEVINE INFLOW/FLOW//1Hour/RUN:2007_MAR-JUL/. The run label alone does not establish whether the source is measured or simulated. Saved coverage: 2007-03-16 through 2007-07-10; 2,785 ordinates, 0 missing; interval setting OneHour.",
+        "oldDescription": "Hourly inflow hydrograph for Grapevine Dam imported from a HEC-DSS file. Use the Alternative Time Series selector to compare with the outflow hydrograph."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "Grapevine Dam - Outflow",
+        "description": "Hourly Grapevine Dam release from the supplied dss-example-data.dss, in CFS. Pathname: //GRAPEVINE LAKE-RELEASE/FLOW//1Hour/RUN:2007_MAR-JUL/. The run label alone does not establish whether the source is measured or simulated. Saved coverage: 2007-03-16 through 2007-07-10; 2,785 ordinates, 0 missing; interval setting OneHour.",
+        "oldDescription": "Hourly outflow (release) hydrograph for Grapevine Dam imported from a HEC-DSS file. Use the Alternative Time Series selector to compare with the inflow hydrograph."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 59,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
+    "beforeSha256": "98785e3f8b7de3da3102a61d5c2cd86c37af7080507dd659f3caef727e838db7",
+    "afterSha256": "86b7da6dcb53ea202929311af1a55deb5be1035f6a3e7e54d263904262e2ff7d",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "manual-entry-example",
+        "description": "Manual-entry examples for monthly airline passengers, annual Nile flow volume and monthly Mauna Loa CO2, with source CSV files. The Nile project dates are 1897–1996 while the CSV dates are 1871–1970; compare and reconcile dates before historical interpretation.",
+        "oldDescription": "Demonstrates manual time series data entry using copy-paste from CSV files. Contains three classic datasets commonly used in time series analysis: airline passengers, Nile River annual flows, and atmospheric CO2 concentrations."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "Airline Passengers",
+        "description": "Monthly airline passenger totals (Box-Jenkins, 1970). A classic dataset for seasonal ARIMA modeling, exhibiting strong seasonality and multiplicative trend. Saved coverage: 1949-01-01 through 1960-12-01; 144 ordinates, 0 missing; interval setting OneMonth.",
+        "oldDescription": "Monthly airline passenger totals (Box-Jenkins, 1970). A classic dataset for seasonal ARIMA modeling, exhibiting strong seasonality and multiplicative trend."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "Nile River Flows",
+        "description": "Annual Nile flow volumes in 10^8 cubic metres. Saved dates are 1897–1996; the supplied CSV dates are 1871–1970. Values and dates are retained for a documented date-reconciliation exercise. Saved coverage: 1897-01-01 through 1996-01-01; 100 ordinates, 0 missing; interval setting OneYear.",
+        "oldDescription": "Annual flow volume of the Nile River at Aswan (Cobb, 1978). A classic dataset for change-point detection and AR modeling, with a notable level shift around 1898."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "Mauna Loa CO2",
+        "description": "Monthly atmospheric CO2 concentrations from Mauna Loa Observatory, Hawaii (NOAA GML). A classic dataset for seasonal decomposition with strong upward trend and annual cycle. Saved coverage: 1958-03-01 through 2023-12-01; 790 ordinates, 0 missing; interval setting OneMonth.",
+        "oldDescription": "Monthly atmospheric CO2 concentrations from Mauna Loa Observatory, Hawaii (NOAA GML). A classic dataset for seasonal decomposition with strong upward trend and annual cycle."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 84,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
+    "beforeSha256": "b809ca84f4792b029e0deca1718c0e394f5c87cea5e3a242028378eb54f52ba3",
+    "afterSha256": "fee46359abfc1abcc2a9550653dd7afe9538c0e93f535690cb8555909179473c",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "USGS - 01134500 - Block Max - Calendar Year",
+        "description": "USGS - 01134500 - Block Max - Calendar Year: 80 saved observations indexed 1947–2026, with 0 low-outlier flags. Maximum daily mean discharge in cfs using CalendarYear blocks; source 1947-01-01–2026-07-14. Review incomplete boundary years. Not instantaneous peaks.",
+        "oldDescription": "Annual maximum daily discharge series derived from USGS gage 01134500 (Moose River at Victory, VT) using calendar year (January to December) blocks."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "USGS - 01134500 - Block Max - Water Year",
+        "description": "USGS - 01134500 - Block Max - Water Year: 80 saved observations indexed 1947–2026, with 0 low-outlier flags. Maximum daily mean discharge in cfs using WaterYear blocks; source 1947-01-01–2026-07-14. Review incomplete boundary years. Not instantaneous peaks.",
+        "oldDescription": "Annual maximum daily discharge series derived from USGS gage 01134500 (Moose River at Victory, VT) using water year (October to September) blocks."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "usgs-block-max-example",
+        "description": "Calendar-year and water-year maxima of Moose River daily mean discharge, USGS 01134500. Both saved inputs have 80 observations indexed 1947–2026; 16 paired magnitudes differ. Boundary blocks are incomplete. These are daily-mean maxima, not annual instantaneous peaks.",
+        "oldDescription": "Demonstrates downloading daily discharge time series data from the USGS National Water Information System (NWIS) API. Then, block max input data is created from the downloaded time series."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "USGS - 01134500 - Daily Discharge",
+        "description": "Saved source for usgs-block-max-example: USGS - 01134500 - Daily Discharge; Flow (cfs). 29,050 daily ordinates from 1947-01-01 through 2026-07-14, including 0 missing values. Inspect source coverage before deriving frequency inputs.",
+        "oldDescription": "Daily mean discharge for Moose River at Victory, VT. Record begins 1947."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 94,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+    "beforeSha256": "bf48bf775c9ab88ad7135e5d0c45be5d08ad303eb0e95aa9e120ab17adf56921",
+    "afterSha256": "fee997625118f4a92728efe2f4963fa9400ca4987595f3f394d4c00e89687bb1",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "usgs-download-example",
+        "description": "Eight saved USGS series from five stations illustrate daily means, instantaneous observations, annual peaks and field measurements. Intended for source inspection and sampling-definition checks before frequency or rating-curve analysis.",
+        "oldDescription": "Demonstrates downloading time series data from the USGS National Water Information System (NWIS) API. Includes daily, instantaneous, peak, and measured series types for discharge and stage from four gaging stations."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "USGS - 01134500 - Daily Discharge",
+        "description": "Daily mean discharge for Moose River at Victory, VT. Record begins 1947. Saved coverage: 1947-01-01 through 2026-07-14; 29,050 ordinates, 0 missing; interval setting OneDay.",
+        "oldDescription": "Daily mean discharge for Moose River at Victory, VT. Record begins 1947."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 2,
+        "name": "USGS - 07010000 - Daily Stage",
+        "description": "Daily mean USGS gage height for Mississippi River at St. Louis (07010000), in feet relative to the station datum. The saved chart axis label is Value. Saved coverage: 1982-10-01 through 2026-07-15; 15,994 ordinates, 197 missing; interval setting OneDay.",
+        "oldDescription": "Daily mean gage height for Mississippi River at St. Louis, MO. Record begins 1982."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 3,
+        "name": "USGS - 01646500 - Instantaneous Discharge",
+        "description": "Instantaneous (unit-value) discharge for Potomac River near Washington, DC at Little Falls Pump Station. Saved coverage: 1972-06-09 through 2026-07-15; 1,272,826 ordinates, 0 missing; interval setting Irregular.",
+        "oldDescription": "Instantaneous (unit-value) discharge for Potomac River near Washington, DC at Little Falls Pump Station."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 4,
+        "name": "USGS - 01646500 - Instantaneous Stage",
+        "description": "Instantaneous (unit-value) gage height for Potomac River near Washington, DC at Little Falls Pump Station. Saved coverage: 2007-10-01 through 2026-07-15; 723,856 ordinates, 0 missing; interval setting Irregular.",
+        "oldDescription": "Instantaneous (unit-value) gage height for Potomac River near Washington, DC at Little Falls Pump Station."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 5,
+        "name": "USGS - 01570500 - Measured Discharge",
+        "description": "Field-measured discharge for Susquehanna River at Harrisburg, PA. Saved coverage: 1897-03-31 through 2026-07-15; 412 ordinates, 0 missing; interval setting Irregular.",
+        "oldDescription": "Field-measured (rated) discharge for Susquehanna River at Harrisburg, PA."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 6,
+        "name": "USGS - 01570500 - Measured Stage",
+        "description": "Field-measured gage height for Susquehanna River at Harrisburg, PA. Saved coverage: 1897-03-31 through 2026-07-15; 939 ordinates, 0 missing; interval setting Irregular.",
+        "oldDescription": "Field-measured gage height for Susquehanna River at Harrisburg, PA."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 7,
+        "name": "USGS - 01614000 - Peak Discharge",
+        "description": "Annual peak instantaneous discharge for Back Creek near Jones Springs, WV. Saved coverage: 1929-04-17 through 2025-05-14; 69 ordinates, 0 missing; interval setting OneDay.",
+        "oldDescription": "Annual peak instantaneous discharge for Back Creek near Jones Springs, WV."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 8,
+        "name": "USGS - 01614000 - Peak Stage",
+        "description": "Annual peak gage height for Back Creek near Jones Springs, WV. Saved coverage: 1929-04-17 through 2025-05-14; 69 ordinates, 0 missing; interval setting OneDay.",
+        "oldDescription": "Annual peak gage height for Back Creek near Jones Springs, WV."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 217,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+    "beforeSha256": "6f2c9db5911443f8bff6d00dfbb97eb16d9cdea7c3fd67912a7c2f632e06f532",
+    "afterSha256": "06f471c420106383a13135db5a07ed2e0401b39138520f872f047da32de065ca",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "USGS - 01134500 - Peak Discharge",
+        "description": "USGS - 01134500 - Peak Discharge: 79 saved observations indexed 1947–2025, with 0 low-outlier flags. USGS annual instantaneous discharge in cfs; saved chart label is Value. MGBT enabled; saved low-outlier threshold 0 cfs. Flags are retained in ExactSeries.",
+        "oldDescription": "Annual peak instantaneous discharge for USGS gage 01134500 (Moose River at Victory, VT). Downloaded directly from the USGS NWIS peak-flow web service. No low outliers detected by the MGBT."
+      },
+      {
+        "table": "Input Data",
+        "rowid": 2,
+        "name": "USGS - 11274500 - Peak Discharge",
+        "description": "USGS - 11274500 - Peak Discharge: 94 saved observations indexed 1932–2025, with 47 low-outlier flags. USGS annual instantaneous discharge in cfs; saved chart label is Value. MGBT enabled; saved low-outlier threshold 1270 cfs. Flags are retained in ExactSeries.",
+        "oldDescription": "Annual peak instantaneous discharge for USGS gage 11274500 (Orestimba Creek near Newman, CA). Downloaded directly from the USGS NWIS peak-flow web service. The Multiple Grubbs-Beck Test identified 47 low outliers, which are treated as censored observations in flood frequency analysis."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "usgs-peak-download-example",
+        "description": "USGS annual instantaneous peaks for Moose River (01134500; 79 rows, 1947–2025) and Orestimba Creek (11274500; 94 rows, 1932–2025), in cfs. MGBT flags 0 and 47 low outliers respectively; Orestimba screening threshold is 1,270 cfs. Demonstrates source review and retained low-outlier treatment.",
+        "oldDescription": "Demonstrates downloading annual peak discharge data directly from the USGS National Water Information System (NWIS) API. Includes examples with and without the Multiple Grubbs-Beck Test (MGBT) for detecting low outliers."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 69,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  },
+  {
+    "project": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+    "beforeSha256": "e4ffb3fce7d67848459c160a969e653d5e40eb5865ebe705999a8f1ae63ac9b3",
+    "afterSha256": "dd174446fa5c4836721fd7f6b6e3f6cf539b4b85d249748a38acedd8adf0abf8",
+    "onlyApprovedCellsChanged": true,
+    "edits": [
+      {
+        "table": "Input Data",
+        "rowid": 1,
+        "name": "USGS - 11274500 - Peaks-Over-Threshold",
+        "description": "USGS - 11274500 - Peaks-Over-Threshold: 78 saved observations indexed 1937–2025, with 0 low-outlier flags. POT teaching example for Orestimba Creek daily mean discharge, USGS 11274500. Saved threshold 650 cfs, separation 5 daily steps, no smoothing, 78 events. Older input lacks source-exposure metadata and uses 89 retained-event years (Lambda 0.8764044944), although the daily source spans 1932–2026. Resolve exposure before annual-frequency use.",
+        "oldDescription": "Peaks-Over-Threshold (POT) series extracted from daily discharge at USGS gage 11274500 (Orestimba Creek near Newman, CA). Uses a threshold of 650 cfs with a minimum separation of 5 days between peaks, yielding 78 independent flood events over 94 years of record (~0.8 events/year). Threshold diagnostics (MRL plot, modified scale and shape stability plots) support the selected threshold."
+      },
+      {
+        "table": "Project",
+        "rowid": 1,
+        "name": "usgs-peaks-over-threshold-example",
+        "description": "POT teaching example for Orestimba Creek daily mean discharge, USGS 11274500. Saved threshold 650 cfs, separation 5 daily steps, no smoothing, 78 events. Older input lacks source-exposure metadata and uses 89 retained-event years (Lambda 0.8764044944), although the daily source spans 1932–2026. Resolve exposure before annual-frequency use.",
+        "oldDescription": "Demonstrates Peaks-Over-Threshold (POT) analysis using daily discharge data from the USGS NWIS API. A threshold of 650 cfs is applied to extract independent flood peaks from the daily time series, with a minimum of 5 days between peaks to ensure independence."
+      },
+      {
+        "table": "Time Series Data",
+        "rowid": 1,
+        "name": "USGS - 11274500 - Daily Discharge",
+        "description": "Saved source for usgs-peaks-over-threshold-example: USGS - 11274500 - Daily Discharge; Flow (cfs). 34,438 daily ordinates from 1932-04-01 through 2026-07-14, including 0 missing values. Inspect source coverage before deriving frequency inputs.",
+        "oldDescription": "Daily mean discharge for USGS gage 11274500 (Orestimba Creek near Newman, CA), spanning 1932 to 2026. Downloaded from the USGS NWIS daily values web service. This time series serves as the source data for the Peaks-Over-Threshold extraction."
+      }
+    ],
+    "deletedRow": null,
+    "preservedCellCount": 64,
+    "auditMethod": "Immutable read of original backup and persisted database; every cell compared except listed edits and deletion."
+  }
+]

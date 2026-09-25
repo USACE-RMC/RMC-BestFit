@@ -20,6 +20,12 @@ the axis transform. Date bounds use ISO 8601. The desktop adapter accounts for
 AEP's decreasing transform. Source RGBA fills retain their original transparency;
 `alpha: null` lets Matplotlib use the alpha encoded in each color.
 
+Monthly seasonality bands are the 5th–95th and 25th–75th percentiles of observed
+values in each month (`MonthlySummaryStatistics` columns 1/5 and 2/4). Python
+labels these **90% Observed Range** and **50% Observed Range**, correcting the
+desktop's legacy confidence-interval labels without changing their coordinates.
+They describe sample spread, not uncertainty in a fitted mean or flood quantile.
+
 ## Legacy frequency command
 
 ## Input chronology before fitting
@@ -100,3 +106,7 @@ Matplotlib uses its available sans-serif font and drawing engine; exact pixels a
 automatic label layout can differ from WPF. The renderer intentionally handles
 invalid log bounds explicitly. Custom desktop axis/series settings are outside
 this contract.
+
+PlotSpec may set `legendLocation` to `best` (default), `upper left`, `upper right`,
+`lower left` or `lower right`. Use a fixed corner after visual review if automatic
+placement covers an observation; this must not change coordinates or axis bounds.

@@ -1,118 +1,50 @@
-# HEC-DSS Import Example
+# HEC-DSS import: compare Grapevine Dam inflow and releases
 
-## Overview
+This example imports hourly inflow and release hydrographs from the HEC-DSS file shipped beside the project. It teaches pathname selection, time and unit checks, and comparison of two different flow quantities for the same reservoir period.
 
-This example demonstrates importing time series data from a **HEC-DSS** file. HEC-DSS (Data Storage System) is the standard binary file format used by the U.S. Army Corps of Engineers Hydrologic Engineering Center (HEC) suite of software, including HEC-HMS, HEC-RAS, and HEC-ResSim.
+## Open the example
 
-The example contains hourly inflow and outflow hydrographs for Grapevine Dam from a reservoir simulation. It also demonstrates the **Alternative Time Series** feature, which allows overlaying multiple time series on the same plot for visual comparison.
+Open [hec-dss-import-example.bestfit](hec-dss-import-example.bestfit) in RMC-BestFit and save a working copy before importing or editing data. The figures use the saved snapshot; downloading again may change the record. You do not need to run an analysis to follow this exercise.
 
-## Data Source
+## Source and saved records
 
-- **Format:** HEC-DSS (`.dss` binary file)
-- **File:** `dss-example-data.dss` (included in this folder)
-- **Entry Method in BestFit:** `HECDSS`
-- **Required Parameters:** DSS file path + DSS data pathname
+Use the local [dss-example-data.dss](dss-example-data.dss) file. The saved series cover March 16 through July 10, 2007 and are labeled CFS (cubic feet per second). The DSS pathnames identify a 2007 run; the project does not establish whether every value is a direct measurement, reconstructed inflow or model output. Preserve that distinction when citing the data.
 
-### HEC-DSS Pathname Format
+| Saved element | Units | First–last saved date | Ordinates | Missing |
+|---|---|---|---:|---:|
+| Grapevine Dam - Inflow | CFS | 2007-03-16–2007-07-10 | 2,785 | 0 |
+| Grapevine Dam - Outflow | CFS | 2007-03-16–2007-07-10 | 2,785 | 0 |
 
-HEC-DSS organizes data using a 6-part pathname:
-```
-/A-Part/B-Part/C-Part/D-Part/E-Part/F-Part/
-```
+“Missing” counts stored nonfinite values. A date range and a zero missing-value count do not prove complete time coverage, particularly for irregular or annual-peak records.
 
-| Part | Meaning | Example Value |
-|------|---------|---------------|
-| A | Project or basin | (empty in this example) |
-| B | Location | `GRAPEVINE INFLOW` or `GRAPEVINE LAKE-RELEASE` |
-| C | Parameter | `FLOW` |
-| D | Date range | Auto-detected by BestFit |
-| E | Time interval | `1Hour` |
-| F | Version or run label | `RUN:2007_MAR-JUL` |
+## Work through the example
 
-## What's Inside
+1. Select **Grapevine Dam - Inflow** under **Time Series Data** and inspect its hourly table and time-series plot.
+2. Select **Grapevine Dam - Outflow**. Check that the 2,785 saved timestamps and CFS units match the inflow series before comparing them.
+3. To repeat the import on a working copy, set **Entry Method = HECDSS** and browse to the supplied `dss-example-data.dss`. Replace the old machine-specific file path with this local path.
+4. Choose inflow pathname `//GRAPEVINE INFLOW/FLOW//1Hour/RUN:2007_MAR-JUL/` or release pathname `//GRAPEVINE LAKE-RELEASE/FLOW//1Hour/RUN:2007_MAR-JUL/`, as appropriate for the selected element.
+5. Import the selected record and verify the first and last dates, hourly spacing, units and number of ordinates against the inventory. Use the alternative-series selector to compare the two hydrographs in BestFit.
 
-This project contains 2 time series elements imported from the same DSS file:
+## Read the plots
 
-| Element | DSS Pathname (B/C parts) | Units |
-|---------|--------------------------|-------|
-| Grapevine Dam - Inflow | `GRAPEVINE INFLOW/FLOW` | cfs |
-| Grapevine Dam - Outflow | `GRAPEVINE LAKE-RELEASE/FLOW` | cfs |
+![Hourly Grapevine Dam inflow from the supplied DSS record.](figures/hec-dss-import-example-inflow.png)
 
-### About the Data
+*Figure 1. Hourly Grapevine Dam inflow from the supplied DSS record.* [SVG](figures/hec-dss-import-example-inflow.svg) · [Plot data](figures/hec-dss-import-example-inflow.plotspec.json.gz)
 
-This dataset represents a reservoir routing simulation for Grapevine Dam (Trinity River basin, Texas). The inflow hydrograph shows the flood entering the reservoir, while the outflow (release) hydrograph shows the controlled release from the dam. Comparing the two demonstrates how the reservoir attenuates flood peaks.
+![Hourly Grapevine Dam release from the supplied DSS record. Compare dates as well as magnitudes.](figures/hec-dss-import-example-outflow.png)
 
-## Step-by-Step Guide
+*Figure 2. Hourly Grapevine Dam release from the supplied DSS record. Compare dates as well as magnitudes.* [SVG](figures/hec-dss-import-example-outflow.svg) · [Plot data](figures/hec-dss-import-example-outflow.plotspec.json.gz)
 
-### Opening the Project
+## Interpretation and limits
 
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to `examples/1-time-series-data/5-hec-dss-import/`
-3. Open `hec-dss-import-example.bestfit`
-4. The Project Explorer will show 2 elements under **Time Series Data**
+The saved maximum inflow is approximately 34,118 cfs, while the maximum release is 1,382 cfs. These are maxima of the two records and need not occur at the same time. A difference between their hydrographs alone does not provide storage change: a water balance also requires consistent timing, volume integration and any other relevant fluxes.
 
-![RMC-BestFit Project Explorer showing the 2 HEC-DSS time series elements](../images/hec-dss-project-explorer.png)
-*Figure 1: Project Explorer with HEC-DSS time series elements*
+Neither hydrograph is an annual-maximum sample. Do not assign an annual exceedance probability to its largest value from this one event-period record. The supplied DSS file makes the import exercise reproducible without the original author’s computer paths.
 
-### Exploring the Inflow Hydrograph
+## Check your understanding
 
-1. Click **Grapevine Dam - Inflow** in the Project Explorer
-2. The **Time Series** tab displays the hourly inflow hydrograph
-3. Notice the sharp flood peak followed by a gradual recession
+Find both DSS pathnames and verify that they refer to FLOW at a one-hour interval. Explain what additional information would be required to turn the hydrograph comparison into a reservoir water balance.
 
-![Time series plot showing the hourly inflow hydrograph for Grapevine Dam](../images/hec-dss-inflow-ts-plot.png)
-*Figure 2: Hourly inflow hydrograph for Grapevine Dam*
+## Figure reproducibility
 
-### Comparing Inflow and Outflow with Alternative Time Series
-
-RMC-BestFit's **Alternative Time Series** feature lets you overlay another time series on the same plot:
-
-1. With the **Grapevine Dam - Inflow** element selected, look at the top-left of the time series plot
-2. Find the **Alternative Time Series** selector (dropdown)
-3. Select **Grapevine Dam - Outflow** from the dropdown
-4. The outflow hydrograph will be overlaid on the inflow plot, visually demonstrating the reservoir's flood attenuation effect
-
-![Time series plot showing inflow and outflow hydrographs overlaid using the Alternative Time Series feature](../images/hec-dss-inflow-outflow-comparison.png)
-*Figure 3: Inflow vs. outflow -- the Alternative Time Series feature shows how the reservoir attenuates the flood peak*
-
-### Viewing the Properties Panel
-
-1. With an element selected, open the **Properties** panel
-2. The panel shows HEC-DSS-specific configuration:
-   - **Entry Method:** HEC-DSS
-   - **Full File Path:** Path to the `.dss` file
-   - **DSS Pathname:** The 6-part pathname identifying the dataset within the DSS file
-   - **Import** button to re-import from the DSS file
-
-![Properties panel showing HEC-DSS file path, DSS pathname, and Import button](../images/hec-dss-properties-panel.png)
-*Figure 4: Properties panel for a HEC-DSS time series element*
-
-### Importing Your Own HEC-DSS Data
-
-To create a new HEC-DSS time series element:
-
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **HEC-DSS**
-3. Click **Browse** to select a `.dss` file
-4. The **DSS Path Selector** window will open, displaying all available pathnames in the file
-5. Select the desired dataset and click **OK**
-6. Click **Import** to load the data
-
-![DSS Path Selector window showing available pathnames in the DSS file](../images/hec-dss-path-selector.png)
-*Figure 5: DSS Path Selector window -- browse and select datasets from a HEC-DSS file*
-
-## Key Settings
-
-| Setting | Value in This Example | Notes |
-|---------|----------------------|-------|
-| Entry Method | HEC-DSS | Reads from a local `.dss` file using the Hec.Dss library |
-| DSS File | `dss-example-data.dss` | Must be accessible on the local filesystem |
-| DSS Pathname | 6-part path (e.g., `//GRAPEVINE INFLOW/FLOW//1Hour/RUN:2007_MAR-JUL/`) | Identifies the specific dataset within the DSS file |
-| Time Interval | OneHour | Automatically detected from the DSS data |
-
-## Next Steps
-
-- **Reservoir Analysis:** Compare inflow and outflow statistics to quantify flood attenuation performance
-- **Create Input Data:** Reference the inflow time series in an Input Data element to extract peak values for frequency analysis
-- **Time Series Analysis:** Fit ARIMA models to the hourly inflow series to characterize the temporal structure of flood events
-- **Import Additional Data:** Use the same `.dss` file to import stage, precipitation, or other parameters stored alongside the flow data
+Figures are rendered with Python from BestFit.UI/App coordinates exported from the saved project. Use the repository [figure-generation instructions](../../README.md#reproducing-the-figures) with project filter `hec-dss-import-example`. The accompanying plot data records the source hash; a successful plot export is not validation of a statistical model.

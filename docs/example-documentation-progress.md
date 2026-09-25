@@ -4,7 +4,7 @@ Plan: [2026-09-25 example documentation](superpowers/plans/2026-09-25-example-do
 
 ## Current state
 
-- Session 1 complete; Session 2 in progress. Starting HEAD: `0cb6ab9eca1cedef86509cb61b82132e9b48ba57`.
+- Sessions 1–2 implementation packages complete; Session 3 in progress. Starting HEAD: `0cb6ab9eca1cedef86509cb61b82132e9b48ba57`.
 - Switched to the user-requested `documentation-verification-updates` branch and fast-forwarded it to local main after fetching origin.
 - Updater merge committed as `1fe9b9a`; plotting merge committed as `9fbf0ec`.
 - Merged baseline: build and desktop exporter build have zero warnings/errors; 5,055 fast .NET tests and 101 Python tests passed. Three inherited Python integration tests required the sibling notebook runtime; standalone coverage passed 98 tests.
@@ -26,6 +26,10 @@ Plan: [2026-09-25 example documentation](superpowers/plans/2026-09-25-example-do
 
 1. Foundation: branch reconciliation; API error serialization and B17C warning correction; portable desktop adapter and display fixes; immutable inventory, figure regeneration and transactional metadata-audit tools. Four fast .NET suites pass (5,055 tests), Python checks pass (113 tests, 15 subtests), and desktop exporter smoke checks pass (3 tests). The XML gate passed across 960 source files. Review findings on fill transparency and axis bounds/direction were corrected and independently rechecked. Old geometry snapshots need `--refresh` to capture axis direction.
 
-## Session 2 work in progress
+## Session 2 review and validation
 
-Ten data-preparation tutorials have new drafts. Nineteen Chapter 1 figures rendered; fifteen Chapter 2 figures are being generated. Individual visual/page review and index updates remain. An App-test failure caught a removed release-note opening in the examples index; the required opening was restored and all 444 App tests then passed.
+Ten data-preparation tutorials and their three indexes are rewritten. All 34 PNGs (19 Chapter 1, 15 Chapter 2) were individually inspected, and all 13 rendered pages were reviewed. Local links pass. The independent visual receipt records 34 matching hashes and zero open findings. Low-outlier crosses retain the desktop red stroke; monthly percentile ranges are labeled observed ranges; a legend was repositioned to expose the highest observations.
+
+Nine description updates passed a persisted, cell-by-cell audit against preserved original databases. The audit now closes SQLite before hashing, with a regression reproducing the WAL issue. The GHCN values and metadata remain pending the source-unit decision. The reviewed binary changes are listed in `examples/metadata-audit.json`.
+
+Validation: 117 Python tests and 15 subtests pass; all four fast .NET suites pass (3,434 core, 645 UI, 444 App, 532 API). Shared plotting and audit fixes received an independent scoped review. No statistical settings, observations, or results changed; the approved ABOM test-row removal is documented.

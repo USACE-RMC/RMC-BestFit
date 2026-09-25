@@ -30,6 +30,21 @@ def test_description_edit_preserves_seed_and_binary_payload(tmp_path):
     assert receipt["onlyApprovedCellsChanged"] is True
 
 
+def test_wal_database_receipt_hashes_the_flushed_file(tmp_path):
+    from update_descriptions import apply_updates
+    from project_inventory import read_project
+    path = tmp_path / "wal.bestfit"
+    database(path)
+    connection = sqlite3.connect(path)
+    connection.execute("PRAGMA journal_mode=WAL")
+    connection.close()
+    source_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+    receipt = apply_updates(path, source_hash, [{"table": "Input Data", "rowid": 1, "name": "Record", "description": "Flushed description"}])
+    assert read_project(path)["Input Data"][0]["Description"] == "Flushed description"
+    assert receipt["afterSha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert receipt["afterSha256"] != source_hash
+
+
 def test_invalid_or_stale_request_cannot_partly_edit_project(tmp_path):
     from update_descriptions import apply_updates
     from project_inventory import read_project

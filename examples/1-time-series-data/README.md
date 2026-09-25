@@ -1,73 +1,28 @@
-# Time Series Data Examples
+# Time-series data: establish the record before analysis
 
-These example projects demonstrate how to import and download time series data in RMC-BestFit 2.0. Each `.bestfit` file showcases a different data source, covering all entry methods supported by the software.
+A time-series element stores observations and their source settings. This chapter teaches the first decisions in an analysis: what was measured, in which units, at what interval, and over what observed period. All projects contain saved records and can be explored offline. Network access is needed only to refresh a download.
 
-## Examples
+| Tutorial | Saved source | Main lesson |
+|---|---|---|
+| [USGS records](1-usgs-download/usgs-download-example.md) | Eight series at five U.S. gages | Daily means, instantaneous values, annual peaks and field measurements answer different questions. |
+| [GHCN precipitation and snowfall](2-ghcn-download/ghcn-download-example.md) | Big Bear Lake and Paradise, California | Check variable-specific units and missing values; the retained snowfall scale has a documented error. |
+| [Canadian hydrometric records](3-chmn-download/chmn-download-example.md) | Lillooet River, 08MG005 | Compare coverage and metric units across six discharge and stage products. |
+| [Australian water data](4-abom-download/abom-download-example.md) | Six series from three stations | Read precipitation, flow and stage settings separately and review gaps. |
+| [HEC-DSS hydrographs](5-hec-dss-import/hec-dss-import-example.md) | Supplied Grapevine Dam DSS file | Match pathnames, intervals and units before comparing inflow with release. |
+| [Manual entry](6-manual-entry/manual-entry-example.md) | Airline passengers, Nile volume and Mauna Loa CO2 | Check dates and units against the supplied CSV; the Nile date discrepancy is retained and explained. |
 
-| Example | Data Source | Series Types | Description |
-|---------|-------------|--------------|-------------|
-| [USGS Download](1-usgs-download/usgs-download-example.md) | USGS NWIS | Daily, Instantaneous, Peak, Measured (Discharge + Stage) | Four U.S. gaging stations demonstrating all 8 USGS series types |
-| [GHCN Download](2-ghcn-download/ghcn-download-example.md) | NOAA GHCN | Daily Precipitation, Daily Snow | Cooperative observer stations in California |
-| [CHMN Download](3-chmn-download/chmn-download-example.md) | Water Survey of Canada | Daily, Instantaneous, Peak (Discharge + Stage) | Lillooet River near Pemberton, BC demonstrating all 6 CHMN series types |
-| [ABOM Download](4-abom-download/abom-download-example.md) | Australian BOM | Daily, Instantaneous (Discharge, Stage, Precipitation) | Stations in the ACT and NSW demonstrating all 5 ABOM series types |
-| [HEC-DSS Import](5-hec-dss-import/hec-dss-import-example.md) | Local HEC-DSS file | Hourly Discharge | Grapevine Dam inflow/outflow hydrographs with Alternative Time Series comparison |
-| [Manual Entry](6-manual-entry/manual-entry-example.md) | Copy-paste from CSV | Monthly, Annual | Three classic time series analysis datasets entered manually |
+## Begin with one project
 
-## CSV Data Files
+1. Open its `.bestfit` file with **File > Open** and save a working copy.
+2. Select the named **Time Series Data** element. Read Properties and the data grid before the plot.
+3. Confirm the source identifier, variable, units, first and last dates, and missing values.
+4. Compare chronology and seasonality. A seasonal band shows the spread of observed monthly values; it is not uncertainty in a fitted flood quantile.
+5. State the engineering quantity you need before deriving a frequency sample.
 
-The following CSV files are provided for the manual entry example. Each file has a Date column and a value column that can be copy-pasted into a Time Series Data element:
+A zero missing-value count describes stored rows, not necessarily complete coverage between dates. This distinction is particularly important for event records and irregular measurements. A stage measurement is relative to a datum; a negative gage height is not a negative water depth. Field-measured stage and discharge must be paired by reliable timestamps or measurement identifiers, not row number.
 
-| File | Dataset | Frequency | Source |
-|------|---------|-----------|--------|
-| [`airline-passengers.csv`](6-manual-entry/airline-passengers.csv) | Airline Passengers | Monthly | Box & Jenkins (1970) |
-| [`nile-river-flow.csv`](6-manual-entry/nile-river-flow.csv) | Nile River Annual Flow | Annual | Cobb (1978) |
-| [`mauna-loa-co2.csv`](6-manual-entry/mauna-loa-co2.csv) | Mauna Loa CO2 | Monthly | NOAA GML |
+The manual-entry folder supplies [airline](6-manual-entry/airline-passengers.csv), [Nile](6-manual-entry/nile-river-flow.csv) and [CO2](6-manual-entry/mauna-loa-co2.csv) files. The HEC-DSS tutorial links its local source file. Keep these sources with the working project.
 
-## Supported Data Sources
+## Continue the workflow
 
-RMC-BestFit supports manual data entry, downloads from four web APIs, and imports from one local file format:
-
-| Entry Method | Agency | Required Parameter | Format | Available Series Types |
-|--------------|--------|-------------------|--------|----------------------|
-| **Manual** | — | — | — | Any (user-defined time interval and unit label) |
-| **USGS** | U.S. Geological Survey | Site Number (8-15 digits) | `01134500` | Daily Discharge/Stage, Instantaneous Discharge/Stage, Peak Discharge/Stage, Measured Discharge/Stage |
-| **GHCN** | NOAA NCEI | Station ID (11 characters) | `USC00040741` | Daily Precipitation, Daily Snow |
-| **CHMN** | Water Survey of Canada | Station ID (7 characters) | `08MG005` | Daily Discharge/Stage, Instantaneous Discharge/Stage, Peak Discharge/Stage |
-| **ABOM** | Australian Bureau of Meteorology | Station ID (6 digits) | `410730` | Daily Discharge/Stage/Precipitation, Instantaneous Discharge/Stage |
-| **HEC-DSS** | Local file import | DSS file path + pathname | 6-part DSS path | Any time series stored in DSS format |
-
-## Prerequisites
-
-- **RMC-BestFit 2.0.0** or later
-- **Internet connection** required for USGS, GHCN, CHMN, and ABOM download examples
-- **HEC-DSS example** includes the `.dss` file in the [`5-hec-dss-import/`](5-hec-dss-import/) subfolder -- no internet required
-- **Manual entry example** includes CSV files in the [`6-manual-entry/`](6-manual-entry/) subfolder for copy-paste -- no internet required
-
-## How to Use These Examples
-
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to a subfolder (e.g., `1-usgs-download/`)
-3. Open the `.bestfit` file
-4. Expand **Time Series Data** in the Project Explorer to see the elements
-5. Click on an element to view its time series plot, seasonality, ACF, and PACF tabs
-6. Open the Properties panel to see the data source configuration
-
-Each tutorial guide includes step-by-step instructions for exploring the data, viewing the Properties panel, and downloading your own data from the same source.
-
-## Screenshot Images
-
-Screenshot placeholders in the tutorial guides reference images in the `images/` subfolder. To add screenshots:
-
-1. Create an `images/` folder in this directory if it does not exist
-2. Capture screenshots from RMC-BestFit matching the descriptions in the alt text
-3. Save as PNG with the filename specified in each image reference
-4. Naming convention: `<example-name>-<view-name>.png`
-
-## Next Steps
-
-After exploring time series data, the typical workflow continues with:
-
-1. **Input Data** -- Create an Input Data element that references a time series, apply a block function (e.g., annual maximum), and extract the sample for analysis
-2. **Distribution Fitting** -- Fit multiple distributions to the extracted sample and compare goodness-of-fit
-3. **Univariate Analysis** -- Perform Bayesian frequency analysis with a selected distribution
-4. **Time Series Analysis** -- Fit ARIMA/ARIMAX models to the raw time series
+Use [Chapter 2](../2-input-data/README.md) to create annual or threshold-based frequency inputs. Use [Chapter 7](../7-time-series-analysis/README.md) when the question concerns serial dependence or forecasting in the original time series. The [shared figure instructions](../README.md#reproducing-the-figures) explain how the Python figures are regenerated from BestFit plot geometry.

@@ -56,6 +56,8 @@ def validate_spec(spec):
         raise ValueError("PlotSpec must be an object")
     if spec.get("version") != 1 or isinstance(spec.get("version"), bool):
         raise ValueError("Unsupported PlotSpec version")
+    if not isinstance(spec.get("legendLocation", "best"), str) or spec.get("legendLocation", "best") not in {"best", "upper left", "upper right", "lower left", "lower right"}:
+        raise ValueError("legendLocation must name a supported legend position")
     for key in ("plotId", "variant", "title"):
         if not isinstance(spec.get(key), str) or not spec[key].strip():
             raise ValueError(f"{key} must be a nonempty string")

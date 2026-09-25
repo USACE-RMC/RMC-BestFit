@@ -1,137 +1,58 @@
-# Block Maximum Example
+# Annual maxima: choose the block and the measured quantity
 
-## Overview
+This exercise extracts one maximum daily mean discharge per annual block from the Moose River at Victory, Vermont (USGS 01134500). Compare calendar-year and water-year blocks to see how the same daily record can produce different annual samples. Neither sample is an annual instantaneous-peak record.
 
-This example demonstrates extracting annual maximum values from a daily discharge time series using the **Block Maximum** method. Two Input Data elements are created from the same source time series -- one using calendar year blocks (January--December) and one using water year blocks (October--September) -- to illustrate how the choice of time block affects the resulting annual maximum series.
+## Open and inspect the source
 
-Block maximum extraction is the most common method for creating input data for flood frequency analysis. It divides the continuous daily record into fixed-length blocks and returns the maximum value within each block, producing exactly one observation per year.
+Open [usgs-block-max-example.bestfit](usgs-block-max-example.bestfit) in BestFit and save a working copy before refreshing or processing data. The figures below use the saved observations and current desktop display routines.
 
-## Data Source
+The saved daily series contains 29,050 observations from 1947-01-01 through 2026-07-14, with no stored missing ordinates. Discharge is in cubic feet per second (cfs). The source record stops partway through 2026. The water-year series also starts partway through water year 1947 because October–December 1946 are absent.
 
-- **Station:** USGS 01134500, Moose River at Victory, VT
-- **Source Time Series:** Daily mean discharge, downloaded from the USGS NWIS API
-- **Record:** 1947--present
-- **Units:** Cubic feet per second (cfs)
+## Saved configuration and sample
 
-The Moose River at Victory is a perennial stream in northeastern Vermont, draining a 75 square mile watershed in the Green Mountains. Spring snowmelt typically produces the annual peak flow, usually occurring between March and May.
+| Saved input | Block | Observations | Year indexes | Low outliers |
+|---|---|---:|---|---:|
+| USGS - 01134500 - Block Max - Calendar Year | January–December | 80 | 1947–2026 | 0 |
+| USGS - 01134500 - Block Max - Water Year | October–September, named by ending year | 80 | 1947–2026 | 0 |
 
-## What's Inside
+## Work through the example
 
-Open `usgs-block-max-example.bestfit` in RMC-BestFit. The Project Explorer shows the following elements:
+1. Select **USGS - 01134500 - Daily Discharge** under **Time Series Data**. Check the first and last dates and confirm that the values are daily means.
+2. Select **USGS - 01134500 - Block Max - Calendar Year** under **Input Data**. In Properties, confirm **Exact Data Method = Block Series**, the Moose River source, **Block Function = Maximum**, and **Time Block = Calendar Year**.
+3. Inspect the data grid and **Chronology**. There are 80 rows, including an incomplete 2026 block. A row count alone does not prove that each year was completely observed.
+4. Select the water-year element and confirm **Time Block = Water Year**. Read each observation’s event date as well as its year index; an October event belongs to the following water year.
+5. Compare the two samples by year index. Sixteen of the 80 paired magnitudes differ. The grouping choice can change the selected event even though no daily value changed.
+6. Open **Frequency**. These are empirical plotting positions from the saved sample, not a fitted flood-frequency curve. Inspect completeness before creating a separate analysis.
+7. To repeat the extraction, create a new Input Data element in a working copy, select the source, maximum function and desired annual block. Document how incomplete blocks are handled before interpreting a fitted annual probability.
 
-| Element | Type | Description |
-|---------|------|-------------|
-| USGS - 01134500 - Daily Discharge | Time Series Data | Daily mean discharge from USGS NWIS |
-| USGS - 01134500 - Block Max - Calendar Year | Input Data | Annual maximum using January--December blocks |
-| USGS - 01134500 - Block Max - Water Year | Input Data | Annual maximum using October--September blocks |
+## Read the plots
 
-![Project Explorer showing the time series and two block maximum Input Data elements](../images/block-max-project-explorer.png)
-*Figure 1: Project Explorer with time series and block maximum elements*
+![Calendar-year maxima of daily mean discharge. The 2026 block is incomplete.](images/usgs-block-max-example-calendar-chronology.png)
 
-## Step-by-Step Guide
+*Calendar-year maxima of daily mean discharge. The 2026 block is incomplete.* [SVG](images/usgs-block-max-example-calendar-chronology.svg) · [Plot data](images/usgs-block-max-example-calendar-chronology.plotspec.json.gz)
 
-### Opening the Project
+![Water-year maxima. Both the first and last water-year blocks have incomplete coverage.](images/usgs-block-max-example-water-year-chronology.png)
 
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to `examples/2-input-data/1-block-maximum/`
-3. Open `usgs-block-max-example.bestfit`
-4. Expand **Time Series Data** and **Input Data** in the Project Explorer
+*Water-year maxima. Both the first and last water-year blocks have incomplete coverage.* [SVG](images/usgs-block-max-example-water-year-chronology.svg) · [Plot data](images/usgs-block-max-example-water-year-chronology.plotspec.json.gz)
 
-### Exploring the Source Time Series
+![Empirical frequency of the saved daily-mean maxima, including the retained boundary years.](images/usgs-block-max-example-calendar-frequency.png)
 
-1. Click **USGS - 01134500 - Daily Discharge** in the Project Explorer
-2. The **Time Series** tab displays the full daily hydrograph spanning 1947 to present
-3. Click the **Seasonality** tab to see the annual cycle -- note the spring snowmelt peak between March and May, which is typical of New England rivers
+*Empirical frequency of the saved daily-mean maxima, including the retained boundary years.* [SVG](images/usgs-block-max-example-calendar-frequency.svg) · [Plot data](images/usgs-block-max-example-calendar-frequency.plotspec.json.gz)
 
-![Daily discharge hydrograph for Moose River at Victory, VT](../images/block-max-daily-discharge.png)
-*Figure 2: Daily discharge hydrograph for Moose River at Victory, VT*
+## Interpretation and limits
 
-### Exploring the Calendar Year Block Maximum
+The stored Start Month and End Month fields are 10 and 9 in both elements. For these saved standard-block choices, the Time Block selection determines the grouping; do not describe the calendar-year element as October–September solely from those otherwise retained fields.
 
-1. Click **USGS - 01134500 - Block Max - Calendar Year** in the Project Explorer
-2. The **Chronology** tab shows the extracted annual maximum series plotted against year
-3. Click the **Frequency** tab to see the empirical frequency curve (plotting positions)
-4. Click the **Seasonality** tab to see when annual maxima occur -- most fall in spring (March--May)
-5. The **Density**, **Histogram**, and **Q-Q** tabs provide additional views of the sample distribution
-6. The **ACF** and **PACF** tabs show the autocorrelation structure of the annual maximum series
+A maximum daily mean averages over a day; an instantaneous annual peak describes the highest momentary discharge. Compare records only after matching year convention, coverage and source qualifiers. Do not substitute the daily-mean series for instantaneous peaks without stating the change in the engineering quantity.
 
-![Chronology plot of calendar year annual maxima](../images/block-max-calendar-chronology.png)
-*Figure 3: Calendar year annual maximum series*
+Both inputs retain an enabled low-outlier screening setting and zero low-outlier flags. That does not establish independence, stationarity or suitability for extrapolation. The incomplete boundary years require review before a design analysis; the original sample is retained so this issue remains visible.
 
-![Frequency plot showing empirical plotting positions](../images/block-max-calendar-frequency.png)
-*Figure 4: Empirical frequency curve for calendar year annual maxima*
+## Check your understanding
 
-### Exploring the Water Year Block Maximum
+Explain why the two records have the same count but 16 different magnitudes. Then identify which boundary years lack complete source coverage and state whether the intended analysis concerns daily mean or instantaneous flow.
 
-1. Click **USGS - 01134500 - Block Max - Water Year** in the Project Explorer
-2. Compare the chronology with the calendar year series -- values may differ in years where the annual peak occurs near the January boundary
-3. The water year (October 1 through September 30) is the standard block used in U.S. flood frequency practice because it keeps the winter-spring flood season within a single year
+Compare the [USGS annual-peak example](../2-usgs-peak-discharge/usgs-peak-download-example.md) before choosing a frequency-analysis input.
 
-![Chronology plot of water year annual maxima](../images/block-max-wateryear-chronology.png)
-*Figure 5: Water year annual maximum series*
+## Reproduce the figures
 
-### Comparing Calendar Year vs Water Year
-
-The calendar year and water year series will often be identical for stations where annual peaks occur far from the year boundary. For the Moose River, spring snowmelt peaks (March--May) fall well within both the calendar year and the water year, so the two series are nearly identical. However, for stations with winter flood seasons, the choice of time block can significantly affect the results.
-
-**Why water year is preferred for flood frequency analysis:**
-
-- In the U.S., the water year begins on October 1 and ends on September 30
-- This keeps the primary flood season (typically winter through spring) within a single year
-- Calendar year blocks can split a single flood season across two years, potentially missing the true annual maximum or double-counting events
-- Bulletin 17C and most U.S. flood frequency guidelines specify the water year
-
-### Viewing the Properties Panel
-
-1. With either Input Data element selected, open the **Properties** panel
-2. The panel shows the block maximum configuration:
-   - **Exact Data Method:** Time Series
-   - **Time Series Element:** The source daily discharge element
-   - **Block Function:** Maximum
-   - **Time Block:** Calendar Year or Water Year
-   - **Start Month / End Month:** Defines the custom block boundaries (relevant when Time Block is set to Custom Year)
-
-![Properties panel showing block maximum settings](../images/block-max-properties.png)
-*Figure 6: Properties panel for a block maximum Input Data element*
-
-### Creating Your Own Block Maximum Element
-
-To create a new block maximum Input Data element:
-
-1. Right-click **Input Data** in the Project Explorer and select **Create New**
-2. Enter a descriptive name for the element
-3. In the Properties panel:
-   - Set **Exact Data Method** to **Time Series**
-   - Select a **Time Series Element** from the dropdown (must already exist in the project)
-   - Set **Block Function** to **Maximum** (or Minimum, Mean)
-   - Set **Time Block** to **Water Year**, **Calendar Year**, or **Custom Year**
-   - If using Custom Year, set the **Start Month** and **End Month**
-4. The Input Data element will automatically process the time series and extract the block maximum values
-
-## Block Maximum vs USGS Peak Download
-
-There are two ways to obtain annual peak flow data for flood frequency analysis:
-
-| Approach | Source | Peak Type | Requires Time Series |
-|----------|--------|-----------|---------------------|
-| **Block Maximum** (this example) | Daily mean discharge time series | Daily maximum | Yes |
-| **USGS Peak Download** ([see example](../2-usgs-peak-discharge/usgs-peak-download-example.md)) | USGS peak-flow database | Instantaneous peak | No |
-
-The USGS peak discharge values are the single highest *instantaneous* streamflow each water year, which is always greater than or equal to the daily mean maximum. For most applications, the USGS peak download is preferred because it captures the true peak. Block maximum from daily data is useful when peak data are not available, when working with non-USGS data sources, or when analyzing other variables (precipitation, stage, temperature).
-
-## Key Settings Reference
-
-| Setting | Calendar Year | Water Year | Notes |
-|---------|--------------|------------|-------|
-| Exact Data Method | Time Series | Time Series | Both reference the same daily discharge |
-| Block Function | Maximum | Maximum | Also supports Minimum, Mean |
-| Time Block | Calendar Year | Water Year | Water year: Oct 1 -- Sep 30 |
-| Start Month | 1 (January) | 10 (October) | Defines block start |
-| End Month | 12 (December) | 9 (September) | Defines block end |
-
-## Next Steps
-
-- **Distribution Fitting** -- Fit multiple distributions (Normal, Log-Normal, GEV, LP3, etc.) to the annual maximum series and compare goodness-of-fit
-- **Univariate Distribution Analysis** -- Perform Bayesian frequency analysis with a selected distribution to estimate flood quantiles with full uncertainty
-- **Bulletin 17C** -- For USGS regulatory applications, use the water year block maximum series as input to a Bulletin 17C analysis with the Log-Pearson Type III distribution
-- **Compare with Peak Download** -- See the [USGS Peak Discharge example](../2-usgs-peak-discharge/usgs-peak-download-example.md) to compare block maxima from daily data with official USGS instantaneous peaks
+Follow the [shared figure-generation instructions](../../README.md#reproducing-the-figures) with `--only usgs-block-max-example`. No saved analysis is refitted. Threshold views, where present, call the desktop diagnostic fits on the saved source; the Python package renders their returned geometry.

@@ -1,77 +1,33 @@
-# Input Data Examples
+# Input data: define the sample and observation process
 
-Input Data is the bridge between raw time series and frequency analysis in RMC-BestFit. An Input Data element extracts a statistical sample from a time series (or downloads one directly) and organizes it into a data frame with exact, uncertain, interval-censored, and threshold-censored observations. This sample becomes the input to Distribution Fitting and Univariate Distribution Analysis.
+An Input Data element organizes the observations used by a frequency analysis. It can hold exact values, measurement-error distributions, intervals and perception thresholds. Start by deciding what one observation represents and how many years were actually observed; the choice of a statistical distribution comes later.
 
-These examples demonstrate the three methods for creating Input Data elements, covering the most common workflows in flood and precipitation frequency analysis.
+| Tutorial | Saved sample | Main decision |
+|---|---|---|
+| [Annual block maxima](1-block-maximum/usgs-block-max-example.md) | Moose River daily-mean maxima, calendar and water years | Choose the annual grouping and review incomplete boundary blocks. |
+| [USGS annual instantaneous peaks](2-usgs-peak-discharge/usgs-peak-download-example.md) | Moose River and Orestimba Creek | Preserve source qualifiers and understand low-outlier flags. |
+| [Orestimba flow POT](3-peaks-over-threshold/usgs-peaks-over-threshold-example.md) | 78 daily-flow events above 650 cfs | Distinguish retained-event span from full observation exposure. |
+| [Big Bear precipitation POT](3-peaks-over-threshold/ghcn-peaks-over-threshold-example.md) | 233 daily precipitation events above 1 inch | Review threshold, separation, partial years and missing observations. |
 
-## Examples
+## Understand the observation types
 
-| Example | Method | Description |
-|---------|--------|-------------|
-| [Block Maximum](1-block-maximum/usgs-block-max-example.md) | Block Maximum from Time Series | Calendar year and water year annual maxima extracted from USGS daily discharge |
-| [USGS Peak Discharge](2-usgs-peak-discharge/usgs-peak-download-example.md) | Direct USGS Download | Annual peak discharge downloaded from USGS NWIS, with and without MGBT low outlier detection |
-| [USGS Peaks-Over-Threshold](3-peaks-over-threshold/usgs-peaks-over-threshold-example.md) | Peaks-Over-Threshold from Time Series | POT series from USGS daily discharge with a 650 cfs threshold |
-| [GHCN Peaks-Over-Threshold](3-peaks-over-threshold/ghcn-peaks-over-threshold-example.md) | Peaks-Over-Threshold from Time Series | POT series from NOAA GHCN daily precipitation with a 1.0 inch threshold |
+| Type | What it says | What it does not say |
+|---|---|---|
+| Exact | Use the recorded magnitude as a point observation for this model. | The physical measurement has literally no error. |
+| Uncertain | A specified distribution describes measurement uncertainty. | Only two endpoints or an interval have been supplied. |
+| Interval | The event magnitude lies between the recorded bounds. | The magnitude is uniformly distributed between those bounds. |
+| Threshold | An observation window and perception level constrain the unobserved events. | Every unrecorded year had zero flow. |
 
-## Input Data Methods
+MGBT low-outlier flags remain attached to the saved exact-series rows. The selected estimator determines their statistical treatment. Do not remove flagged years or infer a distinct physical population solely from the flag. Historical perception windows and measurement-error observations require their own evidence and cannot be inferred from a filename.
 
-RMC-BestFit provides three ways to populate an Input Data element:
+## Work in a reproducible sequence
 
-### Block Maximum from Time Series
+1. Open a working copy and inspect the source record described in the tutorial.
+2. Confirm variable, units, date convention, completeness and observation method.
+3. Read the extraction settings and compare the saved input grid with chronology.
+4. Inspect frequency and, for POT inputs, the threshold diagnostics. Five-step separation is an extraction rule, not proof of independence.
+5. Record the chosen sample and observation exposure before creating an analysis.
 
-Divides a time series into fixed-length blocks (calendar year, water year, or custom period) and returns one value per block -- typically the maximum, but minimum and mean are also available. This is the standard approach for annual maximum flood frequency analysis when working with daily or sub-daily records.
+Annual maxima and POT peaks need different probability interpretations. A daily-mean maximum also differs from an instantaneous annual peak. For a POT model, count years with no events when they were observed, and distinguish missing coverage from a zero event count. Current extraction retains the source calendar-year span, while the older Orestimba snapshot lacks that field; its tutorial documents the resulting saved-rate difference.
 
-### USGS Peak Discharge Download
-
-Downloads the official annual peak instantaneous discharge series directly from the USGS NWIS peak-flow web service. These values represent the single highest instantaneous streamflow recorded each water year, as published by the USGS. This method bypasses the need for a time series element entirely. It also supports the Multiple Grubbs-Beck Test (MGBT) for detecting anomalously low peaks, which are flagged as threshold-censored observations.
-
-### Peaks-Over-Threshold from Time Series
-
-Selects all values exceeding a user-defined threshold from a time series, with a minimum separation between peaks to ensure independence. Unlike block maximum (which produces exactly one value per block), POT can yield multiple events in wet years and zero events in dry years. The resulting partial-duration series is used with point process or Poisson-GP models for frequency analysis.
-
-## Data Frame Types
-
-Each Input Data element contains a data frame with up to four series types:
-
-| Series | Description | Example |
-|--------|-------------|---------|
-| **Exact** | Precisely observed values | Annual peak discharge of 5,200 cfs |
-| **Uncertain** | Values with measurement error, modeled as distributions | Peak estimated between 4,800 and 5,600 cfs |
-| **Interval** | Values known only within a range | Peak between 3,000 and 5,000 cfs (historical flood) |
-| **Threshold** | Values known only to be below (or above) a threshold | Peak was below 1,270 cfs (MGBT low outlier) |
-
-The block maximum and POT methods produce exact observations. The USGS peak download method can additionally produce threshold-censored observations when the MGBT detects low outliers.
-
-## Prerequisites
-
-- **RMC-BestFit 2.0.0** or later
-- **Internet connection** required for the USGS peak discharge download example and for refreshing time series data in the block maximum and POT examples
-- All examples include pre-downloaded data -- you can explore the results without an internet connection
-
-## How to Use These Examples
-
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to a subfolder (e.g., `1-block-maximum/`)
-3. Open the `.bestfit` file
-4. Expand **Input Data** in the Project Explorer to see the elements
-5. Click on an element to view its chronology, frequency, seasonality, density, histogram, Q-Q, ACF, and PACF tabs
-6. Open the Properties panel to see the Input Data configuration
-
-Each tutorial guide includes step-by-step instructions for exploring the data, understanding the Properties panel settings, and creating your own Input Data elements.
-
-## Screenshot Images
-
-Screenshot placeholders in the tutorial guides reference images in the `images/` subfolder. To add screenshots:
-
-1. Create an `images/` folder in this directory if it does not exist
-2. Capture screenshots from RMC-BestFit matching the descriptions in the alt text
-3. Save as PNG with the filename specified in each image reference
-4. Naming convention: `<example-name>-<view-name>.png`
-
-## Next Steps
-
-After creating Input Data, the typical workflow continues with:
-
-1. **Distribution Fitting** -- Fit multiple distributions to the extracted sample and compare goodness-of-fit using information criteria (DIC, WAIC, LOO-CV)
-2. **Univariate Distribution Analysis** -- Perform Bayesian frequency analysis with a selected distribution to estimate flood quantiles and their uncertainty
-3. **Bulletin 17C Analysis** -- For USGS regulatory applications, perform a Bulletin 17C flood frequency analysis using the Log-Pearson Type III distribution
+Continue to [Chapter 4](../4-univariate-distribution-analysis/README.md) for Bayesian and Bulletin 17C analyses. Use the [figure instructions](../README.md#reproducing-the-figures) to reproduce these Python figures from the saved source geometry.

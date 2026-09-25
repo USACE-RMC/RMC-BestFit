@@ -103,9 +103,9 @@ def time_series_plots(time_series, source, unit="Value", peak=False):
             stats = time_series.MonthlySummaryStatistics()
             x = [f"2020-{i+1:02d}-01" for i in range(stats.GetLength(0))]
             cols = lambda j: [float(stats[i, j]) for i in range(stats.GetLength(0))]
-            season = [area("90% Confidence Interval", x, cols(1), cols(5), {"kind":"confidence","level":.9},
+            season = [area("90% Observed Range", x, cols(1), cols(5),
                            color="#353b7a", facecolor="#688caf", alpha=74/255),
-                      area("50% Confidence Interval", x, cols(2), cols(4), {"kind":"confidence","level":.5},
+                      area("50% Observed Range", x, cols(2), cols(4),
                            color="#353b7a", facecolor="#29d372", alpha=117/255),
                       line("Median", x, cols(3), color="blue"), line("Mean", x, cols(7), color="blue", linestyle="-.")]
     output["seasonality"] = plot("time_series_data.seasonality", source, "Seasonality", axis("Month", "date", "date"),

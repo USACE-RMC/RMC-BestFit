@@ -1,0 +1,275 @@
+[
+  {
+    "id": "usgs-download-example-daily-flow",
+    "project": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+    "element": "USGS - 01134500 - Daily Discharge",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/1-usgs-download/figures/usgs-download-example-daily-flow"
+  },
+  {
+    "id": "usgs-download-example-seasonality",
+    "project": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+    "element": "USGS - 01134500 - Daily Discharge",
+    "plotId": "time_series_data.seasonality",
+    "variant": "default",
+    "output": "examples/1-time-series-data/1-usgs-download/figures/usgs-download-example-seasonality"
+  },
+  {
+    "id": "usgs-download-example-annual-peaks",
+    "project": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+    "element": "USGS - 01614000 - Peak Discharge",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/1-usgs-download/figures/usgs-download-example-annual-peaks"
+  },
+  {
+    "id": "usgs-download-example-field-measurements",
+    "project": "examples/1-time-series-data/1-usgs-download/usgs-download-example.bestfit",
+    "element": "USGS - 01570500 - Measured Discharge",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/1-usgs-download/figures/usgs-download-example-field-measurements"
+  },
+  {
+    "id": "ghcn-download-example-precipitation",
+    "project": "examples/1-time-series-data/2-ghcn-download/ghcn-download-example.bestfit",
+    "element": "GHCN - USC00040741 - Daily Precipitation",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/2-ghcn-download/figures/ghcn-download-example-precipitation"
+  },
+  {
+    "id": "ghcn-download-example-precipitation-seasonality",
+    "project": "examples/1-time-series-data/2-ghcn-download/ghcn-download-example.bestfit",
+    "element": "GHCN - USC00040741 - Daily Precipitation",
+    "plotId": "time_series_data.seasonality",
+    "variant": "default",
+    "output": "examples/1-time-series-data/2-ghcn-download/figures/ghcn-download-example-precipitation-seasonality"
+  },
+  {
+    "id": "ghcn-download-example-snowfall-source-check",
+    "project": "examples/1-time-series-data/2-ghcn-download/ghcn-download-example.bestfit",
+    "element": "GHCN - USC00046685 - Daily Snow",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/2-ghcn-download/figures/ghcn-download-example-snowfall-source-check"
+  },
+  {
+    "id": "chmn-download-example-daily-flow",
+    "project": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
+    "element": "CHMN - 08MG005 - Daily Discharge",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/3-chmn-download/figures/chmn-download-example-daily-flow"
+  },
+  {
+    "id": "chmn-download-example-seasonality",
+    "project": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
+    "element": "CHMN - 08MG005 - Daily Discharge",
+    "plotId": "time_series_data.seasonality",
+    "variant": "default",
+    "output": "examples/1-time-series-data/3-chmn-download/figures/chmn-download-example-seasonality"
+  },
+  {
+    "id": "chmn-download-example-annual-peaks",
+    "project": "examples/1-time-series-data/3-chmn-download/chmn-download-example.bestfit",
+    "element": "CHMN - 08MG005 - Peak Discharge",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/3-chmn-download/figures/chmn-download-example-annual-peaks"
+  },
+  {
+    "id": "abom-download-example-precipitation",
+    "project": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+    "element": "ABOM - 410730 - Daily Precipitation",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/4-abom-download/figures/abom-download-example-precipitation"
+  },
+  {
+    "id": "abom-download-example-cotter-daily-flow",
+    "project": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+    "element": "ABOM - 410730 - Daily Discharge",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/4-abom-download/figures/abom-download-example-cotter-daily-flow"
+  },
+  {
+    "id": "abom-download-example-cotter-seasonality",
+    "project": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+    "element": "ABOM - 410730 - Daily Discharge",
+    "plotId": "time_series_data.seasonality",
+    "variant": "default",
+    "output": "examples/1-time-series-data/4-abom-download/figures/abom-download-example-cotter-seasonality"
+  },
+  {
+    "id": "abom-download-example-murray-stage",
+    "project": "examples/1-time-series-data/4-abom-download/abom-download-example.bestfit",
+    "element": "ABOM - 409202 - Daily Stage",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/4-abom-download/figures/abom-download-example-murray-stage"
+  },
+  {
+    "id": "hec-dss-import-example-inflow",
+    "project": "examples/1-time-series-data/5-hec-dss-import/hec-dss-import-example.bestfit",
+    "element": "Grapevine Dam - Inflow",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/5-hec-dss-import/figures/hec-dss-import-example-inflow"
+  },
+  {
+    "id": "hec-dss-import-example-outflow",
+    "project": "examples/1-time-series-data/5-hec-dss-import/hec-dss-import-example.bestfit",
+    "element": "Grapevine Dam - Outflow",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/5-hec-dss-import/figures/hec-dss-import-example-outflow"
+  },
+  {
+    "id": "manual-entry-example-airline",
+    "project": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
+    "element": "Airline Passengers",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/6-manual-entry/figures/manual-entry-example-airline"
+  },
+  {
+    "id": "manual-entry-example-co2",
+    "project": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
+    "element": "Mauna Loa CO2",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/6-manual-entry/figures/manual-entry-example-co2"
+  },
+  {
+    "id": "manual-entry-example-nile-stored-dates",
+    "project": "examples/1-time-series-data/6-manual-entry/manual-entry-example.bestfit",
+    "element": "Nile River Flows",
+    "plotId": "time_series_data.series",
+    "variant": "default",
+    "output": "examples/1-time-series-data/6-manual-entry/figures/manual-entry-example-nile-stored-dates"
+  },
+  {
+    "id": "usgs-block-max-example-calendar-chronology",
+    "project": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "plotId": "input_data.chronology",
+    "variant": "calendar_year",
+    "output": "examples/2-input-data/1-block-maximum/images/usgs-block-max-example-calendar-chronology"
+  },
+  {
+    "id": "usgs-block-max-example-water-year-chronology",
+    "project": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Water Year",
+    "plotId": "input_data.chronology",
+    "variant": "water_year",
+    "output": "examples/2-input-data/1-block-maximum/images/usgs-block-max-example-water-year-chronology"
+  },
+  {
+    "id": "usgs-block-max-example-calendar-frequency",
+    "project": "examples/2-input-data/1-block-maximum/usgs-block-max-example.bestfit",
+    "element": "USGS - 01134500 - Block Max - Calendar Year",
+    "plotId": "input_data.frequency",
+    "variant": "exact",
+    "output": "examples/2-input-data/1-block-maximum/images/usgs-block-max-example-calendar-frequency"
+  },
+  {
+    "id": "usgs-peak-download-example-moose-chronology",
+    "project": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+    "element": "USGS - 01134500 - Peak Discharge",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/2-input-data/2-usgs-peak-discharge/images/usgs-peak-download-example-moose-chronology",
+    "legendLocation": "upper left"
+  },
+  {
+    "id": "usgs-peak-download-example-moose-frequency",
+    "project": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+    "element": "USGS - 01134500 - Peak Discharge",
+    "plotId": "input_data.frequency",
+    "variant": "exact",
+    "output": "examples/2-input-data/2-usgs-peak-discharge/images/usgs-peak-download-example-moose-frequency"
+  },
+  {
+    "id": "usgs-peak-download-example-orestimba-chronology",
+    "project": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+    "element": "USGS - 11274500 - Peak Discharge",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/2-input-data/2-usgs-peak-discharge/images/usgs-peak-download-example-orestimba-chronology"
+  },
+  {
+    "id": "usgs-peak-download-example-orestimba-frequency",
+    "project": "examples/2-input-data/2-usgs-peak-discharge/usgs-peak-download-example.bestfit",
+    "element": "USGS - 11274500 - Peak Discharge",
+    "plotId": "input_data.frequency",
+    "variant": "low_outlier",
+    "output": "examples/2-input-data/2-usgs-peak-discharge/images/usgs-peak-download-example-orestimba-frequency"
+  },
+  {
+    "id": "usgs-peaks-over-threshold-example-chronology",
+    "project": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+    "element": "USGS - 11274500 - Peaks-Over-Threshold",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/usgs-peaks-over-threshold-example-chronology"
+  },
+  {
+    "id": "usgs-peaks-over-threshold-example-frequency",
+    "project": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+    "element": "USGS - 11274500 - Peaks-Over-Threshold",
+    "plotId": "input_data.frequency",
+    "variant": "exact",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/usgs-peaks-over-threshold-example-frequency"
+  },
+  {
+    "id": "usgs-peaks-over-threshold-example-mean-residual-life",
+    "project": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+    "element": "USGS - 11274500 - Peaks-Over-Threshold",
+    "plotId": "input_data.mean_residual_life",
+    "variant": "default",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/usgs-peaks-over-threshold-example-mean-residual-life"
+  },
+  {
+    "id": "usgs-peaks-over-threshold-example-shape-stability",
+    "project": "examples/2-input-data/3-peaks-over-threshold/usgs-peaks-over-threshold-example.bestfit",
+    "element": "USGS - 11274500 - Peaks-Over-Threshold",
+    "plotId": "input_data.shape",
+    "variant": "default",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/usgs-peaks-over-threshold-example-shape-stability"
+  },
+  {
+    "id": "ghcn-peaks-over-threshold-example-chronology",
+    "project": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+    "element": "GHCN-USC00040741-POT",
+    "plotId": "input_data.chronology",
+    "variant": "saved_index",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/ghcn-peaks-over-threshold-example-chronology"
+  },
+  {
+    "id": "ghcn-peaks-over-threshold-example-frequency",
+    "project": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+    "element": "GHCN-USC00040741-POT",
+    "plotId": "input_data.frequency",
+    "variant": "exact",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/ghcn-peaks-over-threshold-example-frequency"
+  },
+  {
+    "id": "ghcn-peaks-over-threshold-example-mean-residual-life",
+    "project": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+    "element": "GHCN-USC00040741-POT",
+    "plotId": "input_data.mean_residual_life",
+    "variant": "default",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/ghcn-peaks-over-threshold-example-mean-residual-life"
+  },
+  {
+    "id": "ghcn-peaks-over-threshold-example-modified-scale",
+    "project": "examples/2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.bestfit",
+    "element": "GHCN-USC00040741-POT",
+    "plotId": "input_data.modified_scale",
+    "variant": "default",
+    "output": "examples/2-input-data/3-peaks-over-threshold/images/ghcn-peaks-over-threshold-example-modified-scale"
+  }
+]

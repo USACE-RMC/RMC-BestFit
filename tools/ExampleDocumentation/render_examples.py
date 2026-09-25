@@ -53,6 +53,9 @@ def render_entry(entry, exporter, cache, refresh=False):
         raise ValueError("Desktop export does not match the requested source and view")
     saved["project"] = entry["project"]
     spec = desktop_plot(saved)
+    if "legendLocation" in entry:
+        spec["legendLocation"] = entry["legendLocation"]
+        spec.setdefault("displayCorrections", []).append("Legend repositioned to keep observations visible.")
     if not spec["series"]:
         raise ValueError("A tutorial figure cannot be an empty plot")
     paths = export_plot(spec, output)

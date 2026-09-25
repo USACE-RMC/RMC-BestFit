@@ -39,6 +39,8 @@ def _style(item, kind):
     if kind == "scatter":
         style.update(size=(2 * s.get("MarkerSize", 3)) ** 2,
                      edgecolor=_color(s.get("MarkerStroke")), boundsColor=_color(s.get("ErrorBarColor")))
+        if style["marker"] in {"x", "+"}:
+            style["color"] = _color(s.get("MarkerStroke"), color)
     if kind in {"area", "bars"}:
         style.update(facecolor=_color(s.get("Fill") or s.get("FillColor"), "#688caf4b"),
                      edgecolor=_color(s.get("StrokeColor") or s.get("Color"), "none"), alpha=None)
@@ -86,7 +88,13 @@ def desktop_plot(snapshot):
                 xaxis[key] = _date(xaxis[key])
         corrections.append("OLE observation dates are displayed on a date axis instead of the legacy response-unit axis.")
     b17c = any(value in snapshot.get("analysisKind", "").lower() for value in ("b17c", "bulletin17c")) or plot_id.startswith("b17c.")
+    seasonal_ranges = plot_id == "time_series_data.seasonality" and any(
+        raw["type"] == "AreaSeries" for raw in snapshot["series"])
+    if seasonal_ranges:
+        corrections.append("Monthly sample percentile bands are labeled observed ranges, not confidence intervals for an estimated statistic.")
     def label(value):
+        if seasonal_ranges:
+            value = value.replace("Confidence Interval", "Observed Range")
         if b17c:
             return value.replace("Posterior", "Uncertainty").replace("Credible", "Confidence")
         return value

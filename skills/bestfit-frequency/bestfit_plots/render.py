@@ -150,7 +150,7 @@ def render_plot(spec, ax=None):
             ax.set_xticks([position for position, _ in ticks], [f"{p:g}" for _, p in ticks])
             ax.set_xlim(left, right)
         if any(item["kind"] in {"line", "scatter", "band", "area", "bars"} for item in spec["series"]):
-            ax.legend(loc="best", facecolor="white", edgecolor="#999999")
+            ax.legend(loc=spec.get("legendLocation", "best"), facecolor="white", edgecolor="#999999")
         fig.bestfit_omissions = omissions
         return fig
     except Exception:
@@ -168,6 +168,8 @@ def export_plot(spec, output_prefix):
     try:
         for path in paths:
             fig.savefig(path, dpi=180, facecolor="white")
+            if path.suffix == ".svg":
+                path.write_text("\n".join(line.rstrip() for line in path.read_text(encoding="utf-8").splitlines()) + "\n", encoding="utf-8")
     finally:
         plt.close(fig)
     return paths

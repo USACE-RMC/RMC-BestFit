@@ -1,151 +1,68 @@
-# GHCN Peaks-Over-Threshold Example
+# Big Bear precipitation POT: threshold diagnostics and missing coverage
 
-## Overview
+This example extracts separated daily precipitation peaks at Big Bear Lake, California (GHCN USC00040741). It shows how to connect a threshold, daily event selection and an observation-period record without assuming that every selected value is an independent storm or an annual maximum.
 
-This example demonstrates applying the **Peaks-Over-Threshold (POT)** method to daily precipitation data, showing that the technique is not limited to streamflow analysis. A threshold of 1.0 inch is applied to daily precipitation from a cooperative observer station in the mountains of southern California, extracting independent storm events for precipitation frequency analysis.
+## Open and inspect the source
 
-Comparing this example with the [USGS POT streamflow example](usgs-peaks-over-threshold-example.md) in the same folder illustrates how the POT method adapts to different hydrological variables and climates.
+Open [ghcn-peaks-over-threshold-example.bestfit](ghcn-peaks-over-threshold-example.bestfit) in BestFit and save a working copy before refreshing or processing data. The figures below use the saved observations and current desktop display routines.
 
-## Data Source
+The saved precipitation series has 24,106 daily ordinates from 1960-07-01 through 2026-06-30; 482 are missing. Values are in inches. NOAA defines the source PRCP field in tenths of millimetres; precipitation is converted separately from the snowfall variable discussed in the [GHCN download tutorial](../../1-time-series-data/2-ghcn-download/ghcn-download-example.md). See the [NOAA daily format specification](https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt) for source units and flags.
 
-- **Agency:** NOAA National Centers for Environmental Information (NCEI)
-- **Network:** Global Historical Climatology Network -- Daily (GHCN-Daily)
-- **Station:** USC00040741, Big Bear Lake, CA
-- **Variable:** Daily precipitation
-- **Record:** 1960--present (approximately 67 years)
-- **Units:** Inches (in)
+## Saved configuration and sample
 
-Big Bear Lake is a mountain community at approximately 6,750 feet elevation in the San Bernardino Mountains of southern California. The station receives most of its precipitation from Pacific storm systems between November and April, with occasional summer monsoon events. Annual precipitation averages roughly 25 inches, much of it falling as snow in winter.
+| Saved setting or result | Value |
+|---|---|
+| Input element | GHCN-USC00040741-POT |
+| Source element | GHCN-USC00040741-Precipitation |
+| Threshold | 1.0 inch |
+| Minimum steps between peaks | 5 daily steps |
+| Smoothing | None; retained Period = 2 is inactive |
+| Selected events and year indexes | 233; 1960–2026 |
+| Stored source exposure | 67 inclusive calendar years |
+| Saved Lambda | 3.4776119403 events/year (233 / 67) |
 
-## What's Inside
+## Work through the example
 
-Open `ghcn-peaks-over-threshold-example.bestfit` in RMC-BestFit. The Project Explorer shows:
+1. Open the precipitation source and check the dates, units and missing observations before interpreting the storm peaks.
+2. Select **GHCN-USC00040741-POT**. Confirm the 1.0 inch threshold, five-step separation and **Smoothing = None**. The saved name is GHCN, not the earlier tutorial’s GHCH spelling.
+3. Inspect all 233 event rows and their dates. A daily precipitation peak is a one-day total; it is not a multi-day storm-total depth.
+4. Compare **Chronology** with **Frequency**. Several selected events can occur in one calendar year. The sample exceedance probability should not be described as annual exceedance probability without an occurrence model.
+5. Open **Threshold Diagnostics**. Inspect mean residual life and modified-scale stability together; consult shape stability in the app. Record how many observations support the tail and whether uncertainty expands as the threshold rises.
+6. Read the stored exposure of 67 calendar years and calculate 233 / 67. Then identify the two partial boundary years and the 482 missing daily values that a study-specific effective-exposure review must address.
+7. If investigating sensitivity, create separate working-copy inputs for alternative thresholds and separation rules, keeping units and source period fixed. Explain the hydrologic evidence behind a choice rather than targeting a preferred event count.
 
-| Element | Type | Description |
-|---------|------|-------------|
-| GHCN-USC00040741-Precipitation | Time Series Data | Daily precipitation from NOAA GHCN |
-| GHCH-USC00040741-POT | Input Data | POT series with threshold = 1.0 inch, minimum separation = 5 days |
+## Read the plots
 
-> **Note:** The Input Data element name contains a typo ("GHCH" instead of "GHCN"). This is a known issue in the example file that will be corrected in a future release. The element functions correctly despite the name.
+![The 233 selected one-day precipitation peaks; some years have multiple events.](images/ghcn-peaks-over-threshold-example-chronology.png)
 
-![Project Explorer showing time series and POT Input Data elements](../images/ghcn-pot-project-explorer.png)
-*Figure 1: Project Explorer with precipitation time series and POT elements*
+*The 233 selected one-day precipitation peaks; some years have multiple events.* [SVG](images/ghcn-peaks-over-threshold-example-chronology.svg) · [Plot data](images/ghcn-peaks-over-threshold-example-chronology.plotspec.json.gz)
 
-## Step-by-Step Guide
+![Empirical event-magnitude frequency in inches. Annual frequency requires the occurrence model and exposure.](images/ghcn-peaks-over-threshold-example-frequency.png)
 
-### Opening the Project
+*Empirical event-magnitude frequency in inches. Annual frequency requires the occurrence model and exposure.* [SVG](images/ghcn-peaks-over-threshold-example-frequency.svg) · [Plot data](images/ghcn-peaks-over-threshold-example-frequency.plotspec.json.gz)
 
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to `examples/2-input-data/3-peaks-over-threshold/`
-3. Open `ghcn-peaks-over-threshold-example.bestfit`
-4. Expand **Time Series Data** and **Input Data** in the Project Explorer
+![Mean excess from the desktop threshold diagnostic calculation on the saved precipitation source.](images/ghcn-peaks-over-threshold-example-mean-residual-life.png)
 
-### Exploring the Source Time Series
+*Mean excess from the desktop threshold diagnostic calculation on the saved precipitation source.* [SVG](images/ghcn-peaks-over-threshold-example-mean-residual-life.svg) · [Plot data](images/ghcn-peaks-over-threshold-example-mean-residual-life.plotspec.json.gz)
 
-1. Click **GHCN-USC00040741-Precipitation** in the Project Explorer
-2. The **Time Series** tab displays the full daily precipitation record -- note the episodic nature, with most days recording zero precipitation and occasional large storm events
-3. Click the **Seasonality** tab to see the Mediterranean climate pattern: precipitation is concentrated in winter (November--April) with dry summers
+![Modified GPD scale stability. Sparse high-threshold support should be read together with the interval width.](images/ghcn-peaks-over-threshold-example-modified-scale.png)
 
-![Daily precipitation record for Big Bear Lake, CA](../images/ghcn-pot-daily-precipitation.png)
-*Figure 2: Daily precipitation at Big Bear Lake -- note the seasonal concentration in winter months*
+*Modified GPD scale stability. Sparse high-threshold support should be read together with the interval width.* [SVG](images/ghcn-peaks-over-threshold-example-modified-scale.svg) · [Plot data](images/ghcn-peaks-over-threshold-example-modified-scale.plotspec.json.gz)
 
-### Exploring the POT Input Data
+## Interpretation and limits
 
-1. Click **GHCH-USC00040741-POT** in the Project Explorer
-2. The **Chronology** tab shows all extracted storm events plotted against time
-3. Click the **Frequency** tab to see the empirical frequency curve
-4. Click the **Seasonality** tab to confirm events are concentrated in winter months
+The five-step separation is an extraction convention, not a demonstration of storm independence. The threshold diagnostics use the source series after smoothing, with no smoothing active here; they do not repeat the final declustering rule at each threshold. A stable-looking parameter curve should be considered alongside storm timing, dependence, source quality and the number of exceedances.
 
-![Chronology of POT precipitation events](../images/ghcn-pot-chronology.png)
-*Figure 3: Chronology of precipitation events exceeding 1.0 inch*
+The stored exposure counts 1960 through 2026 inclusive. It does not subtract the partial boundary years or 482 missing days. Missing precipitation is unknown, not zero. Preserve that distinction when deciding whether the source represents continuous observation or requires a different effective exposure in a new study.
 
-![Frequency plot of POT precipitation events](../images/ghcn-pot-frequency.png)
-*Figure 4: Empirical frequency curve for POT precipitation events*
+Compare this example with Orestimba only as a contrast in variable, units and settings. A higher event rate does not by itself establish a physical difference in storm frequency because the thresholds, record completeness and extraction choices also differ. The retained 1.0 inch threshold is a tutorial setting, not a general recommendation for precipitation studies.
 
-### Understanding the POT Configuration
+## Check your understanding
 
-**Threshold (1.0 inch):** Daily precipitation totals exceeding 1.0 inch are considered as potential storm events. This threshold is low enough to capture a meaningful number of events per year while filtering out light rain and drizzle that do not represent significant storms.
+Explain why 233 events do not mean 233 years, why the inactive Period = 2 does not create two-day totals, and why 67 calendar years is not automatically 67 complete observed years.
 
-**Minimum Steps Between Peaks (5 days):** After identifying a peak, the algorithm requires at least 5 days before the next peak can be selected. For daily precipitation, this helps ensure that consecutive rainy days within a single storm system are not counted as separate events.
+Continue with the [point-process examples](../../4-univariate-distribution-analysis/3-point-process-analysis/point-process-examples.md), where event magnitudes and occurrence exposure enter an annual-frequency model.
 
-**Result:** Approximately 233 independent storm events extracted from 67 years of record, yielding an average rate of roughly 3.5 events per year. This is substantially higher than the streamflow POT example (~0.83 events/year), reflecting the fact that precipitation POT naturally captures more events because individual storms regularly exceed a moderate threshold.
+## Reproduce the figures
 
-### Comparing with Streamflow POT
-
-This example pairs well with the [USGS Orestimba Creek POT example](usgs-peaks-over-threshold-example.md) in the same folder:
-
-| | Precipitation (this example) | Streamflow (USGS example) |
-|---|---|---|
-| **Threshold** | 1.0 inch | 650 cfs |
-| **Event rate** | ~3.5 per year | ~0.83 per year |
-| **Total events** | ~233 | 78 |
-| **Record length** | ~67 years | ~94 years |
-| **Climate** | Mediterranean (winter storms) | Semi-arid (episodic rainfall) |
-| **Seasonality** | Strong winter peak | Strong winter peak |
-
-The higher event rate in precipitation POT is typical: a single storm system produces a measurable precipitation event on the day it occurs, but may or may not produce a streamflow peak above the threshold depending on antecedent conditions, infiltration, and basin response.
-
-### Viewing the Threshold Diagnostic Plots
-
-As with the streamflow POT example, RMC-BestFit provides three threshold diagnostic plots:
-
-1. **MRL (Mean Residual Life) Plot** -- Shows the mean excess as a function of threshold. Look for approximate linearity above the selected threshold.
-2. **Modified Scale Stability Plot** -- The adjusted scale parameter should stabilize above the threshold.
-3. **Shape Stability Plot** -- The shape parameter should stabilize above the threshold.
-
-![MRL plot for precipitation threshold selection](../images/ghcn-pot-mrl.png)
-*Figure 5: Mean Residual Life plot for precipitation threshold*
-
-### Viewing the Properties Panel
-
-1. With the POT Input Data element selected, open the **Properties** panel
-2. The panel shows the POT configuration:
-   - **Exact Data Method:** Peaks-Over-Threshold Series
-   - **Time Series Element:** GHCN-USC00040741-Precipitation
-   - **Threshold:** 1.0 (inches)
-   - **Min Steps Between Peaks:** 5 (days)
-
-![Properties panel showing precipitation POT settings](../images/ghcn-pot-properties.png)
-*Figure 6: Properties panel for precipitation POT element*
-
-### Creating Your Own Precipitation POT Element
-
-To create a POT element from precipitation data:
-
-1. First, ensure you have a daily precipitation time series element in your project (download from GHCN, ABOM, or enter manually)
-2. Right-click **Input Data** in the Project Explorer and select **Create New**
-3. In the Properties panel:
-   - Set **Exact Data Method** to **Peaks-Over-Threshold Series**
-   - Select the precipitation **Time Series Element**
-   - Set an initial **Threshold** -- for daily precipitation in inches, 0.5--2.0 inches is a typical starting range depending on climate
-   - Set **Min Steps Between Peaks** to 3--5 days for daily precipitation (shorter than streamflow because precipitation events are more distinct)
-4. Review the threshold diagnostic plots and adjust as needed
-
-**Threshold guidance for precipitation:**
-
-- Arid/semi-arid climates: Lower thresholds (0.25--0.5 inch) to capture enough events
-- Temperate climates: Moderate thresholds (0.5--1.5 inches)
-- Tropical/high-rainfall climates: Higher thresholds (1.0--3.0 inches)
-- Target an event rate of 2--5 events per year as a starting point
-
-## Connection to Other Examples
-
-This example uses the same GHCN station (USC00040741, Big Bear Lake, CA) as the [GHCN download example](../../1-time-series-data/2-ghcn-download/ghcn-download-example.md) in the Time Series Data folder. The time series download example shows the raw daily precipitation; this example shows how to extract independent storm events for frequency analysis.
-
-## Key Settings Reference
-
-| Setting | Value | Notes |
-|---------|-------|-------|
-| Exact Data Method | Peaks-Over-Threshold Series | Extracts peaks above a threshold from a time series |
-| Time Series Element | GHCN-USC00040741-Precipitation | Source daily precipitation |
-| Threshold | 1.0 inch | Moderate threshold for mountain precipitation |
-| Min Steps Between Peaks | 5 days | Ensures storm independence |
-| Extracted Events | ~233 | Over ~67 years of record |
-| Event Rate | ~3.5 per year | Typical for precipitation POT at this threshold |
-
-## Next Steps
-
-- **Distribution Fitting** -- Fit the Generalized Pareto distribution to the precipitation exceedances
-- **Univariate Distribution Analysis** -- Perform a Poisson-GP frequency analysis to estimate precipitation return levels (e.g., the 100-year daily precipitation)
-- **Streamflow POT** -- Compare this precipitation POT with the [USGS streamflow POT example](usgs-peaks-over-threshold-example.md) to understand how the same method applies to different variables
-- **Block Maximum** -- See the [Block Maximum example](../1-block-maximum/usgs-block-max-example.md) for an alternative approach using annual maxima
+Follow the [shared figure-generation instructions](../../README.md#reproducing-the-figures) with `--only ghcn-peaks-over-threshold-example`. No saved analysis is refitted. Threshold views, where present, call the desktop diagnostic fits on the saved source; the Python package renders their returned geometry.

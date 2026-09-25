@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+from contextlib import closing
 import hashlib
 import json
 from pathlib import Path
@@ -49,7 +50,7 @@ def apply_updates(path, expected_hash, edits, *, remove_abom_test=False):
             raise ValueError("The reviewed ABOM test row no longer matches")
         deleted = matches[0]
         expected["Time Series Data"].pop(str(deleted["_rowid_"]))
-    with sqlite3.connect(path) as connection:
+    with closing(sqlite3.connect(path)) as connection, connection:
         connection.row_factory = sqlite3.Row
         connection.execute("BEGIN IMMEDIATE")
         for edit in edits:
@@ -63,6 +64,8 @@ def apply_updates(path, expected_hash, edits, *, remove_abom_test=False):
             raise ValueError("Unapproved SQLite cells changed; transaction rolled back")
         if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
             raise ValueError("SQLite integrity failure; transaction rolled back")
+    if cell_snapshot(read_project(path)) != expected:
+        raise ValueError("Persisted SQLite cells differ from the audited transaction")
     return {"beforeSha256": expected_hash, "afterSha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "onlyApprovedCellsChanged": True, "edits": changes,
             "deletedRow": {"table": "Time Series Data", "rowid": deleted["_rowid_"], "name": deleted["Name"]} if deleted else None,

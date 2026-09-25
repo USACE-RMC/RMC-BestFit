@@ -1,120 +1,56 @@
-# GHCN Download Example
+# GHCN daily climate records: precipitation, snowfall and source-unit checks
 
-## Overview
+This example uses saved daily precipitation at Big Bear Lake, California, and snowfall at Paradise, California. It teaches station selection, missing-data inspection and the distinction between precipitation and snowfall units. No frequency model is fitted in this project.
 
-This example demonstrates downloading daily climate observations from the **NOAA Global Historical Climatology Network (GHCN)**. It includes precipitation and snowfall records from cooperative observer stations in California.
+## Open the example
 
-GHCN data is useful for precipitation frequency analysis, snowmelt modeling inputs, and climate trend studies. RMC-BestFit connects to the NOAA National Centers for Environmental Information (NCEI) API to download daily precipitation and snow depth records.
+Open [ghcn-download-example.bestfit](ghcn-download-example.bestfit) in RMC-BestFit and save a working copy before importing or editing data. The figures use the saved snapshot; downloading again may change the record. You do not need to run an analysis to follow this exercise.
 
-## Data Source
+## Source and saved records
 
-- **Agency:** NOAA National Centers for Environmental Information (NCEI)
-- **Network:** Global Historical Climatology Network - Daily (GHCN-D)
-- **Website:** https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily
-- **Entry Method in BestFit:** `GHCN`
-- **Required Parameter:** GHCN Station ID (11 characters)
-- **Additional Parameter:** Depth Unit (Inches, Millimeters, or Centimeters)
+The source is [NOAA GHCN-Daily](https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily). Big Bear Lake is USC00040741 and Paradise is USC00046685. The [daily-file specification](https://www.ncei.noaa.gov/pub/data/ghcn/daily/readme.txt) defines PRCP as precipitation in tenths of millimetres and SNOW as snowfall in millimetres; SNWD is the separate snow-depth variable.
 
-### GHCN Series Types
+| Saved element | Units | First–last saved date | Ordinates | Missing |
+|---|---|---|---:|---:|
+| GHCN - USC00040741 - Daily Precipitation | Precipitation (in) | 1960-07-01–2026-06-30 | 24,106 | 482 |
+| GHCN - USC00046685 - Daily Snow | Snow (in) | 1957-05-01–2022-05-31 | 23,772 | 2,197 |
 
-| Series Type | Description | Use Case |
-|-------------|-------------|----------|
-| Daily Precipitation | Total daily precipitation depth | Precipitation frequency analysis, IDF curves |
-| Daily Snow | Total daily snowfall depth | Snow accumulation studies, seasonal analysis |
+“Missing” counts stored nonfinite values. A date range and a zero missing-value count do not prove complete time coverage, particularly for irregular or annual-peak records.
 
-### GHCN Station ID Format
+## Work through the example
 
-GHCN station IDs are 11 characters long. For U.S. Cooperative Observer (COOP) stations, the format is:
-- `USC` + 8-digit COOP station number (e.g., `USC00040741`)
+1. Select **GHCN - USC00040741 - Daily Precipitation**. Confirm the station identifier, **Entry Method = GHCN**, **Series Type = DailyPrecipitation**, and **Depth Unit = Inches**.
+2. Inspect the **Time Series** and **Seasonality** plots. A zero means a stored zero precipitation amount; a missing value means the amount is unavailable. The two must remain distinct.
+3. Select **GHCN - USC00046685 - Daily Snow**. Check the source-unit discrepancy below before interpreting the magnitude of any snowfall event.
+4. For a new download, create a separate time-series element, enter the 11-character station identifier, choose the requested variable and depth unit, then select **Download**. Keep the saved teaching project as a reproducible snapshot.
+5. For a precipitation-frequency exercise, proceed to the [precipitation POT example](../../2-input-data/3-peaks-over-threshold/ghcn-peaks-over-threshold-example.md) and review its threshold, separation and observation-period assumptions.
 
-You can search for stations at the NOAA Climate Data Online portal: https://www.ncdc.noaa.gov/cdo-web/
+## Read the plots
 
-## What's Inside
+![Saved daily precipitation at Big Bear Lake, including missing-data gaps.](figures/ghcn-download-example-precipitation.png)
 
-This project contains 2 time series elements from cooperative observer stations in California:
+*Figure 1. Saved daily precipitation at Big Bear Lake, including missing-data gaps.* [SVG](figures/ghcn-download-example-precipitation.svg) · [Plot data](figures/ghcn-download-example-precipitation.plotspec.json.gz)
 
-| Element | Station | Series Type | Units |
-|---------|---------|-------------|-------|
-| GHCN - USC00040741 - Daily Precipitation | Big Bear Lake, CA | DailyPrecipitation | inches |
-| GHCN - USC00046685 - Daily Snow | Paradise, CA | DailySnow | inches |
+![Big Bear Lake precipitation seasonality from the saved record.](figures/ghcn-download-example-precipitation-seasonality.png)
 
-### Station Details
+*Figure 2. Big Bear Lake precipitation seasonality from the saved record.* [SVG](figures/ghcn-download-example-precipitation-seasonality.svg) · [Plot data](figures/ghcn-download-example-precipitation-seasonality.plotspec.json.gz)
 
-**Big Bear Lake, CA (USC00040741)** -- Located in the San Bernardino Mountains at approximately 6,790 ft elevation. Mountain climate with significant winter precipitation.
+![Original Paradise snowfall values. The saved inches are ten times too small; see the source-unit finding before interpreting magnitudes.](figures/ghcn-download-example-snowfall-source-check.png)
 
-**Paradise, CA (USC00046685)** -- Located in the Sierra Nevada foothills of Butte County. Receives measurable snowfall in winter months.
+*Figure 3. Original Paradise snowfall values. The saved inches are ten times too small; see the source-unit finding before interpreting magnitudes.* [SVG](figures/ghcn-download-example-snowfall-source-check.svg) · [Plot data](figures/ghcn-download-example-snowfall-source-check.plotspec.json.gz)
 
-## Step-by-Step Guide
+## Interpretation and limits
 
-### Opening the Project
+The seasonality bands show the 5th–95th percentiles (90% observed range) and 25th–75th percentiles (50% observed range) within each month. They describe variation among observations, not confidence in the monthly mean. Python corrects the desktop’s legacy confidence-interval legend while preserving the plotted values.
 
-1. Open RMC-BestFit 2.0
-2. Select **File > Open** and navigate to `examples/1-time-series-data/2-ghcn-download/`
-3. Open `ghcn-download-example.bestfit`
-4. The Project Explorer will show 2 elements under **Time Series Data**
+The precipitation record contains 482 missing daily ordinates and the snowfall record contains 2,197. Counts describe the saved files, not the latest NOAA download. Review missing intervals and station history before estimating an exposure period or comparing seasons.
 
-![RMC-BestFit Project Explorer showing the 2 GHCN time series elements](../images/ghcn-project-explorer.png)
-*Figure 1: Project Explorer with GHCN time series elements*
+**Source-unit finding awaiting correction:** the 38 nonzero saved snowfall values equal the NOAA SNOW integers divided by 254 rather than 25.4. For example, 445 mm on January 29, 1975 is saved as 1.752 inches; the source amount is 17.52 inches. The original values are retained pending the technical decision. The snowfall figure is a data-quality illustration and must not be used as a correctly scaled physical snowfall record. A fresh download through the affected conversion path would not resolve this issue.
 
-### Exploring Daily Precipitation (Big Bear Lake)
+## Check your understanding
 
-1. Click **GHCN - USC00040741 - Daily Precipitation** in the Project Explorer
-2. The **Time Series** tab displays the daily precipitation record
-3. Notice the episodic nature of precipitation -- many zero values with occasional storms
-4. Click the **Seasonality** tab to see the wet season (winter) and dry season (summer) pattern typical of California's Mediterranean climate
+Locate a missing precipitation interval and explain why filling it with zeros would alter a frequency analysis. Independently convert the 445 mm snowfall observation to inches and compare it with the stored value.
 
-![Time series plot showing daily precipitation for Big Bear Lake, CA](../images/ghcn-precipitation-ts-plot.png)
-*Figure 2: Daily precipitation for Big Bear Lake, CA (GHCN USC00040741)*
+## Figure reproducibility
 
-![Seasonality plot for Big Bear Lake precipitation showing winter wet season](../images/ghcn-precipitation-seasonality.png)
-*Figure 3: Seasonality plot -- California's Mediterranean climate with winter-dominant precipitation*
-
-### Exploring Daily Snowfall (Paradise)
-
-1. Click **GHCN - USC00046685 - Daily Snow** in the Project Explorer
-2. The **Time Series** tab shows daily snowfall amounts
-3. Values are zero throughout most of the year, with snowfall concentrated in winter months
-4. The **Seasonality** tab clearly shows the November-March snow season
-
-![Time series plot showing daily snowfall for Paradise, CA](../images/ghcn-snow-ts-plot.png)
-*Figure 4: Daily snowfall for Paradise, CA (GHCN USC00046685)*
-
-### Viewing the Properties Panel
-
-1. With a GHCN element selected, open the **Properties** panel
-2. The panel shows GHCN-specific configuration:
-   - **Entry Method:** GHCN
-   - **GHCN Site Number:** The 11-character station ID
-   - **Data Type:** Daily Precipitation or Daily Snow
-   - **Depth Unit:** The unit for reported values (Inches in this example)
-   - **Download** button to refresh the data
-
-![Properties panel showing GHCN site number, data type, depth unit, and Download button](../images/ghcn-properties-panel.png)
-*Figure 5: Properties panel for a GHCN time series element*
-
-### Downloading Your Own GHCN Data
-
-To create a new GHCN time series element:
-
-1. Right-click **Time Series Data** in the Project Explorer and select **Create New**
-2. In the Properties panel, set **Entry Method** to **GHCN**
-3. Enter a valid **GHCN Station ID** (11 characters, e.g., `USC00040741`)
-4. Select the **Data Type** (Daily Precipitation or Daily Snow)
-5. Select the **Depth Unit** (Inches, Millimeters, or Centimeters)
-6. Click **Download**
-
-## Key Settings
-
-| Setting | Value in This Example | Notes |
-|---------|----------------------|-------|
-| Entry Method | GHCN | Connects to NOAA NCEI web services |
-| Station ID | 11 characters (e.g., `USC00040741`) | Must be a valid GHCN-D station |
-| Data Type | DailyPrecipitation or DailySnow | Only two series types available for GHCN |
-| Depth Unit | Inches | Also supports Millimeters and Centimeters |
-| Time Interval | OneDay | All GHCN data is daily resolution |
-
-## Next Steps
-
-- **Create Input Data:** Reference the daily precipitation time series in an Input Data element, then apply a block function to extract annual maximum daily precipitation for frequency analysis
-- **Precipitation Frequency Analysis:** Use annual maxima with a Univariate Analysis element to estimate precipitation quantiles (e.g., 100-year 24-hour precipitation)
-- **Seasonal Analysis:** Use the monthly block function to analyze precipitation by season or month
+Figures are rendered with Python from BestFit.UI/App coordinates exported from the saved project. Use the repository [figure-generation instructions](../../README.md#reproducing-the-figures) with project filter `ghcn-download-example`. The accompanying plot data records the source hash; a successful plot export is not validation of a statistical model.

@@ -16,6 +16,27 @@ def snapshot():
                 "style": {"Color": "#ff0000ff"}}]}
 
 
+def test_requested_legend_position_can_leave_a_peak_visible():
+    import matplotlib.pyplot as plt
+    import pytest
+    from bestfit_plots.adapters.desktop import desktop_plot
+    from bestfit_plots.render import render_plot
+    spec = desktop_plot(snapshot())
+    spec["legendLocation"] = "upper left"
+    figure = render_plot(spec)
+    try:
+        figure.canvas.draw()
+        axes = figure.axes[0]
+        legend = axes.get_legend().get_window_extent()
+        assert legend.x1 < axes.get_window_extent().x0 + axes.get_window_extent().width / 2
+    finally:
+        plt.close(figure)
+    for invalid in ("misspelled", [], {}):
+        spec["legendLocation"] = invalid
+        with pytest.raises(ValueError, match="legendLocation"):
+            render_plot(spec)
+
+
 def test_desktop_dates_gaps_and_source_hash_are_retained_without_managed_runtime():
     from bestfit_plots.adapters.desktop import desktop_plot
     original = snapshot()
@@ -85,5 +106,34 @@ def test_desktop_probability_bounds_and_reversed_y_are_displayed():
         axes = figure.axes[0]
         assert axes.get_xlim() == pytest.approx((-NormalDist().inv_cdf(.999), -NormalDist().inv_cdf(1e-7)))
         assert axes.get_ylim() == (10., 0.)
+    finally:
+        plt.close(figure)
+
+
+def test_seasonality_percentiles_are_observed_ranges_not_confidence_bands():
+    from bestfit_plots.adapters.desktop import desktop_plot
+    data = snapshot()
+    data['plotId'] = 'time_series_data.seasonality'
+    data['series'] = [{'type': 'AreaSeries', 'Title': '90% Confidence Interval',
+                       'points': [{'X': 36526., 'Y': 2}, {'X': 36557., 'Y': 3}],
+                       'points2': [{'X': 36526., 'Y': 4}, {'X': 36557., 'Y': 5}], 'style': {}}]
+    spec = desktop_plot(data)
+    assert spec['series'][0]['name'] == '90% Observed Range'
+    assert spec['series'][0]['kind'] == 'area'
+    assert 'interval' not in spec['series'][0]
+    assert any('percentile' in note for note in spec['displayCorrections'])
+
+
+def test_unfilled_low_outlier_marker_uses_desktop_red_stroke():
+    import matplotlib.pyplot as plt
+    import pytest
+    from bestfit_plots.adapters.desktop import desktop_plot
+    from bestfit_plots.render import render_plot
+    data = snapshot()
+    data['series'][0].update(type='ScatterSeries', Title='Low Outlier Data',
+                            style={'MarkerType':'Cross', 'MarkerFill':'#00000001', 'MarkerStroke':'#ffff0000'})
+    figure = render_plot(desktop_plot(data))
+    try:
+        assert figure.axes[0].collections[0].get_edgecolors()[0] == pytest.approx([1.,0.,0.,1.])
     finally:
         plt.close(figure)
