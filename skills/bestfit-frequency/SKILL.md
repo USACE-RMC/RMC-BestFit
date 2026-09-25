@@ -1,9 +1,23 @@
 ---
 name: bestfit-frequency
-description: Use when collecting or entering flood-frequency data, researching historical floods or USGS regional information for a location, configuring BestFit univariate analyses, or plotting input chronologies and frequency curves in GPT or Claude.
+description: Use when collecting flood-frequency data, researching historical floods or regional information, configuring BestFit analyses, or producing app-style Python plots of saved results, chronologies, frequency curves, bivariate analyses, rating curves, time series, regression, and diagnostics.
 ---
 
-# BestFit flood frequency analysis
+# BestFit analysis and app plots
+
+## Start from the supplied evidence
+
+If the task supplies saved results or asks only for plots, read
+[saved-plots.md](references/saved-plots.md) first. List views with
+`python scripts/plot_source.py --source ARTIFACT.json --list`, then export the
+selected view. This path supports saved PlotSpec/case files and completed API
+plot-source snapshots and does not start estimation. Use the bundled
+[45-slot map](references/app-plot-map.json) to check the requested view's source,
+adapter, variants, and verification status. Frozen teaching projects and the
+documented Nile date correction are described in `saved-plots.md`.
+
+For a new analysis, use the workflow below. Preserve existing saved inputs and
+results when preparing a separately requested run.
 
 Use the headless BestFit API and its model-derived results. Default to stationary
 Bayesian LP3 when unspecified; preserve requested distributions and numerical

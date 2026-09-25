@@ -116,3 +116,16 @@ CLAUDE.md
 *.bestfit-wal
 *.bestfit-journal
 
+# Local plot-reference rendering and temporary runtime state (source JSON lives in validation).
+/.tmp-appdata/
+/output/.dotnet/
+/output/plot-ref-test*/
+/output/plot-reference-gallery/
+/output/plot-reference-smoke/
+/output/plot-final-tests*/
+/output/pytest-*/
+/output/influence-compare.json
+/output/loo-compare.json
+*.egg-info/
+/skills/bestfit-frequency/build/
+/skills/bestfit-frequency/dist/

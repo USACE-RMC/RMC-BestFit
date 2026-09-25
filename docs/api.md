@@ -113,6 +113,32 @@ All kinds share the verb set: `POST` (create), `POST {id}/run`, `GET` (list), `G
 `GET {id}/results`, `GET {id}/validate`, `DELETE {id}`. Lookups are kind-guarded (a univariate id
 404s on the Bulletin 17C routes).
 
+`GET api/analyses/{analysisId}/plot-source?includeSamples=false` exports one completed run of
+any kind for external plotting. The matching MCP tool is `get_analysis_plot_source`. The version 1
+response identifies the analysis and last run, and includes the existing kind-specific `results`
+payload, portable `analysisXml` settings, available `modelXml`, frequency `dataFrameXml`, dated
+rating/time-series observations and ARIMAX covariates in `series`, bivariate marginal observation
+frames and model XML, and stored parameter histogram/density/autocorrelation arrays. Histogram bins
+include exact lower and upper edges and raw frequencies, allowing clients to reproduce the app's
+density normalization. Typed `observations` and point-process `amsObservations` avoid requiring a
+.NET runtime to decode frequency input. Distribution fitting snapshots carry `fittingCurves` and
+`fittingHistogram`; bivariate snapshots carry the seeded scatter and desktop contour grids in
+`bivariatePlot`; rating and time-series snapshots carry `residualPlot`, with an exact dated result
+grid in `resultDates` for time-series forecasts. Parameter diagnostics include their configured
+prior density, and `influenceDiagnostics` keeps leverage, fit, variance, and LOO measures distinct.
+Nonstationary univariate snapshots also include a detached `chronology`
+grid with mean and interval arrays. Composite and seasonal point-process snapshots include
+`componentCurves` at each component's configured probabilities. The XML is produced by the
+existing model serializers, while `results` is a detached copy of the established results DTO.
+`includeSamples=true` additionally returns saved parameter draws and per-chain samples when that
+analysis has them. For Bulletin 17C, these draws are the GMM-derived uncertainty ensemble under
+its configured method, not Bayesian MCMC. An analysis with no completed current run returns 404;
+an analysis or live component running concurrently returns 409. Export does not run an analysis or
+alter its settings. The response is a same-run snapshot; clients should not combine it with a
+separate results request when they need strict run identity.
+The API's input-data resources do not retain the desktop project's free-text unit label;
+plotting clients should supply one explicitly when needed, or mark that label unavailable.
+
 **Live component references (composite, bivariate, coincidentfrequency).** Analyses that consume
 OTHER analyses hold LIVE references to them — the one deliberate exception to the clone-at-create
 invariant, because components may not be estimated yet when the consumer is created. This applies
@@ -212,14 +238,14 @@ Connect from an MCP client:
 claude mcp add --transport http bestfit http://localhost:5210/mcp
 ```
 
-Tools (26): `get_metadata`, `list_resources`, `delete_resource`, `usgs_download_timeseries`,
+Tools (27): `get_metadata`, `list_resources`, `delete_resource`, `usgs_download_timeseries`,
 `create_manual_timeseries`, `get_timeseries`, `create_inputdata_usgs_peaks`,
 `create_inputdata_block_max`, `create_inputdata_pot`, `create_inputdata_manual`, `get_inputdata`,
 `create_univariate_analysis`, `create_bulletin17c_analysis`, `create_ratingcurve_analysis`,
 `create_mixture_analysis`, `create_pointprocess_analysis`, `create_competingrisks_analysis`,
 `create_composite_analysis`, `create_distributionfitting_analysis`,
 `create_bivariate_analysis`, `create_coincidentfrequency_analysis`, `create_timeseries_analysis`,
-`run_analysis`, `get_analysis_results`, `validate_analysis`, plus the four
+`run_analysis`, `get_analysis_results`, `get_analysis_plot_source`, `validate_analysis`, plus the four
 `run_usgs_*_workflow` one-shots.
 
 Typical agent chains:

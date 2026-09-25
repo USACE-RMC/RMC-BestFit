@@ -1,0 +1,149 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "b809ca84f4792b029e0deca1718c0e394f5c87cea5e3a242028378eb54f52ba3",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "45b72adb2e983dd40014a29665dfca3ca28af9b638a4a1e862595f41ffec67d4",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+  "element": "USGS - 01134500 - Block Max - Calendar Year",
+  "plotId": "input_data.seasonality",
+  "variant": "default",
+  "variantSelection": "app control defaults and saved element data",
+  "appFactory": "src/RMC.BestFit.UI/Elements/InputData/InputData.cs::CreateDefaultSeasonalityPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/InputData/InputDataControl.xaml.cs::UpdateSeasonalityPlot",
+  "title": "Seasonality",
+  "axes": [
+    {
+      "type": "DateTimeAxis",
+      "Key": "Xaxis",
+      "Title": "Month",
+      "position": "Bottom",
+      "Minimum": 43831,
+      "Maximum": 44196,
+      "ActualMinimum": 43831,
+      "ActualMaximum": 44196,
+      "labels": null
+    },
+    {
+      "type": "LinearAxis",
+      "Key": "Yaxis",
+      "Title": "Relative Frequency",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -0.00525,
+      "ActualMaximum": 0.53025,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "Histogram",
+      "type": "HistogramSeries",
+      "Title": "Seasonality Plot",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [],
+      "actualItems": [
+        {
+          "Value": 0,
+          "RangeStart": 43831,
+          "RangeEnd": 43862,
+          "Area": 0,
+          "Count": 0
+        },
+        {
+          "Value": 0.025,
+          "RangeStart": 43862,
+          "RangeEnd": 43891,
+          "Area": 0.7250000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.1625,
+          "RangeStart": 43891,
+          "RangeEnd": 43922,
+          "Area": 5.0375000000000005,
+          "Count": 0
+        },
+        {
+          "Value": 0.525,
+          "RangeStart": 43922,
+          "RangeEnd": 43952,
+          "Area": 15.75,
+          "Count": 0
+        },
+        {
+          "Value": 0.0625,
+          "RangeStart": 43952,
+          "RangeEnd": 43983,
+          "Area": 1.9375,
+          "Count": 0
+        },
+        {
+          "Value": 0.025,
+          "RangeStart": 43983,
+          "RangeEnd": 44013,
+          "Area": 0.75,
+          "Count": 0
+        },
+        {
+          "Value": 0.025,
+          "RangeStart": 44013,
+          "RangeEnd": 44044,
+          "Area": 0.775,
+          "Count": 0
+        },
+        {
+          "Value": 0.025,
+          "RangeStart": 44044,
+          "RangeEnd": 44075,
+          "Area": 0.775,
+          "Count": 0
+        },
+        {
+          "Value": 0.0125,
+          "RangeStart": 44075,
+          "RangeEnd": 44105,
+          "Area": 0.375,
+          "Count": 0
+        },
+        {
+          "Value": 0.075,
+          "RangeStart": 44105,
+          "RangeEnd": 44136,
+          "Area": 2.3249999999999997,
+          "Count": 0
+        },
+        {
+          "Value": 0.0125,
+          "RangeStart": 44136,
+          "RangeEnd": 44166,
+          "Area": 0.375,
+          "Count": 0
+        },
+        {
+          "Value": 0.05,
+          "RangeStart": 44166,
+          "RangeEnd": 44197,
+          "Area": 1.55,
+          "Count": 0
+        }
+      ],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "FillColor": "#7529d372",
+        "StrokeThickness": 1,
+        "StrokeColor": "#ff353b7a"
+      }
+    }
+  ],
+  "annotations": []
+}

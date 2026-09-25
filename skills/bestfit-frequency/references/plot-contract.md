@@ -1,4 +1,20 @@
-# Default BestFit frequency plot contract
+# BestFit plotting contracts
+
+The canonical package covers the 45 slots listed in
+[app-plot-map.json](app-plot-map.json). Each entry identifies the actual desktop
+factory and population method, source fixture, adapter, applicable variants, and
+evidence. [saved-plots.md](saved-plots.md) documents the common saved-source CLI.
+The remainder of this page describes the preserved legacy frequency command.
+
+PlotSpec v1 retains raw coordinates with explicit `linear`, `log`, `date`, or
+`normal_probability` axes, named series, interval types, and source/run identity.
+Bands may be vertical (flow quantiles) or horizontal (coincident probability and
+rating discharge). Frequency uses AEP; bivariate probability views use marginal
+CDF. Time-series chronology retains actual dates and the training boundary.
+Histogram bar height is density per unit width when that is the app contract.
+Nonfinite coordinates become explicit gaps; source observations are not altered.
+
+## Legacy frequency command
 
 ## Input chronology before fitting
 
@@ -25,7 +41,7 @@ chronology. Inspect and display the PNG before running a fit.
 The renderer targets one standard B17C or stationary Bayesian univariate analysis.
 It matches default desktop semantics and styling, not saved project customizations,
 WPF font rasterization, interactive tooltips, alternative overlays, or other plot
-families. Python never estimates a distribution, computes confidence limits,
+families through that legacy command. Python never estimates a distribution, computes confidence limits,
 reruns MGBT, or reconstructs plotting positions.
 
 | Element | Rendering contract |

@@ -1,0 +1,380 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "6f6f984f8d0357d490ffde9d394601ae77324a0f293a84a3993afaf7e9762e86",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "45b72adb2e983dd40014a29665dfca3ca28af9b638a4a1e862595f41ffec67d4",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\4-univariate-distribution-analysis\\1-univariate-analysis\\1-information-expansion\\viglione-et-al-2013.bestfit",
+  "element": "MCMC - Systematic (1951-2001)",
+  "plotId": "shared_diagnostics.histogram",
+  "variant": "posterior",
+  "variantSelection": "saved Bayesian analysis and control defaults",
+  "appFactory": "src/RMC.BestFit.UI/Elements/Support/BayesianController.cs::CreateDefaultHistogramPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/Support/Controls/HistogramControl.xaml.cs::UpdatePlot",
+  "title": "Marginal Posterior Histogram of Location (\u03BE)",
+  "axes": [
+    {
+      "type": "LinearAxis",
+      "Key": null,
+      "Title": "Density",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -0.0011749284847201987,
+      "ActualMaximum": 0.11866777695674006,
+      "labels": null
+    },
+    {
+      "type": "LinearAxis",
+      "Key": null,
+      "Title": "Location (\u03BE)",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 30.019495954405404,
+      "ActualMaximum": 56.50638464994254,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "PosteriorDensity",
+      "type": "HistogramSeries",
+      "Title": "Posterior Histogram",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [],
+      "actualItems": [
+        {
+          "Value": 0.0001732932868318877,
+          "RangeStart": 30.279171333773416,
+          "RangeEnd": 30.856227732368996,
+          "Area": 0.00010000000000000002,
+          "Count": 0
+        },
+        {
+          "Value": 0,
+          "RangeStart": 30.856227732368996,
+          "RangeEnd": 31.433284130964577,
+          "Area": 0,
+          "Count": 0
+        },
+        {
+          "Value": 0,
+          "RangeStart": 31.433284130964577,
+          "RangeEnd": 32.01034052956015,
+          "Area": 0,
+          "Count": 0
+        },
+        {
+          "Value": 0.000519879860495663,
+          "RangeStart": 32.01034052956015,
+          "RangeEnd": 32.587396928155734,
+          "Area": 0.00030000000000000003,
+          "Count": 0
+        },
+        {
+          "Value": 0.0008664664341594385,
+          "RangeStart": 32.587396928155734,
+          "RangeEnd": 33.164453326751314,
+          "Area": 0.0005000000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.001559639581486989,
+          "RangeStart": 33.164453326751314,
+          "RangeEnd": 33.741509725346894,
+          "Area": 0.0009000000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.0025993993024783155,
+          "RangeStart": 33.741509725346894,
+          "RangeEnd": 34.318566123942475,
+          "Area": 0.0015000000000000002,
+          "Count": 0
+        },
+        {
+          "Value": 0.003812452310301529,
+          "RangeStart": 34.318566123942475,
+          "RangeEnd": 34.895622522538055,
+          "Area": 0.0022,
+          "Count": 0
+        },
+        {
+          "Value": 0.007278318046939283,
+          "RangeStart": 34.895622522538055,
+          "RangeEnd": 35.472678921133635,
+          "Area": 0.004200000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.012303823365064024,
+          "RangeStart": 35.472678921133635,
+          "RangeEnd": 36.049735319729216,
+          "Area": 0.0071,
+          "Count": 0
+        },
+        {
+          "Value": 0.01576968910170178,
+          "RangeStart": 36.049735319729216,
+          "RangeEnd": 36.626791718324796,
+          "Area": 0.0091,
+          "Count": 0
+        },
+        {
+          "Value": 0.02460764673012805,
+          "RangeStart": 36.626791718324796,
+          "RangeEnd": 37.203848116920376,
+          "Area": 0.0142,
+          "Count": 0
+        },
+        {
+          "Value": 0.03327231107172243,
+          "RangeStart": 37.203848116920376,
+          "RangeEnd": 37.78090451551596,
+          "Area": 0.019200000000000002,
+          "Count": 0
+        },
+        {
+          "Value": 0.04124380226598927,
+          "RangeStart": 37.78090451551596,
+          "RangeEnd": 38.35796091411154,
+          "Area": 0.0238,
+          "Count": 0
+        },
+        {
+          "Value": 0.053374332344221405,
+          "RangeStart": 38.35796091411154,
+          "RangeEnd": 38.93501731270712,
+          "Area": 0.030800000000000004,
+          "Count": 0
+        },
+        {
+          "Value": 0.0674110885776043,
+          "RangeStart": 38.93501731270712,
+          "RangeEnd": 39.5120737113027,
+          "Area": 0.038900000000000004,
+          "Count": 0
+        },
+        {
+          "Value": 0.08491371054762496,
+          "RangeStart": 39.5120737113027,
+          "RangeEnd": 40.08913010989828,
+          "Area": 0.049,
+          "Count": 0
+        },
+        {
+          "Value": 0.10137657279665428,
+          "RangeStart": 40.08913010989828,
+          "RangeEnd": 40.66618650849386,
+          "Area": 0.0585,
+          "Count": 0
+        },
+        {
+          "Value": 0.1043225586727964,
+          "RangeStart": 40.66618650849386,
+          "RangeEnd": 41.24324290708944,
+          "Area": 0.06020000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.11454686259587775,
+          "RangeStart": 41.24324290708944,
+          "RangeEnd": 41.82029930568502,
+          "Area": 0.0661,
+          "Count": 0
+        },
+        {
+          "Value": 0.11437356930904587,
+          "RangeStart": 41.82029930568502,
+          "RangeEnd": 42.3973557042806,
+          "Area": 0.066,
+          "Count": 0
+        },
+        {
+          "Value": 0.11749284847201986,
+          "RangeStart": 42.3973557042806,
+          "RangeEnd": 42.97441210287618,
+          "Area": 0.06780000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.11558662231686909,
+          "RangeStart": 42.97441210287618,
+          "RangeEnd": 43.55146850147176,
+          "Area": 0.06670000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.11194746329339944,
+          "RangeStart": 43.55146850147176,
+          "RangeEnd": 44.12852490006734,
+          "Area": 0.0646,
+          "Count": 0
+        },
+        {
+          "Value": 0.10345609223863696,
+          "RangeStart": 44.12852490006734,
+          "RangeEnd": 44.70558129866292,
+          "Area": 0.05970000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.09964363992833543,
+          "RangeStart": 44.70558129866292,
+          "RangeEnd": 45.2826376972585,
+          "Area": 0.05750000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.08370065753980176,
+          "RangeStart": 45.2826376972585,
+          "RangeEnd": 45.85969409585408,
+          "Area": 0.04830000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.07157012746156961,
+          "RangeStart": 45.85969409585408,
+          "RangeEnd": 46.43675049444966,
+          "Area": 0.0413,
+          "Count": 0
+        },
+        {
+          "Value": 0.058573130949178036,
+          "RangeStart": 46.43675049444966,
+          "RangeEnd": 47.01380689304524,
+          "Area": 0.033800000000000004,
+          "Count": 0
+        },
+        {
+          "Value": 0.04886870688659233,
+          "RangeStart": 47.01380689304524,
+          "RangeEnd": 47.59086329164082,
+          "Area": 0.028200000000000006,
+          "Count": 0
+        },
+        {
+          "Value": 0.03760464324251963,
+          "RangeStart": 47.59086329164082,
+          "RangeEnd": 48.1679196902364,
+          "Area": 0.021700000000000004,
+          "Count": 0
+        },
+        {
+          "Value": 0.029286565474589018,
+          "RangeStart": 48.1679196902364,
+          "RangeEnd": 48.74497608883198,
+          "Area": 0.016900000000000002,
+          "Count": 0
+        },
+        {
+          "Value": 0.02027531455933086,
+          "RangeStart": 48.74497608883198,
+          "RangeEnd": 49.32203248742756,
+          "Area": 0.0117,
+          "Count": 0
+        },
+        {
+          "Value": 0.015423102528038005,
+          "RangeStart": 49.32203248742756,
+          "RangeEnd": 49.899088886023144,
+          "Area": 0.008900000000000002,
+          "Count": 0
+        },
+        {
+          "Value": 0.010744183783577037,
+          "RangeStart": 49.899088886023144,
+          "RangeEnd": 50.476145284618724,
+          "Area": 0.0062000000000000015,
+          "Count": 0
+        },
+        {
+          "Value": 0.00901125091525816,
+          "RangeStart": 50.476145284618724,
+          "RangeEnd": 51.053201683214304,
+          "Area": 0.005200000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.005891971752284181,
+          "RangeStart": 51.053201683214304,
+          "RangeEnd": 51.630258081809885,
+          "Area": 0.0034000000000000002,
+          "Count": 0
+        },
+        {
+          "Value": 0.003292572449805866,
+          "RangeStart": 51.630258081809885,
+          "RangeEnd": 52.207314480405465,
+          "Area": 0.0019000000000000002,
+          "Count": 0
+        },
+        {
+          "Value": 0.001559639581486989,
+          "RangeStart": 52.207314480405465,
+          "RangeEnd": 52.784370879001045,
+          "Area": 0.0009000000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.0019062261551507644,
+          "RangeStart": 52.784370879001045,
+          "RangeEnd": 53.361427277596626,
+          "Area": 0.0011,
+          "Count": 0
+        },
+        {
+          "Value": 0.0008664664341594385,
+          "RangeStart": 53.361427277596626,
+          "RangeEnd": 53.938483676192206,
+          "Area": 0.0005000000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.000519879860495663,
+          "RangeStart": 53.938483676192206,
+          "RangeEnd": 54.515540074787786,
+          "Area": 0.00030000000000000003,
+          "Count": 0
+        },
+        {
+          "Value": 0.0008664664341594385,
+          "RangeStart": 54.515540074787786,
+          "RangeEnd": 55.09259647338337,
+          "Area": 0.0005000000000000001,
+          "Count": 0
+        },
+        {
+          "Value": 0.0003465865736637754,
+          "RangeStart": 55.09259647338337,
+          "RangeEnd": 55.66965287197895,
+          "Area": 0.00020000000000000004,
+          "Count": 0
+        },
+        {
+          "Value": 0.0001732932868318877,
+          "RangeStart": 55.66965287197895,
+          "RangeEnd": 56.24670927057453,
+          "Area": 0.00010000000000000002,
+          "Count": 0
+        }
+      ],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "FillColor": "#4bdc143c",
+        "StrokeThickness": 1,
+        "StrokeColor": "#ffff0000"
+      }
+    }
+  ],
+  "annotations": []
+}

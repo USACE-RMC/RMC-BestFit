@@ -1,0 +1,170 @@
+{
+  "formatVersion": 1,
+  "sourceSha256": "b809ca84f4792b029e0deca1718c0e394f5c87cea5e3a242028378eb54f52ba3",
+  "runtime": {
+    "framework": ".NET 10.0.11",
+    "exporterSha256": "45b72adb2e983dd40014a29665dfca3ca28af9b638a4a1e862595f41ffec67d4",
+    "appSha256": "82da23f0e2cb9196e23c207e7dc0ccd5cbd24c7b165620ee789c9c159be30287"
+  },
+  "project": "C:\\Users\\haden\\Documents\\Codex\\2026-09-22\\are-you-able-to-see-c\\RMC-BestFit\\examples\\2-input-data\\1-block-maximum\\usgs-block-max-example.bestfit",
+  "element": "USGS - 01134500 - Block Max - Calendar Year",
+  "plotId": "input_data.histogram",
+  "variant": "default",
+  "variantSelection": "app control defaults and saved element data",
+  "appFactory": "src/RMC.BestFit.UI/Elements/InputData/InputData.cs::CreateDefaultHistogramPlot",
+  "factoryReset": true,
+  "appPopulation": "src/RMC.BestFit.App/GUI/InputData/InputDataControl.xaml.cs::UpdateHistogramPlot",
+  "title": "Histogram",
+  "axes": [
+    {
+      "type": "LinearAxis",
+      "Key": "Xaxis",
+      "Title": "Flow (cfs)",
+      "position": "Bottom",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": 722.56,
+      "ActualMaximum": 4133.44,
+      "labels": null
+    },
+    {
+      "type": "LinearAxis",
+      "Key": "Yaxis",
+      "Title": "Density",
+      "position": "Left",
+      "Minimum": null,
+      "Maximum": null,
+      "ActualMinimum": -6.167763157894736E-06,
+      "ActualMaximum": 0.0006229440789473682,
+      "labels": null
+    }
+  ],
+  "series": [
+    {
+      "name": "Histogram",
+      "type": "HistogramSeries",
+      "Title": "Histogram Plot",
+      "IsVisible": true,
+      "RenderInLegend": true,
+      "points": [],
+      "points2": [],
+      "items": [],
+      "actualItems": [
+        {
+          "Value": 0.00022428229665071763,
+          "RangeStart": 756,
+          "RangeEnd": 978.9333333333334,
+          "Area": 0.049999999999999996,
+          "Count": 0
+        },
+        {
+          "Value": 0.00044856459330143525,
+          "RangeStart": 978.9333333333334,
+          "RangeEnd": 1201.8666666666668,
+          "Area": 0.09999999999999999,
+          "Count": 0
+        },
+        {
+          "Value": 0.0005046351674641148,
+          "RangeStart": 1201.8666666666668,
+          "RangeEnd": 1424.8000000000002,
+          "Area": 0.1125,
+          "Count": 0
+        },
+        {
+          "Value": 0.0006167763157894735,
+          "RangeStart": 1424.8000000000002,
+          "RangeEnd": 1647.7333333333336,
+          "Area": 0.1375,
+          "Count": 0
+        },
+        {
+          "Value": 0.0006167763157894735,
+          "RangeStart": 1647.7333333333336,
+          "RangeEnd": 1870.666666666667,
+          "Area": 0.1375,
+          "Count": 0
+        },
+        {
+          "Value": 0.0006167763157894735,
+          "RangeStart": 1870.666666666667,
+          "RangeEnd": 2093.6000000000004,
+          "Area": 0.1375,
+          "Count": 0
+        },
+        {
+          "Value": 0.00044856459330143525,
+          "RangeStart": 2093.6000000000004,
+          "RangeEnd": 2316.5333333333338,
+          "Area": 0.09999999999999999,
+          "Count": 0
+        },
+        {
+          "Value": 0.00044856459330143525,
+          "RangeStart": 2316.5333333333338,
+          "RangeEnd": 2539.466666666667,
+          "Area": 0.09999999999999999,
+          "Count": 0
+        },
+        {
+          "Value": 0.0001682117224880382,
+          "RangeStart": 2539.466666666667,
+          "RangeEnd": 2762.4000000000005,
+          "Area": 0.03749999999999999,
+          "Count": 0
+        },
+        {
+          "Value": 0,
+          "RangeStart": 2762.4000000000005,
+          "RangeEnd": 2985.333333333334,
+          "Area": 0,
+          "Count": 0
+        },
+        {
+          "Value": 0.00011214114832535881,
+          "RangeStart": 2985.333333333334,
+          "RangeEnd": 3208.2666666666673,
+          "Area": 0.024999999999999998,
+          "Count": 0
+        },
+        {
+          "Value": 0.00011214114832535881,
+          "RangeStart": 3208.2666666666673,
+          "RangeEnd": 3431.2000000000007,
+          "Area": 0.024999999999999998,
+          "Count": 0
+        },
+        {
+          "Value": 5.607057416267941E-05,
+          "RangeStart": 3431.2000000000007,
+          "RangeEnd": 3654.133333333334,
+          "Area": 0.012499999999999999,
+          "Count": 0
+        },
+        {
+          "Value": 5.607057416267941E-05,
+          "RangeStart": 3654.133333333334,
+          "RangeEnd": 3877.0666666666675,
+          "Area": 0.012499999999999999,
+          "Count": 0
+        },
+        {
+          "Value": 5.607057416267964E-05,
+          "RangeStart": 3877.0666666666675,
+          "RangeEnd": 4100,
+          "Area": 0.012499999999999999,
+          "Count": 0
+        }
+      ],
+      "grid": null,
+      "contours": null,
+      "contourLevels": null,
+      "style": {
+        "FillColor": "#7d688caf",
+        "StrokeThickness": 1,
+        "StrokeColor": "#ff353b7a"
+      }
+    }
+  ],
+  "annotations": []
+}

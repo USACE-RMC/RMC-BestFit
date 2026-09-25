@@ -231,6 +231,19 @@ namespace RMC.BestFit.Api.Mcp
             return McpJson.Serialize(_service.GetFrequencyResults(analysisId));
         }
 
+        /// <summary>Exports detached plot source state from one completed run without estimation.</summary>
+        /// <param name="analysisId">The analysis resource id.</param>
+        /// <param name="includeSamples">Include full saved parameter draws and chains.</param>
+        /// <returns>Versioned JSON plot source snapshot.</returns>
+        [McpServerTool(Name = "get_analysis_plot_source")]
+        [Description("Get a read-only plot source snapshot for a completed analysis. Includes model and data configuration, current results, and precomputed diagnostics. Set includeSamples=true to include full saved draws and chains.")]
+        public string GetAnalysisPlotSource(
+            [Description("The analysis id.")] Guid analysisId,
+            [Description("Include full saved draws and chains (default false).")] bool includeSamples = false)
+        {
+            return McpJson.Serialize(PlotSourceExporter.Export(_service.Get(analysisId), includeSamples));
+        }
+
         /// <summary>
         /// Validates an analysis configuration without running it.
         /// </summary>

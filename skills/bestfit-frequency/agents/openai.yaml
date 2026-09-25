@@ -1,6 +1,6 @@
 interface:
-  display_name: "BestFit Flood Frequency"
-  short_description: "Research flood evidence and compare BestFit analyses"
-  default_prompt: "Use $bestfit-frequency to collect and justify flood data, show input chronology, and compare supported historical, regional and causal information scenarios."
+  display_name: "BestFit Analyses and Plots"
+  short_description: "Research flood evidence and plot saved BestFit results"
+  default_prompt: "Use $bestfit-frequency to collect and justify flood evidence, compare supported analysis scenarios, and display app-style plots of saved results while preserving source settings."
 policy:
   allow_implicit_invocation: true
