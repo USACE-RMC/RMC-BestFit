@@ -117,27 +117,13 @@ namespace RMC.BestFit.Api.Services
             ApplyProbabilityOrdinates(request.ProbabilityOrdinates, analysis.ProbabilityOrdinates);
             PriorMapper.ApplyPenalties(distribution, request.ParameterPenalties, request.QuantilePenalties);
 
-            // The Expected Moments Algorithm has no measurement-error likelihood, so uncertain
-            // observations are silently skipped by the model. Never silent here: record a warning
-            // that survives on the resource for create/get/validate responses.
-            var warnings = new List<string>();
-            if (input.DataFrame.UncertainSeries.Count > 0)
-            {
-                warnings.Add(
-                    $"The input data contains {input.DataFrame.UncertainSeries.Count} uncertain observation(s). " +
-                    "The Bulletin 17C Expected Moments Algorithm does not use uncertain data, so these observations " +
-                    "are ignored by this analysis. Use the univariate analysis (POST api/analyses/univariate) for " +
-                    "full measurement-error propagation.");
-            }
-
             var resource = new AnalysisResource
             {
                 Name = string.IsNullOrWhiteSpace(request.Name) ? $"Bulletin 17C analysis of {input.Name}" : request.Name,
                 Description = request.Description,
                 Kind = AnalysisKind.Bulletin17C,
                 Bulletin17C = analysis,
-                InputDataId = input.Id,
-                CreationWarnings = warnings
+                InputDataId = input.Id
             };
             return _store.AddAnalysis(resource);
         }

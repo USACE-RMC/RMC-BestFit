@@ -220,11 +220,11 @@ def time_series_analysis_plots(restored):
     output = {"series":spec}
     parameters = net_array([p.Value for p in model.Parameters])
     residuals = list(model.Residuals(parameters))
-    # Preserve the current desktop factory: OLE date coordinates on a linear
-    # axis whose title is bound to the response unit. See the plot-map caveat.
-    residual_dates = [float(o.Index.ToOADate()) for o in model.TrainingTimeSeries][:len(residuals)]
+    # Use the same observation dates, with a date axis instead of desktop's
+    # legacy OLE serial-number axis titled with the response unit.
+    residual_dates = [str(o.Index.ToString("o")) for o in model.TrainingTimeSeries][:len(residuals)]
     output.update(_residual_plots(restored, "time_series_analysis", residual_dates, residuals,
-                                 axis((restored.get("input_row") or {}).get("UnitLabel", "Value")), default_bins=True))
+                                 axis("Date", "date", "date"), default_bins=True))
     for kind in ("acf", "pacf"):
         view = correlation_plot(residuals, source, f"time_series_analysis.residual_{kind}", partial=kind=="pacf")
         view["title"] = "Residual " + view["title"]

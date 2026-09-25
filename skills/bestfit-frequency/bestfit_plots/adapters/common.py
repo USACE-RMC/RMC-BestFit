@@ -19,7 +19,8 @@ def source_identity(restored):
 
 def clean(values):
     """Convert nonfinite coordinates to explicit JSON null gaps."""
-    return [None if v is None or (not isinstance(v, str) and not math.isfinite(float(v)))
+    return [None if v is None or (isinstance(v, str) and v in {"NaN", "Infinity", "-Infinity"})
+            or (not isinstance(v, str) and not math.isfinite(float(v)))
             else v if isinstance(v, str) else float(v) for v in values]
 
 

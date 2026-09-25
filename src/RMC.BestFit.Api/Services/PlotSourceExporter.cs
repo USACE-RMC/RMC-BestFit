@@ -136,6 +136,9 @@ namespace RMC.BestFit.Api.Services
             }
         }
 
+        /// <summary>Copies the completed result into its kind-specific response contract.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static object MapResults(AnalysisResource resource) => resource.Kind switch
         {
             AnalysisKind.RatingCurve => ResultsMapper.ToRatingCurveResults(resource),
@@ -146,6 +149,9 @@ namespace RMC.BestFit.Api.Services
             _ => ResultsMapper.ToFrequencyResults(resource)
         };
 
+        /// <summary>Copies saved nonstationary chronology curves and their index grid.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static PlotSourceChronologyDto? MapChronology(AnalysisResource resource)
         {
             var analysis = resource.Univariate;
@@ -175,6 +181,9 @@ namespace RMC.BestFit.Api.Services
             };
         }
 
+        /// <summary>Copies component curves and evaluates saved seasonal distributions.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static List<PlotSourceCurveDto> MapComponentCurves(AnalysisResource resource)
         {
             var result = new List<PlotSourceCurveDto>();
@@ -213,6 +222,9 @@ namespace RMC.BestFit.Api.Services
             return result;
         }
 
+        /// <summary>Serializes effective analysis settings without estimation.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static XElement MapAnalysisXml(AnalysisResource resource) => resource.Kind switch
         {
             AnalysisKind.Univariate => resource.Univariate!.ToXElement(),
@@ -236,6 +248,9 @@ namespace RMC.BestFit.Api.Services
             _ => throw new InvalidOperationException("Unsupported analysis kind.")
         };
 
+        /// <summary>Serializes current model configuration when this kind owns a model.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static string? MapModelXml(AnalysisResource resource) => (resource.Kind switch
         {
             AnalysisKind.Univariate => resource.Univariate!.UnivariateDistribution.ToXElement(),
@@ -256,6 +271,9 @@ namespace RMC.BestFit.Api.Services
             _ => null
         })?.ToString(SaveOptions.DisableFormatting);
 
+        /// <summary>Serializes frequency inputs, preserving all observation types.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static string? MapDataFrameXml(AnalysisResource resource) => (resource.Kind switch
         {
             AnalysisKind.Univariate => resource.Univariate!.UnivariateDistribution.DataFrame,
@@ -267,6 +285,9 @@ namespace RMC.BestFit.Api.Services
             _ => null
         })?.ToXElement().ToString(SaveOptions.DisableFormatting);
 
+        /// <summary>Selects the analysis-owned frequency input frame.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static DataFrame? GetFrequencyFrame(AnalysisResource resource) => resource.Kind switch
         {
             AnalysisKind.Univariate => resource.Univariate!.UnivariateDistribution.DataFrame,
@@ -278,6 +299,9 @@ namespace RMC.BestFit.Api.Services
             _ => null
         };
 
+        /// <summary>Copies typed observations and absolute measurement bounds.</summary>
+        /// <param name="frame">The source observation frame.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static List<PlotSourceObservationDto> MapObservations(DataFrame frame)
         {
             var result = new List<PlotSourceObservationDto>();
@@ -304,6 +328,9 @@ namespace RMC.BestFit.Api.Services
             return result;
         }
 
+        /// <summary>Adds desktop geometry for visible successful saved fits.</summary>
+        /// <param name="fitting">The completed fitting analysis.</param>
+        /// <param name="response">The destination snapshot.</param>
         private static void AddFittingGeometry(RMC.BestFit.Analyses.FittingAnalysis fitting, PlotSourceResponse response)
         {
             var values = response.Observations.Where(o => o.Kind != "threshold").Select(o => o.Value).ToArray();
@@ -340,6 +367,9 @@ namespace RMC.BestFit.Api.Services
             }
         }
 
+        /// <summary>Evaluates residual coordinates at stored rating parameters.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static PlotSourceResidualDto MapRatingResiduals(AnalysisResource resource)
         {
             var model = resource.RatingCurve!.RatingCurve;
@@ -351,6 +381,9 @@ namespace RMC.BestFit.Api.Services
             return result;
         }
 
+        /// <summary>Adds the completed timeline and residual display coordinates.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <param name="response">The destination snapshot.</param>
         private static void MapTimeSeriesGeometry(AnalysisResource resource, PlotSourceResponse response)
         {
             var (series, training, residuals, parameters) = resource.TimeSeriesModel switch
@@ -393,6 +426,11 @@ namespace RMC.BestFit.Api.Services
             response.ResidualPlot = plot;
         }
 
+        /// <summary>Builds histogram and normal-reference geometry from supplied residuals.</summary>
+        /// <param name="residuals">Residuals at stored parameters.</param>
+        /// <param name="errorScale">The stored residual error scale.</param>
+        /// <param name="defaultBins">Whether to use default histogram binning.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static PlotSourceResidualDto MapResiduals(double[] residuals, double errorScale, bool defaultBins)
         {
             var result = new PlotSourceResidualDto { Residuals = residuals.ToList(), ErrorScale = errorScale };
@@ -417,6 +455,9 @@ namespace RMC.BestFit.Api.Services
             return result;
         }
 
+        /// <summary>Builds copula display grids and seeded points from the fitted distribution.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static PlotSourceBivariateDto MapBivariateGeometry(AnalysisResource resource)
         {
             var analysis = resource.Bivariate!;
@@ -487,6 +528,10 @@ namespace RMC.BestFit.Api.Services
             return result;
         }
 
+        /// <summary>Serializes the requested marginal input frame.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <param name="xAxis">True selects X; false selects Y.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static string? MapMarginalDataFrameXml(AnalysisResource resource, bool xAxis)
         {
             var bivariate = resource.Kind switch
@@ -501,6 +546,10 @@ namespace RMC.BestFit.Api.Services
             return frame?.ToXElement().ToString(SaveOptions.DisableFormatting);
         }
 
+        /// <summary>Serializes the requested linked marginal model.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <param name="xAxis">True selects X; false selects Y.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static string? MapMarginalModelXml(AnalysisResource resource, bool xAxis)
         {
             var bivariateResource = resource.Kind switch
@@ -513,6 +562,9 @@ namespace RMC.BestFit.Api.Services
             return marginal == null ? null : MapModelXml(marginal);
         }
 
+        /// <summary>Selects the saved sampling or B17C uncertainty compatibility container.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static BayesianAnalysis? GetBayesian(AnalysisResource resource) => resource.Kind switch
         {
             AnalysisKind.Univariate => resource.Univariate!.BayesianAnalysis,
@@ -534,6 +586,9 @@ namespace RMC.BestFit.Api.Services
             _ => null
         };
 
+        /// <summary>Copies observed and covariate series owned by the analysis.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <param name="series">The destination collection.</param>
         private static void AddSeries(AnalysisResource resource, List<PlotSourceSeriesDto> series)
         {
             if (resource.Kind == AnalysisKind.RatingCurve)
@@ -562,6 +617,11 @@ namespace RMC.BestFit.Api.Services
             }
         }
 
+        /// <summary>Copies a dated series with its identity and interval convention.</summary>
+        /// <param name="name">The display name.</param>
+        /// <param name="resourceId">The source identifier, when available.</param>
+        /// <param name="source">The source series.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static PlotSourceSeriesDto CopySeries(string name, Guid? resourceId, TimeSeries source) => new()
         {
             Name = name,
@@ -570,6 +630,9 @@ namespace RMC.BestFit.Api.Services
             Points = source.Select(point => new PlotSourcePointDto { Date = point.Index, Value = point.Value }).ToList()
         };
 
+        /// <summary>Copies saved parameter diagnostics and configured prior curves.</summary>
+        /// <param name="analysis">The saved sampling container.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static List<PlotParameterDiagnosticsDto> MapDiagnostics(BayesianAnalysis analysis)
         {
             var results = analysis.Results!;
@@ -619,6 +682,9 @@ namespace RMC.BestFit.Api.Services
             return diagnostics;
         }
 
+        /// <summary>Copies the first two matrix columns into independent coordinate objects.</summary>
+        /// <param name="values">The coordinate matrix, or null.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static List<PlotPairDto> CopyPairs(double[,]? values)
         {
             var result = new List<PlotPairDto>();
@@ -628,6 +694,9 @@ namespace RMC.BestFit.Api.Services
             return result;
         }
 
+        /// <summary>Copies one stored parameter draw, fitness and weight.</summary>
+        /// <param name="sample">The stored draw.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static PlotSourceSampleDto MapSample(ParameterSet sample) => new()
         {
             Values = sample.Values?.ToList() ?? new List<double>(),
@@ -635,6 +704,10 @@ namespace RMC.BestFit.Api.Services
             Weight = sample.Weight
         };
 
+        /// <summary>Evaluates influence diagnostics from stored estimates using detached Bayesian models.</summary>
+        /// <param name="resource">The stored analysis resource.</param>
+        /// <param name="bayesian">The saved sampling container.</param>
+        /// <returns>The copied or prepared display data, or null when unavailable.</returns>
         private static PlotSourceInfluenceDto? MapInfluence(AnalysisResource resource, BayesianAnalysis bayesian)
         {
             LeverageDiagnostics leverage;
@@ -691,6 +764,12 @@ namespace RMC.BestFit.Api.Services
             return response;
         }
 
+        /// <summary>Formats an invariant observation label.</summary>
+        /// <param name="dataType">The observation type.</param>
+        /// <param name="name">The display name.</param>
+        /// <param name="index">The observation index.</param>
+        /// <param name="value">The observation magnitude.</param>
+        /// <returns>The copied or prepared display data.</returns>
         private static string FormatInfluenceLabel(string dataType, string? name, int index, double value)
         {
             var prefix = dataType is "LeftCensored" or "RightCensored" ? "Threshold" : dataType;

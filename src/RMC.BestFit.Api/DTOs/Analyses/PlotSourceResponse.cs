@@ -106,9 +106,9 @@ namespace RMC.BestFit.Api.DTOs
         [JsonPropertyName("series")]
         public List<PlotSourceSeriesDto> Series { get; set; } = new();
 
-        /// <summary>Detached JSON copy of the existing kind-specific result DTO.</summary>
+        /// <summary>Detached result DTO, or JSON null when no completed result is available.</summary>
         [JsonPropertyName("results")]
-        public JsonElement Results { get; set; }
+        public JsonElement Results { get; set; } = JsonSerializer.SerializeToElement<object?>(null);
 
         /// <summary>Saved nonstationary chronology bounds and mean on the model's index grid.</summary>
         [JsonPropertyName("chronology")]

@@ -79,6 +79,26 @@ def validate_spec(spec):
             raise ValueError(f"axes.{name}.scale is unsupported")
         if axis["scale"] == "normal_probability" and axis["value"] != "aep":
             raise ValueError("normal_probability x axis requires aep values")
+        if "reversed" in axis and not isinstance(axis["reversed"], bool):
+            raise ValueError(f"axes.{name}.reversed must be boolean")
+        for key in ("minimum", "maximum"):
+            if key not in axis:
+                continue
+            value = axis[key]
+            if axis["scale"] == "date":
+                _date(value)
+            else:
+                _number(value, f"axes.{name}.{key}")
+                if axis["scale"] == "log" and value <= 0:
+                    raise ValueError("log axis limits must be positive")
+                if axis["scale"] == "normal_probability" and not 0 < value < 1:
+                    raise ValueError("AEP axis limits must be strictly between 0 and 1")
+        if "minimum" in axis and "maximum" in axis:
+            lower, upper = axis["minimum"], axis["maximum"]
+            if axis["scale"] == "date":
+                lower, upper = _date(lower), _date(upper)
+            if lower >= upper:
+                raise ValueError("axis minimum must be less than maximum")
         if "minimumPositive" in axis:
             _number(axis["minimumPositive"], f"axes.{name}.minimumPositive")
             if axis["minimumPositive"] < 0:

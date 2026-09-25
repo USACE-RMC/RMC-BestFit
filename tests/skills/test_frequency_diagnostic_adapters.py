@@ -89,6 +89,8 @@ def test_api_histogram_bin_area_matches_desktop_height():
 
 
 def test_frozen_saved_results_make_valid_fitting_and_mcmc_geometry():
+    import pytest
+    pytest.importorskip("bestfit_examples", reason="Optional notebook Pythonnet integration; desktop/API rendering is self-contained")
     from bestfit_examples.analysis import restore_analysis
     from bestfit_examples.project_data import load_project
     from bestfit_plots.adapters.frequency import fitting_plots, frequency_plots
@@ -114,7 +116,7 @@ def test_frozen_saved_results_make_valid_fitting_and_mcmc_geometry():
     assert pp["x"][0] == float(fit.Distribution.CDF(values[0])) and pp["y"][0] == complements[0]
     assert qq["x"][0] == values[0] and qq["y"][0] == float(fit.Distribution.InverseCDF(complements[0]))
     assert fit_plots["pp"]["axes"]["x"]["label"] == "Probability (Model)"
-    assert fit_plots["qq"]["axes"]["x"]["label"] == "Quantile (Model)"
+    assert fit_plots["qq"]["axes"]["x"]["label"] == "Quantile (Data)"
     api_source = {"analysisId": "fixture", "lastRunUtc": "2026-09-22T00:00:00Z",
                   "kind": "distributionFitting", "analysisXml": str(fitting["analysis"].ToXElement()),
                   "dataFrameXml": str(fitting["input"].ToXElement())}
@@ -132,6 +134,8 @@ def test_frozen_saved_results_make_valid_fitting_and_mcmc_geometry():
 
 
 def test_frozen_b17c_point_process_mixture_and_composite_geometry():
+    import pytest
+    pytest.importorskip("bestfit_examples", reason="Optional notebook Pythonnet integration; desktop/API rendering is self-contained")
     from bestfit_examples.analysis import restore_analysis
     from bestfit_examples.project_data import load_project
     from bestfit_plots.adapters.frequency import frequency_plots
@@ -212,6 +216,8 @@ def test_frozen_b17c_point_process_mixture_and_composite_geometry():
 
 
 def test_frozen_nonstationary_chronology_uses_saved_result():
+    import pytest
+    pytest.importorskip("bestfit_examples", reason="Optional notebook Pythonnet integration; desktop/API rendering is self-contained")
     from bestfit_examples.analysis import restore_analysis
     from bestfit_examples.project_data import load_project
     from bestfit_plots.adapters.frequency import frequency_plots

@@ -82,7 +82,9 @@ def render_plot(spec, ax=None):
                 ax.plot(x, y, label=legend_label, color=color, linestyle=style.get("linestyle", "-"), linewidth=style.get("linewidth", 1.2), marker=style.get("marker", "None"))
             elif kind == "scatter":
                 valid = np.isfinite(x) & np.isfinite(y)
-                ax.scatter(x[valid], y[valid], label=legend_label, color=color, marker=style.get("marker", "o"), s=style.get("size", 28), zorder=4)
+                marker = style.get("marker", "o")
+                edge = {"edgecolor": style["edgecolor"]} if "edgecolor" in style and marker not in {"x", "+"} else {}
+                ax.scatter(x[valid], y[valid], label=legend_label, color=color, marker=marker, s=style.get("size", 28), zorder=4, **edge)
                 if "xLower" in item or "yLower" in item:
                     bounds_color = style.get("boundsColor", color)
                     for lower_key, upper_key, axis in (("xLower", "xUpper", "x"), ("yLower", "yUpper", "y")):
@@ -117,17 +119,34 @@ def render_plot(spec, ax=None):
                 else:
                     ax.bar(x, y, width=item["width"], **bar_style)
             elif kind == "heatmap":
-                ax.pcolormesh(x, y, np.asarray(item["z"], dtype=float), shading="nearest", cmap=style.get("cmap", "Blues"))
+                mesh = ax.pcolormesh(x, y, np.asarray(item["z"], dtype=float), shading="nearest", cmap=style.get("cmap", "Blues"))
+                if style.get("colorbar"):
+                    fig.colorbar(mesh, ax=ax, label=style.get("colorbarLabel", "Value"))
             elif kind == "contour":
-                ax.contour(x, y, np.asarray(item["z"], dtype=float), levels=style.get("levels"), colors=style.get("colors", color))
+                contours = ax.contour(x, y, np.asarray(item["z"], dtype=float), levels=style.get("levels"), colors=style.get("colors", color))
+                ax.clabel(contours, inline=True, fontsize=8, fmt="%g")
         if category_labels:
             positions = sorted(category_labels)
             ax.set_yticks(positions, [category_labels[position] for position in positions])
+        if actual_xscale == "date" and spec["plotId"].endswith(".seasonality"):
+            ax.xaxis.set_major_locator(mdates.MonthLocator())
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+        for name, data_axis in (("x", spec["axes"]["y" if horizontal_bars else "x"]),
+                                ("y", spec["axes"]["x" if horizontal_bars else "y"])):
+            get_limits = ax.get_xlim if name == "x" else ax.get_ylim
+            set_limits = ax.set_xlim if name == "x" else ax.set_ylim
+            bounds = list(get_limits())
+            for index, key in enumerate(("minimum", "maximum")):
+                if key in data_axis:
+                    target = 1 - index if data_axis["scale"] == "normal_probability" else index
+                    bounds[target] = _axis_values([data_axis[key]], data_axis["scale"])[0]
+            bounds.sort()
+            set_limits(bounds[::-1] if data_axis.get("reversed", False) else bounds)
         if actual_xscale == "normal_probability":
-            probabilities = [0.9, 0.5, 0.1, 0.01, 0.001, 0.0001]
+            probabilities = [0.999, 0.99, 0.9, 0.5, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001]
             left, right = ax.get_xlim()
             ticks = [(float(_axis_values([p], xscale)[0]), p) for p in probabilities]
-            ticks = [(position, p) for position, p in ticks if left <= position <= right]
+            ticks = [(position, p) for position, p in ticks if min(left, right) <= position <= max(left, right)]
             ax.set_xticks([position for position, _ in ticks], [f"{p:g}" for _, p in ticks])
             ax.set_xlim(left, right)
         if any(item["kind"] in {"line", "scatter", "band", "area", "bars"} for item in spec["series"]):

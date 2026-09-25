@@ -14,6 +14,12 @@ CDF. Time-series chronology retains actual dates and the training boundary.
 Histogram bar height is density per unit width when that is the app contract.
 Nonfinite coordinates become explicit gaps; source observations are not altered.
 
+Desktop snapshots also preserve explicit or resolved axis `minimum` and `maximum`
+bounds in source units, and a boolean `reversed` flag for display direction after
+the axis transform. Date bounds use ISO 8601. The desktop adapter accounts for
+AEP's decreasing transform. Source RGBA fills retain their original transparency;
+`alpha: null` lets Matplotlib use the alpha encoded in each color.
+
 ## Legacy frequency command
 
 ## Input chronology before fitting

@@ -122,7 +122,7 @@ def _pair_heatmap(restored, source, samples, first, second):
         yi = max(0, min(bins-1, math.floor((yv-min_y)/dy)))
         z[yi][xi] += 1/len(values)
     label_x, label_y = _parameter_name(restored, first), _parameter_name(restored, second)
-    title = "Joint Density" if "b17c" in _kind(restored) else "Joint Posterior Density"
+    title = "Joint Uncertainty Density" if _is_b17c(restored) else "Joint Posterior Density"
     nonzero = [value for row in z for value in row if value > 0]
     minimum = min(nonzero) if nonzero else 0.
     maximum = max(nonzero) if nonzero else 0.
@@ -254,7 +254,7 @@ def diagnostic_plots(restored, parameter=0, second_parameter=1, *, include_warmu
                     hseries.append(area(_get(selected, "priorName", "PriorName", default="Prior Density"),
                                         px, [0]*len(px), py, facecolor="#688caf", edgecolor="#353b7a",
                                         linewidth=1, alpha=125/255))
-            hseries.append(bars("Posterior Histogram", x, y, width=width,
+            hseries.append(bars("Uncertainty Histogram" if b17c else "Posterior Histogram", x, y, width=width,
                                 facecolor="#dc143c", edgecolor="#ff0000", linewidth=1, alpha=75/255))
             output["histogram"] = plot("shared_diagnostics.histogram", source,
                 f"{'Marginal' if b17c else 'Marginal Posterior'} Histogram of {label}",
@@ -265,7 +265,7 @@ def diagnostic_plots(restored, parameter=0, second_parameter=1, *, include_warmu
             x, y = zip(*kde)
             output["kde"] = plot("shared_diagnostics.kde", source,
                 f"{'Marginal' if b17c else 'Marginal Posterior'} Density of {label}",
-                axis(label), axis("Density"), [area("Posterior Density", x, [0.]*len(x), y,
+                axis(label), axis("Density"), [area("Uncertainty Density" if b17c else "Posterior Density", x, [0.]*len(x), y,
                     facecolor="#dc143c", edgecolor="#ff0000", linewidth=1, alpha=75/255)])
         if not b17c:
             acf = _pairs(_get(selected, "autocorrelation", "Autocorrelation"))

@@ -59,7 +59,7 @@ assigned to an annual index without introducing an unsupported assumption.
 |---|---|
 | Known annual discharge | `exactData: {index, value}`; no synthesized values for missing years |
 | Bounded event magnitude | `intervalData: {index, lowerBound, upperBound, value?}`; `value` is a display coordinate, not an exact observation |
-| Measurement-error model | `uncertainData: {index, distribution:{type,parameters}}`; Bayesian analysis uses it, B17C does not |
+| Measurement-error model | `uncertainData: {index, distribution:{type,parameters}}`; supported by Bayesian analysis and current BestFit B17C/GMM. GMM integrates measurement-error moments; its uncertainty ensemble is not a posterior. |
 | Completeness above one threshold | `thresholdData: {startIndex,endIndex,value,numberAbove}`; inclusive window; split when detectability changes |
 | Additional aggregate exceedances | `numberAbove` counts undated exceedances **not already entered** as exact/interval/uncertain observations |
 | Unknown year | Leave a gap; do not manufacture zero, an interval or a perception threshold |

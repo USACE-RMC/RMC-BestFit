@@ -482,11 +482,10 @@ namespace RMC.BestFit.Api.Tests.Services
 
         /// <summary>
         /// Verifies creating a Bulletin 17C analysis over input data containing uncertain
-        /// observations records a warning (the Expected Moments Algorithm ignores them) that the
-        /// validate response surfaces.
+        /// observations preserves those observations without claiming that they are ignored.
         /// </summary>
         [TestMethod]
-        public void CreateBulletin17C_UncertainData_RecordsWarning()
+        public void CreateBulletin17C_UncertainData_PreservesObservations()
         {
             var input = _store.AddInputData(new InputDataResource
             {
@@ -497,13 +496,14 @@ namespace RMC.BestFit.Api.Tests.Services
 
             var resource = _service.CreateBulletin17C(new CreateBulletin17CAnalysisRequest { InputDataId = input.Id });
 
-            Assert.AreEqual(1, resource.CreationWarnings.Count);
-            StringAssert.Contains(resource.CreationWarnings[0], "uncertain observation");
-            StringAssert.Contains(resource.CreationWarnings[0], "ignored");
+            Assert.AreEqual(0, resource.CreationWarnings.Count);
+            var retained = resource.Bulletin17C!.Bulletin17CDistribution.DataFrame;
+            Assert.AreEqual(input.DataFrame.UncertainSeries.Count, retained.UncertainSeries.Count);
+            Assert.AreEqual(input.DataFrame.ToXElement().ToString(), retained.ToXElement().ToString());
+            Assert.AreNotSame(input.DataFrame, retained);
 
             var validation = _service.Validate(resource.Id, AnalysisKind.Bulletin17C);
-            Assert.AreEqual(1, validation.Warnings.Count);
-            StringAssert.Contains(validation.Warnings[0], "uncertain observation");
+            Assert.AreEqual(0, validation.Warnings.Count);
         }
 
         /// <summary>

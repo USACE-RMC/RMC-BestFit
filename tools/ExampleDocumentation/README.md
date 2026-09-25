@@ -1,0 +1,11 @@
+# Maintaining the example collection
+
+Run these tools from the repository root. They preserve saved numerical inputs and results; changing those requires a separate, explicitly reviewed decision.
+
+- `project_inventory.py` reads SQLite in immutable, read-only mode. Its inventories include metadata, decoded configuration, input counts, diagnostics and a hash of every cell.
+- `update_descriptions.py manifest.json` validates the source hashes and lists proposed description edits. `--apply` retains original files and writes an audit receipt. Each edit names the table, rowid, expected name and replacement description. The transaction compares every cell before committing and rolls back any unrelated change. The only supported deletion is the explicitly approved ABOM test row.
+- `render_examples.py --only <example-slug> --refresh` opens disposable project copies through `PlotReferenceExporter`, then uses the portable skill renderer for PNG/SVG output. Compressed PlotSpec files retain the exact display inputs. `--refresh` is required after changing desktop factories or runtime dependencies; otherwise source-identical cached geometry can be reused.
+
+The figure manifest lives in `examples/figure-manifest.json`. A figure must identify its source project, named element, supported plot ID, variant and output prefix. The renderer fails on unsupported geometry or an empty plot instead of replacing it with invented data. Most views display saved results. Threshold diagnostics invoke the desktop's diagnostic fits on the saved source series; they do not replace a saved analysis.
+
+For each tutorial, review the actual database, write the source and assumptions in plain language, render each figure, inspect the individual PNG and rendered Markdown page, and check local links. Confirm all unapproved SQLite cells remain identical. Run the relevant Python checks and the repository's required fast .NET gates before a local commit. The progress and guidance registers in `docs/` record completed work and unresolved study judgments.

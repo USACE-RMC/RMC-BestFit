@@ -175,6 +175,8 @@ internal static class Program
                 Maximum = Finite(axis.Maximum),
                 ActualMinimum = Finite(axis.ActualMinimum),
                 ActualMaximum = Finite(axis.ActualMaximum),
+                axis.StartPosition,
+                axis.EndPosition,
                 labels = axis.GetType().GetProperty("Labels", InstanceMembers)?.GetValue(axis) is IEnumerable labels
                     ? labels.Cast<object>().Select(label => label?.ToString()).ToArray() : null,
             }).ToList();
@@ -239,6 +241,7 @@ internal static class Program
                 },
                 project = sourcePath,
                 element = element.Name,
+                analysisKind = element.GetType().Name,
                 plotId = options["plot-id"],
                 variant = options["variant"],
                 variantSelection,
@@ -405,6 +408,8 @@ internal static class Program
         }
         if (plotId == "input_data.chronology")
         {
+            if (variant == "saved_index")
+                return "saved observation indices; interpret the year convention from the input metadata";
             string expected = variant == "water_year" ? "Water Year" : "Calendar Year";
             if (!element.Name.EndsWith(expected, StringComparison.Ordinal))
                 throw new ArgumentException($"Chronology variant {variant} requires a saved {expected} element.");

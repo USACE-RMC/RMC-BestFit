@@ -150,11 +150,8 @@ def _time_series(snapshot):
         curve["ciLower"],curve["ciUpper"],r["trainingTimeSteps"],curve["credibleIntervalWidth"],
         _point_name(snapshot),unit)}
     residual=snapshot.get("residualPlot") or {}
-    residual_dates = [None if date is None else
-                      (datetime.fromisoformat(date.replace("Z", "+00:00")).replace(tzinfo=None)
-                       - datetime(1899,12,30)).total_seconds()/86400
-                      for date in residual.get("dates",[])]
-    output.update(_residual_views(snapshot,"time_series_analysis",residual_dates,axis(unit)))
+    residual_dates = residual.get("dates", [])
+    output.update(_residual_views(snapshot,"time_series_analysis",residual_dates,axis("Date", "date", "date")))
     confidence=residual.get("correlationConfidenceInterval") or []
     for kind in ("acf","pacf"):
         title="Partial Autocorrelation" if kind=="pacf" else "Autocorrelation"

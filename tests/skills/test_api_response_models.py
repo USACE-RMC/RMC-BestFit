@@ -107,6 +107,9 @@ def test_time_series_six_plots_retain_exported_dates():
             "credibleIntervalWidth": .9}}})
     assert set(plots) == {"series", "residuals", "residual_histogram", "residual_qq", "residual_acf", "residual_pacf"}
     assert plots["series"]["series"][2]["x"] == dates
+    assert plots["residuals"]["axes"]["x"]["scale"] == "date"
+    assert plots["residuals"]["axes"]["x"]["label"] == "Date"
+    assert plots["residuals"]["series"][0]["x"] == dates[:2]
     assert plots["residual_acf"]["series"][0]["y"] == [1., .2]
     _validate(plots)
 
@@ -120,6 +123,8 @@ def test_frequency_api_observations_and_fits_need_no_managed_runtime():
             "pp": [{"x": .5, "y": .5}], "qq": [{"x": 100., "y": 100.}]}]})
     assert set(fitting) == {"frequency", "pdf", "cdf", "pp", "qq"}
     assert fitting["pdf"]["series"][0]["y"] == [.05]
+    assert fitting["qq"]["axes"]["x"]["label"] == "Quantile (Data)"
+    assert fitting["qq"]["axes"]["y"]["label"] == "Quantile (Model)"
     _validate(fitting)
 
 

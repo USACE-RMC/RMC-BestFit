@@ -9,9 +9,11 @@ using RMC.BestFit.Models;
 
 namespace RMC.BestFit.Api.Tests.Services
 {
+    /// <summary>Checks saved plot ownership, coordinates and completion guards without estimation.</summary>
     [TestClass]
     public class PlotSourceExporterTests
     {
+        /// <summary>Verifies export rejects never run and incomplete state.</summary>
         [TestMethod]
         public void Export_RejectsNeverRunAndIncompleteState()
         {
@@ -22,6 +24,7 @@ namespace RMC.BestFit.Api.Tests.Services
             Assert.ThrowsException<ResourceNotFoundException>(() => PlotSourceExporter.Export(resource));
         }
 
+        /// <summary>Verifies export rejects concurrent run without waiting.</summary>
         [TestMethod]
         public void Export_RejectsConcurrentRunWithoutWaiting()
         {
@@ -37,6 +40,7 @@ namespace RMC.BestFit.Api.Tests.Services
             }
         }
 
+        /// <summary>Verifies export detaches results data and opt in samples.</summary>
         [TestMethod]
         public void Export_DetachesResultsDataAndOptInSamples()
         {
@@ -95,6 +99,7 @@ namespace RMC.BestFit.Api.Tests.Services
             Assert.AreEqual(20, compact.Observations.Count);
         }
 
+        /// <summary>Verifies export bivariate includes both marginal observation frames.</summary>
         [TestMethod]
         public void Export_BivariateIncludesBothMarginalObservationFrames()
         {
@@ -130,6 +135,7 @@ namespace RMC.BestFit.Api.Tests.Services
             Assert.AreEqual(original, PlotSourceExporter.Export(resource).BivariatePlot!.Observed[0].X);
         }
 
+        /// <summary>Verifies export rejects component rerun after parent run.</summary>
         [TestMethod]
         public void Export_RejectsComponentRerunAfterParentRun()
         {
@@ -144,6 +150,7 @@ namespace RMC.BestFit.Api.Tests.Services
             Assert.ThrowsException<ResourceConflictException>(() => PlotSourceExporter.Export(resource));
         }
 
+        /// <summary>Verifies export rating residuals match core without running analysis.</summary>
         [TestMethod]
         public void Export_RatingResidualsMatchCoreWithoutRunningAnalysis()
         {
@@ -173,6 +180,7 @@ namespace RMC.BestFit.Api.Tests.Services
                 source.ResidualPlot.AlignedObservations.Count);
         }
 
+        /// <summary>Verifies export time series dates and residuals match core without running analysis.</summary>
         [TestMethod]
         public void Export_TimeSeriesDatesAndResidualsMatchCoreWithoutRunningAnalysis()
         {
@@ -193,6 +201,7 @@ namespace RMC.BestFit.Api.Tests.Services
                 source.ResultDates[1]);
         }
 
+        /// <summary>Checks that saved chronology ordinates remain independent of the exported snapshot.</summary>
         [TestMethod]
         public void Export_CopiesSavedNonstationaryChronology()
         {
@@ -232,6 +241,7 @@ namespace RMC.BestFit.Api.Tests.Services
             Assert.AreEqual(105d, PlotSourceExporter.Export(resource).Chronology!.MeanCurve[0]);
         }
 
+        /// <summary>Checks configured component ordering and copied frequency ordinates.</summary>
         [TestMethod]
         public void Export_CopiesCompositeComponentCurvesInConfiguredOrder()
         {

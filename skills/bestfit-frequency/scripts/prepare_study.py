@@ -249,8 +249,6 @@ def prepare(document):
                 raise ValueError("Conflicting information/options; run separate single-quantile candidates or supply a justified supported multi-quantile formulation")
             options.update(addition)
         if kind == "bulletin17c":
-            if data.get("uncertainData"):
-                raise ValueError("B17C ignores uncertain observations; use Bayesian analysis or a separately justified interval representation")
             if any(k in options for k in ("parameterPriors", "quantilePriors", "useSingleQuantile", "useJeffreysRuleForScale", "bayesianOptions")):
                 raise ValueError("B17C options must use penalties rather than Bayesian prior settings")
         elif any(k in options for k in ("parameterPenalties", "quantilePenalties", "uncertaintyMethod")):

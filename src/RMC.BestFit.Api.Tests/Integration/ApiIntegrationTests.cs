@@ -249,7 +249,7 @@ namespace RMC.BestFit.Api.Tests.Integration
         /// <summary>
         /// End-to-end Bayesian-inputs flow over HTTP: manual input data with an uncertain
         /// observation, a prior-informed univariate analysis, and a Bulletin 17C analysis that
-        /// warns about the ignored uncertain data. No estimator runs.
+        /// retains uncertain data without a misleading ignored-data warning. No estimator runs.
         /// </summary>
         [TestMethod]
         public async Task BayesianInputs_UncertainData_Priors_Penalties_Flow()
@@ -327,8 +327,7 @@ namespace RMC.BestFit.Api.Tests.Integration
             var badPrior = await client.PostAsJsonAsync("/api/analyses/univariate", univariateRequest, JsonOptions);
             Assert.AreEqual(HttpStatusCode.BadRequest, badPrior.StatusCode);
 
-            // A Bulletin 17C analysis with a regional-skew penalty warns about the ignored
-            // uncertain observation on both the create and validate responses.
+            // The GMM model retains uncertain observations alongside the regional-skew penalty.
             var b17cRequest = new CreateBulletin17CAnalysisRequest
             {
                 InputDataId = input.InputData.Id,
@@ -340,12 +339,11 @@ namespace RMC.BestFit.Api.Tests.Integration
             var b17cResponse = await client.PostAsJsonAsync("/api/analyses/bulletin17c", b17cRequest, JsonOptions);
             Assert.AreEqual(HttpStatusCode.Created, b17cResponse.StatusCode);
             var b17c = await b17cResponse.Content.ReadFromJsonAsync<AnalysisResourceResponse>(JsonOptions);
-            Assert.IsNotNull(b17c!.Analysis!.Warnings);
-            StringAssert.Contains(b17c.Analysis.Warnings![0], "uncertain observation");
+            Assert.IsTrue(b17c!.Analysis!.Warnings is null || b17c.Analysis.Warnings.Count == 0);
 
             var validation = await client.GetFromJsonAsync<ValidationResponse>(
                 $"/api/analyses/bulletin17c/{b17c.Analysis.Id}/validate", JsonOptions);
-            Assert.AreEqual(1, validation!.Warnings.Count);
+            Assert.AreEqual(0, validation!.Warnings.Count);
         }
 
         /// <summary>

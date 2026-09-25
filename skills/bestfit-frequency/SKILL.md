@@ -57,8 +57,9 @@ concepts to BestFit and identifies representations this API cannot support.
 6. Run baseline, historical, regional-skew, regional-quantile, causal and justified
    combined candidates. Screen only the documented systematic cohort; preserve its
    API flags when augmenting. B17C skill default is MGBT unless explicitly disabled
-   or manually screened; API default remains false. B17C ignores uncertain data:
-   do not silently run an incomplete dataset.
+   or manually screened; API default remains false. The current B17C/GMM model
+   integrates uncertain observations over their measurement-error distributions.
+   Preserve those inputs; describe GMM uncertainty as frequentist, not posterior.
 7. Retain original requests, effective configuration before/after execution,
    validation, results, diagnostics and comparisons. Inspect R-hat/ESS and warnings;
    successful execution does not establish scientific validity. Avoid ranking

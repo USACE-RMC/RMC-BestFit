@@ -18,7 +18,7 @@ FILES = (
     "bestfit_plots/adapters/__init__.py", "bestfit_plots/adapters/common.py",
     "bestfit_plots/adapters/input_data.py", "bestfit_plots/adapters/frequency.py",
     "bestfit_plots/adapters/diagnostics.py", "bestfit_plots/adapters/response_models.py",
-    "bestfit_plots/adapters/api_response_models.py",
+    "bestfit_plots/adapters/api_response_models.py", "bestfit_plots/adapters/desktop.py",
 )
 
 

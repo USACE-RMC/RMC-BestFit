@@ -285,8 +285,8 @@ def _fitting(restored):
                 y = complements if key == "pp" else [float(distribution.InverseCDF(v)) for v in complements]
                 series.append(line(str(distribution.DisplayName), x, y))
         output[key] = plot(f"fitting.{key}", source, f"{key.upper()[0]}-{key.upper()[1]} Plot",
-                           axis("Probability (Model)" if key == "pp" else "Quantile (Model)"),
-                           axis("Probability (Data)" if key == "pp" else "Quantile (Data)"), series,
+                           axis("Probability (Model)" if key == "pp" else "Quantile (Data)"),
+                           axis("Probability (Data)" if key == "pp" else "Quantile (Model)"), series,
                            omissions=[] if series else ["No aligned observations or visible successful fits."])
     return output
 
@@ -345,8 +345,8 @@ def _fitting_api(restored):
                 x,y=coordinates(points)
                 series.append(line(_get(candidate,"name","Name"),x,y))
         output[key]=plot(f"fitting.{key}",source,f"{key.upper()[0]}-{key.upper()[1]} Plot",
-            axis("Probability (Model)" if key=="pp" else "Quantile (Model)"),
-            axis("Probability (Data)" if key=="pp" else "Quantile (Data)"),series)
+            axis("Probability (Model)" if key=="pp" else "Quantile (Data)"),
+            axis("Probability (Data)" if key=="pp" else "Quantile (Model)"),series)
     return output
 
 

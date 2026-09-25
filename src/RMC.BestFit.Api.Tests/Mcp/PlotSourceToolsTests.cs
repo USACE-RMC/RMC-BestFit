@@ -8,9 +8,11 @@ using RMC.BestFit.Api.Tests.Support;
 
 namespace RMC.BestFit.Api.Tests.Mcp
 {
+    /// <summary>Checks read-only MCP access to completed plot sources.</summary>
     [TestClass]
     public class PlotSourceToolsTests
     {
+        /// <summary>Verifies get analysis plot source rejects never run without estimating.</summary>
         [TestMethod]
         public void GetAnalysisPlotSource_RejectsNeverRunWithoutEstimating()
         {

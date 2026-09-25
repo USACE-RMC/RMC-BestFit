@@ -97,7 +97,7 @@ class PreparationTests(unittest.TestCase):
             with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
                 helper.prepare(value)
 
-    def test_overlap_invalid_counts_and_uncertain_b17c_stop(self):
+    def test_overlap_invalid_counts_stop_and_uncertain_b17c_is_retained(self):
         helper = load("prepare_study")
         value = study()
         threshold = value["inputs"]["historical"]["thresholdData"][0]
@@ -112,8 +112,10 @@ class PreparationTests(unittest.TestCase):
         value["scenarios"][0]["kind"] = "bulletin17c"
         value["inputs"]["historical"]["uncertainData"] = [{"index": 1890,
             "distribution": {"type": "normal", "parameters": [500, 50]}, "evidenceIds": ["report"]}]
-        with self.assertRaisesRegex(ValueError, "uncertain"):
-            helper.prepare(value)
+        value["inputs"]["historical"]["useMultipleGrubbsBeckTest"] = False
+        prepared = helper.prepare(value)
+        self.assertEqual(prepared["inputs"]["historical"]["uncertainData"][0]["distribution"],
+                         {"type": "normal", "parameters": [500, 50]})
 
     def test_skew_mse_and_quantile_spaces_remain_explicit(self):
         helper = load("prepare_study")

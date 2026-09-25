@@ -9,10 +9,13 @@ from .spec import validate_spec
 
 def plots_from_source(source, *, unit_label=None, parameter=0, second_parameter=1,
                       include_warmup=False, show_prior=False, influence_view=None):
-    """Accept PlotSpec, cached case, or a completed API plot-source response."""
+    """Accept PlotSpec, desktop geometry, cached case, or completed API results."""
     source = deepcopy(source)
     if source.get("version") == 1 and "plotId" in source:
         plots = {source["plotId"]: source}
+    elif source.get("formatVersion") == 1 and "sourceSha256" in source:
+        from .adapters.desktop import desktop_plot
+        plots = {source["plotId"]: desktop_plot(source)}
     elif source.get("schemaVersion") == 1 and "plots" in source:
         plots = source["plots"]
     elif source.get("schemaVersion") == 1 and "analysisId" in source:
@@ -33,7 +36,7 @@ def plots_from_source(source, *, unit_label=None, parameter=0, second_parameter=
                       diagnostic_plots(source, parameter, second_parameter, include_warmup=include_warmup,
                                        show_prior=show_prior, influence_view=influence_view).items()})
     else:
-        raise ValueError("Expected PlotSpec v1, saved case v1, or API plot-source v1")
+        raise ValueError("Expected PlotSpec v1, desktop geometry v1, saved case v1, or API plot-source v1")
     if not plots:
         raise ValueError("The artifact contains no supported plot views")
     for spec in plots.values():

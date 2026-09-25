@@ -101,7 +101,8 @@
       "appPopulation": "src/RMC.BestFit.App/GUI/InputData/InputDataControl.xaml.cs::UpdateChronologyPlot",
       "variants": [
         "calendar_year",
-        "water_year"
+        "water_year",
+        "saved_index"
       ],
       "adapter": "bestfit_plots/adapters/input_data.py::input_data_plots",
       "sourceFixture": [

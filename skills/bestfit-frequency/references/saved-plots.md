@@ -9,10 +9,11 @@ source preparation from Matplotlib display. The renderer never estimates a model
 | Supplied artifact | Action |
 |---|---|
 | PlotSpec JSON (`version: 1`, `plotId`) | Render directly. |
+| Desktop geometry JSON (`formatVersion: 1`, `sourceSha256`) | Render directly. The bundled desktop adapter preserves exported coordinates, styles and interval orientation. |
 | Notebook case JSON or JSON.gz (`schemaVersion: 1`, `plots`) | List its views, then select one. Retain its source and runtime hashes. |
 | Completed API plot-source JSON | Normalize its same-run arrays, then render. Use `includeSamples=true` if trace/pair views are needed. |
 | Only the older `results.json` and `input.json` | Use the legacy frequency command for supported univariate/B17C curves; obtain plot-source for other views. |
-| `.bestfit` project | Use the matching frozen fixture/loader in BestFit-Python-Examples or the desktop reference exporter. The plotting CLI does not open arbitrary project databases. |
+| `.bestfit` project | Use `tools/PlotReferenceExporter` in the BestFit repository on a disposable copy, then render its JSON with this skill. A compatible notebook loader is another option. The plotting CLI does not open arbitrary project databases. |
 
 For an existing API analysis, request
 `GET /api/analyses/{analysisId}/plot-source?includeSamples=true` or MCP
@@ -79,10 +80,13 @@ comparisons against independently exported WPF geometry. Default data, scales,
 curves, intervals and markers are the target; font rasterization, interaction,
 and user-customized desktop styles are outside the contract.
 
-One inherited app default deserves care: the time-series residual scatter uses
-OLE date numbers on a linear horizontal axis labeled with the response unit.
-The Python replica preserves this behavior; its horizontal values are dates,
-not fitted responses. The main time-series plot uses a true date axis.
+The Python figures make three explicit display corrections to inherited desktop
+labels: time-series residuals use a Date axis for the same stored observation
+dates; fitting Q–Q plots label observed X and model Y quantiles correctly; B17C/GMM
+ensembles are labeled as frequentist uncertainty. Seasonality shows month names
+without implying observations occurred in the plotting anchor year. Original
+desktop geometry remains unchanged, and desktop-derived PlotSpec records its
+axis corrections. Contour lines include their numeric levels.
 
 Raw-series/input-data preparation uses the portable BestFit/Numerics runtime when
 building fixtures. Cached PlotSpec display and API-source display use Python only.
