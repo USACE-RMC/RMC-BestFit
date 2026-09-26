@@ -1079,9 +1079,10 @@ namespace RMC.BestFit.UI
                         arimax = new ARIMAX(TimeSeriesData.TimeSeries);
                     }
 
-                    // Sync covariates to model
+                    // Reattach the covariates without rebuilding defaults, so the saved parameter
+                    // values, bounds, and custom priors restored from the XML survive.
                     if (_covariates != null && _covariates.Count > 0)
-                        arimax.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList());
+                        arimax.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList(), resetParameters: false);
 
                     if (innerXElement == null && !isLegacyFormat && analysisXElement != null)
                     {
@@ -1251,10 +1252,28 @@ namespace RMC.BestFit.UI
             {
                 element.Description = Description;
 
-                // Replace the inner analysis with a cloned model
+                // Copy the input references first. Their setters sync the new element's default
+                // model, which is replaced below, so those syncs cannot reset the copied model.
+                element.TimeSeriesData = TimeSeriesData;
+
+                // Deep clone each CovariateData so the copy does not share references with the
+                // source element.
+                element.Covariates.Clear();
+                foreach (var cov in Covariates)
+                {
+                    element.Covariates.Add(new CovariateData { TimeSeriesElement = cov.TimeSeriesElement });
+                }
+
+                // Restore the model on the copy's inputs from the source's XML snapshot, as Open
+                // and undo do, so its parameter values, bounds, and custom priors survive the copy.
+                ARIMAX copiedARIMAX = element.TimeSeriesData?.TimeSeries != null
+                    ? new ARIMAX(element.TimeSeriesData.TimeSeries, ARIMAX.ToXElement())
+                    : (ARIMAX)ARIMAX.Clone();
+                var copiedCovariates = element._covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList();
+                if (copiedCovariates.Count > 0)
+                    copiedARIMAX.SetCovariates(copiedCovariates, resetParameters: false);
                 element._innerAnalysis.PropertyChanged -= element.InnerAnalysis_PropertyChanged;
-                var clonedARIMAX = (ARIMAX)ARIMAX.Clone();
-                element._innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(clonedARIMAX);
+                element._innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(copiedARIMAX);
                 element._innerAnalysis.PropertyChanged += element.InnerAnalysis_PropertyChanged;
 
                 // Copy BayesianAnalysis settings
@@ -1273,17 +1292,6 @@ namespace RMC.BestFit.UI
                 element._innerAnalysis.BayesianAnalysis.CredibleIntervalWidth = BayesianAnalysis.CredibleIntervalWidth;
                 element._innerAnalysis.BayesianAnalysis.OutputLength = BayesianAnalysis.OutputLength;
                 element._innerAnalysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimator;
-
-                // Copy time series reference
-                element.TimeSeriesData = TimeSeriesData;
-
-                // Copy covariates - deep clone each CovariateData so the copy does not
-                // share references with the source element.
-                element.Covariates.Clear();
-                foreach (var cov in Covariates)
-                {
-                    element.Covariates.Add(new CovariateData { TimeSeriesElement = cov.TimeSeriesElement });
-                }
 
                 // Copy forecasting time steps
                 element._innerAnalysis.ForecastingTimeSteps = ForecastSteps;
@@ -1492,7 +1500,7 @@ namespace RMC.BestFit.UI
                         covTimeSeries.Add(cov.TimeSeriesElement.TimeSeries);
                 }
                 if (covTimeSeries.Count > 0)
-                    _innerAnalysis.ARIMAX.SetCovariates(covTimeSeries);
+                    _innerAnalysis.ARIMAX.SetCovariates(covTimeSeries, resetParameters: false);
             }
 
             _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;

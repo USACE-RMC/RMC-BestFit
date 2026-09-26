@@ -27,6 +27,16 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   `SetTransformParameters` throws on a non-finite first parameter and ignores the second;
   `GenerateRandomValues` returns raw-scale values of length `sampleSize`;
   `ARIMAX.TrainingTimeSeries` is the differenced series.
+- Time-series analyses with covariates (ARIMAX; present since 2.0.0): opening a project, copying
+  the analysis, and undo/redo keep the saved coefficient values, bounds, and custom priors. The
+  covariates were reattached through a path that rebuilt the default parameters, so a reopened
+  analysis showed residual diagnostics at default coefficients (residual RMS 0.660229 instead of
+  the fitted 0.341147 in the time-series regression example) and a later save of an edited
+  analysis wrote those defaults to the project. The new overload
+  `ARIMAX.SetCovariates(List<TimeSeries>, bool resetParameters)` keeps a parameter list whose
+  layout still fits the covariates; the one-argument overload still rebuilds the defaults after a
+  user-initiated covariate change. `ARIMAX.Clone()` keeps the source's parameter values, bounds,
+  and priors.
 - Point process: seasonal Gumbel-limit annualization uses `xi + alpha ln p`; the seasonal
   simulator uses the fitted per-season threshold intensities; clones recompute the event rate;
   seasonal quantile priors are evaluated on the annualized distribution; the seasonal block-day

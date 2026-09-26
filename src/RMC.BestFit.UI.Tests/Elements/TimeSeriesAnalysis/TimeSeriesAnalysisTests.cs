@@ -763,6 +763,65 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies model-snapshot undo and UI copy keep a covariate model's coefficient value,
+    /// bounds, and custom prior instead of rebuilding defaults when the covariates are reattached.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateModel_UndoAndCopyPreserveCustomParameters()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("CovariatePriorLifecycleTSA", _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("CovariatePriorResponse", 30, TimeInterval.OneYear, start);
+        tsa.Covariates.Add(new CovariateData
+        {
+            TimeSeriesElement = CreateTimeSeriesElement("CovariatePriorCovariate", 30, TimeInterval.OneYear, start)
+        });
+        tsa.ARIMAX.UseDefaultFlatPriors = false;
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        beta.Value = 0.42;
+        beta.LowerBound = -3.0;
+        beta.UpperBound = 3.0;
+        // The prior change is the recorded model edit, so its snapshot also holds the value and bounds.
+        beta.PriorDistribution = new global::Numerics.Distributions.Normal(0.5, 0.1);
+
+        // Undoing a later recorded change replays the snapshot that holds the custom coefficient.
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+        Assert.IsTrue(tsa.UndoManager.CanUndo);
+        tsa.UndoManager.Undo();
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "after undo");
+
+        var copy = (UI.TimeSeriesAnalysis)tsa.Copy("CovariatePriorLifecycleTSA-Copy");
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(copy.ARIMAX), "in the copy");
+    }
+
+    /// <summary>
+    /// Returns the covariate coefficient of a model with exactly one zero-lag covariate.
+    /// </summary>
+    /// <param name="model">The model whose parameter list is searched.</param>
+    /// <returns>The single covariate coefficient parameter.</returns>
+    private static ModelParameter GetCovariateCoefficient(ARIMAX model)
+    {
+        return model.Parameters.Single(p => p.Name.StartsWith("Covariate", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Asserts that a covariate coefficient still carries the value 0.42, bounds [-3, 3], and
+    /// Normal(0.5, 0.1) prior set by <see cref="CovariateModel_UndoAndCopyPreserveCustomParameters"/>.
+    /// </summary>
+    /// <param name="beta">The covariate coefficient to check.</param>
+    /// <param name="context">Where the coefficient was read, for the failure message.</param>
+    private static void AssertCustomizedCovariateCoefficient(ModelParameter beta, string context)
+    {
+        Assert.AreEqual(0.42, beta.Value, 0.0, $"The coefficient value must survive {context}.");
+        Assert.AreEqual(-3.0, beta.LowerBound, 0.0, $"The lower bound must survive {context}.");
+        Assert.AreEqual(3.0, beta.UpperBound, 0.0, $"The upper bound must survive {context}.");
+        var prior = beta.PriorDistribution as global::Numerics.Distributions.Normal;
+        Assert.IsNotNull(prior, $"The custom Normal prior must survive {context}.");
+        Assert.AreEqual(0.5, prior.Mu, 0.0);
+        Assert.AreEqual(0.1, prior.Sigma, 0.0);
+    }
+
+    /// <summary>
     /// Gets an axis from a plot by key.
     /// </summary>
     /// <param name="plot">The plot containing the target axis.</param>

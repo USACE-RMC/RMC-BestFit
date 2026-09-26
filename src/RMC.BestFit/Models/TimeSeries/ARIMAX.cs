@@ -597,17 +597,44 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Sets the list of exogenous covariate time series and rebuilds the default parameters.
+        /// </summary>
+        /// <param name="covariates">List of time series to use as exogenous predictors.</param>
+        /// <remarks>
+        /// This is the response to a user changing the covariates: the covariate coefficients and
+        /// every data-dependent default are rebuilt. Code that restores a saved, copied, or undone
+        /// model calls <see cref="SetCovariates(List{TimeSeries}, bool)"/> with
+        /// <c>resetParameters</c> set to <see langword="false"/> instead.
+        /// </remarks>
+        public void SetCovariates(List<TimeSeries> covariates)
+        {
+            SetCovariates(covariates, resetParameters: true);
+        }
+
+        /// <summary>
         /// Sets the list of exogenous covariate time series.
         /// </summary>
         /// <param name="covariates">List of time series to use as exogenous predictors.</param>
-        public void SetCovariates(List<TimeSeries> covariates)
+        /// <param name="resetParameters">
+        /// <see langword="true"/> rebuilds the default parameters, bounds, and priors, as for a
+        /// user-initiated covariate change. <see langword="false"/> keeps the current parameter
+        /// list, so restoring a saved, copied, or undone model keeps its values, bounds, and
+        /// custom priors.
+        /// </param>
+        /// <remarks>
+        /// When <paramref name="resetParameters"/> is <see langword="false"/> but the current
+        /// parameter count does not match the layout implied by the new covariates, the existing
+        /// vector cannot be mapped onto the coefficients, so the defaults are rebuilt instead.
+        /// </remarks>
+        public void SetCovariates(List<TimeSeries> covariates, bool resetParameters)
         {
             DetachCovariateSubscriptions();
             _covariates = covariates;
             AttachCovariateSubscriptions();
             RebuildTrainingCovariateAlignment();
             RaisePropertyChange(nameof(Covariates));
-            SetDefaultParameters();
+            if (resetParameters || NumberOfParameters != GetExpectedParameterCount())
+                SetDefaultParameters();
         }
 
         /// <summary>
@@ -2223,8 +2250,7 @@ namespace RMC.BestFit.Models
                 _trainingTimeSteps = TrainingTimeSteps,
                 _useDefaultTrainingSteps = UseDefaultTrainingSteps,
                 _lambda = TransformLambda,
-                _transformLambdaIsManual = _transformLambdaIsManual,
-                Parameters = parms
+                _transformLambdaIsManual = _transformLambdaIsManual
             };
 
             result.TimeSeries = TimeSeries?.Clone()!;
@@ -2239,6 +2265,10 @@ namespace RMC.BestFit.Models
             {
                 result.SetCovariates(_covariates.Select(c => c.Clone()).ToList());
             }
+
+            // Assign the cloned parameters last: attaching the series and covariates above rebuilds
+            // defaults, which must not replace the source's values, bounds, and priors.
+            result.Parameters = parms;
 
             return result;
         }
@@ -2520,6 +2550,18 @@ namespace RMC.BestFit.Models
         {
             if (Parameters == null) return -1;
             return GetARParameterStartIndex() + AROrderP;
+        }
+
+        /// <summary>
+        /// Gets the number of parameters implied by the current model structure and covariates.
+        /// </summary>
+        /// <returns>
+        /// The length of the layout <see cref="SetDefaultParameters"/> builds: the intercept, trend,
+        /// seasonality, covariate, AR, and MA coefficients followed by the scale parameter.
+        /// </returns>
+        private int GetExpectedParameterCount()
+        {
+            return GetMAParameterStartIndex() + MAOrderQ + 1;
         }
 
         /// <inheritdoc/>

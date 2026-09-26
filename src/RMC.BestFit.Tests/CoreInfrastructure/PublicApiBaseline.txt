@@ -1107,6 +1107,7 @@ TYPE class RMC.BestFit.Models.ARIMAX
   METHOD System.ValueTuple<System.Boolean,System.Collections.Generic.List<System.String>> Validate()
   METHOD System.ValueTuple<System.Double[],System.Double[],System.Double[],System.Double[],System.Double[],System.Double[],System.Double[]> Predict(System.Double[], System.Int32 optional, System.Int32 optional, System.Collections.Generic.List<Numerics.Data.TimeSeries> optional)
   METHOD System.Void SetCovariates(System.Collections.Generic.List<Numerics.Data.TimeSeries>)
+  METHOD System.Void SetCovariates(System.Collections.Generic.List<Numerics.Data.TimeSeries>, System.Boolean)
   METHOD System.Void SetDefaultParameters()
   METHOD System.Void SetParameterValues(System.Collections.Generic.IList<System.Double>)
   METHOD System.Void SetTransformParameters(System.Double optional, System.Double optional)

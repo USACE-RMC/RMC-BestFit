@@ -105,6 +105,54 @@ public class ARIMAXTests
     }
 
     /// <summary>
+    /// Builds an ARIMAX(1,0,0) model with one zero-lag covariate whose coefficient carries a
+    /// non-default value, bounds, and prior, as a user configures it before fitting.
+    /// </summary>
+    /// <param name="covariates">Receives the covariate list attached to the model.</param>
+    /// <returns>The configured model, with default flat priors disabled.</returns>
+    private static ARIMAX CreateCustomizedCovariateModel(out List<NumericsTimeSeries> covariates)
+    {
+        var ts = CreateSampleTimeSeries();
+        var model = new ARIMAX(ts) { AROrderP = 1, MAOrderQ = 0, XOrderB = 0 };
+        covariates = new List<NumericsTimeSeries> { CreateCovariateTimeSeries(ts) };
+        model.SetCovariates(covariates);
+        model.UseDefaultFlatPriors = false;
+
+        ModelParameter beta = GetCovariateCoefficient(model);
+        beta.Value = 0.42;
+        beta.LowerBound = -3.0;
+        beta.UpperBound = 3.0;
+        beta.PriorDistribution = new Numerics.Distributions.Normal(0.5, 0.1);
+        return model;
+    }
+
+    /// <summary>
+    /// Returns the covariate coefficient of a model with exactly one zero-lag covariate.
+    /// </summary>
+    /// <param name="model">The model whose parameter list is searched.</param>
+    /// <returns>The single covariate coefficient parameter.</returns>
+    private static ModelParameter GetCovariateCoefficient(ARIMAX model)
+    {
+        return model.Parameters.Single(p => p.Name.StartsWith("Covariate", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Asserts that a covariate coefficient still carries the state set by
+    /// <see cref="CreateCustomizedCovariateModel"/>.
+    /// </summary>
+    /// <param name="beta">The covariate coefficient to check.</param>
+    private static void AssertCustomizedCovariateCoefficient(ModelParameter beta)
+    {
+        Assert.AreEqual(0.42, beta.Value, 0.0, "The saved coefficient value must survive.");
+        Assert.AreEqual(-3.0, beta.LowerBound, 0.0, "The saved lower bound must survive.");
+        Assert.AreEqual(3.0, beta.UpperBound, 0.0, "The saved upper bound must survive.");
+        var prior = beta.PriorDistribution as Numerics.Distributions.Normal;
+        Assert.IsNotNull(prior, "The custom Normal prior must survive.");
+        Assert.AreEqual(0.5, prior.Mu, 0.0);
+        Assert.AreEqual(0.1, prior.Sigma, 0.0);
+    }
+
+    /// <summary>
     /// Finite fixture that makes the Box-Cox lambda objective non-finite.
     /// </summary>
     private static NumericsTimeSeries CreateBoxCoxLambdaFailureTimeSeries()
@@ -738,19 +786,38 @@ public class ARIMAXTests
     }
 
     /// <summary>
-    /// Tests that modifying the original model's parameters does not affect the cloned model.
+    /// Tests that Clone carries the source's parameter values and that later edits to the
+    /// source do not reach the clone.
     /// </summary>
+    /// <remarks>
+    /// The source value is moved off its default first; a clone that rebuilt default
+    /// parameters would otherwise match it by coincidence.
+    /// </remarks>
     [TestMethod]
     public void Test_Clone_ParametersAreIndependent()
     {
         var ts = CreateSampleTimeSeries();
         var original = new ARIMAX(ts);
-        double originalValue = original.Parameters[0].Value;
+        double editedValue = original.Parameters[0].Value + 1.0;
+        original.Parameters[0].Value = editedValue;
 
         var clone = (ARIMAX)original.Clone();
         original.Parameters[0].Value = 99999;
 
-        Assert.AreEqual(originalValue, clone.Parameters[0].Value);
+        Assert.AreEqual(editedValue, clone.Parameters[0].Value);
+    }
+
+    /// <summary>
+    /// Tests that Clone keeps a covariate coefficient's value, bounds, and custom prior.
+    /// </summary>
+    [TestMethod]
+    public void Test_Clone_WithCovariate_PreservesCustomParameterState()
+    {
+        ARIMAX model = CreateCustomizedCovariateModel(out _);
+
+        var clone = (ARIMAX)model.Clone();
+
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(clone));
     }
 
     /// <summary>
@@ -1161,6 +1228,61 @@ public class ARIMAXTests
 
         Assert.IsTrue(model.NumberOfParameters > baseParams,
             "Adding a covariate should increase the parameter count.");
+    }
+
+    /// <summary>
+    /// Tests that reattaching the saved covariates to a model restored from XML keeps the
+    /// saved parameter values, bounds, and custom priors, as project open and undo require.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetCovariates_WithoutParameterReset_AfterXmlRestore_PreservesSavedParameters()
+    {
+        ARIMAX model = CreateCustomizedCovariateModel(out List<NumericsTimeSeries> covariates);
+        var saved = model.ToXElement();
+
+        var restored = new ARIMAX(model.TimeSeries, saved);
+        restored.SetCovariates(covariates, resetParameters: false);
+
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(restored));
+        Assert.IsTrue(System.Xml.Linq.XNode.DeepEquals(saved, restored.ToXElement()),
+            "Reattaching the saved covariates must leave the serialized model unchanged.");
+    }
+
+    /// <summary>
+    /// Tests that a restored parameter list that no longer fits the covariate layout is
+    /// replaced by defaults instead of being assigned to the wrong coefficients.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetCovariates_WithoutParameterReset_WhenLayoutChanges_RebuildsDefaults()
+    {
+        ARIMAX model = CreateCustomizedCovariateModel(out List<NumericsTimeSeries> covariates);
+        int savedCount = model.NumberOfParameters;
+        var restored = new ARIMAX(model.TimeSeries, model.ToXElement());
+        var twoCovariates = new List<NumericsTimeSeries> { covariates[0], CreateCovariateTimeSeries(model.TimeSeries) };
+
+        restored.SetCovariates(twoCovariates, resetParameters: false);
+
+        Assert.AreEqual(savedCount + 1, restored.NumberOfParameters,
+            "A second zero-lag covariate adds exactly one coefficient.");
+        var firstBeta = restored.Parameters.First(p => p.Name.StartsWith("Covariate", StringComparison.Ordinal));
+        Assert.IsInstanceOfType(firstBeta.PriorDistribution, typeof(Numerics.Distributions.Uniform),
+            "Coefficients of a changed layout take the default flat prior.");
+    }
+
+    /// <summary>
+    /// Tests that the one-argument overload still rebuilds default parameters, which is the
+    /// intended response to a user changing the covariates.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetCovariates_DefaultOverload_RebuildsDefaultCoefficient()
+    {
+        ARIMAX model = CreateCustomizedCovariateModel(out List<NumericsTimeSeries> covariates);
+
+        model.SetCovariates(covariates);
+
+        ModelParameter beta = GetCovariateCoefficient(model);
+        Assert.AreEqual(0.0, beta.Value, 0.0);
+        Assert.IsInstanceOfType(beta.PriorDistribution, typeof(Numerics.Distributions.Uniform));
     }
 
     /// <summary>
