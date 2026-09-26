@@ -18,6 +18,13 @@ public class ARIMAXAlignmentTests
     private static readonly double[] s_covariate = { 2.0, -1.0, 0.5, 3.0, -2.0, 1.5, 4.0, -0.5, 8.0, -7.0 };
 
     /// <summary>
+    /// The exact migration hint <see cref="ARIMAX"/> appends once, after every per-covariate
+    /// alignment message, when at least one covariate is missing a required timestamp.
+    /// </summary>
+    private const string CovariateDateAlignmentHint =
+        "Warning: Covariates are paired with the response by date. RMC-BestFit 2.0.0 paired them by position, so a covariate that worked there can fail this check; give each covariate a value at every response date in the training window, plus the b preceding dates when the exogenous lag order b is above 0.";
+
+    /// <summary>
     /// Verifies model step <c>k</c> maps to raw index <c>k+d</c>, with exactly
     /// <c>T-d</c> training differences whose timestamps come from the later raw values.
     /// </summary>
@@ -105,6 +112,84 @@ public class ARIMAXAlignmentTests
         var extendedValidation = extendedModel.Validate();
         Assert.IsTrue(extendedValidation.IsValid, string.Join(Environment.NewLine, extendedValidation.ValidationMessages));
         Assert.IsTrue(double.IsFinite(extendedModel.DataLogLikelihood(CreateParameters())));
+    }
+
+    /// <summary>
+    /// Verifies a same-length positional covariate shift produces the date-pairing migration hint
+    /// exactly once, positioned after every missing-timestamp error it accompanies.
+    /// </summary>
+    [TestMethod]
+    public void ShiftedCovariate_ValidationHint_AppearsOnceAfterMissingTimestampErrors()
+    {
+        NumericTimeSeries shifted = CreateSeries(s_covariate, s_startDate.AddDays(1));
+        ARIMAX model = CreateModel(0, CreateSeries(s_raw), shifted, ModelTransform.None);
+        var validation = model.Validate();
+
+        Assert.IsFalse(validation.IsValid);
+        int lastMissingIndex = -1;
+        int hintIndex = -1;
+        for (int i = 0; i < validation.ValidationMessages.Count; i++)
+        {
+            if (validation.ValidationMessages[i].Contains("missing required timestamp", StringComparison.Ordinal))
+                lastMissingIndex = i;
+            if (validation.ValidationMessages[i] == CovariateDateAlignmentHint)
+                hintIndex = i;
+        }
+
+        Assert.AreNotEqual(-1, lastMissingIndex, "Expected at least one missing-timestamp error.");
+        Assert.AreNotEqual(-1, hintIndex, "Expected the date-pairing migration hint.");
+        Assert.IsTrue(hintIndex > lastMissingIndex, "Expected the hint after every missing-timestamp error.");
+        Assert.AreEqual(1, validation.ValidationMessages.Count(message => message == CovariateDateAlignmentHint), "Expected the hint exactly once.");
+    }
+
+    /// <summary>
+    /// Verifies two covariates that each miss required timestamps still produce the migration
+    /// hint exactly once, not once per covariate.
+    /// </summary>
+    [TestMethod]
+    public void TwoCovariatesMissingDates_ValidationHint_AppearsExactlyOnce()
+    {
+        NumericTimeSeries shiftedA = CreateSeries(s_covariate, s_startDate.AddDays(1));
+        NumericTimeSeries shiftedB = CreateSeries(s_covariate, s_startDate.AddDays(2));
+        ARIMAX model = CreateModel(0, CreateSeries(s_raw), shiftedA, ModelTransform.None);
+        model.SetCovariates(new List<NumericTimeSeries> { shiftedA, shiftedB });
+        var validation = model.Validate();
+
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message => message.Contains("Covariate 1 is missing required timestamp", StringComparison.Ordinal)));
+        Assert.IsTrue(validation.ValidationMessages.Any(message => message.Contains("Covariate 2 is missing required timestamp", StringComparison.Ordinal)));
+        Assert.AreEqual(1, validation.ValidationMessages.Count(message => message == CovariateDateAlignmentHint), "Expected the hint exactly once across both covariates.");
+    }
+
+    /// <summary>
+    /// Verifies a duplicated required timestamp with no missing date produces no migration hint —
+    /// the hint is specific to a covariate that cannot supply a required date at all.
+    /// </summary>
+    [TestMethod]
+    public void DuplicateTimestampWithoutMissingDate_NoValidationHint()
+    {
+        NumericTimeSeries covariate = CreateSeries(s_covariate);
+        covariate[9].Index = covariate[0].Index; // Duplicates day 0 using the "extra" day-9 date; every required date (days 0-7) stays covered.
+        ARIMAX model = CreateModel(0, CreateSeries(s_raw), covariate, ModelTransform.None);
+        var validation = model.Validate();
+
+        Assert.IsFalse(validation.IsValid);
+        Assert.IsTrue(validation.ValidationMessages.Any(message => message.Contains("duplicate required timestamp", StringComparison.Ordinal)));
+        Assert.IsFalse(validation.ValidationMessages.Any(message => message.Contains("missing required timestamp", StringComparison.Ordinal)));
+        Assert.IsFalse(validation.ValidationMessages.Contains(CovariateDateAlignmentHint), "Did not expect the hint when only a duplicate timestamp is present.");
+    }
+
+    /// <summary>
+    /// Verifies a fully aligned covariate validates cleanly with no migration hint.
+    /// </summary>
+    [TestMethod]
+    public void AlignedCovariate_NoValidationHint()
+    {
+        ARIMAX model = CreateModel(0, CreateSeries(s_raw), CreateSeries(s_covariate), ModelTransform.None);
+        var validation = model.Validate();
+
+        Assert.IsTrue(validation.IsValid, string.Join(Environment.NewLine, validation.ValidationMessages));
+        Assert.IsFalse(validation.ValidationMessages.Contains(CovariateDateAlignmentHint), "Did not expect the hint for a clean alignment.");
     }
 
     /// <summary>

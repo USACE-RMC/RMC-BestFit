@@ -175,6 +175,14 @@ namespace RMC.BestFit.Models
         private bool _useDefaultTrainingSteps = true;
         private int[,,]? _trainingCovariatePositions;
         private readonly List<string> _covariateAlignmentValidationMessages = new();
+
+        /// <summary>
+        /// Migration hint appended once to <see cref="_covariateAlignmentValidationMessages"/> when
+        /// at least one covariate is missing a required timestamp, explaining the RMC-BestFit 2.0.1
+        /// date-based pairing rule that replaced the RMC-BestFit 2.0.0 positional rule.
+        /// </summary>
+        private const string CovariateDateAlignmentHint =
+            "Warning: Covariates are paired with the response by date. RMC-BestFit 2.0.0 paired them by position, so a covariate that worked there can fail this check; give each covariate a value at every response date in the training window, plus the b preceding dates when the exogenous lag order b is above 0.";
         private readonly HashSet<SeriesOrdinate<DateTime, double>> _subscribedCovariateOrdinates = new();
 
         /// <summary>
@@ -1065,7 +1073,12 @@ namespace RMC.BestFit.Models
         /// Model step <c>k</c> maps to raw response index <c>k + d</c>. Covariates remain on their
         /// level scale and are selected by the response timestamp at that raw index. Lagged
         /// covariates use preceding model-step timestamps; dates outside the required window are
-        /// ignored.
+        /// ignored. When at least one covariate is missing at least one required timestamp, a
+        /// single <see cref="CovariateDateAlignmentHint"/> message is appended after every
+        /// per-covariate alignment message: it explains that covariates are paired by date rather
+        /// than the RMC-BestFit 2.0.0 positional rule. The hint is never added for duplicate-only
+        /// problems or a clean alignment, and — because it always accompanies at least one
+        /// missing-timestamp error — it never changes validity by itself.
         /// </remarks>
         private void RebuildTrainingCovariateAlignment()
         {
@@ -1080,6 +1093,7 @@ namespace RMC.BestFit.Models
 
             int trainingCount = _trainingTimeSeries.Count;
             _trainingCovariatePositions = new int[Covariates.Count, trainingCount, XOrderB + 1];
+            bool anyMissingTimestamp = false;
             for (int covariateIndex = 0; covariateIndex < Covariates.Count; covariateIndex++)
             {
                 TimeSeries covariate = Covariates[covariateIndex];
@@ -1110,6 +1124,7 @@ namespace RMC.BestFit.Models
                         int rawIndex = DiffOrderD + modelIndex - lag;
                         if (!positionsByDate.TryGetValue(requiredDate, out List<int>? matches))
                         {
+                            anyMissingTimestamp = true;
                             if (reportedMissing.Add(requiredDate))
                             {
                                 _covariateAlignmentValidationMessages.Add(
@@ -1131,6 +1146,11 @@ namespace RMC.BestFit.Models
                         _trainingCovariatePositions[covariateIndex, modelIndex, lag] = matches[0];
                     }
                 }
+            }
+
+            if (anyMissingTimestamp)
+            {
+                _covariateAlignmentValidationMessages.Add(CovariateDateAlignmentHint);
             }
         }
 

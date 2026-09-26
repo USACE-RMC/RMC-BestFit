@@ -33,6 +33,9 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   before they notify, so undoing or redoing a structural edit in a time-series analysis restores
   the default priors and bounds that match the restored structure, and turning default flat
   priors on or off is an undoable step.
+- ARIMAX covariate validation: when a covariate is missing a date the response needs, `Validate()`
+  now also adds a hint that covariates are paired by date (RMC-BestFit 2.0.0 paired them by
+  position).
 - Time-series analyses with covariates (ARIMAX; present since 2.0.0): opening a project, copying
   the analysis, and undoing or redoing a model-property edit keep the saved coefficient values,
   bounds, and custom priors. The covariates were reattached through a path that rebuilt the
