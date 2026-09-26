@@ -6617,7 +6617,7 @@
       "sampleSize": 1000,
       "seed": 12345,
       "oracle": "Independently generated R AR(1) fixture with parent coordinates and hand-coded one-step recurrence.",
-      "acceptanceRule": "Required BestFit Differential Evolution configuration (minimum population 100, unchanged Numerics tolerances) must complete; each parent coordinate must have absolute standardized error no greater than 1.96 using the production adaptive observed-information covariance; likelihood is finite and no worse than the parent; one-step prediction agrees with the independent recurrence within 1E-12.",
+      "acceptanceRule": "Required BestFit Differential Evolution configuration (Numerics default population 10*k, unchanged Numerics tolerances) must complete; each parent coordinate must have absolute standardized error no greater than 1.96 using the production adaptive observed-information covariance; likelihood is finite and no worse than the parent; one-step prediction agrees with the independent recurrence within 1E-12.",
       "artifact": "verification/data/time-series/phase5-recovery-fixtures.json",
       "reportAnchor": "docs/verification/report/time-series-analyses.md#recovery",
       "status": "verified",

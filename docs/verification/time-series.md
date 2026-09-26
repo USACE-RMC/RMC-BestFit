@@ -1213,10 +1213,41 @@ and `0.545`. The stored failed DE coordinate independently reproduces `-3089.265
 `3.1e-8` of the runner report. The generator is valid. The approved resolution did not alter the
 likelihood, bounds, seed, covariance rule, or statistical acceptance. Numerics now repairs an
 infeasible trial halfway from the target coordinate toward the violated bound rather than clamping
-exactly to that bound, without consuming an additional random draw. BestFit MLE/MAP now use
+exactly to that bound, without consuming an additional random draw. BestFit MLE/MAP briefly used
 `max(100,10*k)` DE population members for `k` coordinates while retaining the Numerics convergence
-tolerances. Under that final configuration the exact guarded AR(1) rerun passed 1/1 under
-`20260831-192951-...`.
+tolerances; under that configuration the exact guarded AR(1) rerun passed 1/1 under
+`20260831-192951-...`. Haden Smith reverted the `max(100,10*k)` minimum on 8 September 2026
+(commit `81882ce`); see [D1 DE population reconciliation](#d1-de-population-reconciliation---26-september-2026)
+below for the current `10*k` configuration and its rerun evidence.
+
+## D1 DE population reconciliation - 26 September 2026
+
+**Decision and behavior.** Haden Smith reverted the BestFit-side `max(100, 10*k)` Differential
+Evolution population minimum on 8 September 2026 (commit `81882ce`), restoring the unmodified
+Numerics default population `10*k` for `k` fitted coordinates in both `MaximumLikelihood` and
+`MaximumAPosteriori`. Neither class sets `DifferentialEvolution.PopulationSize`. The Numerics
+midpoint infeasible-trial repair described above and all convergence tolerances are unchanged by
+this revert.
+
+**Reruns (Task 2.11, 26 September 2026).** The AR(1) MLE recovery cell and the five Log10-Normal
+equivalence identities were the only recorded evidence citing the former 100-member minimum. Each
+was rerun individually through `scripts/run-verification-test.ps1` at default settings under the
+current `10*k` population:
+
+| Method | TRX | Outcome |
+|---|---|---|
+| `RMC.BestFit.Verification.TimeSeriesAnalysis.AutoRegressiveMLERecoveryTests.Test_EstimateParameters_AR1` | `TestResults/VerificationFocused/20260926-042420-RMC_BestFit_Verification_TimeSeriesAnalysis_AutoRegressiveMLERecoveryTests_Test_EstimateParameters_AR1/haden_HADEN_2026-09-26_10_24_23.132.trx` | Passed 1/1 |
+| `RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.FlatPriorMap_MatchesClosedFormLog10NormalMle` | `TestResults/VerificationFocused/20260926-042429-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_FlatPriorMap_MatchesClosedFormLog10NormalMle/haden_HADEN_2026-09-26_10_24_32.093.trx` | Passed 1/1 |
+| `RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.UnpenalizedB17CGmm_MatchesExactSampleMoments` | `TestResults/VerificationFocused/20260926-042437-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_UnpenalizedB17CGmm_MatchesExactSampleMoments/haden_HADEN_2026-09-26_10_24_40.764.trx` | Passed 1/1 |
+| `RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.MapMuPriorRegimes_MatchAnalyticalFitAndVarianceInfluence` | `TestResults/VerificationFocused/20260926-042445-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_MapMuPriorRegimes_MatchAnalyticalFitAndVarianceInfluence/haden_HADEN_2026-09-26_10_24_48.858.trx` | Passed 1/1 |
+| `RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence` | `TestResults/VerificationFocused/20260926-042453-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence/haden_HADEN_2026-09-26_10_24_56.876.trx` | Passed 1/1 |
+| `RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.MapAndGmmMuPosterior_InverseVarianceReferenceInsideCentral95Intervals` | `TestResults/VerificationFocused/20260926-042501-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_MapAndGmmMuPosterior_InverseVarianceReferenceInsideCentral95Intervals/haden_HADEN_2026-09-26_10_25_05.021.trx` | Passed 1/1 |
+
+All six passed. No FittingAnalysis recovery cell is named anywhere in
+[review-findings.md](../technical-reference/review-findings.md) or
+[test-inventory.md](test-inventory.md) as evidence for the former 100-member minimum, so none was
+rerun under this reconciliation. No likelihood, bound, seed, tolerance, sample size, fixture, or
+population setting was changed to obtain these results.
 
 ## D6 ARIMAX conditioning order - 26 September 2026
 

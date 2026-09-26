@@ -33,10 +33,14 @@ identities. All eight retained estimator cells are verified. The retained MA(1)
 MLE passed after its arbitrary five-percent gate was replaced by the common production observed-
 information standardized-error rule. The AR(1) MLE's former boundary solution remains failure
 history: it had non-finite/non-positive covariance and an objective independently inferior to both
-parent and conditional optimum. After Haden Smith approved the DE reliability correction, the final
-BestFit configuration uses a minimum population of 100 and midpoint repair between the target and a
-violated bound while retaining Numerics convergence tolerances. The exact AR(1) rerun under
-`20260831-192951-...` passed 1/1. Chunk 13 adds four
+parent and conditional optimum. After Haden Smith approved the DE reliability correction, BestFit
+briefly used a minimum population of 100 alongside the Numerics midpoint repair between the target
+and a violated bound, while retaining Numerics convergence tolerances; the exact AR(1) rerun under
+`20260831-192951-...` passed 1/1 under that configuration. Haden Smith reverted the 100-member
+minimum on 8 September 2026 (commit `81882ce`); BestFit now uses the unmodified Numerics default
+population `10*k`, and the AR(1) rerun on 26 September 2026 also passed 1/1 under that default -
+see [D1 DE population reconciliation](time-series.md#d1-de-population-reconciliation---26-september-2026).
+Chunk 13 adds four
 artifact-backed identities in `TimeSeriesChunk13OracleTests`:
 
 - `FirstOrderConditionalObjectivesMatchIndependentPythonOracle` - passed, one-result TRX;
@@ -193,13 +197,17 @@ makes fixed-variance inverse weighting a statistical reference rather than an ex
 identity; no old result was transferred.
 
 With Haden Smith's approval, Numerics DE now repairs infeasible trials halfway between the target
-and violated bound without consuming an extra random draw, and BestFit MLE/MAP uses a minimum
-population of 100 while retaining Numerics convergence tolerances. The final exact AR(1) run passed
-1/1. All five source-shared Log10-Normal identities also passed in fresh one-result guarded runs,
-including the renamed
+and violated bound without consuming an extra random draw, and Numerics convergence tolerances are
+retained. BestFit MLE/MAP briefly used a minimum population of 100; under that configuration, the
+final exact AR(1) run passed 1/1, and all five source-shared Log10-Normal identities also passed in
+fresh one-result guarded runs, including the renamed
 `MapAndGmmMuPosterior_InverseVarianceReferenceInsideCentral95Intervals`. The normalized MAP method
 first exposed one leftover `1e-5` centered-coordinate assertion in a one-result failed TRX under
 `20260901-115353-...`; that redundant nonstatistical assertion was removed before the final pass.
+Haden Smith reverted the 100-member minimum on 8 September 2026 (commit `81882ce`), restoring the
+unmodified Numerics default population `10*k`. On 26 September 2026 the AR(1) cell and all five
+Log10-Normal identities were rerun individually under `10*k` and all six passed - see
+[D1 DE population reconciliation](time-series.md#d1-de-population-reconciliation---26-september-2026).
 
 ## Chunk 7 Bulletin 17C reconciliation
 

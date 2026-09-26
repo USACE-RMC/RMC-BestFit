@@ -13,8 +13,8 @@ namespace RMC.BestFit.Verification.ModelEstimation;
 /// The deterministic fixture has log10 values symmetric about two. The MLE scale is 0.6 using
 /// the finite-sample denominator n; the GMM scale is 0.648074069840786 using the unbiased sample
 /// moment denominator n-1. MLE and MAP use the BestFit Differential Evolution configuration with
-/// its 100-member minimum population and unchanged Numerics tolerances; GMM retains its separately
-/// declared optimizer policy.
+/// the unmodified Numerics default population (10 times the fitted-coordinate count) and unchanged
+/// Numerics tolerances; GMM retains its separately declared optimizer policy.
 /// </remarks>
 [TestClass]
 public class Log10NormalEstimationEquivalenceTests
