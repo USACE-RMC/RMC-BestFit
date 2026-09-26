@@ -23,14 +23,50 @@ namespace RMC.BestFit.Tests.TimeSeriesModels;
 [TestClass]
 public class TimeSeriesConditioningOrderTests
 {
+    /// <summary>
+    /// Absolute tolerance for comparisons with hand-derived values, independent recursions, and
+    /// equivalent rebuilt models, all of which agree with the model under test to round-off.
+    /// </summary>
     private const double Tolerance = 1E-12;
+
+    /// <summary>
+    /// Intercept of the hand-derived conditioning-order fixtures.
+    /// </summary>
     private const double ConditioningIntercept = 1.0;
+
+    /// <summary>
+    /// Innovation standard deviation of the hand-derived conditioning-order fixtures.
+    /// </summary>
     private const double ConditioningSigma = 1.5;
+
+    /// <summary>
+    /// First timestamp of every daily fixture series built by <see cref="CreateSeries"/>.
+    /// </summary>
     private static readonly DateTime s_startDate = new(2002, 3, 4);
+
+    /// <summary>
+    /// Ten-step response series of the conditioning-order fixtures.
+    /// </summary>
     private static readonly double[] s_conditioningResponse = { 3.0, 4.5, 2.5, 5.0, 4.0, 6.5, 5.5, 7.0, 6.0, 8.0 };
+
+    /// <summary>
+    /// Ten-step exact-date covariate aligned with <see cref="s_conditioningResponse"/>.
+    /// </summary>
     private static readonly double[] s_conditioningCovariate = { 1.0, 2.0, 0.5, 1.5, 3.0, 2.5, 1.0, 2.0, 1.5, 0.5 };
+
+    /// <summary>
+    /// Covariate coefficients for lags 0 through 2; a case with lag order b uses the first b + 1.
+    /// </summary>
     private static readonly double[] s_conditioningBeta = { 0.8, 0.3, -0.2 };
+
+    /// <summary>
+    /// Autoregressive coefficients; a case with order p uses the first p.
+    /// </summary>
     private static readonly double[] s_conditioningPhi = { 0.4, -0.25 };
+
+    /// <summary>
+    /// Moving-average coefficients; a case with order q uses the first q.
+    /// </summary>
     private static readonly double[] s_conditioningTheta = { 0.3, -0.2, 0.15, 0.1 };
 
     /// <summary>

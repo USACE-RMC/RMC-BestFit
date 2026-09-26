@@ -836,6 +836,13 @@ namespace RMC.BestFit.Models
         /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown if <paramref name="index"/> is out of range.
         /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if <see cref="Distribution"/> is not set, or if building the new trend model's
+        /// default parameters from the data fails (the inner exception holds the cause). In the
+        /// second case the previous trend model stays in place and the parameter change handlers
+        /// removed at entry are re-attached, so callers can catch the exception and keep using the
+        /// distribution.
+        /// </exception>
         public void SetTrendModel(int index, TrendModelType type)
         {
             if (Distribution is null)

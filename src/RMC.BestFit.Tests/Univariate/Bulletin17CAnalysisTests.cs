@@ -1021,10 +1021,17 @@ public class Bulletin17CAnalysisTests
     /// and correctly sized for the caller's distribution.
     /// </param>
     /// <returns>A GMM instance flagged as estimated, whose covariance always fails.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <see cref="GeneralizedMethodOfMoments"/> no longer exposes the
+    /// <see cref="GeneralizedMethodOfMoments.IsEstimated"/> or
+    /// <see cref="GeneralizedMethodOfMoments.BestParameterSet"/> property this fixture sets by reflection.
+    /// </exception>
     /// <remarks>
     /// Mirrors the fixture pattern in
     /// <c>RMC.BestFit.Tests.ModelEstimation.CovarianceFailureStatusTests.GeneralizedMethodOfMoments_MomentFailure_ReportsFailureAndThrows</c>,
     /// which forces the same failure mode directly against <c>GetCovariance</c>/<c>TryGetCovariance</c>.
+    /// The moment-condition delegate's own <see cref="InvalidOperationException"/> is raised only when
+    /// a caller evaluates the covariance, not by this method.
     /// </remarks>
     private static GeneralizedMethodOfMoments CreateThrowingCovarianceGmm(double[] bestParameterValues)
     {
@@ -1048,6 +1055,9 @@ public class Bulletin17CAnalysisTests
     /// </summary>
     /// <param name="analysis">The analysis to modify.</param>
     /// <param name="gmm">The GMM instance to install.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <see cref="Bulletin17CAnalysis"/> has no private instance field named <c>_gmm</c>.
+    /// </exception>
     private static void InjectGmm(Bulletin17CAnalysis analysis, GeneralizedMethodOfMoments gmm)
     {
         FieldInfo field = typeof(Bulletin17CAnalysis).GetField("_gmm", BindingFlags.Instance | BindingFlags.NonPublic)
@@ -1061,6 +1071,10 @@ public class Bulletin17CAnalysisTests
     /// <param name="target">The object containing the property.</param>
     /// <param name="propertyName">The property name.</param>
     /// <param name="value">The value to assign.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <paramref name="target"/> has no public instance property named
+    /// <paramref name="propertyName"/>.
+    /// </exception>
     /// <remarks>
     /// Mirrors <c>CovarianceFailureStatusTests.SetPrivateProperty</c> so both suites arrange
     /// deterministic GMM covariance failures the same way.
