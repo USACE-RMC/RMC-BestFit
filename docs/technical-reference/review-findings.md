@@ -137,7 +137,7 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-094](#tr-094) | Rating-curve legacy recovery used arbitrary bands and omitted residual uncertainty from response recovery | High | Confirmed verification gap; resolved | Verification matrix normalized; parameter and log10-residual uncertainty feed simultaneous predictive bands; all non-profile MLE/MAP tests use Differential Evolution with untouched defaults | 10/10 retained recovery cells passed; exact segmented allocations reported | [Report](../verification/rating-curve.md#current-exact-outcomes) | 2026-08-31 |
 | [TR-095](#tr-095) | Distribution/mixture-EM extreme-log-magnitude handling and initialization-failure reporting | High | Approved remediation; implemented 8 September 2026 | Complete | Passed - core 3,410 / UI 599 / App 443 fast tests; Numerics Release suite 2,690/framework | [Report](../distribution-robustness.md) | 2026-09-26 |
 | [TR-096](#tr-096) | B17C BFGS false convergence, concealed line-search failure, and numerical systematic-data Jacobian | High | Approved remediation; implemented 17 September 2026 | Complete | Passed - 36 focused BFGS/AL regressions/framework; BestFit fast suites 5,021 total; 7/7 B17C examples | [Report](../verification/b17c-bfgs-repair-20260917.md) | 2026-09-26 |
-| [TR-097](#tr-097) | Competing-risk (and general MAP-initialized) Bayesian MCMC lacked a data-informed initialization covariance | Medium | Approved remediation; implemented 4 August 2026 | Complete | Passed - resolved the separated three-Weibull R-hat finding; six unrelated cells remain deferred by decision | [Report](../verification/competing-risks.md) | 2026-09-26 |
+| [TR-097](#tr-097) | Competing-risk Bayesian MCMC lacked a data-informed initialization covariance | Medium | Approved remediation; implemented 4 August 2026 | Complete | Passed - resolved the separated three-Weibull R-hat finding; six unrelated cells remain deferred by decision | [Report](../verification/competing-risks.md) | 2026-09-26 |
 | [TR-098](#tr-098) | Reciprocal and sinusoidal default trend priors initialized in the wrong space | Medium | Approved remediation; implemented 30 August 2026 | Complete | Passed - 380/380 default-validity assignments; Chunk 6B 22/22 recovery identities | [Report](../verification/model-estimation.md#univariate-family-and-trend-recovery) | 2026-09-26 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
@@ -1697,7 +1697,7 @@ bootstrap fit is statistically valid. The separate terminal-ridge/regularization
 (`docs/verification/b17c-regularization-exception-plan-20260917.md`) has not been implemented.
 
 <a id="tr-097"></a>
-## TR-097 - Competing-Risk (and General MAP-Initialized) Bayesian MCMC Initialization
+## TR-097 - Competing-Risk Bayesian MCMC Initialization
 
 **Review disposition.** Approved remediation, implemented in commit `c28228d` ("Add Phase 4 recovery
 verification supplement", 4 August 2026), per
@@ -1705,13 +1705,14 @@ verification supplement", 4 August 2026), per
 "authorized MAP-centered initialization and bounded-Hessian correction were implemented before" its
 21 August 2026 rerun. The same commit introduces `MaximumAPosteriori.TryGetInitializationCovarianceMatrix`.
 
-**Implementation status.** `MaximumAPosteriori.TryGetInitializationCovarianceMatrix` supplies a
-MAP-centered initialization covariance for Bayesian MCMC starts (including competing-risk models),
-falling back to a regularized Moore-Penrose pseudo-inverse when the posterior information matrix is
-singular so null-space directions are anchored at the MAP rather than given unbounded variance. The
-public covariance contract (`TryGetCovarianceMatrix`) is unchanged, and this initialization-only
-covariance must not be reported as posterior uncertainty. No prior, DEMCzs sampling default, seed,
-likelihood, or acceptance tolerance changed.
+**Implementation status.** `MaximumAPosteriori.TryGetInitializationCovarianceMatrix` is `internal`,
+and its only production caller is `CompetingRiskAnalysis.cs:471`. It supplies a MAP-centered
+initialization covariance for competing-risk Bayesian MCMC starts, falling back to a regularized
+Moore-Penrose pseudo-inverse when the posterior information matrix is singular so null-space
+directions are anchored at the MAP rather than given unbounded variance. The public covariance
+contract (`TryGetCovarianceMatrix`) is unchanged, and this initialization-only covariance must not
+be reported as posterior uncertainty. No prior, DEMCzs sampling default, seed, likelihood, or
+acceptance tolerance changed.
 
 **Verification status.** Per the same document, MAP initialization resolved the separated
 three-Weibull R-hat finding recorded in the historical Phase 4 disposition. `CompetingRiskRecoveryTests`
@@ -1722,10 +1723,9 @@ R-hat/ESS, and Gamma inverse-CDF uncertainty postprocessing), and no distributio
 default, public signature, DEMCzs sampling setting, fixture, or verification tolerance changed in
 response to a failed cell or in granting the deferral.
 
-**Impact.** Bayesian competing-risk (and other MAP-initialized) MCMC chains start from a
-data-informed, bounded neighborhood of the posterior mode instead of an arbitrary or
-boundary-adjacent point, improving chain reliability without altering the sampled posterior's target
-distribution.
+**Impact.** Bayesian competing-risk MCMC chains start from a data-informed, bounded neighborhood of
+the posterior mode instead of an arbitrary or boundary-adjacent point, improving chain reliability
+without altering the sampled posterior's target distribution.
 
 **Follow-up.** The six deferred `Bayesian_*_RecoversParent` cells named above remain open research
 items; this record makes no new claim about their resolution.
