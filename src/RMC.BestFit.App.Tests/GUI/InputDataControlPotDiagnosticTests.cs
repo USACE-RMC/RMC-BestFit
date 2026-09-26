@@ -9,8 +9,10 @@ namespace RMC.BestFit.App.Tests.GUI
     /// Source-level regression tests for POT diagnostic lazy-load wiring in <c>InputDataControl</c>.
     /// </summary>
     /// <remarks>
-    /// Constructing the full WPF control requires the application resource graph, so these tests
-    /// pin the control-code wiring that prevents blank lazy-loaded POT diagnostic plots.
+    /// These tests pin the control-code wiring that prevents blank lazy-loaded POT diagnostic plots,
+    /// which depends on a loaded, visible control and the dispatcher.
+    /// <see cref="InputDataControlThresholdDiagnosticsTests"/> constructs the control to exercise the
+    /// diagnostics update itself.
     /// </remarks>
     [TestClass]
     public class InputDataControlPotDiagnosticTests
