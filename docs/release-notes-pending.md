@@ -88,7 +88,12 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   zero (real-space fits with unbounded errors keep the additive shift); when the censored-data
   (ROS) initial-moment estimate is unavailable, `Bulletin17CDistribution` keeps the
   constraint-based initial values and records a validation warning instead of reporting zero
-  parameters, and an outright initialization failure is reported as a validation error.
+  parameters, and an outright initialization failure is reported as a validation error; a GMM
+  covariance failure during MVN/LinkedMVN uncertainty sampling, the effective-record-length
+  calculation, or `ComputeCohnStyleConfidenceIntervals()` now degrades gracefully (the existing
+  "point estimate is still valid" diagnostic, or a `NaN` effective record length, or a `null`
+  Cohn result) instead of throwing and clearing the whole analysis; `IsEstimated` and the point
+  estimate are unaffected by a covariance-only failure.
 - Rating curve: the data log likelihood is the discharge-space density (the log10-space Gaussian
   term plus the base-10 change-of-variables term per aligned pair) in the scalar, pointwise, and
   component paths, so AIC/BIC/DIC/WAIC/LOOIC shift by the data constant `-sum log(Q ln 10)` and

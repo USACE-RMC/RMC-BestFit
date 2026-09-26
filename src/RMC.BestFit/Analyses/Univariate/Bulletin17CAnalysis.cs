@@ -856,7 +856,13 @@ namespace RMC.BestFit.Analyses
             var results = new ParameterSet[B];
 
             var thetaHat = _gmm!.BestParameterSet.Values;
-            var sigmaHat = _gmm!.GetCovariance(thetaHat);
+            if (!_gmm!.TryGetCovariance(thetaHat, true, out Matrix sigmaHat))
+            {
+                SetUncertaintyDiagnosticMessage("Uncertainty quantification failed - " +
+                    (_gmm.CovarianceDiagnostic ?? "the GMM covariance matrix is unavailable.") +
+                    " The point estimate is still valid but confidence intervals cannot be computed.");
+                return null;
+            }
 
             // Validate that the covariance matrix is positive-definite before constructing MVN.
             // This can fail for ill-conditioned fits (e.g., fitting exponential to non-exponential data).
@@ -1037,7 +1043,13 @@ namespace RMC.BestFit.Analyses
 
             // Step 1: obtain thetaHat and S_theta from GMM.
             var thetaHat = _gmm!.BestParameterSet.Values;
-            var sigmaHat = _gmm!.GetCovariance(thetaHat);
+            if (!_gmm!.TryGetCovariance(thetaHat, true, out Matrix sigmaHat))
+            {
+                SetUncertaintyDiagnosticMessage("Uncertainty quantification failed - " +
+                    (_gmm.CovarianceDiagnostic ?? "the GMM covariance matrix is unavailable.") +
+                    " The point estimate is still valid but confidence intervals cannot be computed.");
+                return null;
+            }
 
             // Step 2: Compute weighted error direction score (WEDS) in natural parameter space.
             // WEDS counts the weighted fraction of observations producing positive vs negative
@@ -2743,11 +2755,10 @@ namespace RMC.BestFit.Analyses
                     ? GoodnessOfFit.RMSE(values, pp, Bulletin17CDistribution.Distribution)
                     : double.NaN;
 
-                // Effective record length
+                // Effective record length. Falls back to NaN rather than throwing when the GMM
+                // covariance cannot be computed; the point estimate above remains valid.
                 var thetaHat = gmm.BestParameterSet.Values;
-                var sigmaHat = gmm.GetCovariance(thetaHat);
-                var eig = new EigenValueDecomposition(sigmaHat);
-                analysisResults.ERL = eig.EffectiveSampleSize();
+                analysisResults.ERL = gmm.TryGetCovariance(thetaHat, true, out var s) ? new EigenValueDecomposition(s).EffectiveSampleSize() : double.NaN;
             });
 
             RaisePropertyChange(nameof(AnalysisResults));
@@ -2932,8 +2943,11 @@ namespace RMC.BestFit.Analyses
 
             var thetaHat = _gmm.BestParameterSet.Values;
 
-            // Compute the outer covariance at the GMM estimate.
-            var sigmaHat = _gmm.GetCovariance(ClampForCovariance(thetaHat));
+            // Compute the outer covariance at the GMM estimate. A failure here is fatal to the
+            // whole diagnostic (every downstream quadrature point depends on it), so it joins
+            // the method's other null-return guards above rather than throwing.
+            if (!_gmm.TryGetCovariance(ClampForCovariance(thetaHat), true, out Matrix sigmaHat))
+                return null;
             sigmaHat = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaHat);
 
             // Two nodes per dimension produce 2^p outer quadrature points.
@@ -2955,26 +2969,37 @@ namespace RMC.BestFit.Analyses
                 Matrix sigmaAtI;
                 try
                 {
-                    sigmaAtI = _gmm.GetCovariance(ClampForCovariance(outerGrid[i]));
-                    sigmaAtI = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaAtI);
-
-                    // At perturbed parameters the sandwich covariance can become ill-conditioned.
-                    // Use the baseline covariance when a diagonal is nonpositive, nonfinite,
-                    // or differs from its baseline value by more than a factor of 10.
-                    bool degenerate = false;
-                    for (int d = 0; d < p; d++)
+                    // A per-node covariance failure only affects this quadrature point, and the
+                    // nested evaluation already tolerates a degenerate node by substituting the
+                    // baseline sigmaHat, so a failed TryGetCovariance is handled the same way as
+                    // the ill-conditioned case below rather than aborting the whole diagnostic.
+                    if (!_gmm.TryGetCovariance(ClampForCovariance(outerGrid[i]), true, out sigmaAtI))
                     {
-                        double baseVar = sigmaHat[d, d];
-                        double gridVar = sigmaAtI[d, d];
-                        if (double.IsNaN(gridVar) || double.IsInfinity(gridVar) || gridVar <= 0
-                            || (baseVar > 0 && (gridVar > 10.0 * baseVar || gridVar < 0.1 * baseVar)))
-                        {
-                            degenerate = true;
-                            break;
-                        }
-                    }
-                    if (degenerate)
+                        Debug.WriteLine($"Bulletin17CAnalysis.AdaptiveQuadrature: per-node covariance failed at i={i}, falling back to global sigmaHat: {_gmm.CovarianceDiagnostic}");
                         sigmaAtI = sigmaHat;
+                    }
+                    else
+                    {
+                        sigmaAtI = MatrixRegularization.MakeSymmetricPositiveDefinite(sigmaAtI);
+
+                        // At perturbed parameters the sandwich covariance can become ill-conditioned.
+                        // Use the baseline covariance when a diagonal is nonpositive, nonfinite,
+                        // or differs from its baseline value by more than a factor of 10.
+                        bool degenerate = false;
+                        for (int d = 0; d < p; d++)
+                        {
+                            double baseVar = sigmaHat[d, d];
+                            double gridVar = sigmaAtI[d, d];
+                            if (double.IsNaN(gridVar) || double.IsInfinity(gridVar) || gridVar <= 0
+                                || (baseVar > 0 && (gridVar > 10.0 * baseVar || gridVar < 0.1 * baseVar)))
+                            {
+                                degenerate = true;
+                                break;
+                            }
+                        }
+                        if (degenerate)
+                            sigmaAtI = sigmaHat;
+                    }
                 }
                 catch (Exception ex)
                 {

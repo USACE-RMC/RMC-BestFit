@@ -1,10 +1,14 @@
+using Numerics;
 using Numerics.Distributions;
 using Numerics.Functions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Analyses;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.Models.LinkFunctions;
 using System.Reflection;
+using System.Xml.Linq;
 using BestFitDataFrame = RMC.BestFit.Models.DataFrame;
 
 namespace RMC.BestFit.Tests.Univariate;
@@ -1000,6 +1004,204 @@ public class Bulletin17CAnalysisTests
         Assert.AreEqual(2, diagnostics.TotalRetries);
         Assert.AreEqual(1, diagnostics.FailedReplicates);
         Assert.AreEqual(0, diagnostics.RetainedReplicates);
+    }
+
+    #endregion
+
+    #region Covariance failure graceful degradation
+
+    /// <summary>
+    /// Builds a <see cref="GeneralizedMethodOfMoments"/> whose moment-condition function always
+    /// throws, deterministically forcing every covariance computation to fail without requiring
+    /// an optimizer run.
+    /// </summary>
+    /// <param name="bestParameterValues">
+    /// The finite parameter vector to expose as <see cref="GeneralizedMethodOfMoments.BestParameterSet"/>.
+    /// The delegate ignores its input and always throws, so these values only need to be finite
+    /// and correctly sized for the caller's distribution.
+    /// </param>
+    /// <returns>A GMM instance flagged as estimated, whose covariance always fails.</returns>
+    /// <remarks>
+    /// Mirrors the fixture pattern in
+    /// <c>RMC.BestFit.Tests.ModelEstimation.CovarianceFailureStatusTests.GeneralizedMethodOfMoments_MomentFailure_ReportsFailureAndThrows</c>,
+    /// which forces the same failure mode directly against <c>GetCovariance</c>/<c>TryGetCovariance</c>.
+    /// </remarks>
+    private static GeneralizedMethodOfMoments CreateThrowingCovarianceGmm(double[] bestParameterValues)
+    {
+        var gmm = new GeneralizedMethodOfMoments(
+            _ => throw new InvalidOperationException("Forced GMM covariance failure for test fixture."),
+            numberOfParameters: bestParameterValues.Length,
+            numberOfMomentConditions: bestParameterValues.Length,
+            sampleSize: 50,
+            initialValues: bestParameterValues,
+            lowerBounds: bestParameterValues.Select(v => v - 100.0).ToArray(),
+            upperBounds: bestParameterValues.Select(v => v + 100.0).ToArray());
+
+        SetPrivateProperty(gmm, nameof(GeneralizedMethodOfMoments.IsEstimated), true);
+        SetPrivateProperty(gmm, nameof(GeneralizedMethodOfMoments.BestParameterSet), new ParameterSet(bestParameterValues, 0.0));
+        return gmm;
+    }
+
+    /// <summary>
+    /// Replaces an analysis's private GMM field with a fixture instance via reflection,
+    /// simulating a restored, already-fitted GMM state without running the optimizer.
+    /// </summary>
+    /// <param name="analysis">The analysis to modify.</param>
+    /// <param name="gmm">The GMM instance to install.</param>
+    private static void InjectGmm(Bulletin17CAnalysis analysis, GeneralizedMethodOfMoments gmm)
+    {
+        FieldInfo field = typeof(Bulletin17CAnalysis).GetField("_gmm", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Field '_gmm' was not found.");
+        field.SetValue(analysis, gmm);
+    }
+
+    /// <summary>
+    /// Sets a property with a non-public setter for deterministic failure-path setup.
+    /// </summary>
+    /// <param name="target">The object containing the property.</param>
+    /// <param name="propertyName">The property name.</param>
+    /// <param name="value">The value to assign.</param>
+    /// <remarks>
+    /// Mirrors <c>CovarianceFailureStatusTests.SetPrivateProperty</c> so both suites arrange
+    /// deterministic GMM covariance failures the same way.
+    /// </remarks>
+    private static void SetPrivateProperty(object target, string propertyName, object value)
+    {
+        PropertyInfo property = target.GetType().GetProperty(
+            propertyName,
+            BindingFlags.Instance | BindingFlags.Public)
+            ?? throw new InvalidOperationException($"Property '{propertyName}' was not found.");
+        property.SetValue(target, value);
+    }
+
+    /// <summary>
+    /// Computes a finite, data-informed parameter vector for the given model without running
+    /// the GMM optimizer, matching the moment-based initialization <c>RunAsync</c> performs
+    /// before estimation.
+    /// </summary>
+    /// <param name="model">The model to initialize.</param>
+    /// <returns>A finite parameter vector safe to use as a stand-in GMM point estimate.</returns>
+    private static double[] CreateThetaHatForModel(Bulletin17CDistribution model)
+    {
+        model.SetInitialParameters();
+        return model.Parameters.Select(p => p.Value).ToArray();
+    }
+
+    /// <summary>
+    /// Builds a small, deterministic spread of parameter sets around <paramref name="thetaHat"/>
+    /// suitable for <see cref="MCMCResults"/>'s output sample.
+    /// </summary>
+    /// <param name="thetaHat">The center point to jitter around.</param>
+    /// <param name="count">The number of parameter sets to generate.</param>
+    /// <returns>Finite parameter sets clustered tightly around <paramref name="thetaHat"/>.</returns>
+    /// <remarks>
+    /// Kernel-density-based summary statistics (e.g., posterior mode) can degenerate to
+    /// <see cref="double.NaN"/> when every draw is identical or the sample is too small
+    /// (see project memory: "KDE posterior-mean NaN with 2 draws"). A small deterministic
+    /// spread avoids that degeneracy without requiring an MCMC run.
+    /// </remarks>
+    private static ParameterSet[] CreateJitteredParameterSets(double[] thetaHat, int count = 30)
+    {
+        var sets = new ParameterSet[count];
+        for (int i = 0; i < count; i++)
+        {
+            double offset = 0.001 * (i - count / 2);
+            var values = thetaHat.Select(v => v + offset * Math.Max(Math.Abs(v), 1.0)).ToArray();
+            sets[i] = new ParameterSet(values, 0.0);
+        }
+        return sets;
+    }
+
+    /// <summary>
+    /// Builds an analysis whose <c>IsEstimated</c> flag is restored true without an optimizer
+    /// run, using the XElement restoration constructor the way a deserialized project would.
+    /// </summary>
+    /// <param name="model">The Bulletin 17C model to attach.</param>
+    /// <param name="mcmcResults">Optional compatibility results to restore into BayesianAnalysis.</param>
+    /// <param name="analysisResults">Optional frequency analysis results to restore.</param>
+    /// <returns>A restored analysis with <c>IsEstimated == true</c> and no live GMM yet.</returns>
+    private static Bulletin17CAnalysis CreateRestoredEstimatedAnalysis(
+        Bulletin17CDistribution model,
+        MCMCResults? mcmcResults = null,
+        UncertaintyAnalysisResults? analysisResults = null)
+    {
+        var xElement = new XElement(nameof(Bulletin17CAnalysis), new XAttribute("IsEstimated", true));
+        return new Bulletin17CAnalysis(model, xElement, mcmcResults: mcmcResults, analysisResults: analysisResults);
+    }
+
+    /// <summary>
+    /// MVN and LinkedMVN uncertainty sampling must degrade gracefully when the GMM covariance
+    /// fails: publish no parameter sets, record the "point estimate is still valid" diagnostic,
+    /// and leave the analysis's own <c>IsEstimated</c> flag untouched.
+    /// </summary>
+    /// <param name="methodName">
+    /// The private sampling method under test (<c>GetParameterSetsFromMultivariateNormal</c> or
+    /// <c>GetParameterSetsFromLinkedMultivariateNormal</c>), invoked via reflection since both
+    /// are private implementation details of <see cref="Bulletin17CAnalysis"/>.
+    /// </param>
+    /// <remarks>
+    /// Before the fix, the unguarded <c>GetCovariance</c> call in each method threw
+    /// <see cref="InvalidOperationException"/>, which faulted the enclosing
+    /// <c>RunUncertaintyQuantificationAsync</c> Task.Run and propagated into <c>RunAsync</c>'s
+    /// catch block (Bulletin17CAnalysis.cs, RunAsync), which reset <c>IsEstimated</c> to
+    /// <see langword="false"/> and cleared the whole analysis via <c>ClearResults()</c>. Proving
+    /// the call no longer throws, and that <c>IsEstimated</c> is unaffected by the call itself,
+    /// establishes that the outer catch block is never reached for a covariance-only failure.
+    /// </remarks>
+    [DataTestMethod]
+    [DataRow("GetParameterSetsFromMultivariateNormal")]
+    [DataRow("GetParameterSetsFromLinkedMultivariateNormal")]
+    public void UncertaintySampling_CovarianceFails_ReturnsNoSetsAndDegradesGracefully(string methodName)
+    {
+        var model = CreateLP3Model();
+        var thetaHat = CreateThetaHatForModel(model);
+        var analysis = CreateRestoredEstimatedAnalysis(model);
+        InjectGmm(analysis, CreateThrowingCovarianceGmm(thetaHat));
+
+        MethodInfo method = typeof(Bulletin17CAnalysis).GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException($"Method '{methodName}' was not found.");
+        var rawSets = (ParameterSet[]?)method.Invoke(analysis, new object?[] { null });
+
+        Assert.IsNull(rawSets, "A failing covariance must publish no parameter sets.");
+        StringAssert.Contains(analysis.UncertaintyDiagnosticMessage, "point estimate is still valid");
+        Assert.IsTrue(analysis.IsEstimated, "A covariance-only failure must not clear the analysis's estimated state.");
+    }
+
+    /// <summary>
+    /// The effective record length falls back to <see cref="double.NaN"/> instead of throwing
+    /// when the GMM covariance cannot be computed.
+    /// </summary>
+    [TestMethod]
+    public async Task UpdatePointEstimateResultsAsync_CovarianceFails_SetsEffectiveRecordLengthToNaN()
+    {
+        var model = CreateLP3Model();
+        var thetaHat = CreateThetaHatForModel(model);
+        var bestPs = new ParameterSet(thetaHat, 0.0);
+        var mcmcResults = new MCMCResults(bestPs, CreateJitteredParameterSets(thetaHat), alpha: 0.1);
+        var analysis = CreateRestoredEstimatedAnalysis(model, mcmcResults, new UncertaintyAnalysisResults());
+        InjectGmm(analysis, CreateThrowingCovarianceGmm(thetaHat));
+
+        await analysis.UpdatePointEstimateResultsAsync();
+
+        Assert.IsNotNull(analysis.AnalysisResults);
+        Assert.IsTrue(double.IsNaN(analysis.AnalysisResults!.ERL),
+            "A failing GMM covariance must leave ERL as NaN rather than throwing.");
+    }
+
+    /// <summary>
+    /// The Cohn-style confidence interval diagnostic returns null instead of throwing when the
+    /// GMM covariance at the point estimate cannot be computed.
+    /// </summary>
+    [TestMethod]
+    public void ComputeCohnStyleConfidenceIntervals_CovarianceFails_ReturnsNull()
+    {
+        var model = CreateLP3Model();
+        var thetaHat = CreateThetaHatForModel(model);
+        var analysis = new Bulletin17CAnalysis(model);
+        InjectGmm(analysis, CreateThrowingCovarianceGmm(thetaHat));
+
+        Assert.IsNull(analysis.ComputeCohnStyleConfidenceIntervals(),
+            "A failing GMM covariance must return null rather than throwing.");
     }
 
     #endregion
