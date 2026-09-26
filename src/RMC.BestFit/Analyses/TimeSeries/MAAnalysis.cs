@@ -22,8 +22,8 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// The MA(q) model uses lagged error terms to predict the current value:
-    /// Y(t) = µ + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
-    /// where e(t) ~ N(0, s²).
+    /// Y(t) = Âµ + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
+    /// where e(t) ~ N(0, sÂ²).
     /// </para>
     /// <para>
     /// This analysis uses Bayesian Markov Chain Monte Carlo (MCMC) methods to estimate the model parameters
@@ -294,13 +294,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the uncertainty/forecast output
+        /// Clears <see cref="AnalysisResults"/> only â€” the uncertainty/forecast output
         /// whose horizon is <see cref="ForecastingTimeSteps"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results) and
         /// <c>IsEstimated</c> intact. Called when the horizon is set to a value
-        /// that would produce no derived output (e.g., a defensive fallback) — the fit
+        /// that would produce no derived output (e.g., a defensive fallback) â€” the fit
         /// survives and reprocesses on the next valid horizon change.
         /// </remarks>
         public void ClearUncertaintyAnalysisResults()
@@ -317,7 +317,7 @@ namespace RMC.BestFit.Analyses
         /// </summary>
         /// <remarks>
         /// Validity matches the setter clamp (0 = horizon = 100). Reprocess is
-        /// fire-and-forget on the default task scheduler — exceptions are logged
+        /// fire-and-forget on the default task scheduler â€” exceptions are logged
         /// via <see cref="Debug"/> and do not propagate to the setter.
         /// </remarks>
         private void ReprocessOrClearForecast()
@@ -356,7 +356,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change) can be inside its parallel loop
-            // when ClearResults() nulls AnalysisResults — producing an NRE on the next
+            // when ClearResults() nulls AnalysisResults â€” producing an NRE on the next
             // AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -374,7 +374,7 @@ namespace RMC.BestFit.Analyses
                     await BayesianAnalysis.RunAsync(AnalysisProgress.CreateEstimatorReporter(progressReporter, nameof(BayesianAnalysis)), false);
 
                     // Post-process. The base-class gate is held throughout RunAsync, so
-                    // CreateUncertaintyAnalysisResultsAsync runs without contention here —
+                    // CreateUncertaintyAnalysisResultsAsync runs without contention here â€”
                     // its body (and the UpdatePointEstimateResultsAsync it chains to) does
                     // not itself acquire the gate, so there is no re-entrant deadlock.
                     if (BayesianAnalysis.IsEstimated == true)
@@ -535,7 +535,7 @@ namespace RMC.BestFit.Analyses
 
                 var prng = new MersenneTwister(BayesianAnalysis.PRNGSeed);
                 // Bind realz to the actual posterior length, not the configured
-                // OutputLength — guards against a partial run / restore where
+                // OutputLength â€” guards against a partial run / restore where
                 // OutputLength > Output.Count.
                 var realz = Math.Min(BayesianAnalysis.OutputLength, posterior.Count);
                 double alpha = 1 - BayesianAnalysis.CredibleIntervalWidth;

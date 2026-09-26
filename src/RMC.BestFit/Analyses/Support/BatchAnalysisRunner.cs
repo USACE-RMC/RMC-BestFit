@@ -413,7 +413,7 @@ namespace RMC.BestFit.Analyses
                     // CoincidentFrequencyAnalysis with un-estimated upstream BivariateAnalysis)
                     // are batch-eligible BEFORE Phase 1 has run their dependencies. Phase
                     // ordering normally fits the dependency first, but if it failed in
-                    // Phase 1 we must not let RunAsync throw deeper in the stack — instead
+                    // Phase 1 we must not let RunAsync throw deeper in the stack â€” instead
                     // we record a clear, type-specific failure here and skip the run.
                     var dependencyFailure = CheckDependencies(analysis);
                     if (dependencyFailure != null)
@@ -526,7 +526,7 @@ namespace RMC.BestFit.Analyses
         /// </list>
         /// <para>
         /// Other analysis types pass through unchanged. The check is intentionally narrower
-        /// than the analysis's own <c>Validate()</c> — it guards the cross-batch dependency
+        /// than the analysis's own <c>Validate()</c> â€” it guards the cross-batch dependency
         /// only; all other failure modes (shape, bin count, etc.) surface from
         /// <c>RunAsync</c>'s own validation as before.
         /// </para>

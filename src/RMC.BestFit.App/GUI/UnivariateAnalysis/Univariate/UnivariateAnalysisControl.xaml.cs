@@ -37,7 +37,7 @@ namespace RMC_BestFit
             InitializeComponent();
             DataContext = this;
             _colorHexCodes = GenericControls.GeneralMethods.RandomColorsLongList;
-            // DataGrid Binding.StringFormat must be set before first render — see
+            // DataGrid Binding.StringFormat must be set before first render â€” see
             // RatingCurveAnalysisControl constructor for the rationale.
             SetColumnStringFormats();
         }
@@ -101,7 +101,7 @@ namespace RMC_BestFit
             // (theme-deferred Background / PlotAreaBackground PropertyChanged on Bayesian
             // plots that live in non-selected TabItems). PropertiesCalled /
             // PlotPropertiesCalled are wired in XAML on every toolbar and every Bayesian
-            // sub-control — no programmatic += needed.
+            // sub-control â€” no programmatic += needed.
             using (newElement.SuspendPlotBridges())
             {
                 thisControl.FrequencyPlotHost.Content = newElement.FrequencyPlot;
@@ -192,7 +192,7 @@ namespace RMC_BestFit
                 BindFrequencyCurveDataGrid();
 
                 // One-time setup: column headers and summary grid layout do not need to
-                // re-run on every transient visual-tree cycle — only on the first load
+                // re-run on every transient visual-tree cycle â€” only on the first load
                 // after a new Element is assigned (U1).
                 if (!_isLoaded)
                 {
@@ -219,7 +219,7 @@ namespace RMC_BestFit
         {
             // Reset _isLoaded so the next Loaded event re-runs one-time setup steps.
             // Element-scoped lifecycle (PropertyChanged, plot hosts, toolbars) is owned by
-            // ElementCallback and survives unload/reload cycles — no additional teardown needed.
+            // ElementCallback and survives unload/reload cycles â€” no additional teardown needed.
             _isLoaded = false;
         }
 
@@ -242,7 +242,7 @@ namespace RMC_BestFit
         {
             // Marshal to UI thread if called from a background thread. The model layer's
             // ReprocessIfEstimated path uses TaskScheduler.Default and AnalysisBase.RaisePropertyChange
-            // does NOT marshal — so AnalysisResults / ChronologyAnalysisResults notifications can
+            // does NOT marshal â€” so AnalysisResults / ChronologyAnalysisResults notifications can
             // arrive here on a worker thread. WPF DataGrid and OxyPlot mutations from a worker
             // thread throw InvalidOperationException ("calling thread cannot access this object").
             if (!Dispatcher.CheckAccess())
@@ -308,7 +308,7 @@ namespace RMC_BestFit
             // Reset at Background priority so the Render-priority cursor frame from the
             // earlier `Mouse.OverrideCursor = Cursors.Wait` is guaranteed to flush before
             // the reset runs. Without this, fast reprocesses (UpdatePointEstimateResultsAsync)
-            // can reset the cursor before the OS visually picks up the change — the user
+            // can reset the cursor before the OS visually picks up the change â€” the user
             // sees no wait cursor at all when the mouse is stationary.
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
@@ -946,7 +946,7 @@ namespace RMC_BestFit
                     chronologyIntervalData.TrackerFormatString = "{0}" + Environment.NewLine + "{1}: {2:0}" + Environment.NewLine + "{3}: {4:" + UserSettings.ValueStringFormat + "}";
                     if (Element.InputData.DataFrame.IntervalSeries.Count > 0) plot.Series.Add(chronologyIntervalData);
 
-                    // threshold data (dynamic count — created inline)
+                    // threshold data (dynamic count â€” created inline)
                     UpdateThresholdPlotSeries();
 
                     // frequency results

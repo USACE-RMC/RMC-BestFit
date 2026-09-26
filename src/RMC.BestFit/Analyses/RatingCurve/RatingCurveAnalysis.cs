@@ -489,7 +489,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults â€”
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try

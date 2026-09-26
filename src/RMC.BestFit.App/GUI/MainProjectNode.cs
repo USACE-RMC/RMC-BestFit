@@ -180,12 +180,12 @@ namespace RMC_BestFit
                         var batchWindow = new BatchRunWindow();
                         // Create list of valid analyses. CoincidentFrequencyAnalysis is included
                         // when batch-eligible (configured but upstream BA not yet estimated) since
-                        // the model-layer batch runner orders CFAs into Phase 3 — the un-estimated
+                        // the model-layer batch runner orders CFAs into Phase 3 â€” the un-estimated
                         // upstream BivariateAnalysis in the same collection is fitted in Phase 1
                         // first. Mirrors the univariate handler above (Composite + components in
                         // UnivariateAnalysisCollection); the iteration walks every sibling element
                         // in the collection so dependents are loaded automatically via the IsValid
-                        // branch — no separate dependent-discovery pass is needed.
+                        // branch â€” no separate dependent-discovery pass is needed.
                         List<IElement> list = new List<IElement>();
                         foreach (var analysis in elementNodeCollection.ElementCollection)
                         {
@@ -1116,7 +1116,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Bulletin 17C Analysis — element owns plots, no serialization needed on close
+            // Bulletin 17C Analysis â€” element owns plots, no serialization needed on close
             if (documentControl as B17CAnalysisControl != null)
             {
                 var cntrl = (B17CAnalysisControl)documentControl;
@@ -1124,7 +1124,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Point Process Analysis — plots are owned by Element, no serialization needed on close
+            // Point Process Analysis â€” plots are owned by Element, no serialization needed on close
             if (documentControl as PointProcessAnalysisControl != null)
             {
                 var cntrl = (PointProcessAnalysisControl)documentControl;
@@ -1132,7 +1132,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Mixture Analysis — plots are owned by Element, no serialization needed on close
+            // Mixture Analysis â€” plots are owned by Element, no serialization needed on close
             if (documentControl as MixtureAnalysisControl != null)
             {
                 var cntrl = (MixtureAnalysisControl)documentControl;
@@ -1140,7 +1140,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Composite Analysis — plots are owned by Element, no serialization needed on close
+            // Composite Analysis â€” plots are owned by Element, no serialization needed on close
             if (documentControl as CompositeAnalysisControl != null)
             {
                 var cntrl = (CompositeAnalysisControl)documentControl;
@@ -1148,7 +1148,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Bivariate Analysis — plots are owned by Element, no serialization needed on close
+            // Bivariate Analysis â€” plots are owned by Element, no serialization needed on close
             if (documentControl as BivariateAnalysisControl != null)
             {
                 var cntrl = (BivariateAnalysisControl)documentControl;
@@ -1156,7 +1156,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Coincident Frequency Analysis — plots are owned by Element, no serialization needed on close
+            // Coincident Frequency Analysis â€” plots are owned by Element, no serialization needed on close
             if (documentControl as CoincidentFrequencyControl != null)
             {
                 var cntrl = (CoincidentFrequencyControl)documentControl;
@@ -1164,7 +1164,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Rating Curve Analysis — plots are owned by Element, no serialization needed on close
+            // Rating Curve Analysis â€” plots are owned by Element, no serialization needed on close
             if (documentControl as RatingCurveAnalysisControl != null)
             {
                 var cntrl = (RatingCurveAnalysisControl)documentControl;
@@ -1172,7 +1172,7 @@ namespace RMC_BestFit
                 cntrl.PreviewControlClicked -= DocumentControl_PreviewClicked;
             }
 
-            // Time Series Analysis — plots are owned by Element, no serialization needed on close
+            // Time Series Analysis â€” plots are owned by Element, no serialization needed on close
             if (documentControl as TimeSeriesAnalysisControl != null)
             {
                 var cntrl = (TimeSeriesAnalysisControl)documentControl;

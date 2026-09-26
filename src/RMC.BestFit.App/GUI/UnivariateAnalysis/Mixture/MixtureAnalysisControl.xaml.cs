@@ -77,7 +77,7 @@ namespace RMC_BestFit
                     oldElement.PropertyChanged -= thisControl.Element_PropertyChanged;
                     thisControl.FrequencyPlotHost.Content = null;
                     thisControl.FrequencyPlotToolbar.Plot = null;
-                    // NOTE: PropertiesCalled is wired in XAML — no programmatic -= needed.
+                    // NOTE: PropertiesCalled is wired in XAML â€” no programmatic -= needed.
                 }
             }
 
@@ -90,7 +90,7 @@ namespace RMC_BestFit
 
             // Attach plots, wire toolbars, bind axis titles, and wire Bayesian sub-control
             // plots inside a bridge-suspension block. PropertiesCalled / PlotPropertiesCalled
-            // are wired in XAML — no programmatic += needed.
+            // are wired in XAML â€” no programmatic += needed.
             using (newElement.SuspendPlotBridges())
             {
                 thisControl.FrequencyPlotHost.Content = newElement.FrequencyPlot;
@@ -249,7 +249,7 @@ namespace RMC_BestFit
             // Reset at Background priority so the Render-priority cursor frame from the
             // earlier `Mouse.OverrideCursor = Cursors.Wait` is guaranteed to flush before
             // the reset runs. Without this, fast reprocesses (UpdatePointEstimateResultsAsync)
-            // can reset the cursor before the OS visually picks up the change — the user
+            // can reset the cursor before the OS visually picks up the change â€” the user
             // sees no wait cursor at all when the mouse is stationary.
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
