@@ -1429,4 +1429,50 @@ public class MixtureModelTests
         Assert.IsFalse(threeComponent.IsSampledWeightVectorLength(threeComponentFullK));
     }
 
+    /// <summary>
+    /// Verifies the shape predicate for a zero-inflated two-component mixture: the fixed zero
+    /// mass does not add a weight coordinate, so the K-1/full-K boundary is unchanged from the
+    /// ordinary two-component case.
+    /// </summary>
+    [TestMethod]
+    public void Test_IsSampledWeightVectorLength_ZeroInflatedTwoComponent()
+    {
+        var zeroInflated = new MixtureModel(
+            CreateZeroInflatedDataFrame(),
+            new List<UnivariateDistributionType> { UnivariateDistributionType.Normal, UnivariateDistributionType.Normal },
+            isZeroInflated: true);
+        int fullK = zeroInflated.NumberOfParameters;
+        Assert.IsTrue(zeroInflated.IsSampledWeightVectorLength(fullK - 1));
+        Assert.IsFalse(zeroInflated.IsSampledWeightVectorLength(fullK));
+    }
+
+    /// <summary>
+    /// Verifies a single-component mixture with no data frame still expands a distribution-only
+    /// (full-K, no weight coordinate) vector to itself.
+    /// </summary>
+    /// <remarks>
+    /// Pinning test for a regression the opus review caught in commit a12ba57: gating the private
+    /// expansion helper behind <see cref="MixtureModel.IsSampledWeightVectorLength"/> rejected
+    /// every K = 1 input, because the predicate's <c>Distributions.Length &gt; 1</c> guard is
+    /// unconditional while base's unconditional call to that helper accepted a length-D vector
+    /// for K = 1 (its own <c>freeWeightCount</c> is zero, so a K = 1 vector has no distinct K-1
+    /// shape to reject). This reproduces base exactly: for K = 1, the full-K check
+    /// (<c>Count == NumberOfParameters</c>) misses whenever <c>Parameters</c> is not populated
+    /// (for example, no <see cref="DataFrame"/>, as here), so the fallback expansion must still
+    /// succeed instead of being pre-empted by the new predicate.
+    /// </remarks>
+    [TestMethod]
+    public void Test_TryGetPhysicalParameters_SingleComponentNoDataFrame_ReturnsInputUnchanged()
+    {
+        var model = new MixtureModel(null!, new List<UnivariateDistributionType> { UnivariateDistributionType.Normal });
+        Assert.AreEqual(1, model.Mixture!.Distributions.Length, "Fixture precondition: one component.");
+
+        var input = new double[] { 1.0, 2.0 };
+
+        bool succeeded = model.TryGetPhysicalParameters(input, out double[] expanded);
+
+        Assert.IsTrue(succeeded, "Base accepted this K = 1, no-DataFrame input; the new predicate must not reject it.");
+        CollectionAssert.AreEqual(input, expanded);
+    }
+
 }

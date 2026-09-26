@@ -3,6 +3,9 @@ using Numerics.Mathematics.Optimization;
 using Numerics.Sampling.MCMC;
 using RMC.BestFit.Api.Mappers;
 using RMC.BestFit.Api.Tests.Support;
+using RMC.BestFit.Estimation;
+using RMC.BestFit.Models;
+using System.Reflection;
 
 namespace RMC.BestFit.Api.Tests.Mappers
 {
@@ -231,6 +234,40 @@ namespace RMC.BestFit.Api.Tests.Mappers
             CollectionAssert.AreEqual(
                 model.Parameters.Select(parameter => parameter.DisplayName).ToArray(),
                 names);
+        }
+
+        /// <summary>
+        /// Verifies the shape-test guard cannot index past the end of an unpopulated name list:
+        /// when the mixture's own <c>Parameters</c> is empty (no data frame was ever set) but a
+        /// stored result's length coincides with the mixture's structural K-1 length, the method
+        /// must return the same empty list base did instead of throwing from <c>RemoveAt</c>.
+        /// </summary>
+        /// <remarks>
+        /// <c>ResultsMapper.GetSampledParameterNames</c> is private, so it is reached here by
+        /// reflection (mirroring how the reviewer's own read-only A/B probe reached it) rather
+        /// than through <see cref="ResultsMapper.ToFrequencyResults"/>, which would additionally
+        /// require an unpopulated model to complete an unrelated async estimation step.
+        /// </remarks>
+        [TestMethod]
+        public void GetSampledParameterNames_UnpopulatedParametersWithStructuralKMinusOneLength_ReturnsEmptyWithoutThrowing()
+        {
+            var model = new MixtureModel(
+                null!,
+                new List<UnivariateDistributionType> { UnivariateDistributionType.Normal, UnivariateDistributionType.Normal });
+            Assert.AreEqual(0, model.Parameters.Count, "Fixture precondition: no data frame, so Parameters is unpopulated.");
+            Assert.IsTrue(model.IsSampledWeightVectorLength(5), "Fixture precondition: 5 is the structural K-1 length for this mixture.");
+            var bayesian = new BayesianAnalysis(model);
+            var output = Enumerable.Range(0, 5)
+                .Select(drawIndex => new ParameterSet(new double[] { 0.3, 1.0, 1.0, 2.0, 2.0 }, -drawIndex))
+                .ToList();
+            bayesian.SetCustomMCMCResults(new MCMCResults(output[0], output, alpha: 0.10), skipInformationCriteria: true);
+
+            MethodInfo method = typeof(ResultsMapper).GetMethod(
+                "GetSampledParameterNames",
+                BindingFlags.NonPublic | BindingFlags.Static)!;
+            var names = (List<string>)method.Invoke(null, new object[] { bayesian, model.Parameters })!;
+
+            Assert.AreEqual(0, names.Count, "Base returned the (empty) name list unmodified; the shape test must not attempt RemoveAt on it.");
         }
 
         /// <summary>

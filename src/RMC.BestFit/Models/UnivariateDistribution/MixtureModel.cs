@@ -464,18 +464,23 @@ namespace RMC.BestFit.Models
         /// <see langword="false"/>.
         /// </returns>
         /// <remarks>
-        /// This mirrors <see cref="TryExpandIndependentParameters"/>'s own shape check exactly, so
-        /// it reads the mixture's structure (<see cref="Mixture"/>) directly rather than
-        /// <see cref="ModelBase.NumberOfParameters"/>: the latter is <c>Parameters.Count</c>, which
-        /// requires a validated <see cref="DataFrame"/> to be populated by
+        /// The length formula (free-weight count plus total component parameter count) is the
+        /// same arithmetic <see cref="TryExpandIndependentParameters"/> uses to accept or reject a
+        /// proposal, so it reads the mixture's structure (<see cref="Mixture"/>) directly rather
+        /// than <see cref="ModelBase.NumberOfParameters"/>: the latter is <c>Parameters.Count</c>,
+        /// which requires a validated <see cref="DataFrame"/> to be populated by
         /// <see cref="SetDefaultParameters"/> and is not a precondition of the low-level expansion.
-        /// A single-component mixture has no weight coordinate at all in the public parameter
-        /// vector, so it has no shape distinct from the full-K shape and this always returns
-        /// <see langword="false"/> for it. <see cref="TryGetPhysicalParameters"/> calls this
-        /// directly so the shape test and the expansion it gates cannot drift apart; a result
-        /// consumer that only needs the shape decision without expanding anything (for example,
-        /// the API's sampled-parameter name list) calls it the same way instead of re-deriving
-        /// the arithmetic.
+        /// This does <i>not</i> mirror <see cref="TryExpandIndependentParameters"/> exactly at
+        /// K = 1: that method has no component-count guard, so it accepts a length-D proposal for
+        /// a single-component mixture (its own free-weight count is zero, so the formula reduces
+        /// to the distribution parameter count, coinciding with the full-K length). This method
+        /// adds the <c>Distributions.Length &gt; 1</c> guard on top of the formula, because for a
+        /// single-component mixture that length is always the full-K shape and never a distinct
+        /// K-1 shape — so this always returns <see langword="false"/> for it. The API's results
+        /// mapper calls this directly to decide which name to omit, without expanding anything; it
+        /// does not need to re-derive the arithmetic. <see cref="TryGetPhysicalParameters"/> uses
+        /// it only to choose the public output shape after expansion succeeds, not to gate whether
+        /// expansion is attempted (see that method's remarks for why).
         /// </remarks>
         public bool IsSampledWeightVectorLength(int length)
         {
@@ -494,18 +499,29 @@ namespace RMC.BestFit.Models
         /// <returns><see langword="true"/> when the vector is either a valid K-1 sampled shape or the established full-K shape.</returns>
         /// <remarks>
         /// This is the single K-1/full-K expansion rule for result consumers outside this
-        /// assembly — the App's parameter-sets table and the API's results mapper — so both
-        /// share one implementation instead of re-deriving it. A full-K vector (length
-        /// <see cref="ModelBase.NumberOfParameters"/>) is returned unchanged. A K-1 sampled
-        /// vector (<see cref="IsSampledWeightVectorLength"/>) has its derived final weight
-        /// computed as the remaining component mass minus the tracked free weights and clamped
-        /// to zero when that residual lies within <c>1E-12 * Math.Max(1.0, componentMass)</c> of
-        /// zero — the boundary of the physical simplex from floating-point accumulation, not an
+        /// assembly. The App's parameter-sets table uses it directly to expand a stored draw; the
+        /// API's results mapper only needs the shape decision
+        /// (<see cref="IsSampledWeightVectorLength"/>) to choose which name to omit and never
+        /// expands anything itself. A full-K vector (length
+        /// <see cref="ModelBase.NumberOfParameters"/>) is returned unchanged. Otherwise the vector
+        /// is expanded as the independent EM/sampling coordinates it was always accepted as (this
+        /// control flow, including the full-K check preceding an unconditional expansion attempt,
+        /// is unchanged from before this method was made public): its derived final weight is
+        /// computed as the remaining component mass minus the tracked free weights and clamped to
+        /// zero when that residual lies within <c>1E-12 * Math.Max(1.0, componentMass)</c> of zero
+        /// — the boundary of the physical simplex from floating-point accumulation, not an
         /// infeasible point — while a genuinely negative residual beyond that tolerance is still
-        /// rejected. Public model methods (<see cref="LogLikelihood"/> and siblings) continue to
-        /// require the established full-K vector; this method is restricted to BestFit result
-        /// consumption. The caller-owned array is never mutated, and no result migration or
-        /// rewritten serialization occurs.
+        /// rejected. For a single-component mixture this expansion path is reached only when
+        /// <see cref="ModelBase.NumberOfParameters"/> itself is stale or unpopulated (for example,
+        /// no <see cref="DataFrame"/>): there is no distinct K-1 shape to gate on, so
+        /// <see cref="IsSampledWeightVectorLength"/> is consulted only to choose the output shape
+        /// (full Numerics vector versus the weight-free public convention), never to decide
+        /// whether to attempt the expansion at all — gating entry on it would silently reject
+        /// every single-component proposal instead of reproducing the established behavior.
+        /// Public model methods (<see cref="LogLikelihood"/> and siblings) continue to require the
+        /// established full-K vector; this method is restricted to BestFit result consumption. The
+        /// caller-owned array is never mutated, and no result migration or rewritten serialization
+        /// occurs.
         /// </remarks>
         public bool TryGetPhysicalParameters(IList<double> parameters, out double[] physicalParameters)
         {
@@ -518,11 +534,12 @@ namespace RMC.BestFit.Models
                 return true;
             }
 
-            if (!IsSampledWeightVectorLength(parameters.Count) ||
-                !TryExpandIndependentParameters(parameters, out double[] numericsParameters))
+            if (!TryExpandIndependentParameters(parameters, out double[] numericsParameters))
                 return false;
 
-            physicalParameters = numericsParameters;
+            physicalParameters = IsSampledWeightVectorLength(parameters.Count)
+                ? numericsParameters
+                : numericsParameters.Skip(1).ToArray();
             return true;
         }
 

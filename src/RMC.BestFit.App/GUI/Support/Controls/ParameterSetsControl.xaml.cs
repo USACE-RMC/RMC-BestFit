@@ -178,9 +178,10 @@ namespace RMC_BestFit
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="analysis"/> is <see langword="null"/>.</exception>
         /// <remarks>
         /// This is the WPF-independent decision seam behind <see cref="BindParameterSetDataGrid"/>:
-        /// it never throws, so one infeasible historical draw cannot crash the properties tab.
-        /// Only the all-or-nothing outcome is exposed — a table with the failing row silently
-        /// dropped would misrepresent the retained posterior sample as smaller than it is.
+        /// it never throws for a stored draw, so one infeasible historical draw cannot crash the
+        /// properties tab. Only the all-or-nothing outcome is exposed — a table with the failing
+        /// row silently dropped would misrepresent the retained posterior sample as smaller than
+        /// it is.
         /// </remarks>
         internal static bool TryGetAllPhysicalDisplayValues(BayesianAnalysis analysis, out List<double[]> displayRows)
         {

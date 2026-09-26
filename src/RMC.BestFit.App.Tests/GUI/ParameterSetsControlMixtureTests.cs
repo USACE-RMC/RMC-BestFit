@@ -226,5 +226,53 @@ namespace RMC.BestFit.App.Tests.GUI
                 "An infeasible draw must fail the whole-table decision instead of dropping just that row.");
             Assert.AreEqual(0, displayRows.Count);
         }
+
+        /// <summary>
+        /// Verifies the WPF-independent decision seam's happy path: every retained draw expands
+        /// successfully, one row per draw, in the same order as
+        /// <see cref="BayesianAnalysis.Results"/>' stored output — the order
+        /// <see cref="RMC_BestFit.ParameterSetsControl"/>'s table binding relies on to pair
+        /// <c>displayRows[i]</c> with <c>Output[i].Fitness</c>.
+        /// </summary>
+        [TestMethod]
+        public void TryGetAllPhysicalDisplayValues_AllDrawsFeasible_ReturnsTrueWithRowsInOutputOrder()
+        {
+            var model = new MixtureModel(
+                CreateDataFrame(),
+                new List<UnivariateDistributionType>
+                {
+                    UnivariateDistributionType.Normal,
+                    UnivariateDistributionType.Normal
+                });
+            var analysis = new BayesianAnalysis(model);
+            double[] baseline = model.Parameters.Select(parameter => parameter.Value)
+                .Where((_, index) => index != 1)
+                .ToArray();
+
+            var output = new List<ParameterSet>();
+            for (int drawIndex = 0; drawIndex < 4; drawIndex++)
+            {
+                double[] values = baseline.ToArray();
+                values[0] = 0.2 + drawIndex * 0.1;
+                output.Add(new ParameterSet(values, -drawIndex));
+            }
+
+            var results = new MCMCResults(output[0], output, alpha: 0.10);
+            analysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+
+            bool succeeded = RMC_BestFit.ParameterSetsControl.TryGetAllPhysicalDisplayValues(
+                analysis, out List<double[]> displayRows);
+
+            Assert.IsTrue(succeeded);
+            Assert.AreEqual(output.Count, displayRows.Count);
+            for (int drawIndex = 0; drawIndex < output.Count; drawIndex++)
+            {
+                double[] expected = RMC_BestFit.ParameterSetsControl.GetPhysicalDisplayValues(analysis, output[drawIndex].Values);
+                CollectionAssert.AreEqual(
+                    expected,
+                    displayRows[drawIndex],
+                    $"Row {drawIndex} must expand draw {drawIndex}, so the caller's Output[{drawIndex}].Fitness pairs with the correct row.");
+            }
+        }
     }
 }

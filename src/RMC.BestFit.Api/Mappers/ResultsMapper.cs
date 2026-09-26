@@ -470,10 +470,15 @@ namespace RMC.BestFit.Api.Mappers
         /// <param name="parameters">The public model parameters.</param>
         /// <returns>Sampled-coordinate names, omitting the derived final mixture weight for new K-1 results.</returns>
         /// <remarks>
-        /// The K-1 versus full-K decision is <see cref="MixtureModel.IsSampledWeightVectorLength"/> —
-        /// the same shape test <see cref="MixtureModel.TryGetPhysicalParameters"/> uses to gate its
-        /// expansion (finding M6) — so this method never re-derives the length arithmetic; it only
-        /// decides which name to omit, and expands nothing.
+        /// The K-1 versus full-K decision is the shared shape test
+        /// <see cref="MixtureModel.IsSampledWeightVectorLength"/> — the same one
+        /// <see cref="MixtureModel.TryGetPhysicalParameters"/> consults to choose its own output
+        /// shape (finding M6) — so this method never re-derives the length arithmetic; it only
+        /// decides which name to omit, and expands nothing. The shape test is evaluated against
+        /// the mixture's own structure and can be true even when <paramref name="parameters"/> (and
+        /// so <c>names</c>) does not have as many entries as that structure implies — for example,
+        /// a mixture whose <c>Parameters</c> was never populated (no data frame) — so the omitted
+        /// index is bounds-checked before <c>RemoveAt</c> instead of assuming it is always present.
         /// </remarks>
         private static List<string> GetSampledParameterNames(
             BayesianAnalysis bayesian,
@@ -483,7 +488,8 @@ namespace RMC.BestFit.Api.Mappers
             if (bayesian.Model is MixtureModel mixtureModel &&
                 mixtureModel.Mixture is not null &&
                 bayesian.Results?.ParameterResults?.Length is int sampledLength &&
-                mixtureModel.IsSampledWeightVectorLength(sampledLength))
+                mixtureModel.IsSampledWeightVectorLength(sampledLength) &&
+                mixtureModel.Mixture.Distributions.Length <= names.Count)
             {
                 names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
             }
