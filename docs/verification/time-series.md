@@ -1275,10 +1275,11 @@ beyond the six above.
 
 ## D6 ARIMAX conditioning order - 26 September 2026
 
-**Decision and behavior.** Haden Smith approved review decision D6 on 25 September 2026. An ARIMAX
-model with covariates now conditions on `K = max(q, p + b)` model steps, and a model without
-covariates on `K = max(p, q)`, because the covariate lag order has no role without covariates
-(ruling R2). The TR-066 rule `max(p, q, b)` let the first evaluated steps of a model with `p > 0`
+**Decision and behavior.** Haden Smith approved review decision D6 on 25 September 2026: an ARIMAX
+model with covariates now conditions on `K = max(q, p + b)` model steps. Haden Smith confirmed on
+26 September 2026 that a model without covariates conditions on `K = max(p, q)`, because the
+covariate lag order has no role without covariates (ruling R2). The TR-066 rule `max(p, q, b)` let
+the first evaluated steps of a model with `p > 0`
 and `b > 0` use autoregressive-lag means `m(t-i)` whose covariate lags before the first observation
 were truncated. Under the new rule every evaluated step `t >= K` has its own mean with all `b` lags
 and every AR-lag mean with all `b` lags (`t - i >= K - p >= b`). Residual lags before `K` fall

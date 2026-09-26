@@ -55,12 +55,13 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   defaults), and `ARIMAX.Clone()` keeps the source's parameter values, bounds, and priors, so the
   REST plot-source leverage and leave-one-out diagnostics of ARIMAX models with covariates and
   non-uniform priors now use the fitted priors, as the desktop does.
-- ARIMAX conditioning (approved 25 September 2026): a model with covariates now conditions on
-  `max(q, p + b)` leading model steps instead of `max(p, q, b)`, so every evaluated step's own
-  mean and every autoregressive-lag mean include all `b` lagged covariate values (the first
-  evaluated steps of a model with `p > 0` and `b > 0` formerly used AR-lag means that omitted the
-  covariate lags before the first observation). A model without covariates conditions on
-  `max(p, q)`: the covariate lag order has no role without covariates. **ARIMAX analyses with
+- ARIMAX conditioning (with-covariates rule approved 25 September 2026, review decision D6;
+  without-covariates rule confirmed 26 September 2026, ruling R2): a model with covariates now
+  conditions on `max(q, p + b)` leading model steps instead of `max(p, q, b)`, so every evaluated
+  step's own mean and every autoregressive-lag mean include all `b` lagged covariate values (the
+  first evaluated steps of a model with `p > 0` and `b > 0` formerly used AR-lag means that
+  omitted the covariate lags before the first observation). A model without covariates conditions
+  on `max(p, q)`: the covariate lag order has no role without covariates. **ARIMAX analyses with
   covariates and `p > 0`, `b > 0` (where `p + b > q`) now condition on more leading steps, and
   analyses without covariates whose lag order exceeds `max(p, q)` on fewer; their likelihood,
   pointwise terms, information criteria, residual diagnostics, in-sample predictions, and fits

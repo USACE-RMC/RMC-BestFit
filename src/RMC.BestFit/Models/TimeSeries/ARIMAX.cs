@@ -2657,10 +2657,11 @@ namespace RMC.BestFit.Models
         /// K = max(p, q) as in ARIMA.
         /// </para>
         /// <para>
-        /// This rule was approved on 25 September 2026 (review decision D6). The previous rule,
-        /// max(p, q, b), let the first evaluated steps of a model with p &gt; 0 and b &gt; 0 use
-        /// autoregressive-lag means that omitted the covariate lags preceding the first
-        /// observation.
+        /// The with-covariates rule was approved on 25 September 2026 (review decision D6). The
+        /// previous rule, max(p, q, b), let the first evaluated steps of a model with p &gt; 0
+        /// and b &gt; 0 use autoregressive-lag means that omitted the covariate lags preceding
+        /// the first observation. Haden Smith confirmed the without-covariates rule, max(p, q),
+        /// on 26 September 2026 (ruling R2).
         /// </para>
         /// </remarks>
         private int ConditionalOrder => HasCovariates
