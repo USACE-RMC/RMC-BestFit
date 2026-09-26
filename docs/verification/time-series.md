@@ -288,10 +288,13 @@ indexed the shorter differenced residual series with the raw training count.
 
 After correction, one map governs these paths. A raw training prefix `[0,T)` produces exactly
 `T-d` transformed differences. Model step `k` maps to raw response index `r=k+d` and retains the
-timestamp of that later raw observation. Conditional evaluation starts at `k=max(p,q)`. Each
+timestamp of that later raw observation. Conditional evaluation starts at the conditioning order
+`K`: `max(p,q)` in this correction, `max(p,q,b)` after TR-066, and, since review decision D6,
+`max(q,p+b)` for a model with covariates and `max(p,q)` for one without (see
+[D6](#d6-arimax-conditioning-order---26-september-2026)). Each
 level covariate is selected by exact timestamp at the corresponding raw-response date and is never
 differenced; its lag `j` uses the date at model step `k-j`. The Box-Cox/Yeo-Johnson Jacobian covers
-raw response indices `d+max(p,q)` through `T-1`. Response and covariate values at raw indices
+raw response indices `d+K` through `T-1`. Response and covariate values at raw indices
 `T...N-1` cannot enter training state, defaults, residuals, or likelihood. The residual plot uses
 the differenced training count and those preserved dates.
 
@@ -1214,6 +1217,103 @@ exactly to that bound, without consuming an additional random draw. BestFit MLE/
 `max(100,10*k)` DE population members for `k` coordinates while retaining the Numerics convergence
 tolerances. Under that final configuration the exact guarded AR(1) rerun passed 1/1 under
 `20260831-192951-...`.
+
+## D6 ARIMAX conditioning order - 26 September 2026
+
+**Decision and behavior.** Haden Smith approved review decision D6 on 25 September 2026. An ARIMAX
+model with covariates now conditions on `K = max(q, p + b)` model steps, and a model without
+covariates on `K = max(p, q)`, because the covariate lag order has no role without covariates
+(ruling R2). The TR-066 rule `max(p, q, b)` let the first evaluated steps of a model with `p > 0`
+and `b > 0` use autoregressive-lag means `m(t-i)` whose covariate lags before the first observation
+were truncated. Under the new rule every evaluated step `t >= K` has its own mean with all `b` lags,
+every AR-lag mean with all `b` lags (`t - i >= K - p >= b`), and residual lags inside the conditioned
+window, where the residuals are zero.
+
+One `ConditionalOrder` property still drives the scalar, pointwise, and component likelihoods, the
+residuals, prediction seeding (and so `GenerateRandomSeries`, which calls `Predict`), the validation
+minimum length and its message, the empty-conditional-sum rule, and the transform Jacobian window
+`d+K` through `T-1`. `GenerateRandomValues` simulates from a zero initial state and does not
+condition, so it is unchanged. ARIMA, AR, and MA have no covariates and are unchanged. Because `K`
+now depends on the lag order and on whether covariates are attached, `XOrderB` and `SetCovariates`
+refresh the Jacobian window before they notify, through the helper `SetTrainingData` also uses.
+They keep the transform exponent: the automatic Box-Cox/Yeo-Johnson exponent is fitted on the whole
+raw training prefix, which does not depend on `K`, so the new rule changes no fitted exponent, and
+a restored or manual exponent survives when a saved, copied, or undone model is reattached to its
+covariates.
+
+**Fast regressions.** `RMC.BestFit.Tests.TimeSeriesModels.TimeSeriesConditioningOrderTests` pins
+the hand-derived orders `p=1, b=2, q=0 -> K=3`, `p=2, b=1, q=4 -> K=4`, `p=0, b=2 -> K=2`, and
+`p=1, q=0, b=2` without covariates `-> K=1` against an independent recursion that never truncates a
+covariate lag; hand-computed residuals and predictions for `K=3`; the logarithmic Jacobian window;
+the empty-sum and validation boundary; and the Jacobian after a lag-order change, after adding or
+removing the only covariate, after an XML restore or a clone, and with a restored automatic
+exponent. The order tests failed first against `max(p, q, b)`, and the refresh tests failed against
+the new order before the refresh was added.
+
+**Independent R oracle.** The exact Verification method is
+`RMC.BestFit.Verification.TimeSeriesAnalysis.TimeSeriesIndependentOracleTests.ArimaxDistributedLagConditioningMatchesIndependentOracle`.
+It reads [phase5-arimax-distributed-lag-oracle.json](../../verification/data/time-series/phase5-arimax-distributed-lag-oracle.json),
+produced by `verification/r/time-series/generate_phase5_arimax_distributed_lag_oracle.R` with R
+4.4.3, jsonlite 2.0.0, and digest 0.6.39. The generator implements the transforms at fixed
+exponents, later-date differencing, date-keyed covariate lags, the conditioning order, the residual
+recursion (stopping if a mean would need a covariate value before the first observation), the
+per-observation Jacobian, the Gaussian likelihood, and the conditional raw-scale predictions
+without calling BestFit or Numerics. Its four daily cases start on `2003-04-05` with ten training
+and two holdout responses, and their covariates start one or two days earlier, so positional pairing
+would select the wrong values:
+
+| Case | Model | `K` | Former `max(p,q,b)` | Evaluated steps |
+|---|---|---:|---:|---:|
+| `ar-plus-lag-decides` | ARIMAX(1,0,0), one covariate, `b=2`, untransformed | 3 | 2 | 7 |
+| `ma-order-decides` | ARIMAX(1,0,3), one covariate, `b=1`, untransformed | 3 | 3 | 7 |
+| `box-cox-differenced` | ARIMAX(2,1,1), one covariate, `b=1`, Box-Cox `lambda=0.35` | 3 | 2 | 6 |
+| `yeo-johnson-two-covariates` | ARIMAX(1,0,1), two covariates, `b=1`, Yeo-Johnson `lambda=0.6`, negative responses | 2 | 1 | 8 |
+
+The method compares the training differences, residuals, pointwise term count and values,
+components, scalar likelihood, Jacobian total and per-observation terms, and the `Predict`
+conditional levels with the `1E-10` absolute tolerance of the alignment oracle; counts must match
+exactly. The covariates are attached after the response and training window, as opening a saved
+project does. Generator SHA-256 is
+`020ddc8440ad9224a2afb446ae1a33ffa50410443eb9d67a42b98aaf17197981`; artifact SHA-256 is
+`529cb4a224d21a6b3bd6110954870f7f67a7eae2e7d0b7e1961189bd7de202f7`. Both match the manifest. As a
+negative control, the method fails against the pre-D6 model (`b9d99c8`) at the first case, where
+the former order evaluates step 2 (residual `-1.2235` instead of the conditioned zero).
+
+**Regeneration of the `b = 0` oracles.** The alignment oracle (`p = q = 1`, `b = 0`) and the
+ARIMAX MLE/MAP oracle (ARIMAX(1,1,0), unlagged covariate) cannot distinguish the rules, because
+`max(q, p + b)` equals `max(p, q, b)` when `b = 0`. Both generators were rerun as a regression check:
+all 112 floating-point and 120 other leaves of the alignment artifact and all 44 floating-point and
+46 other leaves of the MLE artifact, including optimizer evaluation counts, reproduced the committed
+values exactly. Only the generation time, source commit, and working-copy generator hash differed,
+so the committed artifacts were kept byte for byte.
+
+**Guarded reruns.** Each method ran alone through `scripts/run-verification-test.ps1` at default
+settings, against the D6 model:
+
+| Method | Outcome | Duration | TRX directory under `TestResults/VerificationFocused/` |
+|---|---|---:|---|
+| `TimeSeriesIndependentOracleTests.ArimaxDistributedLagConditioningMatchesIndependentOracle` (final artifact) | Passed 1/1 | 0.047 s | `20260926-021251-...` |
+| `TimeSeriesIndependentOracleTests.ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle` | Passed 1/1 | 0.050 s | `20260926-020629-...` |
+| `TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle` | Passed 1/1 | 0.027 s | `20260926-020634-...` |
+| `TimeSeriesIndependentOracleTests.ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary` | Passed 1/1 | 0.032 s | `20260926-020638-...` |
+| `TimeSeriesIndependentOracleTests.TransformedArimaAndArimaxForecastsMatchModelScaleOracle` | Passed 1/1 | 0.033 s | `20260926-020642-...` |
+| `TimeSeriesIndependentOracleTests.ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle` | Passed 1/1 | 0.033 s | `20260926-020646-...` |
+| `TimeSeriesIndependentOracleTests.TransformLambdaMatchesIndependentTrainingOnlyOracle` | Passed 1/1 | 0.052 s | `20260926-020650-...` |
+| `TimeSeriesIndependentOracleTests.ManualTransformLambdaRebuildMatchesIndependentLikelihoodOracle` | Passed 1/1 | 0.045 s | `20260926-020654-...` |
+| `TimeSeriesIndependentOracleTests.InvalidScaleBehaviorMatchesScalarAndPointwiseOracle` | Passed 1/1 | 0.056 s | `20260926-020658-...` |
+| `TimeSeriesIndependentOracleTests.JeffreysScaleMetadataMatchesIndependentPriorOracle` | Passed 1/1 | 0.017 s | `20260926-020900-...` |
+| `TimeSeriesIndependentOracleTests.InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior` | Passed 1/1 | 0.171 s | `20260926-020715-...` |
+| `TimeSeriesChunk13OracleTests.ArimaxTrendSeasonalityAndCovariatesMatchIndependentPythonOracle` | Passed 1/1 | 0.034 s | `20260926-020702-...` |
+| `TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 | 0.448 s | `20260926-020719-...` |
+| `TimeSeriesIndependentRecoveryTests.BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` | Passed 1/1 | 31.753 s | `20260926-020729-...` |
+
+The new method also passed 1/1 under `20260926-020539-...` on the first generation of its artifact,
+whose values the final artifact reproduces exactly after a comment-only generator edit. No active
+Verification method builds an ARIMAX with covariates and `b > 0`: every existing ARIMAX cell uses
+`b = 0` and keeps its conditioning order under both rules, so its evidence is unchanged and its
+rerun passed. The historical `ARIMAXAnalysisTests` and `ARIMAXMLERecoveryTests` bodies carry no
+`TestMethod` identity and were not run. No tolerance, seed, sample size, fixture, prior, bound, or
+default was changed, and the complete Verification project was not run.
 
 ---
 

@@ -37,7 +37,7 @@ where bracketed blocks appear only when configured. Coefficients inherit the uni
 
 ## Likelihood and Prior
 
-Let $r=\max(p,q,b)$. Presample residuals and fitted residuals before $r$ are conditioned out, so every evaluated step has its $p$ autoregressive lags, $q$ residual lags and $b$ lagged covariate values. For $t\ge r$,
+Let $r=\max(q,p+b)$ when the model has covariates and $r=\max(p,q)$ when it has none; the covariate lag order has no role without covariates. Presample residuals and fitted residuals before $r$ are conditioned out. For every evaluated step $t\ge r$, the mean $m_t$ has all $b$ lagged covariate values; each autoregressive-lag mean $m_{t-i}$, $i\le p$, also has them because $t-i\ge r-p\ge b$; and the $q$ residual lags fall inside the conditioned window, where the residuals are zero. The truncation of pre-sample covariate lags described below therefore affects only conditioned steps, never an evaluated residual. For $t\ge r$,
 
 $$
 e_t=w_t-m_t-
@@ -73,12 +73,20 @@ numerical evaluation returns negative infinity rather than falling back to posit
 Extra dates outside the required window are harmless. The conditional transform Jacobian is
 
 $$
-J_g=\sum_{u=d+r}^{T-1}\log|g'(y_u)|,\qquad r=\max(p,q,b),
+J_g=\sum_{u=d+r}^{T-1}\log|g'(y_u)|,
 \tag{AX.6}
 $$
 
-so response, level covariates, conditional residuals, and change-of-variable terms share one raw
-index set. Independent date-indexed likelihood calculations verify this alignment.
+with the conditioning order $r$ of the likelihood above, so response, level covariates, conditional
+residuals, and change-of-variable terms share one raw index set. Changing the covariate lag order,
+or attaching the first covariate or removing the last one, moves this window with $r$ and keeps
+the transform exponent. Independent date-indexed likelihood calculations verify this alignment,
+including cases with $p>0$ and $b>0$ in which $r$ exceeds $\max(p,q,b)$.
+
+The conditioning rule $r=\max(q,p+b)$ was approved on 25 September 2026 (review decision D6). The
+previous rule, $r=\max(p,q,b)$, evaluated the first steps of a model with $p>0$ and $b>0$ with
+autoregressive-lag means that omitted covariate lags before the first observation, so the
+likelihood, criteria, and fits of such models differ between the two rules.
 
 Trend and Fourier seasonality are explicitly rejected when `DiffOrderD>0`, avoiding an additional deterministic-term ambiguity. With $d=0$, the single Fourier harmonic is useful for a stable sinusoidal cycle but cannot represent changing phase, multiple seasonal frequencies, or event-timed hydrology.
 

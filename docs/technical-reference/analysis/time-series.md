@@ -33,8 +33,10 @@ maps to raw response index $k+d$, and the training model series has $T-d$ values
 level covariates matched by exact timestamp at that raw index; covariates are never differenced.
 AR conditions on its first $p$ observations. Standalone MA initializes presample innovations
 to zero and includes every residual, starting at index zero. ARIMA starts at $k=\max(p,q)$
-and ARIMAX at $k=\max(p,q,b)$ in the differenced series; their transform Jacobian uses raw
-indices $d+k$ through $T-1$. The pointwise data
+in the differenced series. ARIMAX with covariates starts at $k=\max(q,p+b)$, so every evaluated
+step's own mean and every autoregressive-lag mean include all $b$ covariate lags; without
+covariates it starts at $k=\max(p,q)$, because the covariate lag order then has no role. The
+transform Jacobian uses raw indices $d+k$ through $T-1$. The pointwise data
 log-likelihood attributes each observation's own change-of-variables term $\log|g'(y_{k+d})|$ to
 the model step that evaluates that observation, so the pointwise terms sum to the scalar
 data log-likelihood and WAIC/PSIS-LOO see the actual per-observation contributions. Required
