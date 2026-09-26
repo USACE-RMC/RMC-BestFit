@@ -1007,8 +1007,9 @@ public class TimeSeriesAnalysisTests
     /// model structure.
     /// </summary>
     /// <remarks>
-    /// The order setter notifies before it rebuilds the parameters, so the recorded redo snapshot
-    /// holds the new order with the previous vector; the restore must rebuild a vector that fits.
+    /// The order setter rebuilds the parameters before it notifies, so the recorded redo snapshot
+    /// holds the new order with a vector that fits it; the restore's layout guard remains a
+    /// backstop for a snapshot whose vector does not fit its structure.
     /// </remarks>
     [STATestMethod]
     public void AROrderChange_UndoThenRedo_RestoresConsistentParameterLayout()
@@ -1025,6 +1026,127 @@ public class TimeSeriesAnalysisTests
 
         Assert.AreEqual(2, tsa.ARIMAX.AROrderP);
         Assert.AreEqual(4, tsa.ARIMAX.NumberOfParameters, "Redo must restore a vector that fits AR(2).");
+    }
+
+    /// <summary>
+    /// Verifies that undoing an edit made after a differencing-order change returns to the
+    /// differenced model with the intercept bounds built for it.
+    /// </summary>
+    /// <remarks>
+    /// The undo step of the later edit restores the state recorded when the differencing order
+    /// changed. That state must hold the defaults rebuilt for d = 1, not the level model's
+    /// intercept bounds carried over with the new order.
+    /// </remarks>
+    [STATestMethod]
+    public void DiffOrderChange_ThenUndoOfLaterEdit_KeepsDifferencedInterceptBounds()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("DiffOrderLaterUndoTSA", _collection!);
+        tsa.TimeSeriesData = CreateLevelTimeSeriesElement("DiffOrderLaterUndoResponse");
+        (double Lower, double Upper) levelBounds = GetInterceptBounds(tsa.ARIMAX);
+        tsa.ARIMAX.DiffOrderD = 1;
+        (double Lower, double Upper) differencedBounds = GetInterceptBounds(tsa.ARIMAX);
+        Assert.AreNotEqual(levelBounds, differencedBounds, "Precondition: differencing changes the default intercept bounds.");
+
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+        Assert.IsTrue(tsa.UndoManager.CanUndo);
+        tsa.UndoManager.Undo();
+
+        Assert.AreEqual(1, tsa.ARIMAX.DiffOrderD, "Undo of the later edit keeps the differencing order.");
+        Assert.AreEqual(differencedBounds, GetInterceptBounds(tsa.ARIMAX),
+            "Undo must restore the intercept bounds built for d = 1.");
+    }
+
+    /// <summary>
+    /// Verifies that undoing and redoing a differencing-order change restores the intercept
+    /// bounds built for each order.
+    /// </summary>
+    /// <remarks>
+    /// The redo step restores the state recorded when the order changed, which must hold the
+    /// defaults rebuilt for d = 1.
+    /// </remarks>
+    [STATestMethod]
+    public void DiffOrderChange_UndoThenRedo_RestoresDifferencedInterceptBounds()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("DiffOrderRedoTSA", _collection!);
+        tsa.TimeSeriesData = CreateLevelTimeSeriesElement("DiffOrderRedoResponse");
+        (double Lower, double Upper) levelBounds = GetInterceptBounds(tsa.ARIMAX);
+        tsa.ARIMAX.DiffOrderD = 1;
+        (double Lower, double Upper) differencedBounds = GetInterceptBounds(tsa.ARIMAX);
+        Assert.AreNotEqual(levelBounds, differencedBounds, "Precondition: differencing changes the default intercept bounds.");
+
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(0, tsa.ARIMAX.DiffOrderD);
+        Assert.AreEqual(levelBounds, GetInterceptBounds(tsa.ARIMAX), "Undo must restore the intercept bounds built for d = 0.");
+        tsa.UndoManager.Redo();
+
+        Assert.AreEqual(1, tsa.ARIMAX.DiffOrderD);
+        Assert.AreEqual(differencedBounds, GetInterceptBounds(tsa.ARIMAX),
+            "Redo must restore the intercept bounds built for d = 1.");
+    }
+
+    /// <summary>
+    /// Verifies that turning default flat priors on is an undoable step: undo restores the flag
+    /// and the custom covariate prior, and redo restores the rebuilt default prior.
+    /// </summary>
+    /// <remarks>
+    /// The redo step restores the state recorded on the flag's notification, so the defaults must
+    /// already be rebuilt when the flag notifies; otherwise redo turns the flag on while keeping
+    /// the custom prior.
+    /// </remarks>
+    [STATestMethod]
+    public void DefaultFlatPriorsTurnedOn_UndoRestoresCustomPriorAndRedoRestoresDefaults()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("FlatPriorUndoTSA", out _);
+        tsa.ARIMAX.UseDefaultFlatPriors = true;
+        Assert.IsInstanceOfType(GetCovariateCoefficient(tsa.ARIMAX).PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Precondition: turning default flat priors on rebuilds the default prior.");
+
+        tsa.UndoManager.Undo();
+        Assert.IsFalse(tsa.ARIMAX.UseDefaultFlatPriors, "Undo must turn default flat priors back off.");
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "undoing the flat-prior toggle");
+
+        tsa.UndoManager.Redo();
+        Assert.IsTrue(tsa.ARIMAX.UseDefaultFlatPriors, "Redo must turn default flat priors back on.");
+        ModelParameter redone = GetCovariateCoefficient(tsa.ARIMAX);
+        Assert.IsInstanceOfType(redone.PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Redo must restore the rebuilt default prior, not the custom prior.");
+        Assert.AreEqual(0.0, redone.Value, 0.0, "Redo must restore the default coefficient value.");
+    }
+
+    /// <summary>
+    /// Creates a 40-step annual time-series element whose level is near 1000 with visible
+    /// variation (value = 1000 + 25·sin(i/3) + i).
+    /// </summary>
+    /// <param name="name">The element name.</param>
+    /// <returns>A populated time-series element starting in 1980.</returns>
+    /// <remarks>
+    /// The level series and its first differences have very different means, so the default
+    /// intercept bounds built for d = 0 and d = 1 differ.
+    /// </remarks>
+    private static TimeSeriesElement CreateLevelTimeSeriesElement(string name)
+    {
+        var element = new TimeSeriesElement(name);
+        var series = new TimeSeries(TimeInterval.OneYear);
+        DateTime date = new DateTime(1980, 1, 1);
+        for (int i = 0; i < 40; i++)
+        {
+            series.Add(new SeriesOrdinate<DateTime, double>(date, 1000.0 + 25.0 * Math.Sin(i / 3.0) + i));
+            date = TimeSeries.AddTimeInterval(date, TimeInterval.OneYear);
+        }
+
+        element.TimeSeries = series;
+        return element;
+    }
+
+    /// <summary>
+    /// Returns the lower and upper bounds of a model's intercept parameter.
+    /// </summary>
+    /// <param name="model">A model that includes an intercept.</param>
+    /// <returns>The intercept's lower and upper bounds.</returns>
+    private static (double Lower, double Upper) GetInterceptBounds(ARIMAX model)
+    {
+        ModelParameter intercept = model.Parameters.Single(p => p.Name.StartsWith("Intercept", StringComparison.Ordinal));
+        return (intercept.LowerBound, intercept.UpperBound);
     }
 
     /// <summary>

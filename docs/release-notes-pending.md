@@ -26,7 +26,12 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   projects with positionally aligned but differently dated covariates fail validation);
   `SetTransformParameters` throws on a non-finite first parameter and ignores the second;
   `GenerateRandomValues` returns raw-scale values of length `sampleSize`;
-  `ARIMAX.TrainingTimeSeries` is the differenced series.
+  `ARIMAX.TrainingTimeSeries` is the differenced series. The ARIMAX structural setters (the AR,
+  differencing, MA, and covariate-lag orders, intercept, seasonality, trend, training window, and
+  default-window rule) and turning `UseDefaultFlatPriors` on now rebuild the default parameters
+  before they notify, so undoing or redoing a structural edit in a time-series analysis restores
+  the default priors and bounds that match the restored structure, and turning default flat
+  priors on or off is an undoable step.
 - Time-series analyses with covariates (ARIMAX; present since 2.0.0): opening a project, copying
   the analysis, and undoing or redoing a model-property edit keep the saved coefficient values,
   bounds, and custom priors. The covariates were reattached through a path that rebuilt the

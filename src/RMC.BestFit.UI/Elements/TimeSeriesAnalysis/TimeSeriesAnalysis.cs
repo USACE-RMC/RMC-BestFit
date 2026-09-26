@@ -354,12 +354,18 @@ namespace RMC.BestFit.UI
         /// <summary>
         /// Property names that trigger snapshot comparison.
         /// </summary>
+        /// <remarks>
+        /// Each ARIMAX setter for these names finishes rebuilding the training data and default
+        /// parameters it affects before it notifies, so the snapshot recorded for an edit of one of
+        /// them holds the new setting together with the parameters built for it.
+        /// </remarks>
         private static readonly HashSet<string> ModelUndoProperties = new()
         {
             "Parameters", "UseJeffreysRuleForScale", "AROrderP", "MAOrderQ",
             "DiffOrderD", "IncludeIntercept", "TransformType", "TransformLambda",
             "TrainingTimeSteps", "UseDefaultTrainingSteps",
-            "XOrderB", "IncludeSeasonality", "TrendType", "CovariateExtension"
+            "XOrderB", "IncludeSeasonality", "TrendType", "CovariateExtension",
+            nameof(ARIMAX.UseDefaultFlatPriors)
         };
 
         #endregion
@@ -1576,9 +1582,9 @@ namespace RMC.BestFit.UI
 
             // Reapply the snapshot's parameters only to the covariate series it was taken with: a
             // covariate swap is not an undo step, so steps recorded before it can be replayed after
-            // it. The call also runs through the layout guard when there are no covariates, because
-            // a structural edit that notifies before it rebuilds can record the new structure with
-            // the previous vector; the guard replaces such a vector when the count differs.
+            // it. The call also runs through the layout guard when there are no covariates, so a
+            // snapshot whose vector does not fit its structure is rebuilt from the defaults instead
+            // of being replayed onto it.
             List<Numerics.Data.TimeSeries> covariates = GetCovariateTimeSeries();
             bool sameCovariates = recordedCovariates.Count == covariates.Count &&
                 recordedCovariates.Zip(covariates, ReferenceEquals).All(same => same);

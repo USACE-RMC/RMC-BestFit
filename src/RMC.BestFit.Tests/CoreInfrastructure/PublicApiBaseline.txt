@@ -1120,6 +1120,7 @@ TYPE class RMC.BestFit.Models.ARIMAX
   PROPERTY RMC.BestFit.Models.Transform TransformType {get;set;}
   PROPERTY System.Boolean IncludeIntercept {get;set;}
   PROPERTY System.Boolean IncludeSeasonality {get;set;}
+  PROPERTY System.Boolean UseDefaultFlatPriors {get;set;}
   PROPERTY System.Boolean UseDefaultTrainingSteps {get;set;}
   PROPERTY System.Boolean UseJeffreysRuleForScale {get;set;}
   PROPERTY System.Collections.Generic.List<Numerics.Data.TimeSeries> Covariates {get;}

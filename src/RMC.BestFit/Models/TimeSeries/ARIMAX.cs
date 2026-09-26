@@ -362,6 +362,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets whether to include an intercept term (μ) in the model.
         /// </summary>
+        /// <remarks>
+        /// The default parameters are rebuilt before the change is raised, so an observer that
+        /// snapshots the model on the notification sees a parameter layout that fits the new
+        /// structure.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Include Intercept")]
         [Description("Determines whether to include an intercept term in the model.")]
@@ -374,8 +379,8 @@ namespace RMC.BestFit.Models
                 if (_includeIntercept != value)
                 {
                     _includeIntercept = value;
-                    RaisePropertyChange(nameof(IncludeIntercept));
                     SetDefaultParameters();
+                    RaisePropertyChange(nameof(IncludeIntercept));
                 }
             }
         }
@@ -383,6 +388,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets whether to include a Fourier series seasonal component.
         /// </summary>
+        /// <remarks>
+        /// The default parameters are rebuilt before the change is raised, so an observer that
+        /// snapshots the model on the notification sees a parameter layout that fits the new
+        /// structure.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Include Seasonality")]
         [Description("Determines whether to include a Fourier series seasonal component: ψ1*sin(2π*t/S) + ψ2*cos(2π*t/S), where S is the seasonal period.")]
@@ -395,8 +405,8 @@ namespace RMC.BestFit.Models
                 if (_includeSeasonality != value)
                 {
                     _includeSeasonality = value;
-                    RaisePropertyChange(nameof(IncludeSeasonality));
                     SetDefaultParameters();
+                    RaisePropertyChange(nameof(IncludeSeasonality));
                 }
             }
         }
@@ -404,6 +414,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the trend type (None, Linear, Quadratic, or Cubic).
         /// </summary>
+        /// <remarks>
+        /// The default parameters are rebuilt before the change is raised, so an observer that
+        /// snapshots the model on the notification sees a parameter layout that fits the new
+        /// structure.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Trend Type")]
         [Description("Specifies the deterministic trend type.")]
@@ -416,8 +431,8 @@ namespace RMC.BestFit.Models
                 if (_trendType != value)
                 {
                     _trendType = value;
-                    RaisePropertyChange(nameof(TrendType));
                     SetDefaultParameters();
+                    RaisePropertyChange(nameof(TrendType));
                 }
             }
         }
@@ -425,6 +440,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the autoregressive order (p).
         /// </summary>
+        /// <remarks>
+        /// The training data and default parameters are rebuilt before the change is raised, and a
+        /// refitted transform exponent is reported only after the rebuild, so an observer that
+        /// snapshots the model on either notification sees parameters built for the new order.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("AR Order (p)")]
         [Description("The order (p) of the Autoregressive component: φ1*Y(t-1) + ... + φp*Y(t-p).")]
@@ -436,10 +456,13 @@ namespace RMC.BestFit.Models
             {
                 if (_arOrderP != value)
                 {
+                    double previousLambda = _lambda;
                     _arOrderP = value;
-                    RaisePropertyChange(nameof(AROrderP));
-                    SetTrainingData();
+                    SetTrainingData(false);
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
+                    RaisePropertyChange(nameof(AROrderP));
                 }
             }
         }
@@ -447,6 +470,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the differencing order (d) for achieving stationarity.
         /// </summary>
+        /// <remarks>
+        /// The training data and default parameters are rebuilt before the change is raised, and a
+        /// refitted transform exponent is reported only after the rebuild, so an observer that
+        /// snapshots the model on either notification sees parameters built for the new order.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Diff Order (d)")]
         [Description("The order (d) of differencing applied to achieve stationarity (ARIMA models).")]
@@ -458,10 +486,13 @@ namespace RMC.BestFit.Models
             {
                 if (_diffOrderD != value)
                 {
+                    double previousLambda = _lambda;
                     _diffOrderD = value;
-                    RaisePropertyChange(nameof(DiffOrderD));
-                    SetTrainingData();
+                    SetTrainingData(false);
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
+                    RaisePropertyChange(nameof(DiffOrderD));
                 }
             }
         }
@@ -469,6 +500,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the moving average order (q).
         /// </summary>
+        /// <remarks>
+        /// The training data and default parameters are rebuilt before the change is raised, and a
+        /// refitted transform exponent is reported only after the rebuild, so an observer that
+        /// snapshots the model on either notification sees parameters built for the new order.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("MA Order (q)")]
         [Description("The order (q) of the Moving Average component: θ1*ε(t-1) + ... + θq*ε(t-q).")]
@@ -480,10 +516,13 @@ namespace RMC.BestFit.Models
             {
                 if (_maOrderQ != value)
                 {
+                    double previousLambda = _lambda;
                     _maOrderQ = value;
-                    RaisePropertyChange(nameof(MAOrderQ));
-                    SetTrainingData();
+                    SetTrainingData(false);
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
+                    RaisePropertyChange(nameof(MAOrderQ));
                 }
             }
         }
@@ -491,6 +530,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the exogenous variable lag order (b).
         /// </summary>
+        /// <remarks>
+        /// The covariate alignment and default parameters are rebuilt before the change is raised,
+        /// so an observer that snapshots the model on the notification sees a parameter layout
+        /// that fits the new lag order.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("X Order (b)")]
         [Description("The lag order (b) for exogenous variables. If b=0, current values are used; if b>0, lagged values X(t-b) are used.")]
@@ -503,9 +547,9 @@ namespace RMC.BestFit.Models
                 if (_xOrderB != value)
                 {
                     _xOrderB = value;
-                    RaisePropertyChange(nameof(XOrderB));
                     RebuildTrainingCovariateAlignment();
                     SetDefaultParameters();
+                    RaisePropertyChange(nameof(XOrderB));
                 }
             }
         }
@@ -531,8 +575,44 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Gets or sets whether the default flat (uniform) priors are applied to the model parameters.
+        /// </summary>
+        /// <remarks>
+        /// Turning the flag on rebuilds the default parameter values, bounds, and priors before the
+        /// change is raised, so an observer that snapshots the model on the notification (the
+        /// time-series analysis records an undo step this way) sees the rebuilt defaults rather
+        /// than the custom priors they replace. Turning it off keeps the current parameters.
+        /// <see cref="ModelBase"/> raises the notification before it rebuilds, and the other models
+        /// keep that order.
+        /// </remarks>
+        [Category("Inputs")]
+        [DisplayName("Use Default Flat Priors")]
+        [Description("If true, the default flat (uniform) prior distributions are applied to the model parameters.")]
+        [Browsable(true)]
+        public override bool UseDefaultFlatPriors
+        {
+            get { return _useDefaultFlatPriors; }
+            set
+            {
+                if (_useDefaultFlatPriors != value)
+                {
+                    _useDefaultFlatPriors = value;
+                    if (_useDefaultFlatPriors)
+                        SetDefaultParameters();
+                    RaisePropertyChange(nameof(UseDefaultFlatPriors));
+                }
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the number of time steps used for model training.
         /// </summary>
+        /// <remarks>
+        /// The training data, and the default parameters when <see cref="UseDefaultFlatPriors"/> is
+        /// on, are rebuilt before the change is raised, and a transform exponent refitted from the
+        /// new training prefix is reported only after the rebuild, so an observer that snapshots
+        /// the model on either notification sees parameters built for the new window.
+        /// </remarks>
         [Category("General")]
         [DisplayName("Training Time Steps")]
         [Description("The number of time steps used for training. Training begins at the start of the time series.")]
@@ -544,11 +624,14 @@ namespace RMC.BestFit.Models
             {
                 if (_trainingTimeSteps != value)
                 {
+                    double previousLambda = _lambda;
                     _trainingTimeSteps = value;
-                    SetTrainingData();
-                    RaisePropertyChange(nameof(TrainingTimeSteps));
+                    SetTrainingData(false);
                     if (UseDefaultFlatPriors)
                         SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
+                    RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -556,6 +639,12 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets whether to automatically set training steps to 80% of available data.
         /// </summary>
+        /// <remarks>
+        /// Turning the rule on recomputes <see cref="TrainingTimeSteps"/>, whose setter rebuilds the
+        /// training data and, when <see cref="UseDefaultFlatPriors"/> is on, the default parameters,
+        /// before this change is raised, so an observer that snapshots the model on the
+        /// notification sees the default window with the parameters built for it.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Use Default Training Steps")]
         [Description("Determines whether to automatically set training steps to 80% of the time series length (minimum 30 or parameter count).")]
@@ -568,9 +657,9 @@ namespace RMC.BestFit.Models
                 if (_useDefaultTrainingSteps != value)
                 {
                     _useDefaultTrainingSteps = value;
-                    RaisePropertyChange(nameof(UseDefaultTrainingSteps));
                     if (_useDefaultTrainingSteps)
                         SetDefaultTrainingSteps();
+                    RaisePropertyChange(nameof(UseDefaultTrainingSteps));
                 }
             }
         }
