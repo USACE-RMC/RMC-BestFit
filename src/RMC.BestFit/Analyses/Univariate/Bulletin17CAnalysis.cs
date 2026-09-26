@@ -848,6 +848,37 @@ namespace RMC.BestFit.Analyses
 
        
         /// <summary>
+        /// Attempts to retrieve the GMM parameter covariance for uncertainty sampling, recording
+        /// the shared "point estimate is still valid" diagnostic message when it cannot be
+        /// computed.
+        /// </summary>
+        /// <param name="thetaHat">The parameter values at which to evaluate the covariance.</param>
+        /// <param name="sigmaHat">
+        /// The computed covariance matrix when available; otherwise a zero matrix that must not
+        /// be interpreted as estimated uncertainty (mirrors
+        /// <see cref="GeneralizedMethodOfMoments.TryGetCovariance"/>).
+        /// </param>
+        /// <returns><see langword="true"/> when the covariance was computed successfully.</returns>
+        /// <remarks>
+        /// Shared by <see cref="GetParameterSetsFromMultivariateNormal"/> and
+        /// <see cref="GetParameterSetsFromLinkedMultivariateNormal"/> so both samplers report the
+        /// identical diagnostic wording for a GMM covariance failure. On a <see langword="false"/>
+        /// return, the caller should return <see langword="null"/> so
+        /// <see cref="RunUncertaintyQuantificationAsync"/> publishes no parameter sets while
+        /// leaving the GMM point estimate and <see cref="AnalysisBase.IsEstimated"/> untouched.
+        /// </remarks>
+        private bool TryGetUncertaintyCovariance(double[] thetaHat, out Matrix sigmaHat)
+        {
+            if (_gmm!.TryGetCovariance(thetaHat, true, out sigmaHat))
+                return true;
+
+            SetUncertaintyDiagnosticMessage("Uncertainty quantification failed - " +
+                (_gmm.CovarianceDiagnostic ?? "the GMM covariance matrix is unavailable.") +
+                " The point estimate is still valid but confidence intervals cannot be computed.");
+            return false;
+        }
+
+        /// <summary>
         /// Generates distributions from a multivariate normal approximation.
         /// </summary>
         private ParameterSet[]? GetParameterSetsFromMultivariateNormal(SafeProgressReporter? progressReporter)
@@ -856,13 +887,8 @@ namespace RMC.BestFit.Analyses
             var results = new ParameterSet[B];
 
             var thetaHat = _gmm!.BestParameterSet.Values;
-            if (!_gmm!.TryGetCovariance(thetaHat, true, out Matrix sigmaHat))
-            {
-                SetUncertaintyDiagnosticMessage("Uncertainty quantification failed - " +
-                    (_gmm.CovarianceDiagnostic ?? "the GMM covariance matrix is unavailable.") +
-                    " The point estimate is still valid but confidence intervals cannot be computed.");
+            if (!TryGetUncertaintyCovariance(thetaHat, out Matrix sigmaHat))
                 return null;
-            }
 
             // Validate that the covariance matrix is positive-definite before constructing MVN.
             // This can fail for ill-conditioned fits (e.g., fitting exponential to non-exponential data).
@@ -1043,13 +1069,8 @@ namespace RMC.BestFit.Analyses
 
             // Step 1: obtain thetaHat and S_theta from GMM.
             var thetaHat = _gmm!.BestParameterSet.Values;
-            if (!_gmm!.TryGetCovariance(thetaHat, true, out Matrix sigmaHat))
-            {
-                SetUncertaintyDiagnosticMessage("Uncertainty quantification failed - " +
-                    (_gmm.CovarianceDiagnostic ?? "the GMM covariance matrix is unavailable.") +
-                    " The point estimate is still valid but confidence intervals cannot be computed.");
+            if (!TryGetUncertaintyCovariance(thetaHat, out Matrix sigmaHat))
                 return null;
-            }
 
             // Step 2: Compute weighted error direction score (WEDS) in natural parameter space.
             // WEDS counts the weighted fraction of observations producing positive vs negative
