@@ -531,9 +531,11 @@ namespace RMC.BestFit.Models
         /// Gets or sets the exogenous variable lag order (b).
         /// </summary>
         /// <remarks>
-        /// The covariate alignment and default parameters are rebuilt before the change is raised,
-        /// so an observer that snapshots the model on the notification sees a parameter layout
-        /// that fits the new lag order.
+        /// The covariate alignment, the transform Jacobian window, and the default parameters are
+        /// rebuilt before the change is raised, so an observer that snapshots the model on the
+        /// notification sees a parameter layout and likelihood that fit the new lag order. With
+        /// covariates the lag order enters the conditioning order max(q, p + b), which sets the
+        /// start of the Jacobian window; the transform exponent is kept.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("X Order (b)")]
@@ -548,6 +550,7 @@ namespace RMC.BestFit.Models
                 {
                     _xOrderB = value;
                     RebuildTrainingCovariateAlignment();
+                    RefreshLogJacobianWindow();
                     SetDefaultParameters();
                     RaisePropertyChange(nameof(XOrderB));
                 }
@@ -712,12 +715,20 @@ namespace RMC.BestFit.Models
         /// custom priors.
         /// </param>
         /// <remarks>
+        /// <para>
         /// Pass <see langword="false"/> only when <paramref name="covariates"/> are the same series,
         /// in the same order, as those the current parameters were saved or fitted with: the check
         /// compares parameter counts, so it cannot detect a different series with the same layout.
         /// When the count does not match the layout implied by the new covariates, the existing
         /// vector cannot be mapped onto the coefficients, and every parameter's value, bounds, and
         /// prior is rebuilt from the defaults instead.
+        /// </para>
+        /// <para>
+        /// Attaching the first covariate or removing the last one changes the conditioning order
+        /// between max(p, q) and max(q, p + b), so the transform Jacobian window is refreshed
+        /// before the change is raised. The transform exponent is kept, which preserves a restored
+        /// exponent when a saved, copied, or undone model is reattached to its covariates.
+        /// </para>
         /// </remarks>
         public void SetCovariates(List<TimeSeries> covariates, bool resetParameters)
         {
@@ -725,6 +736,7 @@ namespace RMC.BestFit.Models
             _covariates = covariates;
             AttachCovariateSubscriptions();
             RebuildTrainingCovariateAlignment();
+            RefreshLogJacobianWindow();
             RaisePropertyChange(nameof(Covariates));
             if (resetParameters || NumberOfParameters != GetExpectedParameterCount())
                 SetDefaultParameters();
@@ -967,18 +979,7 @@ namespace RMC.BestFit.Models
                 for (int i = 0; i < effectiveTrainingSteps; i++)
                     _trainingTimeSeries.Add(_diffSeries[i].Clone());
 
-                int maxOrder = ConditionalOrder;
-                int startRawIdx = DiffOrderD + maxOrder;
-                int endRawIdx = effectiveRawTrainingSteps - 1;
-                if (TransformType != Transform.None && endRawIdx >= startRawIdx)
-                {
-                    var rawSubset = TimeSeries.ValuesToArray().Subset(startRawIdx, endRawIdx);
-                    _logJacobian = TransformType == Transform.YeoJohnson
-                        ? YeoJohnson.LogJacobian(rawSubset, _lambda)
-                        : BoxCox.LogJacobian(rawSubset, _lambda);
-                    _logJacobianTerms = ComputeLogJacobianTerms(rawSubset);
-                }
-
+                RefreshLogJacobianWindow();
                 RebuildTrainingCovariateAlignment();
             }
             finally
@@ -986,6 +987,46 @@ namespace RMC.BestFit.Models
                 if (notifyTransformLambda && _lambda != previousLambda)
                     RaisePropertyChange(nameof(TransformLambda));
             }
+        }
+
+        /// <summary>
+        /// Recomputes the transform log-Jacobian over the raw observations whose transformed values
+        /// enter the conditional likelihood.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The window runs from raw index d + K, where K is <see cref="ConditionalOrder"/>, to the
+        /// last raw training index, so it covers exactly the evaluated model steps. It is empty,
+        /// and the log-Jacobian zero, when no transform is applied, when no response is attached,
+        /// or when the exponent fit failed.
+        /// </para>
+        /// <para>
+        /// <see cref="SetTrainingData"/> calls this after rebuilding the training series. The
+        /// covariate lag order and the presence of covariates change K without changing the
+        /// training series or the exponent, so <see cref="XOrderB"/> and
+        /// <see cref="SetCovariates(List{TimeSeries}, bool)"/> call it directly. The exponent is
+        /// not refitted: an automatic exponent is fitted on the whole raw training prefix, which
+        /// does not depend on K, and a restored or manual exponent must be kept.
+        /// </para>
+        /// </remarks>
+        private void RefreshLogJacobianWindow()
+        {
+            _logJacobian = 0;
+            _logJacobianTerms = null;
+            if (TimeSeries == null || TransformType == Transform.None || _transformFitValidationMessage != null)
+                return;
+
+            int effectiveRawTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
+            int startRawIdx = DiffOrderD + ConditionalOrder;
+            int endRawIdx = effectiveRawTrainingSteps - 1;
+            if (endRawIdx < startRawIdx)
+                return;
+
+            var rawSubset = TimeSeries.ValuesToArray().Subset(startRawIdx, endRawIdx);
+            _logJacobian = TransformType == Transform.YeoJohnson
+                ? YeoJohnson.LogJacobian(rawSubset, _lambda)
+                : BoxCox.LogJacobian(rawSubset, _lambda);
+            _logJacobianTerms = ComputeLogJacobianTerms(rawSubset);
         }
 
         /// <summary>
@@ -2442,7 +2483,8 @@ namespace RMC.BestFit.Models
                 isValid = false;
                 messages.Add(
                     $"Error: The raw training window provides {trainingDifferenceCount} differenced model steps, " +
-                    $"which must exceed the conditional AR/MA/covariate-lag order ({conditionalOrder}).");
+                    $"which must exceed the conditioning order ({conditionalOrder}): max(q, p + b) with covariates, " +
+                    "max(p, q) without.");
             }
 
             // Check orders
@@ -2600,15 +2642,37 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Gets the number of leading model steps that condition the likelihood: max(p, q, b).
+        /// Gets the number of leading model steps that condition the likelihood: K = max(q, p + b)
+        /// when the model has covariates and K = max(p, q) when it has none.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// Conditional evaluation, residuals, prediction seeding and the transform Jacobian window
-        /// all start at model step max(p, q, b), so every evaluated step has its p autoregressive
-        /// lags, q residual lags and b lagged covariate values available. Model step k maps to raw
-        /// index k + d.
+        /// all start at model step K. Model step k maps to raw index k + d. With covariates, every
+        /// evaluated step t ≥ K has its own mean with all b lagged covariate values, each
+        /// autoregressive-lag mean m(t − i), i ≤ p, also has all b lags because t − i ≥ K − p ≥ b,
+        /// and its q residual lags lie inside the conditioned window, where the residuals are
+        /// zero. Without covariates the lag order b has no role, so K = max(p, q) as in ARIMA.
+        /// </para>
+        /// <para>
+        /// This rule was approved on 25 September 2026 (review decision D6). The previous rule,
+        /// max(p, q, b), let the first evaluated steps of a model with p &gt; 0 and b &gt; 0 use
+        /// autoregressive-lag means that omitted the covariate lags preceding the first
+        /// observation.
+        /// </para>
         /// </remarks>
-        private int ConditionalOrder => Math.Max(AROrderP, Math.Max(MAOrderQ, XOrderB));
+        private int ConditionalOrder => HasCovariates
+            ? Math.Max(MAOrderQ, AROrderP + XOrderB)
+            : Math.Max(AROrderP, MAOrderQ);
+
+        /// <summary>
+        /// Gets whether at least one exogenous covariate series is attached.
+        /// </summary>
+        /// <remarks>
+        /// The covariate coefficients enter the parameter layout, the mean, and the conditioning
+        /// order only when this is <see langword="true"/>.
+        /// </remarks>
+        private bool HasCovariates => _covariates != null && _covariates.Count > 0;
 
         /// <summary>
         /// Gets the starting index of AR parameters in the parameter list.

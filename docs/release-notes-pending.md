@@ -17,8 +17,9 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   Corrected positions can change empirical moments, regression-on-order-statistics initialization,
   and fit diagnostics. Saved analyses are not automatically re-estimated; reprocess affected
   analyses to refresh results that depend on those positions.
-- Time series: ARIMAX conditions the likelihood, residuals, generation, and prediction on
-  `max(p, q, b)`; an empty conditional sum is an invalid fit (negative-infinite likelihood)
+- Time series: ARIMAX conditions the likelihood, residuals, transform Jacobian, generation, and
+  prediction on one conditioning order (the rule is the ARIMAX conditioning entry below); an
+  empty conditional sum is an invalid fit (negative-infinite likelihood)
   rather than a zero log-likelihood; ARIMA/AR order setters rebuild the training state; the
   pointwise transform Jacobian is per observation; the transform reset of custom priors is
   gated on `UseDefaultFlatPriors`; prediction-window covariate gaps and transform failures are
@@ -54,6 +55,23 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   defaults), and `ARIMAX.Clone()` keeps the source's parameter values, bounds, and priors, so the
   REST plot-source leverage and leave-one-out diagnostics of ARIMAX models with covariates and
   non-uniform priors now use the fitted priors, as the desktop does.
+- ARIMAX conditioning (approved 25 September 2026): a model with covariates now conditions on
+  `max(q, p + b)` leading model steps instead of `max(p, q, b)`, so every evaluated step's own
+  mean and every autoregressive-lag mean include all `b` lagged covariate values (the first
+  evaluated steps of a model with `p > 0` and `b > 0` formerly used AR-lag means that omitted the
+  covariate lags before the first observation). A model without covariates conditions on
+  `max(p, q)`: the covariate lag order has no role without covariates. **ARIMAX analyses with
+  covariates and `p > 0`, `b > 0` (where `p + b > q`) now condition on more leading steps, and
+  analyses without covariates whose lag order exceeds `max(p, q)` on fewer; their likelihood,
+  pointwise terms, information criteria, residual diagnostics, in-sample predictions, and fits
+  change, so re-run saved results of such analyses.** Models with `b = 0`, including every shipped
+  example, are unchanged. A training window must provide more differenced steps than this
+  order, and the validation message names it. Changing the covariate lag order, or attaching the
+  first covariate or removing the last one, now also moves the Box-Cox, Yeo-Johnson, or
+  logarithmic transform Jacobian window to the new order, keeping the transform exponent;
+  previously a lag-order edit left the window at its old start until the training data was next
+  rebuilt, which offset the reported log-likelihood and criteria of the edited analysis (the
+  fitted parameters were unaffected because the offset is constant).
 - Point process: seasonal Gumbel-limit annualization uses `xi + alpha ln p`; the seasonal
   simulator uses the fitted per-season threshold intensities; clones recompute the event rate;
   seasonal quantile priors are evaluated on the annualized distribution; the seasonal block-day
