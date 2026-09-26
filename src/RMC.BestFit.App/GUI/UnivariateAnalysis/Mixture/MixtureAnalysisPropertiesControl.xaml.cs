@@ -39,7 +39,7 @@ namespace RMC_BestFit
         {
             InitializeComponent();
             DataContext = this;
-            // RowType set to null � enum types cannot be default-constructed by DataGrid toolbar
+            // RowType set to null — enum types cannot be default-constructed by DataGrid toolbar
             // (Activator.CreateInstance on an enum yields the 0-value, which is not a supported mixture type).
             // Add/remove is handled via PreviewAddRows/PreviewDeleteRows to inject Normal as the default.
             DistributionDataGrid.RowType = null;
@@ -94,7 +94,7 @@ namespace RMC_BestFit
             if (d as MixtureAnalysisPropertiesControl == null) return;
             var thisControl = (MixtureAnalysisPropertiesControl)d;
 
-            // Unsubscribe from old element � both PropertyChanged (element-scoped) and
+            // Unsubscribe from old element — both PropertyChanged (element-scoped) and
             // InputDataCollection subscriptions so the new element's LoadInputData starts clean.
             if (e.OldValue is MixtureAnalysis oldElement)
             {
@@ -445,13 +445,13 @@ namespace RMC_BestFit
         /// <param name="e">The event data containing the name of the changed property.</param>
         private void Element_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Model object replaced (e.g., during undo) � push to sub-controls
+            // Model object replaced (e.g., during undo) — push to sub-controls
             if (e.PropertyName == nameof(Element.MixtureDistribution))
             {
                 ParameterPriorsControl.Model = Element.MixtureDistribution;
                 QuantilePriorsControl.Model = Element.MixtureDistribution;
             }
-            // BayesianAnalysis replaced � push to sub-controls
+            // BayesianAnalysis replaced — push to sub-controls
             if (e.PropertyName == nameof(Element.BayesianAnalysis))
             {
                 BayesianOptionsControl.Analysis = Element.BayesianAnalysis;

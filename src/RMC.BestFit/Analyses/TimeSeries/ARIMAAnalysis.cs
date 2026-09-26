@@ -22,7 +22,7 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// The ARIMA(p,q) model combines autoregressive and moving average components:
-    /// Y(t) = µ + f1*(Y(t-1) - µ) + ... + fp*(Y(t-p) - µ) + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
+    /// Y(t) = μ + f1*(Y(t-1) - μ) + ... + fp*(Y(t-p) - μ) + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
     /// where e(t) ~ N(0, s²).
     /// </para>
     /// <para>

@@ -22,7 +22,7 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// The AR(p) model uses lagged values of the series to predict the current value:
-    /// Y(t) = µ + f1*(Y(t-1) - µ) + ... + fp*(Y(t-p) - µ) + e(t)
+    /// Y(t) = μ + f1*(Y(t-1) - μ) + ... + fp*(Y(t-p) - μ) + e(t)
     /// where e(t) ~ N(0, s²).
     /// </para>
     /// <para>

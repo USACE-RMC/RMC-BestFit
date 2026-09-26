@@ -22,7 +22,7 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// The MA(q) model uses lagged error terms to predict the current value:
-    /// Y(t) = µ + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
+    /// Y(t) = μ + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
     /// where e(t) ~ N(0, s²).
     /// </para>
     /// <para>
