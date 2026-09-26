@@ -2649,10 +2649,12 @@ namespace RMC.BestFit.Models
         /// <para>
         /// Conditional evaluation, residuals, prediction seeding and the transform Jacobian window
         /// all start at model step K. Model step k maps to raw index k + d. With covariates, every
-        /// evaluated step t ≥ K has its own mean with all b lagged covariate values, each
-        /// autoregressive-lag mean m(t − i), i ≤ p, also has all b lags because t − i ≥ K − p ≥ b,
-        /// and its q residual lags lie inside the conditioned window, where the residuals are
-        /// zero. Without covariates the lag order b has no role, so K = max(p, q) as in ARIMA.
+        /// evaluated step t ≥ K has its own mean with all b lagged covariate values, and each
+        /// autoregressive-lag mean m(t − i), i ≤ p, also has all b lags because t − i ≥ K − p ≥ b.
+        /// Residual lags before K fall inside the conditioned window, where the residuals are zero;
+        /// because K ≥ q, every residual lag used at step K is at or after step 0, so no lag ever
+        /// precedes the first observation. Without covariates the lag order b has no role, so
+        /// K = max(p, q) as in ARIMA.
         /// </para>
         /// <para>
         /// This rule was approved on 25 September 2026 (review decision D6). The previous rule,

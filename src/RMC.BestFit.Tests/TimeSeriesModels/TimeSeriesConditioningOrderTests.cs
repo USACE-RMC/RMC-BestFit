@@ -16,8 +16,9 @@ namespace RMC.BestFit.Tests.TimeSeriesModels;
 /// <remarks>
 /// ARIMAX conditions on K = max(q, p + b) when it has covariates and on K = max(p, q) when it has
 /// none (review decision D6, approved 25 September 2026). Every evaluated step t ≥ K then has its
-/// own mean with all b covariate lags, every autoregressive-lag mean m(t − i), i ≤ p, has all b
-/// lags, and its residual lags lie inside the conditioned window, where the residuals are zero.
+/// own mean with all b covariate lags, and every autoregressive-lag mean m(t − i), i ≤ p, has all b
+/// lags. Residual lags before K fall inside the conditioned window, where the residuals are zero;
+/// K ≥ q keeps every lag used at step K at or after step 0.
 /// </remarks>
 [TestClass]
 public class TimeSeriesConditioningOrderTests

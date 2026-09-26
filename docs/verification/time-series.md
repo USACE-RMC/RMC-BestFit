@@ -1256,9 +1256,10 @@ model with covariates now conditions on `K = max(q, p + b)` model steps, and a m
 covariates on `K = max(p, q)`, because the covariate lag order has no role without covariates
 (ruling R2). The TR-066 rule `max(p, q, b)` let the first evaluated steps of a model with `p > 0`
 and `b > 0` use autoregressive-lag means `m(t-i)` whose covariate lags before the first observation
-were truncated. Under the new rule every evaluated step `t >= K` has its own mean with all `b` lags,
-every AR-lag mean with all `b` lags (`t - i >= K - p >= b`), and residual lags inside the conditioned
-window, where the residuals are zero.
+were truncated. Under the new rule every evaluated step `t >= K` has its own mean with all `b` lags
+and every AR-lag mean with all `b` lags (`t - i >= K - p >= b`). Residual lags before `K` fall
+inside the conditioned window, where the residuals are zero; `K >= q` keeps every lag used at step
+`K` at or after step 0.
 
 One `ConditionalOrder` property still drives the scalar, pointwise, and component likelihoods, the
 residuals, prediction seeding (and so `GenerateRandomSeries`, which calls `Predict`), the validation
@@ -1317,6 +1318,15 @@ all 112 floating-point and 120 other leaves of the alignment artifact and all 44
 46 other leaves of the MLE artifact, including optimizer evaluation counts, reproduced the committed
 values exactly. Only the generation time, source commit, and working-copy generator hash differed,
 so the committed artifacts were kept byte for byte.
+
+Two further oracle generators were also considered: the Chunk 13 Python ARIMAX(1,0,1) oracle behind
+`TimeSeriesChunk13OracleTests.ArimaxTrendSeasonalityAndCovariatesMatchIndependentPythonOracle` (its
+two current-level covariates carry `b = 0`) and `verification/r/time-series/generate_phase5_recovery_fixtures.R`,
+whose dated level-covariate ARIMAX(1,1,0) fixture also uses `b = 0`. Both are therefore unchanged by
+the new `max(q, p + b)` conditioning, and their consumers were rerun and passed in Task 2.8: see
+`TimeSeriesChunk13OracleTests.ArimaxTrendSeasonalityAndCovariatesMatchIndependentPythonOracle` and
+`TimeSeriesIndependentRecoveryTests.MleArimax10D1LevelCovariateRecoversGeneratingParameters` /
+`BayesianArimax10D1LevelCovariateRecoversGeneratingParameters` in the guarded-rerun table below.
 
 **Guarded reruns.** Each method ran alone through `scripts/run-verification-test.ps1` at default
 settings, against the D6 model:
