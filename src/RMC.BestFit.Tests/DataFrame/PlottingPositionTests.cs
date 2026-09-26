@@ -752,6 +752,10 @@ public class PlottingPositionTests
         var flows = new double[] { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
         for (int i = 0; i < flows.Length; i++)
             frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        // End the bulk-load window here: the low-outlier setters restore the caller's suppression
+        // state rather than clearing it, so the clear under test runs unsuppressed only if the
+        // fixture unsuppresses.
+        frame.ExactSeries.SuppressCollectionChanged = false;
         frame.LowOutlierThreshold = 100.0;
         frame.SetLowOutliersFromThreshold();
         Assert.AreEqual(2, frame.NumberOfLowOutliers, "Fixture precondition: low outliers flagged.");
@@ -802,6 +806,147 @@ public class PlottingPositionTests
         Assert.AreEqual(0, frame.NumberOfLowOutliers);
         Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPositionComplement == 1.0),
             "A suppressed clear must not compute plotting positions; the caller owns the refresh.");
+    }
+
+    /// <summary>
+    /// Builds an exact-only frame and leaves its exact series at the caller's suppression state.
+    /// </summary>
+    /// <param name="flows">The exact annual peaks, indexed from one.</param>
+    /// <param name="callerSuppressed">The notification-suppression state the caller holds when it runs a setter.</param>
+    /// <returns>The data frame.</returns>
+    /// <remarks>
+    /// The values are loaded under suppression so no plotting positions are computed by the load
+    /// itself, then the flag is set to the state under test.
+    /// </remarks>
+    private static BestFitDataFrame CreateLowOutlierFrame(double[] flows, bool callerSuppressed)
+    {
+        var frame = new BestFitDataFrame();
+        frame.ExactSeries.SuppressCollectionChanged = true;
+        for (int i = 0; i < flows.Length; i++)
+            frame.ExactSeries.Add(new ExactData(i + 1, flows[i]));
+        frame.ExactSeries.SuppressCollectionChanged = callerSuppressed;
+        return frame;
+    }
+
+    /// <summary>
+    /// Seventeen annual peaks with two extreme low floods (50 and 80) that both setters flag.
+    /// </summary>
+    private static readonly double[] LowOutlierFlows =
+        { 1250, 980, 2100, 50, 1430, 890, 3050, 1120, 80, 1780, 2460, 1010, 1560, 2900, 1340, 1950, 1190 };
+
+    /// <summary>
+    /// Runs one of the two low-outlier setters, using a 100 cfs threshold for the threshold setter.
+    /// </summary>
+    /// <param name="frame">The data frame to test.</param>
+    /// <param name="useMgbt">True to run the Multiple Grubbs-Beck setter; false to run the threshold setter.</param>
+    private static void RunLowOutlierSetter(BestFitDataFrame frame, bool useMgbt)
+    {
+        if (useMgbt)
+        {
+            frame.SetLowOutliersFromMGBT();
+        }
+        else
+        {
+            frame.LowOutlierThreshold = 100.0;
+            frame.SetLowOutliersFromThreshold();
+        }
+    }
+
+    /// <summary>
+    /// A caller that suppressed notifications gets its flag back from either low-outlier setter,
+    /// and the setter still refreshes the positions and raises one "LowOutliers" change.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    /// <remarks>
+    /// The setters formerly forced the flag to false on return, silently ending a caller's
+    /// suppression window. The refresh and the raise after the window are unconditional by design,
+    /// so they are pinned here to show that restoring the flag leaves them unchanged.
+    /// </remarks>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_CallerSuppressed_RestoresFlagAndStillRefreshes(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows, callerSuppressed: true);
+        int lowOutlierRaises = 0;
+        frame.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == "LowOutliers")
+                lowOutlierRaises++;
+        };
+
+        RunLowOutlierSetter(frame, useMgbt);
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must be restored.");
+        Assert.IsTrue(frame.NumberOfLowOutliers >= 1, "Fixture precondition: the extreme low floods are flagged.");
+        Assert.AreEqual(1, lowOutlierRaises, "The setter still raises exactly one LowOutliers change.");
+        Assert.IsTrue(frame.ExactSeries.All(d => d.PlottingPosition > 0.0 && d.PlottingPosition < 1.0),
+            "The setter still refreshes the Hirsch-Stedinger positions.");
+    }
+
+    /// <summary>
+    /// A caller that did not suppress notifications finds the flag still false after either setter.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_CallerUnsuppressed_LeavesFlagFalse(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows, callerSuppressed: false);
+
+        RunLowOutlierSetter(frame, useMgbt);
+
+        Assert.IsFalse(frame.ExactSeries.SuppressCollectionChanged, "The caller's unsuppressed state must be kept.");
+        Assert.IsTrue(frame.NumberOfLowOutliers >= 1, "Fixture precondition: the extreme low floods are flagged.");
+    }
+
+    /// <summary>
+    /// A precondition guard that rejects the call leaves a suppressing caller's flag untouched.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    /// <remarks>
+    /// Nine exact values fail the ten-value guard of both setters, which throws before the
+    /// suppression window opens.
+    /// </remarks>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_GuardThrowUnderCallerSuppression_KeepsFlag(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows.Take(9).ToArray(), callerSuppressed: true);
+
+        Assert.ThrowsException<ArgumentException>(() => RunLowOutlierSetter(frame, useMgbt));
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must survive a rejected call.");
+    }
+
+    /// <summary>
+    /// A failure inside the suppression window restores a suppressing caller's flag instead of
+    /// clearing it.
+    /// </summary>
+    /// <param name="useMgbt">True for the Multiple Grubbs-Beck setter; false for the threshold setter.</param>
+    /// <remarks>
+    /// A listener on the 50 cfs flood throws when both setters flag it as a low outlier, which
+    /// happens inside the window, so the setter's finally block is the only code that restores the
+    /// flag before the exception propagates.
+    /// </remarks>
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Test_LowOutlierSetter_ThrowInsideSuppressionWindow_RestoresCallerFlag(bool useMgbt)
+    {
+        var frame = CreateLowOutlierFrame(LowOutlierFlows, callerSuppressed: true);
+        var lowestFlood = frame.ExactSeries.Single(d => d.Value == 50);
+        lowestFlood.PropertyChanged += (sender, e) =>
+        {
+            if (e.PropertyName == nameof(ExactData.IsLowOutlier))
+                throw new InvalidOperationException("Probe listener failure.");
+        };
+
+        Assert.ThrowsException<InvalidOperationException>(() => RunLowOutlierSetter(frame, useMgbt));
+
+        Assert.IsTrue(frame.ExactSeries.SuppressCollectionChanged, "The caller's suppression state must be restored after a failure.");
     }
 
 

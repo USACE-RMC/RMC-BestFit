@@ -923,15 +923,18 @@ namespace RMC.BestFit.Models
         /// flags, and the model-layer handlers listening for that raise rebuild Bulletin 17C initial
         /// parameters from the positions via the censored-data (ROS) regression. On return the frame's
         /// plotting positions therefore reflect the new flags for headless and GUI callers alike; the
-        /// refresh is skipped only while the threshold series is transiently invalid. The suppression
-        /// flag is restored in a finally block so a throwing test can never strand the frame with
-        /// notifications suppressed, which would silently disable every later plotting-position refresh.
+        /// refresh is skipped only while the threshold series is transiently invalid. The caller's
+        /// suppression flag is saved on entry and restored in a finally block, as
+        /// <see cref="ClearLowOutliers"/> does: a throwing test can never strand an unsuppressed frame
+        /// with notifications suppressed, which would silently disable every later plotting-position
+        /// refresh, and a caller that suppressed notifications keeps its own suppression window.
         /// </remarks>
         public void SetLowOutliersFromMGBT()
         {
             if (!ExactSeries.Validate().IsValid) throw new ArgumentException("The exact data series has errors.", nameof(ExactSeries));
             if (ExactSeries.Count < 10) throw new ArgumentException("The exact data series must have at least 10 items before evaluating low outliers.", nameof(ExactSeries));
 
+            bool wasSuppressed = ExactSeries.SuppressCollectionChanged;
             ExactSeries.SuppressCollectionChanged = true;
             try
             {
@@ -970,7 +973,7 @@ namespace RMC.BestFit.Models
             }
             finally
             {
-                ExactSeries.SuppressCollectionChanged = false;
+                ExactSeries.SuppressCollectionChanged = wasSuppressed;
             }
 
             // Refresh the derived plotting positions BEFORE raising "LowOutliers", so the handlers
@@ -989,8 +992,9 @@ namespace RMC.BestFit.Models
         /// <remarks>
         /// See <see cref="SetLowOutliersFromMGBT"/> for the derived-state contract: on return the
         /// frame's plotting positions reflect the new flags, the refresh precedes the "LowOutliers"
-        /// raise so listeners rebuild model initials from current positions, and the suppression flag
-        /// is restored in a finally block so a throw cannot strand notifications suppressed.
+        /// raise so listeners rebuild model initials from current positions, and the caller's
+        /// suppression flag is saved on entry and restored in a finally block, so a throw cannot
+        /// strand notifications suppressed and a suppressing caller keeps its window.
         /// </remarks>
         public void SetLowOutliersFromThreshold()
         {
@@ -999,6 +1003,7 @@ namespace RMC.BestFit.Models
             if (LowOutlierThreshold > ExactSeries.UpperMiddleValue)
                 throw new ArgumentException($"The low outlier threshold cannot censor more than 50% of the data. Set it to {ExactSeries.UpperMiddleValue} or less.", nameof(LowOutlierThreshold));
 
+            bool wasSuppressed = ExactSeries.SuppressCollectionChanged;
             ExactSeries.SuppressCollectionChanged = true;
             try
             {
@@ -1019,7 +1024,7 @@ namespace RMC.BestFit.Models
             }
             finally
             {
-                ExactSeries.SuppressCollectionChanged = false;
+                ExactSeries.SuppressCollectionChanged = wasSuppressed;
             }
 
             // Refresh the derived plotting positions BEFORE raising "LowOutliers", so the handlers
