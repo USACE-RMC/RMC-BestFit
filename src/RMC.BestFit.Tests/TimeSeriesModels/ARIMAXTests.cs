@@ -1270,6 +1270,31 @@ public class ARIMAXTests
     }
 
     /// <summary>
+    /// Tests that a restored model with a lagged covariate keeps its saved parameters, so the
+    /// layout check counts one coefficient per covariate lag.
+    /// </summary>
+    [TestMethod]
+    public void Test_SetCovariates_WithoutParameterReset_LaggedCovariate_PreservesSavedParameters()
+    {
+        var ts = CreateSampleTimeSeries();
+        var model = new ARIMAX(ts) { AROrderP = 1, MAOrderQ = 0, XOrderB = 2 };
+        var covariates = new List<NumericsTimeSeries> { CreateCovariateTimeSeries(ts) };
+        model.SetCovariates(covariates);
+        model.UseDefaultFlatPriors = false;
+        model.Parameters.Single(p => p.Name == "Covariate (β₁,-2)").PriorDistribution = new Numerics.Distributions.Normal(0.5, 0.1);
+        var saved = model.ToXElement();
+
+        var restored = new ARIMAX(model.TimeSeries, saved);
+        restored.SetCovariates(covariates, resetParameters: false);
+
+        Assert.AreEqual(6, restored.NumberOfParameters, "Intercept, three covariate lags, one AR coefficient, and the scale.");
+        Assert.IsInstanceOfType(restored.Parameters.Single(p => p.Name == "Covariate (β₁,-2)").PriorDistribution,
+            typeof(Numerics.Distributions.Normal), "The custom prior on the second covariate lag must survive.");
+        Assert.IsTrue(System.Xml.Linq.XNode.DeepEquals(saved, restored.ToXElement()),
+            "Reattaching the saved lagged covariate must leave the serialized model unchanged.");
+    }
+
+    /// <summary>
     /// Tests that the one-argument overload still rebuilds default parameters, which is the
     /// intended response to a user changing the covariates.
     /// </summary>

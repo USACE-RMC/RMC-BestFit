@@ -601,9 +601,10 @@ namespace RMC.BestFit.Models
         /// </summary>
         /// <param name="covariates">List of time series to use as exogenous predictors.</param>
         /// <remarks>
-        /// This is the response to a user changing the covariates: the covariate coefficients and
-        /// every data-dependent default are rebuilt. Code that restores a saved, copied, or undone
-        /// model calls <see cref="SetCovariates(List{TimeSeries}, bool)"/> with
+        /// This is the response to a user changing the covariates: every parameter's value, bounds,
+        /// and prior is rebuilt from the defaults, discarding custom priors regardless of
+        /// <see cref="ModelBase.UseDefaultFlatPriors"/>. Code that restores a saved, copied, or
+        /// undone model calls <see cref="SetCovariates(List{TimeSeries}, bool)"/> with
         /// <c>resetParameters</c> set to <see langword="false"/> instead.
         /// </remarks>
         public void SetCovariates(List<TimeSeries> covariates)
@@ -622,9 +623,12 @@ namespace RMC.BestFit.Models
         /// custom priors.
         /// </param>
         /// <remarks>
-        /// When <paramref name="resetParameters"/> is <see langword="false"/> but the current
-        /// parameter count does not match the layout implied by the new covariates, the existing
-        /// vector cannot be mapped onto the coefficients, so the defaults are rebuilt instead.
+        /// Pass <see langword="false"/> only when <paramref name="covariates"/> are the same series,
+        /// in the same order, as those the current parameters were saved or fitted with: the check
+        /// compares parameter counts, so it cannot detect a different series with the same layout.
+        /// When the count does not match the layout implied by the new covariates, the existing
+        /// vector cannot be mapped onto the coefficients, and every parameter's value, bounds, and
+        /// prior is rebuilt from the defaults instead.
         /// </remarks>
         public void SetCovariates(List<TimeSeries> covariates, bool resetParameters)
         {
@@ -2559,6 +2563,10 @@ namespace RMC.BestFit.Models
         /// The length of the layout <see cref="SetDefaultParameters"/> builds: the intercept, trend,
         /// seasonality, covariate, AR, and MA coefficients followed by the scale parameter.
         /// </returns>
+        /// <remarks>
+        /// Built on <see cref="GetMAParameterStartIndex"/>, which uses the same indexing as the
+        /// likelihood, so each covariate contributes one coefficient per lag (<c>XOrderB + 1</c>).
+        /// </remarks>
         private int GetExpectedParameterCount()
         {
             return GetMAParameterStartIndex() + MAOrderQ + 1;

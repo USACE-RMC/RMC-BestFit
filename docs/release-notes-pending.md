@@ -28,18 +28,24 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   `GenerateRandomValues` returns raw-scale values of length `sampleSize`;
   `ARIMAX.TrainingTimeSeries` is the differenced series.
 - Time-series analyses with covariates (ARIMAX; present since 2.0.0): opening a project, copying
-  the analysis, and undo/redo keep the saved coefficient values, bounds, and custom priors. The
-  covariates were reattached through a path that rebuilt the default parameters, so a reopened
-  analysis showed residual diagnostics at default coefficients (residual RMS 0.660229 instead of
-  the fitted 0.341147 in the time-series regression example) and a later save of an edited
-  analysis wrote those defaults to the project. The new overload
-  `ARIMAX.SetCovariates(List<TimeSeries>, bool resetParameters)` keeps a parameter list whose
-  layout still fits the covariates; the one-argument overload still rebuilds the defaults after a
-  user-initiated covariate change. `ARIMAX.Clone()` keeps the source's parameter values, bounds,
-  and priors. Metadata edits on a covariate series (its name, description, or unit label, or
-  saving it) no longer rebuild the parameters or clear the analysis results, and reselecting the
-  same covariate series is not treated as a change; pointing a covariate row at another series or
-  replacing the covariate's data still rebuilds the defaults.
+  the analysis, and undoing or redoing a model-property edit keep the saved coefficient values,
+  bounds, and custom priors. The covariates were reattached through a path that rebuilt the
+  default parameters, so a reopened analysis showed residual diagnostics at default coefficients
+  (residual RMS 0.660229 instead of the fitted 0.341147 in the time-series regression example),
+  and a later save of an edited analysis wrote those defaults to the project. **Re-check any
+  ARIMAX analysis with covariates that was reopened, edited, and saved in 2.0.0: its stored
+  priors may already be the defaults.** Metadata edits on a covariate series (its name,
+  description, or unit label, or saving it) no longer rebuild the parameters or clear the
+  results, and reselecting the same covariate series is not a change; pointing a covariate row
+  at another series, replacing a covariate's data, or undoing a covariate addition or removal
+  still rebuilds the defaults. Copying an analysis also keeps its manual training window and
+  covariate-extension method. Undo after a series or covariate change, and redo of a structural
+  edit such as the AR order, restore a parameter vector that fits the model. API: the new
+  overload `ARIMAX.SetCovariates(List<TimeSeries>, bool resetParameters)` keeps a parameter list
+  whose layout still fits the covariates (the one-argument overload still rebuilds the
+  defaults), and `ARIMAX.Clone()` keeps the source's parameter values, bounds, and priors, so the
+  REST plot-source leverage and leave-one-out diagnostics of ARIMAX models with covariates and
+  non-uniform priors now use the fitted priors, as the desktop does.
 - Point process: seasonal Gumbel-limit annualization uses `xi + alpha ln p`; the seasonal
   simulator uses the fitted per-season threshold intensities; clones recompute the event rate;
   seasonal quantile priors are evaluated on the annualized distribution; the seasonal block-day

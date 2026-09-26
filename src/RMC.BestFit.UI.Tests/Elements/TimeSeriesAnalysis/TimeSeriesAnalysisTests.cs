@@ -890,12 +890,19 @@ public class TimeSeriesAnalysisTests
     public void Copy_KeepsModelAndSubscribesOnlyTheCopiedModelToLiveSeries()
     {
         var tsa = CreateAnalysisWithCustomizedCovariate("CopySubscriptionTSA", out TimeSeriesElement covariate);
+        tsa.ARIMAX.UseDefaultTrainingSteps = false;
+        tsa.ARIMAX.TrainingTimeSteps = 24;
+        tsa.ARIMAX.CovariateExtension = ARIMAX.CovariateExtensionMethod.None;
         TimeSeries response = tsa.TimeSeriesData.TimeSeries;
         int responseModels = CountModelSubscribers(response);
         int covariateModels = CountModelSubscribers(covariate.TimeSeries);
 
         var copy = (UI.TimeSeriesAnalysis)tsa.Copy("CopySubscriptionTSA-Copy");
 
+        Assert.IsFalse(copy.ARIMAX.UseDefaultTrainingSteps, "The copy keeps the manual training window.");
+        Assert.AreEqual(24, copy.ARIMAX.TrainingTimeSteps);
+        Assert.AreEqual(ARIMAX.CovariateExtensionMethod.None, copy.ARIMAX.CovariateExtension);
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(copy.ARIMAX), "in the copy");
         Assert.IsTrue(System.Xml.Linq.XNode.DeepEquals(tsa.ARIMAX.ToXElement(), copy.ARIMAX.ToXElement()),
             "The copy must carry the source model unchanged.");
         Assert.AreEqual(responseModels + 1, CountModelSubscribers(response),
