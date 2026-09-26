@@ -1879,7 +1879,8 @@ namespace RMC_BestFit
 
         /// <summary>
         /// Computes and draws all three threshold diagnostic plots (MRL, Modified Scale, Shape).
-        /// Requires a time series with at least 20 observations.
+        /// Requires a time series with at least 20 observations and a smoothing period that is
+        /// valid for the current smoothing function.
         /// </summary>
         /// <remarks>
         /// Callers that invoke this method from a lazy UI path should wrap it in wait-cursor
@@ -1893,6 +1894,16 @@ namespace RMC_BestFit
             var ts = Element.TimeSeriesElement?.TimeSeries;
             if (ts == null || ts.Count < 20) return;
 
+            // Numerics' MovingAverage/MovingSum/Difference all throw when the period is not
+            // strictly less than the series length (and the moving-window pair also throws below
+            // a period of 1). Bail out before SmoothedSeries reaches that guard, or an invalid
+            // period closes the App instead of showing a validation message.
+            if (!Element.IsSmoothingPeriodValid())
+            {
+                ClearThresholdDiagnosticsPlots();
+                return;
+            }
+
             // The diagnostics must operate on the same smoothed series the peaks-over-threshold
             // extraction thresholds: SmoothedSeries is the exact preprocessing
             // PeaksOverThresholdSeries applies, so the threshold annotation drawn on these plots
@@ -1903,7 +1914,11 @@ namespace RMC_BestFit
                 .Select(s => s.Value)
                 .Where(v => !double.IsNaN(v))
                 .ToList();
-            if (values.Count < 20) return;
+            if (values.Count < 20)
+            {
+                ClearThresholdDiagnosticsPlots();
+                return;
+            }
             var sorted = values.OrderBy(v => v).ToArray();
             double uMin = sorted[(int)(sorted.Length * 0.5)];
             double uMax = sorted[sorted.Length - 1];
@@ -1916,6 +1931,26 @@ namespace RMC_BestFit
             DrawShapePlot(UserSettings.ValueStringFormat);
 
             ShowSelectedDiagnosticPlot();
+        }
+
+        /// <summary>
+        /// Clears the three threshold diagnostic plots (MRL, Modified Scale, Shape) by discarding
+        /// the cached diagnostic results and redrawing each plot, so a stale curve from a
+        /// previously valid period/smoothing configuration is never left on screen.
+        /// </summary>
+        /// <remarks>
+        /// Discarding the results and calling the existing <see cref="DrawMRLPlot"/>,
+        /// <see cref="DrawModifiedScalePlot"/>, and <see cref="DrawShapePlot"/> methods reuses their
+        /// null-result branch, which clears each plot's series and annotations inside
+        /// <c>SuspendPlotBridges</c> instead of duplicating that logic here.
+        /// </remarks>
+        private void ClearThresholdDiagnosticsPlots()
+        {
+            _mrlResult = null;
+            _stabilityResult = null;
+            DrawMRLPlot(UserSettings.ValueStringFormat);
+            DrawModifiedScalePlot(UserSettings.ValueStringFormat);
+            DrawShapePlot(UserSettings.ValueStringFormat);
         }
 
         /// <summary>

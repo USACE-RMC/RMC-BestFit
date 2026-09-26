@@ -382,6 +382,131 @@ public class InputDataTests
     }
 
     /// <summary>
+    /// Verifies that a smoothing period equal to the linked time series' length is rejected for
+    /// <see cref="SmoothingFunctionType.MovingAverage"/>. Numerics' <c>TimeSeries.MovingAverage</c>
+    /// throws unless the period is strictly less than the series length, so period == length must
+    /// not be treated as valid.
+    /// </summary>
+    [STATestMethod]
+    public void Period_EqualToSeriesLength_IsInvalidForMovingAverage()
+    {
+        var id = new UI.InputData("PeriodAtLengthID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodAtLengthTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 30;
+
+        Assert.IsFalse(id.IsSmoothingPeriodValid(),
+            "A period equal to the series length must be rejected: MovingAverage requires period < Count.");
+        Assert.IsFalse(id.IsTimeSeriesInputValid());
+        Assert.IsFalse(id.IsValid);
+        Assert.IsTrue(MessengerHas(id, "ID-ERR-017"),
+            "The period validation message must be active while the period is out of range.");
+    }
+
+    /// <summary>
+    /// Verifies that a smoothing period below 1 is rejected for
+    /// <see cref="SmoothingFunctionType.MovingAverage"/>.
+    /// </summary>
+    [STATestMethod]
+    public void Period_BelowOne_IsInvalidForMovingAverage()
+    {
+        var id = new UI.InputData("PeriodZeroID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodZeroTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 0;
+
+        Assert.IsFalse(id.IsSmoothingPeriodValid());
+        Assert.IsFalse(id.IsTimeSeriesInputValid());
+        Assert.IsFalse(id.IsValid);
+        Assert.IsTrue(MessengerHas(id, "ID-ERR-017"));
+    }
+
+    /// <summary>
+    /// Verifies that a smoothing period strictly between 1 and the series length is accepted for
+    /// <see cref="SmoothingFunctionType.MovingAverage"/>.
+    /// </summary>
+    [STATestMethod]
+    public void Period_WithinSeriesLength_IsValidForMovingAverage()
+    {
+        var id = new UI.InputData("PeriodValidID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodValidTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 5;
+
+        Assert.IsTrue(id.IsSmoothingPeriodValid());
+        Assert.IsTrue(id.IsTimeSeriesInputValid());
+        Assert.IsFalse(MessengerHas(id, "ID-ERR-017"));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UI.InputData.IsSmoothingPeriodValid"/> ignores an out-of-range
+    /// period when <see cref="SmoothingFunctionType.None"/> is selected, since
+    /// <c>TimeSeries.SmoothedSeries</c> returns a clone without consulting the period in that case.
+    /// </summary>
+    [STATestMethod]
+    public void Period_OutOfRange_IsValidWhenSmoothingFunctionIsNone()
+    {
+        var id = new UI.InputData("PeriodNoneID", _collection!);
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PeriodNoneTS",
+            TimeInterval.OneDay,
+            new DateTime(2021, 1, 1),
+            Enumerable.Range(0, 30).Select(i => i + 1d).ToArray());
+        id.SmoothingFunction = SmoothingFunctionType.None;
+
+        id.Period = 30;
+
+        Assert.IsTrue(id.IsSmoothingPeriodValid());
+        Assert.IsFalse(MessengerHas(id, "ID-ERR-017"));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UI.InputData.IsSmoothingPeriodValid"/> rejects a period below 1 even
+    /// when no time series is linked yet, since the lower bound never depends on the series length.
+    /// </summary>
+    [STATestMethod]
+    public void Period_BelowOneWithNoLinkedTimeSeries_IsInvalid()
+    {
+        var id = new UI.InputData("PeriodNoTsZeroID", _collection!);
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 0;
+
+        Assert.IsFalse(id.IsSmoothingPeriodValid());
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UI.InputData.IsSmoothingPeriodValid"/> accepts any period of at
+    /// least 1 when no time series is linked yet, since the upper bound cannot be evaluated
+    /// without a series to measure.
+    /// </summary>
+    [STATestMethod]
+    public void Period_AtLeastOneWithNoLinkedTimeSeries_IsValid()
+    {
+        var id = new UI.InputData("PeriodNoTsValidID", _collection!);
+        id.SmoothingFunction = SmoothingFunctionType.MovingAverage;
+
+        id.Period = 1000;
+
+        Assert.IsTrue(id.IsSmoothingPeriodValid());
+    }
+
+    /// <summary>
     /// Verifies that the StartMonth setter raises PropertyChanged.
     /// </summary>
     [STATestMethod]

@@ -365,6 +365,7 @@ TYPE class RMC.BestFit.UI.InputData
   INTERFACE FrameworkInterfaces.Undo.IUndoableElement
   INTERFACE System.ComponentModel.INotifyPropertyChanged
   CTOR public RMC.BestFit.UI.InputData(System.String, FrameworkInterfaces.IElementCollection, System.Boolean optional=false)
+  METHOD public System.Boolean IsSmoothingPeriodValid()
   METHOD public System.Boolean IsTimeSeriesInputValid()
   METHOD public System.IDisposable SuspendPlotBridges()
   METHOD public System.Threading.Tasks.Task CreateFromUSGS(System.Threading.CancellationToken optional=null)

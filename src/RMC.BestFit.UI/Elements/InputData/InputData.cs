@@ -73,7 +73,7 @@ namespace RMC.BestFit.UI
                 _timeSeriesInValidMsg = RegisterMessage(MessageType.Error, "The selected time series is invalid.", nameof(TimeSeriesElement), "ID-ERR-014");
                 _startMonthMsg = RegisterMessage(MessageType.Error, "The start month must be between 1 and 12.", nameof(StartMonth), "ID-ERR-015");
                 _endMonthMsg = RegisterMessage(MessageType.Error, "The end month must be between 1 and 12.", nameof(EndMonth), "ID-ERR-016");
-                _periodMsg = RegisterMessage(MessageType.Error, "The smoothing period must be non-negative and not exceed the time series length.", nameof(Period), "ID-ERR-017");
+                _periodMsg = RegisterMessage(MessageType.Error, "The smoothing period must be at least 1 and less than the time series length.", nameof(Period), "ID-ERR-017");
                 _potThresholdMsg = RegisterMessage(MessageType.Error, "The threshold must be less than the max of the time series values.", nameof(Threshold), "ID-ERR-018");
                 _minStepsMsg = RegisterMessage(MessageType.Error, "The minimum steps between peaks must be non-negative and not exceed the time series length.", nameof(MinStepsBetweenPeaks), "ID-ERR-019");
                 _partialBlockSeriesMsg = RegisterMessage(MessageType.Warning, "The selected time series contains missing values, gaps, or incomplete block years. Block-series results may be biased; consider trimming to complete block years or filling missing data before processing.", nameof(TimeSeriesElement), "ID-WNG-020");
@@ -345,11 +345,6 @@ namespace RMC.BestFit.UI
         /// Indicates whether the end month is valid.
         /// </summary>
         private bool _endMonthValid = true;
-
-        /// <summary>
-        /// Indicates whether the period is valid.
-        /// </summary>
-        private bool _periodValid = true;
 
         /// <summary>
         /// The data frame containing exact, uncertain, interval, and threshold data series.
@@ -983,7 +978,6 @@ namespace RMC.BestFit.UI
                 {
                     var old = _period;
                     _period = value;
-                    _periodValid = _period >= 1;
 
                     if (ExactDataMethod != ExactDataEntryType.Manual && !UndoManager.IsExecutingAction)
                         ClearTimeSeriesResults();
@@ -1829,9 +1823,8 @@ namespace RMC.BestFit.UI
                 }
             }
 
-            if (_periodValid == false) valid = false;
             _messenger.Remove(_periodMsg);
-            if (_period < 1 || (TimeSeriesElement?.TimeSeries != null && _period > TimeSeriesElement.TimeSeries.Count))
+            if (!IsSmoothingPeriodValid())
             {
                 valid = false;
                 _messenger.Add(_periodMsg);
@@ -1862,6 +1855,38 @@ namespace RMC.BestFit.UI
             }
 
             return valid;
+        }
+
+        /// <summary>
+        /// Determines whether <see cref="Period"/> is a safe smoothing period for
+        /// <see cref="SmoothingFunction"/> against the linked <see cref="TimeSeriesElement"/>'s series.
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> when <see cref="SmoothingFunction"/> is <see cref="SmoothingFunctionType.None"/>
+        /// (the period is not applied), when no time series is linked yet (the upper bound cannot be
+        /// evaluated), or when <c>1 &lt;= Period &lt; TimeSeriesElement.TimeSeries.Count</c>; otherwise,
+        /// <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Numerics' <c>TimeSeries.MovingAverage</c> and <c>TimeSeries.MovingSum</c> — two of the three
+        /// functions behind <c>TimeSeries.SmoothedSeries</c> — throw when the period is not strictly less
+        /// than the series length, and also throw for a period below 1 (via their internal
+        /// <c>minValidCount</c> guard). <c>TimeSeries.Difference</c> shares the same upper-bound guard (it
+        /// throws when the series length does not exceed the period used as its lag) but, unlike the
+        /// moving-window pair, does not itself throw for a period of 0 — it silently returns an
+        /// all-zero series instead. This predicate applies the single <c>1 &lt;= period &lt; series length</c>
+        /// rule to all three non-<see cref="SmoothingFunctionType.None"/> functions so the validation
+        /// message is consistent regardless of which one is selected. Used by
+        /// <see cref="IsTimeSeriesInputValid"/> and by the App's POT diagnostics plots to reject an
+        /// out-of-range period before it reaches <c>TimeSeries.SmoothedSeries</c>, instead of crashing on
+        /// an unhandled exception.
+        /// </remarks>
+        public bool IsSmoothingPeriodValid()
+        {
+            if (SmoothingFunction == SmoothingFunctionType.None) return true;
+            int? seriesLength = TimeSeriesElement?.TimeSeries?.Count;
+            if (seriesLength == null) return Period >= 1;
+            return Period >= 1 && Period < seriesLength.Value;
         }
 
         /// <summary>

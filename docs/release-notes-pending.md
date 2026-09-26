@@ -185,6 +185,11 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   operate on the same smoothed series the peaks-over-threshold extraction thresholds (via the new
   `TimeSeries.SmoothedSeries`), and editing the smoothing function, period, minimum steps between
   peaks, or the source time-series element marks the diagnostics dirty.
+- Input data POT diagnostics: a smoothing period outside `1 <= period < series length` for any
+  smoothing function other than `None` (new `InputData.IsSmoothingPeriodValid`) is now a validation
+  message instead of an unhandled exception from `TimeSeries.MovingAverage`/`MovingSum`/
+  `Difference` — opening the Threshold Diagnostics tab with such a period no longer closes the
+  application, and the three diagnostic plots clear instead of showing a stale curve.
 - Nonstationary trend models: a failed default-parameter build in
   `UnivariateDistribution.SetTrendModel` (for example, too few observations, a constant sample, or
   non-finite values reaching the parent distribution's automatic constraint estimator) still
