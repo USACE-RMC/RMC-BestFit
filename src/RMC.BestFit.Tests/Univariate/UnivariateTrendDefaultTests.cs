@@ -64,6 +64,48 @@ public class UnivariateTrendDefaultTests
     }
 
     /// <summary>
+    /// Verifies that a trend-model default-build failure leaves the previous trend model in place
+    /// and re-attaches the parameter property-changed handlers that were detached at the top of
+    /// SetTrendModel, instead of leaving the distribution permanently unresponsive to later
+    /// parameter edits.
+    /// </summary>
+    /// <remarks>
+    /// A three-observation sample passes DataFrame validation (which has no minimum-count rule) but
+    /// fails the Normal distribution's four-observation minimum for automatic parameter constraints,
+    /// so SetTrendModel's internal try/catch converts the Numerics exception into the documented
+    /// InvalidOperationException before the trend-model assignment is ever reached.
+    /// </remarks>
+    [TestMethod]
+    public void SetTrendModel_DefaultBuildFailure_RestoresTrendModelAndReattachesHandlers()
+    {
+        var dataFrame = new BestFitDataFrame { ExactSeries = new ExactSeries(new[] { 10d, 12d, 14d }) };
+        var model = new UnivariateDistribution(dataFrame, UnivariateDistributionType.Normal)
+        {
+            IsNonstationary = true
+        };
+        ITrendModel originalTrendModel = model.TrendModels[0];
+
+        Assert.ThrowsException<InvalidOperationException>(() => model.SetTrendModel(0, TrendModelType.Linear));
+
+        Assert.AreSame(originalTrendModel, model.TrendModels[0],
+            "A failed trend-model swap must leave the previously assigned trend model in place.");
+
+        // ModelBase.Parameter_PropertyChanged only forwards a parameter's PriorDistribution change
+        // to the distribution's own PropertyChanged event, so reassigning the prior is the
+        // observable proof that the handler detached at the top of SetTrendModel was restored.
+        bool parametersChangedRaised = false;
+        model.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(UnivariateDistribution.Parameters))
+                parametersChangedRaised = true;
+        };
+        model.Parameters[0].PriorDistribution = new Uniform(0d, 1d);
+
+        Assert.IsTrue(parametersChangedRaised,
+            "SetTrendModel must re-attach parameter handlers on failure so later edits still notify the distribution.");
+    }
+
+    /// <summary>
     /// Verifies finite priors and valid default response trajectories for every supported parent
     /// distribution parameter crossed with every temporal trend model.
     /// </summary>

@@ -185,6 +185,14 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   operate on the same smoothed series the peaks-over-threshold extraction thresholds (via the new
   `TimeSeries.SmoothedSeries`), and editing the smoothing function, period, minimum steps between
   peaks, or the source time-series element marks the diagnostics dirty.
+- Nonstationary trend models: a failed default-parameter build in
+  `UnivariateDistribution.SetTrendModel` (for example, too few observations, a constant sample, or
+  non-finite values reaching the parent distribution's automatic constraint estimator) still
+  throws `InvalidOperationException`, but now leaves the previous trend model in place and
+  re-attaches the parameter change handlers removed at entry instead of leaving the distribution
+  permanently unresponsive to later parameter edits. The App's trend-model combo box catches the
+  failure, reverts the row to the distribution's actual trend model, and shows a warning dialog
+  instead of crashing the application.
 
 ## RMC.Numerics (since 2.1.4)
 

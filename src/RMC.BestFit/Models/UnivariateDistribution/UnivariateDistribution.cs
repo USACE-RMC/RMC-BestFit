@@ -1054,6 +1054,16 @@ namespace RMC.BestFit.Models
             }
             catch (Exception ex)
             {
+                // Restore the handlers removed above before propagating. TrendModels[index] and
+                // _parameters are never reassigned when this catch runs, so re-attaching here
+                // keeps the distribution's PropertyChanged notifications working for the unchanged
+                // trend model instead of leaving them permanently detached.
+                if (Parameters is not null && Parameters.Count > 0)
+                {
+                    for (int i = 0; i < Parameters.Count; i++)
+                        Parameters[i].PropertyChanged += Parameter_PropertyChanged;
+                }
+
                 throw new InvalidOperationException("Failed to set the trend model defaults.", ex);
             }
 
