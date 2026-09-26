@@ -1320,10 +1320,15 @@ namespace RMC.BestFit.UI
                 ARIMAX copiedARIMAX = element.TimeSeriesData?.TimeSeries != null
                     ? new ARIMAX(element.TimeSeriesData.TimeSeries, ARIMAX.ToXElement())
                     : (ARIMAX)ARIMAX.Clone();
-                var copiedCovariates = element._covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList();
-                if (copiedCovariates.Count > 0)
-                    copiedARIMAX.SetCovariates(copiedCovariates, resetParameters: false);
+                copiedARIMAX.SetCovariates(element.GetCovariateTimeSeries(), resetParameters: false);
+
+                // Unbind the replaced default model from the live series before dropping it. ARIMAX
+                // has no teardown, so a bound but discarded model would keep reacting to every later
+                // edit of those series.
                 element._innerAnalysis.PropertyChanged -= element.InnerAnalysis_PropertyChanged;
+                ARIMAX replacedModel = element._innerAnalysis.ARIMAX;
+                replacedModel.SetCovariates(new List<Numerics.Data.TimeSeries>());
+                replacedModel.TimeSeries = null;
                 element._innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(copiedARIMAX);
                 element._innerAnalysis.PropertyChanged += element.InnerAnalysis_PropertyChanged;
 

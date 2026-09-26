@@ -879,6 +879,51 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies that copying an analysis carries its model unchanged and leaves only the copy's
+    /// model subscribed to the live response and covariate series.
+    /// </summary>
+    /// <remarks>
+    /// Copy first attaches the inputs to the new element's default model and then replaces that
+    /// model; a replaced model that stayed subscribed would keep reacting to every later data edit.
+    /// </remarks>
+    [STATestMethod]
+    public void Copy_KeepsModelAndSubscribesOnlyTheCopiedModelToLiveSeries()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CopySubscriptionTSA", out TimeSeriesElement covariate);
+        TimeSeries response = tsa.TimeSeriesData.TimeSeries;
+        int responseModels = CountModelSubscribers(response);
+        int covariateModels = CountModelSubscribers(covariate.TimeSeries);
+
+        var copy = (UI.TimeSeriesAnalysis)tsa.Copy("CopySubscriptionTSA-Copy");
+
+        Assert.IsTrue(System.Xml.Linq.XNode.DeepEquals(tsa.ARIMAX.ToXElement(), copy.ARIMAX.ToXElement()),
+            "The copy must carry the source model unchanged.");
+        Assert.AreEqual(responseModels + 1, CountModelSubscribers(response),
+            "Only the copy's model may join the response series.");
+        Assert.AreEqual(covariateModels + 1, CountModelSubscribers(covariate.TimeSeries),
+            "Only the copy's model may join the covariate series.");
+    }
+
+    /// <summary>
+    /// Counts the ARIMAX models subscribed to a series' collection-change event.
+    /// </summary>
+    /// <param name="series">The series whose subscribers are counted.</param>
+    /// <returns>The number of handlers whose target is an <see cref="ARIMAX"/> model.</returns>
+    private static int CountModelSubscribers(TimeSeries series)
+    {
+        System.Reflection.FieldInfo? field = null;
+        for (Type? type = series.GetType(); type != null && field == null; type = type.BaseType)
+        {
+            field = type.GetField(nameof(TimeSeries.CollectionChanged),
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        }
+
+        Assert.IsNotNull(field, "The series' CollectionChanged backing field was not found.");
+        var handler = (Delegate?)field.GetValue(series);
+        return handler?.GetInvocationList().Count(subscriber => subscriber.Target is ARIMAX) ?? 0;
+    }
+
+    /// <summary>
     /// Creates a time-series analysis with one covariate whose coefficient carries the value 0.42,
     /// bounds [-3, 3], and a Normal(0.5, 0.1) prior.
     /// </summary>
