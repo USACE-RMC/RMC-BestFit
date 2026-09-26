@@ -3,11 +3,17 @@ using FrameworkInterfaces;
 using FrameworkInterfaces.Messaging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Numerics.Data;
+using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
+using Numerics.Utilities;
+using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using RMC.BestFit.UI;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
+using System.Reflection;
 using System.Xml.Linq;
 
 namespace RMC.BestFit.UI.Tests.Elements.TimeSeriesAnalysis;
@@ -896,6 +902,239 @@ public class TimeSeriesAnalysisTests
         }
     }
 
+    // -----------------------------------------------------------------------------------------
+    // Task 3.19 (finding L14): when Open's layout guard replaces a saved parameter vector that no
+    // longer fits the covariates that resolved (for example, a covariate series missing from the
+    // project), the saved results are not restored and a warning is shown. Fixtures are real
+    // SQLite rows opened through Open(); the saved draws are synthetic, so no sampler runs.
+    // -----------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// Verifies that opening a covariate model whose covariate series is missing from the project
+    /// warns, keeps the rebuilt default parameters without the saved results, and restores the
+    /// other saved settings.
+    /// </summary>
+    /// <remarks>
+    /// The saved draws have the one-covariate model's dimension, but only the response resolves, so
+    /// the layout guard rebuilds a covariate-free default vector. Restored next to that vector, the
+    /// draws would make a later point-estimator reprocess fail on the length mismatch. The row also
+    /// carries a true pre-v2.0.1 marker, which would raise the Task 2.9 warning had the results been
+    /// restored.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_SavedParametersNoLongerFitCovariates_WarnsAndSkipsSavedResults()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutMismatch-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutMismatchTSA", resolveCovariate: false, out int savedParameterCount);
+
+            BasicMessageItem? warning = MessengerMessage(analysis, "TSA-WRN-LAYOUT");
+            Assert.IsNotNull(warning, "Replacing the saved parameters on Open must warn.");
+            Assert.AreEqual(MessageType.Warning, warning.Type);
+            Assert.AreEqual(nameof(UI.TimeSeriesAnalysis), warning.ParameterName);
+            Assert.AreEqual(
+                $"The saved parameters of time series analysis '{analysis.Name}' no longer match its covariates " +
+                "(for example, a covariate time series could not be found), so default parameters were restored " +
+                "and the saved results were not loaded. Check the covariates and re-run the Bayesian analysis.",
+                warning.Description);
+
+            Assert.AreEqual(0, analysis.Covariates.Count, "Sanity check: the covariate series cannot be resolved.");
+            Assert.AreNotEqual(savedParameterCount, analysis.ARIMAX.NumberOfParameters,
+                "Sanity check: the layout guard replaced the saved vector with the covariate-free defaults.");
+            Assert.IsFalse(analysis.IsEstimated, "Results of the replaced vector must not be restored.");
+            Assert.IsFalse(analysis.BayesianAnalysis.IsEstimated, "The Bayesian analysis must not report a fit either.");
+            Assert.IsNull(analysis.BayesianAnalysis.Results, "The saved draws must not be restored.");
+            Assert.IsNull(analysis.AnalysisResults, "The saved uncertainty results must not be restored.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "No results were restored, so the pre-v2.0.1 marker must not raise the Task 2.9 warning.");
+
+            Assert.AreEqual(4321, analysis.BayesianAnalysis.Iterations, "The saved Bayesian settings are still restored.");
+            Assert.AreEqual(777, analysis.BayesianAnalysis.PRNGSeed, "The saved Bayesian settings are still restored.");
+            Assert.AreEqual(BayesianAnalysis.PointEstimateType.PosteriorMode, analysis.BayesianAnalysis.PointEstimator,
+                "The saved Bayesian settings are still restored.");
+            Assert.AreEqual(3, analysis.ForecastSteps, "The saved forecast horizon is still restored.");
+            Assert.IsFalse(analysis.IsDirty, "Open must not change the element's dirty state.");
+
+            analysis.BayesianAnalysis.PointEstimator = BayesianAnalysis.PointEstimateType.PosteriorMean;
+
+            Assert.IsFalse(analysis.IsEstimated, "With no restored results there is nothing to reprocess.");
+            Assert.IsNull(analysis.AnalysisResults);
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that the same saved row opens as before when its covariate series resolves: the
+    /// saved vector fits, the saved results are restored, and no layout warning is shown.
+    /// </summary>
+    [STATestMethod]
+    public void Open_SavedParametersFitCovariates_RestoresSavedResultsWithoutLayoutWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutFits-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutFitsTSA", resolveCovariate: true, out int savedParameterCount);
+
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LAYOUT"), "A saved vector that fits its covariates must not warn.");
+            Assert.AreEqual(1, analysis.Covariates.Count, "Sanity check: the covariate series resolves.");
+            Assert.AreEqual(savedParameterCount, analysis.ARIMAX.NumberOfParameters, "The saved vector is kept.");
+            Assert.IsTrue(analysis.IsEstimated, "The saved results are restored as before.");
+            Assert.IsNotNull(analysis.BayesianAnalysis.Results, "The saved draws are restored as before.");
+            Assert.AreEqual(savedParameterCount, analysis.BayesianAnalysis.Results.MAP.Values.Length,
+                "The restored draws have the saved model's dimension.");
+            Assert.IsNotNull(analysis.AnalysisResults, "The saved uncertainty results are restored as before.");
+            Assert.AreEqual(analysis.TimeSeriesData.TimeSeries.Count + 3, analysis.AnalysisResults.ModeCurve!.Length);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
+                "The restored results carry the pre-v2.0.1 marker, so the Task 2.9 warning shows as before.");
+            Assert.AreEqual(4321, analysis.BayesianAnalysis.Iterations);
+            Assert.AreEqual(777, analysis.BayesianAnalysis.PRNGSeed);
+            Assert.AreEqual(BayesianAnalysis.PointEstimateType.PosteriorMode, analysis.BayesianAnalysis.PointEstimator);
+            Assert.AreEqual(3, analysis.ForecastSteps);
+            Assert.IsFalse(analysis.IsDirty);
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies the layout warning is never duplicated and that saving the element writes neither a
+    /// true pre-v2.0.1 marker nor anything that raises the Task 2.9 warning on the next open.
+    /// </summary>
+    /// <remarks>
+    /// Opening the same element again from the unchanged row, with the covariate still missing, shows
+    /// the warning once, because Open starts from a clean message state. The element's save writes
+    /// the rebuilt default parameters and only the covariates that resolved, so the saved row no
+    /// longer names the missing series; the reopened analysis therefore fits its covariates and has
+    /// nothing to warn about.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_LayoutMismatchOpenedAgainAndSaved_WarnsOnceAndWritesNoPreV201Marker()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutSave-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutSaveTSA", resolveCovariate: false, out _);
+            Assert.AreEqual(1, MessengerCount(analysis, "TSA-WRN-LAYOUT"), "Precondition: the layout mismatch warns on open.");
+
+            using (var sqlite = new SQLiteManager(path))
+            {
+                analysis.Open(sqlite);
+            }
+
+            Assert.AreEqual(1, MessengerCount(analysis, "TSA-WRN-LAYOUT"), "Opening again must not duplicate the warning.");
+            Assert.IsFalse(analysis.IsEstimated, "Opening again must not restore the saved results either.");
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"));
+
+            analysis.Save();
+
+            string? marker = ReadSavedCell(path, analysis.Name, "PreV201Results");
+            Assert.IsTrue(bool.TryParse(marker, out bool markerValue),
+                $"The save must write the pre-v2.0.1 results marker (read '{marker ?? "<absent>"}').");
+            Assert.IsFalse(markerValue, "No results were restored, so the save must not mark any as predating v2.0.1.");
+            Assert.AreEqual("", ReadSavedCell(path, analysis.Name, "Covariates"),
+                "Sanity check: the save keeps only the covariates that resolved.");
+
+            UI.TimeSeriesAnalysis reopened = ReopenAnalysis(analysis, path);
+
+            Assert.IsFalse(reopened.IsEstimated);
+            Assert.IsFalse(MessengerHas(reopened, "TSA-WRN-LEGACY-TRANSFORM"),
+                "The saved row carries no results and a false marker, so the Task 2.9 warning must not appear.");
+            Assert.AreEqual(0, MessengerCount(reopened, "TSA-WRN-LAYOUT"),
+                "The saved default parameters fit the saved covariates, so the reopened analysis must not warn.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies a successful re-run removes the layout warning, at the step that removes the
+    /// legacy-schema warning.
+    /// </summary>
+    /// <remarks>
+    /// No existing test seam completes a time-series run without sampling, so the test swaps in an
+    /// inner analysis whose run completes at once (<see cref="CompletedRunARIMAXAnalysis"/>); the
+    /// wrapper's real <see cref="UI.TimeSeriesAnalysis.RunAsync"/> then takes its success path.
+    /// </remarks>
+    /// <returns>A task that completes when the test finishes.</returns>
+    [STATestMethod]
+    public async Task RunAsync_Succeeded_RemovesLayoutWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALayoutRerun-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            UI.TimeSeriesAnalysis analysis = BuildAndOpenLayoutMismatchFixture(
+                path, "LayoutRerunTSA", resolveCovariate: false, out _);
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LAYOUT"), "Precondition: the layout mismatch warns on open.");
+
+            FieldInfo innerAnalysisField = typeof(UI.TimeSeriesAnalysis).GetField(
+                "_innerAnalysis", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            innerAnalysisField.SetValue(analysis, new CompletedRunARIMAXAnalysis(analysis.ARIMAX));
+
+            await analysis.RunAsync(new SafeProgressReporter());
+
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LAYOUT"),
+                "A successful re-run fits the current covariates, so the warning must be removed.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
+    /// <summary>
+    /// Verifies a legacy 'ARMAX' row whose covariate resolves shows only its legacy warning, not the
+    /// layout warning.
+    /// </summary>
+    /// <remarks>
+    /// The legacy model is discarded and rebuilt from the defaults, so there is no saved parameter
+    /// vector for the layout warning to describe, although attaching the covariate still resizes the
+    /// default vector.
+    /// </remarks>
+    [STATestMethod]
+    public void Open_LegacyArmaxRowWithCovariate_DoesNotAddLayoutWarning()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"BestFit-TSALegacyLayout-{Guid.NewGuid():N}.bestfit");
+        try
+        {
+            BestFitProject project = CreateIsolatedProject(path);
+            var tsCollection = (TimeSeriesCollection)project.ElementCollections!.OfType<TimeSeriesCollection>().Single();
+            var tsaCollection = (TimeSeriesAnalysisCollection)project.ElementCollections!.OfType<TimeSeriesAnalysisCollection>().Single();
+            var start = new DateTime(1990, 1, 1);
+            TimeSeriesElement response = CreateTimeSeriesElementInCollection("LegacyLayoutTSA-Response", 30, TimeInterval.OneYear, start, tsCollection);
+            tsCollection.Add(response);
+            TimeSeriesElement covariate = CreateTimeSeriesElementInCollection("LegacyLayoutTSA-Covariate", 30, TimeInterval.OneYear, start, tsCollection);
+            tsCollection.Add(covariate);
+            BuildLegacyTimeSeriesAnalysisDatabase(path, "LegacyLayoutTSA", "<ARMAX />", response.Name, covariate.Name);
+
+            var analysis = new UI.TimeSeriesAnalysis("LegacyLayoutTSA", tsaCollection);
+            using (var sqlite = new SQLiteManager(path))
+            {
+                analysis.Open(sqlite);
+            }
+
+            Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY"), "Sanity check: the legacy schema is detected.");
+            Assert.AreEqual(1, analysis.Covariates.Count, "Sanity check: the covariate series resolves.");
+            Assert.IsFalse(analysis.IsEstimated);
+            Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LAYOUT"),
+                "A legacy model has no saved parameter vector, so only the legacy warning applies.");
+        }
+        finally
+        {
+            DeleteFixtureFile(path);
+        }
+    }
+
     /// <summary>
     /// Opens a new time-series analysis element from the saved row of <paramref name="saved"/>,
     /// the way reopening the project would, leaving the original instance untouched.
@@ -962,6 +1201,19 @@ public class TimeSeriesAnalysisTests
     private static bool MessengerHas(object source, string code)
     {
         return MessengerMessage(source, code) != null;
+    }
+
+    /// <summary>
+    /// Counts the active messenger items from the supplied source with the supplied code.
+    /// </summary>
+    /// <param name="source">The expected owner of the messages.</param>
+    /// <param name="code">The stable message code to count.</param>
+    /// <returns>The number of matching active messages.</returns>
+    private static int MessengerCount(object source, string code)
+    {
+        return Messenger.GetInstance().AllMessageItems()
+            .OfType<BasicMessageItem>()
+            .Count(m => ReferenceEquals(m.Source, source) && m.Code == code);
     }
 
     /// <summary>
@@ -1072,6 +1324,102 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Builds and opens a time-series analysis for the Task 3.19 tests: its saved row holds a
+    /// one-covariate ARIMAX model with MCMC and uncertainty results of that model's dimension.
+    /// </summary>
+    /// <param name="path">The temporary <c>.bestfit</c> file backing the isolated project.</param>
+    /// <param name="analysisName">The analysis name, unique per test.</param>
+    /// <param name="resolveCovariate">
+    /// <see langword="true"/> to add the covariate series to the project, so Open reattaches it;
+    /// <see langword="false"/> to leave it out, so the saved <c>Covariates</c> cell names a series
+    /// the project does not contain.
+    /// </param>
+    /// <param name="savedParameterCount">The parameter count of the saved model and of every saved draw.</param>
+    /// <returns>The freshly constructed analysis, already opened from the fixture.</returns>
+    /// <remarks>
+    /// The row also stores a true pre-v2.0.1 results marker, so restored results raise the Task 2.9
+    /// warning, and non-default Bayesian settings (4321 iterations, seed 777, posterior mode) and
+    /// three forecast steps, so a test can tell which saved state Open kept. The draws are small
+    /// deterministic perturbations of the model's default values; no sampler runs.
+    /// </remarks>
+    private static UI.TimeSeriesAnalysis BuildAndOpenLayoutMismatchFixture(
+        string path, string analysisName, bool resolveCovariate, out int savedParameterCount)
+    {
+        BestFitProject project = CreateIsolatedProject(path);
+        var tsCollection = (TimeSeriesCollection)project.ElementCollections!.OfType<TimeSeriesCollection>().Single();
+        var tsaCollection = (TimeSeriesAnalysisCollection)project.ElementCollections!.OfType<TimeSeriesAnalysisCollection>().Single();
+
+        var start = new DateTime(1990, 1, 1);
+        TimeSeriesElement response = CreateTimeSeriesElementInCollection(analysisName + "-Response", 30, TimeInterval.OneYear, start, tsCollection);
+        tsCollection.Add(response);
+        TimeSeriesElement covariate = CreateTimeSeriesElementInCollection(analysisName + "-Covariate", 30, TimeInterval.OneYear, start, tsCollection);
+        if (resolveCovariate)
+            tsCollection.Add(covariate);
+
+        var arimax = new ARIMAX(response.TimeSeries);
+        arimax.SetCovariates(new List<TimeSeries> { covariate.TimeSeries });
+        savedParameterCount = arimax.NumberOfParameters;
+
+        double[] mode = arimax.Parameters.Select(p => p.Value).ToArray();
+        var draws = new List<ParameterSet>();
+        for (int i = 0; i < 20; i++)
+            draws.Add(new ParameterSet(mode.Select((value, j) => value + 0.001 * (i + j)).ToArray(), 0.0));
+        var mcmcResults = new MCMCResults(new ParameterSet(mode, 0.0), draws, alpha: 0.10);
+
+        const int forecastSteps = 3;
+        int horizon = response.TimeSeries.Count + forecastSteps;
+        var analysisResults = new UncertaintyAnalysisResults
+        {
+            ModeCurve = Enumerable.Range(1, horizon).Select(t => (double)t).ToArray(),
+            MeanCurve = Enumerable.Range(1, horizon).Select(t => (double)t).ToArray(),
+            ConfidenceIntervals = new double[horizon, 3]
+        };
+
+        string analysisXml =
+            $"<ARIMAXAnalysis IsEstimated=\"True\" ForecastingTimeSteps=\"{forecastSteps}\">" +
+            "<BayesianAnalysis UseSimulationDefaults=\"False\" Iterations=\"4321\" PRNGSeed=\"777\" " +
+            "PointEstimator=\"PosteriorMode\" IsEstimated=\"True\" />" +
+            "</ARIMAXAnalysis>";
+        BuildTimeSeriesAnalysisRow(path, analysisName, response.Name, covariate.Name, arimax.ToXElement().ToString(), analysisXml,
+            AnalysisPersistenceHelper.SerializeMCMCResults(mcmcResults),
+            AnalysisPersistenceHelper.SerializeAnalysisResults(analysisResults),
+            preV201Results: true);
+
+        var analysis = new UI.TimeSeriesAnalysis(analysisName, tsaCollection);
+        using (var sqlite = new SQLiteManager(path))
+        {
+            analysis.Open(sqlite);
+        }
+
+        return analysis;
+    }
+
+    /// <summary>
+    /// An ARIMAX analysis whose run completes at once without sampling, standing in for a
+    /// successful Bayesian re-run so a fast test can reach the wrapper's post-run message handling.
+    /// </summary>
+    private sealed class CompletedRunARIMAXAnalysis : RMC.BestFit.Analyses.ARIMAXAnalysis
+    {
+        /// <summary>
+        /// Creates the stand-in analysis for the supplied model.
+        /// </summary>
+        /// <param name="model">The model of the analysis being replaced.</param>
+        public CompletedRunARIMAXAnalysis(ARIMAX model) : base(model)
+        {
+        }
+
+        /// <summary>
+        /// Completes immediately without running the sampler.
+        /// </summary>
+        /// <param name="progressReporter">Not used.</param>
+        /// <returns>A completed task.</returns>
+        public override Task RunAsync(SafeProgressReporter? progressReporter = null)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    /// <summary>
     /// Builds the "Time Series Analysis" table row for the Task 2.9 fixtures, hand-writing only
     /// the cells that matter for the legacy-transform-warning check (mirrors the relevant subset
     /// of the cells <see cref="UI.TimeSeriesAnalysis.Save"/> writes).
@@ -1085,8 +1433,21 @@ public class TimeSeriesAnalysisTests
     /// </param>
     /// <param name="arimaxXml">The model XML written to the <c>ARIMAX</c> cell.</param>
     /// <param name="analysisXml">The inner-analysis XML written to the <c>AnalysisXml</c> cell.</param>
+    /// <param name="mcmcResults">
+    /// The serialized MCMC results written to the <c>MCMCResults</c> cell, or <see langword="null"/>
+    /// to omit the column.
+    /// </param>
+    /// <param name="analysisResults">
+    /// The serialized uncertainty results written to the <c>AnalysisResults</c> cell, or
+    /// <see langword="null"/> to omit the column.
+    /// </param>
+    /// <param name="preV201Results">
+    /// The pre-v2.0.1 results marker written to the <c>PreV201Results</c> cell, or
+    /// <see langword="null"/> to omit the column.
+    /// </param>
     private static void BuildTimeSeriesAnalysisRow(string path, string analysisName, string timeSeriesDataName,
-        string? covariateName, string arimaxXml, string analysisXml)
+        string? covariateName, string arimaxXml, string analysisXml,
+        byte[]? mcmcResults = null, string? analysisResults = null, bool? preV201Results = null)
     {
         var anTable = new DataTable("Time Series Analysis");
         anTable.Columns.Add("Name", typeof(string));
@@ -1098,6 +1459,12 @@ public class TimeSeriesAnalysisTests
             anTable.Columns.Add("Covariates", typeof(string));
         anTable.Columns.Add("ARIMAX", typeof(string));
         anTable.Columns.Add("AnalysisXml", typeof(string));
+        if (mcmcResults != null)
+            anTable.Columns.Add("MCMCResults", typeof(byte[]));
+        if (analysisResults != null)
+            anTable.Columns.Add("AnalysisResults", typeof(string));
+        if (preV201Results != null)
+            anTable.Columns.Add("PreV201Results", typeof(bool));
 
         using (var sqlite = new SQLiteManager(path))
         {
@@ -1115,6 +1482,12 @@ public class TimeSeriesAnalysisTests
                 anView.EditCell(0, "Covariates", covariateName);
             anView.EditCell(0, "ARIMAX", arimaxXml);
             anView.EditCell(0, "AnalysisXml", analysisXml);
+            if (mcmcResults != null)
+                anView.EditCell(0, "MCMCResults", mcmcResults);
+            if (analysisResults != null)
+                anView.EditCell(0, "AnalysisResults", analysisResults);
+            if (preV201Results != null)
+                anView.EditCell(0, "PreV201Results", preV201Results.Value);
             anView.ApplyEdits();
             sqlite.Close();
         }
@@ -1159,14 +1532,20 @@ public class TimeSeriesAnalysisTests
     /// <summary>
     /// Builds a SQLite <c>.bestfit</c> file with only the pre-v2.0 schema for time-series
     /// analysis: an <c>ARMAX</c> TEXT column (not the new <c>ARIMAX</c>) holds the model XML.
-    /// The referenced input series is intentionally omitted to keep the test self-contained
-    /// without touching the singleton project state — the legacy detection path runs even
-    /// when the input series cannot be resolved.
+    /// By default the referenced input series is intentionally omitted to keep the test
+    /// self-contained without touching the singleton project state — the legacy detection path
+    /// runs even when the input series cannot be resolved.
     /// </summary>
     /// <param name="path">The <c>.bestfit</c> file to create the table in.</param>
     /// <param name="analysisName">The analysis name written to the <c>Name</c> cell.</param>
     /// <param name="armaxXml">The pre-v2.0 model XML written to the <c>ARMAX</c> cell.</param>
-    private static void BuildLegacyTimeSeriesAnalysisDatabase(string path, string analysisName, string armaxXml)
+    /// <param name="timeSeriesDataName">The response element name written to the <c>TimeSeriesData</c> cell.</param>
+    /// <param name="covariateName">
+    /// The covariate element name written to the <c>Covariates</c> cell, or <see langword="null"/>
+    /// to omit the <c>Covariates</c> column.
+    /// </param>
+    private static void BuildLegacyTimeSeriesAnalysisDatabase(string path, string analysisName, string armaxXml,
+        string timeSeriesDataName = "MissingSeries", string? covariateName = null)
     {
         var anTable = new DataTable("Time Series Analysis");
         anTable.Columns.Add("Name", typeof(string));
@@ -1174,6 +1553,8 @@ public class TimeSeriesAnalysisTests
         anTable.Columns.Add("CreationDate", typeof(string));
         anTable.Columns.Add("LastModified", typeof(string));
         anTable.Columns.Add("TimeSeriesData", typeof(string));
+        if (covariateName != null)
+            anTable.Columns.Add("Covariates", typeof(string));
         anTable.Columns.Add("ARMAX", typeof(string));
 
         using (var sqlite = new SQLiteManager(path))
@@ -1187,7 +1568,9 @@ public class TimeSeriesAnalysisTests
             anView.EditCell(0, "Description", "");
             anView.EditCell(0, "CreationDate", DateTime.Now.ToString("o"));
             anView.EditCell(0, "LastModified", DateTime.Now.ToString("o"));
-            anView.EditCell(0, "TimeSeriesData", "MissingSeries");
+            anView.EditCell(0, "TimeSeriesData", timeSeriesDataName);
+            if (covariateName != null)
+                anView.EditCell(0, "Covariates", covariateName);
             anView.EditCell(0, "ARMAX", armaxXml);
             anView.ApplyEdits();
             sqlite.Close();

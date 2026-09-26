@@ -314,6 +314,22 @@ namespace RMC.BestFit.UI
         private BasicMessageItem _legacyTransformResultsMsg = null;
 
         /// <summary>
+        /// Reference to the warning added to the messenger during <see cref="Open()"/> when the
+        /// parameter vector restored from the saved model no longer fits the covariates that
+        /// resolved (for example, a covariate time series could not be found), so the layout guard
+        /// of <see cref="ARIMAX.SetCovariates(List{Numerics.Data.TimeSeries}, bool)"/> replaced it
+        /// with the default parameters and the saved results were not loaded (Task 3.19, finding L14).
+        /// </summary>
+        /// <remarks>
+        /// Held so that <see cref="RunAsync"/> can remove it once a successful re-run has fitted the
+        /// current covariates. It is not persisted: saving this element writes the default
+        /// parameters and only the covariates that resolved, which fit each other on the next open,
+        /// while a project save that skips the unchanged element leaves the row as it was, so the
+        /// next open warns again.
+        /// </remarks>
+        private BasicMessageItem _layoutMismatchMsg = null;
+
+        /// <summary>
         /// Name of the Boolean column that records whether the pre-v2.0.1 results warning was still
         /// showing when the row was saved, that is, whether the saved results predate v2.0.1.
         /// </summary>
@@ -1106,6 +1122,9 @@ namespace RMC.BestFit.UI
             // Clear(this) below removes the warning itself; forget it too, or the next Save would
             // mark the newly restored results as legacy.
             _legacyTransformResultsMsg = null;
+            // Clear(this) removes the layout warning too; this Open raises it again only if the
+            // restored parameters still do not fit the covariates that resolve.
+            _layoutMismatchMsg = null;
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
@@ -1252,6 +1271,10 @@ namespace RMC.BestFit.UI
                     ? null
                     : AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
 
+                // Set when the layout guard replaces the parameter vector restored from the saved
+                // model; the saved results are then skipped and a warning is raised below.
+                bool savedLayoutRebuilt = false;
+
                 if (TimeSeriesData != null)
                 {
                     ARIMAX arimax;
@@ -1273,7 +1296,20 @@ namespace RMC.BestFit.UI
                     // Reattach the covariates without rebuilding defaults, so the saved parameter
                     // values, bounds, and custom priors restored from the XML survive. The layout
                     // guard still rebuilds a vector that no longer fits (e.g., an unresolved covariate).
+                    int restoredParameterCount = arimax.NumberOfParameters;
                     arimax.SetCovariates(GetCovariateTimeSeries(), resetParameters: false);
+
+                    // The guard rebuilds only on a count mismatch, and a rebuild always lands on the
+                    // expected count, so a changed count means the saved vector was replaced by the
+                    // defaults. The saved results belong to the replaced vector (a point-estimator
+                    // reprocess would fail on the length mismatch), so they are not restored. A legacy
+                    // or unreadable model starts from the defaults, so it has no saved vector to lose.
+                    if (modelXElement != null && arimax.NumberOfParameters != restoredParameterCount)
+                    {
+                        savedLayoutRebuilt = true;
+                        mcmcResults = null;
+                        analysisResults = null;
+                    }
 
                     if (innerXElement == null && !isLegacyFormat && analysisXElement != null)
                     {
@@ -1305,6 +1341,12 @@ namespace RMC.BestFit.UI
                     {
                         _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(arimax);
                     }
+
+                    // The persisted analysis XML still marks the replaced fit as estimated and
+                    // carries its information criteria; clear that state too, before this element
+                    // subscribes, so the settings are all that is restored.
+                    if (savedLayoutRebuilt)
+                        _innerAnalysis.ClearResults();
                 }
                 else
                 {
@@ -1336,6 +1378,15 @@ namespace RMC.BestFit.UI
                         $"The results of time series analysis '{Name}' were computed by an earlier version of RMC-BestFit. This version fits the transform exponent on the training window, aligns covariates by date, trains and reintegrates differenced models on corrected windows, and uses a revised conditioning window, so reprocessed forecasts would combine the saved results with different model settings. Re-run the Bayesian analysis to refresh the results.",
                         this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY-TRANSFORM");
                     _messenger.Add(_legacyTransformResultsMsg);
+                }
+
+                if (savedLayoutRebuilt)
+                {
+                    _layoutMismatchMsg = new BasicMessageItem(
+                        MessageType.Warning,
+                        $"The saved parameters of time series analysis '{Name}' no longer match its covariates (for example, a covariate time series could not be found), so default parameters were restored and the saved results were not loaded. Check the covariates and re-run the Bayesian analysis.",
+                        this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LAYOUT");
+                    _messenger.Add(_layoutMismatchMsg);
                 }
             }
 
@@ -1600,8 +1651,9 @@ namespace RMC.BestFit.UI
         /// <param name="progressReporter">Receives the start, progress, and end of the run.</param>
         /// <returns>A task that completes when the run finishes, fails, or is canceled.</returns>
         /// <remarks>
-        /// A successful run removes the legacy-schema and pre-v2.0.1 results warnings added by
-        /// <see cref="Open(SQLiteManager)"/>, because it replaces the results they describe.
+        /// A successful run removes the legacy-schema, pre-v2.0.1 results, and parameter-layout
+        /// warnings added by <see cref="Open(SQLiteManager)"/>, because it replaces the parameters
+        /// and results they describe.
         /// </remarks>
         public async Task RunAsync(SafeProgressReporter progressReporter)
         {
@@ -1641,6 +1693,14 @@ namespace RMC.BestFit.UI
                 {
                     _messenger.Remove(_legacyMigrationMsg);
                     _legacyMigrationMsg = null;
+                }
+
+                // A successful re-run fits the parameters to the covariates that resolved, so the
+                // layout warning added during Open() no longer applies.
+                if (succeeded && _layoutMismatchMsg != null)
+                {
+                    _messenger.Remove(_layoutMismatchMsg);
+                    _layoutMismatchMsg = null;
                 }
 
                 // The run replaced any restored pre-v2.0.1 results. Its clear-before-run step only

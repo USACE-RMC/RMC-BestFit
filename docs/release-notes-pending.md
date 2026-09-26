@@ -276,6 +276,11 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   the marker, as soon as the results are cleared (including by an undo or redo that rebuilds the
   model without them) or the analysis is re-run; it does not change any algorithm, default, or
   numerical result.
+- Time series (Task 3.19, finding L14): opening a time-series analysis whose saved parameters no
+  longer match its covariates (for example, a missing covariate series) now warns and opens without
+  the saved results, instead of silently restoring default parameters next to results of the wrong
+  size (which could make a later reprocess fail); the other saved settings are still restored, and
+  the warning clears after a successful re-run.
 - Distribution and mixture-EM robustness (approved 8 September 2026): quantile priors in
   `UnivariateDistribution` and `PointProcessModel` use an additive log-quantile-Jacobian so a
   finite logarithmic determinant survives raw-determinant overflow/underflow instead of failing
