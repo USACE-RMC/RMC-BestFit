@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using System.Xml.Linq;
@@ -314,6 +315,95 @@ public class TimeSeriesIndependentOracleTests
                 holdoutMutation.DataLogLikelihood(parameters),
                 1E-12,
                 $"{context} holdout likelihood isolation");
+        }
+    }
+
+    /// <summary>
+    /// Verifies that ARIMAX models with lagged covariates and an autoregressive term condition on
+    /// max(q, p + b) against the independently generated R oracle: training differences,
+    /// residuals, the pointwise term count and values, the scalar likelihood, the transform
+    /// Jacobian over the evaluated raw observations, and the conditional raw-scale predictions.
+    /// </summary>
+    /// <remarks>
+    /// The four cases have p &gt; 0 and b &gt; 0: p + b decides the order untransformed and with
+    /// Box-Cox and first differencing, q decides it in the third, and the fourth uses Yeo-Johnson
+    /// with two covariates and negative responses. Three of them condition on more steps than the
+    /// former max(p, q, b). The covariates start before the response, so positional pairing would
+    /// select the wrong values, and they are attached after the response and training window, as
+    /// opening a saved project does. The committed oracle fixes the exponents, training boundary,
+    /// parameters, and the 1E-10 absolute tolerance of the ARIMAX alignment oracle before C#
+    /// evaluation; counts must match exactly.
+    /// </remarks>
+    [TestMethod]
+    public void ArimaxDistributedLagConditioningMatchesIndependentOracle()
+    {
+        JsonElement oracle = LoadOracle("phase5-arimax-distributed-lag-oracle.json");
+        double tolerance = oracle.GetProperty("metadata").GetProperty("tolerance_absolute").GetDouble();
+
+        foreach (JsonElement testCase in oracle.GetProperty("cases").EnumerateArray())
+        {
+            string context = testCase.GetProperty("case_id").GetString()!;
+            ARIMAX model = CreateDistributedLagArimax(testCase);
+            double[] parameters = ReadDoubleArray(testCase.GetProperty("parameters"));
+            double sigma = testCase.GetProperty("sigma").GetDouble();
+            int conditioningOrder = testCase.GetProperty("conditioning_order").GetInt32();
+            int evaluatedCount = testCase.GetProperty("evaluated_count").GetInt32();
+            Assert.AreEqual(parameters.Length, model.NumberOfParameters, $"{context} parameter layout");
+
+            Assert.AreEqual(
+                testCase.GetProperty("training_difference_count").GetInt32(),
+                model.TrainingTimeSeries.Count,
+                $"{context} training count");
+            AssertArrayEqual(
+                ReadDoubleArray(testCase.GetProperty("training_difference_values")),
+                model.TrainingTimeSeries.ValuesToArray(),
+                tolerance,
+                $"{context} training differences");
+
+            double[] residuals = model.Residuals(parameters);
+            AssertArrayEqual(ReadDoubleArray(testCase.GetProperty("residuals")), residuals, tolerance, $"{context} residuals");
+
+            double[] expectedPointwise = ReadDoubleArray(testCase.GetProperty("pointwise_log_likelihood"));
+            double[] pointwise = model.PointwiseDataLogLikelihood(parameters);
+            List<DataComponent> components = model.PointwiseDataLogLikelihoodComponents(parameters);
+            Assert.AreEqual(evaluatedCount, expectedPointwise.Length, $"{context} oracle term count");
+            Assert.AreEqual(evaluatedCount, pointwise.Length, $"{context} pointwise term count");
+            Assert.AreEqual(evaluatedCount, components.Count, $"{context} component count");
+            AssertArrayEqual(expectedPointwise, pointwise, tolerance, $"{context} pointwise");
+            AssertArrayEqual(
+                expectedPointwise,
+                components.Select(component => component.LogLikelihood).ToArray(),
+                tolerance,
+                $"{context} components");
+
+            double expectedLogLikelihood = testCase.GetProperty("log_likelihood").GetDouble();
+            double logLikelihood = model.DataLogLikelihood(parameters);
+            Assert.AreEqual(expectedLogLikelihood, expectedPointwise.Sum(), tolerance, $"{context} oracle total");
+            Assert.AreEqual(expectedLogLikelihood, logLikelihood, tolerance, $"{context} scalar likelihood");
+
+            // The production Jacobian is the data log-likelihood less the independent Gaussian
+            // terms of the evaluated residuals, and each pointwise term carries the Jacobian term
+            // of its own raw observation.
+            double[] gaussianTerms = residuals
+                .Skip(conditioningOrder)
+                .Select(residual => IndependentGaussianLogDensity(residual, sigma))
+                .ToArray();
+            Assert.AreEqual(
+                testCase.GetProperty("jacobian").GetDouble(),
+                logLikelihood - gaussianTerms.Sum(),
+                tolerance,
+                $"{context} Jacobian");
+            AssertArrayEqual(
+                ReadDoubleArray(testCase.GetProperty("jacobian_terms")),
+                pointwise.Zip(gaussianTerms, (total, gaussian) => total - gaussian).ToArray(),
+                tolerance,
+                $"{context} Jacobian terms");
+
+            AssertArrayEqual(
+                ReadDoubleArray(testCase.GetProperty("prediction_levels")),
+                model.Predict(parameters, 0, -1).Y,
+                tolerance,
+                $"{context} conditional predictions");
         }
     }
 
@@ -1120,6 +1210,56 @@ public class TimeSeriesIndependentOracleTests
         model.UseDefaultTrainingSteps = false;
         model.TrainingTimeSteps = trainingSteps;
         model.SetCovariates(new List<Numerics.Data.TimeSeries> { CreateDailySeries(covariate, startDate) });
+        return model;
+    }
+
+    /// <summary>
+    /// Creates the ARIMAX model of one distributed-lag oracle case, attaching its covariates last.
+    /// </summary>
+    /// <param name="testCase">The committed oracle case.</param>
+    /// <returns>The configured model.</returns>
+    /// <exception cref="InvalidDataException">The case names an unknown transform.</exception>
+    /// <remarks>
+    /// The transform and its fixed exponent are set before the response is attached, so no
+    /// exponent is fitted. The covariates are attached after the training window, as opening a
+    /// saved project does, so the conditioning order reaches max(q, p + b) only then.
+    /// </remarks>
+    private static ARIMAX CreateDistributedLagArimax(JsonElement testCase)
+    {
+        string transformName = testCase.GetProperty("transform").GetString()!;
+        Transform transform = transformName switch
+        {
+            "None" => Transform.None,
+            "BoxCox" => Transform.BoxCox,
+            "YeoJohnson" => Transform.YeoJohnson,
+            _ => throw new InvalidDataException($"Unknown oracle transform: {transformName}."),
+        };
+
+        var model = new ARIMAX
+        {
+            IncludeIntercept = testCase.GetProperty("include_intercept").GetBoolean(),
+            AROrderP = testCase.GetProperty("ar_order").GetInt32(),
+            DiffOrderD = testCase.GetProperty("differencing_order").GetInt32(),
+            MAOrderQ = testCase.GetProperty("ma_order").GetInt32(),
+            XOrderB = testCase.GetProperty("covariate_lag_order").GetInt32(),
+            CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
+            TransformType = transform,
+        };
+        if (transform != Transform.None)
+            model.SetTransformParameters(testCase.GetProperty("lambda").GetDouble(), double.NaN);
+
+        DateTime responseStart = DateTime.Parse(
+            testCase.GetProperty("response_start_date").GetString()!,
+            CultureInfo.InvariantCulture);
+        model.TimeSeries = CreateDailySeries(ReadDoubleArray(testCase.GetProperty("raw")), responseStart);
+        model.UseDefaultTrainingSteps = false;
+        model.TrainingTimeSteps = testCase.GetProperty("training_steps").GetInt32();
+        model.SetCovariates(testCase.GetProperty("covariates")
+            .EnumerateArray()
+            .Select(covariate => CreateDailySeries(
+                ReadDoubleArray(covariate.GetProperty("values")),
+                DateTime.Parse(covariate.GetProperty("start_date").GetString()!, CultureInfo.InvariantCulture)))
+            .ToList());
         return model;
     }
 

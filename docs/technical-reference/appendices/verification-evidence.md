@@ -2,7 +2,7 @@
 
 # Verification Evidence Map
 
-This appendix connects the methods explained in this manual to the preserved verification report. The current catalog contains 328 retained methods: 326 verified and two accepted limitations. The 56 retired coverage declarations are a separate historical set. Counts describe the evidence inventory, not the fraction of all possible scientific uses that is validated.
+This appendix connects the methods explained in this manual to the preserved verification report. The current catalog contains 329 retained methods: 327 verified and two accepted limitations. The 56 retired coverage declarations are a separate historical set. Counts describe the evidence inventory, not the fraction of all possible scientific uses that is validated.
 
 | Scientific area | Evidence and interpretation |
 |---|---|

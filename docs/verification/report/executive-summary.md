@@ -25,7 +25,7 @@ The tests combine direct mathematical answers, comparisons with independent R an
 
 The main chapters cover all fifteen analysis types: distribution fitting, univariate, Bulletin 17C, point process, competing risk, mixture, composite, bivariate, coincident frequency, rating curve, autoregressive, moving average, ARIMA, ARIMAX, and spatial extremes. The estimation chapter explains the shared fitting and diagnostic calculations. The data chapters explain checks that preserve measurements, dates, missing values, and observation types before analysis.
 
-Appendix A maps all **328 current test methods in 71 classes** to these explanations. The catalog records 326 verified methods and two tests of accepted limitations. These are inventory counts, not probabilities that a model is correct or percentages of statistical interval coverage.
+Appendix A maps all **329 current test methods in 71 classes** to these explanations. The catalog records 327 verified methods and two tests of accepted limitations. These are inventory counts, not probabilities that a model is correct or percentages of statistical interval coverage.
 
 ## How to interpret the results
 

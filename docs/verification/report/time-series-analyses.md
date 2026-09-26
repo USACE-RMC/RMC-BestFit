@@ -7,7 +7,7 @@ shocks, and external information such as a dated covariate. Verification must th
 than a fitted coefficient: a correct fit can still produce a wrong forecast if dates, differences,
 transformations, or the last observed value are handled incorrectly.
 
-This chapter describes 24 verification methods: eight estimator-recovery tests, twelve
+This chapter describes 25 verification methods: eight estimator-recovery tests, thirteen
 shared calculation checks, and four additional model-interaction checks. The recovery data are
 synthetic numerical series, with no assigned discharge or other physical unit. An innovation is the
 new, unpredictable Normal error at a time step; its standard deviation is measured on the model's
@@ -28,7 +28,7 @@ state and innovation history are specified in the generator, rather than obtaine
 
 ### Shared calculation checks
 
-The twelve checks below isolate operations used across the four model families. An independent
+The thirteen checks below isolate operations used across the four model families. An independent
 reference calculation is called an oracle. These calculations are specified directly in R or in
 the test mathematics, rather than obtained by calling another BestFit analysis.
 
@@ -39,6 +39,7 @@ the test mathematics, rather than obtained by calling another BestFit analysis.
 | Automatically fitted Box-Cox and Yeo-Johnson transforms | R fits the transformation using six training observations only. Changing the three later observations cannot change the fitted transformation. Saved/restored settings are also checked. Passed. |
 | Manually specified transformation | Eight training values, Yeo-Johnson power 0.6, AR coefficient 0.35, MA coefficient -0.25, and innovation SD 0.8 are transformed independently before reconstructing the likelihood. Passed. |
 | Dated ARIMAX likelihood | An R calculation independently matches response differences with same-date covariates, accounts for lags and transformation density, and checks every likelihood contribution to $10^{-10}$. Changing holdout responses leaves the training likelihood unchanged. Passed. |
+| Lagged-covariate ARIMAX conditioning | An R calculation independently conditions on $\max(q, p+b)$ steps, so every evaluated mean and every autoregressive-lag mean carries all $b$ covariate lags. Four cases with $p>0$ and $b>0$ (untransformed, Box-Cox with one difference, and Yeo-Johnson with two covariates and negative responses) check the number of evaluated steps, residuals, per-observation transformation density terms, every likelihood contribution, and conditional predictions to $10^{-10}$. Passed. |
 | Reconstructing levels after differencing | Short ARIMA and ARIMAX examples deliberately depart from the recurrence within training. Hand calculations require forecasts to begin at the last observed training level, without using the holdout value. Agreement is within $10^{-10}$. Passed. |
 | Forecast uncertainty at the training boundary | An independently calculated innovation-variance recurrence checks when forecast uncertainty starts accumulating. Variances and standard deviations agree to $10^{-10}$. Passed. |
 | Transformed stochastic forecasts | Forecasts evolve on the transformed model scale and undergo one inverse transformation. Deterministic values agree to $10^{-10}$; 1,000-seed moment comparisons meet their analytical sampling-error bounds. Passed. |

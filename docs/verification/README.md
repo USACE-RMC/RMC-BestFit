@@ -4,7 +4,7 @@
 
 The report describes the current numerical test library and the scientific evidence supporting each analysis family. Start with the [executive summary](report/executive-summary.md), then read the [methodology](report/system-and-methodology.md) and the relevant analysis chapter. The [complete test index](report/test-coverage.md) accounts for every executable verification method.
 
-The source inventory contains **328 methods in 71 active classes**. The catalog records 326 verified dispositions and two accepted limitations: generic sampling of coupled priors and the magnitude of one-step GMM deletion influence. These are numerical evidence dispositions, distinct from code coverage and repeated-sample interval coverage. The report explains the limits of each claim.
+The source inventory contains **329 methods in 71 active classes**. The catalog records 327 verified dispositions and two accepted limitations: generic sampling of coupled priors and the magnitude of one-step GMM deletion influence. These are numerical evidence dispositions, distinct from code coverage and repeated-sample interval coverage. The report explains the limits of each claim.
 
 | Report area | Chapter |
 |---|---|

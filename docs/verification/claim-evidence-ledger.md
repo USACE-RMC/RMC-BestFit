@@ -6,7 +6,7 @@ This control is excluded from the publication manifest. The report describes the
 
 ## Current claim map
 
-The source-matched catalog has 328 methods in 71 active classes: 326 verified dispositions and two accepted limitations. No numerical method was rerun for the editorial refresh. The existing per-method references and acceptance rules are preserved. Appendix A is generated from these records; the catalog validator checks them against executable C# declarations.
+The source-matched catalog has 329 methods in 71 active classes: 327 verified dispositions and two accepted limitations. No numerical method was rerun for the editorial refresh. The existing per-method references and acceptance rules are preserved. Appendix A is generated from these records; the catalog validator checks them against executable C# declarations.
 
 | Claim area | Methods | Primary public chapter |
 |---|---:|---|
@@ -21,7 +21,7 @@ The source-matched catalog has 328 methods in 71 active classes: 326 verified di
 | Composite analyses | 14 | [Chapter](report/composite-analysis.md) |
 | Bivariate and coincident frequency | 25 | [Chapter](report/bivariate-analyses.md) |
 | Rating curves | 19 | [Chapter](report/rating-curve.md) |
-| Time-series models | 24 | [Chapter](report/time-series-analyses.md) |
+| Time-series models | 25 | [Chapter](report/time-series-analyses.md) |
 | Spatial extremes | 31 | [Chapter](report/spatial-extremes.md) |
 
 Shared posterior-resampling evidence is counted under estimation and diagnostics and supports both composite and coincident-frequency chapters. Cross-references do not create additional methods.

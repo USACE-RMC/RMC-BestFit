@@ -21,6 +21,6 @@ The tests construct short records with known values and dates, import records fr
 
 Malformed input also receives deliberate checks. Duplicate timestamps, inconsistent array lengths, and conflicting blocks are rejected instead of being returned as a successful partial import. User-assigned labels and plot settings are checked separately when copying or reopening a series.
 
-These are deterministic software checks: the expected answer is the original supplied record or a prescribed timestamp conversion. They passed in the software regression suites and are not included in the 328-method numerical-verification inventory.
+These are deterministic software checks: the expected answer is the original supplied record or a prescribed timestamp conversion. They passed in the software regression suites and are not included in the 329-method numerical-verification inventory.
 
 Preserving these inputs supports the statistical comparisons in the time-series analysis chapter. Network availability, provider revisions, station quality, and the analyst's treatment of missing values remain outside these checks.

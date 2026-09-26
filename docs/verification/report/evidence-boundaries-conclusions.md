@@ -4,7 +4,7 @@
 
 ## Supported conclusions
 
-The 328-method verification library provides analytical, independently implemented, external-package, published-source, and recovery evidence across the model families described in this report. The strongest conclusions concern a specified calculation under a defined parameterization: distribution functions and likelihoods, estimator objectives and covariance, diagnostic statistics, recurrence relations, and uncertainty transformations.
+The 329-method verification library provides analytical, independently implemented, external-package, published-source, and recovery evidence across the model families described in this report. The strongest conclusions concern a specified calculation under a defined parameterization: distribution functions and likelihoods, estimator objectives and covariance, diagnostic statistics, recurrence relations, and uncertainty transformations.
 
 Recovery experiments add evidence that the tested estimators recover their generating parameters or responses under the declared sample sizes, seeds, priors, and acceptance rules. Published examples connect these calculations to established flood-frequency applications. Appendix A gives the complete correspondence between report scope and executable tests.
 

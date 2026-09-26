@@ -1,0 +1,196 @@
+{
+  "metadata": {
+    "artifact_id": "TS-PHASE5-ARIMAX-DISTRIBUTED-LAG-001",
+    "finding": "TR-066",
+    "decision": "D6: condition ARIMAX models with covariates on max(q, p + b); approved 25 September 2026",
+    "generator": "verification/r/time-series/generate_phase5_arimax_distributed_lag_oracle.R",
+    "generator_sha256": "020ddc8440ad9224a2afb446ae1a33ffa50410443eb9d67a42b98aaf17197981",
+    "source_commit": "4b7e3050c8e7ceff09dd96d02ae29de8b06ab9cb",
+    "r_version": "R version 4.4.3 (2025-02-28 ucrt)",
+    "jsonlite_version": "2.0.0",
+    "digest_version": "0.6.39",
+    "generated_utc": "2026-09-26 08:12:33 UTC",
+    "tolerance_absolute": 1e-10,
+    "random_seed": null,
+    "parameter_layout": "intercept, covariate coefficients (each covariate's lags 0..b), AR coefficients, MA coefficients, innovation scale"
+  },
+  "cases": [
+    {
+      "case_id": "ar-plus-lag-decides",
+      "description": "ARIMAX(1,0,0) with one covariate at lags 0-2; p + b = 3 exceeds q = 0.",
+      "transform": "None",
+      "lambda": 0,
+      "differencing_order": 0,
+      "ar_order": 1,
+      "ma_order": 0,
+      "covariate_lag_order": 2,
+      "covariate_count": 1,
+      "include_intercept": true,
+      "conditioning_order": 3,
+      "previous_conditioning_order": 2,
+      "response_start_date": "2003-04-05",
+      "raw": [12.4, 15.1, 13.8, 17.2, 16.5, 19.9, 18.3, 21.7, 20.6, 24.2, 23.1, 26.8],
+      "training_steps": 10,
+      "covariates": [
+        {
+          "start_date": "2003-04-03",
+          "values": [0.9, -1.2, 1.6, 0.3, -0.7, 2.1, 1.1, -0.4, 0.8, 1.9, -1.5, 0.6, 1.3, -0.2]
+        }
+      ],
+      "intercept": 18,
+      "beta": [
+        [0.9, 0.35, -0.25]
+      ],
+      "phi": [0.55],
+      "theta": [],
+      "sigma": 0.9,
+      "parameters": [18, 0.9, 0.35, -0.25, 0.55, 0.9],
+      "training_difference_count": 10,
+      "training_difference_values": [12.4, 15.1, 13.8, 17.2, 16.5, 19.9, 18.3, 21.7, 20.6, 24.2],
+      "model_dates": ["2003-04-05", "2003-04-06", "2003-04-07", "2003-04-08", "2003-04-09", "2003-04-10", "2003-04-11", "2003-04-12", "2003-04-13", "2003-04-14"],
+      "residuals": [0, 0, 0, -0.568749999999998, -2.0965, 4.26999999999999, -1.325, 1.61274999999999, 2.59950000000001, 4.74325],
+      "predictions": [12.4, 15.1, 13.8, 17.76875, 18.5965, 15.63, 19.625, 20.08725, 18.0005, 19.45675],
+      "evaluated_count": 7,
+      "evaluation_raw_indices": [3, 4, 5, 6, 7, 8, 9],
+      "jacobian": 0,
+      "jacobian_terms": [0, 0, 0, 0, 0, 0, 0],
+      "pointwise_log_likelihood": [-1.01325490797894, -3.52673372742339, -12.0684545607567, -1.89729715334931, -2.41911046353449, -4.98481273976909, -14.701491945016],
+      "log_likelihood": -40.6111554978279,
+      "prediction_levels": [12.4, 15.1, 13.8, 17.76875, 18.5965, 15.63, 19.625, 20.08725, 18.0005, 19.45675]
+    },
+    {
+      "case_id": "ma-order-decides",
+      "description": "ARIMAX(1,0,3) with one covariate at lags 0-1; q = 3 exceeds p + b = 2.",
+      "transform": "None",
+      "lambda": 0,
+      "differencing_order": 0,
+      "ar_order": 1,
+      "ma_order": 3,
+      "covariate_lag_order": 1,
+      "covariate_count": 1,
+      "include_intercept": true,
+      "conditioning_order": 3,
+      "previous_conditioning_order": 3,
+      "response_start_date": "2003-04-05",
+      "raw": [12.4, 15.1, 13.8, 17.2, 16.5, 19.9, 18.3, 21.7, 20.6, 24.2, 23.1, 26.8],
+      "training_steps": 10,
+      "covariates": [
+        {
+          "start_date": "2003-04-03",
+          "values": [0.9, -1.2, 1.6, 0.3, -0.7, 2.1, 1.1, -0.4, 0.8, 1.9, -1.5, 0.6, 1.3, -0.2]
+        }
+      ],
+      "intercept": 18.5,
+      "beta": [
+        [0.7, -0.3]
+      ],
+      "phi": [0.35],
+      "theta": [0.25, -0.15, 0.1],
+      "sigma": 1.1,
+      "parameters": [18.5, 0.7, -0.3, 0.35, 0.25, -0.15, 0.1, 1.1],
+      "training_difference_count": 10,
+      "training_difference_values": [12.4, 15.1, 13.8, 17.2, 16.5, 19.9, 18.3, 21.7, 20.6, 24.2],
+      "model_dates": ["2003-04-05", "2003-04-06", "2003-04-07", "2003-04-08", "2003-04-09", "2003-04-10", "2003-04-11", "2003-04-12", "2003-04-13", "2003-04-14"],
+      "residuals": [0, 0, 0, -1.538, -0.712500000000002, 2.706425, -2.21318124999999, 3.4485090625, 1.51675304687501, 3.88740622265625],
+      "predictions": [12.4, 15.1, 13.8, 18.738, 17.2125, 17.193575, 20.51318125, 18.2514909375, 19.083246953125, 20.3125937773438],
+      "evaluated_count": 7,
+      "evaluation_raw_indices": [3, 4, 5, 6, 7, 8, 9],
+      "jacobian": 0,
+      "jacobian_terms": [0, 0, 0, 0, 0, 0, 0],
+      "pointwise_log_likelihood": [-1.99170491135611, -1.22402402292635, -4.04099924219288, -3.03828641769972, -5.92838704116793, -1.9648849961514, -7.25884670472243],
+      "log_likelihood": -25.4471333362168,
+      "prediction_levels": [12.4, 15.1, 13.8, 18.738, 17.2125, 17.193575, 20.51318125, 18.2514909375, 19.083246953125, 20.3125937773438]
+    },
+    {
+      "case_id": "box-cox-differenced",
+      "description": "Box-Cox (lambda 0.35) ARIMAX(2,1,1) with one covariate at lags 0-1; p + b = 3 exceeds q = 1.",
+      "transform": "BoxCox",
+      "lambda": 0.35,
+      "differencing_order": 1,
+      "ar_order": 2,
+      "ma_order": 1,
+      "covariate_lag_order": 1,
+      "covariate_count": 1,
+      "include_intercept": true,
+      "conditioning_order": 3,
+      "previous_conditioning_order": 2,
+      "response_start_date": "2003-04-05",
+      "raw": [12.4, 15.1, 13.8, 17.2, 16.5, 19.9, 18.3, 21.7, 20.6, 24.2, 23.1, 26.8],
+      "training_steps": 10,
+      "covariates": [
+        {
+          "start_date": "2003-04-03",
+          "values": [0.9, -1.2, 1.6, 0.3, -0.7, 2.1, 1.1, -0.4, 0.8, 1.9, -1.5, 0.6, 1.3, -0.2]
+        }
+      ],
+      "intercept": 0.05,
+      "beta": [
+        [0.04, -0.03]
+      ],
+      "phi": [0.3, -0.15],
+      "theta": [0.2],
+      "sigma": 0.5,
+      "parameters": [0.05, 0.04, -0.03, 0.3, -0.15, 0.2, 0.5],
+      "training_difference_count": 9,
+      "training_difference_values": [0.492286809247924, -0.229185141099847, 0.57372212230739, -0.111645597244824, 0.516549758889313, -0.235279765003501, 0.485704248069502, -0.151353843724448, 0.477687468787327],
+      "model_dates": ["2003-04-06", "2003-04-07", "2003-04-08", "2003-04-09", "2003-04-10", "2003-04-11", "2003-04-12", "2003-04-13", "2003-04-14"],
+      "residuals": [0, 0, 0, -0.304590005102019, 0.682069757429272, -0.641755483742873, 0.688171738152524, -0.386491430526328, 0.518847545220352],
+      "predictions": [0.492286809247924, -0.229185141099847, 0.57372212230739, 0.192944407857194, -0.16551999853996, 0.406475718739372, -0.202467490083022, 0.23513758680188, -0.0411600764330253],
+      "evaluated_count": 6,
+      "evaluation_raw_indices": [4, 5, 6, 7, 8, 9],
+      "jacobian": -11.6934591422928,
+      "jacobian_terms": [-1.82218424758925, -1.94396782562479, -1.88948568890079, -2.00025296935517, -1.9664391992671, -2.07112921155572],
+      "pointwise_log_likelihood": [-2.23352574265007, -3.10019748626877, -2.93897724337362, -3.17320500438363, -2.4909818036524, -2.83532611456281],
+      "log_likelihood": -16.7722133948913,
+      "prediction_levels": [12.4, 15.1, 13.8, 17.2, 18.4547074804565, 15.4967176976601, 22.8733919294736, 16.9921148031677, 23.4834803422821, 20.3072661150897]
+    },
+    {
+      "case_id": "yeo-johnson-two-covariates",
+      "description": "Yeo-Johnson (lambda 0.6) ARIMAX(1,0,1) with two covariates at lags 0-1 and negative responses; p + b = 2 exceeds q = 1.",
+      "transform": "YeoJohnson",
+      "lambda": 0.6,
+      "differencing_order": 0,
+      "ar_order": 1,
+      "ma_order": 1,
+      "covariate_lag_order": 1,
+      "covariate_count": 2,
+      "include_intercept": true,
+      "conditioning_order": 2,
+      "previous_conditioning_order": 1,
+      "response_start_date": "2003-04-05",
+      "raw": [0.8, -0.3, 1.5, 0.4, -0.9, 1.1, 2, 0.2, -0.5, 1.7, 0.9, 1.3],
+      "training_steps": 10,
+      "covariates": [
+        {
+          "start_date": "2003-04-03",
+          "values": [0.9, -1.2, 1.6, 0.3, -0.7, 2.1, 1.1, -0.4, 0.8, 1.9, -1.5, 0.6, 1.3, -0.2]
+        },
+        {
+          "start_date": "2003-04-04",
+          "values": [-0.5, 1.1, 0.3, -1.4, 0.6, 1, -0.2, 0.8, -1.3, 0.5, 1.4, -0.7, 0.1]
+        }
+      ],
+      "intercept": 0.4,
+      "beta": [
+        [0.3, -0.1],
+        [-0.2, 0.15]
+      ],
+      "phi": [0.25],
+      "theta": [-0.3],
+      "sigma": 0.6,
+      "parameters": [0.4, 0.3, -0.1, -0.2, 0.15, 0.25, -0.3, 0.6],
+      "training_difference_count": 10,
+      "training_difference_values": [0.704773943112645, -0.317032427774728, 1.22143684647978, 0.372842074574098, -1.04010776970689, 0.934572751152271, 1.5553034082196, 0.192667702883046, -0.545798952705007, 1.35792678882483],
+      "model_dates": ["2003-04-05", "2003-04-06", "2003-04-07", "2003-04-08", "2003-04-09", "2003-04-10", "2003-04-11", "2003-04-12", "2003-04-13", "2003-04-14"],
+      "residuals": [0, 0, 0.924444953423458, -0.303933651018808, -1.44199838365605, 0.504500178482177, 1.07301027397619, -1.021755066979, -0.0479923985194683, 0.821228807445244],
+      "predictions": [0.704773943112645, -0.317032427774728, 0.296991893056318, 0.676775725592907, 0.401890613949167, 0.430072572670095, 0.482293134243415, 1.21442276986204, -0.497806554185539, 0.536697981379589],
+      "evaluated_count": 8,
+      "evaluation_raw_indices": [2, 3, 4, 5, 6, 7, 8, 9],
+      "jacobian": -1.28862677496661,
+      "jacobian_terms": [-0.366516292749662, -0.134588894648485, 0.256741554468958, -0.296774937891751, -0.439444915467244, -0.0729286227175818, 0.162186043243266, -0.397300709204113],
+      "pointwise_log_likelihood": [-1.96157152428571, -0.67100133772831, -3.03937043617344, -1.05838844467564, -2.4466565027649, -1.93101850006912, -0.249125852744932, -1.74210355500104],
+      "log_likelihood": -13.0992361534431,
+      "prediction_levels": [0.8, -0.3, 0.314302626239094, 0.764720323071658, 0.433390988445525, 0.466086029741719, 0.527446132465012, 1.48988898640502, -0.458967144852394, 0.592438659876741]
+    }
+  ]
+}

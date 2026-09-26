@@ -3,9 +3,9 @@
 
 # Appendix A. Complete Verification Test Index
 
-The source inventory audited on 21 September 2026 contains **328 methods in 71 active test classes**. Every executable verification method appears exactly once below; helper methods are not counted as tests.
+The source inventory audited on 21 September 2026 contains **329 methods in 71 active test classes**. Every executable verification method appears exactly once below; helper methods are not counted as tests.
 
-The catalog records 326 methods as verified and 2 as accepted limitations. **Verified** identifies a check with a declared oracle, acceptance rule, and verified catalog disposition. Acceptance rules, sample sizes, seeds, oracle descriptions, artifact paths, and original evidence-ledger anchors remain in the [machine-readable catalog](../verification-catalog.json). The PDF embeds the current catalog as an attachment; its repository links identify the source-review baseline. Each method links to the source file containing its assertions, including partial classes.
+The catalog records 327 methods as verified and 2 as accepted limitations. **Verified** identifies a check with a declared oracle, acceptance rule, and verified catalog disposition. Acceptance rules, sample sizes, seeds, oracle descriptions, artifact paths, and original evidence-ledger anchors remain in the [machine-readable catalog](../verification-catalog.json). The PDF embeds the current catalog as an attachment; its repository links identify the source-review baseline. Each method links to the source file containing its assertions, including partial classes.
 
 | Report area | Active classes | Methods |
 |---|---:|---:|
@@ -20,9 +20,9 @@ The catalog records 326 methods as verified and 2 as accepted limitations. **Ver
 | [Composite analyses](composite-analysis.md) | 2 | 14 |
 | [Bivariate and coincident frequency](bivariate-analyses.md) | 3 | 25 |
 | [Rating curves](rating-curve.md) | 5 | 19 |
-| [Time-series models](time-series-analyses.md) | 7 | 24 |
+| [Time-series models](time-series-analyses.md) | 7 | 25 |
 | [Spatial extremes](spatial-extremes.md) | 8 | 31 |
-| **Total** | **71** | **328** |
+| **Total** | **71** | **329** |
 
 ## Estimation and diagnostics
 
@@ -910,7 +910,7 @@ Scope: ARIMA(2,0,0) and ARIMA(0,0,2); ARIMAX(1,0,1), intercept + linear trend + 
 
 Source: [TimeSeriesIndependentOracleTests.cs](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs). Namespace: `RMC.BestFit.Verification.TimeSeriesAnalysis`.
 
-Scope: AR, MA, ARIMA, and ARIMAX automatic Box-Cox/Yeo-Johnson fitting; AR, MA, ARIMA, and ARIMAX information criteria; AR, MA, ARIMA, and ARIMAX invalid innovation scales; AR, MA, ARIMA, and ARIMAX manual Box-Cox/Yeo-Johnson transforms; AR, MA, ARIMA, and ARIMAX scale priors; ARIMA and ARIMAX forecast variance recurrence; ARIMA(1,1,1) log transform and ARIMAX(1,1,0) level covariate; ARIMA(1,1,1) transformed/differenced generator; ARIMAX transformed/differenced date and covariate generator; ARIMAX(1,1,0), date-indexed contemporaneous covariate; Transformed AR(1) and MA(1) generators; Transformed ARIMA and ARIMAX stochastic forecasts.
+Scope: AR, MA, ARIMA, and ARIMAX automatic Box-Cox/Yeo-Johnson fitting; AR, MA, ARIMA, and ARIMAX information criteria; AR, MA, ARIMA, and ARIMAX invalid innovation scales; AR, MA, ARIMA, and ARIMAX manual Box-Cox/Yeo-Johnson transforms; AR, MA, ARIMA, and ARIMAX scale priors; ARIMA and ARIMAX forecast variance recurrence; ARIMA(1,1,1) log transform and ARIMAX(1,1,0) level covariate; ARIMA(1,1,1) transformed/differenced generator; ARIMAX transformed/differenced date and covariate generator; ARIMAX with p > 0 and date-indexed covariates lagged b > 0 steps: ARIMAX(1,0,0) b=2, ARIMAX(1,0,3) b=1, Box-Cox ARIMAX(2,1,1) b=1, Yeo-Johnson ARIMAX(1,0,1) b=1 with two covariates; ARIMAX(1,1,0), date-indexed contemporaneous covariate; Transformed AR(1) and MA(1) generators; Transformed ARIMA and ARIMAX stochastic forecasts.
 
 | Method | Evidence | Disposition |
 |---|---|---|
@@ -919,6 +919,7 @@ Scope: AR, MA, ARIMA, and ARIMAX automatic Box-Cox/Yeo-Johnson fitting; AR, MA, 
 | [`ArimaAndArimaxPredictionUncertaintyBeginsAtForecastBoundary`](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs) | Analytical | Verified |
 | [`ArimaDifferencedTransformedGeneratorMatchesIndependentOracle`](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs) | External package | Verified |
 | [`ArimaxDifferencedLikelihoodMatchesDateIndexedIndependentOracle`](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs) | External package | Verified |
+| [`ArimaxDistributedLagConditioningMatchesIndependentOracle`](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs) | External package | Verified |
 | [`ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle`](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs) | External package | Verified |
 | [`InformationCriteriaUseDataLikelihoodAtMapAndExcludePrior`](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs) | Analytical | Verified |
 | [`InvalidScaleBehaviorMatchesScalarAndPointwiseOracle`](../../../src/RMC.BestFit.Verification/TimeSeriesAnalysis/TimeSeriesIndependentOracleTests.cs) | External package | Verified |
