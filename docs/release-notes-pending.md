@@ -36,11 +36,14 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   ARIMAX analysis with covariates that was reopened, edited, and saved in 2.0.0: its stored
   priors may already be the defaults.** Metadata edits on a covariate series (its name,
   description, or unit label, or saving it) no longer rebuild the parameters or clear the
-  results, and reselecting the same covariate series is not a change; pointing a covariate row
-  at another series, replacing a covariate's data, or undoing a covariate addition or removal
-  still rebuilds the defaults. Copying an analysis also keeps its manual training window and
-  covariate-extension method. Undo after a series or covariate change, and redo of a structural
-  edit such as the AR order, restore a parameter vector that fits the model. API: the new
+  results, and reselecting the same covariate series is not a change. Adding or removing a
+  covariate, pointing a covariate row at another series, or replacing a covariate's series (for
+  example by downloading it again) still rebuilds the defaults; editing covariate values in place
+  rebuilds them only when default flat priors are on and clears the results either way. Undo
+  and redo no longer apply a replaced covariate's coefficient, bounds, or prior to the covariate
+  that replaced it, and redoing a structural edit that changes the number of parameters (for
+  example the AR order) restores a vector that fits the model. Copying an analysis also keeps its
+  manual training window and covariate-extension method. API: the new
   overload `ARIMAX.SetCovariates(List<TimeSeries>, bool resetParameters)` keeps a parameter list
   whose layout still fits the covariates (the one-argument overload still rebuilds the
   defaults), and `ARIMAX.Clone()` keeps the source's parameter values, bounds, and priors, so the

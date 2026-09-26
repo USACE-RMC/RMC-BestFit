@@ -347,6 +347,11 @@ namespace RMC.BestFit.UI
         private XElement _modelSnapshot;
 
         /// <summary>
+        /// Covariate series the <see cref="_modelSnapshot"/> baseline was taken with, in row order.
+        /// </summary>
+        private List<Numerics.Data.TimeSeries> _modelSnapshotCovariates = new List<Numerics.Data.TimeSeries>();
+
+        /// <summary>
         /// Property names that trigger snapshot comparison.
         /// </summary>
         private static readonly HashSet<string> ModelUndoProperties = new()
@@ -723,8 +728,8 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
-        /// Moves the model-undo baseline to the current model after a series or covariate change
-        /// that rebuilt the model without recording a model-undo step.
+        /// Moves the model-undo baseline to the current model after this element changes the
+        /// model's series or covariates.
         /// </summary>
         /// <remarks>
         /// Without this, the next recorded model edit would store the pre-change vector as its undo
@@ -736,6 +741,22 @@ namespace RMC.BestFit.UI
         private void RefreshModelUndoBaseline()
         {
             _modelSnapshot = _innerAnalysis?.ARIMAX?.ToXElement();
+            _modelSnapshotCovariates = GetCovariateTimeSeries();
+        }
+
+        /// <summary>
+        /// Detaches a replaced model from the live response and covariate series.
+        /// </summary>
+        /// <param name="model">The model being replaced; ignored when <see langword="null"/>.</param>
+        /// <remarks>
+        /// ARIMAX subscribes to its series and has no teardown, so a replaced model that stayed
+        /// bound would keep reacting to every later edit of those series and stay reachable.
+        /// </remarks>
+        private static void UnbindModel(ARIMAX model)
+        {
+            if (model == null) return;
+            model.SetCovariates(new List<Numerics.Data.TimeSeries>());
+            model.TimeSeries = null;
         }
 
         /// <summary>
@@ -1105,8 +1126,10 @@ namespace RMC.BestFit.UI
                     catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load BayesianAnalysis for '{Name}': {ex.Message}"); }
                 }
 
-                // Reconstruct inner analysis from persisted data
+                // Reconstruct inner analysis from persisted data. The covariates loaded above were
+                // synced into the constructor's default model, so unbind it before replacing it.
                 _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
+                UnbindModel(_innerAnalysis.ARIMAX);
 
                 UncertaintyAnalysisResults analysisResults = isLegacyFormat
                     ? null
@@ -1326,9 +1349,7 @@ namespace RMC.BestFit.UI
                 // has no teardown, so a bound but discarded model would keep reacting to every later
                 // edit of those series.
                 element._innerAnalysis.PropertyChanged -= element.InnerAnalysis_PropertyChanged;
-                ARIMAX replacedModel = element._innerAnalysis.ARIMAX;
-                replacedModel.SetCovariates(new List<Numerics.Data.TimeSeries>());
-                replacedModel.TimeSeries = null;
+                UnbindModel(element._innerAnalysis.ARIMAX);
                 element._innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(copiedARIMAX);
                 element._innerAnalysis.PropertyChanged += element.InnerAnalysis_PropertyChanged;
 
@@ -1516,14 +1537,17 @@ namespace RMC.BestFit.UI
             if (XNode.DeepEquals(_modelSnapshot, currentSnapshot)) return;
 
             var oldSnapshot = _modelSnapshot;
+            var oldCovariates = _modelSnapshotCovariates;
+            var currentCovariates = GetCovariateTimeSeries();
             var action = new DelegateAction(
                 $"Change {propertyName}",
-                () => RestoreModelFromSnapshot(currentSnapshot),
-                () => RestoreModelFromSnapshot(oldSnapshot),
+                () => RestoreModelFromSnapshot(currentSnapshot, currentCovariates),
+                () => RestoreModelFromSnapshot(oldSnapshot, oldCovariates),
                 this);
             undoManager.RecordAction(action);
             SetIsDirty(true);
             _modelSnapshot = currentSnapshot;
+            _modelSnapshotCovariates = currentCovariates;
         }
 
         /// <summary>
@@ -1533,12 +1557,16 @@ namespace RMC.BestFit.UI
         /// in <see cref="RecordModelUndo"/>.
         /// </summary>
         /// <param name="snapshot">The XElement snapshot to restore.</param>
-        private void RestoreModelFromSnapshot(XElement snapshot)
+        /// <param name="recordedCovariates">The covariate series, in row order, the snapshot was
+        /// taken with.</param>
+        private void RestoreModelFromSnapshot(XElement snapshot, IReadOnlyList<Numerics.Data.TimeSeries> recordedCovariates)
         {
-            if (_innerAnalysis != null)
-                _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
-            var ts = _innerAnalysis?.ARIMAX?.TimeSeries;
-            var analysisXml = _innerAnalysis?.ToXElement();
+            ModelAnalyses.ARIMAXAnalysis replacedAnalysis = _innerAnalysis;
+            if (replacedAnalysis != null)
+                replacedAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
+            var ts = replacedAnalysis?.ARIMAX?.TimeSeries;
+            var analysisXml = replacedAnalysis?.ToXElement();
+            UnbindModel(replacedAnalysis?.ARIMAX);
             var newModel = new ARIMAX(ts, snapshot);
             _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(newModel, analysisXml);
             if (_innerAnalysis.BayesianAnalysis.UseSimulationDefaults)
@@ -1546,10 +1574,15 @@ namespace RMC.BestFit.UI
             if (_innerAnalysis.BayesianAnalysis.UseAdvancedSimulationDefaults)
                 _innerAnalysis.BayesianAnalysis.SetDefaultAdvancedSimulationOptions();
 
-            // Re-apply covariates to the restored model through the layout guard, even when there
-            // are none: a structural edit notifies before it rebuilds, so a recorded snapshot can
-            // pair the new structure with the previous vector, which the guard replaces.
-            _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries(), resetParameters: false);
+            // Reapply the snapshot's parameters only to the covariate series it was taken with: a
+            // covariate swap is not an undo step, so steps recorded before it can be replayed after
+            // it. The call also runs through the layout guard when there are no covariates, because
+            // a structural edit that notifies before it rebuilds can record the new structure with
+            // the previous vector; the guard replaces such a vector when the count differs.
+            List<Numerics.Data.TimeSeries> covariates = GetCovariateTimeSeries();
+            bool sameCovariates = recordedCovariates.Count == covariates.Count &&
+                recordedCovariates.Zip(covariates, ReferenceEquals).All(same => same);
+            _innerAnalysis.ARIMAX.SetCovariates(covariates, resetParameters: !sameCovariates);
 
             _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
             SetupBridges();
@@ -1712,6 +1745,7 @@ namespace RMC.BestFit.UI
             UndoManager.StateChanged += UndoManager_StateChanged;
 
             _modelSnapshot = _innerAnalysis?.ARIMAX?.ToXElement();
+            _modelSnapshotCovariates = GetCovariateTimeSeries();
 
             Func<IUndoManager> getUndo = () => IsUndoEnabled ? UndoManager : null;
             Action onRecorded = () => SetIsDirty(true);

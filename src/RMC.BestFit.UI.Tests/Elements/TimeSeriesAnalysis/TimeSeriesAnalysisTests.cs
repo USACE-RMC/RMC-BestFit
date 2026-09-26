@@ -831,6 +831,64 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies that undoing and redoing a prior edit recorded before a covariate swap does not
+    /// apply the replaced covariate's coefficient, bounds, and prior to the new covariate.
+    /// </summary>
+    /// <remarks>
+    /// The swap itself is not an undo step, so steps recorded against the previous covariate stay
+    /// on the stacks; their snapshots must only be reapplied to the covariates they were taken with.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateSwap_ThenUndoAndRedoOfEarlierPriorEdit_KeepsNewCovariateDefaults()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("SwapRedoTSA", out _);
+        tsa.Covariates[0].TimeSeriesElement = CreateTimeSeriesElement("SwapRedoTSA-C", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+
+        tsa.UndoManager.Undo();
+        tsa.UndoManager.Redo();
+
+        Assert.IsInstanceOfType(GetCovariateCoefficient(tsa.ARIMAX).PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Redo must not apply the replaced covariate's custom prior to the new covariate.");
+    }
+
+    /// <summary>
+    /// Verifies that undoing a model edit recorded before a covariate swap restores the edited
+    /// setting without applying the replaced covariate's prior to the new covariate.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateSwap_ThenUndoOfEditRecordedBeforeSwap_KeepsNewCovariateDefaults()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("SwapUndoEarlierTSA", out _);
+        bool originalJeffreys = tsa.ARIMAX.UseJeffreysRuleForScale;
+        tsa.ARIMAX.UseJeffreysRuleForScale = !originalJeffreys;
+        tsa.Covariates[0].TimeSeriesElement = CreateTimeSeriesElement("SwapUndoEarlierTSA-C", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+
+        tsa.UndoManager.Undo();
+
+        Assert.AreEqual(originalJeffreys, tsa.ARIMAX.UseJeffreysRuleForScale, "Undo restores the edited setting.");
+        Assert.IsInstanceOfType(GetCovariateCoefficient(tsa.ARIMAX).PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Undo must not apply the replaced covariate's custom prior to the new covariate.");
+    }
+
+    /// <summary>
+    /// Verifies that model-snapshot undo and redo leave only the current model subscribed to the
+    /// live response and covariate series.
+    /// </summary>
+    [STATestMethod]
+    public void ModelUndoAndRedo_LeaveOnlyTheCurrentModelSubscribedToLiveSeries()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("UndoSubscriptionTSA", out TimeSeriesElement covariate);
+        TimeSeries response = tsa.TimeSeriesData.TimeSeries;
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+
+        tsa.UndoManager.Undo();
+        tsa.UndoManager.Redo();
+
+        Assert.AreEqual(1, CountModelSubscribers(response), "Only the current model may stay on the response series.");
+        Assert.AreEqual(1, CountModelSubscribers(covariate.TimeSeries), "Only the current model may stay on the covariate series.");
+    }
+
+    /// <summary>
     /// Verifies that metadata edits on a covariate series do not rebuild the model's parameters.
     /// </summary>
     /// <remarks>
@@ -918,16 +976,7 @@ public class TimeSeriesAnalysisTests
     /// <returns>The number of handlers whose target is an <see cref="ARIMAX"/> model.</returns>
     private static int CountModelSubscribers(TimeSeries series)
     {
-        System.Reflection.FieldInfo? field = null;
-        for (Type? type = series.GetType(); type != null && field == null; type = type.BaseType)
-        {
-            field = type.GetField(nameof(TimeSeries.CollectionChanged),
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        }
-
-        Assert.IsNotNull(field, "The series' CollectionChanged backing field was not found.");
-        var handler = (Delegate?)field.GetValue(series);
-        return handler?.GetInvocationList().Count(subscriber => subscriber.Target is ARIMAX) ?? 0;
+        return ModelSubscriptionCounter.Count(series);
     }
 
     /// <summary>

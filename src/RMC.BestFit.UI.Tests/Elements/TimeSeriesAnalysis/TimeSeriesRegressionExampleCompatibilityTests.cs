@@ -28,12 +28,16 @@ public class TimeSeriesRegressionExampleCompatibilityTests
     {
         string source = FindExampleProject();
         string originalHash = ComputeHash(source);
-        Dictionary<string, string> savedModels = ReadSavedModels(source);
-        Assert.AreEqual(2, savedModels.Count);
         string copy = Path.Combine(Path.GetTempPath(), $"BestFit-TimeSeriesRegression-{Guid.NewGuid():N}.bestfit");
         File.Copy(source, copy);
         try
         {
+            // Read the expectations from the copy the project opens, not from the checked-in file,
+            // whose ignored write-ahead-log sidecars could otherwise supply different cells.
+            Dictionary<string, string> savedModels = ReadSavedModels(copy);
+            Assert.AreEqual(2, savedModels.Count);
+            SQLiteConnection.ClearAllPools();
+
             BestFitProject opened = CreateIsolatedProject(copy);
             opened.Open();
 
@@ -45,6 +49,24 @@ public class TimeSeriesRegressionExampleCompatibilityTests
                 Assert.IsTrue(savedModels.TryGetValue(analysis.Name, out string? saved), analysis.Name);
                 Assert.IsTrue(XNode.DeepEquals(XElement.Parse(saved), analysis.ARIMAX.ToXElement()),
                     analysis.Name + ": the opened model must match its saved cell.");
+            }
+
+            // Each opened analysis binds one model to its response and to each covariate series;
+            // the default models the loader replaced must not stay bound.
+            var expectedModels = new Dictionary<Numerics.Data.TimeSeries, int>(ReferenceEqualityComparer.Instance);
+            foreach (UI.TimeSeriesAnalysis analysis in analyses)
+            {
+                foreach (Numerics.Data.TimeSeries series in analysis.Covariates
+                    .Select(covariate => covariate.TimeSeriesElement.TimeSeries)
+                    .Prepend(analysis.TimeSeriesData.TimeSeries))
+                {
+                    expectedModels[series] = expectedModels.GetValueOrDefault(series) + 1;
+                }
+            }
+            foreach (var entry in expectedModels)
+            {
+                Assert.AreEqual(entry.Value, ModelSubscriptionCounter.Count(entry.Key),
+                    "Only the opened models may stay bound to the example's series.");
             }
 
             UI.TimeSeriesAnalysis multiple = analyses.Single(analysis => analysis.Name == "Multiple Linear Regression");

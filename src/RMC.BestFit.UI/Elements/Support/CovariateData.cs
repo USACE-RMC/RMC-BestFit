@@ -119,7 +119,7 @@ namespace RMC.BestFit.UI
         /// <remarks>
         /// Without this, the underlying time series element's <c>PropertyChanged</c> +
         /// <c>Deleted</c> delegate lists keep the wrapper alive even after it has been removed
-        /// from its owning collection � a long-session memory leak for users who add and
+        /// from its owning collection — a long-session memory leak for users who add and
         /// remove covariates repeatedly. Setting <see cref="TimeSeriesElement"/> to null
         /// triggers the setter's unsubscribe path.
         /// </remarks>
