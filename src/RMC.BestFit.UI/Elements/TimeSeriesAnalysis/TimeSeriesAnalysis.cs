@@ -421,7 +421,8 @@ namespace RMC.BestFit.UI
                 // Sync covariates to inner analysis model
                 if (_innerAnalysis != null && _innerAnalysis.ARIMAX != null)
                 {
-                    _innerAnalysis.ARIMAX.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList());
+                    _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries());
+                    RefreshModelUndoBaseline();
                 }
 
                 RaisePropertyChange(nameof(Covariates));
@@ -698,10 +699,43 @@ namespace RMC.BestFit.UI
 
             _innerAnalysis.ARIMAX.TimeSeries = _timeSeriesData?.TimeSeries;
             if (_covariates != null)
-                _innerAnalysis.ARIMAX.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList());
+                _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries());
+            RefreshModelUndoBaseline();
 
             RaisePropertyChange(nameof(TrainingTimeSteps));
             RaisePropertyChange(nameof(UseDefaultTrainingSteps));
+        }
+
+        /// <summary>
+        /// Gets the covariate series selected in <see cref="Covariates"/>.
+        /// </summary>
+        /// <returns>
+        /// The series of every covariate row whose element holds data, in row order; an empty list
+        /// when no covariate is selected.
+        /// </returns>
+        private List<Numerics.Data.TimeSeries> GetCovariateTimeSeries()
+        {
+            if (_covariates == null) return new List<Numerics.Data.TimeSeries>();
+            return _covariates
+                .Where(x => x.TimeSeriesElement?.TimeSeries != null)
+                .Select(x => x.TimeSeriesElement.TimeSeries)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Moves the model-undo baseline to the current model after a series or covariate change
+        /// that rebuilt the model without recording a model-undo step.
+        /// </summary>
+        /// <remarks>
+        /// Without this, the next recorded model edit would store the pre-change vector as its undo
+        /// state, and undoing that edit would replay the vector onto the changed covariates (for a
+        /// swapped covariate the parameter count still matches, so the layout guard cannot catch it).
+        /// Recorded model edits are not re-baselined here: some setters rebuild the defaults before
+        /// they notify, and moving the baseline early would erase the recorded change.
+        /// </remarks>
+        private void RefreshModelUndoBaseline()
+        {
+            _modelSnapshot = _innerAnalysis?.ARIMAX?.ToXElement();
         }
 
         /// <summary>
@@ -747,7 +781,8 @@ namespace RMC.BestFit.UI
             }
 
             // Sync covariates to inner analysis model
-            _innerAnalysis.ARIMAX.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList());
+            _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries());
+            RefreshModelUndoBaseline();
             SetIsValid();
             // Guard against undo replay: clearing the fit on replay-driven CollectionChanged
             // produces asymmetric undo (the UI wrapper consistency rule).
@@ -779,7 +814,8 @@ namespace RMC.BestFit.UI
             }
 
             // Sync covariates to inner analysis model
-            _innerAnalysis.ARIMAX.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList());
+            _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries());
+            RefreshModelUndoBaseline();
             SetIsValid();
             // Guard against undo replay (same rationale as Covariates_CollectionChanged above).
             if (!UndoManager.IsExecutingAction)
@@ -1080,9 +1116,9 @@ namespace RMC.BestFit.UI
                     }
 
                     // Reattach the covariates without rebuilding defaults, so the saved parameter
-                    // values, bounds, and custom priors restored from the XML survive.
-                    if (_covariates != null && _covariates.Count > 0)
-                        arimax.SetCovariates(_covariates.Where(x => x.TimeSeriesElement != null).Select(x => x.TimeSeriesElement.TimeSeries).ToList(), resetParameters: false);
+                    // values, bounds, and custom priors restored from the XML survive. The layout
+                    // guard still rebuilds a vector that no longer fits (e.g., an unresolved covariate).
+                    arimax.SetCovariates(GetCovariateTimeSeries(), resetParameters: false);
 
                     if (innerXElement == null && !isLegacyFormat && analysisXElement != null)
                     {
@@ -1490,18 +1526,10 @@ namespace RMC.BestFit.UI
             if (_innerAnalysis.BayesianAnalysis.UseAdvancedSimulationDefaults)
                 _innerAnalysis.BayesianAnalysis.SetDefaultAdvancedSimulationOptions();
 
-            // Re-apply covariates to the restored ARIMAX model
-            if (_covariates != null && _covariates.Count > 0)
-            {
-                var covTimeSeries = new System.Collections.Generic.List<Numerics.Data.TimeSeries>();
-                foreach (var cov in _covariates)
-                {
-                    if (cov.TimeSeriesElement?.TimeSeries != null)
-                        covTimeSeries.Add(cov.TimeSeriesElement.TimeSeries);
-                }
-                if (covTimeSeries.Count > 0)
-                    _innerAnalysis.ARIMAX.SetCovariates(covTimeSeries, resetParameters: false);
-            }
+            // Re-apply covariates to the restored model through the layout guard, even when there
+            // are none: a structural edit notifies before it rebuilds, so a recorded snapshot can
+            // pair the new structure with the previous vector, which the guard replaces.
+            _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries(), resetParameters: false);
 
             _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
             SetupBridges();

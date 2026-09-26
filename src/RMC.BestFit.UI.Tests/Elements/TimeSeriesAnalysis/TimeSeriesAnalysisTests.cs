@@ -795,6 +795,67 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies that undoing a model edit made after a covariate swap does not carry the replaced
+    /// covariate's coefficient, bounds, and prior over to the new covariate.
+    /// </summary>
+    /// <remarks>
+    /// The swap rebuilds the default parameters without recording a model-undo step, so the undo
+    /// baseline must follow the rebuilt model; otherwise undo replays the pre-swap vector onto the
+    /// new covariate, which has the same parameter count.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateSwap_ThenUndoOfModelEdit_KeepsNewCovariateDefaults()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("CovariateSwapUndoTSA", _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("CovariateSwapResponse", 30, TimeInterval.OneYear, start);
+        tsa.Covariates.Add(new CovariateData
+        {
+            TimeSeriesElement = CreateTimeSeriesElement("CovariateSwapA", 30, TimeInterval.OneYear, start)
+        });
+        tsa.ARIMAX.UseDefaultFlatPriors = false;
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        beta.Value = 0.42;
+        beta.LowerBound = -3.0;
+        beta.UpperBound = 3.0;
+        beta.PriorDistribution = new global::Numerics.Distributions.Normal(0.5, 0.1);
+
+        tsa.Covariates[0].TimeSeriesElement = CreateTimeSeriesElement("CovariateSwapC", 30, TimeInterval.OneYear, start);
+        tsa.ARIMAX.UseJeffreysRuleForScale = !tsa.ARIMAX.UseJeffreysRuleForScale;
+        tsa.UndoManager.Undo();
+
+        ModelParameter restored = GetCovariateCoefficient(tsa.ARIMAX);
+        Assert.IsInstanceOfType(restored.PriorDistribution, typeof(global::Numerics.Distributions.Uniform),
+            "Undo must not attach the replaced covariate's custom prior to the new covariate.");
+        Assert.AreEqual(0.0, restored.Value, 0.0, "The new covariate keeps its default coefficient.");
+    }
+
+    /// <summary>
+    /// Verifies that redoing an AR-order change restores a parameter vector that fits the new
+    /// model structure.
+    /// </summary>
+    /// <remarks>
+    /// The order setter notifies before it rebuilds the parameters, so the recorded redo snapshot
+    /// holds the new order with the previous vector; the restore must rebuild a vector that fits.
+    /// </remarks>
+    [STATestMethod]
+    public void AROrderChange_UndoThenRedo_RestoresConsistentParameterLayout()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("AROrderRedoTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("AROrderRedoResponse", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        Assert.AreEqual(1, tsa.ARIMAX.AROrderP);
+        tsa.ARIMAX.AROrderP = 2;
+        Assert.AreEqual(4, tsa.ARIMAX.NumberOfParameters, "Intercept, two AR coefficients, and the scale.");
+
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(3, tsa.ARIMAX.NumberOfParameters, "Intercept, one AR coefficient, and the scale.");
+        tsa.UndoManager.Redo();
+
+        Assert.AreEqual(2, tsa.ARIMAX.AROrderP);
+        Assert.AreEqual(4, tsa.ARIMAX.NumberOfParameters, "Redo must restore a vector that fits AR(2).");
+    }
+
+    /// <summary>
     /// Returns the covariate coefficient of a model with exactly one zero-lag covariate.
     /// </summary>
     /// <param name="model">The model whose parameter list is searched.</param>
