@@ -316,15 +316,15 @@ namespace RMC.BestFit.Analyses
         /// Routes each notification to one of three branches per the canonical
         /// property-change classification:
         /// <list type="bullet">
-        /// <item><description><b>Clear results</b> — structurally destructive changes
+        /// <item><description><b>Clear results</b> â€” structurally destructive changes
         /// (data, distribution, parameters, trend models, prior toggles) call
         /// <see cref="ClearResults"/> to invalidate the fit.</description></item>
-        /// <item><description><b>Re-process if estimated</b> — <c>ParameterTimeIndex</c>
+        /// <item><description><b>Re-process if estimated</b> â€” <c>ParameterTimeIndex</c>
         /// re-runs <see cref="CreateFrequencyAnalysisResultsAsync"/> against the existing
         /// MCMC fit; <c>Alpha</c> re-runs <see cref="CreateChronologyResultsAsync"/>.
         /// Both are post-fit selectors of which time-slice / exceedance probability the
-        /// displayed curves are evaluated at — cheap to recompute, no MCMC re-run needed.</description></item>
-        /// <item><description><b>Propagate only</b> — every other notification flows through
+        /// displayed curves are evaluated at â€” cheap to recompute, no MCMC re-run needed.</description></item>
+        /// <item><description><b>Propagate only</b> â€” every other notification flows through
         /// <see cref="ModelBase.RaisePropertyChange"/> for UI binding.</description></item>
         /// </list>
         /// </summary>
@@ -371,7 +371,7 @@ namespace RMC.BestFit.Analyses
                     // or past the data's last index. The Chronology plot always covers the full
                     // period of record; when TimeIndex > maxIndex it extends a forecast tail to
                     // the new index. So re-process Chronology only when at least one of (old, new)
-                    // is past the data's last index — i.e. the forecast tail just appeared,
+                    // is past the data's last index â€” i.e. the forecast tail just appeared,
                     // disappeared, or changed extent. When both old and new are inside the POR,
                     // the chronology output is unchanged and a re-process would be wasted work.
                     int? maxIndex = TryGetMaxDataIndex();
@@ -460,13 +460,13 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <summary>
-        /// Clears <see cref="AnalysisResults"/> only — the frequency/quantile output whose
+        /// Clears <see cref="AnalysisResults"/> only â€” the frequency/quantile output whose
         /// evaluation grid is <see cref="ProbabilityOrdinates"/>.
         /// </summary>
         /// <remarks>
         /// Leaves the Bayesian MCMC output (<see cref="BayesianAnalysis"/>.Results),
         /// <see cref="ChronologyAnalysisResults"/>, and <c>IsEstimated</c> intact.
-        /// Called when ordinates become invalid — the fit survives and can be reused once
+        /// Called when ordinates become invalid â€” the fit survives and can be reused once
         /// valid ordinates are restored.
         /// </remarks>
         public void ClearFrequencyAnalysisResults()
@@ -501,7 +501,7 @@ namespace RMC.BestFit.Analyses
             // Wait for any in-flight reprocess to finish before clearing results and
             // starting a new MCMC run. Without this gate, a fire-and-forget reprocess
             // (triggered by a prior property change via ReprocessIfEstimated) can be
-            // inside its parallel loop when ClearResults() nulls AnalysisResults —
+            // inside its parallel loop when ClearResults() nulls AnalysisResults â€”
             // producing an NRE on the next AnalysisResults dereference inside the loop body.
             await _reprocessGate.WaitAsync();
             try
@@ -679,7 +679,8 @@ namespace RMC.BestFit.Analyses
                 var probs = UnivariateDistribution.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
                 probs.AddRange(UnivariateDistribution.DataFrame.UncertainSeries.Select(x => x.PlottingPositionComplement));
                 probs.AddRange(UnivariateDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
-                var rmse = GoodnessOfFit.RMSE(values, probs, UnivariateDistribution.Distribution);
+                // RMSE is undefined when the residual degrees of freedom are not positive.
+                var rmse = GoodnessOfFitGuards.RmseOrNaN(values, probs, UnivariateDistribution.Distribution);
 
                 AnalysisResults.AIC = aic;
                 AnalysisResults.BIC = bic;

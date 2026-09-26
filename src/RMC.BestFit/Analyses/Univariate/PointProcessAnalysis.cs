@@ -518,7 +518,8 @@ namespace RMC.BestFit.Analyses
                 var probs = PointProcess.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
                 probs.AddRange(PointProcess.DataFrame.UncertainSeries.Select(x => x.PlottingPositionComplement));
                 probs.AddRange(PointProcess.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
-                var rmse = GoodnessOfFit.RMSE(values, probs, PointProcess.Distribution!);
+                // RMSE is undefined when the residual degrees of freedom are not positive.
+                var rmse = GoodnessOfFitGuards.RmseOrNaN(values, probs, PointProcess.Distribution!);
 
                 AnalysisResults.AIC = aic;
                 AnalysisResults.BIC = bic;

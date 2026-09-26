@@ -790,9 +790,7 @@ namespace RMC.BestFit.Analyses
                 probs.AddRange(MixtureDistribution.DataFrame.UncertainSeries.Select(x => x.PlottingPositionComplement));
                 probs.AddRange(MixtureDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
                 // RMSE is undefined when the residual degrees of freedom are not positive.
-                var rmse = values.Count > MixtureDistribution.Mixture!.NumberOfParameters
-                    ? GoodnessOfFit.RMSE(values, probs, MixtureDistribution.Mixture!)
-                    : double.NaN;
+                var rmse = GoodnessOfFitGuards.RmseOrNaN(values, probs, MixtureDistribution.Mixture!);
 
                 AnalysisResults.AIC = aic;
                 AnalysisResults.BIC = bic;

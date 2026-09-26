@@ -2772,9 +2772,7 @@ namespace RMC.BestFit.Analyses
                 var pp = Bulletin17CDistribution.DataFrame.ExactSeries.Select(x => x.PlottingPositionComplement).ToList();
                 pp.AddRange(Bulletin17CDistribution.DataFrame.IntervalSeries.Select(x => x.PlottingPositionComplement));
                 // RMSE is undefined when the residual degrees of freedom are not positive.
-                analysisResults.RMSE = values.Count > Bulletin17CDistribution.Distribution.NumberOfParameters
-                    ? GoodnessOfFit.RMSE(values, pp, Bulletin17CDistribution.Distribution)
-                    : double.NaN;
+                analysisResults.RMSE = GoodnessOfFitGuards.RmseOrNaN(values, pp, Bulletin17CDistribution.Distribution);
 
                 // Effective record length. Falls back to NaN rather than throwing when the GMM
                 // covariance cannot be computed; the point estimate above remains valid.

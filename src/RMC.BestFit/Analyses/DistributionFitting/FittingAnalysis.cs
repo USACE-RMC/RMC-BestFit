@@ -292,9 +292,7 @@ namespace RMC.BestFit.Analyses
             IList<double> plottingPositions,
             UnivariateDistributionBase distribution)
         {
-            return values.Count > distribution.NumberOfParameters
-                ? GoodnessOfFit.RMSE(values, plottingPositions, distribution)
-                : double.NaN;
+            return GoodnessOfFitGuards.RmseOrNaN(values, plottingPositions, distribution);
         }
 
         /// <inheritdoc/>
