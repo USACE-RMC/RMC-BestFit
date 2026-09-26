@@ -210,6 +210,10 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   validation message instead of terminating the application, and a legacy project whose stored
   low-outlier settings the current guards reject opens with the outliers cleared instead of
   crashing on load.
+- Version 1.0 project open (Task 3.3): opening a version 1.0 project whose saved low-outlier
+  settings the current guards reject (for example a threshold that censors more than half the
+  record) now shows a warning that its low outliers were cleared, instead of clearing them
+  silently.
 - Input data POT diagnostics (issue #14): the mean-residual-life and parameter-stability plots
   operate on the same smoothed series the peaks-over-threshold extraction thresholds (via the new
   `TimeSeries.SmoothedSeries`), and editing the smoothing function, period, minimum steps between

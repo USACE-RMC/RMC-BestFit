@@ -312,6 +312,23 @@ namespace RMC.BestFit.UI
         private BasicMessageItem _partialBlockSeriesMsg;
 
         /// <summary>
+        /// Reference to the low-outlier migration warning added to the messenger during
+        /// <see cref="OpenFromVersion1"/> when a version 1.0 project's stored low-outlier threshold
+        /// or Multiple Grubbs-Beck Test result is rejected by the current guards in
+        /// <see cref="DataFrame.SetLowOutliersFromThreshold"/> / <see cref="DataFrame.SetLowOutliersFromMGBT"/>.
+        /// </summary>
+        /// <remarks>
+        /// Unlike the other messages in <see cref="_messages"/>, its text depends on the caught
+        /// exception and so cannot be pre-registered by <see cref="RegisterMessage"/>; it is
+        /// constructed in <see cref="OpenFromVersion1"/> and added to <see cref="_messages"/> there
+        /// so the <see cref="Name"/> setter still keeps its <c>SourceName</c> in sync. Reset (cleared
+        /// and removed from <see cref="_messages"/>) at the start of every <see cref="Open(SQLiteManager)"/>
+        /// so a later open of a project that does not trigger it shows no warning and repeated opens
+        /// never accumulate messages.
+        /// </remarks>
+        private BasicMessageItem _lowOutlierMigrationMsg = null;
+
+        /// <summary>
         /// Indicates whether the file was opened from version 1.0 format.
         /// </summary>
         private bool openedFromV1 = false;
@@ -1307,6 +1324,14 @@ namespace RMC.BestFit.UI
             try
             {
             openedFromV1 = false;
+            // Reset the low-outlier migration warning before re-deriving it below, so a later
+            // Open of a project that does not trigger it shows no warning and repeated Opens
+            // never accumulate stale messages (see remarks on the field).
+            if (_lowOutlierMigrationMsg != null)
+            {
+                _messages.Remove(_lowOutlierMigrationMsg);
+                _lowOutlierMigrationMsg = null;
+            }
             bool repairedPlottingPositions = false;
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
@@ -1585,7 +1610,8 @@ namespace RMC.BestFit.UI
                 // legacy project can store a threshold the current guards reject (for example one
                 // censoring more than half the record) or fewer than ten exact values - and an
                 // uncaught throw here crashed the application on project open. The outliers are
-                // left cleared instead so the project opens and the user can re-run the test.
+                // left cleared instead so the project opens, and the catch below warns the user
+                // instead of clearing them silently.
                 try
                 {
                     if (UseMultipleGrubbsBeckTest == true)
@@ -1597,6 +1623,15 @@ namespace RMC.BestFit.UI
                 {
                     System.Diagnostics.Debug.WriteLine($"InputData.Open: the stored low-outlier settings for '{Name}' could not be applied: {ex.Message}");
                     DataFrame.ClearLowOutliers();
+
+                    // Surface the cleared settings to the user instead of only logging them, since a
+                    // legacy project silently losing its low-outlier flags is otherwise invisible.
+                    string reason = ex.Message.TrimEnd('.');
+                    _lowOutlierMigrationMsg = new BasicMessageItem(MessageType.Warning,
+                        $"The low-outlier settings saved with this version 1.0 project could not be applied ({reason}), so no observations are flagged as low outliers. Review the low-outlier threshold or the Multiple Grubbs-Beck test setting before running an analysis on this input data.",
+                        this, ParentCollection.Name, Name, nameof(UseMultipleGrubbsBeckTest), "ID-WNG-021");
+                    _messages.Add(_lowOutlierMigrationMsg);
+                    _messenger.Add(_lowOutlierMigrationMsg);
                 }
 
             }
