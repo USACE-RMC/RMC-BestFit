@@ -307,6 +307,14 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   the smaller distance from the stationary initializer to either parent-parameter bound. This fixes
   reciprocal and sinusoidal default trend starting points that were previously orders of magnitude
   away from a workable scale for some parent distributions.
+- Time series (Task 3.6, finding M5): `GenerateRandomSeries` on `AutoRegressive`, `MovingAverage`,
+  `ARIMA`, and `ARIMAX` again accepts a requested length shorter than the training window for
+  every differencing order (previously this threw for a differenced model, d > 0); every `Predict`
+  overload of the four classes now rejects a negative `forecastSteps` with
+  `ArgumentOutOfRangeException` instead of silently accepting it. The `ARAnalysis`/`MAAnalysis`/
+  `ARIMAAnalysis`/`ARIMAXAnalysis` point-estimate and uncertainty-analysis paths, which can derive a
+  negative forecast-step count internally for a series shorter than the default training-window
+  floor, are updated to keep producing the same values.
 
 ## RMC.Numerics (since 2.1.4)
 

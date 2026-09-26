@@ -511,7 +511,15 @@ namespace RMC.BestFit.Analyses
                 // with any concurrent UI binding read of ARIMAX.Parameters.
                 int dataLength = ARIMAX.TimeSeries.Count;
                 int forecastStepsForPredict = (dataLength - ARIMAX.TrainingTimeSteps) + ForecastingTimeSteps;
-                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, forecastStepsForPredict).Y;
+                int n = dataLength + ForecastingTimeSteps;
+
+                // forecastStepsForPredict is negative whenever TrainingTimeSteps exceeds n (for
+                // example a series shorter than the default training-window floor). Predict now
+                // rejects a negative forecastSteps, so predict at least the training window
+                // (clamped to zero) and keep only the leading n values -- identical to the
+                // unclamped values for every t < n because the recursion is forward-only and does
+                // not depend on the loop's upper bound.
+                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, Math.Max(0, forecastStepsForPredict)).Y.Subset(0, n - 1);
 
                 // Get goodness of fit measures
                 // RMSE (comparing predicted vs observed for training period only)
@@ -576,8 +584,12 @@ namespace RMC.BestFit.Analyses
                 int forecastStepsForPredict = (dataLength - ARIMAX.TrainingTimeSteps) + ForecastingTimeSteps;
                 int n = dataLength + ForecastingTimeSteps;
 
+                // See the clamping note in UpdatePointEstimateResultsAsync: forecastStepsForPredict
+                // can be negative, and Predict now rejects a negative forecastSteps.
+                int clampedForecastSteps = Math.Max(0, forecastStepsForPredict);
+
                 AnalysisResults = new UncertaintyAnalysisResults();
-                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, forecastStepsForPredict).Y;
+                AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, clampedForecastSteps).Y.Subset(0, n - 1);
                 AnalysisResults.MeanCurve = new double[n];
                 AnalysisResults.ConfidenceIntervals = new double[n, 3];
 
@@ -593,8 +605,8 @@ namespace RMC.BestFit.Analyses
                 var series = new double[n, realz];
                 Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
                 {
-                    var prediction = ARIMAX.Predict(posterior[idx].Values, forecastStepsForPredict, seeds[idx]);
-                    series.SetColumn(idx, prediction.Y);
+                    var prediction = ARIMAX.Predict(posterior[idx].Values, clampedForecastSteps, seeds[idx]);
+                    series.SetColumn(idx, prediction.Y.Subset(0, n - 1));
                 });
 
                 // Compute summary statistics

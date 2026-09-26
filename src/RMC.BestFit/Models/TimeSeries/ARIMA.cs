@@ -980,8 +980,12 @@ namespace RMC.BestFit.Models
         /// <param name="forecastSteps">Number of steps to forecast beyond training data.</param>
         /// <param name="seed">Random seed for stochastic predictions. If -1, returns mean prediction.</param>
         /// <returns>Tuple containing predicted values and component decomposition.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="forecastSteps"/> is negative.</exception>
         public (double[] Y, double[] InterceptPart, double[] ARPart, double[] MAPart) Predict(double[] parameters, int forecastSteps = 0, int seed = -1)
         {
+            if (forecastSteps < 0)
+                throw new ArgumentOutOfRangeException(nameof(forecastSteps), "Forecast steps must be zero or positive.");
+
             if (TimeSeries == null)
                 throw new InvalidOperationException("TimeSeries must be set.");
 
@@ -1112,8 +1116,12 @@ namespace RMC.BestFit.Models
         /// <param name="forecastSteps">Number of steps to forecast beyond training data.</param>
         /// <param name="seed">Random seed for stochastic predictions. If -1, returns mean prediction.</param>
         /// <returns>Array of predicted values.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="forecastSteps"/> is negative.</exception>
         public double[] Predict(int forecastSteps = 0, int seed = -1)
         {
+            if (forecastSteps < 0)
+                throw new ArgumentOutOfRangeException(nameof(forecastSteps), "Forecast steps must be zero or positive.");
+
             var pars = Parameters.Select(x => x.Value).ToArray();
             return Predict(pars, forecastSteps, seed).Y;
         }
@@ -1124,6 +1132,14 @@ namespace RMC.BestFit.Models
         /// <param name="timeSteps">Number of time steps to simulate.</param>
         /// <param name="seed">Random seed for reproducibility.</param>
         /// <returns>Simulated time series.</returns>
+        /// <remarks>
+        /// A <paramref name="timeSteps"/> shorter than the training window predicts the full
+        /// training window (forecast steps clamped to zero) and returns its leading
+        /// <paramref name="timeSteps"/> values, so a short request succeeds for every differencing
+        /// order instead of passing a negative forecast-step count to the prediction method (which
+        /// previously reached <see cref="TimeSeriesPredictionIntegrator"/> reconstruction with a
+        /// reconstructed length shorter than the training window and threw).
+        /// </remarks>
         public TimeSeries GenerateRandomSeries(int timeSteps, int seed = 12345)
         {
             if (TimeSeries == null)
@@ -1138,7 +1154,7 @@ namespace RMC.BestFit.Models
 
             var result = new TimeSeries(TimeSeries.TimeInterval, startDate, endDate);
             var parameters = Parameters.Select(x => x.Value).ToArray();
-            var prediction = Predict(parameters, timeSteps - TrainingTimeSteps, seed);
+            var prediction = Predict(parameters, Math.Max(0, timeSteps - TrainingTimeSteps), seed);
 
             for (int i = 0; i < timeSteps; i++)
             {

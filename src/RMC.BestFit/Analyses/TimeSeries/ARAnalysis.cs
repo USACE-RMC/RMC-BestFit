@@ -464,8 +464,15 @@ namespace RMC.BestFit.Analyses
                 // matches the full observed range plus the future forecast horizon.
                 int dataLength = AutoRegressive.TimeSeries.Count;
                 int forecastStepsForPredict = (dataLength - AutoRegressive.TrainingTimeSteps) + ForecastingTimeSteps;
+                int n = dataLength + ForecastingTimeSteps;
 
-                AnalysisResults.ModeCurve = localModel.Predict(forecastStepsForPredict);
+                // forecastStepsForPredict is negative whenever TrainingTimeSteps exceeds n (for
+                // example a series shorter than the default training-window floor). Predict now
+                // rejects a negative forecastSteps, so predict at least the training window
+                // (clamped to zero) and keep only the leading n values -- identical to the
+                // unclamped values for every t < n because the recursion is forward-only and does
+                // not depend on the loop's upper bound.
+                AnalysisResults.ModeCurve = localModel.Predict(Math.Max(0, forecastStepsForPredict)).Subset(0, n - 1);
 
                 // Get goodness of fit measures
                 // RMSE (comparing predicted vs observed for in-sample period only)
@@ -530,8 +537,12 @@ namespace RMC.BestFit.Analyses
                 int forecastStepsForPredict = (dataLength - AutoRegressive.TrainingTimeSteps) + ForecastingTimeSteps;
                 int n = dataLength + ForecastingTimeSteps;
 
+                // See the clamping note in UpdatePointEstimateResultsAsync: forecastStepsForPredict
+                // can be negative, and Predict now rejects a negative forecastSteps.
+                int clampedForecastSteps = Math.Max(0, forecastStepsForPredict);
+
                 AnalysisResults = new UncertaintyAnalysisResults();
-                AnalysisResults.ModeCurve = AutoRegressive.Predict(forecastStepsForPredict);
+                AnalysisResults.ModeCurve = AutoRegressive.Predict(clampedForecastSteps).Subset(0, n - 1);
                 AnalysisResults.MeanCurve = new double[n];
                 AnalysisResults.ConfidenceIntervals = new double[n, 3];
 
@@ -550,7 +561,7 @@ namespace RMC.BestFit.Analyses
                     // Temporarily set parameters for prediction
                     var tempAR = (AutoRegressive)AutoRegressive.Clone();
                     tempAR.SetParameterValues(posterior[idx].Values);
-                    var prediction = tempAR.Predict(forecastStepsForPredict, seeds[idx]);
+                    var prediction = tempAR.Predict(clampedForecastSteps, seeds[idx]).Subset(0, n - 1);
                     series.SetColumn(idx, prediction);
                 });
 
