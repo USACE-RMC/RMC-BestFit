@@ -149,9 +149,9 @@ counts and `Validate_NonPositiveDischarge_IsInvalid` keeps the aligned-pair erro
   one, two, and three segments. The estimate must remain inside the declared model bounds.
 | Exact method | Latest outcome | Wall-clock per guarded invocation |
 |---|---|---|
-| `Mle_OneSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141102-...`) | 1.452 s |
-| `Mle_TwoSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141123-...`) | 4.375 s |
-| `Mle_ThreeSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141108-...`) | 10.461 s |
+| `Mle_OneSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141102-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074946-...`, Task 2.12) | 1.452 s |
+| `Mle_TwoSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141123-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074950-...`, Task 2.12) | 4.375 s |
+| `Mle_ThreeSegment_RecoversExampleCurve` | Passed fresh 2 September 2026 (`20260902-141108-...`); rerun 26 September 2026 under the current `10*k` DE population (`20260926-074957-...`, Task 2.12) | 10.461 s |
 
 The three former Bayesian example calculations are now non-discovered historical methods. Their sampled-MAP
 5-10% coordinate bands, 2% curve band, and reported pointwise fractions did not provide an independent

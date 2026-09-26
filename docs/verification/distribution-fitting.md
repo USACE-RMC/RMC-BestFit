@@ -64,7 +64,10 @@ Natural-log Normal references are explicitly converted from log-space location/s
 physical mean/standard-deviation order used by the fitted `LnNormal` model. All 15 exact identities
 passed with one inspected TRX result each under `20260901-142634-...` through
 `20260901-142721-...`. The discarded `20260901-140711-...Test_LnNormal_MLE` run had exactly one
-failed result and exposed the missing parameter crosswalk; it is not evidence.
+failed result and exposed the missing parameter crosswalk; it is not evidence. The 1 September runs
+were produced under the former `max(100, 10*k)` Differential Evolution population minimum; all 15
+identities were rerun individually on 26 September 2026 under the current `10*k` population
+(Task 2.12, `20260926-074708-...` through `20260926-074805-...`) and all 15 passed again.
 
 ### Chunk 6A exact execution - 29 August 2026
 
@@ -213,7 +216,7 @@ The exact focused methods are:
 
 **Acceptance rationale:** The two fitted vectors must lie in the same joint 95% likelihood-ratio region, using \(2|\ell_{\mathrm{SciPy}}-\ell_{\mathrm{BestFit}}|\leq\chi^2_{0.95,k}\), where \(k\) is the candidate's fitted-coordinate count. This is a statistical objective-space comparison and replaces the former arbitrary scaled-coordinate tolerance. Maximum log likelihood, AIC, and BIC evaluated at the same parameter vector retain the tighter cross-language numerical tolerances of `1e-8` absolute plus `1e-7` relative. RMSE magnitudes are not compared at different optimizer-returned parameter vectors. Instead, the BestFit RMSE equation is checked directly to `1e-10`, inverse-RMSE weights are checked from the actual RMSE values to `1e-12`, and the cross-optimizer RMSE ranking must agree exactly.
 
-**Verification:** Both focused methods passed the normalized contract in one-result guarded runs on 1 September 2026. The parameter run is recorded under `TestResults/VerificationFocused/20260901-111937-...`; the criteria, ranking, and weight run is recorded under `TestResults/VerificationFocused/20260901-111945-...`. See the [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json).
+**Verification:** Both focused methods passed the normalized contract in one-result guarded runs on 1 September 2026. The parameter run is recorded under `TestResults/VerificationFocused/20260901-111937-...`; the criteria, ranking, and weight run is recorded under `TestResults/VerificationFocused/20260901-111945-...`. Both runs were produced under the former `max(100, 10*k)` Differential Evolution population minimum; both methods were rerun individually on 26 September 2026 under the current `10*k` population (Task 2.12) and passed again under `TestResults/VerificationFocused/20260926-074516-...` and `TestResults/VerificationFocused/20260926-074558-...` respectively. See the [evidence artifact](../../verification/data/distribution-fitting/fitting-analysis-optimizer-precision.json).
 
 ## Log10-Normal analytical verification
 
@@ -239,7 +242,7 @@ The focused method is:
 
 - `RMC.BestFit.Verification.DistributionFitting.Log10NormalFittingVerificationTests.ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle`
 
-**Verification:** Passed in a one-result guarded run under `20260901-111953-...`. Production Differential Evolution used untouched default tolerances. At \(n=7\), fitted \(\mu\) and \(\sigma\) are judged against central-95% intervals from the known Normal-MLE covariance, \(\operatorname{SE}(\widehat\mu)=\sigma/\sqrt n\) and \(\operatorname{SE}(\widehat\sigma)=\sigma/\sqrt{2n}\). The fitted point must also occupy the analytical optimum's joint 95% likelihood-ratio region with two degrees of freedom. The fitted 0.9 quantile uses a central-95% delta-method interval propagated through \(q=10^{\mu+z_{0.9}\sigma}\). Direct and pointwise likelihood, CDF, and analytical-quantile comparisons retain tight tolerances because they evaluate deterministic formulas at the same declared coordinates. See the [evidence artifact](../../verification/data/distribution-fitting/log10-normal-closed-form.json).
+**Verification:** Passed in a one-result guarded run under `20260901-111953-...`, produced under the former `max(100, 10*k)` Differential Evolution population minimum; rerun individually on 26 September 2026 under the current `10*k` population (Task 2.12) and passed again under `20260926-074602-...`. Production Differential Evolution used untouched default tolerances. At \(n=7\), fitted \(\mu\) and \(\sigma\) are judged against central-95% intervals from the known Normal-MLE covariance, \(\operatorname{SE}(\widehat\mu)=\sigma/\sqrt n\) and \(\operatorname{SE}(\widehat\sigma)=\sigma/\sqrt{2n}\). The fitted point must also occupy the analytical optimum's joint 95% likelihood-ratio region with two degrees of freedom. The fitted 0.9 quantile uses a central-95% delta-method interval propagated through \(q=10^{\mu+z_{0.9}\sigma}\). Direct and pointwise likelihood, CDF, and analytical-quantile comparisons retain tight tolerances because they evaluate deterministic formulas at the same declared coordinates. See the [evidence artifact](../../verification/data/distribution-fitting/log10-normal-closed-form.json).
 
 ## External family-oracle execution
 
@@ -255,3 +258,7 @@ All 15 current family-specific methods and both current multi-candidate `Fitting
 methods passed their normalized contracts in serial one-result guarded executions on 1 September 2026. Those results verify the individual-family
 external/package claims and the declared common-data ranking, criteria, RMSE-formula, and weighting
 claims; they do not establish a pass result for the new Chunk 6A generated-parent recovery cells.
+The 1 September runs were produced under the former `max(100, 10*k)` Differential Evolution
+population minimum; all 15 family-specific methods were rerun individually on 26 September 2026
+under the current `10*k` population (Task 2.12, `20260926-074606-...` through `20260926-074704-...`)
+and all 15 passed again (the two `FittingAnalysis` methods are covered separately under TR-064 above).

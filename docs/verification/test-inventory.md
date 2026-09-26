@@ -90,8 +90,8 @@ weak raw `nu` is not claimed recovered.
 | `BivariateAnalysisParameterRecoveryTests.RecoverJoeCopulaParameters` | `20260831-073231-..._RecoverJoeCopulaParameters` | Passed |
 | `BivariateAnalysisParameterRecoveryTests.RecoverNormalCopulaParameters` | `20260831-073409-..._RecoverNormalCopulaParameters` | Passed |
 | `BivariateAnalysisParameterRecoveryTests.RecoverStudentTCopulaParametersWithMaximumLikelihood` | `20260831-073524-..._RecoverStudentTCopulaParametersWithMaximumLikelihood` | Passed |
-| `CopulaEstimationOracleTests.StudentT_PseudoLikelihood_MatchesIndependentOptimum` | `20260901-143725-..._StudentT_PseudoLikelihood_MatchesIndependentOptimum` | Passed |
-| `CopulaEstimationOracleTests.StudentT_InferenceFromMargins_MatchesIndependentOptimum` | `20260901-143950-..._StudentT_InferenceFromMargins_MatchesIndependentOptimum` | Passed |
+| `CopulaEstimationOracleTests.StudentT_PseudoLikelihood_MatchesIndependentOptimum` | `20260901-143725-..._StudentT_PseudoLikelihood_MatchesIndependentOptimum`; rerun 26 September 2026, `20260926-074859-...` (Task 2.12, see Phase 6 Batch 6.2 note below) | Passed |
+| `CopulaEstimationOracleTests.StudentT_InferenceFromMargins_MatchesIndependentOptimum` | `20260901-143950-..._StudentT_InferenceFromMargins_MatchesIndependentOptimum`; rerun 26 September 2026, `20260926-074915-...` (Task 2.12, see Phase 6 Batch 6.2 note below) | Passed |
 
 The removed historical identity is
 `BivariateAnalysisParameterRecoveryTests.RecoverStudentTCopulaParameters`; its interrupted
@@ -126,9 +126,9 @@ inside the central 95% bands at nonexceedance 0.10, 0.25, 0.50, 0.75, and 0.90.
 | Exact current identity | Latest isolated result directory | Result |
 |---|---|---|
 | `CoincidentFrequencyAnalysisTests.ExponentialLinearCombination_ParentResponseInsidePredictiveBands` | `20260831-073912-..._ExponentialLinearCombination_ParentResponseInsidePredictiveBands` | Passed |
-| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoZero_MatchesClosedForm` | `20260831-073650-..._SumOfNormals_RhoZero_MatchesClosedForm` | Passed |
-| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoPositive_MatchesClosedForm` | `20260831-073728-..._SumOfNormals_RhoPositive_MatchesClosedForm` | Passed |
-| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoNegative_MatchesClosedForm` | `20260831-073809-..._SumOfNormals_RhoNegative_MatchesClosedForm` | Passed |
+| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoZero_MatchesClosedForm` | Originally `20260831-073650-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-075022-..._SumOfNormals_RhoZero_MatchesClosedForm` (Task 2.12) | Passed |
+| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoPositive_MatchesClosedForm` | Originally `20260831-073728-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-075045-..._SumOfNormals_RhoPositive_MatchesClosedForm` (Task 2.12) | Passed |
+| `CoincidentFrequencyAnalysisTests.SumOfNormals_RhoNegative_MatchesClosedForm` | Originally `20260831-073809-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-075110-..._SumOfNormals_RhoNegative_MatchesClosedForm` (Task 2.12) | Passed |
 
 Every latest TRX contains exactly one result. The authored nonlinear test first exposed a shared
 constant ownership compile error (`MinimumEffectiveSampleSize` belongs to `RecoveryAcceptance`);
@@ -206,7 +206,11 @@ first exposed one leftover `1e-5` centered-coordinate assertion in a one-result 
 `20260901-115353-...`; that redundant nonstatistical assertion was removed before the final pass.
 Haden Smith reverted the 100-member minimum on 8 September 2026 (commit `81882ce`), restoring the
 unmodified Numerics default population `10*k`. On 26 September 2026 the AR(1) cell and all five
-Log10-Normal identities were rerun individually under `10*k` and all six passed - see
+Log10-Normal identities were rerun individually under `10*k` and all six passed (Task 2.11); Haden
+Smith then widened the rerun scope to every Differential Evolution MLE/MAP identity dated inside the
+former-minimum window, and the remaining 53 identities, the two undated Chunk 13 MA(1)/ARIMA(1,1,1)
+MLE cells, and the three linear `CoincidentFrequencyAnalysisTests` cells were each rerun individually
+under `10*k` and all 58 passed (Task 2.12) - see
 [D1 DE population reconciliation](time-series.md#d1-de-population-reconciliation---26-september-2026).
 
 ## Chunk 7 Bulletin 17C reconciliation
@@ -351,7 +355,11 @@ The scientifically distinct 15-cell `UnivariateDistributionMLETests` real-data m
 but its 1%-10% coordinate bands were replaced by joint 95% likelihood-ratio regions. All 15 current
 identities passed exact one-result runs under `20260901-142634-...` through
 `20260901-142721-...`. The one-result `20260901-140711-...Test_LnNormal_MLE` failure was discarded
-after it exposed a missing natural-log to physical-moment parameter crosswalk.
+after it exposed a missing natural-log to physical-moment parameter crosswalk. Because the 1
+September runs were produced under the former `max(100, 10*k)` Differential Evolution population
+minimum, all 15 identities were rerun individually on 26 September 2026 under the current `10*k`
+population (Task 2.12, `20260926-074708-...` through `20260926-074805-...`) and all 15 passed again;
+see [time-series.md](time-series.md#d1-de-population-reconciliation---26-september-2026).
 `FittingAnalysisRecoveryTests` is class-level `[DoNotParallelize]` because each default-list fitting
 run internally parallelizes 15 candidates, avoiding 15 simultaneous nested fitting runs under the
 assembly's method-level MSTest parallelization.
@@ -1021,7 +1029,11 @@ distribution function. Each method below ran once through `scripts/run-verificat
 
 After the final review made the two-point likelihood distance sign-safe, the first twelve identities
 passed with one result per TRX under `20260901-143648-...` through `20260901-143722-...`; the two
-Student-t identities passed under `20260901-143725-...` and `20260901-143950-...`.
+Student-t identities passed under `20260901-143725-...` and `20260901-143950-...`. Because the
+1 September runs were produced under the former `max(100, 10*k)` Differential Evolution population
+minimum, all 14 identities were rerun individually on 26 September 2026 under the current `10*k`
+population (Task 2.12, `20260926-074810-...` through `20260926-074915-...`) and all 14 passed again;
+see [time-series.md](time-series.md#d1-de-population-reconciliation---26-september-2026).
 
 ## Phase 6 Batch 6.3 spatial likelihood confirmation - 21 August 2026
 
@@ -1128,7 +1140,7 @@ and every method below ran once through `scripts/run-verification-test.ps1`.
 | `SpatialGEVChunk14OracleTests.BasicExponentialCorrelation_MatchesAnalyticalGrid` | Verification | Analytical exponential grid including zero and the range | Passed; one-result TRX |
 | `SpatialGEVChunk14OracleTests.PoweredExponentialCorrelation_MatchesAnalyticalGrid` | Verification | Analytical powered-exponential grid with smoothness 1.6 | Passed; one-result TRX |
 | `SpatialGEVChunk14OracleTests.SphericalCorrelation_MatchesAnalyticalGridAndCompactSupport` | Verification | Analytical compact-support boundary and beyond-range zeros | Passed; one-result TRX |
-| `SpatialGEVChunk14OracleTests.HeldOutCopulaFold_MatchesIndependentFittedOracle` | Verification | Independent complete Gaussian-copula reduced-fold optimum and held-out quantile uncertainty | Passed; one-result TRX `20260901-144228-...` after the final sign-safe LR review |
+| `SpatialGEVChunk14OracleTests.HeldOutCopulaFold_MatchesIndependentFittedOracle` | Verification | Independent complete Gaussian-copula reduced-fold optimum and held-out quantile uncertainty | Passed; one-result TRX `20260901-144228-...` after the final sign-safe LR review; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074931-...` (Task 2.12) |
 | `SpatialGEVChunk14OracleTests.HeldOutCovariateFold_MatchesIndependentRegressionOracle` | Verification | Independent held-out covariate row plus executable normal-equation uncertainty split | Passed; one-result TRX |
 | Historical three `SpatialGEVCrossValidationVerificationTests` methods | Design history | Same-ecosystem production parity or result accounting; no longer executable Verification declarations | Consolidated; fast owners retained |
 | `SpatialGEVChunk14OracleTests.UngaugedDrawSpecificPrediction_MatchesIndependentGeodesicGaussianOracle` | Verification | Four fixed geodesic GP draws, conditional mean/variance, physical location | Passed; one-result TRX |
@@ -1400,8 +1412,8 @@ parameter and conditional-GP uncertainty are not mixed.
 
 | Current exact identity | Network and distinction | Outcome and exact result directory |
 |---|---|---|
-| `SpatialGEVMLERecoveryTests.MLE_BasicHomogeneous_RecoversParameters` | 10 sites; independent homogeneous GEV | Passed 1/1, 1.716 s; `20260902-074615-...` |
-| `SpatialGEVMLERecoveryTests.MLE_WithCopula_RecoversParameters` | 10 sites; exponential Gaussian copula | Passed 1/1, 4.931 s; `20260902-074645-...` |
+| `SpatialGEVMLERecoveryTests.MLE_BasicHomogeneous_RecoversParameters` | 10 sites; independent homogeneous GEV | Passed 1/1, 1.716 s; `20260902-074615-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074936-...` (Task 2.12) |
+| `SpatialGEVMLERecoveryTests.MLE_WithCopula_RecoversParameters` | 10 sites; exponential Gaussian copula | Passed 1/1, 4.931 s; `20260902-074645-...`; rerun 26 September 2026 under the current `10*k` DE population, `20260926-074940-...` (Task 2.12) |
 | `SpatialGEVBayesianRecoveryTests.Bayesian_BasicHomogeneous_RecoversParameters` | 10 sites; mildly negative shape baseline | Passed 1/1, 68.472 s; `20260902-075604-...` |
 | `SpatialGEVBayesianRecoveryTests.Bayesian_WithCopula_RecoversParameters` | 10 sites; exponential Gaussian copula | Passed 1/1, 165.125 s; `20260902-075735-...` |
 | `SpatialGEVBayesianRecoveryTests.Bayesian_WithLocationRegression_RecoversParameters` | 10 sites; X/Y location regression | Passed 1/1, 130.429 s; `20260902-080047-...` |

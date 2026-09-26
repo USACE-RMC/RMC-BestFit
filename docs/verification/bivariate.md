@@ -115,7 +115,10 @@ production optimum cannot pass through a negative statistic. The two Student-t c
 artifact's same-point numerical tolerance and the joint two-coordinate cutoff
 `chi-square(2)=5.991464547107979`. All 14 retained methods passed fresh guarded one-result runs on
 1 September 2026 (`20260901-143648-...` through `20260901-143950-...`); the twelve historical
-identities were not rerun after consolidation.
+identities were not rerun after consolidation. The 1 September runs were produced under the former
+`max(100, 10*k)` Differential Evolution population minimum; all 14 methods were rerun individually
+on 26 September 2026 under the current `10*k` population (Task 2.12, `20260926-074810-...` through
+`20260926-074915-...`) and all 14 passed again.
 
 ## Bayesian recovery and coincident frequency
 
@@ -131,7 +134,13 @@ match the closed-form distribution of the sum of two correlated fitted Normals w
 5x5 response-table discretization error for rho = 0, positive, and negative. The
 fourth cell uses `exp(0.01X+0.01Y)`, the exact Lognormal law, separate response-table error and parent-
 fit checks, and central-95% propagated parent-response bands at five predeclared ordinates. All four
-current cells passed separately on 31 August 2026. The TR-014 product-posterior oracle is
+current cells passed separately on 31 August 2026. The three `SumOfNormals_Rho*` cells fit their
+Normal marginals by Differential Evolution MLE and their 31 August record could not be confirmed
+outside the former `max(100, 10*k)` population-minimum window (31 August-8 September 2026); they were
+rerun individually on 26 September 2026 under the current `10*k` population (Task 2.12,
+`20260926-075022-...`, `20260926-075045-...`, and `20260926-075110-...`) and all three passed again.
+The fourth cell (`ExponentialLinearCombination_ParentResponseInsidePredictiveBands`) predates the
+window and was not rerun. The TR-014 product-posterior oracle is
 recorded in the [composite chapter](composite.md#independent-posterior-resampling).
 
 ## Criteria
