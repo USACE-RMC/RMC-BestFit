@@ -520,3 +520,69 @@ reprocess only to refresh their saved AIC and BIC (see the information-criteria 
   `InterpolateMissingData` overloads skip out-of-range indexes like their seven siblings instead
   of throwing from the indexer, and the indexed interpolation carries its twin's series-start
   extrapolation guard.
+
+## Known issues and limitations
+
+- Desktop updater: when an update is available, RMC-BestFit 2.0.0 and 2.0.1 show the "Update
+  Available" prompt twice at startup. Answering Yes to the first prompt starts the Tools-menu
+  update check, which asks again; answer Yes to the second prompt as well to download and install
+  the update. The single-prompt fix needs RMC.Wpf.Framework 1.0.5, which is not yet published;
+  this release stays on Framework 1.0.4.
+- Spatial GEV (library): after `RunAsync` with an uncertainty method other than the Bayesian
+  posterior, a reprocess (for example after the probability ordinates change) rebuilds the
+  results from the posterior without re-applying the selected method; re-run the analysis after
+  such a change. `RunSpatialBootstrapAsync` and `RunCrossValidationAsync` cannot be cancelled, and
+  cross-validation is not serialized with `RunAsync`; do not start either while `RunAsync` is
+  running. The `SpatialGEV` XML constructor restores the saved parameter values by position into
+  a parameter list built before the copula setting is applied, so the saved values of a model
+  with copula dependence are misaligned. (The Godambe sandwich method with spatial regression
+  errors is now rejected by validation; see the Spatial GEV validation entry above.)
+- GHCN snowfall downloads (RMC.Numerics downloader): daily snowfall values are ten times too
+  small. NOAA reports SNOW in whole millimetres, but the downloader converts it as it converts
+  PRCP, which NOAA reports in tenths of a millimetre (inches are the NOAA value divided by 254
+  instead of 25.4). Multiply downloaded snowfall values by ten; precipitation downloads are
+  unaffected. The shipped Paradise snowfall example keeps its original values (38 nonzero values
+  are affected) pending a decision on correcting them.
+- Verification reference value: the systematic-only Viglione et al. (Kamp) example tests the
+  lower endpoint of its 1,000-year quantile interval against 163 m³/s, while Skahill et al.
+  (2016), Table 2, gives 183 m³/s. Passing that test does not establish agreement with the
+  published endpoint; the disposition of the reference value is open.
+- Legacy Bulletin 17C rows: Bulletin 17C analyses saved by pre-release 2.0 builds older than
+  2.0 Beta-4 store their fit in an earlier format that this release does not convert. They open
+  without their fitted curves and without a warning, and saving the project overwrites their
+  original result cells. The Back Creek analysis in the shipped Bulletin 17C Bayesian examples
+  project is one. Keep a copy of such a project before saving it if the original results are
+  needed.
+- Time-series covariate rows: undoing the removal of a covariate row restores the row without its
+  time series. Select the series again in the restored row.
+- Coincident-frequency links: a coincident-frequency analysis stored in a project ahead of its
+  upstream bivariate analysis (for example, one created before that bivariate analysis) opens
+  without its link to it. Select the bivariate analysis again in the coincident-frequency
+  analysis's properties and re-run it.
+- Peaks-over-threshold exposure after save and reopen: the exposure (observation span) recorded
+  by a peaks-over-threshold extraction is restored on returning to the peaks-over-threshold
+  method only within the same session. If the project is saved and reopened in between, the
+  exposure falls back to the exact series' year or index span (the 2.0.0 behavior). Run the
+  extraction again after returning to peaks-over-threshold.
+- Peaks-over-threshold undo after a source change: after extracting peaks over threshold from one
+  time series, switching the source to another series, and processing again, undoing twice can
+  restore the first series' peaks with the second series' exposure. Run the extraction again
+  after such an undo.
+- API/MCP low-outlier flags without a threshold: manual input that flags observations with
+  `isLowOutlier:true` but supplies neither `lowOutlierThreshold` nor `useMultipleGrubbsBeckTest`
+  stores the flags without a censoring threshold, and Bulletin 17C and univariate fits then treat
+  those observations inconsistently. Whenever low outliers are flagged, also supply a
+  `lowOutlierThreshold` above every flagged value, or omit the flags and set
+  `useMultipleGrubbsBeckTest` to true.
+- Short time series (unchanged since 2.0.0): the default training window is the largest of 30
+  steps, the number of parameters, and 80% of the series, so a series of 10 to 29 values fails
+  validation under the default training settings. Turn off the default training steps
+  (`UseDefaultTrainingSteps`) and set the training window (`TrainingTimeSteps`) between the
+  number of parameters and the series length.
+- Save prompt after an automatic repair: opening a project in which RMC-BestFit repairs or
+  migrates an element (for example the plotting-position repair described above) does not mark
+  the project as changed, so there is no prompt to save the repair. Save the project after
+  opening it to keep the repair.
+- API plot-source export: the `results` payload of `GET api/analyses/{analysisId}/plot-source` is
+  not checked for ±Infinity as other responses are, so a non-finite value there is returned as
+  the JSON string "Infinity" or "-Infinity" instead of failing the request.
