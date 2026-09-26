@@ -453,16 +453,61 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
+        /// Determines whether a stored parameter-vector length is the reduced K-1 sampled weight
+        /// shape, rather than the full-K public shape, for this mixture.
+        /// </summary>
+        /// <param name="length">The stored vector length to test.</param>
+        /// <returns>
+        /// <see langword="true"/> when the mixture has more than one component and
+        /// <paramref name="length"/> equals the free-weight count plus the total component
+        /// parameter count (one fewer than the full-K public length); otherwise
+        /// <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// This mirrors <see cref="TryExpandIndependentParameters"/>'s own shape check exactly, so
+        /// it reads the mixture's structure (<see cref="Mixture"/>) directly rather than
+        /// <see cref="ModelBase.NumberOfParameters"/>: the latter is <c>Parameters.Count</c>, which
+        /// requires a validated <see cref="DataFrame"/> to be populated by
+        /// <see cref="SetDefaultParameters"/> and is not a precondition of the low-level expansion.
+        /// A single-component mixture has no weight coordinate at all in the public parameter
+        /// vector, so it has no shape distinct from the full-K shape and this always returns
+        /// <see langword="false"/> for it. <see cref="TryGetPhysicalParameters"/> calls this
+        /// directly so the shape test and the expansion it gates cannot drift apart; a result
+        /// consumer that only needs the shape decision without expanding anything (for example,
+        /// the API's sampled-parameter name list) calls it the same way instead of re-deriving
+        /// the arithmetic.
+        /// </remarks>
+        public bool IsSampledWeightVectorLength(int length)
+        {
+            if (Mixture is null || Mixture.Distributions.Length <= 1) return false;
+
+            int freeWeightCount = GetFreeWeightCount(Mixture);
+            int distributionParameterCount = Mixture.Distributions.Sum(distribution => distribution.NumberOfParameters);
+            return length == freeWeightCount + distributionParameterCount;
+        }
+
+        /// <summary>
         /// Expands a stored mixture result to the full public parameter vector.
         /// </summary>
         /// <param name="parameters">A K-1 sampled vector or a legacy full-K vector.</param>
         /// <param name="physicalParameters">The full public parameter vector when the stored shape is recognized and feasible.</param>
         /// <returns><see langword="true"/> when the vector is either a valid K-1 sampled shape or the established full-K shape.</returns>
         /// <remarks>
-        /// This method is restricted to BestFit result consumption. Public model methods continue
-        /// to require the established full-K vector, and the caller-owned result is never mutated.
+        /// This is the single K-1/full-K expansion rule for result consumers outside this
+        /// assembly — the App's parameter-sets table and the API's results mapper — so both
+        /// share one implementation instead of re-deriving it. A full-K vector (length
+        /// <see cref="ModelBase.NumberOfParameters"/>) is returned unchanged. A K-1 sampled
+        /// vector (<see cref="IsSampledWeightVectorLength"/>) has its derived final weight
+        /// computed as the remaining component mass minus the tracked free weights and clamped
+        /// to zero when that residual lies within <c>1E-12 * Math.Max(1.0, componentMass)</c> of
+        /// zero — the boundary of the physical simplex from floating-point accumulation, not an
+        /// infeasible point — while a genuinely negative residual beyond that tolerance is still
+        /// rejected. Public model methods (<see cref="LogLikelihood"/> and siblings) continue to
+        /// require the established full-K vector; this method is restricted to BestFit result
+        /// consumption. The caller-owned array is never mutated, and no result migration or
+        /// rewritten serialization occurs.
         /// </remarks>
-        internal bool TryGetPhysicalParameters(IList<double> parameters, out double[] physicalParameters)
+        public bool TryGetPhysicalParameters(IList<double> parameters, out double[] physicalParameters)
         {
             physicalParameters = Array.Empty<double>();
             if (Mixture is null || parameters is null) return false;
@@ -473,12 +518,11 @@ namespace RMC.BestFit.Models
                 return true;
             }
 
-            if (!TryExpandIndependentParameters(parameters, out double[] numericsParameters))
+            if (!IsSampledWeightVectorLength(parameters.Count) ||
+                !TryExpandIndependentParameters(parameters, out double[] numericsParameters))
                 return false;
 
-            physicalParameters = Mixture.Distributions.Length > 1
-                ? numericsParameters
-                : numericsParameters.Skip(1).ToArray();
+            physicalParameters = numericsParameters;
             return true;
         }
 

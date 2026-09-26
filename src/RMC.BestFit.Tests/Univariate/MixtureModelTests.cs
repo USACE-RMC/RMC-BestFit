@@ -1348,4 +1348,85 @@ public class MixtureModelTests
             "A residual below the clamp tolerance must still be rejected.");
     }
 
+    /// <summary>
+    /// Verifies the promoted public expansion rule at known points: the K-1 derived-weight formula,
+    /// the 1E-12 simplex-boundary clamp, the rejection boundary just outside it, and an unchanged
+    /// full-K passthrough returned in a new array.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="MixtureModel.TryGetPhysicalParameters"/> is now public so the App's parameter-sets
+    /// table and the API's results mapper can share this exact rule instead of re-deriving it
+    /// (Task 3.7 / finding M6). This pins the same numeric points the App and API tests use.
+    /// </remarks>
+    [TestMethod]
+    public void Test_TryGetPhysicalParameters_PublicSurface_MatchesKnownPoints()
+    {
+        var model = new MixtureModel();
+        Assert.AreEqual(2, model.Mixture!.Distributions.Length, "Fixture precondition: two components.");
+
+        // K-1 vector: the derived weight is the component mass minus the tracked free-weight sum.
+        var sampled = new double[] { 0.4, 10.0, 2.0, 30.0, 5.0 };
+        Assert.IsTrue(model.TryGetPhysicalParameters(sampled, out double[] expanded));
+        Assert.AreEqual(0.6, expanded[1], 1E-15, "Derived weight is componentMass minus the tracked sum.");
+
+        // A derived weight of -5E-13 (mass 1) is within the 1E-12 clamp tolerance: clamped to zero.
+        var vanishinglyNegative = new double[] { 1.0 + 5E-13, 10.0, 2.0, 30.0, 5.0 };
+        Assert.IsTrue(model.TryGetPhysicalParameters(vanishinglyNegative, out double[] clamped));
+        Assert.AreEqual(0.0, clamped[1], 0d, "A derived weight of -5E-13 is clamped to zero.");
+
+        // A derived weight of -1E-9 is outside the clamp tolerance: rejected, not clamped.
+        var justOutsideTolerance = new double[] { 1.0 + 1E-9, 10.0, 2.0, 30.0, 5.0 };
+        Assert.IsFalse(model.TryGetPhysicalParameters(justOutsideTolerance, out _),
+            "A derived weight of -1E-9 is outside the clamp tolerance and must be rejected.");
+
+        // Full-K vector on a fully configured model (Parameters populated from a valid data
+        // frame): returned unchanged, in a newly allocated array.
+        var configured = new MixtureModel(
+            CreateSampleDataFrame(),
+            new List<UnivariateDistributionType> { UnivariateDistributionType.Normal, UnivariateDistributionType.Normal });
+        double[] fullK = configured.Parameters.Select(parameter => parameter.Value).ToArray();
+        Assert.AreEqual(configured.NumberOfParameters, fullK.Length, "Fixture precondition: parameters are populated.");
+        Assert.IsTrue(configured.TryGetPhysicalParameters(fullK, out double[] passedThrough));
+        CollectionAssert.AreEqual(fullK, passedThrough);
+        Assert.AreNotSame(fullK, passedThrough);
+    }
+
+    /// <summary>
+    /// Verifies the shared K-1 shape predicate at one, two, and three mixture components.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="MixtureModel.IsSampledWeightVectorLength"/> is the single length-only shape test
+    /// result consumers use to decide K-1 versus full-K without re-deriving the arithmetic (the
+    /// API's <c>ResultsMapper.GetSampledParameterNames</c> calls it directly). A single-component
+    /// mixture has no weight coordinate at all, so it has no shape distinct from the full-K shape.
+    /// </remarks>
+    [TestMethod]
+    public void Test_IsSampledWeightVectorLength_KnownComponentCounts()
+    {
+        var twoComponent = new MixtureModel(
+            CreateSampleDataFrame(),
+            new List<UnivariateDistributionType> { UnivariateDistributionType.Normal, UnivariateDistributionType.Normal });
+        int twoComponentFullK = twoComponent.NumberOfParameters;
+        Assert.IsTrue(twoComponent.IsSampledWeightVectorLength(twoComponentFullK - 1));
+        Assert.IsFalse(twoComponent.IsSampledWeightVectorLength(twoComponentFullK));
+
+        var oneComponent = new MixtureModel(
+            CreateSampleDataFrame(),
+            new List<UnivariateDistributionType> { UnivariateDistributionType.Normal });
+        Assert.IsFalse(oneComponent.IsSampledWeightVectorLength(oneComponent.NumberOfParameters - 1));
+        Assert.IsFalse(oneComponent.IsSampledWeightVectorLength(oneComponent.NumberOfParameters));
+
+        var threeComponent = new MixtureModel(
+            CreateSampleDataFrame(),
+            new List<UnivariateDistributionType>
+            {
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal,
+                UnivariateDistributionType.Normal
+            });
+        int threeComponentFullK = threeComponent.NumberOfParameters;
+        Assert.IsTrue(threeComponent.IsSampledWeightVectorLength(threeComponentFullK - 1));
+        Assert.IsFalse(threeComponent.IsSampledWeightVectorLength(threeComponentFullK));
+    }
+
 }

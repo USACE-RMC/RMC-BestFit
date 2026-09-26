@@ -194,6 +194,46 @@ namespace RMC.BestFit.Api.Tests.Mappers
         }
 
         /// <summary>
+        /// Verifies legacy full-K stored mixture results keep every component's name (the shared
+        /// shape test used to decide K-1 versus full-K,
+        /// <see cref="RMC.BestFit.Models.MixtureModel.IsSampledWeightVectorLength"/>, must not strip
+        /// a name when the stored coordinate count already matches the full public parameter count).
+        /// </summary>
+        [TestMethod]
+        public async Task ToFrequencyResults_MixtureLegacyFullKResults_KeepsAllNames()
+        {
+            var resource = TestAnalyses.CreateMixtureResource();
+            var analysis = resource.Mixture!;
+            var model = analysis.MixtureDistribution;
+            double[] fullK = model.Parameters.Select(parameter => parameter.Value).ToArray();
+            var output = Enumerable.Range(0, 20)
+                .Select(drawIndex =>
+                {
+                    double[] values = fullK.ToArray();
+                    values[0] = 0.35 + drawIndex * 0.01;
+                    values[1] = 1.0 - values[0];
+                    return new ParameterSet(values, model.LogLikelihood(values));
+                })
+                .ToList();
+            var results = new MCMCResults(
+                output.OrderByDescending(parameterSet => parameterSet.Fitness).First(),
+                output,
+                alpha: 0.10);
+            analysis.BayesianAnalysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+            await analysis.CreateFrequencyAnalysisResultsAsync();
+
+            var response = ResultsMapper.ToFrequencyResults(resource);
+            string[] names = response.ParameterSummaries
+                .Select(summary => summary.Name ?? string.Empty)
+                .ToArray();
+
+            Assert.AreEqual(model.NumberOfParameters, names.Length);
+            CollectionAssert.AreEqual(
+                model.Parameters.Select(parameter => parameter.DisplayName).ToArray(),
+                names);
+        }
+
+        /// <summary>
         /// Verifies the convergence scan flags high R-hat and low effective sample size, and stays
         /// silent for healthy diagnostics.
         /// </summary>

@@ -321,6 +321,13 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   negative when the model already fails validation (`TrainingTimeSteps` greater than the response
   length); `RunAsync` refuses to run such a model, so this path is not reachable from a normally
   validated project.
+- Mixture analysis parameter-sets table (Task 3.7, finding M6): the App's parameter-sets table and
+  the API's results mapper now share the core's K-1/full-K expansion
+  (`MixtureModel.TryGetPhysicalParameters`, newly public) instead of each re-deriving the
+  arithmetic. The table no longer crashes the application when a stored draw's derived final
+  weight is a rounding-level negative — it now shows zero, as the fit itself does — and shows an
+  empty table with a message instead of a partial table or an unhandled exception when a stored
+  draw cannot be expanded at all.
 
 ## RMC.Numerics (since 2.1.4)
 

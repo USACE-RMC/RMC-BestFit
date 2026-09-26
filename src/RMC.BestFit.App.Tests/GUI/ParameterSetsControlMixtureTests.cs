@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Numerics.Distributions;
+using Numerics.Mathematics.Optimization;
+using Numerics.Sampling.MCMC;
 using RMC.BestFit.Estimation;
 using RMC.BestFit.Models;
 using System;
@@ -150,6 +152,79 @@ namespace RMC.BestFit.App.Tests.GUI
 
             Assert.ThrowsException<InvalidDataException>(() =>
                 RMC_BestFit.ParameterSetsControl.GetPhysicalDisplayValues(analysis, stored));
+        }
+
+        /// <summary>
+        /// Verifies a derived weight that is negative only at rounding level displays as zero
+        /// instead of throwing (finding M6: the control's duplicated expansion lacked the core's
+        /// 1E-12 simplex-boundary clamp, so this exact draw used to crash the tab).
+        /// </summary>
+        [TestMethod]
+        public void GetPhysicalDisplayValues_DerivedWeightRoundingLevelNegative_ClampsToZeroInsteadOfThrowing()
+        {
+            var model = new MixtureModel(
+                CreateDataFrame(),
+                new List<UnivariateDistributionType>
+                {
+                    UnivariateDistributionType.Normal,
+                    UnivariateDistributionType.Normal
+                });
+            var analysis = new BayesianAnalysis(model);
+            double[] stored = model.Parameters.Select(parameter => parameter.Value)
+                .Where((_, index) => index != 1)
+                .ToArray();
+            // Derived weight = componentMass(1.0) - stored[0] = -5E-13: within the core's 1E-12
+            // clamp tolerance, so it must display as zero rather than throw.
+            stored[0] = 1.0 + 5E-13;
+
+            double[] displayed = RMC_BestFit.ParameterSetsControl.GetPhysicalDisplayValues(analysis, stored);
+
+            Assert.AreEqual(0.0, displayed[1], 0.0,
+                "A rounding-level negative derived weight is clamped to zero, not rejected.");
+        }
+
+        /// <summary>
+        /// Verifies the WPF-independent decision seam behind the data-grid binding never throws:
+        /// when any one retained draw cannot be expanded, it reports failure and no rows, rather
+        /// than a table missing just that row or an unhandled exception reaching the UI thread.
+        /// </summary>
+        [TestMethod]
+        public void TryGetAllPhysicalDisplayValues_OneInfeasibleDrawAmongValidOnes_ReturnsFalseWithNoRows()
+        {
+            var model = new MixtureModel(
+                CreateDataFrame(),
+                new List<UnivariateDistributionType>
+                {
+                    UnivariateDistributionType.Normal,
+                    UnivariateDistributionType.Normal
+                });
+            var analysis = new BayesianAnalysis(model);
+            double[] baseline = model.Parameters.Select(parameter => parameter.Value)
+                .Where((_, index) => index != 1)
+                .ToArray();
+
+            var output = new List<ParameterSet>();
+            for (int drawIndex = 0; drawIndex < 3; drawIndex++)
+            {
+                double[] values = baseline.ToArray();
+                values[0] = 0.3 + drawIndex * 0.05;
+                output.Add(new ParameterSet(values, -drawIndex));
+            }
+            // A genuinely infeasible draw: the free weight alone exceeds the component mass by
+            // far more than the clamp tolerance, so no valid physical mixture can be derived.
+            double[] infeasibleValues = baseline.ToArray();
+            infeasibleValues[0] = 1.5;
+            output.Add(new ParameterSet(infeasibleValues, -100));
+
+            var results = new MCMCResults(output[0], output, alpha: 0.10);
+            analysis.SetCustomMCMCResults(results, skipInformationCriteria: true);
+
+            bool succeeded = RMC_BestFit.ParameterSetsControl.TryGetAllPhysicalDisplayValues(
+                analysis, out List<double[]> displayRows);
+
+            Assert.IsFalse(succeeded,
+                "An infeasible draw must fail the whole-table decision instead of dropping just that row.");
+            Assert.AreEqual(0, displayRows.Count);
         }
     }
 }

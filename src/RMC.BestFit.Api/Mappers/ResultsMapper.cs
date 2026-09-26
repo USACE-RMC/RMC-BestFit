@@ -469,6 +469,12 @@ namespace RMC.BestFit.Api.Mappers
         /// <param name="bayesian">The Bayesian analysis that owns the results.</param>
         /// <param name="parameters">The public model parameters.</param>
         /// <returns>Sampled-coordinate names, omitting the derived final mixture weight for new K-1 results.</returns>
+        /// <remarks>
+        /// The K-1 versus full-K decision is <see cref="MixtureModel.IsSampledWeightVectorLength"/> —
+        /// the same shape test <see cref="MixtureModel.TryGetPhysicalParameters"/> uses to gate its
+        /// expansion (finding M6) — so this method never re-derives the length arithmetic; it only
+        /// decides which name to omit, and expands nothing.
+        /// </remarks>
         private static List<string> GetSampledParameterNames(
             BayesianAnalysis bayesian,
             IReadOnlyList<RMC.BestFit.Models.ModelParameter> parameters)
@@ -476,8 +482,8 @@ namespace RMC.BestFit.Api.Mappers
             var names = parameters.Select(parameter => parameter.DisplayName).ToList();
             if (bayesian.Model is MixtureModel mixtureModel &&
                 mixtureModel.Mixture is not null &&
-                mixtureModel.Mixture.Distributions.Length > 1 &&
-                bayesian.Results?.ParameterResults?.Length == names.Count - 1)
+                bayesian.Results?.ParameterResults?.Length is int sampledLength &&
+                mixtureModel.IsSampledWeightVectorLength(sampledLength))
             {
                 names.RemoveAt(mixtureModel.Mixture.Distributions.Length - 1);
             }

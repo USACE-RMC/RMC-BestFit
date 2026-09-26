@@ -13,11 +13,15 @@
              DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <Grid>
         <tblView:TableViewer
-                    x:Name="ParameterSetTableViewer" 
-                    RowSelectable="True" 
-                    ColumnSelectable="True" 
-                    CellSelectable="True" 
+                    x:Name="ParameterSetTableViewer"
+                    RowSelectable="True"
+                    ColumnSelectable="True"
+                    CellSelectable="True"
                     ShowRowHeaders="False"
                     AutoFitColumns="True"/>
+        <TextBlock x:Name="InvalidMixtureDrawWarning"
+                   Text="The parameter sets cannot be displayed because a stored draw does not define valid mixture weights."
+                   TextWrapping="Wrap" Foreground="#FFE41400" FontSize="13"
+                   Margin="10,8,10,4" Visibility="Collapsed"/>
     </Grid>
 </UserControl>
