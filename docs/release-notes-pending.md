@@ -200,7 +200,11 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   the recorded POT source-observation span survived a source change and could be silently reused
   as the exposure for an unrelated point-process fit. Replacing or editing the POT-derived exact
   series while the method stays peaks-over-threshold is unchanged and still keeps the recorded
-  span.
+  span. Returning to peaks-over-threshold with the extracted series unchanged — by re-selecting the
+  method with no intervening edit, or by an Undo/Redo of the method change — restores the exposure
+  that was cleared on the way out; if the series changed (edited in place, or re-derived by another
+  method such as Block Series) while a different method was selected, the exposure stays cleared
+  until the next POT extraction.
 - Nonstationary trend models: a failed default-parameter build in
   `UnivariateDistribution.SetTrendModel` (for example, too few observations, a constant sample, or
   non-finite values reaching the parent distribution's automatic constraint estimator) still

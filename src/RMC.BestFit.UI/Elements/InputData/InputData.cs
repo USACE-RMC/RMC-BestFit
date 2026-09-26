@@ -357,6 +357,39 @@ namespace RMC.BestFit.UI
         private ExactDataEntryType _exactDataMethod = ExactDataEntryType.Manual;
 
         /// <summary>
+        /// The point-process observation-years exposure recorded on <see cref="DataFrame"/> at the
+        /// moment <see cref="ExactDataMethod"/> last left <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>.
+        /// <see cref="double.NaN"/> when nothing is stashed.
+        /// </summary>
+        /// <remarks>
+        /// Stashed by <see cref="StashPointProcessObservationYears"/> and consumed (restored or
+        /// discarded) by <see cref="RestorePointProcessObservationYearsIfUnchanged"/> the next time
+        /// the method returns to POT extraction. See that method's remarks for why the stash exists.
+        /// </remarks>
+        private double _stashedPointProcessObservationYears = double.NaN;
+
+        /// <summary>
+        /// The <see cref="DataFrame"/> instance that owned <see cref="_stashedPointProcessObservationYears"/>
+        /// and <see cref="_stashedExactSeriesSnapshot"/> when they were stashed. <c>null</c> when
+        /// nothing is stashed.
+        /// </summary>
+        /// <remarks>
+        /// Compared by reference against the current <see cref="DataFrame"/> before restoring, so a
+        /// data frame swapped in while away from POT extraction (for example, by reassigning
+        /// <see cref="DataFrame"/> directly) cannot receive an exposure recorded for a different
+        /// instance.
+        /// </remarks>
+        private DataFrame _stashedDataFrame;
+
+        /// <summary>
+        /// A snapshot of <see cref="DataFrame"/>'s exact series — each ordinate's date, index, and
+        /// value, in order — taken when <see cref="ExactDataMethod"/> last left
+        /// <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>. <c>null</c> when nothing is
+        /// stashed.
+        /// </summary>
+        private List<(DateTime DateTime, int Index, double Value)> _stashedExactSeriesSnapshot;
+
+        /// <summary>
         /// The factory-default data unit label.
         /// </summary>
         private const string DefaultUnitLabel = "Value";
@@ -610,9 +643,14 @@ namespace RMC.BestFit.UI
         /// <see cref="RMC.BestFit.Models.DataFrame.PointProcessObservationYears"/> source exposure
         /// retained on <see cref="DataFrame"/> from the prior POT extraction: Manual, USGS, and
         /// Block Series entry do not carry that metadata, so leaving it in place would let a later
-        /// point-process fit silently reuse an exposure recorded for an unrelated period. Switching
-        /// between other methods, or editing the POT-derived series while this stays
-        /// <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>, does not affect it.
+        /// point-process fit silently reuse an exposure recorded for an unrelated period. Editing
+        /// the POT-derived series while this stays <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>
+        /// does not affect it. Returning to <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>
+        /// with the exact series unchanged since it left — whether by re-selecting the method or by
+        /// an Undo/Redo that replays this setter — restores the exposure that was cleared; if the
+        /// series changed (edited in place, or re-derived by another method) while away, the
+        /// exposure stays cleared until the next POT extraction. See
+        /// <see cref="RestorePointProcessObservationYearsIfUnchanged"/> for the exact conditions.
         /// </remarks>
         [Category("General")]
         [DisplayName("Exact Data Entry Method")]
@@ -632,11 +670,21 @@ namespace RMC.BestFit.UI
                     // Manual and USGS entry never populate this metadata, and Block Series clears
                     // it itself (DataFrame.CreateBlockSeries); reset it here too so every path away
                     // from POT is covered by a single check on the transition, not on which
-                    // "Create*" method the caller happens to invoke next. Go through the property
-                    // setter (not the backing field) so listeners such as PointProcessModel see the
-                    // change and re-infer their exposure.
+                    // "Create*" method the caller happens to invoke next. Stash what is being
+                    // cleared first so a return to POT with the series unchanged can restore it —
+                    // see RestorePointProcessObservationYearsIfUnchanged.
                     if (old == ExactDataEntryType.PeaksOverThresholdSeries && DataFrame != null)
+                    {
+                        StashPointProcessObservationYears();
                         DataFrame.PointProcessObservationYears = double.NaN;
+                    }
+                    else if (value == ExactDataEntryType.PeaksOverThresholdSeries && DataFrame != null)
+                    {
+                        // Deliberately unconditional: this must also run when UndoManager replays
+                        // this setter for Undo/Redo, or the stash/restore pair is not symmetric and
+                        // Undo of a method change would leave a wrong exposure in place.
+                        RestorePointProcessObservationYearsIfUnchanged();
+                    }
 
                     SetIsValid();
                     RecordPropertyChange(nameof(ExactDataMethod), old, value);
@@ -2231,6 +2279,129 @@ namespace RMC.BestFit.UI
                 }
             }
             IsProcessed = false;
+        }
+
+        /// <summary>
+        /// Records the current point-process observation-years exposure, the owning data frame, and
+        /// a snapshot of the exact series, for a possible restore by
+        /// <see cref="RestorePointProcessObservationYearsIfUnchanged"/> if <see cref="ExactDataMethod"/>
+        /// later returns to peaks-over-threshold extraction.
+        /// </summary>
+        /// <remarks>
+        /// Called only from the <see cref="ExactDataMethod"/> setter's leave-POT branch, so
+        /// <see cref="DataFrame"/> is known non-null at the call site. Stashing unconditionally
+        /// (even when the current exposure is already <see cref="double.NaN"/>) is intentional and
+        /// harmless: <see cref="RestorePointProcessObservationYearsIfUnchanged"/> only acts on a
+        /// finite stashed value, so a stash of NaN is simply never restored.
+        /// </remarks>
+        private void StashPointProcessObservationYears()
+        {
+            _stashedPointProcessObservationYears = DataFrame.PointProcessObservationYears;
+            _stashedDataFrame = DataFrame;
+            _stashedExactSeriesSnapshot = SnapshotExactSeries(DataFrame.ExactSeries);
+        }
+
+        /// <summary>
+        /// Restores a point-process observation-years exposure stashed by
+        /// <see cref="StashPointProcessObservationYears"/> when <see cref="ExactDataMethod"/> returns
+        /// to peaks-over-threshold extraction with the exact series unchanged, then clears the
+        /// stash unconditionally.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Switching <see cref="ExactDataMethod"/> away from and back to
+        /// <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/> — by plain re-selection, or by
+        /// an Undo/Redo that replays the setter — does not itself re-run
+        /// <see cref="CreatePeaksOverThresholdSeries()"/>. Without this check, restoring the stashed
+        /// exposure unconditionally on return would apply an old span to a series that may have
+        /// since been edited in place, re-derived by <see cref="CreateBlockSeries()"/> or
+        /// <see cref="CreateFromUSGS"/>, or replaced outright — silently reintroducing the
+        /// stale-exposure defect this stash/restore pair exists to prevent.
+        /// </para>
+        /// <para>
+        /// Restoring requires ALL of: a finite stashed exposure; the current <see cref="DataFrame"/>
+        /// is reference-equal to the one the stash was taken from (a data frame swapped in while
+        /// away from POT must not receive an exposure recorded for a different instance); the
+        /// current exact series matches the stashed snapshot exactly, item for item (catches an
+        /// in-place value or date edit that leaves the count unchanged, as well as a re-derived
+        /// series with a different count); and the current exposure is still <see cref="double.NaN"/>
+        /// (defensive — something else may already have recorded a fresh exposure). The stash is
+        /// dropped after this check regardless of outcome, so a later, unrelated return to POT
+        /// cannot reuse a stale snapshot from an earlier transition.
+        /// </para>
+        /// <para>
+        /// This method must run unconditionally, including while <c>UndoManager</c> is replaying an
+        /// Undo or Redo of the <see cref="ExactDataMethod"/> setter: the stash written on the
+        /// forward leave-POT transition and the restore attempted on the reverse return-to-POT
+        /// transition are what make Undo (which replays the setter with the old method value) and
+        /// Redo (which replays it with the new value) symmetric. Gating this on
+        /// <c>!UndoManager.IsExecutingAction</c>, as some other property setters in this class do
+        /// for <see cref="ClearTimeSeriesResults"/>, would break that symmetry here.
+        /// </para>
+        /// </remarks>
+        private void RestorePointProcessObservationYearsIfUnchanged()
+        {
+            if (double.IsFinite(_stashedPointProcessObservationYears) &&
+                ReferenceEquals(_stashedDataFrame, DataFrame) &&
+                _stashedExactSeriesSnapshot != null &&
+                double.IsNaN(DataFrame.PointProcessObservationYears) &&
+                ExactSeriesMatchesSnapshot(DataFrame.ExactSeries, _stashedExactSeriesSnapshot))
+            {
+                DataFrame.PointProcessObservationYears = _stashedPointProcessObservationYears;
+            }
+
+            _stashedPointProcessObservationYears = double.NaN;
+            _stashedDataFrame = null;
+            _stashedExactSeriesSnapshot = null;
+        }
+
+        /// <summary>
+        /// Captures the date, index, and value of every ordinate in an exact series, in order, for
+        /// later exact comparison against the same series' state at another point in time.
+        /// </summary>
+        /// <param name="series">The exact series to snapshot.</param>
+        /// <returns>A list with one entry per ordinate, in series order.</returns>
+        private static List<(DateTime DateTime, int Index, double Value)> SnapshotExactSeries(ExactSeries series)
+        {
+            var snapshot = new List<(DateTime, int, double)>(series.Count);
+            for (int i = 0; i < series.Count; i++)
+            {
+                var item = (ExactData)series[i];
+                snapshot.Add((item.DateTime, item.Index, item.Value));
+            }
+            return snapshot;
+        }
+
+        /// <summary>
+        /// Determines whether an exact series' current ordinates match a snapshot taken earlier by
+        /// <see cref="SnapshotExactSeries"/>, comparing count and every ordinate's date, index, and
+        /// value exactly.
+        /// </summary>
+        /// <param name="series">The current exact series.</param>
+        /// <param name="snapshot">The snapshot to compare against.</param>
+        /// <returns>
+        /// <c>true</c> when <paramref name="series"/> has the same count as <paramref name="snapshot"/>
+        /// and every ordinate's date, index, and value exactly match the snapshot at the same
+        /// position; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// Value comparison uses <see cref="double.Equals(double)"/> rather than <c>==</c> so two
+        /// stashed <see cref="double.NaN"/> values compare equal, matching the intuitive meaning of
+        /// "nothing changed" rather than IEEE 754 equality.
+        /// </remarks>
+        private static bool ExactSeriesMatchesSnapshot(ExactSeries series, List<(DateTime DateTime, int Index, double Value)> snapshot)
+        {
+            if (series.Count != snapshot.Count)
+                return false;
+
+            for (int i = 0; i < series.Count; i++)
+            {
+                var item = (ExactData)series[i];
+                var expected = snapshot[i];
+                if (item.DateTime != expected.DateTime || item.Index != expected.Index || !item.Value.Equals(expected.Value))
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>

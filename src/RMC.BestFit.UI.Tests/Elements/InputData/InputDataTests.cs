@@ -1033,6 +1033,132 @@ public class InputDataTests
     }
 
     /// <summary>
+    /// Builds a POT-derived <see cref="UI.InputData"/> with a recorded, finite source exposure, for
+    /// the round-trip/undo/series-changed tests below.
+    /// </summary>
+    /// <param name="name">The InputData element name.</param>
+    /// <param name="timeSeriesName">The linked time-series element name.</param>
+    /// <returns>The configured element, already past a successful POT extraction.</returns>
+    private static UI.InputData CreatePeaksOverThresholdInputData(string name, string timeSeriesName)
+    {
+        var id = new UI.InputData(name, _collection!);
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+        var potValues = Enumerable.Repeat(10.0, 372).Select((v, i) => i == 186 ? 500d : v).ToArray();
+        id.TimeSeriesElement = MakeTimeSeriesElement(timeSeriesName, TimeInterval.OneMonth, new DateTime(1990, 1, 1), potValues);
+        id.CreatePeaksOverThresholdSeries();
+        return id;
+    }
+
+    /// <summary>
+    /// Verifies that a plain round trip away from and back to
+    /// <see cref="UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries"/> — re-selecting the
+    /// method with no intervening edit — restores the exposure that was cleared on the way out.
+    /// </summary>
+    /// <remarks>
+    /// Regression coverage for a Critical finding against the initial fix: switching away from POT
+    /// unconditionally cleared <c>PointProcessObservationYears</c>, so returning to POT with the
+    /// exact same, unedited series (no re-extraction) left the exposure at <c>NaN</c> instead of
+    /// restoring the span the series still legitimately represents.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_RoundTripThroughAnotherMethod_RestoresPointProcessObservationYears()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotRoundTripID", "PotRoundTripTS");
+        double observationYears = id.DataFrame.PointProcessObservationYears;
+        Assert.IsTrue(double.IsFinite(observationYears) && observationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure.");
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+
+        Assert.AreEqual(observationYears, id.DataFrame.PointProcessObservationYears, 0.0,
+            "Returning to POT with the exact series unchanged must restore the cleared exposure.");
+    }
+
+    /// <summary>
+    /// Verifies that Undo of a method change away from POT restores both
+    /// <see cref="UI.InputData.ExactDataMethod"/> and the cleared exposure, and that Redo clears the
+    /// exposure again — the stash/restore pair must be symmetric under undo replay.
+    /// </summary>
+    /// <remarks>
+    /// <c>UndoManager.Undo()</c>/<c>Redo()</c> replay a recorded <see cref="UI.InputData.ExactDataMethod"/>
+    /// change by re-invoking the property setter with the old (Undo) or new (Redo) method value —
+    /// the same code path a direct assignment takes. This test is the reason
+    /// <c>RestorePointProcessObservationYearsIfUnchanged</c> and the leave-POT stash must run
+    /// unconditionally rather than being skipped while <c>UndoManager.IsExecutingAction</c> is true.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_UndoRedoAroundPeaksOverThreshold_RestoresAndClearsExposureSymmetrically()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotUndoID", "PotUndoTS");
+        double observationYears = id.DataFrame.PointProcessObservationYears;
+        Assert.IsTrue(double.IsFinite(observationYears) && observationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure.");
+        id.UndoManager.Clear();
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+        Assert.IsTrue(id.UndoManager.CanUndo, "The method change must be recorded for undo.");
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        id.UndoManager.Undo();
+        Assert.AreEqual(UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries, id.ExactDataMethod);
+        Assert.AreEqual(observationYears, id.DataFrame.PointProcessObservationYears, 0.0,
+            "Undoing the method change must restore the exposure recorded before the switch.");
+
+        id.UndoManager.Redo();
+        Assert.AreEqual(UI.InputData.ExactDataEntryType.Manual, id.ExactDataMethod);
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "Redoing the method change must clear the exposure again.");
+    }
+
+    /// <summary>
+    /// Verifies that returning to POT extraction after the exact series was edited in place while
+    /// another method was selected leaves the exposure cleared — the stashed span no longer
+    /// describes the current series.
+    /// </summary>
+    [STATestMethod]
+    public void ExactDataMethod_ReturningToPeaksOverThreshold_KeepsExposureClearedWhenSeriesChangedWhileAway()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotSeriesChangedID", "PotSeriesChangedTS");
+        Assert.IsTrue(double.IsFinite(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        // The series is edited while a different method is selected.
+        id.DataFrame.ExactSeries[0] = new RMC.BestFit.Models.ExactData(id.DataFrame.ExactSeries[0].Index, 999d);
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "The exposure must stay cleared: the exact series changed while a different method was selected.");
+    }
+
+    /// <summary>
+    /// Verifies that returning to POT extraction after the exact series was re-derived by
+    /// <see cref="UI.InputData.CreateBlockSeries()"/> while Block Series was selected leaves the
+    /// exposure cleared.
+    /// </summary>
+    [STATestMethod]
+    public void ExactDataMethod_ReturningToPeaksOverThreshold_KeepsExposureClearedWhenSeriesWasReDerived()
+    {
+        var id = CreatePeaksOverThresholdInputData("PotReDerivedID", "PotReDerivedTS");
+        Assert.IsTrue(double.IsFinite(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.BlockSeries;
+        id.TimeBlock = TimeBlockWindow.CalendarYear;
+        id.CreateBlockSeries();
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears));
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "The exposure must stay cleared: the exact series was re-derived by another method while away from POT.");
+    }
+
+    /// <summary>
     /// Verifies that editing plot axis titles does not back-sync into data labels.
     /// </summary>
     [STATestMethod]
