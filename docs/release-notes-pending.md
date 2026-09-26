@@ -17,65 +17,6 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   Corrected positions can change empirical moments, regression-on-order-statistics initialization,
   and fit diagnostics. Saved analyses are not automatically re-estimated; reprocess affected
   analyses to refresh results that depend on those positions.
-- Time series: ARIMAX conditions the likelihood, residuals, transform Jacobian, generation, and
-  prediction on one conditioning order (the rule is the ARIMAX conditioning entry below); an
-  empty conditional sum is an invalid fit (negative-infinite likelihood)
-  rather than a zero log-likelihood; ARIMA/AR order setters rebuild the training state; the
-  pointwise transform Jacobian is per observation; the transform reset of custom priors is
-  gated on `UseDefaultFlatPriors`; prediction-window covariate gaps and transform failures are
-  validation messages. `ARIMAX.Validate` requires exact-date covariate matching (legacy
-  projects with positionally aligned but differently dated covariates fail validation);
-  `SetTransformParameters` throws on a non-finite first parameter and ignores the second;
-  `GenerateRandomValues` returns raw-scale values of length `sampleSize`;
-  `ARIMAX.TrainingTimeSeries` is the differenced series. The ARIMAX structural setters (the AR,
-  differencing, MA, and covariate-lag orders, intercept, seasonality, trend, training window, and
-  default-window rule) and turning `UseDefaultFlatPriors` on now rebuild the default parameters
-  before they notify, so undoing or redoing a structural edit in a time-series analysis restores
-  the default priors and bounds that match the restored structure, and turning default flat
-  priors on or off is an undoable step.
-- ARIMAX covariate validation: when a covariate is missing a date the response needs, `Validate()`
-  now also adds a hint that covariates are paired by date (RMC-BestFit 2.0.0 paired them by
-  position).
-- Time-series analyses with covariates (ARIMAX; present since 2.0.0): opening a project, copying
-  the analysis, and undoing or redoing a model-property edit keep the saved coefficient values,
-  bounds, and custom priors. The covariates were reattached through a path that rebuilt the
-  default parameters, so a reopened analysis showed residual diagnostics at default coefficients
-  (residual RMS 0.660229 instead of the fitted 0.341147 in the time-series regression example),
-  and a later save of an edited analysis wrote those defaults to the project. **Re-check any
-  ARIMAX analysis with covariates that was reopened, edited, and saved in 2.0.0: its stored
-  priors may already be the defaults.** Metadata edits on a covariate series (its name,
-  description, or unit label, or saving it) no longer rebuild the parameters or clear the
-  results, and reselecting the same covariate series is not a change. Adding or removing a
-  covariate, pointing a covariate row at another series, or replacing a covariate's series (for
-  example by downloading it again) still rebuilds the defaults; editing covariate values in place
-  rebuilds them only when default flat priors are on and clears the results either way. Undo
-  and redo no longer apply a replaced covariate's coefficient, bounds, or prior to the covariate
-  that replaced it, and redoing a structural edit that changes the number of parameters (for
-  example the AR order) restores a vector that fits the model. Copying an analysis also keeps its
-  manual training window and covariate-extension method. API: the new
-  overload `ARIMAX.SetCovariates(List<TimeSeries>, bool resetParameters)` keeps a parameter list
-  whose layout still fits the covariates (the one-argument overload still rebuilds the
-  defaults), and `ARIMAX.Clone()` keeps the source's parameter values, bounds, and priors, so the
-  REST plot-source leverage and leave-one-out diagnostics of ARIMAX models with covariates and
-  non-uniform priors now use the fitted priors, as the desktop does.
-- ARIMAX conditioning (with-covariates rule approved 25 September 2026, review decision D6;
-  without-covariates rule confirmed 26 September 2026, ruling R2): a model with covariates now
-  conditions on `max(q, p + b)` leading model steps instead of `max(p, q, b)`, so every evaluated
-  step's own mean and every autoregressive-lag mean include all `b` lagged covariate values (the
-  first evaluated steps of a model with `p > 0` and `b > 0` formerly used AR-lag means that
-  omitted the covariate lags before the first observation). A model without covariates conditions
-  on `max(p, q)`: the covariate lag order has no role without covariates. **ARIMAX analyses with
-  covariates and `p > 0`, `b > 0` (where `p + b > q`) now condition on more leading steps, and
-  analyses without covariates whose lag order exceeds `max(p, q)` on fewer; their likelihood,
-  pointwise terms, information criteria, residual diagnostics, in-sample predictions, and fits
-  change, so re-run saved results of such analyses.** Models with `b = 0`, including every shipped
-  example, are unchanged. A training window must provide more differenced steps than this
-  order, and the validation message names it. Changing the covariate lag order, or attaching the
-  first covariate or removing the last one, now also moves the Box-Cox, Yeo-Johnson, or
-  logarithmic transform Jacobian window to the new order, keeping the transform exponent;
-  previously a lag-order edit left the window at its old start until the training data was next
-  rebuilt, which offset the reported log-likelihood and criteria of the edited analysis (the
-  fitted parameters were unaffected because the offset is constant).
 - Point process: seasonal Gumbel-limit annualization uses `xi + alpha ln p`; the seasonal
   simulator uses the fitted per-season threshold intensities; clones recompute the event rate;
   seasonal quantile priors are evaluated on the annualized distribution; the seasonal block-day
@@ -84,12 +25,53 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   mis-paired out-of-order records and `DayOfYear` broke across leap-year boundaries);
   `CustomYear` blocks shift like `WaterYear`; seasonal fitting requires dated exact observations
   (the fabricated January-1 index fallback is removed and validation reports the missing dates).
+  Seasonal changepoint defaults (TR-005): the broad default supports are `K1` in `[1, 251)` and
+  `K2` in `[200, 367)` (formerly `[10, 170]` and `[171, 330]`); with at least ten dated exact
+  events, the monthly occurrence histogram, rotated to the block-year start, sets each default to
+  a flat five-month window centered on a seasonal valley (within the broad support) unless the
+  histogram is effectively flat (Pearson statistic at or below the fixed cutoff 19.675, the 95th
+  percentile of a chi-square distribution with 11 degrees of freedom), lacks two separated peaks,
+  or is otherwise ambiguous; the likelihood, exposure weights, annual distribution conversion,
+  and simulation use the floored changepoint days. Seasonal fits that use the default changepoint
+  priors therefore change.
 - Composite and coincident frequency: zero inflation is inferred only when the weights sum to
   less than one by more than `1e-10`; the correlation matrix edit is undoable; the posterior
   index cache is thread safe; opening a coincident frequency analysis now syncs the upstream
   marginal posterior chains immediately after linking the upstream bivariate analysis and
   before restoring the saved results, so the first upstream validation notification delivered
   after a project opens no longer clears the just-restored coincident frequency curves.
+  Composite and coincident-frequency uncertainty (TR-014) now samples the retained posterior draws
+  of each source analysis independently: for each source, a seeded draw without replacement from
+  its whole retained chain, using the composite or coincident-frequency analysis's own `PRNGSeed`,
+  with as many realizations as the shortest source has retained draws. Separately fitted chains
+  are no longer paired by draw index, so the bands follow the product of the source posteriors.
+  Composite and coincident-frequency results saved by earlier versions stay readable but must be
+  re-run to adopt this sampling.
+- Information criteria (TR-011, TR-042, TR-047): the AIC and BIC of the Bayesian univariate,
+  mixture, competing-risk, point-process, time-series, rating-curve, and bivariate copula analyses
+  and of the `MaximumAPosteriori` estimator (`GetAIC`, `GetBIC`) are evaluated with the data
+  log-likelihood at the MAP instead of the full posterior kernel, so prior densities, their
+  normalization constants, and Jeffreys or quantile-prior terms no longer shift them. With flat
+  priors the values are comparable with maximum-likelihood criteria; with informative priors they
+  are not conventional AIC/BIC (DIC, WAIC, or PSIS-LOO apply). Criteria stored with results saved
+  by earlier versions keep their values until the analysis is re-run or reprocessed.
+- Profiles, PSIS-LOO, and covariance status (TR-023, TR-024, TR-027): the profile likelihoods and
+  profile intervals of `MaximumLikelihood` and `MaximumAPosteriori` (`ProfileLikelihood`,
+  `ParameterConfidenceIntervals`) re-optimize every free nuisance parameter at each point (against
+  the data likelihood for MLE and the posterior kernel for MAP) instead of holding the other
+  parameters at the optimum, so intervals of correlated parameters are no longer too narrow (MAP
+  profile intervals remain chi-squared cutoffs on the profiled posterior, not credible
+  intervals); `ParameterConfidenceIntervals` throws when a bound has no converged nuisance solve.
+  PSIS-LOO follows R `loo` 2.10.0 and `posterior` 1.7.0 (a tail fitted to the cutoff excesses with
+  the bounded generalized-Pareto fit and shrinkage of `posterior::gpdfit`, monotone expected order
+  statistics, reference truncation, and `r_eff = 1`), so LOOIC, `p_loo`, the LOOIC standard error,
+  Pareto k, and PSIS influence values change. Covariance failures are reported instead of
+  appearing as zero uncertainty: MLE, MAP, and GMM expose `CovarianceStatus`
+  (`CovarianceComputationStatus`: `NotComputed`, `Available`, `Regularized`, `Failed`) and
+  `CovarianceDiagnostic`; the new `TryGetCovarianceMatrix` (MLE, MAP),
+  `TryGetSandwichCovarianceMatrix` (MLE), and `TryGetCovariance` (GMM) return `false` when no
+  usable covariance exists; and the existing covariance getters throw `InvalidOperationException`
+  instead of returning zero standard errors.
 - Estimation and diagnostics: a degenerate PSIS tail reports `k = +inf` and unestimated Pareto
   k counts as unreliable; fewer than eleven retained draws use the fixed 0.7 limit; the data
   frame keeps the recorded POT observation span when the exact series is replaced; GMM
@@ -138,48 +120,48 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
 - Spatial GEV: rows with missing sites are marginalized through the observed-site Gaussian-copula
   submatrix (`GaussianCopula.LogPDF(z, observedSites)`; a zero placeholder score is no longer
   substituted), so posteriors of copula models fitted to networks with missing data change; the
-  Gaussian-process densities of the latent location/scale/shape errors moved from `DataLogLikelihood`
-  to a `PriorLogLikelihood` override (posterior kernel, sampler, MAP, and posterior unchanged;
-  AIC/BIC/DIC/WAIC/LOOIC of latent-error models now exclude the process densities; the
-  scalar/pointwise identities hold); `ComputeGodambeCovariance` derives both sandwich factors from
-  the row/year estimating equations, returns `null` with `GodambeCovarianceStatus = Failed` and a
-  `GodambeCovarianceDiagnostic` instead of the variability matrix when the sensitivity matrix is
-  singular or a value is not finite, validates the parameter count, and is reset by `ClearResults`;
-  spatial AIC/BIC keep the nonempty row/year unit (`SpatialGEVAnalysis.ComputeInformationCriteria`);
-  `SpatialGEV.Clone()` now carries the copula and latent-error parameter blocks and the source
-  values, bounds, and priors (previously the clone held only the trend blocks with reset
-  intercepts, so copula and latent-error Bayesian analyses failed while building site results);
-  leave-one-site-out cross-validation fits a reduced training model per fold (the held-out site's
-  data, coordinates, covariate rows, copula coordinate, and latent error removed) with a fold
-  analysis carrying the main settings and seed, predicts the held-out site with its own covariate
-  rows, never refits or mutates the main analysis (results are retained), and reports
-  `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, and `TotalFolds` with NaN metrics for unscored
-  folds, aggregates over successful folds, and an `InvalidOperationException` when no fold
-  succeeds; `GeneralLinearFunction.PredictWithCovariates(null or empty)` throws for a trend that
-  has covariates (intercept-only trends still accept null), so `PredictAtUngaugedLocation` and
-  `SpatialGEV.PredictAtUngauged` require covariate values for covariate models; ungauged-site
-  predictions apply the conditional Gaussian process of every posterior draw with a seeded conditional
-  residual (`SampleConditionalResidual`, default true; false gives the conditional mean) instead of
-  inverse-distance interpolation; regional credible bounds are posterior quantiles of the per-draw
-  regional mean quantile instead of averages of site interval endpoints; `GenerateRandomValues`
-  simulates spatially dependent rows through the fitted copula (independent sites without it);
-  `RunSpatialBootstrapAsync` runs a temporal block bootstrap (rows resampled in blocks, all sites kept,
-  MAP refit per replicate, NaN failures, at least half of the replicates required, `BootstrapResults`
-  accounting; `blockSize` now counts rows); `RunAsync` applies the selected `UncertaintyMethod`
-  (posterior, sqrt-VIF inflation, Gaussian parameter draws from the Godambe covariance at the MAP, or
-  the bootstrap with `BootstrapReplicates`/`BootstrapBlockSize`) and records `AppliedUncertaintyMethod`
-  and `SpatialGEVSiteResults.UncertaintyMethod`; `UncertaintyMethod`, `SampleConditionalResidual`,
-  `BootstrapReplicates`, and `BootstrapBlockSize` are serialized as optional attributes; a non-finite
-  site GEV parameter gives negative-infinite likelihood instead of throwing inside the sampler; default
-  latent-error bounds under a log link use the log-space spread (floor 1.0 log unit), so
-  `ConfigureForProperCoverage` models sample under the defaults; `SpatialGEV.DistanceMetric`
-  (`SpatialDistanceMetric.Cartesian` default, bitwise the former planar distances; `Geodesic` for
-  latitude/longitude in decimal degrees with great-circle kilometres) with new `GaussianCopula` and
-  `SpatialRegressionErrors` constructor overloads, coordinate validation, and an optional serialized
-  attribute; `ComputeEffectiveSampleSizeWeights` is obsolete in favor of
+  Gaussian-process densities of the latent location/scale/shape errors moved from
+  `DataLogLikelihood` to a `PriorLogLikelihood` override (posterior kernel, sampler, MAP, and
+  posterior unchanged; AIC/BIC/DIC/WAIC/LOOIC of latent-error models now exclude the process
+  densities; the scalar/pointwise identities hold); `ComputeGodambeCovariance` derives both sandwich
+  factors from the row/year estimating equations, returns `null` with
+  `GodambeCovarianceStatus = Failed` and a `GodambeCovarianceDiagnostic` instead of the variability
+  matrix when the sensitivity matrix is singular or a value is not finite, validates the parameter
+  count, and is reset by `ClearResults`; spatial AIC/BIC keep the nonempty row/year unit
+  (`SpatialGEVAnalysis.ComputeInformationCriteria`); `SpatialGEV.Clone()` now carries the copula and
+  latent-error parameter blocks and the source values, bounds, and priors (previously the clone held
+  only the trend blocks with reset intercepts, so copula and latent-error Bayesian analyses failed
+  while building site results); leave-one-site-out cross-validation fits a reduced training model
+  per fold (the held-out site's data, coordinates, covariate rows, copula coordinate, and latent
+  error removed) with a fold analysis carrying the main settings and seed, predicts the held-out
+  site with its own covariate rows, never refits or mutates the main analysis (results are
+  retained), and reports `FoldStatus`, `FoldMessages`, `SuccessfulFolds`, and `TotalFolds` with NaN
+  metrics for unscored folds, aggregates over successful folds, and an `InvalidOperationException`
+  when no fold succeeds; `GeneralLinearFunction.PredictWithCovariates(null or empty)` throws for a
+  trend that has covariates (intercept-only trends still accept null), so
+  `PredictAtUngaugedLocation` and `SpatialGEV.PredictAtUngauged` require covariate values for
+  covariate models; ungauged-site predictions apply the conditional Gaussian process of every
+  posterior draw with a seeded conditional residual (`SampleConditionalResidual`, default true;
+  false gives the conditional mean) instead of inverse-distance interpolation; regional credible
+  bounds are posterior quantiles of the per-draw regional mean quantile instead of averages of site
+  interval endpoints; `GenerateRandomValues` simulates spatially dependent rows through the fitted
+  copula (independent sites without it); `RunSpatialBootstrapAsync` runs a temporal block bootstrap
+  (rows resampled in blocks, all sites kept, MAP refit per replicate, NaN failures, at least half of
+  the replicates required, `BootstrapResults` accounting; `blockSize` now counts rows); `RunAsync`
+  applies the selected `UncertaintyMethod` (posterior, sqrt-VIF inflation, Gaussian parameter draws
+  from the Godambe covariance at the MAP, or the bootstrap with
+  `BootstrapReplicates`/`BootstrapBlockSize`) and records `AppliedUncertaintyMethod` and
+  `SpatialGEVSiteResults.UncertaintyMethod`; `UncertaintyMethod`, `SampleConditionalResidual`,
+  `BootstrapReplicates`, and `BootstrapBlockSize` are serialized as optional attributes; a
+  non-finite site GEV parameter gives negative-infinite likelihood instead of throwing inside the
+  sampler; default latent-error bounds under a log link use the log-space spread (floor 1.0 log
+  unit), so `ConfigureForProperCoverage` models sample under the defaults;
+  `SpatialGEV.DistanceMetric` (`SpatialDistanceMetric.Cartesian` default, bitwise the former planar
+  distances; `Geodesic` for latitude/longitude in decimal degrees with great-circle kilometres) with
+  new `GaussianCopula` and `SpatialRegressionErrors` constructor overloads, coordinate validation,
+  and an optional serialized attribute; `ComputeEffectiveSampleSizeWeights` is obsolete in favor of
   `ComputeCorrelationHeuristicSiteWeights` (same numbers; the weights are a correlation heuristic on
   the marginal terms, not a composite likelihood).
-
 - Data frame: the low-outlier setters (`SetLowOutliersFromMGBT`, `SetLowOutliersFromThreshold`)
   recompute the Hirsch-Stedinger plotting positions before raising `LowOutliers`, so headless and
   GUI callers alike fit from current positions instead of the TR-087 constraint-initials fallback;
@@ -213,7 +195,7 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   validation message instead of terminating the application, and a legacy project whose stored
   low-outlier settings the current guards reject opens with the outliers cleared instead of
   crashing on load.
-- Version 1.0 project open (Task 3.3): opening a version 1.0 project whose saved low-outlier
+- Version 1.0 project open: opening a version 1.0 project whose saved low-outlier
   settings the current guards reject (for example a threshold that censors more than half the
   record) now shows a warning that its low outliers were cleared, instead of clearing them
   silently.
@@ -225,7 +207,9 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   smoothing function other than `None` (new `InputData.IsSmoothingPeriodValid`) is now a validation
   message instead of an unhandled exception from `TimeSeries.MovingAverage`/`MovingSum`/
   `Difference` — opening the Threshold Diagnostics tab with such a period no longer closes the
-  application, and the three diagnostic plots clear instead of showing a stale curve.
+  application, and the three diagnostic plots clear instead of showing a stale curve. With the
+  smoothing function `None`, any smoothing period is accepted (2.0.0 rejected a period below 1 or
+  longer than the series whatever the smoothing function).
 - Input data POT exposure: `DataFrame.CreateBlockSeries` now clears any
   `PointProcessObservationYears` retained from an earlier peaks-over-threshold extraction, and
   `InputData.ExactDataMethod` clears it as soon as the method changes away from
@@ -238,6 +222,12 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   that was cleared on the way out; if the series changed (edited in place, or re-derived by another
   method such as Block Series) while a different method was selected, the exposure stays cleared
   until the next POT extraction.
+- HEC-DSS import: a regular time series whose storage blocks are partly missing now imports
+  completely. The reader resolves every catalog record that matches the path's A, B, C, E, and F
+  parts, reads each calendar block separately, keeps gaps as missing values, and rejects
+  malformed or conflicting partial results; weekly records keep their stored seven-day phase. The
+  former single whole-record read did not handle such sparse records and could import an
+  incomplete series. The DSS path selector shows the date range of the same complete read.
 - Nonstationary trend models: a failed default-parameter build in
   `UnivariateDistribution.SetTrendModel` (for example, too few observations, a constant sample, or
   non-finite values reaching the parent distribution's automatic constraint estimator) still
@@ -246,7 +236,7 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   permanently unresponsive to later parameter edits. The App's trend-model combo box catches the
   failure, reverts the row to the distribution's actual trend model, and shows a warning dialog
   instead of crashing the application.
-- API/MCP input data (Task 2.10 / decision D5, approved 25 September 2026): manual input creation
+- API/MCP input data (approved 25 September 2026): manual input creation
   now applies a supplied `lowOutlierThreshold` with `DataFrame.SetLowOutliersFromThreshold()`
   after the exact series is populated, instead of only storing it. Every exact observation
   strictly below the threshold is now flagged a low outlier and counted in the response's
@@ -257,31 +247,25 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   `isLowOutlier:true` on an observation whose value is at or above `lowOutlierThreshold` is a new
   400 (the threshold would unflag it); a preflagged observation already below the threshold is
   unaffected. Omitting `lowOutlierThreshold` is unchanged: preflagged `isLowOutlier` values are
-  stored exactly as supplied. `useMultipleGrubbsBeckTest` continues to reject a request that also
+  stored exactly as supplied. `useMultipleGrubbsBeckTest` (new, below) rejects a request that also
   supplies `lowOutlierThreshold` or a preflagged observation. The bundled `bestfit-frequency` skill
   follows suit: its runner no longer stops a manual request that sends a threshold without
   per-observation flags, and its workflow notes describe the applied threshold.
-- Time series (Task 2.9 / decision D2, approved 25 September 2026): opening a time-series analysis
-  whose saved results were computed before v2.0.1 now adds a validation warning when the restored
-  model has a covariate, uses a fitted Box-Cox or Yeo-Johnson transform, is differenced
-  (`DiffOrderD > 0`), or (covariate-free) has `XOrderB > max(AROrderP, MAOrderQ)` — the
-  configurations changed by v2.0.1's training-window transform fit, date-based covariate alignment,
-  corrected training and reintegration windows for differenced models (TR-041, TR-037), and revised
-  conditioning window (see the ARIMAX conditioning entry above). Detection reads the saved model's
-  `TransformLambda` attribute, which is present only in saves made by v2.0.1 or later (earlier saves
-  never wrote it). Because every save now writes that attribute, a save made while the warning
-  stands also stores a `PreV201Results` marker with the analysis, so saving without re-running
-  keeps the warning on the next open; projects without the marker are checked by the attribute
-  alone. The warning asks the user to re-run the Bayesian analysis, and it clears, together with
-  the marker, as soon as the results are cleared (including by an undo or redo that rebuilds the
-  model without them) or the analysis is re-run; it does not change any algorithm, default, or
-  numerical result.
-- Time series (Task 3.19, finding L14): opening a time-series analysis whose saved parameters no
-  longer match its covariates (for example, a missing covariate series) now warns and opens without
-  the saved results, instead of silently restoring default parameters next to results of the wrong
-  size (which could make a later reprocess fail); the other saved settings are still restored, and
-  the warning clears after a successful re-run.
-- Distribution and mixture-EM robustness (approved 8 September 2026): quantile priors in
+- API/MCP additions (see `docs/api.md`): `GET api/analyses/{analysisId}/plot-source` (MCP
+  `get_analysis_plot_source`) exports one completed run of any analysis kind for external
+  plotting without running or changing the analysis (settings and model XML, the results payload,
+  observations, stored parameter diagnostics, and, with `includeSamples=true`, the saved draws);
+  `GET api/inputdata/{id}/chronology` (MCP `get_inputdata_chronology`) returns an input resource's
+  observations and inclusive threshold windows before fitting; and `GET api/inputdata/{id}/source`
+  (MCP `get_inputdata_source`) returns the original creation request, its capture time, any raw
+  USGS download text, and a SHA-256 of that text. Univariate requests accept
+  `useJeffreysRuleForScale` and reject a quantile-prior count the model cannot apply (one with
+  `useSingleQuantile=true`, otherwise one per distribution parameter); univariate and Bulletin 17C
+  resources report their effective `configuration`; manual input, USGS-peak input, and the USGS
+  Bulletin 17C workflow accept `useMultipleGrubbsBeckTest` (Multiple Grubbs-Beck low-outlier
+  screening, default off); frequency results add `quantileAnnotations`, and uncertain
+  observations report `lowerBound`/`upperBound`.
+- Distribution and mixture-EM robustness (TR-095, approved 8 September 2026): quantile priors in
   `UnivariateDistribution` and `PointProcessModel` use an additive log-quantile-Jacobian so a
   finite logarithmic determinant survives raw-determinant overflow/underflow instead of failing
   (exact singularity still returns negative infinity); Mixture EM evaluates exact, censored,
@@ -291,28 +275,160 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   effective-support checks; automatic parameter initialization now reports an unusable sample
   through model validation instead of failing silently, and a later valid sample clears the
   diagnostic.
-- Bulletin 17C BFGS convergence (implemented 17 September 2026, commit `4732d5c`): BFGS checks the
-  infinity norm of the projected gradient at initialization and after every accepted step, so a
-  small objective change or an exhausted parameter step no longer registers as successful
-  convergence; genuine line-search exhaustion is still reported as `LineSearchFailed` rather than
-  concealed; `Bulletin17CDistribution` now supplies an analytical Pearson III/Log-Pearson III
-  systematic-data Jacobian instead of numerical differentiation (mixed/censored data and other
-  families are unaffected). This reduces outer-GMM-pass counts and false-convergence reports in
-  Bulletin 17C bootstrap fitting but does not eliminate every optimizer failure: some bootstrap
-  realizations can still reach the 100-pass ceiling or produce an indefinite weighting matrix.
-- Competing-risk Bayesian MCMC initialization (implemented 4 August 2026, commit `c28228d`):
-  competing-risk analyses that start Bayesian MCMC from the MAP now use a MAP-centered
+- Bulletin 17C BFGS convergence (TR-096; implemented 17 September 2026, commit `4732d5c`): with
+  the RMC.Numerics BFGS repair below, BFGS checks the infinity norm of the projected gradient at
+  initialization and after every accepted step, so a small objective change or an exhausted
+  parameter step no longer registers as successful convergence, and genuine line-search
+  exhaustion is reported as `LineSearchFailed` rather than concealed; the GMM estimator treats a
+  BFGS pass that ends in `LineSearchFailed` as failed and finishes it with its Nelder-Mead
+  fallback, as for any failed BFGS pass (commit `d29f87a`); `Bulletin17CDistribution` now supplies
+  an analytical Pearson III/Log-Pearson III systematic-data Jacobian instead of numerical
+  differentiation (mixed/censored data and other families are unaffected). This reduces
+  outer-GMM-pass counts and false-convergence reports in Bulletin 17C bootstrap fitting but does
+  not eliminate every optimizer failure: some bootstrap realizations can still reach the 100-pass
+  ceiling or produce an indefinite weighting matrix.
+- Competing-risk Bayesian MCMC initialization (TR-097; implemented 4 August 2026, commit
+  `c28228d`): competing-risk analyses that start Bayesian MCMC from the MAP now use a MAP-centered
   initialization covariance, falling back to a regularized Moore-Penrose pseudo-inverse when the
   posterior information matrix is singular so null-space directions are anchored at the MAP instead
   of given unbounded variance; this does not change the sampled posterior, priors, or convergence
   criteria.
-- Nonstationary trend defaults (implemented 30 August 2026, commit `0a2703a`): reciprocal temporal
-  trends now initialize their coefficient in response space (`a = 1 / responseInitial`) instead of
-  copying the stationary response initializer directly into `a`, and sinusoidal amplitude now uses
-  the smaller distance from the stationary initializer to either parent-parameter bound. This fixes
-  reciprocal and sinusoidal default trend starting points that were previously orders of magnitude
-  away from a workable scale for some parent distributions.
-- Time series (Task 3.6, finding M5): every public `Predict` overload of `AutoRegressive`,
+- Nonstationary trend defaults (TR-098; implemented 30 August 2026, commit `0a2703a`): reciprocal
+  temporal trends now initialize their coefficient in response space (`a = 1 / responseInitial`)
+  instead of copying the stationary response initializer directly into `a`, and their default
+  priors follow from it: a finite same-sign one-decade response interval, transformed to `a`, sets
+  the `a` prior, and the endpoint response changes over the record set the `b` prior. Sinusoidal
+  amplitude now uses the smaller distance from the stationary initializer to either
+  parent-parameter bound, keeping the whole default trajectory valid. This fixes reciprocal
+  default starting points and priors that were previously orders of magnitude away from a
+  workable scale for some parent distributions.
+- Mixture analysis parameter-sets table: the App's parameter-sets table now
+  uses the core's K-1/full-K expansion (`MixtureModel.TryGetPhysicalParameters`, newly public)
+  instead of re-deriving the arithmetic; the API's results mapper shares only the new public
+  `MixtureModel.IsSampledWeightVectorLength(int)` shape test it already used to decide which
+  parameter name to omit. The table no longer crashes the application when a stored draw's
+  derived final weight is a rounding-level negative — it now shows zero, as the fit itself does —
+  and shows an empty table with a message when a stored draw cannot be displayed for any reason
+  (an infeasible derived weight, invalid component parameters, or a length that matches neither
+  the K-1 nor the full-K shape).
+- Spatial GEV validation: Spatial GEV analysis validation now rejects
+  the Godambe sandwich uncertainty method combined with spatial regression errors, a combination
+  that always failed after the MCMC run.
+
+### Time series (AR, MA, ARIMA, ARIMAX)
+
+**Action required: re-run affected time-series analyses.** When a project opens, RMC-BestFit warns
+about each time-series analysis whose saved results predate v2.0.1 and use a configuration this
+release handles differently (a covariate, a fitted Box-Cox or Yeo-Johnson exponent, differencing,
+or, without covariates, a covariate lag order above `max(p, q)`; see the entry on results saved
+before v2.0.1), and about each one whose saved parameters no longer fit its covariates; re-run the
+Bayesian analysis of every analysis that shows either warning. Before re-running an ARIMAX analysis
+with covariates that was reopened, edited, and saved in 2.0.0, check its priors: they may already
+be the defaults (see the covariate entry below). Other time-series analyses need a re-run or
+reprocess only to refresh their saved AIC and BIC (see the information-criteria entry above).
+
+- Time series: ARIMAX conditions the likelihood, residuals, transform Jacobian, generation, and
+  prediction on one conditioning order (the rule is the ARIMAX conditioning entry below); an empty
+  conditional sum is an invalid fit (negative-infinite likelihood) rather than a zero
+  log-likelihood; ARIMA/AR order setters rebuild the training state; the pointwise transform
+  Jacobian is per observation; the transform reset of custom priors is gated on
+  `UseDefaultFlatPriors`; transform failures are validation messages. `ARIMAX.Validate` requires
+  exact-date covariate matching in the training window (legacy projects with positionally aligned
+  but differently dated covariates fail validation). Covariate dates needed only in the holdout or
+  forecast window are not validated (with the covariate extension `None`, validation checks only
+  that each covariate has at least as many values as the response plus the forecast steps): a
+  covariate that is missing or duplicates such a date passes validation, and the run then fails
+  after sampling, when the predictions are built, with a "missing required timestamp" or
+  "duplicate required timestamp" error. `SetTransformParameters` throws on a non-finite first
+  parameter and ignores the second; `GenerateRandomValues` returns raw-scale values of length
+  `sampleSize`; `ARIMAX.TrainingTimeSeries` is the differenced series.
+- Transform exponent, differencing, and simulation (TR-036, TR-037, TR-038, TR-039, TR-041): the
+  Box-Cox and Yeo-Johnson exponent is fitted on the raw training window only (formerly on the
+  whole series, holdout included) and then applied to the full response; the new read-only
+  `TransformLambda` reports the effective exponent, which is saved with the model (a fitted
+  exponent is refitted after a data or training-window change; a manually set exponent stays
+  fixed when the training window changes); the REST time-series request accepts an optional
+  manual `transformLambda`, and time-series results report the effective exponent. Differenced
+  ARIMAX models train on the `T - d` differences inside a `T`-observation training window
+  (formerly the first `T` differences, which reached into the holdout), keep each difference at
+  its later raw time stamp, and select level covariates by that time stamp without differencing
+  them. ARIMA and ARIMAX fitted values and forecasts are reintegrated from the observed state at
+  the preceding step (formerly off by one step), so fitted values no longer accumulate
+  innovations from the start of the record and forecasts start from the final observed training
+  state. AR, MA, ARIMA, and ARIMAX simulation completes its recursion on the transformed,
+  differenced model scale and inverse-transforms once (formerly ARIMA ignored differencing and
+  transforms, and ARIMAX mixed transformed and raw scales).
+- ARIMAX structural edits and undo: the structural setters (the AR, differencing, MA, and
+  covariate-lag orders, intercept, seasonality, trend, training window, and default-window rule)
+  and turning `UseDefaultFlatPriors` on now rebuild the default parameters before they notify, so
+  undoing or redoing a structural edit in a time-series analysis restores the priors and bounds
+  recorded with that step, custom or default, which match the restored structure; turning
+  default flat priors on or off is an undoable step (undoing it restores the priors it replaced).
+- ARIMAX covariate validation: when a covariate is missing a date the response needs, `Validate()`
+  now also adds a hint that covariates are paired by date (RMC-BestFit 2.0.0 paired them by
+  position).
+- Time-series analyses with covariates (ARIMAX; present since 2.0.0): opening a project, copying
+  the analysis, and undoing or redoing a model-property edit keep the saved coefficient values,
+  bounds, and custom priors. The covariates were reattached through a path that rebuilt the
+  default parameters, so a reopened analysis showed residual diagnostics at default coefficients
+  (residual RMS 0.660229 instead of the fitted 0.341147 in the time-series regression example),
+  and a later save of an edited analysis wrote those defaults to the project. An ARIMAX analysis
+  with covariates that was reopened, edited, and saved in 2.0.0 may therefore already store the
+  default priors (see the action above). Metadata edits on a covariate series (its name,
+  description, or unit label, or saving it) no longer rebuild the parameters or clear the
+  results, and reselecting the same covariate series is not a change. Adding or removing a
+  covariate, pointing a covariate row at another series, or replacing a covariate's series (for
+  example by downloading it again) still rebuilds the defaults; editing covariate values in place
+  rebuilds them only when default flat priors are on and clears the results either way. Undo
+  and redo no longer apply a replaced covariate's coefficient, bounds, or prior to the covariate
+  that replaced it, and redoing a structural edit that changes the number of parameters (for
+  example the AR order) restores a vector that fits the model. Copying an analysis also keeps its
+  manual training window and covariate-extension method. API: the new
+  overload `ARIMAX.SetCovariates(List<TimeSeries>, bool resetParameters)` keeps a parameter list
+  whose layout still fits the covariates (the one-argument overload still rebuilds the
+  defaults), and `ARIMAX.Clone()` keeps the source's parameter values, bounds, and priors, so the
+  REST plot-source leverage and leave-one-out diagnostics of ARIMAX models with covariates and
+  non-uniform priors now use the fitted priors, as the desktop does.
+- ARIMAX conditioning (TR-066; with-covariates rule approved 25 September 2026, review decision D6;
+  without-covariates rule confirmed 26 September 2026, ruling R2): a model with covariates now
+  conditions on `max(q, p + b)` leading model steps instead of `max(p, q, b)`, so every evaluated
+  step's own mean and every autoregressive-lag mean include all `b` lagged covariate values (the
+  first evaluated steps of a model with `p > 0` and `b > 0` formerly used AR-lag means that
+  omitted the covariate lags before the first observation). A model without covariates conditions
+  on `max(p, q)`: the covariate lag order has no role without covariates. ARIMAX analyses with
+  covariates and `p > 0`, `b > 0` (where `p + b > q`) now condition on more leading steps, and
+  analyses without covariates whose lag order exceeds `max(p, q)` on fewer; their likelihood,
+  pointwise terms, information criteria, residual diagnostics, in-sample predictions, and fits
+  change. This rule leaves the conditioning order of models with `b = 0`, including every shipped
+  example, unchanged; the other changes in this section can still affect their saved results,
+  which the warning on results saved before v2.0.1 reports. A training window must provide more
+  differenced steps than this order, and the validation message names it. Changing the covariate
+  lag order, or attaching the first covariate or removing the last one, now also moves the
+  Box-Cox, Yeo-Johnson, or logarithmic transform Jacobian window to the new order, keeping the
+  transform exponent; previously a lag-order edit left the window at its old start until the
+  training data was next rebuilt, which offset the reported log-likelihood and criteria of the
+  edited analysis (the fitted parameters were unaffected because the offset is constant).
+- Results saved before v2.0.1 (approved 25 September 2026): opening a time-series analysis
+  whose saved results were computed before v2.0.1 now adds a validation warning when the restored
+  model has a covariate, uses a fitted Box-Cox or Yeo-Johnson transform, is differenced
+  (`DiffOrderD > 0`), or (covariate-free) has `XOrderB > max(AROrderP, MAOrderQ)` — the
+  configurations changed by v2.0.1's training-window transform fit (TR-036), date-based covariate
+  alignment, corrected training and reintegration windows for differenced models (TR-041,
+  TR-037), and revised conditioning window (see the ARIMAX conditioning entry above). Detection
+  reads the saved model's `TransformLambda` attribute, which is present only in saves made by
+  v2.0.1 or later (earlier saves never wrote it). Because every save now writes that attribute, a
+  save made while the warning stands also stores a `PreV201Results` marker with the analysis, so
+  saving without re-running keeps the warning on the next open; projects without the marker are
+  checked by the attribute alone. The warning asks the user to re-run the Bayesian analysis, and it
+  clears, together with the marker, as soon as the results are cleared (including by an undo or
+  redo that rebuilds the model without them) or the analysis is re-run; it does not change any
+  algorithm, default, or numerical result.
+- Saved parameters that no longer fit: opening a time-series analysis whose saved parameters no
+  longer match its covariates (for example, a missing covariate series) now warns and opens without
+  the saved results, instead of silently restoring default parameters next to results of the wrong
+  size (which could make a later reprocess fail); the other saved settings are still restored, and
+  the warning clears after a successful re-run.
+- Forecast steps and random series: every public `Predict` overload of `AutoRegressive`,
   `MovingAverage`, `ARIMA`, and `ARIMAX` now rejects a negative `forecastSteps` with
   `ArgumentOutOfRangeException` (previously a differenced model, d > 0, could throw an internal
   reconstruction `ArgumentOutOfRangeException` naming the wrong parameter, or an undifferenced
@@ -326,18 +442,6 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   negative when the model already fails validation (`TrainingTimeSteps` greater than the response
   length); `RunAsync` refuses to run such a model, so this path is not reachable from a normally
   validated project.
-- Mixture analysis parameter-sets table (Task 3.7, finding M6): the App's parameter-sets table now
-  uses the core's K-1/full-K expansion (`MixtureModel.TryGetPhysicalParameters`, newly public)
-  instead of re-deriving the arithmetic; the API's results mapper shares only the new public
-  `MixtureModel.IsSampledWeightVectorLength(int)` shape test it already used to decide which
-  parameter name to omit. The table no longer crashes the application when a stored draw's
-  derived final weight is a rounding-level negative — it now shows zero, as the fit itself does —
-  and shows an empty table with a message when a stored draw cannot be displayed for any reason
-  (an infeasible derived weight, invalid component parameters, or a length that matches neither
-  the K-1 nor the full-K shape).
-- Spatial GEV validation (Task 3.8, finding M8/B-6): Spatial GEV analysis validation now rejects
-  the Godambe sandwich uncertainty method combined with spatial regression errors, a combination
-  that always failed after the MCMC run.
 
 ## RMC.Numerics (since 2.1.4)
 
@@ -378,8 +482,24 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   floor; fitted covariances gain the trace-scaled base ridge of about 1E-10); `DecisionTree`
   regression stops at pure nodes (distinct-response count for both modes, scikit-learn's rule —
   formerly a default regression tree split zero-gain pure nodes down to one observation per
-  leaf); BFGS implements dfpmin's parameter-change exit (TOLX), so a stagnated warm start returns
-  immediately instead of repeating the identical non-progressing iteration to the budget.
+  leaf).
+- BFGS reports success only when the infinity norm of the projected gradient is at or below the
+  absolute tolerance, tested at the start point and after every accepted step (a start that
+  already satisfies it returns immediately), so a small objective change or an exhausted
+  parameter step no longer counts as convergence. The strong-Wolfe line search is safeguarded
+  (feasible step limit, safeguarded cubic/quadratic interpolation, gradient checks at
+  rounded-equal objective values); after an exhausted search BFGS retries once with the identity
+  metric, and a search that still finds no acceptable step ends with the new
+  `OptimizationStatus.LineSearchFailed` instead of continuing. `Optimizer` computes its
+  end-of-run Hessian for a `LineSearchFailed` result as for `Success`. BestFit uses BFGS for
+  Bulletin 17C GMM fits and for the nuisance re-optimization of MLE and MAP profile likelihoods,
+  so those results can change.
+- Differential Evolution repairs an infeasible trial coordinate halfway between the target
+  member's coordinate and the violated bound instead of clamping it to the bound (approved
+  change, commit `2b57771`; convergence tolerances are unchanged), so seeded Differential
+  Evolution runs follow different trajectories, and the MLE and MAP estimates (including
+  distribution fitting) that BestFit computes with its default Differential Evolution optimizer
+  can differ from those computed with 2.1.4.
 - The interpolation correlated-search windows scale as Count^0.25 (`Interpolater.deltaStart` was
   pinned to 1 by a Math.Min typo; `OrderedPairedData`'s X/Y windows were never assigned), so the
   hunt search path is reachable; brackets are unchanged.
