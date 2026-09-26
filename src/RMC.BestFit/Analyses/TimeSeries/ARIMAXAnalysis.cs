@@ -513,10 +513,11 @@ namespace RMC.BestFit.Analyses
                 int forecastStepsForPredict = (dataLength - ARIMAX.TrainingTimeSteps) + ForecastingTimeSteps;
                 int n = dataLength + ForecastingTimeSteps;
 
-                // forecastStepsForPredict is negative whenever TrainingTimeSteps exceeds n (for
-                // example a series shorter than the default training-window floor). Predict now
-                // rejects a negative forecastSteps, so predict at least the training window
-                // (clamped to zero) and keep only the leading n values -- identical to the
+                // forecastStepsForPredict is negative whenever TrainingTimeSteps exceeds n.
+                // Reachable only when the model fails validation (TrainingTimeSteps >
+                // TimeSeries.Count), e.g. injected state; RunAsync refuses such configurations.
+                // Predict now rejects a negative forecastSteps, so predict at least the training
+                // window (clamped to zero) and keep only the leading n values -- identical to the
                 // unclamped values for every t < n because the recursion is forward-only and does
                 // not depend on the loop's upper bound.
                 AnalysisResults.ModeCurve = ARIMAX.Predict(parameters, Math.Max(0, forecastStepsForPredict)).Y.Subset(0, n - 1);

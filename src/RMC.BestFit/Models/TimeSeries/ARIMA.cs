@@ -1132,6 +1132,7 @@ namespace RMC.BestFit.Models
         /// <param name="timeSteps">Number of time steps to simulate.</param>
         /// <param name="seed">Random seed for reproducibility.</param>
         /// <returns>Simulated time series.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeSteps"/> is less than one.</exception>
         /// <remarks>
         /// A <paramref name="timeSteps"/> shorter than the training window predicts the full
         /// training window (forecast steps clamped to zero) and returns its leading
@@ -1142,6 +1143,9 @@ namespace RMC.BestFit.Models
         /// </remarks>
         public TimeSeries GenerateRandomSeries(int timeSteps, int seed = 12345)
         {
+            if (timeSteps < 1)
+                throw new ArgumentOutOfRangeException(nameof(timeSteps), "Time steps must be at least one.");
+
             if (TimeSeries == null)
                 throw new InvalidOperationException("TimeSeries must be set.");
 

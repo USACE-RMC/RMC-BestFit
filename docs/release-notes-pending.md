@@ -307,14 +307,20 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   the smaller distance from the stationary initializer to either parent-parameter bound. This fixes
   reciprocal and sinusoidal default trend starting points that were previously orders of magnitude
   away from a workable scale for some parent distributions.
-- Time series (Task 3.6, finding M5): `GenerateRandomSeries` on `AutoRegressive`, `MovingAverage`,
-  `ARIMA`, and `ARIMAX` again accepts a requested length shorter than the training window for
-  every differencing order (previously this threw for a differenced model, d > 0); every `Predict`
-  overload of the four classes now rejects a negative `forecastSteps` with
-  `ArgumentOutOfRangeException` instead of silently accepting it. The `ARAnalysis`/`MAAnalysis`/
-  `ARIMAAnalysis`/`ARIMAXAnalysis` point-estimate and uncertainty-analysis paths, which can derive a
-  negative forecast-step count internally for a series shorter than the default training-window
-  floor, are updated to keep producing the same values.
+- Time series (Task 3.6, finding M5): every public `Predict` overload of `AutoRegressive`,
+  `MovingAverage`, `ARIMA`, and `ARIMAX` now rejects a negative `forecastSteps` with
+  `ArgumentOutOfRangeException` (previously a differenced model, d > 0, could throw an internal
+  reconstruction `ArgumentOutOfRangeException` naming the wrong parameter, or an undifferenced
+  model would silently accept it). `GenerateRandomSeries` on the same four classes again accepts a
+  requested length shorter than the training window for every differencing order (previously this
+  threw for d > 0), and now also rejects a `timeSteps` less than one with
+  `ArgumentOutOfRangeException` (previously a negative `timeSteps` threw `OverflowException` from
+  a negative array size for every class, and `timeSteps = 0` did too for a differenced model).
+  `ARAnalysis`/`MAAnalysis`/`ARIMAAnalysis`/`ARIMAXAnalysis` internally derive their own
+  forecast-step count and are updated to tolerate the same negative value, but that value is only
+  negative when the model already fails validation (`TrainingTimeSteps` greater than the response
+  length); `RunAsync` refuses to run such a model, so this path is not reachable from a normally
+  validated project.
 
 ## RMC.Numerics (since 2.1.4)
 

@@ -25,12 +25,6 @@ namespace RMC.BestFit.Tests.TimeSeriesModels;
 public class TimeSeriesForecastStepsGuardTests
 {
     /// <summary>
-    /// Absolute tolerance for comparing a seeded-stochastic prediction computed by two different
-    /// call paths that must reproduce identical draws.
-    /// </summary>
-    private const double Tolerance = 1E-12;
-
-    /// <summary>
     /// First timestamp of every daily fixture series built by <see cref="CreateSeries"/>.
     /// </summary>
     private static readonly DateTime s_startDate = new(2000, 1, 1);
@@ -194,8 +188,74 @@ public class TimeSeriesForecastStepsGuardTests
     }
 
     /// <summary>
-    /// Asserts a generated series has the requested length and that every value matches the
-    /// corresponding leading value of a reference prediction.
+    /// Verifies <c>GenerateRandomSeries</c> of <see cref="AutoRegressive"/> rejects a non-positive
+    /// <c>timeSteps</c> before doing any other work, for both a negative value and zero.
+    /// </summary>
+    [TestMethod]
+    public void AutoRegressive_GenerateRandomSeries_NonPositiveTimeSteps_Throws()
+    {
+        AutoRegressive model = CreateAutoRegressive();
+
+        var negative = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(-1));
+        Assert.AreEqual("timeSteps", negative.ParamName, "negative timeSteps");
+
+        var zero = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(0));
+        Assert.AreEqual("timeSteps", zero.ParamName, "zero timeSteps");
+    }
+
+    /// <summary>
+    /// Verifies <c>GenerateRandomSeries</c> of <see cref="MovingAverage"/> rejects a non-positive
+    /// <c>timeSteps</c> before doing any other work, for both a negative value and zero.
+    /// </summary>
+    [TestMethod]
+    public void MovingAverage_GenerateRandomSeries_NonPositiveTimeSteps_Throws()
+    {
+        MovingAverage model = CreateMovingAverage();
+
+        var negative = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(-1));
+        Assert.AreEqual("timeSteps", negative.ParamName, "negative timeSteps");
+
+        var zero = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(0));
+        Assert.AreEqual("timeSteps", zero.ParamName, "zero timeSteps");
+    }
+
+    /// <summary>
+    /// Verifies <c>GenerateRandomSeries</c> of a differenced (d = 1) <see cref="ARIMA"/> rejects a
+    /// non-positive <c>timeSteps</c> before doing any other work, for both a negative value and
+    /// zero.
+    /// </summary>
+    [TestMethod]
+    public void Arima_GenerateRandomSeries_NonPositiveTimeSteps_Throws()
+    {
+        ARIMA model = CreateDifferencedArima();
+
+        var negative = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(-1));
+        Assert.AreEqual("timeSteps", negative.ParamName, "negative timeSteps");
+
+        var zero = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(0));
+        Assert.AreEqual("timeSteps", zero.ParamName, "zero timeSteps");
+    }
+
+    /// <summary>
+    /// Verifies <c>GenerateRandomSeries</c> of a differenced (d = 1) <see cref="ARIMAX"/> rejects a
+    /// non-positive <c>timeSteps</c> before doing any other work, for both a negative value and
+    /// zero.
+    /// </summary>
+    [TestMethod]
+    public void Arimax_GenerateRandomSeries_NonPositiveTimeSteps_Throws()
+    {
+        ARIMAX model = CreateDifferencedArimax();
+
+        var negative = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(-1));
+        Assert.AreEqual("timeSteps", negative.ParamName, "negative timeSteps");
+
+        var zero = Assert.ThrowsException<ArgumentOutOfRangeException>(() => model.GenerateRandomSeries(0));
+        Assert.AreEqual("timeSteps", zero.ParamName, "zero timeSteps");
+    }
+
+    /// <summary>
+    /// Asserts a generated series has the requested length and that every value is bit-identical
+    /// to the corresponding leading value of a reference prediction.
     /// </summary>
     /// <param name="expected">The reference prediction values.</param>
     /// <param name="generated">The series returned by <c>GenerateRandomSeries</c>.</param>
@@ -204,7 +264,7 @@ public class TimeSeriesForecastStepsGuardTests
     {
         Assert.AreEqual(timeSteps, generated.Count, "generated length");
         for (int i = 0; i < timeSteps; i++)
-            Assert.AreEqual(expected[i], generated[i].Value, Tolerance, $"step {i}");
+            Assert.AreEqual(expected[i], generated[i].Value, $"step {i}");
     }
 
     /// <summary>
@@ -224,11 +284,18 @@ public class TimeSeriesForecastStepsGuardTests
     }
 
     /// <summary>
-    /// Creates an ARIMAX(1,1,0) model with no covariates, an intercept, a full-length training
-    /// window, and <c>UseDefaultTrainingSteps</c> disabled so the training window
-    /// is exactly the fixture length.
+    /// Creates an ARIMAX(1,1,0) model with no covariates, an intercept, and a full-length training
+    /// window.
     /// </summary>
     /// <returns>The configured model, with default (unset) parameter values.</returns>
+    /// <remarks>
+    /// Setting <c>TimeSeries</c> after <c>UseDefaultTrainingSteps = false</c> turns
+    /// <c>UseDefaultTrainingSteps</c> back on and recomputes a default <c>TrainingTimeSteps</c>
+    /// (the model's private <c>ResetDefaultTrainingStepsForNewTimeSeries</c>), so the flag does not
+    /// end up disabled here. The explicit <c>TrainingTimeSteps</c> assignment that follows
+    /// overwrites that recomputed default directly regardless of the flag's value, so the training
+    /// window still ends up exactly the fixture length.
+    /// </remarks>
     private static ARIMAX CreateDifferencedArimax()
     {
         var model = new ARIMAX
