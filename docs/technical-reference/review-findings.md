@@ -135,6 +135,10 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-092](#tr-092) | Spatial likelihood throws on non-finite site parameters | High | Confirmed defect - fixed | Fixed (22 August 2026): non-finite site GEV parameters return negative-infinite likelihood in both paths | Passed - fast contract (overflowing latent error); the location-error network now samples under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 | [TR-093](#tr-093) | Latent-error default bounds ignore the log link | High | Confirmed defect - fixed | Fixed (22 August 2026): link-space spread × 3, floor 1.0, for log-link location and scale errors | Passed - fast bound-rule contract; the TR-054 guarded cell runs under the defaults | [Report](../verification/spatial-extremes.md#batch-65-prediction-uncertainty-simulation-and-dispatch-22-august-2026) | 2026-08-22 |
 | [TR-094](#tr-094) | Rating-curve legacy recovery used arbitrary bands and omitted residual uncertainty from response recovery | High | Confirmed verification gap; resolved | Verification matrix normalized; parameter and log10-residual uncertainty feed simultaneous predictive bands; all non-profile MLE/MAP tests use Differential Evolution with untouched defaults | 10/10 retained recovery cells passed; exact segmented allocations reported | [Report](../verification/rating-curve.md#current-exact-outcomes) | 2026-08-31 |
+| [TR-095](#tr-095) | Distribution/mixture-EM extreme-log-magnitude handling and initialization-failure reporting | High | Approved remediation; implemented 8 September 2026 | Complete | Passed - core 3,410 / UI 599 / App 443 fast tests; Numerics Release suite 2,690/framework | [Report](../distribution-robustness.md) | 2026-09-26 |
+| [TR-096](#tr-096) | B17C BFGS false convergence, concealed line-search failure, and numerical systematic-data Jacobian | High | Approved remediation; implemented 17 September 2026 | Complete | Passed - 36 focused BFGS/AL regressions/framework; BestFit fast suites 5,021 total; 7/7 B17C examples | [Report](../verification/b17c-bfgs-repair-20260917.md) | 2026-09-26 |
+| [TR-097](#tr-097) | Competing-risk (and general MAP-initialized) Bayesian MCMC lacked a data-informed initialization covariance | Medium | Approved remediation; implemented 4 August 2026 | Complete | Passed - resolved the separated three-Weibull R-hat finding; six unrelated cells remain deferred by decision | [Report](../verification/competing-risks.md) | 2026-09-26 |
+| [TR-098](#tr-098) | Reciprocal and sinusoidal default trend priors initialized in the wrong space | Medium | Approved remediation; implemented 30 August 2026 | Complete | Passed - 380/380 default-validity assignments; Chunk 6B 22/22 recovery identities | [Report](../verification/model-estimation.md#univariate-family-and-trend-recovery) | 2026-09-26 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -1614,6 +1618,150 @@ gaps. The independently generated likelihood and example-optimum evidence remain
 
 **Follow-up.** The recovery matrix does not establish R `bdrc` compatibility, arbitrary control-matrix
 parity, or predictive coverage outside the generated stage ranges.
+
+<a id="tr-095"></a>
+## TR-095 - Distribution and Mixture-EM Extreme-Log-Magnitude Handling and Initialization-Failure Reporting
+
+**Review disposition.** Approved remediation, implemented 8 September 2026 (commit `9a8d969`,
+"Use robust distribution likelihoods and quantile priors"), matching the "approved September 8,
+2026 distribution repair plan" recorded in [`docs/distribution-robustness.md`](../distribution-robustness.md).
+
+**Implementation status.** Complete, per that document. Aggregate and pointwise quantile priors in
+`UnivariateDistribution` and `PointProcessModel` use the additive Numerics `LogAbsQuantileJacobian`
+extension so a finite logarithmic determinant survives raw-determinant overflow/underflow (exact
+singularity still returns negative infinity). Mixture EM evaluates exact, censored, interval,
+positive-conditional, and measurement-error observations logarithmically through responsibility
+normalization, centering observation logs before adding weights so relative weights survive an
+extremely large common log density; zero-weight components are skipped before singular-density or
+effective-support checks. Automatic initialization reports unusable samples through model
+validation while preserving editable parameters and priors, and a later valid sample clears the
+diagnostic. No optimizer, seed, or GEV prior bound was changed.
+
+**Verification status.** Per the same document: core fast tests 3,410 passed, UI fast tests 599
+passed, App fast tests 443 passed, and the XML documentation/namespace scan passed (941 source
+files). The paired Numerics-side repair separately reported the Numerics Release/XML build at zero
+warnings/errors across all four supported frameworks and the complete Numerics Release suite at
+2,690 passed per framework (10,760 total). `RMC.BestFit.Verification` was not executed as part of
+this work.
+
+**Impact.** The distribution and mixture-EM likelihood paths handle extreme log-magnitude
+observations and disappeared/measurement-error component weights without throwing or silently
+zeroing responsibilities; automatic-initialization failures surface as a validation message instead
+of failing silently.
+
+**Follow-up.** The paired Numerics GNO/GLO/Kappa local-MLE uncertainty and covariance additions do
+not establish global MLE existence or finite-sample coverage; L-moment and product-moment
+covariance for those three families remain unsupported.
+
+<a id="tr-096"></a>
+## TR-096 - B17C BFGS False Convergence, Concealed Line-Search Failure, and Numerical Systematic-Data Jacobian
+
+**Review disposition.** Approved remediation, implemented 17 September 2026 (commit `4732d5c`,
+"Add analytical systematic B17C Jacobians and regression evidence"), per
+[`docs/verification/b17c-bfgs-repair-20260917.md`](../verification/b17c-bfgs-repair-20260917.md).
+That document is explicit that the complete B17C bootstrap numerical/performance defect is **not**
+fully resolved: 50 of 1,000 realizations still reach the 100-outer-GMM-pass ceiling and indefinite
+weighting matrices remain possible. No GMM equation, weighting update, stopping rule, penalty, seed,
+limit, or fallback policy changed.
+
+**Implementation status.** `Numerics/Mathematics/Optimization/Local/BFGS.cs` now checks the infinity
+norm of the projected gradient at initialization and after every accepted step using the existing
+absolute tolerance, so a small objective change or an exhausted parameter step no longer registers
+as successful convergence; the returned point is the one actually tested, and accepted-iteration
+counts are accurate. The strong-Wolfe line search was hardened (feasible ray/step limit, safeguarded
+cubic/quadratic interpolation, gradient checks at rounded-equal objective values, one identity-metric
+retry on an exhausted quasi-Newton search); genuine exhaustion still reports `LineSearchFailed`.
+`Bulletin17CDistribution` now supplies the analytical Pearson III/Log-Pearson III systematic-data
+Jacobian through its existing interface, with the existing finite-sample corrections and inverse-link
+derivatives; mixed/censored data and other families retain numerical differentiation.
+
+**Verification status.** Per the same document: 36 focused BFGS/Augmented Lagrange regression tests
+pass per framework across all Numerics frameworks; the complete Numerics Release suite reports 2,857
+(net481) / 2,872 (each modern framework) cases, 11,473 distinct framework/test cases, with the 15
+initial live USGS/BOM network failures (HTTP 500/503 or timeout) passing on rerun. The BestFit Debug
+solution build is zero warnings/errors with all four mandatory fast suites passing (core 3,434; UI
+645; App 444; API 498; total 5,021). Fourteen new B17C derivative/fallback cases pass. Scoped B17C
+verification passed all seven published examples and 13 independent covariance-oracle tests; Example
+#1 also passed the one-method/one-TRX `scripts/run-verification-test.ps1` workflow.
+
+**Impact.** The parent 1,000-realization headless Release benchmark's outer-pass count fell from 100
+to 6 and objective evaluations from 826 to 55, with the parent convergence flag now `true`; bootstrap
+fits reaching the 100-pass ceiling fell from 675/1,000 to 50/1,000. Reported BFGS fallback and
+Cholesky-exception counts changed (fallbacks 165 to 202) and are not treated as a full resolution of
+every optimizer failure.
+
+**Follow-up.** Realization 8 (seed 1219180210) still alternates between two fits at the 100-pass
+ceiling; realizations 213 and 402 still produce indefinite moment matrices accepted by the outer
+convergence flag, so the 950 true outer-convergence flags are not a certificate that every retained
+bootstrap fit is statistically valid. The separate terminal-ridge/regularization plan
+(`docs/verification/b17c-regularization-exception-plan-20260917.md`) has not been implemented.
+
+<a id="tr-097"></a>
+## TR-097 - Competing-Risk (and General MAP-Initialized) Bayesian MCMC Initialization
+
+**Review disposition.** Approved remediation, implemented in commit `c28228d` ("Add Phase 4 recovery
+verification supplement", 4 August 2026), per
+[`docs/verification/competing-risks.md`](../verification/competing-risks.md), which records that the
+"authorized MAP-centered initialization and bounded-Hessian correction were implemented before" its
+21 August 2026 rerun. The same commit introduces `MaximumAPosteriori.TryGetInitializationCovarianceMatrix`.
+
+**Implementation status.** `MaximumAPosteriori.TryGetInitializationCovarianceMatrix` supplies a
+MAP-centered initialization covariance for Bayesian MCMC starts (including competing-risk models),
+falling back to a regularized Moore-Penrose pseudo-inverse when the posterior information matrix is
+singular so null-space directions are anchored at the MAP rather than given unbounded variance. The
+public covariance contract (`TryGetCovarianceMatrix`) is unchanged, and this initialization-only
+covariance must not be reported as posterior uncertainty. No prior, DEMCzs sampling default, seed,
+likelihood, or acceptance tolerance changed.
+
+**Verification status.** Per the same document, MAP initialization resolved the separated
+three-Weibull R-hat finding recorded in the historical Phase 4 disposition. `CompetingRiskRecoveryTests`
+and its helper partial retain their recorded per-cell MLE/Bayesian outcomes from the 21 August 2026
+rerun round; six `Bayesian_*_RecoversParent` cells remain explicitly deferred, nonblocking research
+items (separated-component/aggregate identification, heterogeneous ridges, correlated-dependence
+R-hat/ESS, and Gamma inverse-CDF uncertainty postprocessing), and no distribution formula, seed
+default, public signature, DEMCzs sampling setting, fixture, or verification tolerance changed in
+response to a failed cell or in granting the deferral.
+
+**Impact.** Bayesian competing-risk (and other MAP-initialized) MCMC chains start from a
+data-informed, bounded neighborhood of the posterior mode instead of an arbitrary or
+boundary-adjacent point, improving chain reliability without altering the sampled posterior's target
+distribution.
+
+**Follow-up.** The six deferred `Bayesian_*_RecoversParent` cells named above remain open research
+items; this record makes no new claim about their resolution.
+
+<a id="tr-098"></a>
+## TR-098 - Reciprocal and Sinusoidal Default Trend-Prior Initialization
+
+**Review disposition.** Approved remediation, implemented in commit `0a2703a` ("Complete
+verification remediation through Chunk 6", 30 August 2026), per
+[`docs/verification/model-estimation.md`](../verification/model-estimation.md#univariate-family-and-trend-recovery),
+which records "the approved remediation" for a reciprocal-trend ESS failure found in the first
+guarded pass on 29 August 2026.
+
+**Implementation status.** Reciprocal trends now initialize in response space
+(`a = 1 / responseInitial`), with a finite same-sign one-decade response interval transformed to the
+`a` prior and endpoint response changes over the record determining the `b` prior; sinusoidal
+amplitude now uses the smaller distance from the stationary initializer to either parent-parameter
+bound, keeping the full default trajectory valid. No likelihood, sampler, chain count, iteration
+count, convergence threshold, seed, or generating parent changed.
+
+**Verification status.** Per the same document, the fast deterministic test
+`AllSupportedParentAndTemporalTrendAssignments_HaveFiniteValidDefaults` crosses all 38 parameters of
+the 15 supported parent distributions with the 10 temporal trend types (380 assignments) and
+requires finite ordered priors, valid model construction, and valid default response trajectories
+across all 1,000 time indices. Targeted reruns passed for Exponential (`20260829-182917-*`) and
+reciprocal Normal mean (`182932-*`); five further Bayesian covering-array cells (Normal reciprocal
+scale, Normal sinusoidal scale, GEV linear shape, GPD linear location with exponential scale, and
+Log-Pearson III linear log-mean with exponential log-scale) passed their predeclared
+central-95%/R-hat/ESS criteria, bringing the Chunk 6B matrix to 22 of 22 passed identities.
+
+**Impact.** Reciprocal and sinusoidal nonstationary trends on all 15 supported parent distributions
+now default to a valid, appropriately scaled starting trajectory, resolving the below-100 ESS
+failure that resulted from copying the stationary response initializer directly into the reciprocal
+coefficient `a`.
+
+**Follow-up.** None recorded beyond the closed Chunk 6B matrix.
 
 ## Resolution Rule
 

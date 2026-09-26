@@ -258,6 +258,36 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   is present only in saves made by v2.0.1 or later (earlier saves never wrote it). The warning asks
   the user to re-run the Bayesian analysis, and clears as soon as the results are cleared or the
   analysis is re-run; it does not change any algorithm, default, or numerical result.
+- Distribution and mixture-EM robustness (approved 8 September 2026): quantile priors in
+  `UnivariateDistribution` and `PointProcessModel` use an additive log-quantile-Jacobian so a
+  finite logarithmic determinant survives raw-determinant overflow/underflow instead of failing
+  (exact singularity still returns negative infinity); Mixture EM evaluates exact, censored,
+  interval, positive-conditional, and measurement-error observations logarithmically through
+  responsibility normalization, so an extremely large common log density no longer distorts
+  component weights, and zero-weight components are skipped before singular-density or
+  effective-support checks; automatic parameter initialization now reports an unusable sample
+  through model validation instead of failing silently, and a later valid sample clears the
+  diagnostic.
+- Bulletin 17C BFGS convergence (approved 17 September 2026): BFGS checks the infinity norm of the
+  projected gradient at initialization and after every accepted step, so a small objective change
+  or an exhausted parameter step no longer registers as successful convergence; genuine line-search
+  exhaustion is still reported as `LineSearchFailed` rather than concealed; `Bulletin17CDistribution`
+  now supplies an analytical Pearson III/Log-Pearson III systematic-data Jacobian instead of
+  numerical differentiation (mixed/censored data and other families are unaffected). This reduces
+  outer-GMM-pass counts and false-convergence reports in Bulletin 17C bootstrap fitting but does not
+  eliminate every optimizer failure: some bootstrap realizations can still reach the 100-pass
+  ceiling or produce an indefinite weighting matrix.
+- Bayesian MCMC initialization (approved 4 August 2026): Bayesian analyses that start MCMC from the
+  MAP, including competing-risk models, now use a MAP-centered initialization covariance, falling
+  back to a regularized Moore-Penrose pseudo-inverse when the posterior information matrix is
+  singular so null-space directions are anchored at the MAP instead of given unbounded variance;
+  this does not change the sampled posterior, priors, or convergence criteria.
+- Nonstationary trend defaults (approved 30 August 2026): reciprocal temporal trends now initialize
+  their coefficient in response space (`a = 1 / responseInitial`) instead of copying the stationary
+  response initializer directly into `a`, and sinusoidal amplitude now uses the smaller distance
+  from the stationary initializer to either parent-parameter bound. This fixes reciprocal and
+  sinusoidal default trend starting points that were previously orders of magnitude away from a
+  workable scale for some parent distributions.
 
 ## RMC.Numerics (since 2.1.4)
 
