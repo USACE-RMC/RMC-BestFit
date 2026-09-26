@@ -22,8 +22,8 @@ namespace RMC.BestFit.Analyses
     /// </para>
     /// <para>
     /// The ARIMA(p,q) model combines autoregressive and moving average components:
-    /// Y(t) = μ + f1*(Y(t-1) - μ) + ... + fp*(Y(t-p) - μ) + e(t) + ?1*e(t-1) + ... + ?q*e(t-q)
-    /// where e(t) ~ N(0, s²).
+    /// Y(t) = μ + φ1*(Y(t-1) - μ) + ... + φp*(Y(t-p) - μ) + ε(t) + θ1*ε(t-1) + ... + θq*ε(t-q)
+    /// where ε(t) ~ N(0, σ²).
     /// </para>
     /// <para>
     /// This analysis uses Bayesian Markov Chain Monte Carlo (MCMC) methods to estimate the model parameters

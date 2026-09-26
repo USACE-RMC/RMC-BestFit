@@ -27,9 +27,9 @@ namespace RMC.BestFit.Analyses
     /// and their uncertainty, producing confidence intervals for both historical fit and forecasts.
     /// </para>
     /// <para>
-    /// Model structure: Y(t) = μ + ?(t) + ?(t) + β*X(t) + f*Y(t-p) + ?*e(t-q) + e(t)
-    /// where μ is the intercept, ?(t) is the trend, ?(t) is seasonality, β*X(t) are exogenous covariates,
-    /// f*Y(t-p) is the autoregressive component, ?*e(t-q) is the moving average component, and e(t) is white noise.
+    /// Model structure: Y(t) = μ + γ(t) + ψ(t) + β*X(t) + φ*Y(t-p) + θ*ε(t-q) + ε(t)
+    /// where μ is the intercept, γ(t) is the trend, ψ(t) is seasonality, β*X(t) are exogenous covariates,
+    /// φ*Y(t-p) is the autoregressive component, θ*ε(t-q) is the moving average component, and ε(t) is white noise.
     /// </para>
     /// <para>
     /// The class implements <see cref="IAnalysis"/> and extends <see cref="AnalysisBase"/>.
