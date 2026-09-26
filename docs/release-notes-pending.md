@@ -193,6 +193,14 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   message instead of an unhandled exception from `TimeSeries.MovingAverage`/`MovingSum`/
   `Difference` — opening the Threshold Diagnostics tab with such a period no longer closes the
   application, and the three diagnostic plots clear instead of showing a stale curve.
+- Input data POT exposure: `DataFrame.CreateBlockSeries` now clears any
+  `PointProcessObservationYears` retained from an earlier peaks-over-threshold extraction, and
+  `InputData.ExactDataMethod` clears it as soon as the method changes away from
+  `PeaksOverThresholdSeries` (Manual, Block Series, and USGS entry never populate it). Previously
+  the recorded POT source-observation span survived a source change and could be silently reused
+  as the exposure for an unrelated point-process fit. Replacing or editing the POT-derived exact
+  series while the method stays peaks-over-threshold is unchanged and still keeps the recorded
+  span.
 - Nonstationary trend models: a failed default-parameter build in
   `UnivariateDistribution.SetTrendModel` (for example, too few observations, a constant sample, or
   non-finite values reaching the parent distribution's automatic constraint estimator) still

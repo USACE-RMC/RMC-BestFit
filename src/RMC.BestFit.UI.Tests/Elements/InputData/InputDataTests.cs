@@ -963,6 +963,76 @@ public class InputDataTests
     }
 
     /// <summary>
+    /// Verifies that switching <see cref="UI.InputData.ExactDataMethod"/> away from
+    /// <see cref="UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries"/> clears the retained
+    /// POT source-observation span on the shared <see cref="UI.InputData.DataFrame"/>.
+    /// </summary>
+    /// <remarks>
+    /// The InputData element keeps one DataFrame instance across ExactDataMethod switches. Without
+    /// this reset, a POT extraction's <c>PointProcessObservationYears</c> survives a later switch to
+    /// Manual entry (or any other method) and is silently reused by a downstream point-process fit
+    /// even though the manually entered data has no relationship to the original extraction period.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_SwitchingAwayFromPeaksOverThreshold_ClearsPointProcessObservationYears()
+    {
+        var id = new UI.InputData("PotSwitchID", _collection!);
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+        var potValues = Enumerable.Repeat(10.0, 372).Select((v, i) => i == 186 ? 500d : v).ToArray();
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PotSwitchTS",
+            TimeInterval.OneMonth,
+            new DateTime(1990, 1, 1),
+            potValues);
+
+        id.CreatePeaksOverThresholdSeries();
+
+        Assert.IsTrue(double.IsFinite(id.DataFrame.PointProcessObservationYears) && id.DataFrame.PointProcessObservationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure before the method changes.");
+
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.Manual;
+
+        Assert.IsTrue(double.IsNaN(id.DataFrame.PointProcessObservationYears),
+            "Switching the exact-data method away from POT extraction must clear the stale source exposure.");
+    }
+
+    /// <summary>
+    /// Verifies that editing the POT-derived exact series in place, while
+    /// <see cref="UI.InputData.ExactDataMethod"/> remains
+    /// <see cref="UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries"/>, keeps the retained
+    /// source-observation span — only a change AWAY from POT extraction clears it.
+    /// </summary>
+    /// <remarks>
+    /// Matches the documented DataFrame-level behavior verified by
+    /// <c>DataFrameLambdaTests.Lambda_AfterExactSeriesReplacement_KeepsPeaksOverThresholdObservationSpan</c>:
+    /// a bootstrap refit, interactive edit, or API round trip that replaces individual POT ordinates
+    /// is not a source change and must not clear the exposure.
+    /// </remarks>
+    [STATestMethod]
+    public void ExactDataMethod_RemainingPeaksOverThreshold_KeepsPointProcessObservationYearsAfterSeriesEdit()
+    {
+        var id = new UI.InputData("PotKeepID", _collection!);
+        id.ExactDataMethod = UI.InputData.ExactDataEntryType.PeaksOverThresholdSeries;
+        var potValues = Enumerable.Repeat(10.0, 372).Select((v, i) => i == 186 ? 500d : v).ToArray();
+        id.TimeSeriesElement = MakeTimeSeriesElement(
+            "PotKeepTS",
+            TimeInterval.OneMonth,
+            new DateTime(1990, 1, 1),
+            potValues);
+
+        id.CreatePeaksOverThresholdSeries();
+        double observationYears = id.DataFrame.PointProcessObservationYears;
+        Assert.IsTrue(double.IsFinite(observationYears) && observationYears > 0.0,
+            "Setup sanity check: POT extraction must record a finite source exposure.");
+
+        // Replace a POT-derived ordinate in place without changing ExactDataMethod.
+        id.DataFrame.ExactSeries[0] = new RMC.BestFit.Models.ExactData(id.DataFrame.ExactSeries[0].Index, 999d);
+
+        Assert.AreEqual(observationYears, id.DataFrame.PointProcessObservationYears, 0.0,
+            "Editing the POT series in place must not clear the retained source exposure.");
+    }
+
+    /// <summary>
     /// Verifies that editing plot axis titles does not back-sync into data labels.
     /// </summary>
     [STATestMethod]

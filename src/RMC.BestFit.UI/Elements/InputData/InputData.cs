@@ -605,6 +605,15 @@ namespace RMC.BestFit.UI
         /// <summary>
         /// Determines how the exact data is entered.
         /// </summary>
+        /// <remarks>
+        /// Changing away from <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/> clears any
+        /// <see cref="RMC.BestFit.Models.DataFrame.PointProcessObservationYears"/> source exposure
+        /// retained on <see cref="DataFrame"/> from the prior POT extraction: Manual, USGS, and
+        /// Block Series entry do not carry that metadata, so leaving it in place would let a later
+        /// point-process fit silently reuse an exposure recorded for an unrelated period. Switching
+        /// between other methods, or editing the POT-derived series while this stays
+        /// <see cref="ExactDataEntryType.PeaksOverThresholdSeries"/>, does not affect it.
+        /// </remarks>
         [Category("General")]
         [DisplayName("Exact Data Entry Method")]
         [Description("Select whether exact data is manually entered, downloaded from USGS, or derived from a time series.")]
@@ -618,6 +627,17 @@ namespace RMC.BestFit.UI
                 {
                     var old = _exactDataMethod;
                     _exactDataMethod = value;
+
+                    // Leaving POT extraction invalidates any retained source-observation span.
+                    // Manual and USGS entry never populate this metadata, and Block Series clears
+                    // it itself (DataFrame.CreateBlockSeries); reset it here too so every path away
+                    // from POT is covered by a single check on the transition, not on which
+                    // "Create*" method the caller happens to invoke next. Go through the property
+                    // setter (not the backing field) so listeners such as PointProcessModel see the
+                    // change and re-infer their exposure.
+                    if (old == ExactDataEntryType.PeaksOverThresholdSeries && DataFrame != null)
+                        DataFrame.PointProcessObservationYears = double.NaN;
+
                     SetIsValid();
                     RecordPropertyChange(nameof(ExactDataMethod), old, value);
                 }

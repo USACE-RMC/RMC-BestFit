@@ -318,7 +318,9 @@ namespace RMC.BestFit.Models
         /// This metadata preserves leading and trailing source years that contain no extracted
         /// peaks. A value of <see cref="double.NaN"/> means that source exposure is unavailable.
         /// Collection edits do not recalculate this value because the retained POT events cannot
-        /// reveal unobserved zero-event years.
+        /// reveal unobserved zero-event years. <see cref="CreatePeaksOverThresholdSeries"/> sets it
+        /// from the source time series; <see cref="CreateBlockSeries"/> clears it back to
+        /// <see cref="double.NaN"/> because a block series carries no such source exposure.
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">
         /// Thrown when the value is not <see cref="double.NaN"/> and is not positive and finite.
@@ -2584,10 +2586,22 @@ namespace RMC.BestFit.Models
         /// <param name="startMonth">The starting month for the custom time block. Default = 10.</param>
         /// <param name="endMonth">The ending month for the custom time block. Default = 9.</param>
         /// <param name="period">The time period to perform smoothing over. Default = 1.</param>
-        public void CreateBlockSeries(TimeSeries timeSeries, TimeBlockWindow timeBlock = TimeBlockWindow.WaterYear, 
-            BlockFunctionType blockFunction = BlockFunctionType.Maximum, SmoothingFunctionType smoothingFunction = SmoothingFunctionType.None, 
+        /// <remarks>
+        /// Clears any <see cref="PointProcessObservationYears"/> retained from an earlier
+        /// peaks-over-threshold extraction. A block series has no leading or trailing zero-event
+        /// years to preserve, so a source exposure recorded for a different extraction period no
+        /// longer describes this data; leaving it in place would let a later point-process fit
+        /// silently reuse that stale exposure. The reset goes through the public property, not the
+        /// backing field, so listeners such as <c>PointProcessModel</c> re-infer their exposure
+        /// from this block series' own index span.
+        /// </remarks>
+        public void CreateBlockSeries(TimeSeries timeSeries, TimeBlockWindow timeBlock = TimeBlockWindow.WaterYear,
+            BlockFunctionType blockFunction = BlockFunctionType.Maximum, SmoothingFunctionType smoothingFunction = SmoothingFunctionType.None,
             int startMonth = 10, int endMonth = 9, int period = 1)
         {
+            // A block series carries no source-exposure metadata of its own; clear any span
+            // retained from a prior POT extraction before rebuilding the series.
+            PointProcessObservationYears = double.NaN;
 
             TimeSeries? _timeSeries = null;
             if (timeBlock == TimeBlockWindow.CalendarYear)
