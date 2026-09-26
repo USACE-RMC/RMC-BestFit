@@ -1250,8 +1250,8 @@ was changed to obtain these results.
 that cite the minimum were rerun. The minimum was in the working tree from the 31 August 2026 AR(1)
 run (`20260831-192951`), was committed in `808be5c` (1 September 2026), and was reverted in
 `81882ce` (8 September 2026), so every BestFit MLE/MAP fit on Differential Evolution in that window
-used it, whether or not its record says so. Besides the six cells rerun above, the MLE/MAP evidence
-dated inside the window covers 53 identities, none of which was rerun:
+used it, whether or not its record says so. Besides the six cells rerun above, the Differential
+Evolution MLE/MAP evidence dated inside the window covers 53 identities, none of which was rerun:
 
 | Identities | Recorded runs | Record |
 |---|---|---|
