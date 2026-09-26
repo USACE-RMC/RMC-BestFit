@@ -297,6 +297,17 @@ namespace RMC.BestFit.UI
         private BasicMessageItem _legacyMigrationMsg = null;
 
         /// <summary>
+        /// Reference to the pre-v2.0.1 transform-results warning message added to the messenger
+        /// during <see cref="Open()"/> when <see cref="IsPreV201TransformResult"/> determines the
+        /// restored results were computed before v2.0.1's training-window transform fit, date-based
+        /// covariate alignment, and revised conditioning window (Task 2.9 / decision D2, approved
+        /// 25 Sep 2026). Held so <see cref="InnerAnalysis_PropertyChanged"/> can remove it from the
+        /// messenger as soon as the results are cleared, and <see cref="RunAsync"/>'s clear-before-run
+        /// step reaches that same handler when a re-run starts.
+        /// </summary>
+        private BasicMessageItem _legacyTransformResultsMsg = null;
+
+        /// <summary>
         /// The time series element containing the data to be analyzed.
         /// </summary>
         private TimeSeriesElement _timeSeriesData;
@@ -659,6 +670,19 @@ namespace RMC.BestFit.UI
                 e.PropertyName == nameof(ModelAnalyses.ARIMAXAnalysis.ARIMAX) ||
                 e.PropertyName == nameof(ModelAnalyses.ARIMAXAnalysis.BayesianAnalysis))
             {
+                // IsEstimated -> false means the fit was cleared, whether directly (ClearResults,
+                // a structural property setter) or as the first step of a fresh RunAsync (which
+                // clears before it estimates). Either way the pre-v2.0.1 transform-results warning
+                // added during Open() no longer describes the current state, so drop it here rather
+                // than only after a successful re-run — unlike _legacyMigrationMsg, whose model was
+                // already reset to defaults at Open() and so has nothing to "clear" separately.
+                if (e.PropertyName == nameof(ModelAnalyses.ARIMAXAnalysis.IsEstimated) &&
+                    _innerAnalysis.IsEstimated == false && _legacyTransformResultsMsg != null)
+                {
+                    _messenger.Remove(_legacyTransformResultsMsg);
+                    _legacyTransformResultsMsg = null;
+                }
+
                 SetIsValid();
                 RaisePropertyChange(e.PropertyName);
             }
@@ -977,6 +1001,56 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
+        /// Determines whether a just-restored time-series analysis carries results computed by a
+        /// pre-v2.0.1 build of RMC-BestFit (Task 2.9 / decision D2, approved 25 Sep 2026), so
+        /// <see cref="Open(SQLiteManager)"/> should warn the user to re-run the Bayesian analysis.
+        /// </summary>
+        /// <param name="isEstimated">The <c>IsEstimated</c> state of the inner analysis reconstructed
+        /// by <see cref="Open(SQLiteManager)"/>.</param>
+        /// <param name="modelXElement">The persisted <see cref="ARIMAX"/> XElement read from the
+        /// saved project (the raw <c>ARIMAX</c> column cell), or <see langword="null"/> when no model
+        /// XML was saved or it failed to parse.</param>
+        /// <param name="arimax">The reconstructed <see cref="ARIMAX"/> model, already bound to its
+        /// resolved covariates.</param>
+        /// <returns>
+        /// <see langword="true"/> when the saved results predate v2.0.1's model handling for a
+        /// configuration v2.0.1 actually changed; otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// v2.0.1 started writing the <see cref="ARIMAX.TransformLambda"/> attribute unconditionally
+        /// on every <see cref="ARIMAX.ToXElement"/> call (commit ac661e9); v2.0.0 never wrote that
+        /// attribute. Its absence on <paramref name="modelXElement"/> is therefore a reliable
+        /// signature of a pre-v2.0.1 save — but only estimated results are stale, so the check first
+        /// requires <paramref name="isEstimated"/>.
+        /// </para>
+        /// <para>
+        /// The warning is scoped to the configurations v2.0.1 actually changed: models with at least
+        /// one covariate (v2.0.1 aligns covariates by date instead of by position, and widens the
+        /// conditioning window to <c>K = max(MAOrderQ, AROrderP + XOrderB)</c>), models whose
+        /// transform exponent is fitted on the training window (<see cref="RMC.BestFit.Models.Transform.BoxCox"/>
+        /// or <see cref="RMC.BestFit.Models.Transform.YeoJohnson"/>), and covariate-free models where
+        /// <see cref="ARIMAX.XOrderB"/> exceeds <c>max(AROrderP, MAOrderQ)</c> — Task 2.8 narrowed the
+        /// conditioning window to <c>K = max(AROrderP, MAOrderQ)</c> for that combination, so a saved
+        /// fit from before that change used a larger K. A covariate-free, non-fitted-transform model
+        /// with <c>XOrderB &lt;= max(AROrderP, MAOrderQ)</c> is unaffected by any of the three changes,
+        /// so its saved results remain valid and no warning is shown.
+        /// </para>
+        /// </remarks>
+        internal static bool IsPreV201TransformResult(bool isEstimated, XElement modelXElement, ARIMAX arimax)
+        {
+            if (!isEstimated || arimax == null) return false;
+            if (modelXElement?.Attribute(nameof(ARIMAX.TransformLambda)) != null) return false;
+
+            bool hasCovariates = arimax.Covariates != null && arimax.Covariates.Count > 0;
+            bool fittedTransform = arimax.TransformType == RMC.BestFit.Models.Transform.BoxCox ||
+                arimax.TransformType == RMC.BestFit.Models.Transform.YeoJohnson;
+            bool narrowerConditioningWindow = !hasCovariates && arimax.XOrderB > Math.Max(arimax.AROrderP, arimax.MAOrderQ);
+
+            return hasCovariates || fittedTransform || narrowerConditioningWindow;
+        }
+
+        /// <summary>
         /// Opens the element from disk.
         /// </summary>
         public override void Open()
@@ -1209,6 +1283,14 @@ namespace RMC.BestFit.UI
                         $"The time series analysis '{Name}' was created with an older version of RMC-BestFit and stored under the legacy 'ARMAX' schema. Previous parameter estimates, MCMC samples, and uncertainty results were discarded. Re-run the Bayesian analysis to refresh the results.",
                         this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY");
                     _messenger.Add(_legacyMigrationMsg);
+                }
+                else if (IsPreV201TransformResult(_innerAnalysis.IsEstimated, modelXElement, _innerAnalysis.ARIMAX))
+                {
+                    _legacyTransformResultsMsg = new BasicMessageItem(
+                        MessageType.Warning,
+                        $"The results of time series analysis '{Name}' were computed by an earlier version of RMC-BestFit. This version fits the transform exponent on the training window, aligns covariates by date, and uses a revised conditioning window, so reprocessed forecasts would combine the saved results with different model settings. Re-run the Bayesian analysis to refresh the results.",
+                        this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY-TRANSFORM");
+                    _messenger.Add(_legacyTransformResultsMsg);
                 }
             }
 

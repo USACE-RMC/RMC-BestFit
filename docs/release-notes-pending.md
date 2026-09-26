@@ -236,6 +236,15 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   permanently unresponsive to later parameter edits. The App's trend-model combo box catches the
   failure, reverts the row to the distribution's actual trend model, and shows a warning dialog
   instead of crashing the application.
+- Time series (Task 2.9 / decision D2, approved 25 September 2026): opening a time-series analysis
+  whose saved results were computed before v2.0.1 now adds a validation warning when the restored
+  model has a covariate, uses a fitted Box-Cox or Yeo-Johnson transform, or (covariate-free) has
+  `XOrderB > max(AROrderP, MAOrderQ)` — the configurations changed by v2.0.1's training-window
+  transform fit, date-based covariate alignment, and revised conditioning window (see the ARIMAX
+  conditioning entry above). Detection reads the saved model's `TransformLambda` attribute, which
+  is present only in saves made by v2.0.1 or later (earlier saves never wrote it). The warning asks
+  the user to re-run the Bayesian analysis, and clears as soon as the results are cleared or the
+  analysis is re-run; it does not change any algorithm, default, or numerical result.
 
 ## RMC.Numerics (since 2.1.4)
 
