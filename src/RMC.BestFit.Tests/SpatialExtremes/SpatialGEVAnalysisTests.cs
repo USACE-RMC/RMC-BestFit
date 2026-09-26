@@ -156,6 +156,22 @@ public class SpatialGEVAnalysisTests
         return new SpatialGEV(data, coords, location, scale, shape);
     }
 
+    /// <summary>
+    /// Creates a test model with spatial regression errors enabled on location and scale, mirroring
+    /// <c>SpatialGEVTests.CreateModelWithSpatialErrors</c> so both test classes exercise the same
+    /// fixture shape.
+    /// </summary>
+    private static SpatialGEV CreateSpatialGEVWithSpatialErrors()
+    {
+        var model = CreateTestSpatialGEV();
+        model.LocationErrors = new SpatialRegressionErrors(model.Coordinates, CorrelationFunctionType.Exponential);
+        model.ScaleErrors = new SpatialRegressionErrors(model.Coordinates, CorrelationFunctionType.Exponential);
+        model.UseLocationErrors = true;
+        model.UseScaleErrors = true;
+        model.SetDefaultParameters();
+        return model;
+    }
+
     #endregion
 
     #region Constructor Tests
@@ -412,6 +428,73 @@ public class SpatialGEVAnalysisTests
         var (isValid, messages) = analysis.Validate();
 
         Assert.IsTrue(isValid, $"Validation should pass with missing data. Messages: {string.Join(", ", messages)}");
+    }
+
+    /// <summary>
+    /// Tests that Validate rejects <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/> combined
+    /// with spatial regression errors (B-6). The Godambe sensitivity matrix is the Hessian of the
+    /// observation log likelihood alone, which excludes the latent errors' Gaussian-process prior
+    /// (<see cref="RMC.BestFit.Models.SpatialExtremes.SpatialGEV.PriorLogLikelihood"/>); every enabled
+    /// error family's per-site latent errors are then perfectly confounded with that family's trend
+    /// intercept in the data likelihood, so the sensitivity matrix is exactly singular and the run
+    /// always fails after the MCMC completes. Validate now rejects the combination up front.
+    /// </summary>
+    [TestMethod]
+    public void Validate_GodambeSandwichWithSpatialRegressionErrors_ReturnsInvalid()
+    {
+        var spatialGEV = CreateSpatialGEVWithSpatialErrors();
+        var analysis = new SpatialGEVAnalysis(spatialGEV)
+        {
+            UncertaintyMethod = SpatialGEVUncertaintyMethod.GodambeSandwich
+        };
+
+        var (isValid, messages) = analysis.Validate();
+
+        Assert.IsFalse(isValid);
+        Assert.IsTrue(messages.Contains(
+            "Error: The Godambe sandwich uncertainty method cannot be used with spatial regression errors. Choose Bayesian posterior, Bayesian inflated, or spatial bootstrap uncertainty, or remove the spatial regression errors."),
+            $"Messages: {string.Join(", ", messages)}");
+    }
+
+    /// <summary>
+    /// Tests that Validate does not report the Godambe/spatial-errors restriction when
+    /// <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/> is selected but no spatial regression
+    /// errors are enabled: the B-6 intercept/latent-error confound does not exist without them.
+    /// </summary>
+    [TestMethod]
+    public void Validate_GodambeSandwichWithoutSpatialRegressionErrors_DoesNotReportRestriction()
+    {
+        var spatialGEV = CreateTestSpatialGEV();
+        var analysis = new SpatialGEVAnalysis(spatialGEV)
+        {
+            UncertaintyMethod = SpatialGEVUncertaintyMethod.GodambeSandwich
+        };
+
+        var (isValid, messages) = analysis.Validate();
+
+        Assert.IsTrue(isValid, $"Validation should pass. Messages: {string.Join(", ", messages)}");
+        Assert.IsFalse(messages.Any(m => m.Contains("Godambe sandwich uncertainty method cannot be used with spatial regression errors")));
+    }
+
+    /// <summary>
+    /// Tests that Validate does not report the Godambe/spatial-errors restriction when spatial
+    /// regression errors are enabled but the uncertainty method is
+    /// <see cref="SpatialGEVUncertaintyMethod.BayesianPosterior"/>: the restriction is specific to
+    /// <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/>.
+    /// </summary>
+    [TestMethod]
+    public void Validate_BayesianPosteriorWithSpatialRegressionErrors_DoesNotReportRestriction()
+    {
+        var spatialGEV = CreateSpatialGEVWithSpatialErrors();
+        var analysis = new SpatialGEVAnalysis(spatialGEV)
+        {
+            UncertaintyMethod = SpatialGEVUncertaintyMethod.BayesianPosterior
+        };
+
+        var (isValid, messages) = analysis.Validate();
+
+        Assert.IsTrue(isValid, $"Validation should pass. Messages: {string.Join(", ", messages)}");
+        Assert.IsFalse(messages.Any(m => m.Contains("Godambe sandwich uncertainty method cannot be used with spatial regression errors")));
     }
 
     #endregion

@@ -39,6 +39,13 @@ namespace RMC.BestFit.Analyses
         /// MLE with Godambe sandwich covariance for robust standard errors.
         /// Accounts for model misspecification and correlation.
         /// </summary>
+        /// <remarks>
+        /// Cannot be combined with spatial regression errors on any of the three parameter families
+        /// (<c>UseLocationErrors</c>, <c>UseScaleErrors</c>, <c>UseShapeErrors</c>): the sensitivity
+        /// matrix is the Hessian of the data log likelihood alone, which excludes the latent errors'
+        /// Gaussian-process prior, so it is exactly singular whenever a spatial-error family is enabled.
+        /// <see cref="SpatialGEVAnalysis.Validate"/> rejects the combination.
+        /// </remarks>
         GodambeSandwich,
 
         /// <summary>
@@ -316,6 +323,11 @@ namespace RMC.BestFit.Analyses
         /// <para>
         /// Alternative methods include variance inflation based on effective sample size,
         /// Godambe sandwich covariance for MLE, and spatial block bootstrap.
+        /// </para>
+        /// <para>
+        /// <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/> cannot be combined with spatial
+        /// regression errors on any of the three parameter families; <see cref="Validate"/> rejects
+        /// that combination (see the <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/> remarks).
         /// </para>
         /// </remarks>
         [Category("Output")]
@@ -2354,6 +2366,22 @@ namespace RMC.BestFit.Analyses
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// <para>
+        /// <b>Godambe sandwich vs. spatial regression errors (B-6):</b> <see cref="ComputeGodambeCovariance"/>
+        /// builds its sensitivity matrix from the Hessian of <see cref="SpatialGEV.DataLogLikelihood"/> alone,
+        /// which excludes the latent location/scale/shape errors' Gaussian-process prior (see
+        /// <see cref="SpatialGEV.PriorLogLikelihood"/>). Every enabled error family's free per-site latent
+        /// error enters the pre-link parameter sum alongside that family's trend intercept
+        /// (<see cref="Models.TrendFunctions.GeneralLinearFunction"/> always has one), so shifting the
+        /// intercept by a constant and every site's error by the opposite constant leaves the observation
+        /// log likelihood exactly unchanged. That flat direction makes the sensitivity matrix exactly
+        /// singular whenever <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/> is combined with
+        /// spatial regression errors on any of the three families, regardless of data or the other
+        /// settings, so the run always fails after the MCMC completes. This method rejects the combination
+        /// up front instead.
+        /// </para>
+        /// </remarks>
         public override (bool IsValid, List<string> ValidationMessages) Validate()
         {
             bool isValid = true;
@@ -2380,6 +2408,18 @@ namespace RMC.BestFit.Analyses
             {
                 isValid = false;
                 messageList.AddRange(bayesValid.ValidationMessages);
+            }
+
+            // Godambe sandwich covariance always fails with spatial regression errors (B-6): see the
+            // <remarks> above. Reject the combination here instead of after a full MCMC run.
+            bool hasSpatialRegressionErrors =
+                (SpatialGEV.UseLocationErrors && SpatialGEV.LocationErrors != null) ||
+                (SpatialGEV.UseScaleErrors && SpatialGEV.ScaleErrors != null) ||
+                (SpatialGEV.UseShapeErrors && SpatialGEV.ShapeErrors != null);
+            if (UncertaintyMethod == SpatialGEVUncertaintyMethod.GodambeSandwich && hasSpatialRegressionErrors)
+            {
+                isValid = false;
+                messageList.Add("Error: The Godambe sandwich uncertainty method cannot be used with spatial regression errors. Choose Bayesian posterior, Bayesian inflated, or spatial bootstrap uncertainty, or remove the spatial regression errors.");
             }
 
             return (isValid, messageList);

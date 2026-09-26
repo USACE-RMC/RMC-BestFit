@@ -330,6 +330,9 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   and shows an empty table with a message when a stored draw cannot be displayed for any reason
   (an infeasible derived weight, invalid component parameters, or a length that matches neither
   the K-1 nor the full-K shape).
+- Spatial GEV validation (Task 3.8, finding M8/B-6): Spatial GEV analysis validation now rejects
+  the Godambe sandwich uncertainty method combined with spatial regression errors, a combination
+  that always failed after the MCMC run.
 
 ## RMC.Numerics (since 2.1.4)
 
