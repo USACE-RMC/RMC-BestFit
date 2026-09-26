@@ -53,8 +53,10 @@ From the BestFit repository root, build:
 dotnet build src/RMC.BestFit.Api -c Release -p:UseLocalRmcNumerics=false
 ```
 
-`UseLocalRmcNumerics=false` is essential for a clean-clone/package test: the
-repository otherwise selects a sibling Numerics checkout when one exists.
+`UseLocalRmcNumerics=false` is the default: the repository builds against the
+published RMC.Numerics package unless a build opts into a sibling Numerics checkout
+with `-p:UseLocalRmcNumerics=true`. Passing it explicitly keeps the command correct
+on older checkouts that selected a sibling checkout automatically.
 Inspect `Directory.Packages.props` and `src/RMC.BestFit/obj/project.assets.json`
 to record the requested/resolved RMC.Numerics version. This implementation uses
 the owner-approved **2.2.0** package. An older 2.1.4 pin fails against current code

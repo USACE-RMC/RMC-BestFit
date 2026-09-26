@@ -1,9 +1,9 @@
 # Pending release notes
 
 Behavior changes made since the public releases RMC.BestFit 2.0.0 and RMC.Numerics 2.1.4 that
-must appear in the next release notes. Package versions are not incremented by this list; the
-BestFit solution builds against the local Numerics checkout while these changes are in
-development.
+must appear in the next release notes. Package versions are not incremented by this list. The
+BestFit solution builds against the published RMC.Numerics 2.2.0 package by default; a sibling
+Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics=true`.
 
 ## RMC.BestFit (since 2.0.0)
 
