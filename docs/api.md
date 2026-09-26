@@ -185,7 +185,7 @@ ordinates and server limits), `GET api/resources` (cross-cutting id overview).
 
 ## MCP server
 
-### Optional Multiple Grubbs-Beck screening
+### Low-outlier screening: Multiple Grubbs-Beck test or manual threshold
 
 Manual input creation, USGS-peak input creation, and the USGS B17C workflow accept
 `useMultipleGrubbsBeckTest` (default **false**, preserving existing requests).
@@ -204,8 +204,20 @@ delete the observations. The model's existing strict threshold comparison is
 preserved. When true, a manual `lowOutlierThreshold` (including zero) or any
 `isLowOutlier:true` observation is rejected to avoid overwriting the caller's
 screening choice. Omitted/false retains existing manual behavior.
-For manual screening, provide the intended `isLowOutlier` flags explicitly: the
-current API stores `lowOutlierThreshold` but does not derive flags from it.
+
+Manual input creation also accepts a manual `lowOutlierThreshold` without MGBT
+(Task 2.10 / decision D5, approved 25 September 2026). It is applied with
+`DataFrame.SetLowOutliersFromThreshold()` after the exact series is populated:
+every exact observation strictly below the threshold is flagged a low outlier
+(regardless of any `isLowOutlier` supplied on it), and the count is returned as
+`lowOutlierCount`. The data frame requires at least ten exact observations and
+rejects a threshold that would censor more than 50% of the record (above the
+sorted upper-middle value) with a 400 carrying its own validation message;
+nothing is stored. Supplying `isLowOutlier:true` on an observation whose value is
+at or above `lowOutlierThreshold` is rejected as contradictory (the threshold
+would unflag it) before anything is built; a preflagged observation already
+below the threshold agrees and is accepted. Omitting `lowOutlierThreshold` leaves
+every observation's flag exactly as supplied, matching prior behavior.
 
 The MCP tools `create_inputdata_manual`, `create_inputdata_usgs_peaks`, and
 `run_usgs_bulletin17c_workflow` expose the same optional boolean. For example:

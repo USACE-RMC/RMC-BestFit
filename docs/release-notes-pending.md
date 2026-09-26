@@ -236,6 +236,19 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   permanently unresponsive to later parameter edits. The App's trend-model combo box catches the
   failure, reverts the row to the distribution's actual trend model, and shows a warning dialog
   instead of crashing the application.
+- API/MCP input data (Task 2.10 / decision D5, approved 25 September 2026): manual input creation
+  now applies a supplied `lowOutlierThreshold` with `DataFrame.SetLowOutliersFromThreshold()`
+  after the exact series is populated, instead of only storing it. Every exact observation
+  strictly below the threshold is now flagged a low outlier and counted in the response's
+  `lowOutlierCount`, regardless of any `isLowOutlier` sent on it. **Callers that previously sent
+  `lowOutlierThreshold` on a manual request relied on it being stored but not applied; those
+  requests now censor observations below the threshold and may 400 if the threshold would censor
+  more than half the record or fewer than ten exact observations are present.** Sending
+  `isLowOutlier:true` on an observation whose value is at or above `lowOutlierThreshold` is a new
+  400 (the threshold would unflag it); a preflagged observation already below the threshold is
+  unaffected. Omitting `lowOutlierThreshold` is unchanged: preflagged `isLowOutlier` values are
+  stored exactly as supplied. `useMultipleGrubbsBeckTest` continues to reject a request that also
+  supplies `lowOutlierThreshold` or a preflagged observation.
 - Time series (Task 2.9 / decision D2, approved 25 September 2026): opening a time-series analysis
   whose saved results were computed before v2.0.1 now adds a validation warning when the restored
   model has a covariate, uses a fitted Box-Cox or Yeo-Johnson transform, or (covariate-free) has

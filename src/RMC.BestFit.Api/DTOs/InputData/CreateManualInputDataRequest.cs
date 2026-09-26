@@ -70,9 +70,18 @@ namespace RMC.BestFit.Api.DTOs
         public double? PlottingParameter { get; set; }
 
         /// <summary>
-        /// Optional manually selected low-outlier threshold. Supply the intended
-        /// <see cref="ExactObservationDto.IsLowOutlier"/> flags explicitly; assigning this
-        /// threshold does not derive flags from observation magnitudes.
+        /// Optional manual low-outlier threshold, applied with
+        /// <see cref="RMC.BestFit.Models.DataFrame.SetLowOutliersFromThreshold"/> after the exact
+        /// series is populated: every exact observation strictly below the threshold is flagged as
+        /// a low outlier, and every observation at or above it is unflagged, regardless of any
+        /// <see cref="ExactObservationDto.IsLowOutlier"/> supplied on it. Requires at least ten
+        /// exact observations and a threshold that censors no more than half the record (above the
+        /// sorted upper-middle value); violating either is a 400 with the data frame's message and
+        /// stores nothing. An observation preflagged <see cref="ExactObservationDto.IsLowOutlier"/>
+        /// = true with a value at or above this threshold is rejected as contradictory before
+        /// anything is built - a preflag on a value already below the threshold agrees and is
+        /// accepted. Cannot be combined with <see cref="UseMultipleGrubbsBeckTest"/>. Omit this to
+        /// leave every <see cref="ExactObservationDto.IsLowOutlier"/> value exactly as supplied.
         /// </summary>
         [JsonPropertyName("lowOutlierThreshold")]
         public double? LowOutlierThreshold { get; set; }

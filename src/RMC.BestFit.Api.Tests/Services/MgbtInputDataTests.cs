@@ -92,7 +92,13 @@ namespace RMC.BestFit.Api.Tests.Services
                 analysis.Bulletin17C.Bulletin17CDistribution.DataFrame.ExactSeries.Cast<ExactData>().Select(x => x.IsLowOutlier).ToArray());
         }
 
-        /// <summary>Checks that omitted/false screening preserves existing manual flags and thresholds.</summary>
+        /// <summary>
+        /// Checks that omitted/false MGBT screening preserves an explicit preflagged
+        /// <c>isLowOutlier</c> value when no <c>lowOutlierThreshold</c> is supplied. Task 2.10 /
+        /// decision D5 (approved 25 September 2026) now applies a supplied threshold instead of
+        /// merely storing it, which would overwrite these preflags - see
+        /// <see cref="LowOutlierThresholdInputDataTests"/> for that behavior.
+        /// </summary>
         /// <param name="omit">Whether the new field is omitted entirely.</param>
         [DataTestMethod]
         [DataRow(false)]
@@ -100,10 +106,9 @@ namespace RMC.BestFit.Api.Tests.Services
         public void Manual_NotEnabled_PreservesManualScreening(bool omit)
         {
             var request = ManualRequest(omit ? null : false);
-            request.LowOutlierThreshold = 50;
             request.ExactData[0].IsLowOutlier = true;
             var frame = _inputs.CreateManual(request).DataFrame;
-            Assert.AreEqual(50d, frame.LowOutlierThreshold);
+            Assert.AreEqual(0d, frame.LowOutlierThreshold, "No threshold was supplied; the frame keeps its unset default.");
             Assert.IsTrue(((ExactData)frame.ExactSeries[0]).IsLowOutlier);
             Assert.IsFalse(((ExactData)frame.ExactSeries[1]).IsLowOutlier);
         }

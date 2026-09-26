@@ -132,7 +132,11 @@ namespace RMC.BestFit.Api.Mcp
         /// <param name="intervalData">Optional interval-censored observations.</param>
         /// <param name="thresholdData">Optional perception-threshold records.</param>
         /// <param name="plottingParameter">Optional plotting-position parameter.</param>
-        /// <param name="lowOutlierThreshold">Optional low-outlier threshold.</param>
+        /// <param name="lowOutlierThreshold">
+        /// Optional low-outlier threshold, applied after populating the exact series: observations
+        /// strictly below it are flagged low outliers and counted in the response; requires at
+        /// least ten exact observations and a threshold that censors no more than half the record.
+        /// </param>
         /// <param name="lambda">Optional events-per-year rate.</param>
         /// <param name="name">Optional display name.</param>
         /// <param name="useMultipleGrubbsBeckTest">True to screen exact observations; incompatible with manual screening.</param>
@@ -145,7 +149,7 @@ namespace RMC.BestFit.Api.Mcp
             [Description("Optional interval-censored observations: array of { index, lowerBound, upperBound, value? }.")] List<IntervalObservationDto>? intervalData = null,
             [Description("Optional perception-threshold records: array of { startIndex, endIndex, value, numberAbove }.")] List<ThresholdObservationDto>? thresholdData = null,
             [Description("Plotting-position parameter a: 0 Weibull (default), 0.375 Blom, 0.44 Gringorten, 0.5 Hazen.")] double? plottingParameter = null,
-            [Description("Optional manual low-outlier threshold. Supply isLowOutlier flags explicitly; this value alone does not flag observations.")] double? lowOutlierThreshold = null,
+            [Description("Optional manual low-outlier threshold, applied after populating the exact series: every observation strictly below it is flagged a low outlier (and counted in lowOutlierCount), regardless of any isLowOutlier supplied. Requires at least ten exact observations and a threshold that censors no more than half the record (400 otherwise, nothing stored). An isLowOutlier=true observation at or above the threshold is rejected as contradictory. Cannot combine with useMultipleGrubbsBeckTest. Omit to leave isLowOutlier values exactly as supplied.")] double? lowOutlierThreshold = null,
             [Description("Optional events-per-year rate (lambda); omit for annual data (≈1).")] double? lambda = null,
             [Description("Optional display name for the resource.")] string? name = null,
             [Description("Run Multiple Grubbs-Beck screening after populating observations. Requires at least ten exact observations; cannot combine with lowOutlierThreshold or isLowOutlier=true. Default false.")] bool useMultipleGrubbsBeckTest = false)

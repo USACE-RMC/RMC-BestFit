@@ -56,6 +56,22 @@ namespace RMC.BestFit.Api.Services
                     nameof(request));
             }
 
+            // A manual threshold will be applied to every observation below, so a caller-supplied
+            // isLowOutlier=true on a value the threshold would NOT flag is self-contradictory.
+            // Reject it before building anything, per decision D5's contradiction rule, rather than
+            // silently letting the threshold application below overwrite the caller's flag.
+            if (request.LowOutlierThreshold.HasValue)
+            {
+                double threshold = request.LowOutlierThreshold.Value;
+                var contradiction = request.ExactData.FirstOrDefault(observation => observation.IsLowOutlier && observation.Value >= threshold);
+                if (contradiction != null)
+                {
+                    throw new ArgumentException(
+                        $"Exact observation value {contradiction.Value} is flagged isLowOutlier=true, which contradicts lowOutlierThreshold {threshold}: the threshold only flags values strictly below it.",
+                        nameof(request));
+                }
+            }
+
             var dataFrame = new DataFrame();
             if (request.PlottingParameter.HasValue) dataFrame.PlottingParameter = request.PlottingParameter.Value;
             if (request.LowOutlierThreshold.HasValue) dataFrame.LowOutlierThreshold = request.LowOutlierThreshold.Value;
@@ -120,7 +136,20 @@ namespace RMC.BestFit.Api.Services
             if (request.Lambda.HasValue) dataFrame.SetLambda(request.Lambda.Value);
 
             ThrowIfInvalid(dataFrame);
-            if (request.UseMultipleGrubbsBeckTest) dataFrame.SetLowOutliersFromMGBT();
+            // Mirrors the desktop's InputData.Open: MGBT and a manual threshold are mutually
+            // exclusive (rejected above), so at most one of these applies. SetLowOutliersFromThreshold
+            // throws ArgumentException for fewer than ten exact observations or a threshold that
+            // would censor more than half the record; both propagate unwrapped so the controller's
+            // existing ArgumentException handling maps them to 400 with the data frame's own message,
+            // and nothing is stored because the throw happens before AddInputData below.
+            if (request.UseMultipleGrubbsBeckTest)
+            {
+                dataFrame.SetLowOutliersFromMGBT();
+            }
+            else if (request.LowOutlierThreshold.HasValue)
+            {
+                dataFrame.SetLowOutliersFromThreshold();
+            }
 
             var resource = new InputDataResource
             {
