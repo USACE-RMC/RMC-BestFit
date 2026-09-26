@@ -297,15 +297,33 @@ namespace RMC.BestFit.UI
         private BasicMessageItem _legacyMigrationMsg = null;
 
         /// <summary>
-        /// Reference to the pre-v2.0.1 transform-results warning message added to the messenger
-        /// during <see cref="Open()"/> when <see cref="IsPreV201TransformResult"/> determines the
-        /// restored results were computed before v2.0.1's training-window transform fit, date-based
-        /// covariate alignment, and revised conditioning window (Task 2.9 / decision D2, approved
-        /// 25 Sep 2026). Held so <see cref="InnerAnalysis_PropertyChanged"/> can remove it from the
-        /// messenger as soon as the results are cleared, and <see cref="RunAsync"/>'s clear-before-run
-        /// step reaches that same handler when a re-run starts.
+        /// Reference to the pre-v2.0.1 results warning message added to the messenger during
+        /// <see cref="Open()"/> when the restored results were computed before v2.0.1's
+        /// training-window transform fit, date-based covariate alignment, corrected differenced
+        /// training and reintegration windows, and revised conditioning window (Task 2.9 / decision
+        /// D2, approved 25 Sep 2026): detected by <see cref="IsPreV201TransformResult"/>, or carried
+        /// over from an earlier save by the <see cref="PreV201ResultsColumn"/> marker.
         /// </summary>
+        /// <remarks>
+        /// Held so the warning is removed wherever the restored results stop being current: when
+        /// they are cleared (<see cref="InnerAnalysis_PropertyChanged"/>, which a re-run's
+        /// clear-before-run step also reaches), when an undo or redo rebuilds the inner analysis
+        /// without them (<see cref="RestoreModelFromSnapshot"/>), and after a successful
+        /// <see cref="RunAsync"/>. <see cref="Save"/> persists whether it is still showing.
+        /// </remarks>
         private BasicMessageItem _legacyTransformResultsMsg = null;
+
+        /// <summary>
+        /// Name of the Boolean column that records whether the pre-v2.0.1 results warning was still
+        /// showing when the row was saved, that is, whether the saved results predate v2.0.1.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Save"/> writes the model XML with <see cref="ARIMAX.TransformLambda"/>, which
+        /// erases the signature <see cref="IsPreV201TransformResult"/> reads, so without this marker
+        /// a save that does not re-run the analysis would drop the warning on the next open although
+        /// the results are unchanged. Rows saved before the column existed rely on the XML check alone.
+        /// </remarks>
+        private const string PreV201ResultsColumn = "PreV201Results";
 
         /// <summary>
         /// The time series element containing the data to be analyzed.
@@ -672,15 +690,14 @@ namespace RMC.BestFit.UI
             {
                 // IsEstimated -> false means the fit was cleared, whether directly (ClearResults,
                 // a structural property setter) or as the first step of a fresh RunAsync (which
-                // clears before it estimates). Either way the pre-v2.0.1 transform-results warning
-                // added during Open() no longer describes the current state, so drop it here rather
-                // than only after a successful re-run — unlike _legacyMigrationMsg, whose model was
+                // clears before it estimates). Either way the pre-v2.0.1 results warning added
+                // during Open() no longer describes the current state, so drop it here rather than
+                // only after a successful re-run — unlike _legacyMigrationMsg, whose model was
                 // already reset to defaults at Open() and so has nothing to "clear" separately.
                 if (e.PropertyName == nameof(ModelAnalyses.ARIMAXAnalysis.IsEstimated) &&
-                    _innerAnalysis.IsEstimated == false && _legacyTransformResultsMsg != null)
+                    _innerAnalysis.IsEstimated == false)
                 {
-                    _messenger.Remove(_legacyTransformResultsMsg);
-                    _legacyTransformResultsMsg = null;
+                    RemoveLegacyTransformResultsWarning();
                 }
 
                 SetIsValid();
@@ -690,6 +707,17 @@ namespace RMC.BestFit.UI
             {
                 RaisePropertyChange(e.PropertyName);
             }
+        }
+
+        /// <summary>
+        /// Removes the pre-v2.0.1 results warning from the messenger, if it is showing, and forgets
+        /// it, so the next <see cref="Save"/> no longer marks the saved results as predating v2.0.1.
+        /// </summary>
+        private void RemoveLegacyTransformResultsWarning()
+        {
+            if (_legacyTransformResultsMsg == null) return;
+            _messenger.Remove(_legacyTransformResultsMsg);
+            _legacyTransformResultsMsg = null;
         }
 
         /// <summary>
@@ -949,6 +977,7 @@ namespace RMC.BestFit.UI
             { nameof(MCMCResults), typeof(byte[]) },
             { nameof(AnalysisResults), typeof(string) },
             { "AnalysisXml", typeof(string) },
+            { PreV201ResultsColumn, typeof(bool) },
             { "TimeSeriesPlotSettings", typeof(string) },
             { "ResidualPlotSettings", typeof(string) },
             { "ResidualHistogramPlotSettings", typeof(string) },
@@ -1029,12 +1058,16 @@ namespace RMC.BestFit.UI
         /// one covariate (v2.0.1 aligns covariates by date instead of by position, and widens the
         /// conditioning window to <c>K = max(MAOrderQ, AROrderP + XOrderB)</c>), models whose
         /// transform exponent is fitted on the training window (<see cref="RMC.BestFit.Models.Transform.BoxCox"/>
-        /// or <see cref="RMC.BestFit.Models.Transform.YeoJohnson"/>), and covariate-free models where
+        /// or <see cref="RMC.BestFit.Models.Transform.YeoJohnson"/>), differenced models
+        /// (<see cref="ARIMAX.DiffOrderD"/> &gt; 0), and covariate-free models where
         /// <see cref="ARIMAX.XOrderB"/> exceeds <c>max(AROrderP, MAOrderQ)</c> — Task 2.8 narrowed the
         /// conditioning window to <c>K = max(AROrderP, MAOrderQ)</c> for that combination, so a saved
-        /// fit from before that change used a larger K. A covariate-free, non-fitted-transform model
-        /// with <c>XOrderB &lt;= max(AROrderP, MAOrderQ)</c> is unaffected by any of the three changes,
-        /// so its saved results remain valid and no warning is shown.
+        /// fit from before that change used a larger K. v2.0.0 trained a differenced model on the
+        /// first T differences instead of the T − d differences inside the raw training prefix
+        /// (TR-041) and reintegrated its fitted and forecast curves one step off (TR-037); the App
+        /// draws those saved curves directly. A covariate-free, undifferenced, non-fitted-transform
+        /// model with <c>XOrderB &lt;= max(AROrderP, MAOrderQ)</c> is unaffected by any of these
+        /// changes, so its saved results remain valid and no warning is shown.
         /// </para>
         /// </remarks>
         internal static bool IsPreV201TransformResult(bool isEstimated, XElement modelXElement, ARIMAX arimax)
@@ -1045,9 +1078,10 @@ namespace RMC.BestFit.UI
             bool hasCovariates = arimax.Covariates != null && arimax.Covariates.Count > 0;
             bool fittedTransform = arimax.TransformType == RMC.BestFit.Models.Transform.BoxCox ||
                 arimax.TransformType == RMC.BestFit.Models.Transform.YeoJohnson;
+            bool differenced = arimax.DiffOrderD > 0;
             bool narrowerConditioningWindow = !hasCovariates && arimax.XOrderB > Math.Max(arimax.AROrderP, arimax.MAOrderQ);
 
-            return hasCovariates || fittedTransform || narrowerConditioningWindow;
+            return hasCovariates || fittedTransform || differenced || narrowerConditioningWindow;
         }
 
         /// <summary>
@@ -1069,6 +1103,9 @@ namespace RMC.BestFit.UI
             try
             {
             openedFromV1 = false;
+            // Clear(this) below removes the warning itself; forget it too, or the next Save would
+            // mark the newly restored results as legacy.
+            _legacyTransformResultsMsg = null;
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
@@ -1276,6 +1313,13 @@ namespace RMC.BestFit.UI
 
                 _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
 
+                // A save that did not re-run the analysis rewrote the model XML with
+                // TransformLambda, so the marker it wrote is the only remaining sign that the
+                // restored results still predate v2.0.1. Older rows have no marker column.
+                bool savedPreV201Results = false;
+                if (dtView.ColumnNames.Contains(PreV201ResultsColumn))
+                    bool.TryParse(dtView.GetCell(PreV201ResultsColumn, rowIndex)?.ToString(), out savedPreV201Results);
+
                 if (isLegacyFormat)
                 {
                     _legacyMigrationMsg = new BasicMessageItem(
@@ -1284,11 +1328,12 @@ namespace RMC.BestFit.UI
                         this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY");
                     _messenger.Add(_legacyMigrationMsg);
                 }
-                else if (IsPreV201TransformResult(_innerAnalysis.IsEstimated, modelXElement, _innerAnalysis.ARIMAX))
+                else if (IsPreV201TransformResult(_innerAnalysis.IsEstimated, modelXElement, _innerAnalysis.ARIMAX) ||
+                    (savedPreV201Results && _innerAnalysis.IsEstimated))
                 {
                     _legacyTransformResultsMsg = new BasicMessageItem(
                         MessageType.Warning,
-                        $"The results of time series analysis '{Name}' were computed by an earlier version of RMC-BestFit. This version fits the transform exponent on the training window, aligns covariates by date, and uses a revised conditioning window, so reprocessed forecasts would combine the saved results with different model settings. Re-run the Bayesian analysis to refresh the results.",
+                        $"The results of time series analysis '{Name}' were computed by an earlier version of RMC-BestFit. This version fits the transform exponent on the training window, aligns covariates by date, trains and reintegrates differenced models on corrected windows, and uses a revised conditioning window, so reprocessed forecasts would combine the saved results with different model settings. Re-run the Bayesian analysis to refresh the results.",
                         this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY-TRANSFORM");
                     _messenger.Add(_legacyTransformResultsMsg);
                 }
@@ -1370,6 +1415,9 @@ namespace RMC.BestFit.UI
             dtView.EditCell(rowIndex, nameof(AnalysisResults),
                 AnalysisPersistenceHelper.SerializeAnalysisResults(_innerAnalysis.AnalysisResults));
             dtView.EditCell(rowIndex, "AnalysisXml", _innerAnalysis?.ToXElement()?.ToString() ?? "");
+            // The model XML written above always carries TransformLambda, so record whether the
+            // pre-v2.0.1 results warning still stands for the next Open to find.
+            dtView.EditCell(rowIndex, PreV201ResultsColumn, _legacyTransformResultsMsg != null);
 
             dtView.EditCell(rowIndex, "TimeSeriesPlotSettings", _timeSeriesPlot != null ? PlotSerializer.ToXElement(_timeSeriesPlot).ToString() : "");
             dtView.EditCell(rowIndex, "ResidualPlotSettings", _residualPlot != null ? PlotSerializer.ToXElement(_residualPlot).ToString() : "");
@@ -1549,6 +1597,12 @@ namespace RMC.BestFit.UI
         /// <summary>
         /// Runs the time series analysis asynchronously.
         /// </summary>
+        /// <param name="progressReporter">Receives the start, progress, and end of the run.</param>
+        /// <returns>A task that completes when the run finishes, fails, or is canceled.</returns>
+        /// <remarks>
+        /// A successful run removes the legacy-schema and pre-v2.0.1 results warnings added by
+        /// <see cref="Open(SQLiteManager)"/>, because it replaces the results they describe.
+        /// </remarks>
         public async Task RunAsync(SafeProgressReporter progressReporter)
         {
             SetIsValid();
@@ -1588,6 +1642,12 @@ namespace RMC.BestFit.UI
                     _messenger.Remove(_legacyMigrationMsg);
                     _legacyMigrationMsg = null;
                 }
+
+                // The run replaced any restored pre-v2.0.1 results. Its clear-before-run step only
+                // reaches InnerAnalysis_PropertyChanged when the analysis was still estimated, so
+                // drop the warning here too.
+                if (succeeded)
+                    RemoveLegacyTransformResultsWarning();
             }
         }
 
@@ -1647,6 +1707,10 @@ namespace RMC.BestFit.UI
         /// <param name="snapshot">The XElement snapshot to restore.</param>
         /// <param name="recordedCovariates">The covariate series, in row order, the snapshot was
         /// taken with.</param>
+        /// <remarks>
+        /// Reattaching the covariates clears the rebuilt analysis's results, so the pre-v2.0.1
+        /// results warning is removed here when no results remain.
+        /// </remarks>
         private void RestoreModelFromSnapshot(XElement snapshot, IReadOnlyList<Numerics.Data.TimeSeries> recordedCovariates)
         {
             ModelAnalyses.ARIMAXAnalysis replacedAnalysis = _innerAnalysis;
@@ -1673,6 +1737,13 @@ namespace RMC.BestFit.UI
             _innerAnalysis.ARIMAX.SetCovariates(covariates, resetParameters: !sameCovariates);
 
             _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
+
+            // SetCovariates cleared the rebuilt analysis's results before this element subscribed
+            // to it, so InnerAnalysis_PropertyChanged never saw IsEstimated fall; drop the pre-v2.0.1
+            // results warning here once no results remain.
+            if (!_innerAnalysis.IsEstimated)
+                RemoveLegacyTransformResultsWarning();
+
             SetupBridges();
             RaisePropertyChange(nameof(ARIMAX));
             RaisePropertyChange(nameof(BayesianAnalysis));

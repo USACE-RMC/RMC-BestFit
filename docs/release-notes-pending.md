@@ -251,13 +251,19 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   supplies `lowOutlierThreshold` or a preflagged observation.
 - Time series (Task 2.9 / decision D2, approved 25 September 2026): opening a time-series analysis
   whose saved results were computed before v2.0.1 now adds a validation warning when the restored
-  model has a covariate, uses a fitted Box-Cox or Yeo-Johnson transform, or (covariate-free) has
-  `XOrderB > max(AROrderP, MAOrderQ)` — the configurations changed by v2.0.1's training-window
-  transform fit, date-based covariate alignment, and revised conditioning window (see the ARIMAX
-  conditioning entry above). Detection reads the saved model's `TransformLambda` attribute, which
-  is present only in saves made by v2.0.1 or later (earlier saves never wrote it). The warning asks
-  the user to re-run the Bayesian analysis, and clears as soon as the results are cleared or the
-  analysis is re-run; it does not change any algorithm, default, or numerical result.
+  model has a covariate, uses a fitted Box-Cox or Yeo-Johnson transform, is differenced
+  (`DiffOrderD > 0`), or (covariate-free) has `XOrderB > max(AROrderP, MAOrderQ)` — the
+  configurations changed by v2.0.1's training-window transform fit, date-based covariate alignment,
+  corrected training and reintegration windows for differenced models (TR-041, TR-037), and revised
+  conditioning window (see the ARIMAX conditioning entry above). Detection reads the saved model's
+  `TransformLambda` attribute, which is present only in saves made by v2.0.1 or later (earlier saves
+  never wrote it). Because every save now writes that attribute, a save made while the warning
+  stands also stores a `PreV201Results` marker with the analysis, so saving without re-running
+  keeps the warning on the next open; projects without the marker are checked by the attribute
+  alone. The warning asks the user to re-run the Bayesian analysis, and it clears, together with
+  the marker, as soon as the results are cleared (including by an undo or redo that rebuilds the
+  model without them) or the analysis is re-run; it does not change any algorithm, default, or
+  numerical result.
 - Distribution and mixture-EM robustness (approved 8 September 2026): quantile priors in
   `UnivariateDistribution` and `PointProcessModel` use an additive log-quantile-Jacobian so a
   finite logarithmic determinant survives raw-determinant overflow/underflow instead of failing
