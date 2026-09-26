@@ -69,8 +69,11 @@ only the documented systematic exact cohort, matching candidate years/values. Ma
 historical or paleo exact rows with `recordType:"historical"` or `"paleo"`; this
 classification is preserved in the coverage audit and excludes them from a screening cohort. The
 runner saves API screening flags/threshold and transfers them into the augmented
-request with screening disabled. Alternatively supply manual flags/threshold or
-explicit screening off. Historical **exact** events also need a cohort decision:
+request with screening disabled. The API applies the transferred threshold to every
+exact row of that request: the cohort keeps its MGBT flags, because MGBT flags only
+values strictly below its threshold, and a historical or paleo exact value below the
+threshold is flagged too. Alternatively supply manual flags/threshold or explicit
+screening off. Historical **exact** events also need a cohort decision:
 absence of interval data does not prove every exact value is systematic.
 
 The preparation helper rejects unknown analysis-option names, including nested

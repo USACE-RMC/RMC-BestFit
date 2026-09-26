@@ -1243,11 +1243,35 @@ current `10*k` population:
 | `RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence` | `TestResults/VerificationFocused/20260926-042453-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_GmmMuPenaltyRegimes_MatchAnalyticalFitAndVarianceInfluence/haden_HADEN_2026-09-26_10_24_56.876.trx` | Passed 1/1 |
 | `RMC.BestFit.Verification.ModelEstimation.Log10NormalEstimationEquivalenceTests.MapAndGmmMuPosterior_InverseVarianceReferenceInsideCentral95Intervals` | `TestResults/VerificationFocused/20260926-042501-RMC_BestFit_Verification_ModelEstimation_Log10NormalEstimationEquivalenceTests_MapAndGmmMuPosterior_InverseVarianceReferenceInsideCentral95Intervals/haden_HADEN_2026-09-26_10_25_05.021.trx` | Passed 1/1 |
 
-All six passed. No FittingAnalysis recovery cell is named anywhere in
-[review-findings.md](../technical-reference/review-findings.md) or
-[test-inventory.md](test-inventory.md) as evidence for the former 100-member minimum, so none was
-rerun under this reconciliation. No likelihood, bound, seed, tolerance, sample size, fixture, or
-population setting was changed to obtain these results.
+All six passed. No likelihood, bound, seed, tolerance, sample size, fixture, or population setting
+was changed to obtain these results.
+
+**Other evidence recorded under the minimum.** The rerun scope followed decision D1: only records
+that cite the minimum were rerun. The minimum was in the working tree from the 31 August 2026 AR(1)
+run (`20260831-192951`), was committed in `808be5c` (1 September 2026), and was reverted in
+`81882ce` (8 September 2026), so every BestFit MLE/MAP fit on Differential Evolution in that window
+used it, whether or not its record says so. Besides the six cells rerun above, the MLE/MAP evidence
+dated inside the window covers 53 identities, none of which was rerun:
+
+| Identities | Recorded runs | Record |
+|---|---|---|
+| TR-064 `FittingAnalysisCriteriaVerificationTests.FittedParameters_MatchIndependentOracle` and `CriteriaRankingWeightsAndConfiguredOrder_MatchIndependentOracle` (`FittingAnalysis` fits each candidate by Differential Evolution MLE) | 1 September 2026, `20260901-111937-...` and `20260901-111945-...` | [distribution-fitting.md](distribution-fitting.md#tr-064---distribution-fitting-optimizer-likelihood-region) |
+| `Log10NormalFittingVerificationTests.ClosedFormMle_LikelihoodCdfAndQuantileMatchAnalyticalOracle` | 1 September 2026, `20260901-111953-...` | [distribution-fitting.md](distribution-fitting.md#log10-normal-analytical-verification) |
+| 13 `ScipyDistributionFittingVerificationTests` and 2 `LmomcoDistributionFittingVerificationTests` family cells | 1 September 2026 | [distribution-fitting.md](distribution-fitting.md#external-family-oracle-execution) |
+| 15 published real-data `UnivariateDistributionMLETests` cells | 1 September 2026, `20260901-142634-...` through `20260901-142721-...` | [distribution-fitting.md](distribution-fitting.md#chunk-6a-generated-parent-recovery-preparation) |
+| 14 `CopulaEstimationOracleTests` independent MPL/IFM optima, including both Student-t cells | 1 September 2026, `20260901-143648-...` through `20260901-143950-...` | [bivariate.md](bivariate.md#copula-estimation-oracle) |
+| `SpatialGEVChunk14OracleTests.HeldOutCopulaFold_MatchesIndependentFittedOracle` | 1 September 2026, `20260901-144228-...` | [spatial-extremes.md](spatial-extremes.md#verification-completeness-chunk-14-independent-oracle-reconciliation-31-august-2026) |
+| `SpatialGEVMLERecoveryTests.MLE_BasicHomogeneous_RecoversParameters` and `MLE_WithCopula_RecoversParameters` | 2 September 2026, `20260902-074615-...` and `20260902-074645-...` | [spatial-extremes.md](spatial-extremes.md#verification-completeness-chunk-15-recovery-reconciliation-2-september-2026) |
+| `RatingCurveExampleRecoveryTests.Mle_OneSegment_RecoversExampleCurve`, `Mle_TwoSegment_RecoversExampleCurve`, and `Mle_ThreeSegment_RecoversExampleCurve` | 2 September 2026, `20260902-141102-...` through `20260902-141123-...` ([test-inventory.md](test-inventory.md) dates them 1 September 2026) | [rating-curve.md](rating-curve.md#example-replication-recovery-cells) |
+
+The `FittingAnalysis` generated-parent recovery cells (29 August 2026) predate the window, but the
+TR-064 `FittingAnalysis` criteria pair above was produced under the minimum. The Chunk 13 MA(1) and
+ARIMA(1,1,1) MLE recovery cells record no run date or directory, so the records cannot place their
+current passes inside or outside the window; the ARIMAX MLE cell's current pass is its
+26 September 2026 rerun in the D6 section below. The two `ProfileLikelihoodGridPointFailureTests`
+identities recorded on 31 August 2026 (`20260831-200518-...` and `20260831-200524-...`) fit with
+BFGS, which the minimum did not affect. A wider rerun scope has not been decided; no cell was rerun
+beyond the six above.
 
 ## D6 ARIMAX conditioning order - 26 September 2026
 

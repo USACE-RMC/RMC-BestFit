@@ -248,7 +248,9 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   400 (the threshold would unflag it); a preflagged observation already below the threshold is
   unaffected. Omitting `lowOutlierThreshold` is unchanged: preflagged `isLowOutlier` values are
   stored exactly as supplied. `useMultipleGrubbsBeckTest` continues to reject a request that also
-  supplies `lowOutlierThreshold` or a preflagged observation.
+  supplies `lowOutlierThreshold` or a preflagged observation. The bundled `bestfit-frequency` skill
+  follows suit: its runner no longer stops a manual request that sends a threshold without
+  per-observation flags, and its workflow notes describe the applied threshold.
 - Time series (Task 2.9 / decision D2, approved 25 September 2026): opening a time-series analysis
   whose saved results were computed before v2.0.1 now adds a validation warning when the restored
   model has a covariate, uses a fitted Box-Cox or Yeo-Johnson transform, is differenced
@@ -274,27 +276,27 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   effective-support checks; automatic parameter initialization now reports an unusable sample
   through model validation instead of failing silently, and a later valid sample clears the
   diagnostic.
-- Bulletin 17C BFGS convergence (implemented 17 September 2026, commit `4732d5c`): BFGS checks the infinity norm of the
-  projected gradient at initialization and after every accepted step, so a small objective change
-  or an exhausted parameter step no longer registers as successful convergence; genuine line-search
-  exhaustion is still reported as `LineSearchFailed` rather than concealed; `Bulletin17CDistribution`
-  now supplies an analytical Pearson III/Log-Pearson III systematic-data Jacobian instead of
-  numerical differentiation (mixed/censored data and other families are unaffected). This reduces
-  outer-GMM-pass counts and false-convergence reports in Bulletin 17C bootstrap fitting but does not
-  eliminate every optimizer failure: some bootstrap realizations can still reach the 100-pass
-  ceiling or produce an indefinite weighting matrix.
+- Bulletin 17C BFGS convergence (implemented 17 September 2026, commit `4732d5c`): BFGS checks the
+  infinity norm of the projected gradient at initialization and after every accepted step, so a
+  small objective change or an exhausted parameter step no longer registers as successful
+  convergence; genuine line-search exhaustion is still reported as `LineSearchFailed` rather than
+  concealed; `Bulletin17CDistribution` now supplies an analytical Pearson III/Log-Pearson III
+  systematic-data Jacobian instead of numerical differentiation (mixed/censored data and other
+  families are unaffected). This reduces outer-GMM-pass counts and false-convergence reports in
+  Bulletin 17C bootstrap fitting but does not eliminate every optimizer failure: some bootstrap
+  realizations can still reach the 100-pass ceiling or produce an indefinite weighting matrix.
 - Competing-risk Bayesian MCMC initialization (implemented 4 August 2026, commit `c28228d`):
   competing-risk analyses that start Bayesian MCMC from the MAP now use a MAP-centered
   initialization covariance, falling back to a regularized Moore-Penrose pseudo-inverse when the
   posterior information matrix is singular so null-space directions are anchored at the MAP instead
   of given unbounded variance; this does not change the sampled posterior, priors, or convergence
   criteria.
-- Nonstationary trend defaults (implemented 30 August 2026, commit `0a2703a`): reciprocal temporal trends now initialize
-  their coefficient in response space (`a = 1 / responseInitial`) instead of copying the stationary
-  response initializer directly into `a`, and sinusoidal amplitude now uses the smaller distance
-  from the stationary initializer to either parent-parameter bound. This fixes reciprocal and
-  sinusoidal default trend starting points that were previously orders of magnitude away from a
-  workable scale for some parent distributions.
+- Nonstationary trend defaults (implemented 30 August 2026, commit `0a2703a`): reciprocal temporal
+  trends now initialize their coefficient in response space (`a = 1 / responseInitial`) instead of
+  copying the stationary response initializer directly into `a`, and sinusoidal amplitude now uses
+  the smaller distance from the stationary initializer to either parent-parameter bound. This fixes
+  reciprocal and sinusoidal default trend starting points that were previously orders of magnitude
+  away from a workable scale for some parent distributions.
 
 ## RMC.Numerics (since 2.1.4)
 

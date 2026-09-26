@@ -69,13 +69,22 @@ class RunFrequencyTests(unittest.TestCase):
                 run.run_frequency("http://127.0.0.1:5210", "bulletin17c", {}, "manual", {}, "auto", output)
             self.assertFalse((output / "results.json").exists())
 
-    def test_manual_threshold_requires_explicit_flags_before_api_calls(self):
-        with tempfile.TemporaryDirectory() as temp, patch.object(run, "request_json", side_effect=AssertionError("Threshold-only screening reached the API before asking for flags")) as request:
-            with self.assertRaisesRegex(ValueError, "isLowOutlier"):
-                run.run_frequency("http://127.0.0.1:5210", "bulletin17c",
-                                  {"lowOutlierThreshold": 25, "exactData": [{"index": 2000, "value": 12}]},
-                                  "manual", {}, "auto", Path(temp) / "run")
-            request.assert_not_called()
+    def test_manual_threshold_alone_is_sent_for_the_api_to_apply(self):
+        """The API flags every exact value below a manual threshold, so no per-row flags are needed."""
+        calls = []
+        def request(base, path, body=None, timeout=1800):
+            calls.append((path, body))
+            if path.endswith("/manual"):
+                return {"success": True, "inputData": {"id": "input-id"}}
+            if path.endswith("/chronology"):
+                return {"success": True, "schemaVersion": 1, "inputData": {"id": "input-id"}, "exactData": []}
+            return {"success": True}
+        source = {"lowOutlierThreshold": 25, "exactData": [{"index": 2000, "value": 12}]}
+        with tempfile.TemporaryDirectory() as temp, patch.object(run, "request_json", side_effect=request):
+            run.run_frequency("http://127.0.0.1:5210", "bulletin17c", source, "manual", {}, "auto",
+                              Path(temp) / "run", prepare_only=True)
+        sent = next(body for path, body in calls if path == "/api/inputdata/manual")
+        self.assertEqual(sent, source)
 
 
 if __name__ == "__main__":

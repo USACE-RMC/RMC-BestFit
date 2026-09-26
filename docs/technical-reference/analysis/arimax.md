@@ -88,7 +88,7 @@ previous rule, $r=\max(p,q,b)$, evaluated the first steps of a model with $p>0$ 
 autoregressive-lag means that omitted covariate lags before the first observation, so the
 likelihood, criteria, and fits of such models differ between the two rules.
 
-Trend and Fourier seasonality are explicitly rejected when `DiffOrderD>0`, avoiding an additional deterministic-term ambiguity. With $d=0$, the single Fourier harmonic is useful for a stable sinusoidal cycle but cannot represent changing phase, multiple seasonal frequencies, or event-timed hydrology.
+Trend and Fourier seasonality are not rejected when `DiffOrderD>0`: `Validate` adds a warning for each combination, because differencing already removes a trend and alters seasonal amplitude and phase, so the deterministic terms are typically redundant or weakly identified, but it leaves the model valid. The terms are then fitted on the differenced model scale as functions of the model step. With $d=0$, the single Fourier harmonic is useful for a stable sinusoidal cycle but cannot represent changing phase, multiple seasonal frequencies, or event-timed hydrology.
 
 ## Forecast Covariates
 

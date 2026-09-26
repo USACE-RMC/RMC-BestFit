@@ -65,8 +65,6 @@ def run_frequency(base, kind, source, source_kind, options, mgbt, output, timeou
         raise ValueError("Unsupported analysis or input kind")
     if "inputDataId" in options:
         raise ValueError("analysis-options must omit inputDataId; the new input is linked automatically")
-    if source.get("lowOutlierThreshold") is not None and any("isLowOutlier" not in row for row in source.get("exactData", [])):
-        raise ValueError("Manual lowOutlierThreshold does not derive flags: obtain explicit isLowOutlier flags for every exact observation")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     versions = {"python": sys.version, "platform": platform.platform(), "baseUrl": base,
