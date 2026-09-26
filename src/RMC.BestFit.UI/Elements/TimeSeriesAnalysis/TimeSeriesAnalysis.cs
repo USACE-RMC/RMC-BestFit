@@ -800,6 +800,13 @@ namespace RMC.BestFit.UI
         /// project. Remove the now-empty wrapper from <see cref="Covariates"/> with undo
         /// recording disabled so that pressing Undo cannot re-insert a wrapper pointing at the
         /// now-deleted time series. Pre-existing undo history on this analysis is preserved.
+        /// <para>
+        /// <see cref="CovariateData"/> forwards every property change of its series element. Only
+        /// a different series (the row now points at another element, or that element's series
+        /// object was replaced) changes the model's covariates; metadata such as the element's
+        /// name, description, unit label, or dirty state only refreshes validation and bindings,
+        /// so it neither rebuilds the fitted parameters nor clears the results.
+        /// </para>
         /// </remarks>
         private void Covariate_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -810,6 +817,14 @@ namespace RMC.BestFit.UI
                 IsUndoEnabled = false;
                 try { Covariates.Remove(orphan); }
                 finally { IsUndoEnabled = wasUndoEnabled; }
+                return;
+            }
+
+            if (e.PropertyName != nameof(CovariateData.TimeSeriesElement) &&
+                e.PropertyName != nameof(TimeSeriesElement.TimeSeries))
+            {
+                SetIsValid();
+                RaisePropertyChange(nameof(Covariates));
                 return;
             }
 

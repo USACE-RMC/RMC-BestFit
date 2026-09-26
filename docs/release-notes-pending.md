@@ -36,7 +36,10 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   `ARIMAX.SetCovariates(List<TimeSeries>, bool resetParameters)` keeps a parameter list whose
   layout still fits the covariates; the one-argument overload still rebuilds the defaults after a
   user-initiated covariate change. `ARIMAX.Clone()` keeps the source's parameter values, bounds,
-  and priors.
+  and priors. Metadata edits on a covariate series (its name, description, or unit label, or
+  saving it) no longer rebuild the parameters or clear the analysis results, and reselecting the
+  same covariate series is not treated as a change; pointing a covariate row at another series or
+  replacing the covariate's data still rebuilds the defaults.
 - Point process: seasonal Gumbel-limit annualization uses `xi + alpha ln p`; the seasonal
   simulator uses the fitted per-season threshold intensities; clones recompute the event rate;
   seasonal quantile priors are evaluated on the annualized distribution; the seasonal block-day

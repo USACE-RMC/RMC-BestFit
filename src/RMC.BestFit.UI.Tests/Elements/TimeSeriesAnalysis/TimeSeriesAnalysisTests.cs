@@ -831,6 +831,77 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies that metadata edits on a covariate series do not rebuild the model's parameters.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="CovariateData"/> forwards every property change of its series element; a
+    /// description or unit-label edit is not a covariate change and must keep the fitted model.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateSeriesMetadataEdit_KeepsCustomParameters()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CovariateMetadataTSA", out TimeSeriesElement covariate);
+
+        covariate.Description = "Edited covariate description";
+        covariate.UnitLabel = "Edited unit";
+
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "after a covariate metadata edit");
+    }
+
+    /// <summary>
+    /// Verifies that assigning a covariate row the series it already holds keeps the model's
+    /// parameters, as a data-binding write-back of an unchanged selection does.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateRowReassignedToSameSeries_KeepsCustomParameters()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CovariateSameSeriesTSA", out TimeSeriesElement covariate);
+
+        tsa.Covariates[0].TimeSeriesElement = covariate;
+
+        AssertCustomizedCovariateCoefficient(GetCovariateCoefficient(tsa.ARIMAX), "after reassigning the same series");
+    }
+
+    /// <summary>
+    /// Verifies that replacing a covariate element's series is still a covariate change that
+    /// rebuilds the default coefficient.
+    /// </summary>
+    [STATestMethod]
+    public void CovariateSeriesReplaced_RebuildsDefaultCoefficient()
+    {
+        var tsa = CreateAnalysisWithCustomizedCovariate("CovariateReplacedTSA", out TimeSeriesElement covariate);
+
+        covariate.TimeSeries = CreateTimeSeriesElement("CovariateReplacementSource", 30, TimeInterval.OneYear, new DateTime(1990, 1, 1)).TimeSeries;
+
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        Assert.AreEqual(0.0, beta.Value, 0.0);
+        Assert.IsInstanceOfType(beta.PriorDistribution, typeof(global::Numerics.Distributions.Uniform));
+    }
+
+    /// <summary>
+    /// Creates a time-series analysis with one covariate whose coefficient carries the value 0.42,
+    /// bounds [-3, 3], and a Normal(0.5, 0.1) prior.
+    /// </summary>
+    /// <param name="name">The analysis name, unique per test.</param>
+    /// <param name="covariate">Receives the covariate series element.</param>
+    /// <returns>The configured analysis, with default flat priors disabled.</returns>
+    private static UI.TimeSeriesAnalysis CreateAnalysisWithCustomizedCovariate(string name, out TimeSeriesElement covariate)
+    {
+        var tsa = new UI.TimeSeriesAnalysis(name, _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement(name + "-Response", 30, TimeInterval.OneYear, start);
+        covariate = CreateTimeSeriesElement(name + "-Covariate", 30, TimeInterval.OneYear, start);
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = covariate });
+        tsa.ARIMAX.UseDefaultFlatPriors = false;
+        ModelParameter beta = GetCovariateCoefficient(tsa.ARIMAX);
+        beta.Value = 0.42;
+        beta.LowerBound = -3.0;
+        beta.UpperBound = 3.0;
+        beta.PriorDistribution = new global::Numerics.Distributions.Normal(0.5, 0.1);
+        return tsa;
+    }
+
+    /// <summary>
     /// Verifies that redoing an AR-order change restores a parameter vector that fits the new
     /// model structure.
     /// </summary>
