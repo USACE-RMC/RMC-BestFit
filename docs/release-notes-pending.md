@@ -59,7 +59,10 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   (the fabricated January-1 index fallback is removed and validation reports the missing dates).
 - Composite and coincident frequency: zero inflation is inferred only when the weights sum to
   less than one by more than `1e-10`; the correlation matrix edit is undoable; the posterior
-  index cache is thread safe.
+  index cache is thread safe; opening a coincident frequency analysis now syncs the upstream
+  marginal posterior chains immediately after linking the upstream bivariate analysis and
+  before restoring the saved results, so the first upstream validation notification delivered
+  after a project opens no longer clears the just-restored coincident frequency curves.
 - Estimation and diagnostics: a degenerate PSIS tail reports `k = +inf` and unestimated Pareto
   k counts as unreliable; fewer than eleven retained draws use the fixed 0.7 limit; the data
   frame keeps the recorded POT observation span when the exact series is replaced; GMM

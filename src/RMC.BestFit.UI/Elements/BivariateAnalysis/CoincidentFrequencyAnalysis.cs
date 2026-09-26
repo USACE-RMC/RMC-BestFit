@@ -724,7 +724,20 @@ namespace RMC.BestFit.UI
                                 _bivariateAnalysis.PropertyChanged += BivariateAnalysis_PropertyChanged;
                                 _bivariateAnalysis.Deleted += OnBivariateAnalysisDeleted;
                                 if (_innerAnalysis != null)
+                                {
                                     _innerAnalysis.BivariateAnalysis = bi.InnerAnalysis as ModelAnalyses.BivariateAnalysis;
+
+                                    // Sync the marginal posterior chains now, before AnalysisResults is
+                                    // restored below. Without this, MarginalXChain/MarginalYChain stay
+                                    // null until the first upstream PropertyChanged notification arrives
+                                    // after Open() returns — and because those model-layer setters clear
+                                    // results whenever the chain reference changes, that first
+                                    // notification (e.g., IsValid) would wipe the results this method is
+                                    // about to restore. Syncing here means the chains are already current
+                                    // by the time the notification fires, so the setters see no reference
+                                    // change and leave the restored results alone.
+                                    SyncMarginalChainsToInnerAnalysis();
+                                }
                                 break;
                             }
                         }
