@@ -3650,7 +3650,7 @@ namespace RMC.BestFit.Analyses
             int p = model.NumberOfParameters;
             const int labelWidth = 24;
 
-            // Credible interval percentiles
+            // Confidence interval percentiles
             double ciWidth = BayesianAnalysis.CredibleIntervalWidth;
             double lowerPct = (1.0 - ciWidth) / 2.0 * 100.0;
             double upperPct = (1.0 + ciWidth) / 2.0 * 100.0;
@@ -3667,7 +3667,7 @@ namespace RMC.BestFit.Analyses
             sb.AppendLine($"  {"GMM Strategy:".PadRight(labelWidth)}{ReportFormatGMMStrategy(gmm.EstimationStrategy)}");
             sb.AppendLine($"  {"Uncertainty Method:".PadRight(labelWidth)}{ReportFormatUncertaintyMethod(UncertaintyMethod)}");
             sb.AppendLine($"  {"Output Length:".PadRight(labelWidth)}{BayesianAnalysis.OutputLength:N0}");
-            sb.AppendLine($"  {"Credible Interval:".PadRight(labelWidth)}{ciWidth * 100:F0}%");
+            sb.AppendLine($"  {"Confidence Interval:".PadRight(labelWidth)}{ciWidth * 100:F0}%");
             sb.AppendLine($"  {"PRNG Seed:".PadRight(labelWidth)}{BayesianAnalysis.PRNGSeed}");
             sb.AppendLine();
 

@@ -120,7 +120,9 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   calculation, or `ComputeCohnStyleConfidenceIntervals()` now degrades gracefully (the existing
   "point estimate is still valid" diagnostic, or a `NaN` effective record length, or a `null`
   Cohn result) instead of throwing and clearing the whole analysis; `IsEstimated` and the point
-  estimate are unaffected by a covariance-only failure.
+  estimate are unaffected by a covariance-only failure; estimation reports now label the interval
+  width "Confidence Interval" (previously "Credible Interval"); reports saved by earlier versions
+  keep their text until the analysis is re-run.
 - Rating curve: the data log likelihood is the discharge-space density (the log10-space Gaussian
   term plus the base-10 change-of-variables term per aligned pair) in the scalar, pointwise, and
   component paths, so AIC/BIC/DIC/WAIC/LOOIC shift by the data constant `-sum log(Q ln 10)` and
