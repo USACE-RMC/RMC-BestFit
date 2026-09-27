@@ -336,6 +336,10 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   the Godambe sandwich uncertainty method combined with spatial regression errors, a combination
   that always failed after the MCMC run.
 
+- NuGet package: `RMC.BestFit` now ships its XML documentation file (`lib/net10.0/RMC.BestFit.xml`),
+  so IntelliSense shows the library's summaries, parameter descriptions, and remarks (the 2.0.0
+  package shipped without it).
+
 ### Time series (AR, MA, ARIMA, ARIMAX)
 
 **Action required: re-run affected time-series analyses.** When a project opens, RMC-BestFit warns
