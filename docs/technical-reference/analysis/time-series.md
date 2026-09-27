@@ -56,10 +56,12 @@ $$
 so it trains on 80% of the $N$ observed steps but always leaves at least ten residual degrees of
 freedom, which also guarantees at least ten fitted steps. The window is not capped at $N$: a
 series shorter than $d+K+k+10$ is too short for the model under the default settings, and
-validation names that minimum. The default is recomputed when the series or the model structure
-changes (orders, intercept, trend, seasonality, covariates); opening, copying, cloning, or undoing
-keeps the saved window. Manual windows keep the checks $T\le N$, $T\ge k$ (AR, MA, ARIMAX), and
-$T-d>K$ (ARIMA, ARIMAX). The rule was approved by Haden Smith on 26 September 2026 and replaced
+validation names that minimum; the desktop Training Steps box shows such a window without capping
+it. The default is recomputed when the series or the model structure changes (orders, intercept,
+trend, seasonality, covariates); opening, copying, cloning, or undoing a model-property edit keeps
+the saved window, while undoing a covariate or response-series change recomputes it as the change
+did. Manual windows keep the checks $T\le N$, $T\ge k$ (AR, MA, ARIMAX), and $T-d>K$ (ARIMA,
+ARIMAX). The rule was approved by Haden Smith on 26 September 2026 and replaced
 $\max(30,k,\lfloor 0.8N\rfloor)$, under which every series shorter than 30 steps failed validation
 with the default settings. For example, AR(1) with an intercept ($k=3$, $K=1$) needs 14
 observations, MA(1) needs 13, ARIMA(1,1,1) with an intercept needs 16, and AR(10) needs 32.

@@ -553,7 +553,7 @@ namespace RMC.BestFit.UI
         /// </remarks>
         [Category("Output")]
         [DisplayName("Training Time Steps")]
-        [Description("Number of time steps, counted from the start of the series, used to fit the model; the remaining observed steps are held out. It must not exceed the observed series length, must be at least the number of parameters, and after differencing must exceed the conditioning order. Editing it turns off Use Default Training Steps.")]
+        [Description("Number of time steps, counted from the start of the series, used to fit the model; the remaining observed steps are held out. A manual window must be at least the larger of 10 and the number of parameters (or the whole series, if that is shorter), must not exceed the observed series length, and after differencing must exceed the conditioning order. Editing it turns off Use Default Training Steps.")]
         [Browsable(true)]
         public int TrainingTimeSteps
         {
@@ -562,9 +562,10 @@ namespace RMC.BestFit.UI
             {
                 if (_innerAnalysis.ARIMAX.TrainingTimeSteps != value)
                 {
-                    // A manual edit overrides the 80% default rule. Flip the flag BEFORE assigning
-                    // so subsequent model-internal reset paths (TimeSeries setter, CollectionChanged,
-                    // SetDefaultTrainingSteps) no longer clobber the user's value with floor(0.8·N).
+                    // A manual edit overrides the default training rule. Flip the flag BEFORE assigning
+                    // so later model-internal reset paths (CollectionChanged, structural and covariate
+                    // changes, SetDefaultTrainingSteps) no longer replace the user's value with the
+                    // default window.
                     // Matches the canonical pattern in the verification tests:
                     // UseDefaultTrainingSteps = false THEN TrainingTimeSteps = N.
                     if (_innerAnalysis.ARIMAX.UseDefaultTrainingSteps)

@@ -420,6 +420,13 @@ namespace RMC_BestFit
                 UpdateTrainingSteps();
                 UpdateStepSplitDisplay();
             }
+            else if (e.PropertyName == nameof(Element.TrainingTimeSteps) || e.PropertyName == nameof(Element.UseDefaultTrainingSteps))
+            {
+                // A covariate change moves the default window without a model notification; the
+                // element raises its own, so refresh the box bounds and the validation split here.
+                UpdateTrainingSteps();
+                UpdateStepSplitDisplay();
+            }
             // Model object replaced (e.g., during undo) — push to sub-controls
             if (e.PropertyName == nameof(Element.ARIMAX))
             {
@@ -436,7 +443,7 @@ namespace RMC_BestFit
         /// <summary>
         /// Handles property changes on the inner ARIMAX model so the read-only Validation Steps
         /// and Total Observations displays stay in sync when Training Steps changes programmatically
-        /// (e.g., via the Reset button or the 80% default rule).
+        /// (e.g., via the Reset button or the default training rule).
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data containing the name of the property that changed.</param>
@@ -514,6 +521,11 @@ namespace RMC_BestFit
         /// <summary>
         /// Updates the minimum and maximum values for the training steps control based on the current model parameters and data length.
         /// </summary>
+        /// <remarks>
+        /// A manual window is clamped to the box's range. A default window is left as the model set
+        /// it, even when it is longer than the series, and the box's maximum widens to display it:
+        /// see <see cref="GetManualTrainingSteps"/> for why the box must not clamp it.
+        /// </remarks>
         private void UpdateTrainingSteps()
         {
             if (Element == null || Element.TimeSeriesData == null || Element.TimeSeriesData.TimeSeries == null) return;
@@ -521,11 +533,54 @@ namespace RMC_BestFit
             int minTrainingSteps = maxTrainingSteps > 0
                 ? Math.Min(Math.Max(10, Element.ARIMAX.Parameters.Count), maxTrainingSteps)
                 : 0;
+            bool useDefaultTrainingSteps = Element.ARIMAX.UseDefaultTrainingSteps;
+            int trainingTimeSteps = Element.ARIMAX.TrainingTimeSteps;
             var trainingStepsControl = (NumericUpDown)TrainingSteps.InnerContent;
             trainingStepsControl.Minimum = minTrainingSteps;
-            trainingStepsControl.Maximum = maxTrainingSteps;
-            trainingStepsControl.Value = Math.Min(Math.Max(Element.ARIMAX.TrainingTimeSteps, minTrainingSteps), maxTrainingSteps);
+            trainingStepsControl.Maximum = GetTrainingStepsMaximum(useDefaultTrainingSteps, trainingTimeSteps, maxTrainingSteps);
+            int? manualTrainingSteps = GetManualTrainingSteps(useDefaultTrainingSteps, trainingTimeSteps, minTrainingSteps, maxTrainingSteps);
+            if (manualTrainingSteps.HasValue)
+                trainingStepsControl.Value = manualTrainingSteps.Value;
             trainingStepsControl.ToolTip = $"Must be between {minTrainingSteps} and {maxTrainingSteps} based on the number of parameters and data points.";
+        }
+
+        /// <summary>
+        /// Gets the manual training window the Training Steps box should force, or
+        /// <see langword="null"/> to leave the bound value unchanged.
+        /// </summary>
+        /// <param name="useDefaultTrainingSteps">Whether the default training rule sets the window.</param>
+        /// <param name="trainingTimeSteps">The model's current training window.</param>
+        /// <param name="minimum">The smallest window the box accepts.</param>
+        /// <param name="maximum">The observed series length.</param>
+        /// <returns>
+        /// The window clamped to [<paramref name="minimum"/>, <paramref name="maximum"/>] for a manual
+        /// window; <see langword="null"/> while the default rule is on.
+        /// </returns>
+        /// <remarks>
+        /// The box's value is bound two-way to <see cref="TimeSeriesAnalysis.TrainingTimeSteps"/>, whose
+        /// setter turns the default rule off, so forcing a value writes a manual window back. The
+        /// default window is not capped at the series length (Haden Smith, 26 September 2026): a
+        /// series shorter than its minimum fails validation, naming the minimum, instead of being
+        /// fitted on a silently shortened manual window.
+        /// </remarks>
+        internal static int? GetManualTrainingSteps(bool useDefaultTrainingSteps, int trainingTimeSteps, int minimum, int maximum)
+        {
+            return useDefaultTrainingSteps ? null : Math.Min(Math.Max(trainingTimeSteps, minimum), maximum);
+        }
+
+        /// <summary>
+        /// Gets the Training Steps box maximum.
+        /// </summary>
+        /// <param name="useDefaultTrainingSteps">Whether the default training rule sets the window.</param>
+        /// <param name="trainingTimeSteps">The model's current training window.</param>
+        /// <param name="seriesLength">The observed series length.</param>
+        /// <returns>
+        /// The series length for a manual window; with the default rule on, the larger of the series
+        /// length and the default window, because the box displays its value clamped to its maximum.
+        /// </returns>
+        internal static int GetTrainingStepsMaximum(bool useDefaultTrainingSteps, int trainingTimeSteps, int seriesLength)
+        {
+            return useDefaultTrainingSteps ? Math.Max(seriesLength, trainingTimeSteps) : seriesLength;
         }
 
         /// <summary>
@@ -550,7 +605,7 @@ namespace RMC_BestFit
         }
 
         /// <summary>
-        /// Handles the Reset button click. Restores the 80% training default rule and zeros out
+        /// Handles the Reset button click. Restores the default training rule and zeros out
         /// the forecast horizon so the user can start from the out-of-the-box configuration.
         /// </summary>
         /// <param name="sender">The source of the event.</param>

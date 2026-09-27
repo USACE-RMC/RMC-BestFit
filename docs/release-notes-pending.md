@@ -477,12 +477,16 @@ information-criteria and PSIS-LOO entries above).
   the default settings; now, for example, AR(1) with an intercept validates from 14 values, MA(1)
   from 13, and ARIMA(1,1,1) with an intercept from 16. A series shorter than the minimum is too
   short for the model, and validation names the minimum. New analyses of a 30- to 37-value series
-  now train on 80% of it (24 to 29 steps) instead of 30. The default window is also recomputed
-  when the orders, intercept, trend, seasonality, or covariates change (formerly only when the
-  series changed). Opening, copying, and undoing keep the saved window; a default window saved by
-  2.0.0 that is longer than its series (any series under 30 values) still fails validation until
-  Use Default Training Steps is turned off and on again. Manual windows keep their existing
-  checks. Library callers: assigning `TrainingTimeSteps` does not turn `UseDefaultTrainingSteps`
+  now train on 80% of it (24 to 29 steps) instead of 30 when the model's minimum is no larger, as
+  for low-order models. The default window is also recomputed when the orders, intercept, trend,
+  seasonality, or covariates change (formerly only when the series changed). Opening a project,
+  copying an analysis, and undoing or redoing a model-property edit keep the saved window;
+  undoing a covariate or response-series change recomputes it, as the change itself did. A
+  default window saved by 2.0.0 that is longer than its series (any series under 30 values)
+  still fails validation until Use Default Training Steps is turned off and on again. In the
+  desktop application, the Training Steps box no longer caps a default window at the series
+  length: in 2.0.0, showing such an analysis's properties silently switched it to a manual
+  window of the whole series. Manual windows keep their existing checks. Library callers: assigning `TrainingTimeSteps` does not turn `UseDefaultTrainingSteps`
   off, so a window assigned while the default rule is on is now replaced at the next structural
   change as well as at the next series change; turn the default rule off after attaching the
   series (attaching a series turns it back on) to keep a manual window, as the desktop
