@@ -17,7 +17,12 @@ def read(path):
 
 
 def apply_screening(source, screened):
-    """Transfer API-derived flags only for the matching systematic cohort; never rerun MGBT on history."""
+    """Transfer API-derived flags only for the matching systematic cohort; never rerun MGBT on history.
+
+    The API applies a manual lowOutlierThreshold to every exact row, so the transferred threshold
+    must not reach an unflagged row outside the cohort (a historical or paleo observation):
+    such a candidate stops instead of silently censoring rows that were never screened.
+    """
     result = copy.deepcopy(source)
     rows = {r["index"]: r for r in result["exactData"]}
     for row in screened["exactData"]:
@@ -28,8 +33,19 @@ def apply_screening(source, screened):
         row["isLowOutlier"] = flags.get(row["index"], row.get("isLowOutlier", False))
     result["useMultipleGrubbsBeckTest"] = False
     threshold = screened["inputData"].get("lowOutlierThreshold")
-    if threshold is not None:
-        result["lowOutlierThreshold"] = threshold
+    if threshold is None:
+        if any(row["isLowOutlier"] for row in rows.values()):
+            raise ValueError("Low-outlier flags need the screening threshold that defines their censoring; "
+                             "the screening response reported none")
+        return result
+    unscreened = sorted(i for i, row in rows.items()
+                        if i not in flags and not row["isLowOutlier"] and row["value"] < threshold)
+    if unscreened:
+        raise ValueError(f"Screening threshold {threshold} would also flag exact rows outside the systematic "
+                         f"cohort (indexes {unscreened}), because the API applies it to every exact row. "
+                         "Set isLowOutlier:true on those rows in the study input if censoring them is intended, "
+                         "or give this candidate explicit screening settings instead of screeningInput.")
+    result["lowOutlierThreshold"] = threshold
     return result
 
 

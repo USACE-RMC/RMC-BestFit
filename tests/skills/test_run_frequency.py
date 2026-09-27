@@ -18,9 +18,35 @@ class RunFrequencyTests(unittest.TestCase):
         self.assertTrue(run.input_request({}, "bulletin17c", "auto")["useMultipleGrubbsBeckTest"])
         self.assertNotIn("useMultipleGrubbsBeckTest", run.input_request({}, "univariate", "auto"))
         for request in [{"useMultipleGrubbsBeckTest": False}, {"lowOutlierThreshold": 3},
-                        {"exactData": [{"value": 1, "isLowOutlier": True}]}]:
+                        {"lowOutlierThreshold": 3, "exactData": [{"value": 1, "isLowOutlier": True}]}]:
             self.assertEqual(run.input_request(request, "bulletin17c", "auto"), request)
         self.assertFalse(run.input_request({}, "bulletin17c", "off")["useMultipleGrubbsBeckTest"])
+
+    def test_flags_without_a_threshold_stop_before_any_input_is_created(self):
+        """The API rejects isLowOutlier flags that have no lowOutlierThreshold to define their censoring."""
+        flagged = {"exactData": [{"index": 2000, "value": 1, "isLowOutlier": True}]}
+        for mgbt in ("auto", "on", "off"):
+            with self.assertRaisesRegex(ValueError, "lowOutlierThreshold"):
+                run.input_request(flagged, "bulletin17c", mgbt)
+        calls = []
+        def request(base, path, body=None, timeout=1800):
+            calls.append(path)
+            return {"success": True}
+        with tempfile.TemporaryDirectory() as temp, patch.object(run, "request_json", side_effect=request):
+            with self.assertRaises(ValueError):
+                run.run_frequency("http://127.0.0.1:5210", "bulletin17c", flagged, "manual", {}, "auto",
+                                  Path(temp) / "run")
+        self.assertNotIn("/api/inputdata/manual", calls)
+
+    def test_automatic_screening_is_never_combined_with_a_manual_threshold_or_flags(self):
+        """The API rejects useMultipleGrubbsBeckTest together with lowOutlierThreshold or isLowOutlier flags."""
+        manual = [{"lowOutlierThreshold": 3},
+                  {"lowOutlierThreshold": 3, "exactData": [{"value": 1, "isLowOutlier": True}]}]
+        for request in manual:
+            with self.assertRaisesRegex(ValueError, "useMultipleGrubbsBeckTest"):
+                run.input_request(request, "bulletin17c", "on")
+        with self.assertRaisesRegex(ValueError, "useMultipleGrubbsBeckTest"):
+            run.input_request({"useMultipleGrubbsBeckTest": True, "lowOutlierThreshold": 3}, "bulletin17c", "auto")
 
     def test_run_preserves_options_and_saves_requests_before_calls(self):
         calls = []

@@ -74,6 +74,27 @@ class ScenarioTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cohort"):
             helper.apply_screening(source, screened)
 
+    def test_screening_threshold_never_flags_unscreened_historical_rows(self):
+        """The API applies a manual threshold to every exact row, so the transferred one must not reach unscreened rows."""
+        helper = load("run_study")
+        source = {"exactData": [{"index": 2000, "value": 5}, {"index": 1882, "value": 4}], "useMultipleGrubbsBeckTest": True}
+        screened = {"inputData": {"id": "cohort", "lowOutlierThreshold": 10},
+                    "exactData": [{"index": 2000, "value": 5, "isLowOutlier": True}]}
+        with self.assertRaisesRegex(ValueError, "1882"):
+            helper.apply_screening(source, screened)
+        # An explicit flag in the study input is the analyst's decision to censor that row.
+        source["exactData"][1]["isLowOutlier"] = True
+        result = helper.apply_screening(source, screened)
+        self.assertEqual([r["isLowOutlier"] for r in result["exactData"]], [True, True])
+        self.assertEqual(result["lowOutlierThreshold"], 10)
+
+    def test_screening_flags_are_not_transferred_without_their_threshold(self):
+        """The API rejects isLowOutlier flags that have no lowOutlierThreshold to define their censoring."""
+        helper = load("run_study")
+        screened = {"inputData": {"id": "cohort"}, "exactData": [{"index": 2000, "value": 5, "isLowOutlier": True}]}
+        with self.assertRaisesRegex(ValueError, "threshold"):
+            helper.apply_screening({"exactData": [{"index": 2000, "value": 5}]}, screened)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -264,6 +264,14 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   `lowOutlierThreshold`, or use `useMultipleGrubbsBeckTest` to derive the flags instead, whenever
   any observation is preflagged; a request that already supplies one of those, or that preflags
   nothing, is unaffected.
+- `bestfit-frequency` skill (26 September 2026): the study runner never lets a low-outlier
+  threshold transferred from a screened systematic cohort censor exact observations outside that
+  cohort. The API applies a manual threshold to every exact row, so a candidate whose historical
+  or paleo exact rows lie below the transferred threshold stops with a message naming them,
+  unless the study input flags them `isLowOutlier:true` (the analyst's decision to censor them).
+  The runner also stops, before creating any input, the requests the API rejects:
+  `isLowOutlier:true` flags without `lowOutlierThreshold`, and automatic screening (`--mgbt on`
+  or `useMultipleGrubbsBeckTest:true`) combined with a manual threshold or flags.
 - API/MCP additions (see `docs/api.md`): `GET api/analyses/{analysisId}/plot-source` (MCP
   `get_analysis_plot_source`) exports one completed run of any analysis kind for external
   plotting without running or changing the analysis (settings and model XML, the results payload,

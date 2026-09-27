@@ -25,17 +25,19 @@ python scripts/plot_frequency.py --results RUN/results.json --input RUN/input.js
 Choose a **new** `RUN` directory. The first command enables MGBT for B17C when no
 explicit screening choice exists. `--mgbt off` explicitly disables automatic
 screening; `--mgbt on` explicitly enables it for either method. Auto mode preserves
-an explicit JSON `useMultipleGrubbsBeckTest:false`, `lowOutlierThreshold`, or
-`isLowOutlier:true`. A manual `lowOutlierThreshold` is applied, not just stored:
-every exact observation strictly below it is flagged a low outlier and every other
-one is unflagged, whatever `isLowOutlier` it carried. The API rejects (HTTP 400)
-automatic screening combined with a manual threshold or flags, screening with fewer
-than ten exact observations, a threshold that would censor more than half of the
-record, an `isLowOutlier:true` observation at or above the threshold, and any
+an explicit JSON `useMultipleGrubbsBeckTest:false` or `lowOutlierThreshold` (with any
+`isLowOutlier:true` flags below it). A manual `lowOutlierThreshold` is applied, not
+just stored: every exact observation strictly below it is flagged a low outlier and
+every other one is unflagged, whatever `isLowOutlier` it carried. The API rejects
+(HTTP 400) automatic screening combined with a manual threshold or flags, screening
+with fewer than ten exact observations, a threshold that would censor more than half
+of the record, an `isLowOutlier:true` observation at or above the threshold, and any
 `isLowOutlier:true` observation sent with neither `lowOutlierThreshold` nor
-automatic screening (the flags would otherwise have no censoring threshold).
-Screening occurs after all input series are populated and before analysis
-creation/cloning.
+automatic screening (the flags would otherwise have no censoring threshold). The
+runner stops the first and last of these before creating any input: `--mgbt on` or
+`useMultipleGrubbsBeckTest:true` with a manual threshold or flags, and
+`isLowOutlier:true` without `lowOutlierThreshold`. Screening occurs after all input
+series are populated and before analysis creation/cloning.
 
 For a USGS site supplied by the user:
 

@@ -13,13 +13,24 @@ from urllib.request import Request, urlopen
 
 
 def input_request(source, kind, mgbt):
-    """Apply the skill's B17C screening convention while preserving explicit manual choices."""
+    """Apply the skill's B17C screening convention while preserving explicit manual choices.
+
+    A manual choice is lowOutlierThreshold, which the API applies to every exact value, with any
+    isLowOutlier flags below it. Flags without that threshold, or either one combined with
+    automatic screening, are requests the API rejects, so they stop here before any input exists.
+    """
     body = copy.deepcopy(source)
-    manual = body.get("lowOutlierThreshold") is not None or any(r.get("isLowOutlier") for r in body.get("exactData", []))
+    manual = body.get("lowOutlierThreshold") is not None
+    if not manual and any(r.get("isLowOutlier") for r in body.get("exactData", [])):
+        raise ValueError("exactData rows flagged isLowOutlier:true need lowOutlierThreshold, which defines "
+                         "their censoring threshold; supply the threshold or remove the flags")
     if mgbt != "auto":
         body["useMultipleGrubbsBeckTest"] = mgbt == "on"
     elif kind == "bulletin17c" and "useMultipleGrubbsBeckTest" not in body and not manual:
         body["useMultipleGrubbsBeckTest"] = True
+    if body.get("useMultipleGrubbsBeckTest") and manual:
+        raise ValueError("useMultipleGrubbsBeckTest (or --mgbt on) cannot be combined with lowOutlierThreshold "
+                         "or isLowOutlier flags; choose automatic or manual screening")
     return body
 
 
