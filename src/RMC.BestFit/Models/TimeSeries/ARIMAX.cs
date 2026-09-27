@@ -1126,11 +1126,13 @@ namespace RMC.BestFit.Models
         /// </para>
         /// <para>
         /// <see cref="SetTrainingData"/> calls this after rebuilding the training series. The
-        /// covariate lag order and the presence of covariates change K without changing the
-        /// training series or the exponent, so <see cref="XOrderB"/> and
-        /// <see cref="SetCovariates(List{TimeSeries}, bool)"/> call it directly. The exponent is
-        /// not refitted: an automatic exponent is fitted on the whole raw training prefix, which
-        /// does not depend on K, and a restored or manual exponent must be kept.
+        /// covariate lag order and the presence of covariates change K, so <see cref="XOrderB"/>
+        /// and <see cref="SetCovariates(List{TimeSeries}, bool)"/> call it directly when the
+        /// training window stays the same. The exponent is not refitted then: an automatic exponent
+        /// is fitted on the whole raw training prefix, which does not depend on K, and a restored or
+        /// manual exponent must be kept. When the change moves the default training window, those
+        /// callers rebuild the training data instead, which refits an automatic exponent from the
+        /// new prefix.
         /// </para>
         /// </remarks>
         private void RefreshLogJacobianWindow()
@@ -2477,7 +2479,10 @@ namespace RMC.BestFit.Models
         /// <param name="seed">Random seed for reproducibility (default = 12345).</param>
         /// <returns>A simulated time series.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeSteps"/> is less than one.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the <c>TimeSeries</c> property has not been set.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the <c>TimeSeries</c> property has not been set,
+        /// or propagated from the prediction method when a covariate is missing or duplicates a timestamp the
+        /// simulated steps require, or when <see cref="CovariateExtension"/> is
+        /// <see cref="CovariateExtensionMethod.None"/> and the covariates are too short for the requested steps.</exception>
         /// <remarks>
         /// A <paramref name="timeSteps"/> shorter than the training window predicts the full
         /// training window (forecast steps clamped to zero) and returns its leading
