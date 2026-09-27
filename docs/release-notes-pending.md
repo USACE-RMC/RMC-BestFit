@@ -324,8 +324,9 @@ or, without covariates, a covariate lag order above `max(p, q)`; see the entry o
 before v2.0.1), and about each one whose saved parameters no longer fit its covariates; re-run the
 Bayesian analysis of every analysis that shows either warning. Before re-running an ARIMAX analysis
 with covariates that was reopened, edited, and saved in 2.0.0, check its priors: they may already
-be the defaults (see the covariate entry below). Other time-series analyses need a re-run or
-reprocess only to refresh their saved AIC and BIC (see the information-criteria entry above).
+be the defaults (see the covariate entry below). Other time-series analyses need a re-run only to
+refresh their saved information criteria; a reprocess refreshes just their AIC and BIC (see the
+information-criteria and PSIS-LOO entries above).
 
 - Time series: ARIMAX conditions the likelihood, residuals, transform Jacobian, generation, and
   prediction on one conditioning order (the rule is the ARIMAX conditioning entry below); an empty
@@ -427,7 +428,10 @@ reprocess only to refresh their saved AIC and BIC (see the information-criteria 
   longer match its covariates (for example, a missing covariate series) now warns and opens without
   the saved results, instead of silently restoring default parameters next to results of the wrong
   size (which could make a later reprocess fail); the other saved settings are still restored, and
-  the warning clears after a successful re-run.
+  the warning clears after a successful re-run. Saving that analysis after the warning writes the
+  default parameters and no results and drops the missing covariate's name; to recover, restore
+  the covariate series under its original name and reopen the project before editing, re-running,
+  or saving the analysis (a plain project save leaves the unchanged row untouched).
 - Forecast steps and random series: every public `Predict` overload of `AutoRegressive`,
   `MovingAverage`, `ARIMA`, and `ARIMAX` now rejects a negative `forecastSteps` with
   `ArgumentOutOfRangeException` (previously a differenced model, d > 0, could throw an internal
@@ -549,10 +553,11 @@ reprocess only to refresh their saved AIC and BIC (see the information-criteria 
   published endpoint; the disposition of the reference value is open.
 - Legacy Bulletin 17C rows: Bulletin 17C analyses saved by pre-release 2.0 builds older than
   2.0 Beta-4 store their fit in an earlier format that this release does not convert. They open
-  without their fitted curves and without a warning, and saving the project overwrites their
-  original result cells. The Back Creek analysis in the shipped Bulletin 17C Bayesian examples
-  project is one. Keep a copy of such a project before saving it if the original results are
-  needed.
+  without their fitted curves and without a warning. Opening leaves such an analysis unchanged and
+  a project save rewrites only changed analyses, so its original result cells are overwritten when
+  the project is saved after that analysis is changed or re-run. The Back Creek analysis in the
+  shipped Bulletin 17C Bayesian examples project is one. Keep a copy of such a project before
+  saving it if the original results are needed.
 - Time-series covariate rows: undoing the removal of a covariate row restores the row without its
   time series. Select the series again in the restored row.
 - Coincident-frequency links: a coincident-frequency analysis stored in a project ahead of its
@@ -572,13 +577,20 @@ reprocess only to refresh their saved AIC and BIC (see the information-criteria 
   `isLowOutlier:true` but supplies neither `lowOutlierThreshold` nor `useMultipleGrubbsBeckTest`
   stores the flags without a censoring threshold, and Bulletin 17C and univariate fits then treat
   those observations inconsistently. Whenever low outliers are flagged, also supply a
-  `lowOutlierThreshold` above every flagged value, or omit the flags and set
-  `useMultipleGrubbsBeckTest` to true.
+  `lowOutlierThreshold` above every flagged value and at or below every unflagged exact value (the
+  threshold flags every exact value strictly below it, so a higher threshold also censors
+  observations that were not flagged); the threshold guards still apply (it may censor at most
+  half the record, and at least ten exact values are required). Alternatively, omit the flags and
+  set `useMultipleGrubbsBeckTest` to true.
 - Short time series (unchanged since 2.0.0): the default training window is the largest of 30
   steps, the number of parameters, and 80% of the series, so a series of 10 to 29 values fails
   validation under the default training settings. Turn off the default training steps
-  (`UseDefaultTrainingSteps`) and set the training window (`TrainingTimeSteps`) between the
-  number of parameters and the series length.
+  (`UseDefaultTrainingSteps`) and set the training window (`TrainingTimeSteps`) no longer than the
+  series. AR, MA, and ARIMAX models also need at least as many training steps as parameters, and
+  ARIMA and ARIMAX models need more training steps after differencing (`TrainingTimeSteps - d`)
+  than the conditioning order (`max(p, q)`, or `max(q, p + b)` for ARIMAX with covariates); for
+  example, a model with `p = 2`, `d = 2`, `q = 0`, an intercept, and no other terms has four
+  parameters but needs at least five training steps.
 - Save prompt after an automatic repair: opening a project in which RMC-BestFit repairs or
   migrates an element (for example the plotting-position repair described above) does not mark
   the project as changed, so there is no prompt to save the repair. Save the project after
