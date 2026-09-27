@@ -205,9 +205,8 @@ preserved. When true, a manual `lowOutlierThreshold` (including zero) or any
 `isLowOutlier:true` observation is rejected to avoid overwriting the caller's
 screening choice. Omitted/false retains existing manual behavior.
 
-Manual input creation also accepts a manual `lowOutlierThreshold` without MGBT
-(Task 2.10 / decision D5, approved 25 September 2026). It is applied with
-`DataFrame.SetLowOutliersFromThreshold()` after the exact series is populated:
+Manual input creation also accepts a manual `lowOutlierThreshold` without MGBT.
+It is applied with `DataFrame.SetLowOutliersFromThreshold()` after the exact series is populated:
 every exact observation strictly below the threshold is flagged a low outlier
 (regardless of any `isLowOutlier` supplied on it), and the count is returned as
 `lowOutlierCount`. The data frame requires at least ten exact observations and
@@ -250,9 +249,10 @@ Connect from an MCP client:
 claude mcp add --transport http bestfit http://localhost:5210/mcp
 ```
 
-Tools (27): `get_metadata`, `list_resources`, `delete_resource`, `usgs_download_timeseries`,
+Tools (32): `get_metadata`, `list_resources`, `delete_resource`, `usgs_download_timeseries`,
 `create_manual_timeseries`, `get_timeseries`, `create_inputdata_usgs_peaks`,
 `create_inputdata_block_max`, `create_inputdata_pot`, `create_inputdata_manual`, `get_inputdata`,
+`get_inputdata_chronology`, `get_inputdata_source`,
 `create_univariate_analysis`, `create_bulletin17c_analysis`, `create_ratingcurve_analysis`,
 `create_mixture_analysis`, `create_pointprocess_analysis`, `create_competingrisks_analysis`,
 `create_composite_analysis`, `create_distributionfitting_analysis`,
