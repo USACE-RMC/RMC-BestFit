@@ -157,6 +157,13 @@ public class InputDataCollectionPersistenceTests
     /// guard rejects (it would censor more than half the record) warns instead of silently
     /// clearing the low outliers, and leaves no exact value flagged.
     /// </summary>
+    /// <remarks>
+    /// The expected warning is written out in full, including the guard's reason for this fixture
+    /// (the sorted upper-middle value of the values 1 to 10 is 6), rather than derived from the
+    /// guard's exception message, so text the runtime appends to
+    /// <see cref="ArgumentException.Message"/>, such as the
+    /// <c> (Parameter 'LowOutlierThreshold')</c> suffix, cannot reach the warning unnoticed.
+    /// </remarks>
     [STATestMethod]
     public void OpenVersionOne_RejectedLowOutlierThreshold_WarnsAndLeavesNoLowOutliers()
     {
@@ -172,14 +179,13 @@ public class InputDataCollectionPersistenceTests
             WriteVersion1LowOutlierFixture(scope.ProjectPath, collection.Name, seed.Name,
                 useMultipleGrubbsBeckTest: false, lowOutlierThreshold: 100, exactValues: values);
             SetSoftwareVersion(scope.ProjectPath, "1.0");
-            string expectedReason = CaptureRejectedThresholdReason(values, 100);
 
             opened = new UI.InputData(seed.Name, new InputDataCollection(scope.Project), true);
 
             BasicMessageItem? warning = MessengerMessage(opened, "ID-WNG-021");
             Assert.IsNotNull(warning, "A version 1.0 project's rejected low-outlier threshold must warn instead of silently clearing.");
             Assert.AreEqual(
-                $"The low-outlier settings saved with this version 1.0 project could not be applied ({expectedReason}), so no observations are flagged as low outliers. Review the low-outlier threshold or the Multiple Grubbs-Beck test setting before running an analysis on this input data.",
+                "The low-outlier settings saved with this version 1.0 project could not be applied (The low outlier threshold cannot censor more than 50% of the data. Set it to 6 or less), so no observations are flagged as low outliers. Review the low-outlier threshold or the Multiple Grubbs-Beck test setting before running an analysis on this input data.",
                 warning!.Description);
             Assert.IsFalse(opened.DataFrame.ExactSeries.Cast<ExactData>().Any(row => row.IsLowOutlier),
                 "The rejected threshold must leave no exact value flagged as a low outlier.");
@@ -510,32 +516,6 @@ public class InputDataCollectionPersistenceTests
         var table = sqlite.GetTableManager("Project");
         table.EditCell(0, "SoftwareVersion", version);
         table.ApplyEdits();
-    }
-
-    /// <summary>
-    /// Computes the exact reason text the production low-outlier threshold guard throws for a
-    /// rejected threshold, so the warning-text assertion does not need to guess the runtime's
-    /// exact <see cref="ArgumentException.Message"/> formatting.
-    /// </summary>
-    /// <param name="values">The exact-series values used by the fixture under test.</param>
-    /// <param name="threshold">The rejected low-outlier threshold value.</param>
-    /// <returns>The caught exception's message with any trailing period removed.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the supplied threshold is not
-    /// actually rejected by the current guard, which would make the calling test meaningless.</exception>
-    private static string CaptureRejectedThresholdReason(double[] values, double threshold)
-    {
-        var probe = new DataFrame();
-        for (int i = 0; i < values.Length; i++) probe.ExactSeries.Add(new ExactData(i, values[i]));
-        probe.LowOutlierThreshold = threshold;
-        try
-        {
-            probe.SetLowOutliersFromThreshold();
-            throw new InvalidOperationException("Fixture threshold must be rejected by the current guard for this test to be meaningful.");
-        }
-        catch (ArgumentException ex)
-        {
-            return ex.Message.TrimEnd('.');
-        }
     }
 
     /// <summary>

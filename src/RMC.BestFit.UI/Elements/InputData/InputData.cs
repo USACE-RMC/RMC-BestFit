@@ -1626,7 +1626,7 @@ namespace RMC.BestFit.UI
 
                     // Surface the cleared settings to the user instead of only logging them, since a
                     // legacy project silently losing its low-outlier flags is otherwise invisible.
-                    string reason = ex.Message.TrimEnd('.');
+                    string reason = GetLowOutlierMigrationReason(ex);
                     _lowOutlierMigrationMsg = new BasicMessageItem(MessageType.Warning,
                         $"The low-outlier settings saved with this version 1.0 project could not be applied ({reason}), so no observations are flagged as low outliers. Review the low-outlier threshold or the Multiple Grubbs-Beck test setting before running an analysis on this input data.",
                         this, ParentCollection.Name, Name, nameof(UseMultipleGrubbsBeckTest), "ID-WNG-021");
@@ -1635,6 +1635,38 @@ namespace RMC.BestFit.UI
                 }
 
             }
+        }
+
+        /// <summary>
+        /// Gets the reason shown inside the parentheses of the version 1.0 low-outlier migration
+        /// warning for an exception thrown while the stored low-outlier settings were applied.
+        /// </summary>
+        /// <param name="ex">The exception thrown by the data frame's low-outlier setter.</param>
+        /// <returns>
+        /// The exception message without the parameter-name suffix that <see cref="ArgumentException"/>
+        /// appends and without a trailing period.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="ex"/> is <see langword="null"/>.</exception>
+        /// <remarks>
+        /// When <see cref="ArgumentException.ParamName"/> is set, <see cref="ArgumentException.Message"/>
+        /// ends with <c> (Parameter 'name')</c>, so trimming the trailing period alone would leave that
+        /// suffix, and its closing parenthesis, inside the warning's parentheses. The suffix is removed
+        /// only when the message ends with it; any other message is kept whole apart from its trailing
+        /// period.
+        /// </remarks>
+        private static string GetLowOutlierMigrationReason(Exception ex)
+        {
+            ArgumentNullException.ThrowIfNull(ex);
+
+            string message = ex.Message;
+            if (ex is ArgumentException argumentException && !string.IsNullOrEmpty(argumentException.ParamName))
+            {
+                string parameterSuffix = $" (Parameter '{argumentException.ParamName}')";
+                if (message.EndsWith(parameterSuffix, StringComparison.Ordinal))
+                    message = message.Substring(0, message.Length - parameterSuffix.Length);
+            }
+
+            return message.TrimEnd('.');
         }
 
         /// <summary>
