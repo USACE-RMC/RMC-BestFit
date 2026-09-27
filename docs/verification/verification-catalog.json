@@ -7838,7 +7838,7 @@
       "seed": 54321,
       "oracle": "Generating link-space parents [log(location), log(scale), shape] for a ten-site independent homogeneous SpatialGEV fixture with 100 observations per site, total scalar N=1000, and 100 complete multivariate rows.",
       "acceptanceRule": "Every parent coordinate must have absolute standardized error no greater than 1.96 using the unregularized observed-information covariance; singular or regularized covariance is failure; the conditional five-percent point rule applies only to already resolved intervals; every parent must lie inside its unchanged production bound and prior support.",
-      "artifact": "TestResults/VerificationFocused/20260902-074615-RMC_BestFit_Verification_SpatialExtremes_SpatialGEVMLERecoveryTests_MLE_BasicHomogeneous_RecoversParameters",
+      "artifact": "TestResults/VerificationFocused/20260926-074936-RMC_BestFit_Verification_SpatialExtremes_SpatialGEVMLERecoveryTests_MLE_BasicHomogeneous_RecoversParameters",
       "reportAnchor": "docs/verification/report/spatial-extremes.md#prediction-distance-uncertainty-and-recovery",
       "status": "verified",
       "gap": ""
@@ -7862,7 +7862,7 @@
       "seed": 66666,
       "oracle": "Generating parents [range, log(location), log(scale), shape] for a ten-site exponential Gaussian-copula SpatialGEV fixture with 100 observations per site, total scalar N=1000, 100 complete multivariate rows, and Cartesian distances.",
       "acceptanceRule": "Every parent coordinate must have absolute standardized error no greater than 1.96 using the unregularized observed-information covariance; singular or regularized covariance is failure; the conditional five-percent point rule applies only to already resolved intervals; every parent must lie inside its unchanged production bound and prior support.",
-      "artifact": "TestResults/VerificationFocused/20260902-074645-RMC_BestFit_Verification_SpatialExtremes_SpatialGEVMLERecoveryTests_MLE_WithCopula_RecoversParameters",
+      "artifact": "TestResults/VerificationFocused/20260926-074940-RMC_BestFit_Verification_SpatialExtremes_SpatialGEVMLERecoveryTests_MLE_WithCopula_RecoversParameters",
       "reportAnchor": "docs/verification/report/spatial-extremes.md#prediction-distance-uncertainty-and-recovery",
       "status": "verified",
       "gap": ""
