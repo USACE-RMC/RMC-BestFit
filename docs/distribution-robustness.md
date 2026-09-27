@@ -27,9 +27,9 @@ All tests use small deterministic contracts; the new fast tests do not run an op
 | Numerics complete Release tests | 2,690 passed per framework, all four frameworks; 10,760 passes |
 | BestFit Verification | Not executed |
 
-The isolated Numerics project used here is `C:/GIT/numerics/artifacts/worktrees/distribution-robustness/Numerics/Numerics.csproj`. Each BestFit test command uses `-c Release -p:EnforceXmlDocumentation=true -p:UseLocalRmcNumerics=true -p:RmcNumericsProjectPath=<that path>`. UI and App builds additionally point `HecDssRoot` at the existing `C:/GIT/hec-dss/dotnet/Hec.Dss/` dependency. These are command-line worktree references; project configuration and dependencies were not replaced.
+The isolated Numerics project used here is a temporary worktree of the sibling Numerics checkout, `<Numerics checkout>/artifacts/worktrees/distribution-robustness/Numerics/Numerics.csproj`. Each BestFit test command uses `-c Release -p:EnforceXmlDocumentation=true -p:UseLocalRmcNumerics=true -p:RmcNumericsProjectPath=<that path>`. UI and App builds additionally point `HecDssRoot` at the existing sibling `<hec-dss checkout>/dotnet/Hec.Dss/` dependency. These are command-line worktree references; project configuration and dependencies were not replaced.
 
-After merging to the named local branches and removing the temporary worktrees, use `C:/GIT/numerics/Numerics/Numerics.csproj` for `RmcNumericsProjectPath`. Original test reports and implementation records are retained locally under `C:/GIT/numerics/artifacts/distribution-robustness-evidence/`.
+After merging to the named local branches and removing the temporary worktrees, use `<Numerics checkout>/Numerics/Numerics.csproj` for `RmcNumericsProjectPath`. Original test reports and implementation records are retained locally in the Numerics checkout under `artifacts/distribution-robustness-evidence/`.
 
 The MSTest.Sdk 3.6.4 host uses Microsoft.Testing.Platform. Targeted arguments belong after `--`, for example `-- --filter 'FullyQualifiedName~DistributionRobustnessIntegrationTests' --report-trx`; ordinary legacy filter syntax is ignored by this host. Reported counts were checked against the output/TRX. Full gates name each of the three fast projects explicitly and do not invoke the Verification project.
 

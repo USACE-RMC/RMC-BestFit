@@ -126,6 +126,6 @@ same model, N, parameter order, seeds, oracle, uncertainty source, and executabl
 
 ## Completion conditions
 
-The remediation is complete only when the machine-readable catalog accounts for every Verification method and data-driven execution unit, all open catalog gaps are closed or explicitly approved as limitations, every recovery entry records N=1000, every scientific analysis has a report section, the fast ownership gates pass, and every newly claimed executable Verification result has been run as one explicitly authorized fully qualified method through `scripts/run-verification-test.ps1`. Bulletin 17C confidence-interval coverage results remain historical or reruns-on-request and are not executed by Codex.
+The remediation is complete only when the machine-readable catalog accounts for every Verification method and data-driven execution unit, all open catalog gaps are closed or explicitly approved as limitations, every recovery entry records N=1000, every scientific analysis has a report section, the fast ownership gates pass, and every newly claimed executable Verification result has been run as one explicitly authorized fully qualified method through `scripts/run-verification-test.ps1`. Bulletin 17C confidence-interval coverage results remain historical or reruns-on-request and are not rerun automatically.
 
 The full Verification project is never executed automatically.

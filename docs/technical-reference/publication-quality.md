@@ -15,7 +15,7 @@
 | BestFit source checkpoint | `3fa55a0f75bbd583e2fb7fce42180faa376f007c` |
 | Numerics source checkpoint | `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02` |
 | Version and dependency | BestFit 2.0.0; declared RMC.Numerics 2.2.0; validation used the sibling Numerics project |
-| Workspace / branch | `C:\GIT\RMC-BestFit` / `documentation-verification-updates` |
+| Branch | `documentation-verification-updates` |
 | Release status | Draft for external peer review - not for public release |
 
 The PDF identifies the production source reviewed, before this documentation-only commit. The commit containing this record and the PDF is available with `git log -1 -- docs/technical-reference/publication-quality.md`. Report-specific checkpoint overrides keep the technical HTML, cover, front matter, and PDF metadata consistent while preserving the verification report's separate checkpoint. Session 3 owns the version change and package-only release validation.
@@ -174,7 +174,7 @@ The maintained scripts accept explicit runtime paths; no project or system confi
 
 ```powershell
 # Set these to the installed runtime locations on the reviewing machine.
-$reportDependencies = 'C:\Users\haden\.cache\codex-runtimes\codex-primary-runtime\dependencies'
+$reportDependencies = '<folder containing the python and node runtimes>'
 $reportPython = Join-Path $reportDependencies 'python\python.exe'
 $reportNode = Join-Path $reportDependencies 'node\bin\node.exe'
 $env:BESTFIT_NODE_MODULES = Join-Path $reportDependencies 'node\node_modules'
