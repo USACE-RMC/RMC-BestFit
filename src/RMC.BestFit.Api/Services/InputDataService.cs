@@ -56,6 +56,21 @@ namespace RMC.BestFit.Api.Services
                     nameof(request));
             }
 
+            // A preflag with no threshold and MGBT off would store IsLowOutlier=true with
+            // NumberOfLowOutliers left at 0 and no censoring threshold - the inconsistent state
+            // behind finding L29 (Bulletin 17C's counter-gated MomentConditions would drop the
+            // flagged values while n still counts them, and the counter-gated analytical-Jacobian
+            // guard and univariate filtering would both still treat them as ordinary exact data).
+            // Reject before building anything, per Haden Smith's 26 September 2026 decision (Task
+            // 3.20). The MGBT+preflag combination is already rejected above, so this covers the
+            // remaining no-threshold case.
+            if (!request.LowOutlierThreshold.HasValue && request.ExactData.Any(observation => observation.IsLowOutlier))
+            {
+                throw new ArgumentException(
+                    "Exact observations flagged isLowOutlier=true require lowOutlierThreshold, which defines their censoring threshold; supply lowOutlierThreshold or remove the flags (useMultipleGrubbsBeckTest derives the flags itself).",
+                    nameof(request));
+            }
+
             // A manual threshold will be applied to every observation below, so a caller-supplied
             // isLowOutlier=true on a value the threshold would NOT flag is self-contradictory.
             // Reject it before building anything, per decision D5's contradiction rule, rather than

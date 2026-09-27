@@ -246,11 +246,24 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   more than half the record or fewer than ten exact observations are present.** Sending
   `isLowOutlier:true` on an observation whose value is at or above `lowOutlierThreshold` is a new
   400 (the threshold would unflag it); a preflagged observation already below the threshold is
-  unaffected. Omitting `lowOutlierThreshold` is unchanged: preflagged `isLowOutlier` values are
-  stored exactly as supplied. `useMultipleGrubbsBeckTest` (new, below) rejects a request that also
-  supplies `lowOutlierThreshold` or a preflagged observation. The bundled `bestfit-frequency` skill
-  follows suit: its runner no longer stops a manual request that sends a threshold without
-  per-observation flags, and its workflow notes describe the applied threshold.
+  unaffected. Omitting `lowOutlierThreshold` when no observation is preflagged is unchanged.
+  `useMultipleGrubbsBeckTest` (new, below) rejects a request that also supplies
+  `lowOutlierThreshold` or a preflagged observation. The bundled `bestfit-frequency` skill follows
+  suit: its runner no longer stops a manual request that sends a threshold without per-observation
+  flags, and its workflow notes describe the applied threshold.
+- API/MCP input data (approved 26 September 2026): manual input creation now rejects a request
+  that preflags any exact observation `isLowOutlier:true` without also supplying
+  `lowOutlierThreshold` (and without `useMultipleGrubbsBeckTest`, already rejected together with a
+  preflag by the rule above) with a 400: "Exact observations flagged isLowOutlier=true require
+  lowOutlierThreshold, which defines their censoring threshold; supply lowOutlierThreshold or
+  remove the flags (useMultipleGrubbsBeckTest derives the flags itself)." Previously such a
+  request stored the flags with no censoring threshold and `NumberOfLowOutliers` left at zero;
+  Bulletin 17C's `MomentConditions` then dropped the flagged values from its likelihood while its
+  counter-gated analytical-Jacobian guard and univariate filtering both still treated them as
+  ordinary exact data, so the same flags produced disagreeing fits across analysis kinds. Supply
+  `lowOutlierThreshold`, or use `useMultipleGrubbsBeckTest` to derive the flags instead, whenever
+  any observation is preflagged; a request that already supplies one of those, or that preflags
+  nothing, is unaffected.
 - API/MCP additions (see `docs/api.md`): `GET api/analyses/{analysisId}/plot-source` (MCP
   `get_analysis_plot_source`) exports one completed run of any analysis kind for external
   plotting without running or changing the analysis (settings and model XML, the results payload,
@@ -573,15 +586,6 @@ information-criteria and PSIS-LOO entries above).
   time series, switching the source to another series, and processing again, undoing twice can
   restore the first series' peaks with the second series' exposure. Run the extraction again
   after such an undo.
-- API/MCP low-outlier flags without a threshold: manual input that flags observations with
-  `isLowOutlier:true` but supplies neither `lowOutlierThreshold` nor `useMultipleGrubbsBeckTest`
-  stores the flags without a censoring threshold, and Bulletin 17C and univariate fits then treat
-  those observations inconsistently. Whenever low outliers are flagged, also supply a
-  `lowOutlierThreshold` above every flagged value and at or below every unflagged exact value (the
-  threshold flags every exact value strictly below it, so a higher threshold also censors
-  observations that were not flagged); the threshold guards still apply (it may censor at most
-  half the record, and at least ten exact values are required). Alternatively, omit the flags and
-  set `useMultipleGrubbsBeckTest` to true.
 - Short time series (unchanged since 2.0.0): the default training window is the largest of 30
   steps, the number of parameters, and 80% of the series, so a series of 10 to 29 values fails
   validation under the default training settings. Turn off the default training steps

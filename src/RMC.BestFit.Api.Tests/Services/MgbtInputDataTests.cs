@@ -93,24 +93,27 @@ namespace RMC.BestFit.Api.Tests.Services
         }
 
         /// <summary>
-        /// Checks that omitted/false MGBT screening preserves an explicit preflagged
-        /// <c>isLowOutlier</c> value when no <c>lowOutlierThreshold</c> is supplied. Task 2.10 /
-        /// decision D5 (approved 25 September 2026) now applies a supplied threshold instead of
-        /// merely storing it, which would overwrite these preflags - see
-        /// <see cref="LowOutlierThresholdInputDataTests"/> for that behavior.
+        /// Checks that a preflagged <c>isLowOutlier</c> value with no <c>lowOutlierThreshold</c> is
+        /// rejected whether MGBT is omitted from the wire request entirely or sent as an explicit
+        /// <c>false</c> - both wire forms must produce the same 400. Haden Smith's 26 September
+        /// 2026 decision (Task 3.20 / finding L29) requires a threshold whenever any observation is
+        /// preflagged, so the state can never be stored with the flags set, the count at zero, and
+        /// no censoring threshold. Before this decision the preflag was stored unchanged; see
+        /// <see cref="LowOutlierThresholdInputDataTests"/> for the service-level rejection
+        /// contract. Renamed from <c>Manual_NotEnabled_PreservesManualScreening</c>, which encoded
+        /// the old (now rejected) contract.
         /// </summary>
-        /// <param name="omit">Whether the new field is omitted entirely.</param>
+        /// <param name="omit">Whether the MGBT field is omitted entirely from the wire request.</param>
         [DataTestMethod]
         [DataRow(false)]
         [DataRow(true)]
-        public void Manual_NotEnabled_PreservesManualScreening(bool omit)
+        public void Manual_NotEnabled_WithPreflagAndNoThreshold_Throws(bool omit)
         {
             var request = ManualRequest(omit ? null : false);
             request.ExactData[0].IsLowOutlier = true;
-            var frame = _inputs.CreateManual(request).DataFrame;
-            Assert.AreEqual(0d, frame.LowOutlierThreshold, "No threshold was supplied; the frame keeps its unset default.");
-            Assert.IsTrue(((ExactData)frame.ExactSeries[0]).IsLowOutlier);
-            Assert.IsFalse(((ExactData)frame.ExactSeries[1]).IsLowOutlier);
+            var ex = Assert.ThrowsException<ArgumentException>(() => _inputs.CreateManual(request));
+            StringAssert.Contains(ex.Message, "lowOutlierThreshold");
+            Assert.AreEqual(0, _store.TotalCount);
         }
 
         /// <summary>Rejects competing screening policies before adding any resource.</summary>

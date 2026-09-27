@@ -107,17 +107,36 @@ namespace RMC.BestFit.Api.Tests.Services
             Assert.AreEqual(0, _store.TotalCount);
         }
 
-        /// <summary>Omitting the threshold leaves every observation's flag exactly as supplied, matching prior behavior.</summary>
+        /// <summary>
+        /// Omitting the threshold while an exact observation is preflagged is rejected: Haden
+        /// Smith's 26 September 2026 decision (Task 3.20 / finding L29) requires
+        /// <see cref="CreateManualInputDataRequest.LowOutlierThreshold"/> whenever any observation
+        /// is preflagged, so the low-outlier state can never be stored with the flags set, the
+        /// count at zero, and no censoring threshold to define them. Renamed from
+        /// <c>OmittingThreshold_LeavesPreflagsUnchanged</c>, which encoded the old (now rejected)
+        /// contract this decision replaces.
+        /// </summary>
         [TestMethod]
-        public void OmittingThreshold_LeavesPreflagsUnchanged()
+        public void OmittingThreshold_WithPreflag_Throws_AndStoresNothing()
         {
             var request = Request(null, preflagFirstAs: true);
+            var ex = Assert.ThrowsException<ArgumentException>(() => _inputs.CreateManual(request));
+            // ArgumentException.Message appends "(Parameter 'request')" to the constructor's
+            // message argument, so Contains (not AreEqual) checks the verbatim text supplied.
+            StringAssert.Contains(ex.Message,
+                "Exact observations flagged isLowOutlier=true require lowOutlierThreshold, which defines their censoring threshold; supply lowOutlierThreshold or remove the flags (useMultipleGrubbsBeckTest derives the flags itself).");
+            Assert.AreEqual(0, _store.TotalCount);
+        }
+
+        /// <summary>Omitting the threshold when no observation is preflagged is unaffected by the new rejection rule.</summary>
+        [TestMethod]
+        public void OmittingThreshold_NoPreflags_Succeeds()
+        {
+            var request = Request(null);
             var frame = _inputs.CreateManual(request).DataFrame;
 
             Assert.AreEqual(0d, frame.LowOutlierThreshold, "No threshold was supplied; the frame keeps its unset default.");
-            Assert.IsTrue(((ExactData)frame.ExactSeries[0]).IsLowOutlier, "The explicit preflag on the first observation must survive.");
-            // The second observation shares the same value (0) but was never preflagged, and no
-            // threshold was supplied to derive a flag for it, so it must remain false.
+            Assert.IsFalse(((ExactData)frame.ExactSeries[0]).IsLowOutlier);
             Assert.IsFalse(((ExactData)frame.ExactSeries[1]).IsLowOutlier);
         }
 

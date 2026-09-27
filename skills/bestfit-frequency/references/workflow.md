@@ -31,8 +31,11 @@ every exact observation strictly below it is flagged a low outlier and every oth
 one is unflagged, whatever `isLowOutlier` it carried. The API rejects (HTTP 400)
 automatic screening combined with a manual threshold or flags, screening with fewer
 than ten exact observations, a threshold that would censor more than half of the
-record, and an `isLowOutlier:true` observation at or above the threshold. Screening
-occurs after all input series are populated and before analysis creation/cloning.
+record, an `isLowOutlier:true` observation at or above the threshold, and any
+`isLowOutlier:true` observation sent with neither `lowOutlierThreshold` nor
+automatic screening (the flags would otherwise have no censoring threshold).
+Screening occurs after all input series are populated and before analysis
+creation/cloning.
 
 For a USGS site supplied by the user:
 
@@ -46,12 +49,13 @@ The USGS shortcut supports automatic MGBT or `--mgbt off`; it does not accept
 manual screening fields. For a manual threshold or flags on USGS peaks, first create
 USGS input without MGBT and fetch `includeData=true` through the granular endpoints.
 Copy the year/value observations into a manual request with the user's explicit
-`lowOutlierThreshold` or explicit `isLowOutlier` flags, then use `--manual`. The API
-derives the flags from a threshold, so the threshold alone is enough; any
-`isLowOutlier:true` sent with it must be on a value below the threshold. Without a
-threshold, `isLowOutlier` flags are stored exactly as supplied. Report the returned
-`lowOutlierCount`, preserve all observations, and do not run automatic screening on
-that request.
+`lowOutlierThreshold`, then use `--manual`. The API derives the flags from the
+threshold, so the threshold alone is enough; any `isLowOutlier:true` sent with it
+must be on a value below the threshold. The API rejects a request that preflags
+any observation `isLowOutlier:true` without also supplying `lowOutlierThreshold`
+(and without automatic screening) — always send the threshold whenever any
+observation is flagged. Report the returned `lowOutlierCount`, preserve all
+observations, and do not run automatic screening on that request.
 
 For Bayesian univariate analysis, use `--kind univariate` (also the client default).
 This leaves the API's screening default unchanged. To reuse the illustrative

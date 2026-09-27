@@ -215,8 +215,12 @@ sorted upper-middle value) with a 400 carrying its own validation message;
 nothing is stored. Supplying `isLowOutlier:true` on an observation whose value is
 at or above `lowOutlierThreshold` is rejected as contradictory (the threshold
 would unflag it) before anything is built; a preflagged observation already
-below the threshold agrees and is accepted. Omitting `lowOutlierThreshold` leaves
-every observation's flag exactly as supplied, matching prior behavior.
+below the threshold agrees and is accepted. Omitting `lowOutlierThreshold` while
+any exact observation is preflagged `isLowOutlier:true` is rejected with a 400,
+because the flags would otherwise be stored with no censoring threshold to
+define them (`NumberOfLowOutliers` at zero) — supply `lowOutlierThreshold`, or
+use `useMultipleGrubbsBeckTest` to derive the flags instead. Omitting
+`lowOutlierThreshold` when no exact observation is preflagged is unaffected.
 
 The MCP tools `create_inputdata_manual`, `create_inputdata_usgs_peaks`, and
 `run_usgs_bulletin17c_workflow` expose the same optional boolean. For example:

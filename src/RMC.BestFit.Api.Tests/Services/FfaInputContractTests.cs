@@ -115,11 +115,28 @@ namespace RMC.BestFit.Api.Tests.Services
             var service = new InputDataService(Store(), new FakeUsgsTimeSeriesService());
             var input = service.CreateManual(new()
             {
-                // No lowOutlierThreshold here: this fixture has only two exact observations, and
-                // Task 2.10 / decision D5 requires at least ten before a threshold can be applied
-                // (see LowOutlierThresholdInputDataTests). The explicit preflag below still exercises
-                // isLowOutlier pass-through for the chronology mapping this test targets.
-                ExactData = [new() { Index = 2000, Value = 0, IsLowOutlier = true }, new() { Index = 2002, Value = 200 }],
+                // Ten exact observations (the minimum SetLowOutliersFromThreshold needs) with a
+                // lowOutlierThreshold of 50 so index 2000 (value 0) is derived as a low outlier by
+                // the threshold. Haden Smith's 26 September 2026 decision (Task 3.20 / finding L29)
+                // rejects a bare isLowOutlier preflag with no threshold, so this fixture can no
+                // longer preflag it directly with only two exact observations (see
+                // LowOutlierThresholdInputDataTests for that rejection contract); the
+                // threshold-derived flag still exercises isLowOutlier pass-through for the
+                // chronology mapping this test targets.
+                ExactData =
+                [
+                    new() { Index = 2000, Value = 0 },
+                    new() { Index = 2001, Value = 100 },
+                    new() { Index = 2002, Value = 200 },
+                    new() { Index = 2003, Value = 220 },
+                    new() { Index = 2004, Value = 240 },
+                    new() { Index = 2005, Value = 260 },
+                    new() { Index = 2006, Value = 280 },
+                    new() { Index = 2007, Value = 300 },
+                    new() { Index = 2008, Value = 320 },
+                    new() { Index = 2009, Value = 340 }
+                ],
+                LowOutlierThreshold = 50,
                 IntervalData = [new() { Index = -100, LowerBound = 40, Value = 50, UpperBound = 60 }],
                 UncertainData = [new() { Index = 1900, Distribution = new() { Parameters = [100, 10] } }],
                 ThresholdData = [new() { StartIndex = -101, EndIndex = -99, Value = 100 }]

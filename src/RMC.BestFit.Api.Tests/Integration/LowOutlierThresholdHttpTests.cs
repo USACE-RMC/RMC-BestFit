@@ -57,5 +57,27 @@ namespace RMC.BestFit.Api.Tests.Integration
             using var response = await client.PostAsJsonAsync("/api/inputdata/manual", new { exactData = data, lowOutlierThreshold = 50 });
             Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
         }
+
+        /// <summary>
+        /// A preflagged observation with no threshold and no MGBT is rejected before storing
+        /// anything (Haden Smith's 26 September 2026 decision, Task 3.20 / finding L29): the
+        /// low-outlier state can never be stored with the flags set, the count at zero, and no
+        /// censoring threshold.
+        /// </summary>
+        [TestMethod]
+        public async Task Manual_PreflaggedValueWithoutThreshold_ReturnsBadRequest()
+        {
+            using var factory = new WebApplicationFactory<Program>();
+            using var client = factory.CreateClient();
+            var data = new object[]
+            {
+                new { index = 2000, value = 0, isLowOutlier = true },
+                new { index = 2001, value = 100 }
+            };
+            using var response = await client.PostAsJsonAsync("/api/inputdata/manual", new { exactData = data });
+            Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            StringAssert.Contains(json.RootElement.GetProperty("errorMessage").GetString(), "require lowOutlierThreshold");
+        }
     }
 }

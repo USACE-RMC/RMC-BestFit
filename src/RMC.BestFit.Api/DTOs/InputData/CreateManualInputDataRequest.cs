@@ -80,8 +80,11 @@ namespace RMC.BestFit.Api.DTOs
         /// stores nothing. An observation preflagged <see cref="ExactObservationDto.IsLowOutlier"/>
         /// = true with a value at or above this threshold is rejected as contradictory before
         /// anything is built - a preflag on a value already below the threshold agrees and is
-        /// accepted. Cannot be combined with <see cref="UseMultipleGrubbsBeckTest"/>. Omit this to
-        /// leave every <see cref="ExactObservationDto.IsLowOutlier"/> value exactly as supplied.
+        /// accepted. Cannot be combined with <see cref="UseMultipleGrubbsBeckTest"/>. Required
+        /// whenever any exact observation is preflagged <see cref="ExactObservationDto.IsLowOutlier"/>
+        /// = true: omitting this while a preflag is present is rejected, because the flags would
+        /// otherwise be stored with no censoring threshold to define them. Omitting this is
+        /// unaffected when no observation is preflagged.
         /// </summary>
         [JsonPropertyName("lowOutlierThreshold")]
         public double? LowOutlierThreshold { get; set; }
