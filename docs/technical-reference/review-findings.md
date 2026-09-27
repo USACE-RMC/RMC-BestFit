@@ -139,6 +139,7 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-096](#tr-096) | B17C BFGS false convergence, concealed line-search failure, and numerical systematic-data Jacobian | High | Approved remediation; implemented 17 September 2026 | Complete | Passed - 36 focused BFGS/AL regressions/framework; BestFit fast suites 5,021 total; 7/7 B17C examples | [Report](../verification/b17c-bfgs-repair-20260917.md) | 2026-09-26 |
 | [TR-097](#tr-097) | Competing-risk Bayesian MCMC lacked a data-informed initialization covariance | Medium | Approved remediation; implemented 4 August 2026 | Complete | Passed - resolved the separated three-Weibull R-hat finding; six unrelated cells remain deferred by decision | [Report](../verification/competing-risks.md) | 2026-09-26 |
 | [TR-098](#tr-098) | Reciprocal and sinusoidal default trend priors initialized in the wrong space | Medium | Approved remediation; implemented 30 August 2026 | Complete | Passed - 380/380 default-validity assignments; Chunk 6B 22/22 recovery identities | [Report](../verification/model-estimation.md#univariate-family-and-trend-recovery) | 2026-09-26 |
+| [TR-099](#tr-099) | Default time-series training window made every series shorter than 30 steps invalid | Medium | Approved default-policy change; implemented 26 September 2026 | Complete | Passed - 15 focused fast tests (14 core, 1 UI); four affected time-series oracle identities rerun individually | [Report](analysis/time-series.md#shared-statistical-contract) | 2026-09-26 |
 <a id="tr-001"></a>
 ## TR-001 — Kappa Four \(\kappa=0\) Density and Quantile
 
@@ -1764,6 +1765,49 @@ failure that resulted from copying the stationary response initializer directly 
 coefficient `a`.
 
 **Follow-up.** None recorded beyond the closed Chunk 6B matrix.
+
+<a id="tr-099"></a>
+## TR-099 - Default Time-Series Training Window
+
+**Review disposition.** Approved default-policy change. The v2.0.1 pre-release review found that the
+default training window of the AR, MA, ARIMA, and ARIMAX models, the largest of 30 steps, the
+parameter count, and ⌊0.8N⌋, made every series of 10 to 29 observations fail validation under the
+default settings, because validation requires the window to fit the series. On 26 September 2026
+Haden Smith directed that the rule change but be derived from model theory, with at least ten
+fitted steps and the parameter count charged against the degrees of freedom, and approved the exact
+rule below, together with its choices: ten residual degrees of freedom after all parameters, no
+30-step floor, a fitted transform exponent not counted, and today's checks kept for manual windows.
+He also kept the `TrainingTimeSteps` setter contract (assigning it leaves the default rule on).
+
+**Implementation status.** Implemented in commit `d72acb9`. With conditioning order $K$ (AR $p$; MA
+0; ARIMA $\max(p,q)$; ARIMAX $\max(p,q)$, or $\max(q,p+b)$ with covariates) the conditional
+likelihood scores $n=T-d-K$ steps of a $T$-step window, and with $k$ estimated parameters (the scale
+included) the residual degrees of freedom are $n-k$. The default window is now
+$\max(d+K+k+10,\lfloor 0.8N\rfloor)$ (equation TS.2). It is not capped at $N$; a series shorter than
+the floor fails validation with a message that names the minimum. The default is recomputed on
+structural edits and user covariate changes as well as series changes; open, copy, clone, and undo
+keep the saved window. No likelihood, prior, sampler, optimizer, tolerance, seed, or manual-window
+check changed.
+
+**Verification status.** `DefaultTrainingWindowTests` pins the floor against each model's actual
+parameter layout (AR, MA, ARIMA, ARIMAX with trend, seasonality, and lagged covariates), the 80%
+branch, structural recomputation and its notification order, the too-short message, manual windows,
+restore, clone, and the setter contract; a UI test pins a single undo step that restores the order
+and its window together. A static trace of all 101 time-series Verification methods found four whose
+window changes. The one whose fixture depended on the old setter behavior
+(`ArimaAndArimaxPredictionReintegrationMatchesHandRecurrenceOracle`) now turns the default rule off
+before assigning its window. In the other three (`InvalidScaleBehaviorMatchesScalarAndPointwiseOracle`,
+`ArimaDifferencedTransformedGeneratorMatchesIndependentOracle`, and
+`ArimaxTransformedDifferencedGeneratorMatchesIndependentOracle`) both windows exceed the five-step
+series and are clamped to it. All four passed individually (`20260926-2344*`). All other recovery and
+oracle identities use explicit windows or series of 40 or more steps and are unaffected.
+
+**Impact.** Series of about 13 to 29 observations now validate for low-order models under the
+default settings (for example AR(1) with an intercept from 14 values, MA(1) from 13, ARIMA(1,1,1)
+from 16). New analyses of 30- to 37-value series train on ⌊0.8N⌋ steps instead of 30. Saved analyses
+keep their windows.
+
+**Follow-up.** None.
 
 ## Resolution Rule
 
