@@ -318,7 +318,8 @@ namespace RMC.BestFit.UI
         /// parameter vector restored from the saved model no longer fits the covariates that
         /// resolved (for example, a covariate time series could not be found), so the layout guard
         /// of <see cref="ARIMAX.SetCovariates(List{Numerics.Data.TimeSeries}, bool)"/> replaced it
-        /// with the default parameters and the saved results were not loaded (Task 3.19, finding L14).
+        /// with the default parameters and the saved results were not loaded (they belong to the
+        /// replaced vector, so a later reprocess would fail on the length mismatch).
         /// </summary>
         /// <remarks>
         /// Held so that <see cref="RunAsync"/> can remove it once a successful re-run has fitted the

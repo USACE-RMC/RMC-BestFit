@@ -473,8 +473,9 @@ namespace RMC.BestFit.Api.Mappers
         /// The K-1 versus full-K decision is the shared shape test
         /// <see cref="MixtureModel.IsSampledWeightVectorLength"/> — the same one
         /// <see cref="MixtureModel.TryGetPhysicalParameters"/> consults to choose its own output
-        /// shape (finding M6) — so this method never re-derives the length arithmetic; it only
-        /// decides which name to omit, and expands nothing. The shape test is evaluated against
+        /// shape (sharing it keeps the mapper and the core from diverging) — so this method never
+        /// re-derives the length arithmetic; it only decides which name to omit, and expands
+        /// nothing. The shape test is evaluated against
         /// the mixture's own structure and can be true even when <paramref name="parameters"/> (and
         /// so <c>names</c>) does not have as many entries as that structure implies — for example,
         /// a mixture whose <c>Parameters</c> was never populated (no data frame) — so the omitted

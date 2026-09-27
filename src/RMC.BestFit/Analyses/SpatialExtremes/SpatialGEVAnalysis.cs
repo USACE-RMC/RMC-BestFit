@@ -2368,7 +2368,7 @@ namespace RMC.BestFit.Analyses
         /// <inheritdoc/>
         /// <remarks>
         /// <para>
-        /// <b>Godambe sandwich vs. spatial regression errors (B-6):</b> <see cref="ComputeGodambeCovariance"/>
+        /// <b>Godambe sandwich vs. spatial regression errors:</b> <see cref="ComputeGodambeCovariance"/>
         /// builds its sensitivity matrix from the Hessian of <see cref="SpatialGEV.DataLogLikelihood"/> alone,
         /// which excludes the latent location/scale/shape errors' Gaussian-process prior (see
         /// <see cref="SpatialGEV.PriorLogLikelihood"/>). Every enabled error family's free per-site latent
@@ -2410,7 +2410,8 @@ namespace RMC.BestFit.Analyses
                 messageList.AddRange(bayesValid.ValidationMessages);
             }
 
-            // Godambe sandwich covariance always fails with spatial regression errors (B-6): see the
+            // Godambe sandwich covariance always fails with spatial regression errors, because the
+            // intercept/latent-error confound makes its sensitivity matrix singular: see the
             // <remarks> above. Reject the combination here instead of after a full MCMC run.
             bool hasSpatialRegressionErrors =
                 (SpatialGEV.UseLocationErrors && SpatialGEV.LocationErrors != null) ||

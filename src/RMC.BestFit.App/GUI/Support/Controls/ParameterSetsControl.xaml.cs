@@ -114,9 +114,10 @@ namespace RMC_BestFit
         /// </summary>
         /// <remarks>
         /// Every row is expanded through <see cref="TryGetAllPhysicalDisplayValues"/> before any
-        /// column is populated, so a stored draw that cannot be expanded (finding M6) shows an
-        /// empty table and <see cref="InvalidMixtureDrawWarning"/> instead of a partially built
-        /// table or an unhandled exception from the middle of this method.
+        /// column is populated, so a stored draw that cannot be expanded (for example, one with an
+        /// infeasible derived weight or a length that fits neither the K-1 nor the full-K shape)
+        /// shows an empty table and <see cref="InvalidMixtureDrawWarning"/> instead of a partially
+        /// built table or an unhandled exception from the middle of this method.
         /// </remarks>
         private void BindParameterSetDataGrid()
         {
@@ -217,10 +218,11 @@ namespace RMC_BestFit
         /// New mixture results store K-1 weights; legacy results already store all K. The K-1/full-K
         /// expansion itself (including the 1E-12 simplex-boundary clamp on the derived final weight)
         /// is <see cref="MixtureModel.TryGetPhysicalParameters"/> — the single core rule shared with
-        /// the API's results mapper (finding M6) — so this method only adds the reconstruction check
-        /// the core helper does not perform: whether the expanded vector actually defines a valid
-        /// physical mixture (<see cref="ValidateMixtureDisplayValues"/>). The stored array is never
-        /// changed, and no result migration or rewritten serialization is created.
+        /// the API's results mapper, which replaced a local copy here that lacked that clamp — so
+        /// this method only adds the reconstruction check the core helper does not perform: whether
+        /// the expanded vector actually defines a valid physical mixture
+        /// (<see cref="ValidateMixtureDisplayValues"/>). The stored array is never changed, and no
+        /// result migration or rewritten serialization is created.
         /// </remarks>
         internal static double[] GetPhysicalDisplayValues(BayesianAnalysis analysis, double[] storedValues)
         {

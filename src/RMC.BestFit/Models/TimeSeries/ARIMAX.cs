@@ -2361,6 +2361,7 @@ namespace RMC.BestFit.Models
         /// <param name="seed">Random seed for reproducibility (default = 12345).</param>
         /// <returns>A simulated time series.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="timeSteps"/> is less than one.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the <c>TimeSeries</c> property has not been set.</exception>
         /// <remarks>
         /// A <paramref name="timeSteps"/> shorter than the training window predicts the full
         /// training window (forecast steps clamped to zero) and returns its leading

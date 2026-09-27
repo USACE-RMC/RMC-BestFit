@@ -156,7 +156,7 @@ namespace RMC.BestFit.App.Tests.GUI
 
         /// <summary>
         /// Verifies a derived weight that is negative only at rounding level displays as zero
-        /// instead of throwing (finding M6: the control's duplicated expansion lacked the core's
+        /// instead of throwing (the control's former duplicated expansion lacked the core's
         /// 1E-12 simplex-boundary clamp, so this exact draw used to crash the tab).
         /// </summary>
         [TestMethod]

@@ -13,9 +13,8 @@ namespace RMC.BestFit.Tests.TimeSeriesModels;
 /// differencing order.
 /// </summary>
 /// <remarks>
-/// Task 3.6 (v2.0.1 remediation, finding M5): with a differenced model (d &gt; 0),
-/// <c>GenerateRandomSeries</c>/<c>Predict</c> previously threw an
-/// <see cref="ArgumentOutOfRangeException"/> from the internal conditional-level reconstruction
+/// With a differenced model (d &gt; 0), <c>GenerateRandomSeries</c>/<c>Predict</c> previously threw
+/// an <see cref="ArgumentOutOfRangeException"/> from the internal conditional-level reconstruction
 /// when the derived forecast-step count was negative, instead of returning the leading requested
 /// values as it did (and continues to do) for undifferenced models. These tests set parameter
 /// values directly with <see cref="ModelBase.SetParameterValues"/> and never run an optimizer or
@@ -46,8 +45,8 @@ public class TimeSeriesForecastStepsGuardTests
     /// <summary>
     /// Verifies that an ARIMA(1,1,0) model -- a differenced model, d &gt; 0 -- accepts a
     /// <c>GenerateRandomSeries</c> request shorter than its training window and returns the
-    /// leading values of the zero-forecast-step prediction, instead of throwing. Before the M5
-    /// fix, the un-clamped negative forecast-step count reached the conditional-level
+    /// leading values of the zero-forecast-step prediction, instead of throwing. Before the
+    /// forecast-step clamp, the negative forecast-step count reached the conditional-level
     /// reconstruction with a reconstructed length shorter than the training window and threw.
     /// </summary>
     [TestMethod]
@@ -67,8 +66,8 @@ public class TimeSeriesForecastStepsGuardTests
     /// <summary>
     /// Verifies that an ARIMAX(1,1,0) model with no covariates -- a differenced model, d &gt; 0 --
     /// accepts a <c>GenerateRandomSeries</c> request shorter than its training window and returns
-    /// the leading values of the zero-forecast-step prediction, instead of throwing (the M5
-    /// regression).
+    /// the leading values of the zero-forecast-step prediction, instead of throwing (the same
+    /// differenced-model regression as the ARIMA case).
     /// </summary>
     [TestMethod]
     public void Arimax_GenerateRandomSeriesShorterThanTrainingWindow_MatchesZeroForecastPredict()
@@ -87,11 +86,12 @@ public class TimeSeriesForecastStepsGuardTests
     /// <summary>
     /// Regression guard: an AutoRegressive(1) model -- an undifferenced model, d = 0, which never
     /// reached the throwing reconstruction path -- keeps returning the same values for a
-    /// <c>GenerateRandomSeries</c> request shorter than its training window after the M5 fix as it
-    /// did before it. Clamping <c>forecastSteps</c> to zero does not change any value the caller
-    /// can observe for this request: the shared recursion is forward-only, so step <c>t</c> in the
-    /// clamped (full-training-length) call is identical to step <c>t</c> in the unclamped
-    /// (shorter, would-be-negative-forecast) call for every <c>t &lt; timeSteps</c>.
+    /// <c>GenerateRandomSeries</c> request shorter than its training window after the
+    /// forecast-step clamp as it did before it. Clamping <c>forecastSteps</c> to zero does not
+    /// change any value the caller can observe for this request: the shared recursion is
+    /// forward-only, so step <c>t</c> in the clamped (full-training-length) call is identical to
+    /// step <c>t</c> in the unclamped (shorter, would-be-negative-forecast) call for every
+    /// <c>t &lt; timeSteps</c>.
     /// </summary>
     [TestMethod]
     public void AutoRegressive_GenerateRandomSeriesShorterThanTrainingWindow_MatchesZeroForecastPredict()
@@ -110,7 +110,7 @@ public class TimeSeriesForecastStepsGuardTests
     /// <summary>
     /// Regression guard: a MovingAverage(1) model -- an undifferenced model, d = 0 -- keeps
     /// returning the same values for a <c>GenerateRandomSeries</c> request shorter than its
-    /// training window after the M5 fix as it did before it.
+    /// training window after the forecast-step clamp as it did before it.
     /// </summary>
     [TestMethod]
     public void MovingAverage_GenerateRandomSeriesShorterThanTrainingWindow_MatchesZeroForecastPredict()

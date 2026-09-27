@@ -1356,7 +1356,8 @@ public class MixtureModelTests
     /// <remarks>
     /// <see cref="MixtureModel.TryGetPhysicalParameters"/> is now public so the App's parameter-sets
     /// table and the API's results mapper can share this exact rule instead of re-deriving it
-    /// (Task 3.7 / finding M6). This pins the same numeric points the App and API tests use.
+    /// (the App's former copy lacked the core's simplex-boundary clamp). This pins the same
+    /// numeric points the App and API tests use.
     /// </remarks>
     [TestMethod]
     public void Test_TryGetPhysicalParameters_PublicSurface_MatchesKnownPoints()
@@ -1451,7 +1452,7 @@ public class MixtureModelTests
     /// (full-K, no weight coordinate) vector to itself.
     /// </summary>
     /// <remarks>
-    /// Pinning test for a regression the opus review caught in commit a12ba57: gating the private
+    /// Pinning test for a regression introduced in commit a12ba57: gating the private
     /// expansion helper behind <see cref="MixtureModel.IsSampledWeightVectorLength"/> rejected
     /// every K = 1 input, because the predicate's <c>Distributions.Length &gt; 1</c> guard is
     /// unconditional while base's unconditional call to that helper accepted a length-D vector

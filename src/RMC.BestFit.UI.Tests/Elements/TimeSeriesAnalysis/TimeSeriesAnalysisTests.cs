@@ -903,7 +903,7 @@ public class TimeSeriesAnalysisTests
     }
 
     // -----------------------------------------------------------------------------------------
-    // Task 3.19 (finding L14): when Open's layout guard replaces a saved parameter vector that no
+    // Parameter-layout warning: when Open's layout guard replaces a saved parameter vector that no
     // longer fits the covariates that resolved (for example, a covariate series missing from the
     // project), the saved results are not restored and a warning is shown. Fixtures are real
     // SQLite rows opened through Open(); the saved draws are synthetic, so no sampler runs.
@@ -918,8 +918,8 @@ public class TimeSeriesAnalysisTests
     /// The saved draws have the one-covariate model's dimension, but only the response resolves, so
     /// the layout guard rebuilds a covariate-free default vector. Restored next to that vector, the
     /// draws would make a later point-estimator reprocess fail on the length mismatch. The row also
-    /// carries a true pre-v2.0.1 marker, which would raise the Task 2.9 warning had the results been
-    /// restored.
+    /// carries a true pre-v2.0.1 marker, which would raise the pre-v2.0.1 results warning had the
+    /// results been restored.
     /// </remarks>
     [STATestMethod]
     public void Open_SavedParametersNoLongerFitCovariates_WarnsAndSkipsSavedResults()
@@ -948,7 +948,7 @@ public class TimeSeriesAnalysisTests
             Assert.IsNull(analysis.BayesianAnalysis.Results, "The saved draws must not be restored.");
             Assert.IsNull(analysis.AnalysisResults, "The saved uncertainty results must not be restored.");
             Assert.IsFalse(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
-                "No results were restored, so the pre-v2.0.1 marker must not raise the Task 2.9 warning.");
+                "No results were restored, so the pre-v2.0.1 marker must not raise the pre-v2.0.1 results warning.");
 
             Assert.AreEqual(4321, analysis.BayesianAnalysis.Iterations, "The saved Bayesian settings are still restored.");
             Assert.AreEqual(777, analysis.BayesianAnalysis.PRNGSeed, "The saved Bayesian settings are still restored.");
@@ -991,7 +991,7 @@ public class TimeSeriesAnalysisTests
             Assert.IsNotNull(analysis.AnalysisResults, "The saved uncertainty results are restored as before.");
             Assert.AreEqual(analysis.TimeSeriesData.TimeSeries.Count + 3, analysis.AnalysisResults.ModeCurve!.Length);
             Assert.IsTrue(MessengerHas(analysis, "TSA-WRN-LEGACY-TRANSFORM"),
-                "The restored results carry the pre-v2.0.1 marker, so the Task 2.9 warning shows as before.");
+                "The restored results carry the pre-v2.0.1 marker, so the pre-v2.0.1 results warning shows as before.");
             Assert.AreEqual(4321, analysis.BayesianAnalysis.Iterations);
             Assert.AreEqual(777, analysis.BayesianAnalysis.PRNGSeed);
             Assert.AreEqual(BayesianAnalysis.PointEstimateType.PosteriorMode, analysis.BayesianAnalysis.PointEstimator);
@@ -1006,7 +1006,8 @@ public class TimeSeriesAnalysisTests
 
     /// <summary>
     /// Verifies the layout warning is never duplicated and that saving the element writes neither a
-    /// true pre-v2.0.1 marker nor anything that raises the Task 2.9 warning on the next open.
+    /// true pre-v2.0.1 marker nor anything that raises the pre-v2.0.1 results warning on the next
+    /// open.
     /// </summary>
     /// <remarks>
     /// Opening the same element again from the unchanged row, with the covariate still missing, shows
@@ -1047,7 +1048,7 @@ public class TimeSeriesAnalysisTests
 
             Assert.IsFalse(reopened.IsEstimated);
             Assert.IsFalse(MessengerHas(reopened, "TSA-WRN-LEGACY-TRANSFORM"),
-                "The saved row carries no results and a false marker, so the Task 2.9 warning must not appear.");
+                "The saved row carries no results and a false marker, so the pre-v2.0.1 results warning must not appear.");
             Assert.AreEqual(0, MessengerCount(reopened, "TSA-WRN-LAYOUT"),
                 "The saved default parameters fit the saved covariates, so the reopened analysis must not warn.");
         }
@@ -1324,8 +1325,8 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
-    /// Builds and opens a time-series analysis for the Task 3.19 tests: its saved row holds a
-    /// one-covariate ARIMAX model with MCMC and uncertainty results of that model's dimension.
+    /// Builds and opens a time-series analysis for the parameter-layout tests: its saved row holds
+    /// a one-covariate ARIMAX model with MCMC and uncertainty results of that model's dimension.
     /// </summary>
     /// <param name="path">The temporary <c>.bestfit</c> file backing the isolated project.</param>
     /// <param name="analysisName">The analysis name, unique per test.</param>
@@ -1337,10 +1338,11 @@ public class TimeSeriesAnalysisTests
     /// <param name="savedParameterCount">The parameter count of the saved model and of every saved draw.</param>
     /// <returns>The freshly constructed analysis, already opened from the fixture.</returns>
     /// <remarks>
-    /// The row also stores a true pre-v2.0.1 results marker, so restored results raise the Task 2.9
-    /// warning, and non-default Bayesian settings (4321 iterations, seed 777, posterior mode) and
-    /// three forecast steps, so a test can tell which saved state Open kept. The draws are small
-    /// deterministic perturbations of the model's default values; no sampler runs.
+    /// The row also stores a true pre-v2.0.1 results marker, so restored results raise the
+    /// pre-v2.0.1 results warning, and non-default Bayesian settings (4321 iterations, seed 777,
+    /// posterior mode) and three forecast steps, so a test can tell which saved state Open kept.
+    /// The draws are small deterministic perturbations of the model's default values; no sampler
+    /// runs.
     /// </remarks>
     private static UI.TimeSeriesAnalysis BuildAndOpenLayoutMismatchFixture(
         string path, string analysisName, bool resolveCovariate, out int savedParameterCount)

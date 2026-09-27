@@ -244,9 +244,9 @@ namespace RMC.BestFit.Api.Tests.Mappers
         /// </summary>
         /// <remarks>
         /// <c>ResultsMapper.GetSampledParameterNames</c> is private, so it is reached here by
-        /// reflection (mirroring how the reviewer's own read-only A/B probe reached it) rather
-        /// than through <see cref="ResultsMapper.ToFrequencyResults"/>, which would additionally
-        /// require an unpopulated model to complete an unrelated async estimation step.
+        /// reflection rather than through <see cref="ResultsMapper.ToFrequencyResults"/>, which
+        /// would additionally require an unpopulated model to complete an unrelated async
+        /// estimation step.
         /// </remarks>
         [TestMethod]
         public void GetSampledParameterNames_UnpopulatedParametersWithStructuralKMinusOneLength_ReturnsEmptyWithoutThrowing()

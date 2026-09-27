@@ -432,7 +432,7 @@ public class SpatialGEVAnalysisTests
 
     /// <summary>
     /// Tests that Validate rejects <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/> combined
-    /// with spatial regression errors (B-6). The Godambe sensitivity matrix is the Hessian of the
+    /// with spatial regression errors. The Godambe sensitivity matrix is the Hessian of the
     /// observation log likelihood alone, which excludes the latent errors' Gaussian-process prior
     /// (<see cref="RMC.BestFit.Models.SpatialExtremes.SpatialGEV.PriorLogLikelihood"/>); every enabled
     /// error family's per-site latent errors are then perfectly confounded with that family's trend
@@ -459,7 +459,7 @@ public class SpatialGEVAnalysisTests
     /// <summary>
     /// Tests that Validate does not report the Godambe/spatial-errors restriction when
     /// <see cref="SpatialGEVUncertaintyMethod.GodambeSandwich"/> is selected but no spatial regression
-    /// errors are enabled: the B-6 intercept/latent-error confound does not exist without them.
+    /// errors are enabled: the intercept/latent-error confound does not exist without them.
     /// </summary>
     [TestMethod]
     public void Validate_GodambeSandwichWithoutSpatialRegressionErrors_DoesNotReportRestriction()
