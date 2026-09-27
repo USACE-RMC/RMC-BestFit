@@ -335,7 +335,6 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
 - Spatial GEV validation: Spatial GEV analysis validation now rejects
   the Godambe sandwich uncertainty method combined with spatial regression errors, a combination
   that always failed after the MCMC run.
-
 - NuGet package: `RMC.BestFit` now ships its XML documentation file (`lib/net10.0/RMC.BestFit.xml`),
   so IntelliSense shows the library's summaries, parameter descriptions, and remarks (the 2.0.0
   package shipped without it).
@@ -581,6 +580,13 @@ information-criteria and PSIS-LOO entries above).
   update check, which asks again; answer Yes to the second prompt as well to download and install
   the update. The single-prompt fix needs RMC.Wpf.Framework 1.0.5, which is not yet published;
   this release stays on Framework 1.0.4.
+- Sharing projects with RMC-BestFit 2.0.0: version 2.0.0 opens projects saved by 2.0.1, but teams
+  that share projects should upgrade together. A mixture analysis estimated in 2.0.1 stores its
+  weight posterior with one fewer free weight than components (the shipped mixture example
+  already does); 2.0.0 shows its saved results but cannot recompute them, so changing that
+  analysis's credible-interval width, point estimator, or probability ordinates in 2.0.0 clears
+  its results. Version 2.0.0 also reopens time-series analyses with covariates at default
+  coefficients, the defect 2.0.1 fixes (see the time-series section).
 - Spatial GEV (library): after `RunAsync` with an uncertainty method other than the Bayesian
   posterior, a reprocess (for example after the probability ordinates change) rebuilds the
   results from the posterior without re-applying the selected method; re-run the analysis after
