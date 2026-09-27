@@ -731,6 +731,8 @@ public class TimeSeriesConditioningOrderTests
     /// <remarks>
     /// The transform is set before the response is attached and the covariate is attached last,
     /// so a model with a covariate reaches its conditioning order only when the covariate is added.
+    /// Attaching the response turns the default training window back on, so the manual window is
+    /// selected after it; otherwise attaching the covariate would recompute the default window.
     /// </remarks>
     private static ARIMAX CreateArimax(
         double[] raw,
@@ -751,10 +753,10 @@ public class TimeSeriesConditioningOrderTests
             MAOrderQ = maOrder,
             XOrderB = covariateLagOrder,
             CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
-            UseDefaultTrainingSteps = false,
             TransformType = transform,
         };
         model.TimeSeries = CreateSeries(raw);
+        model.UseDefaultTrainingSteps = false;
         model.TrainingTimeSteps = trainingSteps ?? raw.Length;
         if (covariate != null)
             model.SetCovariates(new List<NumericTimeSeries> { CreateSeries(covariate) });

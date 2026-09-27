@@ -480,6 +480,9 @@ namespace RMC.BestFit.UI
                 {
                     _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries());
                     RefreshModelUndoBaseline();
+                    // The covariates move the default window's floor; SetCovariates does not
+                    // raise the window, so refresh its display here.
+                    RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
 
                 RaisePropertyChange(nameof(Covariates));
@@ -550,7 +553,7 @@ namespace RMC.BestFit.UI
         /// </remarks>
         [Category("Output")]
         [DisplayName("Training Time Steps")]
-        [Description("Number of time steps used to fit the model. Must be at least max(10, parameter count) and no greater than the observed series length.")]
+        [Description("Number of time steps, counted from the start of the series, used to fit the model; the remaining observed steps are held out. It must not exceed the observed series length, must be at least the number of parameters, and after differencing must exceed the conditioning order. Editing it turns off Use Default Training Steps.")]
         [Browsable(true)]
         public int TrainingTimeSteps
         {
@@ -574,17 +577,18 @@ namespace RMC.BestFit.UI
         }
 
         /// <summary>
-        /// Gets or sets whether the training time steps are automatically set to 80% of the observed series length.
+        /// Gets or sets whether the training time steps are set automatically: 80% of the observed
+        /// series, but at least d + K + k + 10 steps.
         /// </summary>
         /// <remarks>
         /// Lightweight delegating wrapper over <see cref="ARIMAX.UseDefaultTrainingSteps"/>. When
-        /// flipped to <c>true</c>, the model recomputes <see cref="TrainingTimeSteps"/> via the
-        /// 80% rule and fires its own <c>PropertyChanged</c>. Undo-redo is handled by the
+        /// flipped to <c>true</c>, the model recomputes <see cref="TrainingTimeSteps"/> by the
+        /// default rule and fires its own <c>PropertyChanged</c>. Undo-redo is handled by the
         /// <c>ModelUndoProperties</c> XElement-snapshot mechanism.
         /// </remarks>
         [Category("Output")]
         [DisplayName("Use Default Training Steps")]
-        [Description("When true, training time steps are automatically set to 80% of the observed series length (with a minimum floor of max(10, parameter count)).")]
+        [Description("When true, the training window is set automatically to 80% of the observed series, but to at least d + K + k + 10 steps (d the differencing order, K the conditioning order max(p, q), or max(q, p + b) with covariates, and k the number of parameters), which leaves ten residual degrees of freedom. A series shorter than that is too short for the model; use fewer parameters or a longer series. Turn it off to set Training Time Steps yourself.")]
         [Browsable(true)]
         public bool UseDefaultTrainingSteps
         {
@@ -879,6 +883,9 @@ namespace RMC.BestFit.UI
             // Sync covariates to inner analysis model
             _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries());
             RefreshModelUndoBaseline();
+            // The covariates move the default window's floor; SetCovariates does not raise the
+            // window, so refresh its display here.
+            RaisePropertyChange(nameof(TrainingTimeSteps));
             SetIsValid();
             // Guard against undo replay: clearing the fit on replay-driven CollectionChanged
             // produces asymmetric undo (the UI wrapper consistency rule).
@@ -927,6 +934,9 @@ namespace RMC.BestFit.UI
             // Sync covariates to inner analysis model
             _innerAnalysis.ARIMAX.SetCovariates(GetCovariateTimeSeries());
             RefreshModelUndoBaseline();
+            // The covariates move the default window's floor; SetCovariates does not raise the
+            // window, so refresh its display here.
+            RaisePropertyChange(nameof(TrainingTimeSteps));
             SetIsValid();
             // Guard against undo replay (same rationale as Covariates_CollectionChanged above).
             if (!UndoManager.IsExecutingAction)
@@ -1811,6 +1821,10 @@ namespace RMC.BestFit.UI
             RaisePropertyChange(nameof(IsEstimated));
             RaisePropertyChange(nameof(AnalysisResults));
             RaisePropertyChange(nameof(ForecastSteps));
+            // The restored snapshot can carry another training window (a structural edit moves the
+            // default window), and the wrapper's window bindings watch these names.
+            RaisePropertyChange(nameof(TrainingTimeSteps));
+            RaisePropertyChange(nameof(UseDefaultTrainingSteps));
             SetIsValid();
             SetIsDirty(true);
         }

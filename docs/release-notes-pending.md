@@ -467,6 +467,26 @@ information-criteria and PSIS-LOO entries above).
   negative when the model already fails validation (`TrainingTimeSteps` greater than the response
   length); `RunAsync` refuses to run such a model, so this path is not reachable from a normally
   validated project.
+- Default training window (approved 26 September 2026): with Use Default Training Steps
+  (`UseDefaultTrainingSteps`) on, AR, MA, ARIMA, and ARIMAX models now train on 80% of the series
+  but on at least `d + K + k + 10` steps, where `d` is the differencing order, `K` the
+  conditioning order (AR `p`; MA 0; ARIMA `max(p, q)`; ARIMAX `max(p, q)`, or `max(q, p + b)` with
+  covariates), and `k` the number of estimated parameters, so every default fit keeps at least ten
+  residual degrees of freedom. The former window, the largest of 30 steps, the number of
+  parameters, and 80% of the series, made every series of 10 to 29 values fail validation under
+  the default settings; now, for example, AR(1) with an intercept validates from 14 values, MA(1)
+  from 13, and ARIMA(1,1,1) with an intercept from 16. A series shorter than the minimum is too
+  short for the model, and validation names the minimum. New analyses of a 30- to 37-value series
+  now train on 80% of it (24 to 29 steps) instead of 30. The default window is also recomputed
+  when the orders, intercept, trend, seasonality, or covariates change (formerly only when the
+  series changed). Opening, copying, and undoing keep the saved window; a default window saved by
+  2.0.0 that is longer than its series (any series under 30 values) still fails validation until
+  Use Default Training Steps is turned off and on again. Manual windows keep their existing
+  checks. Library callers: assigning `TrainingTimeSteps` does not turn `UseDefaultTrainingSteps`
+  off, so a window assigned while the default rule is on is now replaced at the next structural
+  change as well as at the next series change; turn the default rule off after attaching the
+  series (attaching a series turns it back on) to keep a manual window, as the desktop
+  application and the REST API do.
 
 ## RMC.Numerics (since 2.1.4)
 
@@ -594,15 +614,6 @@ information-criteria and PSIS-LOO entries above).
   time series, switching the source to another series, and processing again, undoing twice can
   restore the first series' peaks with the second series' exposure. Run the extraction again
   after such an undo.
-- Short time series (unchanged since 2.0.0): the default training window is the largest of 30
-  steps, the number of parameters, and 80% of the series, so a series of 10 to 29 values fails
-  validation under the default training settings. Turn off the default training steps
-  (`UseDefaultTrainingSteps`) and set the training window (`TrainingTimeSteps`) no longer than the
-  series. AR, MA, and ARIMAX models also need at least as many training steps as parameters, and
-  ARIMA and ARIMAX models need more training steps after differencing (`TrainingTimeSteps - d`)
-  than the conditioning order (`max(p, q)`, or `max(q, p + b)` for ARIMAX with covariates); for
-  example, a model with `p = 2`, `d = 2`, `q = 0`, an intercept, and no other terms has four
-  parameters but needs at least five training steps.
 - Save prompt after an automatic repair: opening a project in which RMC-BestFit repairs or
   migrates an element (for example the plotting-position repair described above) does not mark
   the project as changed, so there is no prompt to save the repair. Save the project after

@@ -2224,6 +2224,37 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies that an AR-order change that moves the default training window is one undo step,
+    /// and that undo and redo restore the order together with its window.
+    /// </summary>
+    /// <remarks>
+    /// On a 20-step series the default window is max(d + K + k + 10, floor(0.8 * 20)): 16 for
+    /// AR(1) and 3 + 5 + 10 = 18 for AR(3). The order setter rebuilds the window before it
+    /// notifies and raises the window afterwards, so the undo step recorded on the order's
+    /// notification already holds the new window and the later window notification adds none.
+    /// </remarks>
+    [STATestMethod]
+    public void AROrderChange_ThatMovesTheDefaultWindow_IsOneUndoStepRestoringBoth()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("WindowUndoTSA", _collection!);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("WindowUndoResponse", 20, TimeInterval.OneYear, new DateTime(1990, 1, 1));
+        Assert.AreEqual(16, tsa.ARIMAX.TrainingTimeSteps, "Precondition: the AR(1) default window.");
+        int undoDepth = tsa.UndoManager.UndoStack.Count;
+
+        tsa.ARIMAX.AROrderP = 3;
+
+        Assert.AreEqual(18, tsa.ARIMAX.TrainingTimeSteps, "AR(3) default window.");
+        Assert.AreEqual(undoDepth + 1, tsa.UndoManager.UndoStack.Count, "One edit records one undo step.");
+        Assert.AreEqual("Change AROrderP", tsa.UndoManager.UndoDescription);
+        tsa.UndoManager.Undo();
+        Assert.AreEqual(1, tsa.ARIMAX.AROrderP);
+        Assert.AreEqual(16, tsa.ARIMAX.TrainingTimeSteps, "Undo restores the AR(1) window.");
+        tsa.UndoManager.Redo();
+        Assert.AreEqual(3, tsa.ARIMAX.AROrderP);
+        Assert.AreEqual(18, tsa.ARIMAX.TrainingTimeSteps, "Redo restores the AR(3) window.");
+    }
+
+    /// <summary>
     /// Verifies that turning default flat priors on is an undoable step: undo restores the flag
     /// and the custom covariate prior, and redo restores the rebuilt default prior.
     /// </summary>

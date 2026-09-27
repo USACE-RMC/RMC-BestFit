@@ -451,10 +451,12 @@ public class TimeSeriesIndependentOracleTests
             MAOrderQ = 0,
             XOrderB = 0,
             CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
-            UseDefaultTrainingSteps = false,
             TransformType = Transform.Logarithmic,
         };
         arimax.TimeSeries = CreateDailySeries(logarithmic, startDate);
+        // Attaching the response turns the default training window back on; turn it off before
+        // the manual window, or attaching the covariate would recompute the default window.
+        arimax.UseDefaultTrainingSteps = false;
         arimax.TrainingTimeSteps = 3;
         arimax.SetCovariates(new List<Numerics.Data.TimeSeries>
         {

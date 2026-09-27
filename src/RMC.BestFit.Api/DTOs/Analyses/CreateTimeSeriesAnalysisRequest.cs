@@ -119,7 +119,9 @@ namespace RMC.BestFit.Api.DTOs
 
         /// <summary>
         /// Optional number of time steps used for training (the remainder validates the fit).
-        /// Leave null for the model default (80% of the series).
+        /// Leave null for the model default: 80% of the series, but at least d + K + k + 10 steps
+        /// (the differencing order, the conditioning order, and ten more fitted steps than the k
+        /// parameters). A series shorter than that minimum fails validation under the default.
         /// </summary>
         [Range(1, int.MaxValue)]
         [JsonPropertyName("trainingTimeSteps")]

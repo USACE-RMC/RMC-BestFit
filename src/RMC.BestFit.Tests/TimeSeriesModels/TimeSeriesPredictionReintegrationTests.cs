@@ -342,6 +342,10 @@ public class TimeSeriesPredictionReintegrationTests
     /// <param name="maOrder">The MA order.</param>
     /// <param name="includeIntercept">Whether to include the intercept before the covariate parameter.</param>
     /// <returns>The configured model.</returns>
+    /// <remarks>
+    /// Attaching the response turns the default training window back on, so the manual window is
+    /// selected after it; otherwise attaching the covariate would recompute the default window.
+    /// </remarks>
     private static ARIMAX CreateArimax(
         double[] raw,
         double[] covariate,
@@ -360,10 +364,10 @@ public class TimeSeriesPredictionReintegrationTests
             MAOrderQ = maOrder,
             XOrderB = 0,
             CovariateExtension = ARIMAX.CovariateExtensionMethod.None,
-            UseDefaultTrainingSteps = false,
             TransformType = transform,
         };
         model.TimeSeries = CreateSeries(raw);
+        model.UseDefaultTrainingSteps = false;
         model.TrainingTimeSteps = trainingSteps ?? raw.Length;
         model.SetCovariates(new List<NumericTimeSeries> { CreateSeries(covariate) });
         return model;

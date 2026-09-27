@@ -1395,17 +1395,22 @@ public class ARIMAXTests
     #region Edge Cases
 
     /// <summary>
-    /// Tests that the model validation fails when time series is too short.
-    /// ARIMAX models require sufficient observations for parameter estimation.
+    /// Tests that the model validation fails when the time series is shorter than the default
+    /// training window the model needs.
     /// </summary>
+    /// <remarks>
+    /// AR(3) with an intercept has k = 5 parameters and conditioning order K = 3, so the default
+    /// window needs at least 3 + 5 + 10 = 18 steps; the fixture has 15.
+    /// </remarks>
     [TestMethod]
     public void Test_ARIMAX_ShortTimeSeries_FailsValidation()
     {
         var ts = CreateShortTimeSeries();
-        var model = new ARIMAX(ts);
+        var model = new ARIMAX(ts) { AROrderP = 3 };
 
-        var (isValid, _) = model.Validate();
+        var (isValid, messages) = model.Validate();
         Assert.IsFalse(isValid, "Short time series should fail validation for ARIMAX.");
+        Assert.IsTrue(messages.Any(m => m.Contains("needs at least 18 training steps")), string.Join(" | ", messages));
     }
 
     /// <summary>

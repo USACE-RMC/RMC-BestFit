@@ -209,6 +209,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the AR order (p).
         /// </summary>
+        /// <remarks>
+        /// The order enters the default training window's floor d + max(p, q) + k + 10, so the
+        /// default window is recomputed when it is in use; <see cref="TrainingTimeSteps"/> is raised
+        /// after the order.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("AR Order (p)")]
         [Description("The number of lagged values used in the autoregression.")]
@@ -221,9 +226,12 @@ namespace RMC.BestFit.Models
                 if (_pOrder != value)
                 {
                     _pOrder = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
                     RaisePropertyChange(nameof(POrder));
                     SetTrainingData();
                     SetDefaultParameters();
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -231,6 +239,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the differencing order (d).
         /// </summary>
+        /// <remarks>
+        /// The order enters the default training window's floor d + max(p, q) + k + 10, so the
+        /// default window is recomputed when it is in use; <see cref="TrainingTimeSteps"/> is raised
+        /// after the order.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Differencing Order (d)")]
         [Description("The order of differencing applied to achieve stationarity.")]
@@ -243,9 +256,12 @@ namespace RMC.BestFit.Models
                 if (_dOrder != value)
                 {
                     _dOrder = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
                     SetTrainingData();
                     RaisePropertyChange(nameof(DOrder));
                     SetDefaultParameters();
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -253,6 +269,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the MA order (q).
         /// </summary>
+        /// <remarks>
+        /// The order enters the default training window's floor d + max(p, q) + k + 10, so the
+        /// default window is recomputed when it is in use; <see cref="TrainingTimeSteps"/> is raised
+        /// after the order.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("MA Order (q)")]
         [Description("The number of lagged error terms used in the moving average.")]
@@ -265,9 +286,12 @@ namespace RMC.BestFit.Models
                 if (_qOrder != value)
                 {
                     _qOrder = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
                     RaisePropertyChange(nameof(QOrder));
                     SetTrainingData();
                     SetDefaultParameters();
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -275,6 +299,11 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets whether to include an intercept.
         /// </summary>
+        /// <remarks>
+        /// The intercept is one of the k parameters in the default training window's floor
+        /// d + max(p, q) + k + 10, so the default window is recomputed when it is in use;
+        /// <see cref="TrainingTimeSteps"/> is raised after the intercept.
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Include Intercept")]
         [Description("Determines whether to include an intercept term.")]
@@ -287,8 +316,13 @@ namespace RMC.BestFit.Models
                 if (_includeIntercept != value)
                 {
                     _includeIntercept = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
                     RaisePropertyChange(nameof(IncludeIntercept));
+                    if (windowChanged)
+                        SetTrainingData();
                     SetDefaultParameters();
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -345,6 +379,12 @@ namespace RMC.BestFit.Models
         /// <summary>
         /// Gets or sets the number of time steps used for training.
         /// </summary>
+        /// <remarks>
+        /// Assigning a value leaves <see cref="UseDefaultTrainingSteps"/> unchanged. While it is on,
+        /// the default rule recomputes the window whenever the series or the model structure
+        /// changes, so turn it off to keep a manual window, after attaching the series (attaching a
+        /// series turns it back on).
+        /// </remarks>
         [Category("Inputs")]
         [DisplayName("Training Time Steps")]
         [Description("The number of time steps used for training. Training begins at the start of the time series.")]
@@ -366,11 +406,12 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Gets or sets whether to use default training steps (80% of data).
+        /// Gets or sets whether to use the default training window: 80% of the series, but at least
+        /// d + max(p, q) + k + 10 steps.
         /// </summary>
         [Category("Inputs")]
         [DisplayName("Use Default Training Steps")]
-        [Description("If true, uses 80% of data for training. If false, uses TrainingTimeSteps value.")]
+        [Description("If true, trains on 80% of the series, but on at least d + max(p, q) + k + 10 steps (d the differencing order, p and q the AR and MA orders, k the number of parameters), leaving ten residual degrees of freedom; a series shorter than that is too short for the model. If false, uses the TrainingTimeSteps value.")]
         [Browsable(true)]
         public bool UseDefaultTrainingSteps
         {
@@ -433,15 +474,46 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Sets the default training steps to 80% of the data.
+        /// Sets the training window to the default: 80% of the series, but at least
+        /// d + max(p, q) + k + 10 steps.
         /// </summary>
+        /// <remarks>
+        /// The conditional likelihood scores T − d − max(p, q) of the T training steps, so the floor
+        /// leaves ten residual degrees of freedom after the k = <see cref="ExpectedParameterCount"/>
+        /// parameters. The window is not capped at the series length; <see cref="Validate"/> reports
+        /// a series too short for the model.
+        /// </remarks>
         private void SetDefaultTrainingSteps()
         {
             if (_timeSeries == null || _timeSeries.Count == 0) return;
-
-            int minSteps = Math.Max(30, Parameters?.Count ?? 0);
-            TrainingTimeSteps = Math.Max(minSteps, (int)Math.Floor(0.8 * _timeSeries.Count));
+            TrainingTimeSteps = DefaultTrainingWindow.Steps(_timeSeries.Count, DOrder, Math.Max(POrder, QOrder), ExpectedParameterCount);
         }
+
+        /// <summary>
+        /// Recomputes the default training window for the current structure without notifying.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true"/> when the default window is in use and changed; the caller then
+        /// rebuilds the training data and raises <see cref="TrainingTimeSteps"/>.
+        /// </returns>
+        /// <remarks>
+        /// Called by the structural setters, whose changes move the floor d + max(p, q) + k + 10. A
+        /// restored or cloned model assigns its saved window directly and never calls this.
+        /// </remarks>
+        private bool RefreshDefaultTrainingWindow()
+        {
+            if (!_useDefaultTrainingSteps || _timeSeries == null || _timeSeries.Count == 0) return false;
+            int steps = DefaultTrainingWindow.Steps(_timeSeries.Count, DOrder, Math.Max(POrder, QOrder), ExpectedParameterCount);
+            if (steps == _trainingTimeSteps) return false;
+            _trainingTimeSteps = steps;
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the number of parameters the current structure estimates: the intercept when it is
+        /// included, the AR and MA coefficients, and the scale.
+        /// </summary>
+        private int ExpectedParameterCount => (IncludeIntercept ? 1 : 0) + POrder + QOrder + 1;
 
         /// <summary>
         /// Restores the default training split when the model is attached to a different input series.
@@ -1332,7 +1404,7 @@ namespace RMC.BestFit.Models
             if (TrainingTimeSteps > TimeSeries.Count)
             {
                 isValid = false;
-                messages.Add("Error: Training time steps cannot exceed time series length.");
+                messages.Add(DefaultTrainingWindow.ExceedsSeriesMessage(UseDefaultTrainingSteps, TimeSeries.Count, DOrder, Math.Max(POrder, QOrder), ExpectedParameterCount));
             }
 
             int maxOrder = Math.Max(POrder, QOrder);

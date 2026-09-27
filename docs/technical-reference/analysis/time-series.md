@@ -43,6 +43,27 @@ data log-likelihood and WAIC/PSIS-LOO see the actual per-observation contributio
 missing or duplicate ARIMAX covariate timestamps invalidate
 evaluation; extra dates outside the required window are ignored.
 
+**Default training window.** With conditioning order $K$ ($p$ for AR, $0$ for MA, $\max(p,q)$
+for ARIMA and for ARIMAX without covariates, $\max(q,p+b)$ for ARIMAX with covariates), a
+$T$-step training window scores $n=T-d-K$ residuals. With $k$ estimated parameters (the scale
+included; a fitted transform exponent is preprocessing and is not counted) the residual degrees
+of freedom are $n-k$. When `UseDefaultTrainingSteps` is on, the window is
+
+$$
+T_{\text{default}}=\max\left(d+K+k+10,\ \left\lfloor 0.8\,N\right\rfloor\right), \tag{TS.2}
+$$
+
+so it trains on 80% of the $N$ observed steps but always leaves at least ten residual degrees of
+freedom, which also guarantees at least ten fitted steps. The window is not capped at $N$: a
+series shorter than $d+K+k+10$ is too short for the model under the default settings, and
+validation names that minimum. The default is recomputed when the series or the model structure
+changes (orders, intercept, trend, seasonality, covariates); opening, copying, cloning, or undoing
+keeps the saved window. Manual windows keep the checks $T\le N$, $T\ge k$ (AR, MA, ARIMAX), and
+$T-d>K$ (ARIMA, ARIMAX). The rule was approved by Haden Smith on 26 September 2026 and replaced
+$\max(30,k,\lfloor 0.8N\rfloor)$, under which every series shorter than 30 steps failed validation
+with the default settings. For example, AR(1) with an intercept ($k=3$, $K=1$) needs 14
+observations, MA(1) needs 13, ARIMA(1,1,1) with an intercept needs 16, and AR(10) needs 32.
+
 When the optional Jeffreys rule is enabled, each model adds the scale contribution
 $\log \pi_J(\sigma)=-\log(\sigma)$ for $\sigma>0$. Pointwise prior diagnostics classify this
 term as `JeffreysScalePrior`, separately from each parameter's configured marginal

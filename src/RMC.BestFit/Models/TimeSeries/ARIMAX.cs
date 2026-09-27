@@ -371,9 +371,10 @@ namespace RMC.BestFit.Models
         /// Gets or sets whether to include an intercept term (μ) in the model.
         /// </summary>
         /// <remarks>
-        /// The default parameters are rebuilt before the change is raised, so an observer that
-        /// snapshots the model on the notification sees a parameter layout that fits the new
-        /// structure.
+        /// The default training window (when it is in use, since the intercept is one of the k
+        /// parameters in its floor), the training data, and the default parameters are rebuilt
+        /// before the change is raised, so an observer that snapshots the model on the notification
+        /// sees a parameter layout that fits the new structure. A moved window is raised afterwards.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("Include Intercept")]
@@ -386,9 +387,17 @@ namespace RMC.BestFit.Models
             {
                 if (_includeIntercept != value)
                 {
+                    double previousLambda = _lambda;
                     _includeIntercept = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
+                    if (windowChanged)
+                        SetTrainingData(false);
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(IncludeIntercept));
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -397,9 +406,11 @@ namespace RMC.BestFit.Models
         /// Gets or sets whether to include a Fourier series seasonal component.
         /// </summary>
         /// <remarks>
-        /// The default parameters are rebuilt before the change is raised, so an observer that
-        /// snapshots the model on the notification sees a parameter layout that fits the new
-        /// structure.
+        /// The default training window (when it is in use, since the two seasonal coefficients are
+        /// among the k parameters in its floor), the training data, and the default parameters are
+        /// rebuilt before the change is raised, so an observer that snapshots the model on the
+        /// notification sees a parameter layout that fits the new structure. A moved window is
+        /// raised afterwards.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("Include Seasonality")]
@@ -412,9 +423,17 @@ namespace RMC.BestFit.Models
             {
                 if (_includeSeasonality != value)
                 {
+                    double previousLambda = _lambda;
                     _includeSeasonality = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
+                    if (windowChanged)
+                        SetTrainingData(false);
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(IncludeSeasonality));
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -423,9 +442,10 @@ namespace RMC.BestFit.Models
         /// Gets or sets the trend type (None, Linear, Quadratic, or Cubic).
         /// </summary>
         /// <remarks>
-        /// The default parameters are rebuilt before the change is raised, so an observer that
-        /// snapshots the model on the notification sees a parameter layout that fits the new
-        /// structure.
+        /// The default training window (when it is in use, since the trend coefficients are among the
+        /// k parameters in its floor), the training data, and the default parameters are rebuilt
+        /// before the change is raised, so an observer that snapshots the model on the notification
+        /// sees a parameter layout that fits the new structure. A moved window is raised afterwards.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("Trend Type")]
@@ -438,9 +458,17 @@ namespace RMC.BestFit.Models
             {
                 if (_trendType != value)
                 {
+                    double previousLambda = _lambda;
                     _trendType = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
+                    if (windowChanged)
+                        SetTrainingData(false);
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(TrendType));
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -449,9 +477,11 @@ namespace RMC.BestFit.Models
         /// Gets or sets the autoregressive order (p).
         /// </summary>
         /// <remarks>
-        /// The training data and default parameters are rebuilt before the change is raised, and a
-        /// refitted transform exponent is reported only after the rebuild, so an observer that
-        /// snapshots the model on either notification sees parameters built for the new order.
+        /// The default training window (when it is in use, since p enters its floor through the
+        /// conditioning order and the parameter count), the training data, and the default
+        /// parameters are rebuilt before the change is raised, and a refitted transform exponent is
+        /// reported only after the rebuild, so an observer that snapshots the model on either
+        /// notification sees parameters built for the new order. A moved window is raised last.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("AR Order (p)")]
@@ -466,11 +496,14 @@ namespace RMC.BestFit.Models
                 {
                     double previousLambda = _lambda;
                     _arOrderP = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
                     SetTrainingData(false);
                     SetDefaultParameters();
                     if (_lambda != previousLambda)
                         RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(AROrderP));
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -479,9 +512,11 @@ namespace RMC.BestFit.Models
         /// Gets or sets the differencing order (d) for achieving stationarity.
         /// </summary>
         /// <remarks>
-        /// The training data and default parameters are rebuilt before the change is raised, and a
-        /// refitted transform exponent is reported only after the rebuild, so an observer that
-        /// snapshots the model on either notification sees parameters built for the new order.
+        /// The default training window (when it is in use, since d enters its floor), the training
+        /// data, and the default parameters are rebuilt before the change is raised, and a refitted
+        /// transform exponent is reported only after the rebuild, so an observer that snapshots the
+        /// model on either notification sees parameters built for the new order. A moved window is
+        /// raised last.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("Diff Order (d)")]
@@ -496,11 +531,14 @@ namespace RMC.BestFit.Models
                 {
                     double previousLambda = _lambda;
                     _diffOrderD = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
                     SetTrainingData(false);
                     SetDefaultParameters();
                     if (_lambda != previousLambda)
                         RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(DiffOrderD));
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -509,9 +547,11 @@ namespace RMC.BestFit.Models
         /// Gets or sets the moving average order (q).
         /// </summary>
         /// <remarks>
-        /// The training data and default parameters are rebuilt before the change is raised, and a
-        /// refitted transform exponent is reported only after the rebuild, so an observer that
-        /// snapshots the model on either notification sees parameters built for the new order.
+        /// The default training window (when it is in use, since q enters its floor through the
+        /// conditioning order and the parameter count), the training data, and the default
+        /// parameters are rebuilt before the change is raised, and a refitted transform exponent is
+        /// reported only after the rebuild, so an observer that snapshots the model on either
+        /// notification sees parameters built for the new order. A moved window is raised last.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("MA Order (q)")]
@@ -526,11 +566,14 @@ namespace RMC.BestFit.Models
                 {
                     double previousLambda = _lambda;
                     _maOrderQ = value;
+                    bool windowChanged = RefreshDefaultTrainingWindow();
                     SetTrainingData(false);
                     SetDefaultParameters();
                     if (_lambda != previousLambda)
                         RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(MAOrderQ));
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -543,7 +586,10 @@ namespace RMC.BestFit.Models
         /// rebuilt before the change is raised, so an observer that snapshots the model on the
         /// notification sees a parameter layout and likelihood that fit the new lag order. With
         /// covariates the lag order enters the conditioning order max(q, p + b), which sets the
-        /// start of the Jacobian window; the transform exponent is kept.
+        /// start of the Jacobian window, and the parameter count, so both move the default training
+        /// window's floor. When that window is in use and moves, the training data is rebuilt for it
+        /// (refitting an automatic transform exponent from the new training prefix) and the window
+        /// is raised last; otherwise the transform exponent is kept.
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("X Order (b)")]
@@ -556,11 +602,24 @@ namespace RMC.BestFit.Models
             {
                 if (_xOrderB != value)
                 {
+                    double previousLambda = _lambda;
                     _xOrderB = value;
-                    RebuildTrainingCovariateAlignment();
-                    RefreshLogJacobianWindow();
+                    bool windowChanged = RefreshDefaultTrainingWindow();
+                    if (windowChanged)
+                    {
+                        SetTrainingData(false);
+                    }
+                    else
+                    {
+                        RebuildTrainingCovariateAlignment();
+                        RefreshLogJacobianWindow();
+                    }
                     SetDefaultParameters();
+                    if (_lambda != previousLambda)
+                        RaisePropertyChange(nameof(TransformLambda));
                     RaisePropertyChange(nameof(XOrderB));
+                    if (windowChanged)
+                        RaisePropertyChange(nameof(TrainingTimeSteps));
                 }
             }
         }
@@ -619,10 +678,18 @@ namespace RMC.BestFit.Models
         /// Gets or sets the number of time steps used for model training.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// The training data, and the default parameters when <see cref="UseDefaultFlatPriors"/> is
         /// on, are rebuilt before the change is raised, and a transform exponent refitted from the
         /// new training prefix is reported only after the rebuild, so an observer that snapshots
         /// the model on either notification sees parameters built for the new window.
+        /// </para>
+        /// <para>
+        /// Assigning a value leaves <see cref="UseDefaultTrainingSteps"/> unchanged. While it is on,
+        /// the default rule recomputes the window whenever the series, the model structure, or the
+        /// covariates change, so turn it off to keep a manual window, after attaching the series
+        /// (attaching a series turns it back on).
+        /// </para>
         /// </remarks>
         [Category("General")]
         [DisplayName("Training Time Steps")]
@@ -648,7 +715,8 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Gets or sets whether to automatically set training steps to 80% of available data.
+        /// Gets or sets whether to set the training window automatically: 80% of the series, but at
+        /// least d + K + k + 10 steps.
         /// </summary>
         /// <remarks>
         /// Turning the rule on recomputes <see cref="TrainingTimeSteps"/>, whose setter rebuilds the
@@ -658,7 +726,7 @@ namespace RMC.BestFit.Models
         /// </remarks>
         [Category("Inputs")]
         [DisplayName("Use Default Training Steps")]
-        [Description("Determines whether to automatically set training steps to 80% of the time series length (minimum 30 or parameter count).")]
+        [Description("Determines whether to set the training window automatically: 80% of the time series, but at least d + K + k + 10 steps (d the differencing order, K the conditioning order max(p, q), or max(q, p + b) with covariates, and k the number of parameters), leaving ten residual degrees of freedom. A series shorter than that is too short for the model.")]
         [Browsable(true)]
         public bool UseDefaultTrainingSteps
         {
@@ -703,9 +771,10 @@ namespace RMC.BestFit.Models
         /// <remarks>
         /// This is the response to a user changing the covariates: every parameter's value, bounds,
         /// and prior is rebuilt from the defaults, discarding custom priors regardless of
-        /// <see cref="ModelBase.UseDefaultFlatPriors"/>. Code that restores a saved, copied, or
-        /// undone model calls <see cref="SetCovariates(List{TimeSeries}, bool)"/> with
-        /// <c>resetParameters</c> set to <see langword="false"/> instead.
+        /// <see cref="ModelBase.UseDefaultFlatPriors"/>, and a default training window is
+        /// recomputed for the new parameter count and conditioning order. Code that restores a
+        /// saved, copied, or undone model calls <see cref="SetCovariates(List{TimeSeries}, bool)"/>
+        /// with <c>resetParameters</c> set to <see langword="false"/> instead.
         /// </remarks>
         public void SetCovariates(List<TimeSeries> covariates)
         {
@@ -737,14 +806,33 @@ namespace RMC.BestFit.Models
         /// before the change is raised. The transform exponent is kept, which preserves a restored
         /// exponent when a saved, copied, or undone model is reattached to its covariates.
         /// </para>
+        /// <para>
+        /// The covariates also change the parameter count k and the conditioning order K in the
+        /// default training window's floor d + K + k + 10. With <paramref name="resetParameters"/>
+        /// set to <see langword="true"/> and the default window in use, the window is recomputed
+        /// and the training data rebuilt for it, which refits an automatic transform exponent from
+        /// the new training prefix. Only <see cref="Covariates"/> is raised for that change, as
+        /// for the parameters rebuilt with it: an observer that snapshots the model on the
+        /// notifications it watches (the time-series analysis's undo recording) must not record
+        /// this step as a separate edit, so the caller refreshes displays of the window itself.
+        /// With <paramref name="resetParameters"/> set to <see langword="false"/> the saved window
+        /// is kept.
+        /// </para>
         /// </remarks>
         public void SetCovariates(List<TimeSeries> covariates, bool resetParameters)
         {
             DetachCovariateSubscriptions();
             _covariates = covariates;
             AttachCovariateSubscriptions();
-            RebuildTrainingCovariateAlignment();
-            RefreshLogJacobianWindow();
+            if (resetParameters && RefreshDefaultTrainingWindow())
+            {
+                SetTrainingData(false);
+            }
+            else
+            {
+                RebuildTrainingCovariateAlignment();
+                RefreshLogJacobianWindow();
+            }
             RaisePropertyChange(nameof(Covariates));
             if (resetParameters || NumberOfParameters != GetExpectedParameterCount())
                 SetDefaultParameters();
@@ -834,15 +922,43 @@ namespace RMC.BestFit.Models
         }
 
         /// <summary>
-        /// Sets the default number of training time steps to 80% of the series length.
+        /// Sets the training window to the default: 80% of the series, but at least d + K + k + 10
+        /// steps.
         /// </summary>
+        /// <remarks>
+        /// The conditional likelihood scores T − d − K of the T training steps, with K the
+        /// <see cref="ConditionalOrder"/>, so the floor leaves ten residual degrees of freedom after
+        /// the k parameters of <see cref="GetExpectedParameterCount"/>. The window is not capped at
+        /// the series length; <see cref="Validate"/> reports a series too short for the model.
+        /// </remarks>
         private void SetDefaultTrainingSteps()
         {
             if (_timeSeries == null || _timeSeries.Count == 0) return;
+            TrainingTimeSteps = DefaultTrainingWindow.Steps(_timeSeries.Count, DiffOrderD, ConditionalOrder, GetExpectedParameterCount());
+        }
 
-            // Use 80% for training, with minimum of 30 or parameter count
-            int minSteps = Math.Max(30, Parameters?.Count ?? 0);
-            TrainingTimeSteps = Math.Max(minSteps, (int)Math.Floor(0.8 * _timeSeries.Count));
+        /// <summary>
+        /// Recomputes the default training window for the current structure without notifying.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true"/> when the default window is in use and changed; the caller then
+        /// rebuilds the training data and raises <see cref="TrainingTimeSteps"/> after its own
+        /// notification.
+        /// </returns>
+        /// <remarks>
+        /// Called by the structural setters and by a covariate change that resets the parameters,
+        /// whose changes move the floor d + K + k + 10. Restoring a saved, copied, cloned, or undone
+        /// model keeps its saved window: the XML constructor and <see cref="Clone"/> assign it
+        /// directly, and <see cref="SetCovariates(List{TimeSeries}, bool)"/> with
+        /// <c>resetParameters</c> set to <see langword="false"/> does not call this.
+        /// </remarks>
+        private bool RefreshDefaultTrainingWindow()
+        {
+            if (!_useDefaultTrainingSteps || _timeSeries == null || _timeSeries.Count == 0) return false;
+            int steps = DefaultTrainingWindow.Steps(_timeSeries.Count, DiffOrderD, ConditionalOrder, GetExpectedParameterCount());
+            if (steps == _trainingTimeSteps) return false;
+            _trainingTimeSteps = steps;
+            return true;
         }
 
         /// <summary>
@@ -2434,7 +2550,9 @@ namespace RMC.BestFit.Models
             result._usePersistedTransformLambda = false;
             if (_covariates != null)
             {
-                result.SetCovariates(_covariates.Select(c => c.Clone()).ToList());
+                // A restore, not a user change: keep the source's training window, which a
+                // resetting call would recompute from the default rule.
+                result.SetCovariates(_covariates.Select(c => c.Clone()).ToList(), resetParameters: false);
             }
 
             // Assign the cloned parameters last: attaching the series and covariates above rebuilds
@@ -2509,7 +2627,7 @@ namespace RMC.BestFit.Models
             if (TrainingTimeSteps > TimeSeries.Count)
             {
                 isValid = false;
-                messages.Add("Error: Training time steps cannot exceed time series length.");
+                messages.Add(DefaultTrainingWindow.ExceedsSeriesMessage(UseDefaultTrainingSteps, TimeSeries.Count, DiffOrderD, ConditionalOrder, GetExpectedParameterCount()));
             }
 
             int effectiveRawTrainingSteps = Math.Min(TrainingTimeSteps, TimeSeries.Count);
