@@ -189,7 +189,7 @@ reported optimizer success from being mistaken for scientific recovery.
 ## Conclusion
 
 The eight recovery tests pass their declared parameter-uncertainty and forecast-recurrence rules.
-The sixteen independent calculation checks support the specified transformations, date alignment,
+The seventeen independent calculation checks support the specified transformations, date alignment,
 likelihoods, forecast boundaries, generators, and criteria. The available recovery results do not include
 a full table of BestFit estimates and credible intervals; external optima are therefore labelled
 as references throughout this chapter.

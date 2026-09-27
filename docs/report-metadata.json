@@ -27,10 +27,10 @@
     "document_id": "Pending assignment",
     "subtitle": "Statistical models, likelihoods, estimation, uncertainty, diagnostics, and scientific API traceability",
     "checkpoint": {
-      "publication_date_iso": "2026-09-22",
-      "publication_date_display": "22 September 2026",
-      "bestfit_version": "2.0.0",
-      "bestfit_commit": "3fa55a0f75bbd583e2fb7fce42180faa376f007c",
+      "publication_date_iso": "2026-09-27",
+      "publication_date_display": "27 September 2026",
+      "bestfit_version": "2.0.1",
+      "bestfit_commit": "9427bd27c1ed7d757fde5a37ce24b90a06f3c9ed",
       "numerics_source_commit": "7e8e8d1c5f26e045a35ec9fc09367de95ed05b02",
       "numerics_package_baseline": "2.2.0",
       "release_status": "Draft for external peer review - not for public release"
@@ -42,10 +42,10 @@
     "document_id": "Pending assignment",
     "subtitle": "Analytical checks, independent benchmarks, estimation recovery, and uncertainty diagnostics",
     "checkpoint": {
-      "publication_date_iso": "2026-09-21",
-      "publication_date_display": "21 September 2026",
-      "bestfit_version": "2.0.0",
-      "bestfit_commit": "8808f19f3bfa712241e55a0dfa47407ff5a60970",
+      "publication_date_iso": "2026-09-27",
+      "publication_date_display": "27 September 2026",
+      "bestfit_version": "2.0.1",
+      "bestfit_commit": "9427bd27c1ed7d757fde5a37ce24b90a06f3c9ed",
       "numerics_source_commit": "7e8e8d1c5f26e045a35ec9fc09367de95ed05b02",
       "numerics_package_baseline": "2.2.0",
       "release_status": "Draft for external peer review - not for public release"

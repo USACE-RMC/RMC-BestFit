@@ -3,7 +3,7 @@
 
 # Appendix A. Complete Verification Test Index
 
-The source inventory audited on 21 September 2026 contains **329 methods in 71 active test classes**. Every executable verification method appears exactly once below; helper methods are not counted as tests.
+The source inventory audited on 27 September 2026 contains **329 methods in 71 active test classes**. Every executable verification method appears exactly once below; helper methods are not counted as tests.
 
 The catalog records 327 methods as verified and 2 as accepted limitations. **Verified** identifies a check with a declared oracle, acceptance rule, and verified catalog disposition. Acceptance rules, sample sizes, seeds, oracle descriptions, artifact paths, and original evidence-ledger anchors remain in the [machine-readable catalog](../verification-catalog.json). The PDF embeds the current catalog as an attachment; its repository links identify the source-review baseline. Each method links to the source file containing its assertions, including partial classes.
 

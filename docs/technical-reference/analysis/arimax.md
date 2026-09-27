@@ -37,7 +37,7 @@ where bracketed blocks appear only when configured. Coefficients inherit the uni
 
 ## Likelihood and Prior
 
-Let $r=\max(q,p+b)$ when the model has covariates and $r=\max(p,q)$ when it has none; the covariate lag order has no role without covariates. Presample residuals and fitted residuals before $r$ are conditioned out. For every evaluated step $t\ge r$, the mean $m_t$ has all $b$ lagged covariate values, and each autoregressive-lag mean $m_{t-i}$, $i\le p$, also has them because $t-i\ge r-p\ge b$. Residual lags before $r$ fall inside the conditioned window, where the residuals are zero; because $r\ge q$, every residual lag used at step $r$ is at or after step 0. The truncation of pre-sample covariate lags described below therefore affects only conditioned steps, never an evaluated residual. For $t\ge r$,
+Let $r=\max(q,p+b)$ when the model has covariates and $r=\max(p,q)$ when it has none; the covariate lag order has no role without covariates. Presample residuals and fitted residuals before $r$ are conditioned out. For every evaluated step $t\ge r$, the mean $m_t$ has all $b$ lagged covariate values, and each autoregressive-lag mean $m_{t-i}$ with $i\le p$ also has them because $t-i\ge r-p\ge b$. Residual lags before $r$ fall inside the conditioned window, where the residuals are zero; because $r\ge q$, every residual lag used at step $r$ is at or after step 0. The truncation of pre-sample covariate lags described below therefore affects only conditioned steps, never an evaluated residual. For $t\ge r$,
 
 $$
 e_t=w_t-m_t-

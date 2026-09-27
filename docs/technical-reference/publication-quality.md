@@ -1,24 +1,42 @@
 # Technical Reference Publication-Quality Record
 
-**Completed:** 22 September 2026. **Scope:** Session 2, technical-reference Markdown, publication controls, and the finished PDF. This is an internal execution record, excluded from both report manifests. It records editorial and engineering acceptance for an external peer-review draft; it does not record external scientific approval.
+**Current edition:** 27 September 2026, prepared for the v2.0.1 release. **First completed:** 22 September 2026 (Session 2). **Scope:** technical-reference Markdown, publication controls, and the finished PDF. This is an internal execution record, excluded from both report manifests. It records editorial and engineering acceptance for an external peer-review draft; it does not record external scientific approval.
 
 ## Delivered artifact and reviewed source
 
 | Item | Final reviewed value |
 |---|---|
 | PDF | [`output/pdf/rmc-bestfit-technical-reference.pdf`](../../output/pdf/rmc-bestfit-technical-reference.pdf) |
-| SHA-256 | `c373529ac30d7ef114cd4b10bb579e79889d57cc32f2c847618a26be1fa013fc` |
-| Pages / chapters / bookmarks | 249 / 66 / 68 |
+| SHA-256 | `7558c031d724a4c6f9af633e258def26455ec626a1b48def1a3413c6987384c8` |
+| Pages / chapters / bookmarks | 250 / 66 / 68 |
 | Contents | Two pages, physical pages 2 and 3; all 66 chapter destinations have printed page numbers |
-| Mathematics | 1,940 source occurrences; 1,256 unique inline/display equations; 1,256 complete offline vector assets |
+| Mathematics | 1,978 source occurrences; 1,277 unique inline/display equations; 1,277 complete offline vector assets |
 | Bibliography | 84 deduplicated sources |
-| BestFit source checkpoint | `3fa55a0f75bbd583e2fb7fce42180faa376f007c` |
+| BestFit source checkpoint | `9427bd27c1ed7d757fde5a37ce24b90a06f3c9ed` |
 | Numerics source checkpoint | `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02` |
-| Version and dependency | BestFit 2.0.0; declared RMC.Numerics 2.2.0; validation used the sibling Numerics project |
+| Version and dependency | BestFit 2.0.1; validation built against the published RMC.Numerics 2.2.0 package, which was built from the Numerics checkpoint |
 | Branch | `documentation-verification-updates` |
 | Release status | Draft for external peer review - not for public release |
 
-The PDF identifies the production source reviewed, before this documentation-only commit. The commit containing this record and the PDF is available with `git log -1 -- docs/technical-reference/publication-quality.md`. Report-specific checkpoint overrides keep the technical HTML, cover, front matter, and PDF metadata consistent while preserving the verification report's separate checkpoint. Session 3 owns the version change and package-only release validation.
+The PDF identifies the production source reviewed, before this documentation-only commit. The commit containing this record and the PDF is available with `git log -1 -- docs/technical-reference/publication-quality.md`. Report-specific checkpoint overrides keep the technical HTML, cover, front matter, and PDF metadata consistent; in this edition both reports record the same checkpoint. The version change and package-mode validation are complete; the v2.0.1 edition section below records them.
+
+## v2.0.1 edition
+
+The 27 September 2026 rebuild replaces the reviewed 22 September artifact (SHA-256 `c373529ac30d7ef114cd4b10bb579e79889d57cc32f2c847618a26be1fa013fc`, 249 pages, BestFit checkpoint `3fa55a0f75bbd583e2fb7fce42180faa376f007c`). Three chapters changed in substance after that build, each with the production change it documents:
+
+- [analysis/time-series.md](analysis/time-series.md) documents the default training window, equation (TS.2), approved by Haden Smith on 26 September 2026 (TR-099), and the ARIMAX conditioning start.
+- [analysis/arimax.md](analysis/arimax.md) states the conditioning order max(q, p + b) with covariates and max(p, q) without (review decision D6, TR-066), its transform-Jacobian window, and the validation warning, rather than rejection, for trend or seasonality with differencing.
+- [appendices/verification-evidence.md](appendices/verification-evidence.md) counts 329 retained methods, 327 verified and two accepted limitations.
+
+The front matter records the 2.0.1 checkpoint and the package dependency. No other chapter source changed.
+
+The rebuilt PDF passed the same automated gates as the reviewed artifact: the PDF audit (metadata, 66 destinations in manifest order, 68 bookmarks, 398 internal and 109 external links, all internal destinations resolved, 55 commit-pinned repository targets present at the checkpoint, every printed page number, no horizontal text overflow or low-content pages); the MathJax 3.2.2 check (zero Markdown or MathJax failures and no equation missing from the PDF); the equation-asset guard in the build; the bibliography check; and the three navigation regression tests.
+
+Every page of the reviewed and rebuilt PDFs was rendered with Poppler 24.04 at 120 dpi and compared over rows 0-1,239 of each 1,320-pixel image, which keeps the body and running header and excludes only the footer. Of the 250 pages of the first rebuilt candidate, 186 exactly match a page of the reviewed artifact. The other 64 were inspected individually at full size: the cover (page 1), the second contents page (3), document control and revision record (4-5), and pages 187-250 other than 217, 240, 243 and 246, where the time-series changes reflowed every later page. Every consecutive page break in that range was read for continuity.
+
+The inspection found no lost or duplicated text, clipped or unnumbered equations, split table rows, stranded headings, or unexplained blank pages. It found two new typographic defects, both where Chromium broke a line at an inline-equation image: a line ending in an opening parenthesis in the default-window example (page 188) and a line beginning with a comma in the ARIMAX likelihood paragraph (page 201). Both sentences were reworded without changing their meaning. The final build differs from the inspected candidate only on those two pages, which were inspected again; its other 248 pages exactly match inspected pages.
+
+Layout patterns already present in the reviewed artifact remain and are left for the next edition: code-formatted identifiers break inside the word in narrow table columns (API traceability matrix and parameterization crosswalk); inline equations sit slightly below the text baseline; very wide display equations set their number on the following line; and a source line wrap after a hyphen prints "level- covariate" in the ARIMAX forecasting paragraph.
 
 ## Source, API, evidence, and editorial review
 
@@ -77,11 +95,11 @@ Every entry in `book-order.txt` was reviewed. In the table, **S/A/V/E complete**
 | 49 | [analysis/bivariate.md](analysis/bivariate.md) | S/A/V/E complete | Seven copulas, densities, tail dependence, IFM and fixed margins |
 | 50 | [analysis/coincident-frequency.md](analysis/coincident-frequency.md) | S/A/V/E complete | Joint event semantics, response integration and product-posterior propagation |
 | 51 | [analysis/rating-curve.md](analysis/rating-curve.md) | S/A/V/E complete | Discharge-measure likelihood, predictive versus latent bands, grid coverage |
-| 52 | [analysis/time-series.md](analysis/time-series.md) | S/A/V/E complete | Conditional sample by family, transforms, differencing and forecasting |
+| 52 | [analysis/time-series.md](analysis/time-series.md) | S/A/V/E complete | Conditional sample by family, default training window, transforms, differencing and forecasting |
 | 53 | [analysis/autoregressive.md](analysis/autoregressive.md) | S/A/V/E complete | AR conditioning from p, transformed residuals and prior terms |
 | 54 | [analysis/moving-average.md](analysis/moving-average.md) | S/A/V/E complete | Zero presample innovations and all residual contributions from index zero |
 | 55 | [analysis/arima.md](analysis/arima.md) | S/A/V/E complete | max(p,q) start, raw-index Jacobian and forecast reintegration |
-| 56 | [analysis/arimax.md](analysis/arimax.md) | S/A/V/E complete | max(p,q,b) window, dated regressors, lags and future covariates |
+| 56 | [analysis/arimax.md](analysis/arimax.md) | S/A/V/E complete | max(q, p + b) window with covariates and max(p, q) without, dated regressors, lags and future covariates |
 | 57 | [spatial/spatial-extremes.md](spatial/spatial-extremes.md) | S/A/V/E complete | Hierarchy, marginalization, distances, prediction and uncertainty dispatch |
 | 58 | [api-traceability.md](api-traceability.md) | S/A/V/E complete | Current public API mapping and claim-specific evidence |
 | 59 | [appendices/notation.md](appendices/notation.md) | S/A/V/E complete | Symbols, dimensions, probability conventions and local overrides |
@@ -89,7 +107,7 @@ Every entry in `book-order.txt` was reviewed. In the table, **S/A/V/E complete**
 | 61 | [appendices/glossary.md](appendices/glossary.md) | S/A/V/E complete | Consistent statistical and engineering terminology |
 | 62 | [appendices/implementation-source-index.md](appendices/implementation-source-index.md) | S/A/V/E complete | Current BestFit/Numerics sources and test ownership |
 | 63 | [distributions/verification-matrix.md](distributions/verification-matrix.md) | S/A/V/E complete | Formula, optimum, recovery and published-example acceptance rules |
-| 64 | [appendices/verification-evidence.md](appendices/verification-evidence.md) | S/A/V/E complete | 328-method inventory, two accepted limitations and retired-study separation |
+| 64 | [appendices/verification-evidence.md](appendices/verification-evidence.md) | S/A/V/E complete | 329-method inventory, two accepted limitations and retired-study separation |
 | 65 | [appendices/reviewer-checklist.md](appendices/reviewer-checklist.md) | S/A/V/E complete | Method-specific external review questions and evidence boundaries |
 | 66 | [appendices/bibliography.md](appendices/bibliography.md) | S/A/V/E complete | 84-source regeneration, deduplication and chapter backreferences |
 
@@ -103,17 +121,17 @@ An independent final-reference review found four important and two minor documen
 
 Canonical mathematics remains editable `$...$` and separate-line `$$` blocks. Code fences and inline code are protected, display boundaries have blank lines, table mathematics uses TeX delimiters that cannot split Markdown columns, and malformed or missing-backslash TeX was repaired without changing intended formulas.
 
-The maintained `scripts/validate-technical-reference-math.mjs` independently extracted all 1,940 occurrences and rendered all 1,256 unique expressions with **MathJax 3.2.2**. Results: zero Markdown failures, MathJax errors, missing equation mappings, broken images/fragments, nonportable local links, duplicate IDs, unrendered heading markup, or malformed table rows. The engine bundle was `tex-svg-full.js` from `https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js`, loaded locally. This is a compatibility check against the syntax documented in [GitHub's mathematics guidance](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions), not a claim to have inspected GitHub's published renderer. No push was performed.
+For the v2.0.1 edition, the maintained `scripts/validate-technical-reference-math.mjs` independently extracted all 1,978 occurrences and rendered all 1,277 unique expressions with **MathJax 3.2.2** (Session 2: 1,940 and 1,256). Results: zero Markdown failures, MathJax errors, missing equation mappings, broken images/fragments, nonportable local links, duplicate IDs, unrendered heading markup, or malformed table rows. The engine bundle was `tex-svg-full.js` from `https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg-full.js`, loaded locally. This is a compatibility check against the syntax documented in [GitHub's mathematics guidance](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions), not a claim to have inspected GitHub's published renderer. No push was performed.
 
 ### Offline PDF equations
 
 The separate publication path uses LaTeX **OT1** encoding and dvisvgm `--no-fonts --exact-bbox --page=1-`. Report-specific temporary directories prevent cross-report equation reuse. The builder clears only its generated `eq-*.svg` files, canonicalizes the resulting names, and runs the complete asset guard before Chromium printing; any missing or invalid asset is fatal.
 
-`scripts/validate-equation-assets.py` passed for the exact 1,256-asset set against the generated TeX preview blocks. It checked vector paths, local glyph references and absence of raster or font-dependent text. This directly guards against the earlier silent T1/EC loss of equation-number glyphs. All source equations were accounted for in the rendered document. Page inspection verified subscripts, superscripts, matrices, limits, equation numbers and black mathematical glyphs on light table headers. Plain-text extraction alone cannot establish equation correctness because the final equations are vector outlines.
+`scripts/validate-equation-assets.py` passed for the exact 1,277-asset set of the v2.0.1 build (Session 2: 1,256) against the generated TeX preview blocks. It checked vector paths, local glyph references and absence of raster or font-dependent text. This directly guards against the earlier silent T1/EC loss of equation-number glyphs. All source equations were accounted for in the rendered document. Page inspection verified subscripts, superscripts, matrices, limits, equation numbers and black mathematical glyphs on light table headers. Plain-text extraction alone cannot establish equation correctness because the final equations are vector outlines.
 
-## Page-level visual review and final PDF audit
+## Page-level visual review and final PDF audit (Session 2, 22 September artifact)
 
-Every page was rendered with Poppler at **120 dpi** and inspected as a readable individual page, with renewed inspection after changes. The review sequence is retained locally under `tmp/pdfs/technical-reference/`:
+This section records the full review of the 249-page artifact that the v2.0.1 page comparison uses as its baseline. Every page was rendered with Poppler at **120 dpi** and inspected as a readable individual page, with renewed inspection after changes. The review sequence is retained locally under `tmp/pdfs/technical-reference/`:
 
 1. The 251-page candidate (`90abc52ad88e18c62bd82a7ae89f8f39c2a6e15567c3b697524a23951bb2aac5`) was inspected page by page. Corrections addressed orphaned reference tails, equation context, long/short code-block breaks, and dense table widths.
 2. The 250-page candidate (`a88fc30187f5b2d4bdfd0cde4397a1dade8b989ec6e56a353678add43800bc49`) retained 189 exact body/header image matches; all 61 differing pages were inspected individually.
@@ -136,23 +154,28 @@ The final hash belongs to the artifact reviewed above. A rebuild may produce a d
 
 | Gate | Result |
 |---|---|
-| Core fast suite | 3,434 passed; zero failures/skips |
-| UI fast suite | 645 passed; zero failures/skips |
-| App fast suite | 444 passed; zero failures/skips |
-| API fast suite | 515 passed; zero failures/skips |
-| Total mandatory fast gate | **5,038 passed** |
+The table records the gates for the v2.0.1 edition at the checkpoint above.
+
+| Gate | Result |
+|---|---|
+| Core fast suite | 3,519 passed; zero failures/skips |
+| UI fast suite | 701 passed; zero failures/skips |
+| App fast suite | 450 passed; zero failures/skips |
+| API fast suite | 546 passed; zero failures/skips |
+| Total mandatory fast gate | **5,216 passed** |
 | Technical-reference documentation contracts | **10 passed**; metadata, manifest, links, exact compiled snippets, API/source traceability and references |
-| Strict Debug XML/build gate | **949 source files**, zero compiler/XML warnings or errors |
-| Verification catalog | **328 methods / execution units**, zero open gaps with `-RequireComplete` |
-| Complete verification index | **328 active methods / 56 retired records**, projection current |
+| Strict Debug XML/build gate | **972 source files**, zero compiler/XML warnings or errors |
+| Package-mode release gate | Clean restore from an empty package cache; RMC.Numerics 2.2.0 resolved in every project; zero-warning Release build; all four fast suites passed in Release; Verification compiled |
+| Verification catalog | **329 methods / execution units**, zero open gaps with `-RequireComplete` |
+| Complete verification index | **329 active methods / 56 retired records**, projection current |
 | Consolidated bibliography | **84 sources**, regeneration and `--check` passed |
 | PDF navigation regression tests | **3 passed**; multi-page contents, wrapped-link deduplication, repeated titles, missing anchors and slash-prefixed names |
 | Mathematics / final PDF audits | Passed separately as detailed above |
 | Final diff | Explicit path review and `git diff --check` passed |
 
-All .NET validation used **local-project Numerics 2.2.0**, not package-only release mode. The strict XML gate compiled Verification but **no numerical Verification method was executed**. No new source/API mismatch required an evidence rerun. Production C#, compiled example regions, reference data, tolerances, acceptance rules, active/retired catalogs and scientific algorithms are unchanged.
+Validation for this edition built against the **published RMC.Numerics 2.2.0 package**, not the sibling Numerics project. The strict XML gate compiled Verification, and the numerical Verification suite was not run. A static trace of the time-series Verification methods found four whose training window changes under the default-window rule; one fixture now turns the default window off after attaching its series, and all four passed in individual single-method runs on 26 September 2026. Session 2 recorded 5,038 fast tests, 949 XML-gated source files and 328 methods; those counts belong to the 22 September artifact.
 
-The verification report deliverable remains byte-identical at SHA-256 **`8c842772cafdcd60952a836dc2a8da2c65c4a03d597571a9383e313edc8e354c`**. A separate temporary finalization regression using the changed shared helper retained its 95 pages, 20 bookmarks, identical per-page text and named destinations, tagging, and identical catalog attachment. Its contents page was compared visually with the reviewed original. The report's Markdown and checkpoint were not revised. The unrelated Numerics `.github/workflows/Release.yml` modification was preserved.
+Both report PDFs were rebuilt for this edition at the same checkpoint; the verification report's own record gives its hash and page review.
 
 ## Explicit scientific qualifications
 
@@ -200,6 +223,6 @@ git diff --check
 
 Ignored local evidence includes `final-build.log`, `final-math-qa.json`, `final-pdf-qa.json`, `final-*-tests.log`, `xml-gate.log`, `catalog-gate.log`, `coverage-gate.log`, `verification-regression-qa.json`, `250-page-comparison.json`, `final-page-comparison.json`, and the `review-final-251`, `review-final-250`, `review-final-249`, and `review-dense-249` page images. These scratch files are not prerequisites for a clean-checkout build; this record preserves the final counts, decisions and hashes.
 
-## Session 3 boundary
+## Release boundary
 
-Session 2 is complete. Continue only with the separately scoped [Session 3 release work](../verification/v2.0.1-closeout-plan.md#session-3---v201-release-candidate-and-publication-handoff): reconcile subsequent source changes, set the approved version, validate `UseLocalRmcNumerics=false`, inspect resolved/packed dependencies, stage release assets, and review any newly generated PDF pages. No merge, push, tag, package publication, or external scientific sign-off is included in this completion.
+The v2.0.1 edition is a completed external peer-review draft. The release work that the Session 2 record assigned to a later session (source reconciliation, the approved version, package-mode validation, dependency inspection, release-asset staging, and review of newly generated pages) is complete. No merge, push, tag, package publication, or external scientific sign-off is included in this record.

@@ -8,10 +8,10 @@
 |---|---|
 | Title | RMC.BestFit 2.0 Technical Reference Manual |
 | Report number | Pending assignment |
-| Version | External peer-review draft |
-| Date | 22 September 2026 |
+| Version | External peer-review draft, prepared for the v2.0.1 release |
+| Date | 27 September 2026 |
 | Prepared for | U.S. Army Corps of Engineers, Risk Management Center |
-| Software checkpoint | RMC.BestFit 2.0.0, commit `3fa55a0f75bbd583e2fb7fce42180faa376f007c` |
+| Software checkpoint | RMC.BestFit 2.0.1, commit `9427bd27c1ed7d757fde5a37ce24b90a06f3c9ed` |
 | Numerical source checkpoint | RMC.Numerics commit `7e8e8d1c5f26e045a35ec9fc09367de95ed05b02` |
 | Declared Numerics dependency | RMC.Numerics 2.2.0 |
 | Review status | Draft for external peer review - not for public release |
@@ -32,4 +32,4 @@ This document is a technical draft supplied for independent scientific and engin
 
 ## Revision record
 
-This edition describes the source checkpoints above. It is a finished draft for external review; scientific approval and public release remain separate decisions. Local validation used the sibling Numerics project at the stated commit. The source checkpoint identifies the reviewed implementation, while the documentation commit and final PDF checksum are recorded in the publication-quality receipt.
+This edition describes the source checkpoints above. It is a finished draft for external review; scientific approval and public release remain separate decisions. Validation built against the published RMC.Numerics 2.2.0 package, which was built from the stated Numerics commit. The source checkpoint identifies the reviewed implementation, while the documentation commit and final PDF checksum are recorded in the publication-quality receipt.

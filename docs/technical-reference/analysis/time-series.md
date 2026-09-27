@@ -63,7 +63,7 @@ the saved window, while undoing a covariate or response-series change recomputes
 did. Manual windows keep the checks $T\le N$, $T\ge k$ (AR, MA, ARIMAX), and $T-d>K$ (ARIMA,
 ARIMAX). The rule was approved by Haden Smith on 26 September 2026 and replaced
 $\max(30,k,\lfloor 0.8N\rfloor)$, under which every series shorter than 30 steps failed validation
-with the default settings. For example, AR(1) with an intercept ($k=3$, $K=1$) needs 14
+with the default settings. For example, AR(1) with an intercept has $k=3$ and $K=1$ and needs 14
 observations, MA(1) needs 13, ARIMA(1,1,1) with an intercept needs 16, and AR(10) needs 32.
 
 When the optional Jeffreys rule is enabled, each model adds the scale contribution
