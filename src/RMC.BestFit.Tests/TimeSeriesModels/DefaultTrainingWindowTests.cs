@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Xml.Linq;
 using Numerics.Data;
 using RMC.BestFit.Models;
+using BestFitTransform = RMC.BestFit.Models.Transform;
 using NumericsTimeSeries = Numerics.Data.TimeSeries;
 
 namespace RMC.BestFit.Tests.TimeSeriesModels;
@@ -41,6 +42,23 @@ public class DefaultTrainingWindowTests
         var series = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1980, 1, 1), new DateTime(1980 + count - 1, 1, 1));
         for (int i = 0; i < series.Count; i++)
             series[i].Value = 100.0 + 10.0 * Math.Sin(i / 2.0) + i;
+        return series;
+    }
+
+    /// <summary>
+    /// Creates an annual series of positive values with multiplicative variation.
+    /// </summary>
+    /// <param name="count">The number of observations.</param>
+    /// <returns>The response series, starting in 1980.</returns>
+    /// <remarks>
+    /// The values span roughly 30 to 150, so the Box-Cox exponent fitted from a training prefix
+    /// changes when the prefix grows.
+    /// </remarks>
+    private static NumericsTimeSeries CreateSkewedSeries(int count)
+    {
+        var series = new NumericsTimeSeries(TimeInterval.OneYear, new DateTime(1980, 1, 1), new DateTime(1980 + count - 1, 1, 1));
+        for (int i = 0; i < series.Count; i++)
+            series[i].Value = Math.Exp(4.0 + 0.6 * Math.Sin(i / 3.0) + 0.02 * i);
         return series;
     }
 
@@ -302,6 +320,77 @@ public class DefaultTrainingWindowTests
             Assert.IsTrue(structural >= 0 && window > structural,
                 $"{name}: TrainingTimeSteps must be raised after {property}; raised: {string.Join(", ", raised)}");
         }
+    }
+
+    /// <summary>
+    /// Verifies that a fitted Box-Cox exponent is preprocessing, not one of the k parameters in the
+    /// floor.
+    /// </summary>
+    /// <remarks>
+    /// The order change recomputes the window after the transform is set: AR(3) and ARIMAX(3,0,0)
+    /// with an intercept have five parameters, so the floor is 3 + 5 + 10 = 18, not 19.
+    /// </remarks>
+    [TestMethod]
+    public void FittedTransformExponent_IsNotCountedInTheFloor()
+    {
+        var ar = new AutoRegressive(CreateSkewedSeries(20), 1, true) { TransformType = BestFitTransform.BoxCox };
+        ar.Order = 3;
+        Assert.AreEqual(18, ar.TrainingTimeSteps, "AR(3)");
+        Assert.AreEqual(3 + ar.NumberOfParameters + 10, ar.TrainingTimeSteps, "AR(3) parameter count");
+
+        var arimax = CreateArimax(CreateSkewedSeries(20));
+        arimax.TransformType = BestFitTransform.BoxCox;
+        arimax.AROrderP = 3;
+        Assert.AreEqual(18, arimax.TrainingTimeSteps, "ARIMAX(3,0,0)");
+    }
+
+    /// <summary>
+    /// Verifies that a structural change that moves the default window refits an automatic
+    /// transform exponent from the new training prefix, and keeps a manual one.
+    /// </summary>
+    [TestMethod]
+    public void StructuralChangeThatMovesTheWindow_RefitsOnlyAnAutomaticExponent()
+    {
+        var automatic = CreateArimax(CreateSkewedSeries(20));
+        automatic.TransformType = BestFitTransform.BoxCox;
+        double before = automatic.TransformLambda;
+        var raised = RecordPropertyChanges(automatic);
+        automatic.AROrderP = 3;
+        Assert.AreEqual(18, automatic.TrainingTimeSteps);
+        Assert.AreNotEqual(before, automatic.TransformLambda, "The exponent is refitted from the 18-step prefix.");
+        CollectionAssert.Contains(raised, nameof(ARIMAX.TransformLambda));
+
+        var manual = CreateArimax(CreateSkewedSeries(20));
+        manual.TransformType = BestFitTransform.BoxCox;
+        manual.SetTransformParameters(0.5);
+        manual.AROrderP = 3;
+        Assert.AreEqual(18, manual.TrainingTimeSteps);
+        Assert.AreEqual(0.5, manual.TransformLambda, "A manual exponent stays fixed when the window moves.");
+    }
+
+    /// <summary>
+    /// Verifies that attaching covariates moves the default window without a
+    /// <c>TrainingTimeSteps</c> notification.
+    /// </summary>
+    /// <remarks>
+    /// The time-series analysis records an undo step when the model raises a watched property such
+    /// as <c>TrainingTimeSteps</c>; a covariate change is recorded through the covariate rows
+    /// instead, so the analysis raises its own window notification after refreshing its undo
+    /// baseline.
+    /// </remarks>
+    [TestMethod]
+    public void SetCovariates_MovesTheWindowWithoutATrainingTimeStepsNotification()
+    {
+        var series = CreateSeries(20);
+        var model = CreateArimax(series);
+        model.XOrderB = 2;
+        var raised = RecordPropertyChanges(model);
+
+        model.SetCovariates(new List<NumericsTimeSeries> { CreateCovariate(series) });
+
+        Assert.AreEqual(19, model.TrainingTimeSteps, "k = 6 and K = 3 give 3 + 6 + 10.");
+        CollectionAssert.DoesNotContain(raised, nameof(ARIMAX.TrainingTimeSteps));
+        CollectionAssert.Contains(raised, nameof(ARIMAX.Covariates));
     }
 
     /// <summary>

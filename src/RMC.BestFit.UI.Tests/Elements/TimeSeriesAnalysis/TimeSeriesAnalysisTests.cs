@@ -2255,6 +2255,33 @@ public class TimeSeriesAnalysisTests
     }
 
     /// <summary>
+    /// Verifies that adding a covariate that moves the default training window raises the
+    /// analysis's own <c>TrainingTimeSteps</c> notification, so bindings to the window refresh.
+    /// </summary>
+    /// <remarks>
+    /// The model moves the window without raising it, so the undo recorder does not record the
+    /// covariate change as a separate window edit. With b = 2, one covariate adds three
+    /// coefficients and raises K to 3, so the 20-step default window moves from 16 to
+    /// 3 + 6 + 10 = 19.
+    /// </remarks>
+    [STATestMethod]
+    public void CovariateAdded_RaisesTrainingTimeStepsForTheMovedDefaultWindow()
+    {
+        var tsa = new UI.TimeSeriesAnalysis("CovariateWindowTSA", _collection!);
+        var start = new DateTime(1990, 1, 1);
+        tsa.TimeSeriesData = CreateTimeSeriesElement("CovariateWindowResponse", 20, TimeInterval.OneYear, start);
+        tsa.ARIMAX.XOrderB = 2;
+        Assert.AreEqual(16, tsa.ARIMAX.TrainingTimeSteps, "Precondition: without covariates the lag order has no role.");
+        var raised = new List<string>();
+        tsa.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? string.Empty);
+
+        tsa.Covariates.Add(new CovariateData { TimeSeriesElement = CreateTimeSeriesElement("CovariateWindowCovariate", 20, TimeInterval.OneYear, start) });
+
+        Assert.AreEqual(19, tsa.ARIMAX.TrainingTimeSteps);
+        CollectionAssert.Contains(raised, nameof(UI.TimeSeriesAnalysis.TrainingTimeSteps));
+    }
+
+    /// <summary>
     /// Verifies that turning default flat priors on is an undoable step: undo restores the flag
     /// and the custom covariate prior, and redo restores the rebuilt default prior.
     /// </summary>
