@@ -110,7 +110,7 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-067](#tr-067) | ARIMA and AR order setters left the transform Jacobian stale | Medium | Confirmed defect | Fixed | Passed - fast order-change likelihood parity | [Report](../verification/time-series.md) | 2026-08-21 |
 | [TR-068](#tr-068) | Empty conditional likelihood sum returned zero | Medium | Confirmed defect | Fixed | Passed - fast negative-infinity and validation contracts | [Report](../verification/time-series.md) | 2026-08-21 |
 | [TR-069](#tr-069) | Pointwise transform Jacobian was spread uniformly | Medium | Confirmed defect | Fixed | Passed - per-observation pins, regenerated alignment oracle | [Report](../verification/time-series.md) / [Artifact](../../verification/data/time-series/phase5-arimax-alignment-oracle.json) | 2026-08-21 |
-| [TR-070](#tr-070) | Time-series residual, prediction-window, and transform-reset guards | Low | Confirmed defect | Fixed | Passed - fast contracts | [Report](../verification/time-series.md) | 2026-08-21 |
+| [TR-070](#tr-070) | Time-series residual, prediction-window, and transform-reset guards | Low | Confirmed defect | Fixed | Passed - fast contracts | [Report](../verification/time-series.md) | 2026-09-26 |
 | [TR-071](#tr-071) | Seasonal Gumbel-limit annualization sign | High | Confirmed defect | Fixed | Passed - hand value, continuity, point-process recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
 | [TR-072](#tr-072) | Point-process clone rate and seasonal quantile priors | Medium | Confirmed defect | Fixed | Passed - fast clone and prior contracts, recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
 | [TR-073](#tr-073) | Competing-risk empirical CDF grid lost resolution for heavy tails (Numerics) | High | Confirmed defect | Fixed in Numerics (local) | Passed - Numerics root-solve parity, composite and competing-risk cells | [Report](../verification/composite.md) | 2026-08-21 |
@@ -1289,7 +1289,9 @@ The verification statement above does not hold for the alignment oracle: it carr
 
 **Review disposition.** Confirmed defect.
 
-**Implementation status.** Fixed. `ARIMA.Residuals` returns an empty array before data are attached; covariate dates missing only in the holdout or forecast window and transform-level failures are validation messages rather than exceptions inside the fire-and-forget uncertainty task; the `TransformType` setter resets priors only when `UseDefaultFlatPriors` is true, matching `SetTransformParameters`.
+**Implementation status.** Fixed. `ARIMA.Residuals` returns an empty array before data are attached; transform-level failures are validation messages rather than exceptions inside the fire-and-forget uncertainty task; the `TransformType` setter resets priors only when `UseDefaultFlatPriors` is true, matching `SetTransformParameters`. Covariate dates needed only in the holdout or forecast window are not validated: `ARIMAX.Validate` checks covariate dates in the training window only, so a covariate that is missing or duplicates such a date passes validation, and the run then fails after sampling, when `ARIMAX.BuildPredictionCovariatePositions` maps the covariates for the predictions, with a "missing required timestamp" or "duplicate required timestamp" error.
+
+**Documentation correction (26 September 2026).** An earlier version of this entry listed covariate dates missing only in the holdout or forecast window among the validation messages; they are not validated, as stated above.
 
 **Verification status.** Passed by fast contracts.
 
