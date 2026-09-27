@@ -110,7 +110,7 @@ spatial models) begins from this checkpoint under the batch ledger in the finali
 | [TR-067](#tr-067) | ARIMA and AR order setters left the transform Jacobian stale | Medium | Confirmed defect | Fixed | Passed - fast order-change likelihood parity | [Report](../verification/time-series.md) | 2026-08-21 |
 | [TR-068](#tr-068) | Empty conditional likelihood sum returned zero | Medium | Confirmed defect | Fixed | Passed - fast negative-infinity and validation contracts | [Report](../verification/time-series.md) | 2026-08-21 |
 | [TR-069](#tr-069) | Pointwise transform Jacobian was spread uniformly | Medium | Confirmed defect | Fixed | Passed - per-observation pins, regenerated alignment oracle | [Report](../verification/time-series.md) / [Artifact](../../verification/data/time-series/phase5-arimax-alignment-oracle.json) | 2026-08-21 |
-| [TR-070](#tr-070) | Time-series residual, prediction-window, and transform-reset guards | Low | Confirmed defect | Fixed | Passed - fast contracts | [Report](../verification/time-series.md) | 2026-09-26 |
+| [TR-070](#tr-070) | Time-series residual and transform-reset guards; prediction-window covariate dates are not validated | Low | Confirmed defect | Fixed | Passed - fast contracts | [Report](../verification/time-series.md) | 2026-09-26 |
 | [TR-071](#tr-071) | Seasonal Gumbel-limit annualization sign | High | Confirmed defect | Fixed | Passed - hand value, continuity, point-process recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
 | [TR-072](#tr-072) | Point-process clone rate and seasonal quantile priors | Medium | Confirmed defect | Fixed | Passed - fast clone and prior contracts, recovery cells | [Report](../verification/point-process.md#tr-005---poisson-gpa-simulation-and-seasonal-priors) | 2026-08-21 |
 | [TR-073](#tr-073) | Competing-risk empirical CDF grid lost resolution for heavy tails (Numerics) | High | Confirmed defect | Fixed in Numerics (local) | Passed - Numerics root-solve parity, composite and competing-risk cells | [Report](../verification/composite.md) | 2026-08-21 |
@@ -823,6 +823,12 @@ timestamps make validation fail and numerical evaluation return negative infinit
 outside the required window are harmless. The transform Jacobian covers raw indices
 $d+\max(p,q)$ through $T-1$.
 
+**Amendment (26 September 2026).** The conditioning start stated above has been superseded.
+[TR-066](#tr-066) first changed it to $\max(p,q,b)$; review decision D6 (approved 25 September
+2026) and ruling R2 (confirmed 26 September 2026) then set it to $K=\max(q,p+b)$ for a model with
+covariates and $K=\max(p,q)$ for a model without them. Conditional evaluation begins at model step
+$K$, and the transform Jacobian covers raw indices $d+K$ through $T-1$.
+
 **Verification status.** Passed. Seven fast Core regressions cover `d=0,1,2`, later timestamps,
 training/holdout isolation, shifted/duplicate/extra covariate dates, level-covariate likelihood,
 direct timestamp and conditional-order mutation, and scalar/pointwise/component parity. The App residual plot follows the corrected differenced
@@ -1286,7 +1292,7 @@ The verification statement above does not hold for the alignment oracle: it carr
 **Impact.** WAIC, PSIS-LOO, Pareto k, and leverage diagnostics see the true per-observation dispersion instead of an artificially flattened one.
 
 <a id="tr-070"></a>
-## TR-070 - Time-Series Residual, Prediction-Window, and Transform-Reset Guards
+## TR-070 - Time-Series Residual and Transform-Reset Guards
 
 **Review disposition.** Confirmed defect.
 
