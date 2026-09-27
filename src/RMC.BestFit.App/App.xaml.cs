@@ -15,8 +15,8 @@ namespace RMC_BestFit
     /// </summary>
     public partial class App : Application
     {
-        internal const string ProductVersion = "2.0.0";
-        internal const string ProductVersionDate = "July 2026";
+        internal const string ProductVersion = "2.0.1";
+        internal const string ProductVersionDate = "October 2026";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="App"/> class. Configures the Windows Jump List

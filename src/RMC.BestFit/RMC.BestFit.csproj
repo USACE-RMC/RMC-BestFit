@@ -18,7 +18,7 @@
     <PackageLicenseExpression>0BSD</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Official RMC.BestFit 2.0.0 model-library release for Bayesian flood-frequency analysis, time series, peaks-over-threshold, mixtures, composites, bivariate/coincident frequency, rating curves, diagnostics, and API-backed workflows.</PackageReleaseNotes>
+    <PackageReleaseNotes>RMC.BestFit 2.0.1 maintenance release of the model library, built against RMC.Numerics 2.2.0. It keeps saved ARIMAX parameters and priors when a model with covariates is restored, copied, or cloned; conditions ARIMAX on max(q, p + b) with covariates; corrects differenced time-series training, reintegration, and transform windows; derives the default time-series training window from its degrees of freedom; keeps Bulletin 17C point estimates when the GMM covariance fails; clears a stale peaks-over-threshold exposure when the input source changes; and applies a manual low-outlier threshold in API input. Full notes: https://github.com/USACE-RMC/RMC-BestFit/releases/tag/v2.0.1</PackageReleaseNotes>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

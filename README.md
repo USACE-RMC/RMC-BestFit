@@ -8,7 +8,7 @@
 ***RMC-BestFit*** is free and open-source software developed by the U.S. Army Corps of Engineers Risk Management Center (USACE-RMC) for Bayesian flood-frequency analysis, distribution fitting, uncertainty quantification, rating curves, bivariate and coincident frequency analysis, time-series modeling, and related hydrologic risk workflows. Version 2.0 exposes the core statistical engine as a reusable .NET model library while retaining the desktop application, UI/project layer, and REST API source in the same repository.
 
 > [!NOTE]
-> RMC-BestFit 2.0.0 is the official public 2.0 release. Expect ongoing bug fixes, minor enhancements, and documentation improvements as the project continues to evolve.
+> RMC-BestFit 2.0.1 is the current public 2.0 release, a maintenance update of 2.0.0. Expect ongoing bug fixes, minor enhancements, and documentation improvements as the project continues to evolve.
 
 ![RMC-BestFit desktop application](docs/images/rmc-bestfit-gui.png)
 
@@ -26,7 +26,7 @@
 Install the model library from NuGet:
 
 ```powershell
-dotnet add package RMC.BestFit --version 2.0.0
+dotnet add package RMC.BestFit --version 2.0.1
 ```
 
 Or search for [RMC.BestFit](https://www.nuget.org/packages/RMC.BestFit/) in the NuGet Package Manager. The package depends on [RMC.Numerics](https://github.com/USACE-RMC/Numerics) 2.x for probability distributions, optimization, MCMC sampling, and numerical methods.
@@ -75,7 +75,7 @@ dotnet test src/RMC.BestFit.Tests/RMC.BestFit.Tests.csproj -c Release --no-build
 Create the public NuGet package locally:
 
 ```powershell
-dotnet pack src/RMC.BestFit/RMC.BestFit.csproj -c Release -o packages /p:Version=2.0.0
+dotnet pack src/RMC.BestFit/RMC.BestFit.csproj -c Release -o packages /p:Version=2.0.1
 ```
 
 ## Key Capabilities

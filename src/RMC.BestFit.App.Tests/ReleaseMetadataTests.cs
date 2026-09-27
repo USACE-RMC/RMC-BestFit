@@ -13,13 +13,13 @@ namespace RMC.BestFit.App.Tests
     public class ReleaseMetadataTests
     {
         /// <summary>
-        /// Verifies the shell displays the v2.0.0 product version and release month.
+        /// Verifies the shell displays the v2.0.1 product version and release month.
         /// </summary>
         [TestMethod]
         public void ProductMetadata_UsesFinalReleaseValues()
         {
-            Assert.AreEqual("2.0.0", BestFitApplication.ProductVersion);
-            Assert.AreEqual("July 2026", BestFitApplication.ProductVersionDate);
+            Assert.AreEqual("2.0.1", BestFitApplication.ProductVersion);
+            Assert.AreEqual("October 2026", BestFitApplication.ProductVersionDate);
         }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace RMC.BestFit.App.Tests
         {
             var options = BestFitApplication.CreateUpdateOptions();
 
-            Assert.AreEqual("2.0.0", options.CurrentVersion.ToString());
+            Assert.AreEqual("2.0.1", options.CurrentVersion.ToString());
             Assert.IsTrue(options.RequireSha256Checksum);
             Assert.AreEqual("USACE-RMC", options.GitHubOwner);
             Assert.AreEqual("RMC-BestFit", options.GitHubRepo);
@@ -48,9 +48,9 @@ namespace RMC.BestFit.App.Tests
             string informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
             string fileVersion = FileVersionInfo.GetVersionInfo(assembly.Location).FileVersion!;
 
-            Assert.AreEqual("2.0.0", informationalVersion);
-            Assert.AreEqual(new Version(2, 0, 0, 0), assembly.GetName().Version);
-            Assert.AreEqual("2.0.0.0", fileVersion);
+            Assert.AreEqual("2.0.1", informationalVersion);
+            Assert.AreEqual(new Version(2, 0, 1, 0), assembly.GetName().Version);
+            Assert.AreEqual("2.0.1.0", fileVersion);
         }
     }
 }
