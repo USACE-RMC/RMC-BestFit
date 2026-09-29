@@ -708,6 +708,12 @@ namespace RMC_BestFit
         /// </summary>
         private void UpdateControl()
         {
+            // Source removal can hide the diagnostics tab before its lazy updater runs.
+            // Discard unavailable results even while a different tab is selected.
+            var diagnosticSource = Element.TimeSeriesElement?.TimeSeries;
+            if (diagnosticSource == null || diagnosticSource.Count < 20)
+                ClearThresholdDiagnosticsPlots();
+
             // Show/hide threshold diagnostics tab based on POT method and time series availability
             if (Element.ExactDataMethod == InputData.ExactDataEntryType.PeaksOverThresholdSeries
                 && Element.TimeSeriesElement?.TimeSeries != null)
@@ -1892,7 +1898,11 @@ namespace RMC_BestFit
             if (Element == null) return;
 
             var ts = Element.TimeSeriesElement?.TimeSeries;
-            if (ts == null || ts.Count < 20) return;
+            if (ts == null || ts.Count < 20)
+            {
+                ClearThresholdDiagnosticsPlots();
+                return;
+            }
 
             // Numerics' MovingAverage/MovingSum/Difference all throw when the period is not
             // strictly less than the series length (and the moving-window pair also throws below
