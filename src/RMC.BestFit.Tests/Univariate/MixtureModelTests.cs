@@ -856,6 +856,26 @@ public class MixtureModelTests
 
     #region Serialization Tests
 
+    /// <summary>Verifies configured mixture snapshots can be restored before input data is selected.</summary>
+    [TestMethod]
+    public void Test_RoundTrip_WithoutInputDataPreservesConfiguredModel()
+    {
+        var original = new MixtureModel(CreateSampleDataFrame(), new List<UnivariateDistributionType>
+        {
+            UnivariateDistributionType.Normal, UnivariateDistributionType.Normal
+        }) { UseDefaultFlatPriors = false };
+        original.DataFrame = null!;
+        original.Parameters[2].Value = 12345d;
+        original.Parameters[2].PriorDistribution = new Normal(12345d, 100d);
+        XElement snapshot = original.ToXElement();
+
+        var restored = new MixtureModel(null!, snapshot);
+
+        Assert.IsNull(restored.DataFrame);
+        Assert.IsTrue(XNode.DeepEquals(snapshot, restored.ToXElement()));
+        Assert.IsFalse(restored.Validate().IsValid, "Restoring configuration must not invent input data.");
+    }
+
     /// <summary>Verifies that to X element contains mixture model element.</summary>
     [TestMethod]
     public void Test_ToXElement_ContainsMixtureModelElement()

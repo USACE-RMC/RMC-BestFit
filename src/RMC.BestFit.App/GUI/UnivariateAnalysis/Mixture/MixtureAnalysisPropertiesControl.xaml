@@ -116,8 +116,7 @@
                                         SelectionMode="Extended" SelectionUnit="CellOrRowHeader" AutoGenerateColumns="False"
                                         CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeColumns="True"
                                         CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False" 
-                                        PreviewMouseLeftButtonDown="DistributionDataGrid_PreviewMouseLeftButtonDown"
-                                        ItemsSource="{Binding Element.Distributions}">   
+                                        PreviewMouseLeftButtonDown="DistributionDataGrid_PreviewMouseLeftButtonDown">
                                         <cntrls:CopyPasteDataGrid.Columns>
                                             <DataGridTemplateColumn 
                                                 x:Name="DistributionColumn"  
@@ -131,7 +130,7 @@
                                                                 ItemsSource="{Binding ElementName=MixtureAnalysisProperties, Path=DistributionList, UpdateSourceTrigger=PropertyChanged}"
                                                                 DisplayMemberPath="DisplayName"
                                                                 SelectedValuePath="Value"
-                                                                SelectedValue="{Binding Mode=OneWay}"
+                                                                SelectedValue="{Binding DistributionType, Mode=OneWay}"
                                                                 SelectionChanged="DistributionComboBox_SelectionChanged"
                                                                 />
                                                         </Grid>

@@ -112,9 +112,13 @@ namespace RMC.BestFit.Models
                 _dataFrame.PropertyChanged -= DataFrame_PropertyChanged;
 
             _dataFrame = dataFrame;
-            _dataFrame.PropertyChanged += DataFrame_PropertyChanged;
-            _dataFrame.ProcessThresholdSeries();
-            _dataFrame.CreateFullTimeSeries();
+            // Configuration undo is also available before an input data set is selected.
+            if (_dataFrame != null)
+            {
+                _dataFrame.PropertyChanged += DataFrame_PropertyChanged;
+                _dataFrame.ProcessThresholdSeries();
+                _dataFrame.CreateFullTimeSeries();
+            }
 
             var distributionElement = xElement.Element("Distribution");
             if (distributionElement != null)

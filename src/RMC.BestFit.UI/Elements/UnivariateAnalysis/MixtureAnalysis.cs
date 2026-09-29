@@ -327,9 +327,9 @@ namespace RMC.BestFit.UI
         private UndoableCollectionBridge<double> _probabilityOrdinatesBridge;
 
         /// <summary>
-        /// Undo bridge for the Distributions ObservableCollection (Add/Remove/Replace).
+        /// Last observed component list, including empty collections, for complete-state undo.
         /// </summary>
-        private UndoableCollectionBridge<UnivariateDistributionType> _distributionsBridge;
+        private UnivariateDistributionType[] _distributionSnapshot = Array.Empty<UnivariateDistributionType>();
 
         /// <summary>
         /// Rolling XElement baseline of the <see cref="MixtureModel"/> state.
@@ -442,6 +442,7 @@ namespace RMC.BestFit.UI
                     _innerAnalysis.MixtureDistribution.SetDefaultMixture(_distributions.ToList());
                 }
 
+                _distributionSnapshot = _distributions.ToArray();
                 RaisePropertyChange(nameof(Distributions));
             }
         }
@@ -619,12 +620,38 @@ namespace RMC.BestFit.UI
             // Note: Max-3 enforcement is handled by the App's PreviewAddRows handler
             // to avoid re-entrancy (cannot modify ObservableCollection during CollectionChanged).
 
-            // Update the inner analysis's mixture distribution
-            if (_distributions.Count > 0)
-                _innerAnalysis.MixtureDistribution.SetDefaultMixture(_distributions.ToList());
-            SetIsValid();
-            if (!UndoManager.IsExecutingAction) ClearResults();
-            RaisePropertyChange(nameof(Distributions));
+            // Capture the actual model before rebuilding it: the ordinary model baseline may
+            // predate parameter/prior edits, and replaying only enum values loses those settings.
+            bool wasUndoEnabled = IsUndoEnabled;
+            bool recordAction = wasUndoEnabled && !UndoManager.IsExecutingAction;
+            var oldModel = recordAction ? _innerAnalysis.MixtureDistribution.ToXElement() : null;
+            var oldTypes = _distributionSnapshot;
+            var newTypes = _distributions.ToArray();
+            IsUndoEnabled = false;
+            try
+            {
+                if (_distributions.Count > 0)
+                    _innerAnalysis.MixtureDistribution.SetDefaultMixture(_distributions.ToList());
+                SetIsValid();
+                if (!UndoManager.IsExecutingAction) ClearResults();
+                RaisePropertyChange(nameof(Distributions));
+                _modelSnapshot = _innerAnalysis.MixtureDistribution.ToXElement();
+                _distributionSnapshot = newTypes;
+            }
+            finally
+            {
+                IsUndoEnabled = wasUndoEnabled;
+            }
+
+            if (recordAction)
+            {
+                var newModel = _modelSnapshot;
+                UndoManager.RecordAction(new DelegateAction(
+                    "Change mixture distributions",
+                    () => RestoreModelFromSnapshot(newModel, newTypes),
+                    () => RestoreModelFromSnapshot(oldModel, oldTypes),
+                    this));
+            }
         }
 
         /// <summary>
@@ -1331,7 +1358,8 @@ namespace RMC.BestFit.UI
         /// <see cref="BayesianAnalysis"/> settings and <see cref="ProbabilityOrdinates"/>.
         /// </summary>
         /// <param name="snapshot">The XElement snapshot to restore from.</param>
-        private void RestoreModelFromSnapshot(XElement snapshot)
+        /// <param name="distributionTypes">The exact component list for a collection edit, including an empty reset; otherwise inferred from the model.</param>
+        private void RestoreModelFromSnapshot(XElement snapshot, UnivariateDistributionType[] distributionTypes = null)
         {
             // 1. Disconnect from current inner analysis
             UnsubscribeInnerAnalysis();
@@ -1353,7 +1381,7 @@ namespace RMC.BestFit.UI
                 _innerAnalysis.BayesianAnalysis.SetDefaultAdvancedSimulationOptions();
 
             // 5. Rebuild the Distributions collection from the restored model's component types
-            var restoredTypes = newModel.Mixture.Distributions.Select(d => d.Type).ToList();
+            var restoredTypes = distributionTypes ?? newModel.Mixture.Distributions.Select(d => d.Type).ToArray();
             _distributions.CollectionChanged -= Distributions_CollectionChanged;
             _distributions.Clear();
             foreach (var t in restoredTypes)
@@ -1494,15 +1522,8 @@ namespace RMC.BestFit.UI
                     this);
             }
 
-            // Collection bridge for the user-editable Distributions list (mixture components)
-            if (_distributions != null)
-            {
-                _distributionsBridge = new UndoableCollectionBridge<UnivariateDistributionType>(
-                    _distributions,
-                    () => IsUndoEnabled ? UndoManager : null,
-                    "mixture distributions",
-                    this);
-            }
+            // Component edits record their complete model and enum state in one custom action.
+            _distributionSnapshot = _distributions?.ToArray() ?? Array.Empty<UnivariateDistributionType>();
 
             // Model undo — capture baseline snapshot for XElement comparison
             _modelSnapshot = _innerAnalysis?.MixtureDistribution?.ToXElement();
@@ -1536,9 +1557,6 @@ namespace RMC.BestFit.UI
 
             _probabilityOrdinatesBridge?.Dispose();
             _probabilityOrdinatesBridge = null;
-
-            _distributionsBridge?.Dispose();
-            _distributionsBridge = null;
 
             _frequencyPlotUndo?.Dispose();
             _frequencyPlotUndo = null;
