@@ -2023,20 +2023,27 @@ namespace RMC.BestFit.UI
         /// <param name="e">The PropertyChangedEventArgs containing the name of the changed property.</param>
         /// <remarks>
         /// This method propagates property changes from individual data points to the time series element
-        /// and triggers validation when changes occur.
+        /// and triggers validation when changes occur. Reset events omit removed items, so retained
+        /// ordinates are checked against the current series by reference before forwarding an event.
         /// </remarks>
         private void SeriesOrdinateChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (TimeSeries.SuppressCollectionChanged == false)
+            var series = TimeSeries;
+            if (series?.SuppressCollectionChanged == true) return;
+            if (series == null || !series.Any(item => ReferenceEquals(item, sender)))
             {
-                RaisePropertyChange(e.PropertyName);
-                // Filter validation to property changes that actually affect validity. Index/Value
-                // changes affect series ordering / sentinel detection; other notifications (if any
-                // are added later) would need the same audit before being whitelisted.
-                if (e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Index) ||
-                    e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Value))
-                    SetIsValid();
+                if (sender is SeriesOrdinate<DateTime, double> removed)
+                    removed.PropertyChanged -= SeriesOrdinateChanged;
+                return;
             }
+
+            RaisePropertyChange(e.PropertyName);
+            // Filter validation to property changes that actually affect validity. Index/Value
+            // changes affect series ordering / sentinel detection; other notifications (if any
+            // are added later) would need the same audit before being whitelisted.
+            if (e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Index) ||
+                e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Value))
+                SetIsValid();
         }
 
         /// <summary>

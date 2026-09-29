@@ -2295,21 +2295,31 @@ namespace RMC.BestFit.UI
         /// </summary>
         /// <param name="sender">The event source.</param>
         /// <param name="e">The property changed event arguments.</param>
+        /// <remarks>
+        /// Source ordinate and collection edits invalidate derived observations just like a series replacement.
+        /// Automatic invalidation does not enter this dependent element's undo history; the source owns the edit.
+        /// </remarks>
         private void TimeSeriesElementChanged(object sender, PropertyChangedEventArgs e)
         {
-            // Defensive null guards. TimeSeriesElement.TimeSeries is initialized non-null in the
-            // ctor but a future refactor or partial init could expose null transiently; mirrors
-            // the guard used in TimeSeriesAnalysis.TimeSeriesData_PropertyChanged at line 670.
-            if (TimeSeriesElement?.TimeSeries == null) return;
-            if (TimeSeriesElement.TimeSeries.SuppressCollectionChanged == false)
-            {
-                if (e.PropertyName == nameof(TimeSeriesElement.TimeSeries))
-                    if (ExactDataMethod != ExactDataEntryType.Manual)
-                        ClearTimeSeriesResults();
+            if (TimeSeriesElement == null || !ReferenceEquals(sender, TimeSeriesElement)) return;
+            if (TimeSeriesElement.TimeSeries?.SuppressCollectionChanged == true) return;
 
-                SetIsValid();
-                RaisePropertyChange(e.PropertyName);
+            bool sourceDataChanged = e.PropertyName == nameof(TimeSeriesElement.TimeSeries)
+                || e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Value)
+                || e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Index)
+                || e.PropertyName == "TimeSeriesCollection";
+            if (sourceDataChanged && ExactDataMethod != ExactDataEntryType.Manual)
+            {
+                bool wasUndoEnabled = IsUndoEnabled;
+                IsUndoEnabled = false;
+                try { ClearTimeSeriesResults(); }
+                finally { IsUndoEnabled = wasUndoEnabled; }
             }
+
+            SetIsValid();
+            RaisePropertyChange(e.PropertyName);
+            if (sourceDataChanged && e.PropertyName != nameof(TimeSeriesElement.TimeSeries))
+                RaisePropertyChange(nameof(TimeSeriesElement.TimeSeries));
         }
 
         /// <summary>
