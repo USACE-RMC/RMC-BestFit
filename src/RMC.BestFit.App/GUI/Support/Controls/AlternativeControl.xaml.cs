@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -64,6 +65,7 @@ namespace RMC_BestFit
             if (d == null) return;
             if (d as AlternativeControl == null) return;
             var thisControl = (AlternativeControl)d;
+            Interlocked.Increment(ref thisControl._elementGeneration);
 
             // Remove handlers
             if (e.OldValue != null)
@@ -89,6 +91,11 @@ namespace RMC_BestFit
         /// events so the subscription can be cleanly torn down when <see cref="Element"/> swaps.
         /// </summary>
         private IElementCollection _subscribedParentCollection;
+
+        /// <summary>
+        /// Identifies the current owner so queued comparison updates cannot outlive an element replacement.
+        /// </summary>
+        private int _elementGeneration;
 
         /// <summary>
         /// Gets the observable collection of analysis alternative items available for comparison.
@@ -232,8 +239,30 @@ namespace RMC_BestFit
         /// <param name="e">Event arguments containing the property name that changed.</param>
         private void Alternative_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            var item = (AnalysisAlternativeItem)sender;
-            if (e.PropertyName == nameof(AnalysisAlternativeItem.IsChecked))
+            if (!(sender is AnalysisAlternativeItem item)) return;
+            int generation = Volatile.Read(ref _elementGeneration);
+            if (!Dispatcher.CheckAccess())
+            {
+                if (!Dispatcher.HasShutdownStarted)
+                    Dispatcher.BeginInvoke(new Action(() => RefreshAlternative(item, e.PropertyName, generation)));
+                return;
+            }
+            RefreshAlternative(item, e.PropertyName, generation);
+        }
+
+        /// <summary>
+        /// Refreshes a still-current comparison on the selector's owning dispatcher.
+        /// </summary>
+        /// <param name="item">The alternative that published the notification.</param>
+        /// <param name="propertyName">The changed comparison, result, or status property.</param>
+        /// <param name="generation">The owner generation when the notification was received.</param>
+        private void RefreshAlternative(AnalysisAlternativeItem item, string propertyName, int generation)
+        {
+            // Removal, unchecking, or owner replacement may occur while a worker update is queued.
+            // A null owner leaves disposed items in AnalysisList, so membership alone is insufficient.
+            if (generation != _elementGeneration || Element == null || !AnalysisList.Contains(item)) return;
+
+            if (propertyName == nameof(AnalysisAlternativeItem.IsChecked))
             {
                 if (item.IsChecked == true)
                 {
@@ -244,8 +273,8 @@ namespace RMC_BestFit
                     AnalysisRemoved?.Invoke(item);
                 }
             }
-            else if (e.PropertyName == nameof(AnalysisAlternativeItem.Alternative.AnalysisResults) ||
-                e.PropertyName == nameof(AnalysisAlternativeItem.Alternative.IsEstimated))
+            else if (propertyName == nameof(AnalysisAlternativeItem.Alternative.AnalysisResults) ||
+                propertyName == nameof(AnalysisAlternativeItem.Alternative.IsEstimated))
             {
                 if (item.IsChecked == true)
                 {
