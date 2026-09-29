@@ -646,6 +646,7 @@ namespace RMC.BestFit.Analyses
                 return;
             }
 
+            var chronologyResults = UnivariateDistribution.IsNonstationary ? ChronologyAnalysisResults : null;
             await Task.Run(() =>
             {
                 // Set the point estimator
@@ -662,6 +663,13 @@ namespace RMC.BestFit.Analyses
                 AnalysisResults.ModeCurve = new double[ProbabilityOrdinates.Count];
                 for (int i = 0; i < ProbabilityOrdinates.Count; i++)
                     AnalysisResults.ModeCurve[i] = UnivariateDistribution.Distribution.InverseCDF(1 - ProbabilityOrdinates[i]);
+
+                // Retain posterior uncertainty while refreshing the chronology's selected point estimate.
+                if (chronologyResults != null)
+                {
+                    chronologyResults.ParentDistribution = UnivariateDistribution.Distribution.Clone();
+                    chronologyResults.ModeCurve = UnivariateDistribution.GetNonstationaryReturnLevel()!;
+                }
 
                 // AIC/BIC use the data likelihood at MAP and are comparable with MLE
                 // criteria only when all active priors are flat.
@@ -689,6 +697,7 @@ namespace RMC.BestFit.Analyses
             });
 
             RaisePropertyChange(nameof(AnalysisResults));
+            if (chronologyResults != null) RaisePropertyChange(nameof(ChronologyAnalysisResults));
         }
 
         /// <summary>
