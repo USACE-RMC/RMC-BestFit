@@ -410,6 +410,14 @@ namespace RMC_BestFit
         /// <param name="e">The event data containing the name of the property that changed.</param>
         private void Element_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            // Point-estimator results arrive from the analysis worker. Even reading Element
+            // is WPF access; dispatch before the stale-sender check touches that property.
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(new Action(() => Element_PropertyChanged(sender, e)));
+                return;
+            }
+
             if (!ReferenceEquals(sender, Element)) return;
 
             if (e.PropertyName == nameof(Element.ARIMAX) || e.PropertyName == nameof(Element.TimeSeriesData))
