@@ -2297,6 +2297,8 @@ namespace RMC.BestFit.UI
         /// <param name="e">The property changed event arguments.</param>
         /// <remarks>
         /// Source ordinate and collection edits invalidate derived observations just like a series replacement.
+        /// Only block and peaks-over-threshold extraction derive observations from the series; manual and USGS
+        /// entry keep theirs, because a switched input keeps the reference to the series it once extracted from.
         /// Automatic invalidation does not enter this dependent element's undo history; the source owns the edit.
         /// </remarks>
         private void TimeSeriesElementChanged(object sender, PropertyChangedEventArgs e)
@@ -2308,7 +2310,9 @@ namespace RMC.BestFit.UI
                 || e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Value)
                 || e.PropertyName == nameof(SeriesOrdinate<DateTime, double>.Index)
                 || e.PropertyName == "TimeSeriesCollection";
-            if (sourceDataChanged && ExactDataMethod != ExactDataEntryType.Manual)
+            bool derivesFromSource = ExactDataMethod == ExactDataEntryType.BlockSeries
+                || ExactDataMethod == ExactDataEntryType.PeaksOverThresholdSeries;
+            if (sourceDataChanged && derivesFromSource)
             {
                 bool wasUndoEnabled = IsUndoEnabled;
                 IsUndoEnabled = false;

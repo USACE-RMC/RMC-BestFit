@@ -292,6 +292,34 @@ public class InputDataSourceInvalidationTests
         Assert.AreSame(entered, input.DataFrame.ExactSeries[0]);
     }
 
+    /// <summary>Downloaded USGS observations never derive from a linked series, so source changes keep them.</summary>
+    /// <param name="method">The USGS entry method whose downloaded observations must survive.</param>
+    /// <param name="replaceSeries">True to replace the source series; false to edit one of its values in place.</param>
+    /// <remarks>
+    /// Switching an input from block or peaks-over-threshold extraction to USGS download keeps the saved source
+    /// reference, so edits to that series still reach this input.
+    /// </remarks>
+    [STATestMethod]
+    [DataRow(UI.InputData.ExactDataEntryType.USGSPeakDischarge, false)]
+    [DataRow(UI.InputData.ExactDataEntryType.USGSPeakDischarge, true)]
+    [DataRow(UI.InputData.ExactDataEntryType.USGSPeakStage, false)]
+    [DataRow(UI.InputData.ExactDataEntryType.USGSPeakStage, true)]
+    public void UsgsInput_SourceChangePreservesDownloadedObservations(UI.InputData.ExactDataEntryType method, bool replaceSeries)
+    {
+        var input = CreateInput(false);
+        input.ExactDataMethod = method;
+        var downloaded = new ExactData(2000, 123d);
+        input.DataFrame.ExactSeries.Add(downloaded);
+
+        if (replaceSeries)
+            input.TimeSeriesElement.TimeSeries = CreateSource("Unrelated replacement").TimeSeries;
+        else
+            input.TimeSeriesElement.TimeSeries[0].Value += 1d;
+
+        Assert.AreEqual(1, input.DataFrame.ExactSeries.Count);
+        Assert.AreSame(downloaded, input.DataFrame.ExactSeries[0]);
+    }
+
     /// <summary>Source metadata edits retain valid extracted values and their notification identity.</summary>
     [STATestMethod]
     public void SourceMetadataChange_PreservesExtractionAndOriginalNotification()
