@@ -200,7 +200,8 @@ package by default; a sibling Numerics checkout is used only when a build opts i
   complete mixture model, including its parameter values, bounds, and priors (formerly undo
   replayed only the list of distribution types and rebuilt the default parameters). Undo also works
   before input data is selected: `MixtureModel(DataFrame, XElement)` accepts a null data frame
-  instead of throwing `NullReferenceException`.
+  instead of throwing `NullReferenceException`. The distributions grid no longer offers the
+  column-header sort menu: sorting reordered the displayed rows away from the component order.
 - Point-estimator changes and comparisons: switching an estimated analysis between the posterior
   mean and mode refreshes every view from the retained posterior without re-running it. The
   comparison list of the univariate, Bulletin 17C, mixture, point-process, composite,
@@ -210,8 +211,14 @@ package by default; a sibling Numerics checkout is used only when a build opts i
   time-series analysis properties apply the change on the UI thread; and a nonstationary univariate
   analysis refreshes its chronology's point-estimate curve with its frequency curve
   (`UnivariateAnalysis.UpdatePointEstimateResultsAsync` also updates `ChronologyAnalysisResults`
-  and raises its change notification). Previously these views could miss the refresh raised from
-  the background reprocess, and the chronology kept the previous estimator's curve.
+  and raises its change notification when the curve's extent still matches the chronology's
+  intervals; a time index moved past the record leaves the chronology to its own reprocess).
+  Previously these views could miss the refresh raised from the background reprocess, and the
+  chronology kept the previous estimator's curve. `CreateChronologyResultsAsync` now publishes the
+  chronology only once its mean and intervals are complete (it formerly exposed the new results
+  before computing them), and the chronology plot draws only complete, aligned results, so a
+  chronology redraw during a credible-interval or time-index change can no longer close the
+  application.
 - Low outlier test (issue #13): a threshold rejected by the 50-percent-censoring guard shows the
   validation message instead of terminating the application, and a legacy project whose stored
   low-outlier settings the current guards reject opens with the outliers cleared instead of
@@ -247,8 +254,10 @@ package by default; a sibling Numerics checkout is used only when a build opts i
   source time series in place now clears the input data's extracted block or peaks-over-threshold
   series and marks it unprocessed, as replacing the series already did, so an analysis can no
   longer use extracted observations that no longer match their source; process the input data
-  again after such an edit. Manual entry keeps its observations, and editing only the source's
-  name, description, or unit keeps the extraction. The clearing is not an undo step of the input
+  again after such an edit. Manual entry and USGS downloads keep their observations when a time
+  series the input data was previously set to extract from is edited or replaced (2.0.0 cleared
+  downloaded USGS peaks when that series was replaced), and editing only the source's name,
+  description, or unit keeps the extraction. The clearing is not an undo step of the input
   data: undoing the source edit restores the source values, not the extraction. The
   threshold-diagnostics plots and their cached results also clear when the source is removed,
   shortened below 20 values, or edited, instead of keeping curves from the former source.
