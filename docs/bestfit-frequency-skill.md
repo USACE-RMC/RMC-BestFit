@@ -40,16 +40,19 @@ Build the downloadable ZIP from a checkout containing the implementation:
 python scripts/package-bestfit-skill.py
 ```
 
-Outputs: `artifacts/bestfit-frequency-skill.zip` and
-`artifacts/bestfit-frequency-marketplace.zip`, each with a `.zip.sha256` sidecar.
+Outputs: `artifacts/bestfit-frequency-skill.zip`,
+`artifacts/bestfit-frequency-marketplace.zip` and
+`artifacts/bestfit-frequency-claude-plugin.zip`, each with a `.zip.sha256` sidecar.
 The standalone archive has one `bestfit-frequency/` root; the marketplace archive
-wraps the same skill in a thin OpenAI plugin. Both include the preparation,
+wraps the same skill in a thin OpenAI plugin, and the Claude plugin archive wraps it
+in a `.claude-plugin` plugin that also serves as its own one-plugin marketplace
+(`claude plugin validate --strict` passes on it). All three include the preparation,
 research-capture, execution and plotting helpers, Python requirements, references,
 synthetic examples and repository license. They exclude local results, virtual
 environments and application binaries.
 
 See [installation instructions](../skills/bestfit-frequency/references/install.md)
-for Codex, Claude Code, and custom ZIP uploads. Once installed, matching prompts
+for Codex, Claude Desktop, Claude Code, and custom ZIP uploads. Once installed, matching prompts
 can select the skill, or users can invoke it explicitly. The session still needs
 execution tools, .NET 10, Python, and dependency access. Publishing a ZIP does not
 publish the corresponding API code; distribute a compatible source revision.

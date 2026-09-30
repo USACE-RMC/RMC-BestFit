@@ -63,16 +63,28 @@ def package_marketplace(output):
     return write_archive(output, entries)
 
 
+def package_claude_plugin(output):
+    """Build a skills-only Claude plugin that uploads directly or serves as its own local marketplace."""
+    root = Path(__file__).resolve().parents[1]
+    templates = root / "packaging/bestfit-frequency"
+    plugin = "bestfit-frequency-claude-plugin/"
+    entries = [(plugin + ".claude-plugin/plugin.json", (templates / "claude-plugin.json").read_bytes()),
+               (plugin + ".claude-plugin/marketplace.json", (templates / "claude-marketplace.json").read_bytes())]
+    entries.extend((plugin + "skills/bestfit-frequency/" + name, content) for name, content in skill_entries())
+    return write_archive(output, entries)
+
+
 def main():
-    """Package to the default artifact path or a caller-supplied ZIP path."""
+    """Package to the default artifact paths or caller-supplied ZIP paths."""
+    artifacts = Path(__file__).resolve().parents[1] / "artifacts"
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parents[1] / "artifacts/bestfit-frequency-skill.zip")
-    parser.add_argument("--plugin-output", type=Path, default=Path(__file__).resolve().parents[1] / "artifacts/bestfit-frequency-marketplace.zip")
+    parser.add_argument("--output", type=Path, default=artifacts / "bestfit-frequency-skill.zip")
+    parser.add_argument("--plugin-output", type=Path, default=artifacts / "bestfit-frequency-marketplace.zip")
+    parser.add_argument("--claude-plugin-output", type=Path, default=artifacts / "bestfit-frequency-claude-plugin.zip")
     args = parser.parse_args()
-    digest = package(args.output)
-    print(f"{args.output.resolve()}\nSHA-256 {digest}")
-    digest = package_marketplace(args.plugin_output)
-    print(f"{args.plugin_output.resolve()}\nSHA-256 {digest}")
+    for path, build in ((args.output, package), (args.plugin_output, package_marketplace),
+                        (args.claude_plugin_output, package_claude_plugin)):
+        print(f"{path.resolve()}\nSHA-256 {build(path)}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,13 @@
+{
+  "name": "bestfit-local",
+  "owner": { "name": "USACE Risk Management Center" },
+  "description": "Local catalog for the BestFit Flood Frequency plugin.",
+  "plugins": [
+    {
+      "name": "bestfit-frequency",
+      "source": "./",
+      "description": "Evidence-backed flood frequency analysis with the local BestFit API.",
+      "category": "productivity"
+    }
+  ]
+}

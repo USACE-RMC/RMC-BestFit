@@ -42,11 +42,15 @@
   "packages": [
     {
       "path": "artifacts\\bestfit-frequency-skill.zip",
-      "sha256": "26a7fc3ca07306eb48da6c1d0e9182c019083174a70e0a2d662dacaf17f3374f"
+      "sha256": "f54709c04c46a5e87b773499dc683badc9a7dbbd5aeacc1167072108f5ac95bb"
     },
     {
       "path": "artifacts\\bestfit-frequency-marketplace.zip",
-      "sha256": "89b0237f18ef1c41192b2e7c03f22f5abec29ef4cf18f6c98e177b7945317e7b"
+      "sha256": "2dfb9d69553aa3772efd670f0ffbf44e0414b7192d746def6c57a177372148ef"
+    },
+    {
+      "path": "artifacts\\bestfit-frequency-claude-plugin.zip",
+      "sha256": "4880e7daaaac742d794f277ea297453eefc56f559eee91e2a69f488054a10057"
     }
   ],
   "evidence": {

@@ -48,6 +48,36 @@ class PackageTests(unittest.TestCase):
                                  (ROOT / "skills/bestfit-frequency/references/examples.md").read_bytes())
                 self.assertFalse(any("__pycache__" in name or name.endswith(".pyc") for name in archive.namelist()))
 
+    def test_claude_plugin_uploads_or_serves_as_its_own_marketplace(self):
+        self.assertTrue(hasattr(PACKAGE, "package_claude_plugin"), "Missing Claude plugin package")
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "claude-plugin.zip"
+            PACKAGE.package_claude_plugin(path)
+            original = path.read_bytes()
+            PACKAGE.package_claude_plugin(path)
+            self.assertEqual(original, path.read_bytes())
+            with zipfile.ZipFile(path) as archive:
+                self.assertIsNone(archive.testzip())
+                names = archive.namelist()
+                # Uploads accept a plugin root at the top of the archive or one folder down.
+                root = "bestfit-frequency-claude-plugin/"
+                self.assertTrue(all(name.startswith(root) for name in names))
+                manifest = json.loads(archive.read(root + ".claude-plugin/plugin.json"))
+                openai = json.loads((ROOT / "packaging/bestfit-frequency/plugin.json").read_text(encoding="utf-8"))
+                self.assertEqual(manifest["name"], "bestfit-frequency")
+                self.assertEqual(manifest["version"], openai["version"])
+                self.assertNotIn("mcpServers", manifest)
+                catalog = json.loads(archive.read(root + ".claude-plugin/marketplace.json"))
+                entry = catalog["plugins"][0]
+                self.assertEqual((entry["name"], entry["source"]), (manifest["name"], "./"))
+                self.assertNotIn("version", entry)
+                skill = root + "skills/bestfit-frequency/"
+                standalone = {name for name, _ in PACKAGE.skill_entries()}
+                self.assertEqual({name[len(skill):] for name in names if name.startswith(skill)}, standalone)
+                for name in ("SKILL.md", "references/install.md", "scripts/run_study.py"):
+                    self.assertEqual(archive.read(skill + name), (ROOT / "skills/bestfit-frequency" / name).read_bytes())
+                self.assertFalse(any("__pycache__" in name or name.endswith(".pyc") for name in names))
+
 
 if __name__ == "__main__":
     unittest.main()

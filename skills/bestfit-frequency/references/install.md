@@ -1,16 +1,19 @@
 # Link BestFit to OpenAI and Anthropic chat platforms
 
-One maintained skill is distributed two ways. From the repository root run:
+One maintained skill is distributed three ways. From the repository root run:
 
 ```sh
 python scripts/package-bestfit-skill.py
 ```
 
-This creates `artifacts/bestfit-frequency-skill.zip` (Claude/standalone skill) and
-`artifacts/bestfit-frequency-marketplace.zip` (OpenAI skills-only plugin), each
+This creates `artifacts/bestfit-frequency-skill.zip` (standalone skill),
+`artifacts/bestfit-frequency-marketplace.zip` (OpenAI skills-only plugin) and
+`artifacts/bestfit-frequency-claude-plugin.zip` (Claude skills-only plugin), each
 with a SHA-256 sidecar. No profile is modified, connector registered or plugin
-published. The plugin uses the supported `.codex-plugin/plugin.json` compatibility
-layout. Both archives contain identical skill files, with no binaries or runtimes.
+published. The OpenAI plugin uses the supported `.codex-plugin/plugin.json`
+compatibility layout; the Claude plugin uses `.claude-plugin/plugin.json` and
+lists itself in its own one-plugin marketplace. All three archives contain
+identical skill files, with no binaries or runtimes.
 
 ## Runtime requirement for every platform
 
@@ -69,7 +72,7 @@ as a public connector to work around missing execution capabilities.
    Team/Enterprise administrators may control skills and execution availability.
 2. Open **Customize → Skills → + → Create skill → Upload a skill**.
 3. Upload `bestfit-frequency-skill.zip`. It has one top-level `bestfit-frequency/`
-   folder containing `SKILL.md`; do not upload the marketplace ZIP instead.
+   folder containing `SKILL.md`; do not upload either plugin ZIP instead.
 4. Enable the skill, start a fresh chat, and explicitly request `bestfit-frequency`.
 5. Supply the compatible repository revision and study location/data. Test the
    synthetic input chronology and runtime prerequisites before an engineering fit.
@@ -79,11 +82,38 @@ and [ZIP structure](https://support.claude.com/en/articles/12512198-how-to-creat
 Installing a skill does not guarantee .NET installation or persistent processes in
 that chat environment. Keep runtime acceptance distinct from successful upload.
 
+## Claude Desktop plugin
+
+1. Open **Customize → Plugins**, choose the upload option, and select
+   `bestfit-frequency-claude-plugin.zip`. It has one top-level
+   `bestfit-frequency-claude-plugin/` folder holding `.claude-plugin/plugin.json`
+   and `skills/bestfit-frequency/`; do not upload the skill or OpenAI ZIP instead.
+2. Open the installed plugin and confirm it lists the `bestfit-frequency` skill.
+   An installed plugin is saved to the account, so the skill is also available in
+   chat and in Claude Code; do not also upload the standalone skill.
+3. Start a fresh task with the compatible repository revision and test the
+   synthetic preparation/chronology workflow before an engineering fit.
+
+[Official plugin installation](https://claude.com/docs/cowork/guide/plugins).
+
 ## Claude Code
 
-Extract the skill folder into `~/.claude/skills/` or the repository's `.claude/skills/`.
-Open the compatible checkout, invoke `/bestfit-frequency`, and test preparation and
-chronology before fitting. [Official instructions](https://code.claude.com/docs/en/skills).
+Plugin route:
+
+1. Extract `bestfit-frequency-claude-plugin.zip`, keeping its top-level
+   `bestfit-frequency-claude-plugin` folder and hidden `.claude-plugin` folder.
+2. Register that folder as a local marketplace:
+   `claude plugin marketplace add ABSOLUTE_PATH/bestfit-frequency-claude-plugin`
+   (or `/plugin marketplace add ...` inside a session). Optionally check it first
+   with `claude plugin validate ABSOLUTE_PATH/bestfit-frequency-claude-plugin`.
+3. Run `claude plugin install bestfit-frequency@bestfit-local`, start a new session
+   in the compatible checkout, and invoke `/bestfit-frequency:bestfit-frequency`.
+
+Standalone route instead: extract the skill folder into `~/.claude/skills/` or the
+repository's `.claude/skills/` and invoke `/bestfit-frequency`. Choose one route to
+avoid duplicate copies. Test preparation and chronology before fitting.
+[Skills](https://code.claude.com/docs/en/skills) and
+[plugin marketplaces](https://code.claude.com/docs/en/plugins/marketplace-reference).
 
 ## Repository workflow and starter prompt
 
@@ -100,6 +130,6 @@ snapshot until the owner publishes a reachable revision.
 > candidate analyses. Retain sources, requests, applied settings, diagnostics and
 > plots. Identify unresolved judgments before final engineering adoption.
 
-Installation instructions checked against official documentation on 2026-09-22.
+Installation instructions checked against official documentation on 2026-09-30.
 Named client/account installation and Linux/web runtime execution must be validated
 separately; package checks and Windows tests do not prove those environments work.
