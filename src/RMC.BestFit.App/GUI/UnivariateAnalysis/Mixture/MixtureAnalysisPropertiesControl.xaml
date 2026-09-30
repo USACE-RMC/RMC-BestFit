@@ -115,7 +115,8 @@
                                         RowHeight="24"
                                         SelectionMode="Extended" SelectionUnit="CellOrRowHeader" AutoGenerateColumns="False"
                                         CanUserDeleteRows="False" CanUserAddRows="False" CanUserResizeColumns="True"
-                                        CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False" 
+                                        CanUserResizeRows="False" CanUserSortColumns="False" CanUserReorderColumns="False"
+                                        ShowSortContextMenu="False"
                                         PreviewMouseLeftButtonDown="DistributionDataGrid_PreviewMouseLeftButtonDown">
                                         <cntrls:CopyPasteDataGrid.Columns>
                                             <DataGridTemplateColumn 

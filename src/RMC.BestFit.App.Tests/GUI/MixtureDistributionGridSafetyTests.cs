@@ -35,6 +35,18 @@ namespace RMC.BestFit.App.Tests.GUI
         }
 
         /// <summary>
+        /// Keeps the column-header sort menu off: the grid rows are identity references that cannot be compared,
+        /// and a sorted view would no longer follow the component order.
+        /// </summary>
+        [STATestMethod]
+        public void DistributionGrid_DoesNotOfferHeaderSorting()
+        {
+            using var fixture = new GridFixture();
+            Assert.IsFalse(fixture.Grid.ShowSortContextMenu,
+                "Sorting compares MixtureDistributionRow items, which throws and terminates the application.");
+        }
+
+        /// <summary>
         /// Deletes the second equal-valued default row and renders the result without corrupting WPF's generator.
         /// </summary>
         [STATestMethod]
