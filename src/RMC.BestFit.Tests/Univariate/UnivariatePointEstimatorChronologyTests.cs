@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using Numerics.Distributions;
@@ -91,10 +92,77 @@ public class UnivariatePointEstimatorChronologyTests
         }
     }
 
+    /// <summary>Moving the time index past the record never publishes a chronology whose arrays disagree.</summary>
+    /// <returns>A task representing the completed regression check.</returns>
+    /// <remarks>
+    /// The frequency reprocess ends with the point-estimate refresh, and the chronology reprocess follows it.
+    /// A point-estimate curve spanning the new extent cannot pair with the previous extent's intervals, so each
+    /// published chronology is checked on its own change notification, as a view reads it.
+    /// </remarks>
+    [TestMethod]
+    public async Task TimeIndexPastRecord_PublishesOnlyAlignedChronologies()
+    {
+        var analysis = CreateAnalysis();
+        await analysis.CreateFrequencyAnalysisResultsAsync();
+        await analysis.CreateChronologyResultsAsync();
+        int recordLength = analysis.ChronologyAnalysisResults!.ModeCurve!.Length;
+        var misaligned = new ConcurrentQueue<string>();
+        var extended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        PropertyChangedEventHandler handler = (_, e) =>
+        {
+            if (e.PropertyName != nameof(UnivariateAnalysis.ChronologyAnalysisResults)) return;
+            var results = analysis.ChronologyAnalysisResults;
+            if (results == null) return;
+            int length = results.ModeCurve?.Length ?? -1;
+            if (results.MeanCurve?.Length != length || results.ConfidenceIntervals?.GetLength(0) != length)
+                misaligned.Enqueue($"mode {length}, mean {results.MeanCurve?.Length}, intervals {results.ConfidenceIntervals?.GetLength(0)}");
+            else if (length > recordLength)
+                extended.TrySetResult();
+        };
+        analysis.PropertyChanged += handler;
+        try
+        {
+            analysis.UnivariateDistribution.ParameterTimeIndex = 2015;
+            await extended.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            analysis.PropertyChanged -= handler;
+        }
+
+        Assert.IsTrue(misaligned.IsEmpty, "Published misaligned chronologies: " + string.Join("; ", misaligned));
+    }
+
+    /// <summary>A chronology rebuild never exposes results whose mean and intervals are still being computed.</summary>
+    /// <returns>A task representing the completed regression check.</returns>
+    /// <remarks>
+    /// Views redraw the chronology from change notifications that can arrive while a rebuild runs, so the
+    /// property must hold either no results or complete results. Many stored draws keep the rebuild long
+    /// enough for the polling loop to observe any intermediate state.
+    /// </remarks>
+    [TestMethod]
+    public async Task ChronologyRebuild_NeverExposesIncompleteResults()
+    {
+        var analysis = CreateAnalysis(draws: 8000);
+        bool sawIncomplete = false;
+        var rebuild = analysis.CreateChronologyResultsAsync();
+        while (!rebuild.IsCompleted)
+        {
+            var results = analysis.ChronologyAnalysisResults;
+            if (results != null && (results.MeanCurve == null || results.ConfidenceIntervals == null))
+                sawIncomplete = true;
+        }
+        await rebuild;
+
+        Assert.IsFalse(sawIncomplete, "The chronology was visible before its mean and intervals were set.");
+        Assert.IsNotNull(analysis.ChronologyAnalysisResults?.ConfidenceIntervals);
+    }
+
     /// <summary>Builds an estimated linear-location Normal model using fixed stored posterior draws.</summary>
+    /// <param name="draws">The number of stored posterior draws, which is also the output length.</param>
     /// <returns>The injected analysis ready for deterministic output processing.</returns>
     /// <remarks>The synthetic posterior mean and MAP differ by construction.</remarks>
-    private static UnivariateAnalysis CreateAnalysis()
+    private static UnivariateAnalysis CreateAnalysis(int draws = 100)
     {
         double[] values = [12500, 15300, 8900, 22100, 18700, 14200, 9800, 28500, 17400, 11600,
             19200, 13800, 25600, 10500, 16900, 21300, 14700, 8200, 23800, 15900];
@@ -104,8 +172,8 @@ public class UnivariatePointEstimatorChronologyTests
         var model = new UnivariateDistribution(frame, UnivariateDistributionType.Normal) { IsNonstationary = true };
         model.SetTrendModel(0, TrendModelType.Linear);
         var analysis = new UnivariateAnalysis(model);
-        analysis.BayesianAnalysis.OutputLength = 100;
-        var output = Enumerable.Range(0, 100)
+        analysis.BayesianAnalysis.OutputLength = draws;
+        var output = Enumerable.Range(0, draws)
             .Select(_ => new ParameterSet(new[] { 17000d, 80d, 6000d }, 0d)).ToList();
         analysis.BayesianAnalysis.SetCustomMCMCResults(
             new MCMCResults(new ParameterSet(new[] { 16000d, 50d, 5000d }, 0d), output, alpha: 0.10),

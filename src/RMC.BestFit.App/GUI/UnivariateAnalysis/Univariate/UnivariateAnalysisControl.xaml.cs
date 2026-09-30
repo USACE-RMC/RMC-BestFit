@@ -836,6 +836,28 @@ namespace RMC_BestFit
         }
 
         /// <summary>
+        /// Determines whether chronology results are complete enough to draw.
+        /// </summary>
+        /// <param name="results">The chronology results, read once for the redraw.</param>
+        /// <returns>
+        /// <see langword="true"/> when the point-estimate, mean, and interval arrays exist and align, and the
+        /// intervals hold a lower and an upper bound for every step; otherwise <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// The chronology redraws from change notifications raised by background reprocesses, so it must never
+        /// index into results that are absent or still being rebuilt.
+        /// </remarks>
+        internal static bool IsChronologyDrawable(Numerics.Distributions.UncertaintyAnalysisResults results)
+        {
+            if (results?.ModeCurve == null || results.MeanCurve == null || results.ConfidenceIntervals == null)
+                return false;
+            int length = results.ModeCurve.Length;
+            return results.MeanCurve.Length == length
+                && results.ConfidenceIntervals.GetLength(0) == length
+                && results.ConfidenceIntervals.GetLength(1) >= 2;
+        }
+
+        /// <summary>
         /// Updates the chronology plot with time series data, threshold information, and nonstationary analysis results.
         /// Displays data points, credible intervals, and mean trends over time for nonstationary distributions.
         /// </summary>
@@ -950,9 +972,10 @@ namespace RMC_BestFit
                     UpdateThresholdPlotSeries();
 
                     // frequency results
+                    var chronology = Element.ChronologyAnalysisResults;
                     if (Element.BayesianAnalysis != null &&
                         Element.BayesianAnalysis.IsEstimated == true &&
-                        Element.ChronologyAnalysisResults != null &&
+                        IsChronologyDrawable(chronology) &&
                         Element.UnivariateDistribution != null &&
                         Element.UnivariateDistribution.IsNonstationary == true &&
                         Element.InputData.DataFrame.FullTimeSeries.Count > 0)
@@ -961,12 +984,12 @@ namespace RMC_BestFit
                         var prdPoints = new List<OxyPlot.DataPoint>();
                         var mdPoints = new List<OxyPlot.DataPoint>();
                         int t = Element.InputData.DataFrame.FullTimeSeries.First().Index;
-                        for (int i = 0; i < Element.ChronologyAnalysisResults.ModeCurve.Length; i++)
+                        for (int i = 0; i < chronology.ModeCurve.Length; i++)
                         {
-                            var up = Element.ChronologyAnalysisResults.ConfidenceIntervals[i, 1];
-                            var lo = Element.ChronologyAnalysisResults.ConfidenceIntervals[i, 0];
-                            var prd = Element.ChronologyAnalysisResults.MeanCurve[i];
-                            var md = Element.ChronologyAnalysisResults.ModeCurve[i];
+                            var up = chronology.ConfidenceIntervals[i, 1];
+                            var lo = chronology.ConfidenceIntervals[i, 0];
+                            var prd = chronology.MeanCurve[i];
+                            var md = chronology.ModeCurve[i];
                             ciPoints.Add(new Point3D(t, lo, up));
                             prdPoints.Add(new OxyPlot.DataPoint(t, prd));
                             mdPoints.Add(new OxyPlot.DataPoint(t, md));

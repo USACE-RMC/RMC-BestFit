@@ -635,9 +635,13 @@ namespace RMC.BestFit.Analyses
         /// <remarks>
         /// <para>
         /// This method recalculates the mode curve and goodness-of-fit metrics (AIC, BIC, DIC, RMSE)
-        /// based on either the posterior mean or MAP estimate.
+        /// based on either the posterior mean or MAP estimate. For a nonstationary model it also
+        /// replaces the chronology's point-estimate curve and parent distribution in place, keeping its
+        /// mean and intervals, and raises <see cref="ChronologyAnalysisResults"/>; when the curve's
+        /// extent no longer matches those intervals, the chronology is left for its own reprocess.
         /// </para>
         /// </remarks>
+        /// <returns>A task that completes when the point-estimate results have been refreshed.</returns>
         public async Task UpdatePointEstimateResultsAsync()
         {
             if (BayesianAnalysis == null || BayesianAnalysis.IsEstimated == false || 
@@ -647,6 +651,7 @@ namespace RMC.BestFit.Analyses
             }
 
             var chronologyResults = UnivariateDistribution.IsNonstationary ? ChronologyAnalysisResults : null;
+            bool chronologyRefreshed = false;
             await Task.Run(() =>
             {
                 // Set the point estimator
@@ -665,10 +670,18 @@ namespace RMC.BestFit.Analyses
                     AnalysisResults.ModeCurve[i] = UnivariateDistribution.Distribution.InverseCDF(1 - ProbabilityOrdinates[i]);
 
                 // Retain posterior uncertainty while refreshing the chronology's selected point estimate.
+                // A time index moved past the record changes the curve's extent; the chronology reprocess
+                // queued with that change rebuilds the intervals, so the old ones are not paired with it.
                 if (chronologyResults != null)
                 {
-                    chronologyResults.ParentDistribution = UnivariateDistribution.Distribution.Clone();
-                    chronologyResults.ModeCurve = UnivariateDistribution.GetNonstationaryReturnLevel()!;
+                    var chronologyMode = UnivariateDistribution.GetNonstationaryReturnLevel()!;
+                    if (chronologyResults.MeanCurve?.Length == chronologyMode.Length &&
+                        chronologyResults.ConfidenceIntervals?.GetLength(0) == chronologyMode.Length)
+                    {
+                        chronologyResults.ParentDistribution = UnivariateDistribution.Distribution.Clone();
+                        chronologyResults.ModeCurve = chronologyMode;
+                        chronologyRefreshed = true;
+                    }
                 }
 
                 // AIC/BIC use the data likelihood at MAP and are comparable with MLE
@@ -697,7 +710,7 @@ namespace RMC.BestFit.Analyses
             });
 
             RaisePropertyChange(nameof(AnalysisResults));
-            if (chronologyResults != null) RaisePropertyChange(nameof(ChronologyAnalysisResults));
+            if (chronologyRefreshed) RaisePropertyChange(nameof(ChronologyAnalysisResults));
         }
 
         /// <summary>
@@ -786,12 +799,14 @@ namespace RMC.BestFit.Analyses
                     UnivariateDistribution.SetParameterValues(BayesianAnalysis.Results.MAP.Values);
                 }
 
-                ChronologyAnalysisResults = new UncertaintyAnalysisResults();
-                ChronologyAnalysisResults.ParentDistribution = UnivariateDistribution.Distribution.Clone();
-                ChronologyAnalysisResults.ModeCurve = UnivariateDistribution.GetNonstationaryReturnLevel()!;
+                // Views redraw the chronology from change notifications raised while this rebuild runs,
+                // so the results are published only after the mean and intervals are complete.
+                var results = new UncertaintyAnalysisResults();
+                results.ParentDistribution = UnivariateDistribution.Distribution.Clone();
+                results.ModeCurve = UnivariateDistribution.GetNonstationaryReturnLevel()!;
 
                 int realz = BayesianAnalysis.OutputLength;
-                int length = ChronologyAnalysisResults.ModeCurve.Length;
+                int length = results.ModeCurve.Length;
                 var ts = new double[realz, length];
 
                 Parallel.For(0, realz, AnalysisProgress.CreateParallelOptions(), idx =>
@@ -814,9 +829,9 @@ namespace RMC.BestFit.Analyses
                     ci[idx, 1] = Statistics.Percentile(data, 1 - a, true);
                 });
 
-                ChronologyAnalysisResults.MeanCurve = mean;
-                ChronologyAnalysisResults.ConfidenceIntervals = ci;
-
+                results.MeanCurve = mean;
+                results.ConfidenceIntervals = ci;
+                ChronologyAnalysisResults = results;
             });
 
             RaisePropertyChange(nameof(ChronologyAnalysisResults));
