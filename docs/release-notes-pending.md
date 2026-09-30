@@ -1,9 +1,10 @@
-# Pending release notes
+# RMC-BestFit 2.0.1 release notes
 
-Behavior changes made since the public releases RMC.BestFit 2.0.0 and RMC.Numerics 2.1.4 that
-must appear in the next release notes. Package versions are not incremented by this list. The
-BestFit solution builds against the published RMC.Numerics 2.2.0 package by default; a sibling
-Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics=true`.
+Behavior changes in RMC-BestFit 2.0.1 and the `RMC.BestFit` 2.0.1 package since the public
+releases RMC.BestFit 2.0.0 and RMC.Numerics 2.1.4, including the RMC.Numerics 2.2.0 changes that
+this release is built with. The BestFit solution builds against the published RMC.Numerics 2.2.0
+package by default; a sibling Numerics checkout is used only when a build opts in with
+`-p:UseLocalRmcNumerics=true`.
 
 ## RMC.BestFit (since 2.0.0)
 
@@ -185,12 +186,32 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   (matching the Bulletin 17C initializer). LnNormal, parameterized by the real-space mean, was
   never affected.
 - Mixture analysis (issues #16, #17): deleting a distribution row no longer crashes the
-  application (the grid delete is cancelled and performed from a clean dispatcher stack, and the
-  re-bind suppresses combo-box write-backs); changing the point estimator updates the summary —
+  application (the grid cancels its own delete and removes the selected rows from a clean
+  dispatcher stack); changing the point estimator updates the summary —
   the K-1 weight expansion clamps a ULP-scale negative residual at the simplex boundary instead of
   throwing, and a failed reprocess now raises the conventional `AnalysisResults` notification
   (alongside clearing `IsEstimated`) so every analysis view rebuilds and resets its wait cursor
   instead of freezing on stale output.
+- Mixture components: each row of the distributions grid keeps its own identity, so with two
+  components of the same distribution type, selecting or changing the second row edits the second
+  component (formerly the first); a grid deletion removes the rows that were selected even when
+  another edit, a replacement of the component list, or a switch to another analysis happens
+  before it runs; and adding, removing, or changing a component is one undo step that restores the
+  complete mixture model, including its parameter values, bounds, and priors (formerly undo
+  replayed only the list of distribution types and rebuilt the default parameters). Undo also works
+  before input data is selected: `MixtureModel(DataFrame, XElement)` accepts a null data frame
+  instead of throwing `NullReferenceException`.
+- Point-estimator changes and comparisons: switching an estimated analysis between the posterior
+  mean and mode refreshes every view from the retained posterior without re-running it. The
+  comparison list of the univariate, Bulletin 17C, mixture, point-process, composite,
+  coincident-frequency, rating-curve, and time-series views refreshes a compared analysis on the
+  application's UI thread when that analysis finishes reprocessing, and ignores a queued refresh
+  for a comparison that was unchecked, removed, or whose view switched to another analysis; the
+  time-series analysis properties apply the change on the UI thread; and a nonstationary univariate
+  analysis refreshes its chronology's point-estimate curve with its frequency curve
+  (`UnivariateAnalysis.UpdatePointEstimateResultsAsync` also updates `ChronologyAnalysisResults`
+  and raises its change notification). Previously these views could miss the refresh raised from
+  the background reprocess, and the chronology kept the previous estimator's curve.
 - Low outlier test (issue #13): a threshold rejected by the 50-percent-censoring guard shows the
   validation message instead of terminating the application, and a legacy project whose stored
   low-outlier settings the current guards reject opens with the outliers cleared instead of
@@ -222,6 +243,15 @@ Numerics checkout is used only when a build opts in with `-p:UseLocalRmcNumerics
   that was cleared on the way out; if the series changed (edited in place, or re-derived by another
   method such as Block Series) while a different method was selected, the exposure stays cleared
   until the next POT extraction.
+- Input data derived from a time series: editing, adding, or removing values or dates of the
+  source time series in place now clears the input data's extracted block or peaks-over-threshold
+  series and marks it unprocessed, as replacing the series already did, so an analysis can no
+  longer use extracted observations that no longer match their source; process the input data
+  again after such an edit. Manual entry keeps its observations, and editing only the source's
+  name, description, or unit keeps the extraction. The clearing is not an undo step of the input
+  data: undoing the source edit restores the source values, not the extraction. The
+  threshold-diagnostics plots and their cached results also clear when the source is removed,
+  shortened below 20 values, or edited, instead of keeping curves from the former source.
 - HEC-DSS import: a regular time series whose storage blocks are partly missing now imports
   completely. The reader resolves every catalog record that matches the path's A, B, C, E, and F
   parts, reads each calendar block separately, keeps gaps as missing values, and rejects
