@@ -138,7 +138,9 @@ Use the specialized output alongside, not instead of, these checks:
 - physical plausibility of tail extrapolation; and
 - consistency with the current Bulletin 17C study protocol and agency review requirements.
 
-`ComputeCohnStyleConfidenceIntervals()` supplies a separate diagnostic comparison, not the main frequency result. It is supported only for Log-Pearson Type III with exact observations and no low outliers. The method throws `NotSupportedException` for every other parent family and for uncertain, interval-censored, threshold-censored, or low-outlier data. The report-side Cohn asymptotic-variance diagnostic applies the same guard and states why it is unavailable. Numerical verification of Cohn interval values is deferred.
+`ComputeCohnStyleConfidenceIntervals()` supplies a separate diagnostic comparison, not the main frequency result. It is supported only for Log-Pearson Type III with exact observations and no low outliers. The method throws `NotSupportedException` for every other parent family and for uncertain, interval-censored, threshold-censored, or low-outlier data. Numerical verification of Cohn interval values is deferred.
+
+The GMM report separately propagates the fitted sandwich covariance through `Bulletin17CDistribution.QuantileVariance` for all six supported parents, including analyses with low outliers, uncertain observations, and censoring. Quantiles are reported in log10 space for LP3 and Log-Normal, and native space otherwise; variances use the corresponding squared units. Unavailable covariance is explained, and failed row evaluations are marked `N/A`. This asymptotic delta-method diagnostic does not establish Cohn/PeakFQ parity or interval coverage; see [GMM report quantile variance](bulletin-17c-uncertainty.md#gmm-report-quantile-variance).
 
 ## Specialized GMM Versus Generic Bayesian Univariate Analysis
 

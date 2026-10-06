@@ -767,16 +767,11 @@ public class Bulletin17CAnalysisTests
     }
 
     /// <summary>
-    /// The report-side asymptotic-variance calculation returns no values outside the supported
-    /// LP3 exact-data scope.
+    /// Unestimated analyses do not publish a report, including non-LP3 and censored LP3 models.
     /// </summary>
     [TestMethod]
-    public void ComputeAsymptoticQuantileVariance_UnsupportedScope_ReturnsNull()
+    public void GenerateGMMReport_UnestimatedNonLp3AndCensoredLp3_ReturnsEmpty()
     {
-        MethodInfo method = typeof(Bulletin17CAnalysis).GetMethod(
-            "ComputeAsymptoticQuantileVariance",
-            BindingFlags.Instance | BindingFlags.NonPublic)!;
-
         var nonLp3Analysis = new Bulletin17CAnalysis(new Bulletin17CDistribution(
             CreateFloodDataFrame(), UnivariateDistributionType.Normal));
         var censoredData = CreateFloodDataFrame();
@@ -784,8 +779,8 @@ public class Bulletin17CAnalysisTests
         var censoredLp3Analysis = new Bulletin17CAnalysis(new Bulletin17CDistribution(
             censoredData, UnivariateDistributionType.LogPearsonTypeIII));
 
-        Assert.IsNull(method.Invoke(nonLp3Analysis, null));
-        Assert.IsNull(method.Invoke(censoredLp3Analysis, null));
+        Assert.AreEqual(string.Empty, nonLp3Analysis.GenerateGMMReport());
+        Assert.AreEqual(string.Empty, censoredLp3Analysis.GenerateGMMReport());
     }
 
     #endregion

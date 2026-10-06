@@ -34,7 +34,7 @@ Aggregate result: **7 passed, 0 failed, 0 skipped**. The formal comparisons cove
 
 ## Cohn diagnostic scope
 
-`ComputeCohnStyleConfidenceIntervals()` and the report-side asymptotic quantile variance use LP3 base-10 transformations and are supported only when all observations are exact and no exact observation is marked as a low outlier. The production guard rejects:
+`ComputeCohnStyleConfidenceIntervals()` uses LP3 base-10 transformations and is supported only when all observations are exact and no exact observation is marked as a low outlier. Its production guard rejects:
 
 - Exponential;
 - Gamma;
@@ -46,7 +46,13 @@ Aggregate result: **7 passed, 0 failed, 0 skipped**. The formal comparisons cove
 - LP3 with interval censoring; and
 - LP3 with threshold censoring.
 
-Fast tests in `Bulletin17CAnalysisTests` cover these rejection cases, retain the unestimated exact-LP3 null contract, and confirm that the private report helper returns no values outside scope. Numerical verification of Cohn interval values is deferred and is not implied by the formal worked-example results.
+Fast tests in `Bulletin17CAnalysisTests` cover these rejection cases and retain the unestimated exact-LP3 null contract. Numerical verification of Cohn interval values is deferred and is not implied by the formal worked-example results.
+
+## GMM quantile-variance report contracts
+
+The report's asymptotic delta-method table uses the existing distribution-aware `Bulletin17CDistribution.QuantileVariance` with fitted GMM parameters and covariance. It supports all six parent families and does not apply the Cohn interval scope guard. LP3 and Log-Normal quantiles are in log10 space with squared log10 variance units; other families use native quantiles and squared native units. Unusable covariance is explained without suppressing point estimates, and failed quantile/variance rows display `N/A` without parent-value substitution or clipping negative variance to zero.
+
+`Bulletin17CQuantileVarianceReportTests` contains eighteen deterministic fitted-state cases. Supplied correlated covariance matrices and known-point derivatives test all six families, AEP conversion, parameter-coordinate cross terms, units, preservation of fitted/model state, and report failure handling. LP3 cases with low outliers, uncertain observations, intervals, and thresholds still report available GMM variance while the separate Cohn API rejects them. No optimizer or sampler runs in these tests. These contracts establish report dispatch and arithmetic only, not censored/uncertain covariance accuracy, Cohn/PeakFQ parity, or interval coverage.
 
 ## Result-storage architecture
 

@@ -148,7 +148,17 @@ Report the following with every result: parent family, data units, low-outlier r
 
 `ComputeCohnStyleConfidenceIntervals()` is a separate public diagnostic and does not supply the main `AnalysisResults`. It uses two-node-per-dimension nested quadrature around the GMM estimate. At each outer point it recomputes covariance, constructs an inner grid, estimates the covariance of quantile and quantile standard error, and applies a Cohn-style adjusted Student-$t$ formula with regression coefficient $\beta_1$ and effective degrees of freedom $\nu$ [2]. It enforces monotone lower and upper curves afterward.
 
-The quantile helper instantiates Pearson III in base-10 logarithmic space and exponentiates interval bounds by $10$, so the diagnostic is mathematically limited to LP3. `ComputeCohnStyleConfidenceIntervals()` checks that scope before using the helper: it throws `NotSupportedException` for the five non-LP3 parents and for LP3 data containing low outliers, uncertain observations, interval censoring, or threshold censoring. The report-side asymptotic-quantile-variance calculation uses the same guard and prints an unavailable reason instead of applying LP3 formulas. Cohn value/parity verification remains deferred.
+The quantile helper instantiates Pearson III in base-10 logarithmic space and exponentiates interval bounds by $10$, so the diagnostic is mathematically limited to LP3. `ComputeCohnStyleConfidenceIntervals()` checks that scope before using the helper: it throws `NotSupportedException` for the five non-LP3 parents and for LP3 data containing low outliers, uncertain observations, interval censoring, or threshold censoring. Cohn value/parity verification remains deferred.
+
+## GMM Report Quantile Variance
+
+The report's **ASYMPTOTIC QUANTILE VARIANCE (DELTA METHOD)** table is independent of the Cohn interval diagnostic. For each configured AEP $\alpha$, it calls `Bulletin17CDistribution.QuantileVariance(1 - alpha, thetaHat, covariance)` with the fitted GMM parameters and sandwich covariance. The calculation propagates that covariance through the distribution-aware quantile gradient, including off-diagonal parameter covariances. It preserves the estimator's existing penalty and observation-information treatment and does not rerun estimation or sampling.
+
+For LP3 and Log-Normal, the quantile and gradient are evaluated using Pearson III and Normal, respectively, in base-10 logarithmic space; the reported variance is in squared log10 units. Exponential, Gamma, Normal, and Pearson III use native-space quantiles and squared native units. The point quantile uses the fitted parameter vector, even if the model's configured initial parameters differ.
+
+Low outliers, uncertain observations, and interval or threshold censoring do not by themselves suppress this GMM diagnostic. Unusable GMM covariance produces an explicit unavailable reason while leaving the parameter estimates readable. A failed or nonfinite quantile or variance evaluation is shown as `N/A`; a negative variance is also unavailable rather than replaced with zero. The report does not substitute the parent quantile for a failed row. Existing saved report text is refreshed by the normal rerun/save workflow.
+
+These are asymptotic GMM delta-method variances, not Cohn intervals, PeakFQ parity results, or evidence of confidence-interval coverage. The deterministic report tests verify dispatch, arithmetic, units, and failure handling with supplied fitted states and covariance; they do not establish covariance accuracy for censored or uncertain data.
 
 ## Lifecycle, Cancellation, and Failure Semantics
 
@@ -158,7 +168,7 @@ Changing `UncertaintyMethod` clears results. `CancelAnalysis()` cancels the oute
 
 ## Validation Evidence and Required Calibration
 
-Fast tests cover configuration, serialization, linked-function behavior, WEDS direction, fallback state, pivotal bound repair, result accounting, ranked initialization, and the Cohn scope guard. The [verification report](../../verification/report/data-distributions-b17c.md) records current moment, covariance, published-example, interval, and refit-reliability comparisons. Their acceptance rules remain distinct: matching a published parameter tuple, producing finite refits, and demonstrating nominal interval coverage are not interchangeable.
+Fast tests cover configuration, serialization, linked-function behavior, WEDS direction, fallback state, pivotal bound repair, result accounting, ranked initialization, the Cohn scope guard, and fitted-state quantile-variance reporting. The [verification report](../../verification/report/data-distributions-b17c.md) records current moment, covariance, published-example, interval, and refit-reliability comparisons. Their acceptance rules remain distinct: matching a published parameter tuple, producing finite refits, and demonstrating nominal interval coverage are not interchangeable.
 
 The formal current-path parameter-parity source is `B17CExampleTests.Test_Example1` through `Test_Example7`. Each compares LP3 GMM mean, standard deviation, and skewness with the published Bulletin 17C worked-example values at absolute tolerance `1E-3`. All seven exact methods passed on 28 July 2026 with zero failures or skips. Parent-family covariance checks, uncertain-data variants, pointwise/aggregate moment consistency, coverage experiments, and Cohn interval-value verification are separate claims.
 

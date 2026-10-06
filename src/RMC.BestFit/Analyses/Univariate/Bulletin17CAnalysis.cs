@@ -3110,7 +3110,7 @@ namespace RMC.BestFit.Analyses
         {
             if (Bulletin17CDistribution.DistributionType != UnivariateDistributionType.LogPearsonTypeIII)
             {
-                return "Cohn-style confidence intervals and asymptotic quantile variances are supported only for Log-Pearson Type III analyses.";
+                return "Cohn-style confidence intervals are supported only for Log-Pearson Type III analyses.";
             }
 
             var dataFrame = Bulletin17CDistribution.DataFrame;
@@ -3121,7 +3121,7 @@ namespace RMC.BestFit.Analyses
                 dataFrame.IntervalSeries.Count > 0 ||
                 dataFrame.ThresholdSeries.Count > 0)
             {
-                return "Cohn-style confidence intervals and asymptotic quantile variances require exact data without low outliers, uncertain observations, interval censoring, or threshold censoring.";
+                return "Cohn-style confidence intervals require exact data without low outliers, uncertain observations, interval censoring, or threshold censoring.";
             }
 
             return null;
@@ -3709,14 +3709,27 @@ namespace RMC.BestFit.Analyses
             var paramNames = dist.ParameterNames;
             int maxNameLen = paramNames.Max(n => n.Length);
             maxNameLen = Math.Max(maxNameLen, 9);
-            var stdErrors = gmm.GetStandardErrors();
+            double[]? stdErrors = null;
+            string? standardErrorUnavailableReason = null;
+            try
+            {
+                stdErrors = gmm.GetStandardErrors();
+            }
+            catch (Exception ex)
+            {
+                standardErrorUnavailableReason = gmm.CovarianceDiagnostic ?? ex.Message;
+                Debug.WriteLine($"Bulletin17CAnalysis.GenerateGMMReport: standard errors unavailable: {ex.Message}");
+            }
             sb.AppendLine($"  {"Parameter".PadRight(maxNameLen)}  {"Estimate",12}  {"Std Error",12}");
             sb.AppendLine($"  {new string('-', maxNameLen)}  {new string('-', 12)}  {new string('-', 12)}");
             for (int i = 0; i < p; i++)
             {
                 string name = paramNames[i].PadRight(maxNameLen);
-                sb.AppendLine($"  {name}  {gmm.BestParameterSet.Values[i],12:G6}  {stdErrors[i],12:G6}");
+                string standardError = ReportFormatFiniteNumber(stdErrors?[i] ?? double.NaN);
+                sb.AppendLine($"  {name}  {gmm.BestParameterSet.Values[i],12:G6}  {standardError,12}");
             }
+            if (standardErrorUnavailableReason != null)
+                sb.AppendLine($"  Standard errors unavailable: {standardErrorUnavailableReason}");
             sb.AppendLine();
 
             // Section 5: Sampling Uncertainty (from sampled distributions)
@@ -3980,26 +3993,34 @@ namespace RMC.BestFit.Analyses
         /// <summary>
         /// Computes asymptotic quantile variance for each probability ordinate using the delta method.
         /// </summary>
+        /// <param name="unavailableReason">The reason no table can be computed, or null when rows are available.</param>
         /// <returns>
-        /// LP3 log10-space quantiles and variances, or <c>null</c> when the diagnostic is
-        /// outside its supported scope or covariance evaluation fails.
+        /// Quantiles and variances in log10 space for LP3 and Log-Normal, or native space for other
+        /// families. Returns null when fitted state, probability ordinates, or covariance are unavailable.
+        /// Individual failed evaluations are represented by NaN.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Uses Var(Qhat_p) = grad(Q_p)' * S_theta * grad(Q_p), where grad(Q_p) is the gradient
-        /// of the LP3 log10 quantile with respect to parameters and S_theta is the GMM sandwich covariance.
+        /// Uses the distribution-aware <see cref="Bulletin17CDistribution.QuantileVariance"/>
+        /// with the fitted GMM sandwich covariance. This report diagnostic does not use the Cohn
+        /// quadrature helper, its LP3 scope restrictions, or its point-estimate fallback.
         /// </para>
         /// </remarks>
-        private (double[] quantiles, double[] variances)? ComputeAsymptoticQuantileVariance()
+        private (double[] quantiles, double[] variances)? ComputeAsymptoticQuantileVariance(out string? unavailableReason)
         {
-            if (GetCohnDiagnosticUnavailableReason() != null)
+            unavailableReason = null;
+            if (_gmm == null || !_gmm.IsEstimated)
+            {
+                unavailableReason = "The GMM model has not been estimated.";
                 return null;
-
-            if (_gmm == null || !_gmm.IsEstimated || ProbabilityOrdinates == null || ProbabilityOrdinates.Count == 0)
+            }
+            if (ProbabilityOrdinates == null || ProbabilityOrdinates.Count == 0)
+            {
+                unavailableReason = "No probability ordinates are configured.";
                 return null;
+            }
 
             var thetaHat = _gmm.BestParameterSet.Values;
-            int p = thetaHat.Length;
             int nProb = ProbabilityOrdinates.Count;
 
             // Get the asymptotic parameter covariance matrix (sandwich estimator)
@@ -4010,45 +4031,48 @@ namespace RMC.BestFit.Analyses
             }
             catch (Exception ex)
             {
+                unavailableReason = _gmm.CovarianceDiagnostic ?? ex.Message;
                 Debug.WriteLine($"Bulletin17CAnalysis.ComputeAsymptoticQuantileVariance: GMM covariance unavailable: {ex.Message}");
                 return null;
             }
 
-            var quantiles = new double[nProb];
-            var variances = new double[nProb];
+            // Use the same quantile space as the model's distribution-aware gradient.
+            var model = Bulletin17CDistribution;
+            var quantileDistribution = model.DistributionType switch
+            {
+                UnivariateDistributionType.LogPearsonTypeIII => new PearsonTypeIII(),
+                UnivariateDistributionType.LogNormal => new Normal(),
+                _ => model.Distribution.Clone()
+            };
+            double[,] covariance = sigma.ToArray();
+            var quantiles = Enumerable.Repeat(double.NaN, nProb).ToArray();
+            var variances = Enumerable.Repeat(double.NaN, nProb).ToArray();
 
             for (int k = 0; k < nProb; k++)
             {
                 double nonExceedProb = 1.0 - ProbabilityOrdinates[k];
 
-                // Point estimate in moment-condition space
-                quantiles[k] = EvaluateQuantileSafe(thetaHat, nonExceedProb);
-
-                // Gradient of quantile function w.r.t. parameters via numerical differentiation
-                double[] grad;
                 try
                 {
-                    grad = NumericalDiff.ComputeGradient(
-                        theta => EvaluateQuantileSafe(theta, nonExceedProb),
-                        thetaHat);
+                    quantileDistribution.SetParameters(thetaHat);
+                    double quantile = quantileDistribution.InverseCDF(nonExceedProb);
+                    if (!Tools.IsFinite(quantile))
+                    {
+                        Debug.WriteLine($"Bulletin17CAnalysis.ComputeAsymptoticQuantileVariance: nonfinite quantile at p={nonExceedProb}.");
+                        continue;
+                    }
+                    quantiles[k] = quantile;
+
+                    double variance = model.QuantileVariance(nonExceedProb, thetaHat, covariance);
+                    if (Tools.IsFinite(variance) && variance >= 0.0)
+                        variances[k] = variance;
+                    else
+                        Debug.WriteLine($"Bulletin17CAnalysis.ComputeAsymptoticQuantileVariance: unusable variance at p={nonExceedProb}.");
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Bulletin17CAnalysis.ComputeAsymptoticQuantileVariance: gradient failed at p={nonExceedProb}: {ex.Message}");
-                    variances[k] = double.NaN;
-                    continue;
+                    Debug.WriteLine($"Bulletin17CAnalysis.ComputeAsymptoticQuantileVariance: evaluation failed at p={nonExceedProb}: {ex.Message}");
                 }
-
-                // Evaluate Var(Qhat_p) = grad(Q_p)' * S_theta * grad(Q_p).
-                double variance = 0;
-                for (int i = 0; i < p; i++)
-                {
-                    double tmp = 0;
-                    for (int j = 0; j < p; j++)
-                        tmp += sigma[i, j] * grad[j];
-                    variance += grad[i] * tmp;
-                }
-                variances[k] = Math.Max(0, variance);
             }
 
             return (quantiles, variances);
@@ -4060,35 +4084,45 @@ namespace RMC.BestFit.Analyses
         /// <param name="sb">The string builder to append to.</param>
         private void ReportAppendAsymptoticQuantileVariance(StringBuilder sb)
         {
-            string? unavailableReason = GetCohnDiagnosticUnavailableReason();
-            if (unavailableReason != null)
+            ReportAppendSectionHeader(sb, "ASYMPTOTIC QUANTILE VARIANCE (DELTA METHOD)");
+            var result = ComputeAsymptoticQuantileVariance(out string? unavailableReason);
+            if (result == null)
             {
-                ReportAppendSectionHeader(sb, "COHN LP3 ASYMPTOTIC QUANTILE VARIANCE");
                 sb.AppendLine($"  Not available: {unavailableReason}");
                 sb.AppendLine();
                 return;
             }
 
-            var result = ComputeAsymptoticQuantileVariance();
-            if (result == null) return;
-
             var (quantiles, variances) = result.Value;
 
-            ReportAppendSectionHeader(sb, "COHN LP3 ASYMPTOTIC QUANTILE VARIANCE");
             sb.AppendLine($"  {"AEP",12}  {"Quantile",12}  {"Variance",12}");
             sb.AppendLine($"  {new string('-', 12)}  {new string('-', 12)}  {new string('-', 12)}");
 
             for (int k = 0; k < quantiles.Length; k++)
             {
                 double aep = ProbabilityOrdinates[k];
-                string varStr = double.IsNaN(variances[k]) ? "N/A".PadLeft(12) : $"{variances[k],12:G6}";
-                sb.AppendLine($"  {aep,12:G4}  {quantiles[k],12:G6}  {varStr}");
+                sb.AppendLine($"  {aep,12:G4}  {ReportFormatFiniteNumber(quantiles[k]),12}  {ReportFormatFiniteNumber(variances[k]),12}");
             }
             sb.AppendLine();
-            sb.AppendLine("  Computed in LP3 log10 space via the delta method.");
+            bool isLogSpace = Bulletin17CDistribution.DistributionType is
+                UnivariateDistributionType.LogPearsonTypeIII or UnivariateDistributionType.LogNormal;
+            sb.AppendLine(isLogSpace
+                ? "  Quantiles are in log10 space; variances are in squared log10 units."
+                : "  Quantiles are in native space; variances are in squared native units.");
             sb.AppendLine("  Var(Q) = dQ/dtheta' * Sigma * dQ/dtheta, where Sigma is the sandwich covariance.");
+            sb.AppendLine("  Asymptotic GMM delta-method diagnostic; not Cohn confidence intervals or a coverage assessment.");
+            if (quantiles.Any(q => !Tools.IsFinite(q)) || variances.Any(v => !Tools.IsFinite(v)))
+                sb.AppendLine("  N/A indicates that the quantile or its variance could not be evaluated.");
             sb.AppendLine();
         }
+
+        /// <summary>
+        /// Formats a finite report value at six significant digits, or marks it unavailable.
+        /// </summary>
+        /// <param name="value">The value to format.</param>
+        /// <returns>The formatted value or N/A.</returns>
+        private static string ReportFormatFiniteNumber(double value) =>
+            Tools.IsFinite(value) ? value.ToString("G6", CultureInfo.CurrentCulture) : "N/A";
 
         /// <summary>
         /// Appends the parameter and quantile penalty configuration section to the report.
