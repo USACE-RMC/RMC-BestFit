@@ -998,30 +998,47 @@ namespace RMC_BestFit
                 summaryStats.Add(new SummaryStatistic("WAIC", double.NaN));
                 summaryStats.Add(new SummaryStatistic("LOO-CV", double.NaN));
                 summaryStats.Add(new SummaryStatistic("RMSE", double.NaN));
-                //summaryStats.Add(new SummaryStatistic("ERL", double.NaN));
+
             }
             else
             {
+
                 for (int i = 0; i < Element.PointProcess.Parameters.Count; i++)
                 {
                     summaryStats.Add(new SummaryStatistic(Element.PointProcess.Parameters[i].DisplayName, Element.PointProcess.Parameters[i].Value));
                 }
                 var min = Element.PointProcess.Distribution.Minimum;
                 var max = Element.PointProcess.Distribution.Maximum;
-
                 summaryStats.Add(new SummaryStatistic("Minimum", min < -1E12 ? double.NegativeInfinity : min));
                 summaryStats.Add(new SummaryStatistic("Maximum", max > 1E12 ? double.PositiveInfinity : max));
-                summaryStats.Add(new SummaryStatistic("Mean", Element.PointProcess.Distribution.Mean));
-                summaryStats.Add(new SummaryStatistic("Std Dev", Element.PointProcess.Distribution.StandardDeviation));
-                summaryStats.Add(new SummaryStatistic("Skewness", Element.PointProcess.Distribution.Skewness));
-                summaryStats.Add(new SummaryStatistic("Kurtosis", Element.PointProcess.Distribution.Kurtosis));
+
+                try
+                {
+
+                    var moments = Element.PointProcess.Distribution.CentralMoments(1E-6);
+                    summaryStats.Add(new SummaryStatistic("Mean", moments[0]));
+                    summaryStats.Add(new SummaryStatistic("Std Dev", moments[1]));
+                    summaryStats.Add(new SummaryStatistic("Skewness", moments[2]));
+                    summaryStats.Add(new SummaryStatistic("Kurtosis", moments[3]));
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception and continue with NaN values for summary statistics
+                    Console.WriteLine($"Error computing summary statistics: {ex.Message}");
+
+                    summaryStats.Add(new SummaryStatistic("Mean", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Std Dev", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Skewness", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Kurtosis", double.NaN));
+                }
+
                 summaryStats.Add(new SummaryStatistic("AIC", Element.AnalysisResults.AIC));
                 summaryStats.Add(new SummaryStatistic("BIC", Element.AnalysisResults.BIC));
                 summaryStats.Add(new SummaryStatistic("DIC", Element.AnalysisResults.DIC));
                 summaryStats.Add(new SummaryStatistic("WAIC", Element.BayesianAnalysis.WAIC));
                 summaryStats.Add(new SummaryStatistic("LOO-CV", Element.BayesianAnalysis.LOOIC));
                 summaryStats.Add(new SummaryStatistic("RMSE", Element.AnalysisResults.RMSE));
-                //summaryStats.Add(new SummaryStatistic("ERL", Element.FrequencyAnalysisResults.ERL));
+
             }
 
             SummaryStatisticsTable.ItemsSource = summaryStats;

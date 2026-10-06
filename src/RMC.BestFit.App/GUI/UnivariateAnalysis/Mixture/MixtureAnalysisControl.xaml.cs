@@ -854,10 +854,27 @@ namespace RMC_BestFit
 
                 summaryStats.Add(new SummaryStatistic("Minimum", min < -1E12 ? double.NegativeInfinity : min));
                 summaryStats.Add(new SummaryStatistic("Maximum", max > 1E12 ? double.PositiveInfinity : max));
-                summaryStats.Add(new SummaryStatistic("Mean", Element.MixtureDistribution.Mixture.Mean));
-                summaryStats.Add(new SummaryStatistic("Std Dev", Element.MixtureDistribution.Mixture.StandardDeviation));
-                summaryStats.Add(new SummaryStatistic("Skewness", Element.MixtureDistribution.Mixture.Skewness));
-                summaryStats.Add(new SummaryStatistic("Kurtosis", Element.MixtureDistribution.Mixture.Kurtosis));
+
+                try
+                {
+
+                    var moments = Element.MixtureDistribution.Mixture.CentralMoments(1E-6);
+                    summaryStats.Add(new SummaryStatistic("Mean", moments[0]));
+                    summaryStats.Add(new SummaryStatistic("Std Dev", moments[1]));
+                    summaryStats.Add(new SummaryStatistic("Skewness", moments[2]));
+                    summaryStats.Add(new SummaryStatistic("Kurtosis", moments[3]));
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception and continue with NaN values for summary statistics
+                    Console.WriteLine($"Error computing summary statistics: {ex.Message}");
+
+                    summaryStats.Add(new SummaryStatistic("Mean", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Std Dev", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Skewness", double.NaN));
+                    summaryStats.Add(new SummaryStatistic("Kurtosis", double.NaN));
+                }
+
                 summaryStats.Add(new SummaryStatistic("AIC", Element.AnalysisResults.AIC));
                 summaryStats.Add(new SummaryStatistic("BIC", Element.AnalysisResults.BIC));
                 summaryStats.Add(new SummaryStatistic("DIC", Element.AnalysisResults.DIC));
