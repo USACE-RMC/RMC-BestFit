@@ -781,6 +781,8 @@ namespace RMC_BestFit
                 {
                     var min = pointDist.Minimum;
                     var max = pointDist.Maximum;
+                    summaryStats.Add(new SummaryStatistic("Minimum", min < -1E12 ? double.NegativeInfinity : min));
+                    summaryStats.Add(new SummaryStatistic("Maximum", max > 1E12 ? double.PositiveInfinity : max));
 
                     try
                     {
