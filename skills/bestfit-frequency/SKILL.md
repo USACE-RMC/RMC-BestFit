@@ -1,6 +1,6 @@
 ---
 name: bestfit-frequency
-description: Use when collecting flood-frequency data, researching historical floods or regional information, configuring BestFit analyses, or producing app-style Python plots of saved results, chronologies, frequency curves, bivariate analyses, rating curves, time series, regression, and diagnostics.
+description: Use when researching historical/regional flood evidence, configuring BestFit analyses, or plotting saved frequency, chronology, bivariate, rating-curve, time-series, regression or diagnostic results.
 ---
 
 # BestFit analysis and app plots

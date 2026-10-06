@@ -2,9 +2,10 @@
 
 Use an existing RMC-BestFit checkout if supplied. Otherwise clone the official
 `https://github.com/USACE-RMC/RMC-BestFit.git` repository into the task workspace.
-Use a revision that includes this skill and the API changes it documents. Before
-those changes are merged/released, use the supplied development checkout: the ZIP
-contains instructions/scripts, not the BestFit binaries or an unpublished commit.
+Use a reachable revision that includes this skill and the API changes it documents,
+or a supplied matching source snapshot. Verify its contents rather than assuming
+the default branch or an application version identifies the required contracts.
+The ZIP contains instructions/scripts, not BestFit binaries or unpublished commits.
 
 For ChatGPT or Claude web use, the checkout, .NET host, Python client, and renderer
 all run inside the session's execution environment. `127.0.0.1` refers to that
@@ -67,23 +68,30 @@ state too.
 
 Start the compiled API with a loopback binding, retaining the process handle/PID
 and log. Set `ASPNETCORE_ENVIRONMENT=Development` so the local HTTP endpoint is not
-redirected to HTTPS. For example, a terminal-capable agent can use Python:
+redirected to HTTPS. Run from the compiled DLL's directory so its copied
+`appsettings.json` files are loaded. From the repository root, a terminal-capable
+agent can use Python:
 
 ```python
 import os, subprocess
+from pathlib import Path
+api_dll = Path("src/RMC.BestFit.Api/bin/Release/net10.0/RMC.BestFit.Api.dll").resolve(strict=True)
 env = dict(os.environ, ASPNETCORE_ENVIRONMENT="Development")
 log = open("bestfit-api.log", "w", encoding="utf-8")
+flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 server = subprocess.Popen([
-    "dotnet", "src/RMC.BestFit.Api/bin/Release/net10.0/RMC.BestFit.Api.dll",
+    "dotnet", str(api_dll),
     "--urls", "http://127.0.0.1:5210"
-], env=env, stdout=log, stderr=subprocess.STDOUT)
+], cwd=api_dll.parent, env=env, stdout=log, stderr=subprocess.STDOUT,
+    creationflags=flags)
 # Keep this process handle. Poll /health with a bounded wait (e.g., 30 seconds).
 # When finished, in a finally block:
 # server.terminate(); server.wait(timeout=30); log.close()
 ```
 
 On PowerShell, set `$env:ASPNETCORE_ENVIRONMENT='Development'` and use
-`Start-Process ... -PassThru -WindowStyle Hidden` with redirected logs, or the
+`Start-Process ... -PassThru -WindowStyle Hidden` with the absolute DLL path,
+`-WorkingDirectory` set to its parent directory, and redirected logs, or the
 host's managed background-command tool. If port 5210 is occupied, choose another
 loopback port and pass the matching `--base-url` to the client. Do not kill the
 existing listener or all `dotnet` processes. Do not expose this development host
@@ -94,6 +102,22 @@ Verify `GET /health` and `GET /api/info`. In Development, the OpenAPI schema is
 `useMultipleGrubbsBeckTest`, `useJeffreysRuleForScale`, and analysis `configuration`
 exist. The source revision must include these contracts. The API store is in
 memory and disappears on restart. Keep it alive until input and results are saved.
+
+The Python helpers call REST in this same environment and normally send no `Origin`
+header. All API routes, including REST, `/mcp` and health/schema endpoints, reject
+untrusted browser origins with HTTP 403 in Development and Production. Requests
+without `Origin` remain allowed. Automatic same-origin trust is limited to a
+literal localhost/loopback authority matching the request scheme, host and
+effective port; a matching arbitrary DNS hostname is not implicitly trusted.
+
+For a separately authorized browser client, list each exact origin in the
+`Cors:AllowedOrigins` array, or set environment entries such as
+`Cors__AllowedOrigins__0=https://client.example`. Use only the scheme, host and
+optional port: no wildcard, trailing slash/path, query, fragment or credentials.
+The configured origin must match, with case/default-port normalization; subdomains
+are not included automatically. The shipped `https://localhost` entry is retained.
+Origin checks are not authentication: native clients can omit the header. Keep this
+development workflow bound to loopback; it does not provision a hosted service.
 
 Retain server-side provenance beside each run: BestFit commit/dirty state,
 `dotnet --info`, resolved Numerics version (and source commit if used), build log,

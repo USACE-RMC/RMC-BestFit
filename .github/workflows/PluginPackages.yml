@@ -1,0 +1,119 @@
+name: Plugin packages
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Packaged skill (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      MPLBACKEND: Agg
+      MPLCONFIGDIR: ${{ github.workspace }}/artifacts/matplotlib
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate application release tag
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+$') {
+            throw "Plugin packages accompany a BestFit application release tagged vX.Y.Z."
+          }
+          [xml]$props = Get-Content Directory.Build.props
+          $version = @($props.Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          if ($env:RELEASE_TAG -ne "v$version") {
+            throw "Release tag does not match Directory.Build.props Version $version."
+          }
+
+      - name: Install skill validation dependencies
+        run: python -m pip install -r skills/bestfit-frequency/requirements.txt pytest
+
+      - name: Build portable API and tests with XML documentation enforced
+        run: dotnet build src/RMC.BestFit.Api.Tests/RMC.BestFit.Api.Tests.csproj -c Release -p:UseLocalRmcNumerics=false -p:EnforceXmlDocumentation=true
+
+      - name: Test API contracts and browser origin restrictions
+        run: dotnet test src/RMC.BestFit.Api.Tests/RMC.BestFit.Api.Tests.csproj -c Release --no-build
+
+      - name: Test skill scripts and all package layouts
+        run: python -m pytest tests/skills -q -p no:cacheprovider
+
+      - name: Build four distribution archives and checksums
+        run: python scripts/package-bestfit-skill.py
+
+      - name: Exercise the packaged skill with a fresh local API
+        run: python scripts/smoke-bestfit-plugin.py --output artifacts/plugin-smoke
+
+      - name: Preserve integration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-evidence-${{ matrix.os }}
+          path: |
+            artifacts/plugin-smoke/
+            src/RMC.BestFit.Api.Tests/bin/Release/net10.0/TestResults/
+          if-no-files-found: warn
+
+      - name: Retain validated distribution archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-packages-${{ matrix.os }}
+          path: |
+            artifacts/bestfit-frequency-*.zip
+            artifacts/bestfit-frequency-*.zip.sha256
+          if-no-files-found: error
+
+  release-assets:
+    name: Attach plugins to the application release
+    needs: validate
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-packages-ubuntu-latest
+          path: packages
+      - name: Verify and attach all four packages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          cd packages
+          assets=()
+          for kind in skill marketplace openai-plugin claude-plugin; do
+            archive="bestfit-frequency-${kind}.zip"
+            sha256sum --check "${archive}.sha256"
+            assets+=("$archive" "${archive}.sha256")
+          done
+          # Fail on existing assets; never replace previously published bytes silently.
+          gh release upload "$RELEASE_TAG" "${assets[@]}"

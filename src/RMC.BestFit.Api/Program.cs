@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using RMC.BestFit.Api.Configuration;
 using RMC.BestFit.Api.DTOs;
 using RMC.BestFit.Api.Services;
@@ -30,19 +31,13 @@ builder.Services.AddControllers()
 // Configure OpenAPI
 builder.Services.AddOpenApi();
 
-// Configure CORS
-builder.Services.AddCors(options =>
+// The same browser trust and CORS policies apply in every environment.
+builder.Services.AddSingleton<BrowserOriginPolicy>();
+builder.Services.AddCors();
+builder.Services.AddOptions<CorsOptions>().Configure<BrowserOriginPolicy>((options, browserOrigins) =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader());
-
-    // More restrictive policy for production
-    options.AddPolicy("Production", policy =>
-        policy.WithOrigins(
-                builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                ?? new[] { "https://localhost" })
+    options.AddPolicy("TrustedBrowserOrigins", policy =>
+        policy.SetIsOriginAllowed(browserOrigins.IsConfiguredOriginAllowed)
               .AllowAnyMethod()
               .AllowAnyHeader());
 });
@@ -79,6 +74,22 @@ builder.Services.AddHealthChecks();
 // =============================================================================
 
 var app = builder.Build();
+// Resolve after host configuration is complete, and fail startup on invalid allowlist entries.
+var browserOrigins = app.Services.GetRequiredService<BrowserOriginPolicy>();
+
+// CORS headers alone cannot prevent side effects from browser requests. Reject untrusted,
+// opaque, malformed, or multiple origins before redirects, preflight handling, or endpoints.
+app.Use(async (context, next) =>
+{
+    if (!browserOrigins.IsRequestAllowed(context.Request))
+    {
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new { error = "Browser origin is not allowed." });
+        return;
+    }
+
+    await next(context);
+});
 
 // Configure error handling
 if (app.Environment.IsDevelopment())
@@ -104,7 +115,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.UseCors(app.Environment.IsDevelopment() ? "AllowAll" : "Production");
+app.UseCors("TrustedBrowserOrigins");
 app.UseAuthorization();
 
 // Map controllers
