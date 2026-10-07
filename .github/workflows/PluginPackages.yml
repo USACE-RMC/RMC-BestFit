@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches: [main, 'codex/plugin-*']
   workflow_dispatch:
   release:
     types: [published]

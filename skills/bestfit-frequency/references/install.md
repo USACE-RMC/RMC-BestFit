@@ -166,6 +166,33 @@ avoid duplicate copies. Test preparation and chronology before fitting.
 [Skills](https://code.claude.com/docs/en/skills) and
 [plugin marketplaces](https://code.claude.com/docs/en/plugins/marketplace-reference).
 
+## Anthropic public directory
+
+Public directory submission is separate from a local Claude plugin ZIP upload.
+Use the [developer portal](https://claude.ai/directory/manage), select **Submit new
+→ Plugin bundle**, and supply a public GitHub repository, plugin folder and a
+permanent branch or tag. The directory requires a paid Claude account and a
+connected GitHub account with push access. Select the organization that should
+own the listing long term before submitting.
+
+The generated Claude archive includes a plugin-root README and a manifest license.
+Publish its extracted plugin contents at the chosen durable GitHub location;
+do not point the listing at a development branch that will be deleted. A full
+BestFit source checkout is not a suitable directory snapshot: the directory's
+repository limits are 50 MiB archived, 256 MiB unpacked and 10,000 entries.
+A small distribution repository or retained distribution branch is needed.
+
+Run **Validate** in the portal, resolve blocking findings, complete the listing,
+data-handling and compliance fields, then submit for review. Native
+`claude plugin validate` checks do not replace this directory validation. Confirm
+the portal reports **Published** before advertising directory availability.
+See the official [publication guide](https://claude.com/docs/directory/publish)
+and [directory checklist](https://claude.com/docs/plugins/pre-submission-checklist).
+
+For either public directory, first publish the permanent `v2.0.1` source tag and
+pass the release checks. The bundled [setup instructions](setup.md) use this tag
+so users do not depend on a temporary release-development branch.
+
 ## Live preflight and acceptance
 
 Use a fresh session in the named client/account/workspace. Installation, package

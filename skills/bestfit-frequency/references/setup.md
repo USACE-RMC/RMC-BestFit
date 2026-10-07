@@ -7,6 +7,13 @@ or a supplied matching source snapshot. Verify its contents rather than assuming
 the default branch or an application version identifies the required contracts.
 The ZIP contains instructions/scripts, not BestFit binaries or unpublished commits.
 
+For plugin **0.3.2**, the default API source is the permanent **v2.0.1** release
+tag. Use this release when the user has not supplied another compatible checkout
+or revision. The plugin must not be published before that tag contains the
+v2.0.1 API, RMC.Numerics 2.2.0 dependency, chronology/source contracts, and
+browser-origin fix. If the tag is unavailable, stop and report the missing
+release; do not substitute another revision or a temporary development branch.
+
 For ChatGPT or Claude web use, the checkout, .NET host, Python client, and renderer
 all run inside the session's execution environment. `127.0.0.1` refers to that
 environment, not the user's computer. A repository connection that only reads files
@@ -16,7 +23,7 @@ and support for a persistent child process and loopback HTTP before starting.
 When no checkout is supplied, use a new directory:
 
 ```sh
-git clone https://github.com/USACE-RMC/RMC-BestFit.git
+git clone --branch v2.0.1 --single-branch https://github.com/USACE-RMC/RMC-BestFit.git
 cd RMC-BestFit
 git rev-parse HEAD
 ```

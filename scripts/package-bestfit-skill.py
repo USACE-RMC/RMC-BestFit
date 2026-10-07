@@ -83,7 +83,8 @@ def package_claude_plugin(output):
     templates = root / "packaging/bestfit-frequency"
     plugin = "bestfit-frequency-claude-plugin/"
     entries = [(plugin + ".claude-plugin/plugin.json", (templates / "claude-plugin.json").read_bytes()),
-               (plugin + ".claude-plugin/marketplace.json", (templates / "claude-marketplace.json").read_bytes())]
+               (plugin + ".claude-plugin/marketplace.json", (templates / "claude-marketplace.json").read_bytes()),
+               (plugin + "README.md", (templates / "claude-README.md").read_bytes())]
     entries.extend((plugin + "skills/bestfit-frequency/" + name, content) for name, content in skill_entries())
     return write_archive(output, entries)
 

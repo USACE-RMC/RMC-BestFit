@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import struct
 import tempfile
 import unittest
@@ -15,6 +16,19 @@ SPEC.loader.exec_module(PACKAGE)
 
 
 class PackageTests(unittest.TestCase):
+    def test_claude_directory_package_contains_required_root_readme(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "claude-plugin.zip"
+            PACKAGE.package_claude_plugin(path)
+            with zipfile.ZipFile(path) as archive:
+                readme_path = "bestfit-frequency-claude-plugin/README.md"
+                self.assertIn(readme_path, archive.namelist(),
+                              "Claude directory submission requires a README in the plugin folder")
+                readme = archive.read(readme_path).decode("utf-8")
+                prose = re.sub(r"(?ms)^```.*?^```[^\n]*", "", readme)
+                self.assertGreaterEqual(len(prose.split()), 40,
+                                        "Claude directory README needs at least 40 words outside code blocks")
+
     def test_public_openai_metadata_and_referenced_artwork_meet_submission_limits(self):
         templates = ROOT / "packaging/bestfit-frequency"
         manifest = json.loads((templates / "plugin.json").read_text(encoding="utf-8"))
