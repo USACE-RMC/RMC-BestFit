@@ -14,9 +14,9 @@
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubVersion)" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.0.0-preview.1" />
     <PackageVersion Include="RMC.Numerics" Version="2.2.0" />
-    <PackageVersion Include="RMC.Wpf.Framework.Core" Version="1.0.4" />
-    <PackageVersion Include="RMC.Wpf.Framework.Models" Version="1.0.4" />
-    <PackageVersion Include="RMC.Wpf.Framework.Controls" Version="1.0.4" />
-    <PackageVersion Include="RMC.Wpf.Framework.Support" Version="1.0.4" />
+    <PackageVersion Include="RMC.Wpf.Framework.Core" Version="1.0.5" />
+    <PackageVersion Include="RMC.Wpf.Framework.Models" Version="1.0.5" />
+    <PackageVersion Include="RMC.Wpf.Framework.Controls" Version="1.0.5" />
+    <PackageVersion Include="RMC.Wpf.Framework.Support" Version="1.0.5" />
   </ItemGroup>
 </Project>
