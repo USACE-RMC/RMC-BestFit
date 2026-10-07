@@ -832,7 +832,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -849,127 +850,132 @@ namespace RMC.BestFit.UI
                 _validationAdapter.ClearAll();
                 SetGMMReport(string.Empty, setDirty: false);
                 var wasOpen = sqlite.DataBaseOpen;
-                if (wasOpen == false) sqlite.Open();
-
-                var dtView = sqlite.GetTableManager(CollectionName);
-                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                if (rowIndex != -1)
+                try
                 {
-                    if (dtView.ColumnNames.Contains(nameof(Name)))
-                    {
-                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                        foreach (var item in _messages) item.SourceName = _name;
-                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "B17");
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(Description)))
-                    {
-                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                        if (string.IsNullOrEmpty(_description))
-                            _messenger.Add(_descriptionMsg);
-                        else
-                            _messenger.Remove(_descriptionMsg);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (wasOpen == false) sqlite.Open();
 
-                    // Get input data
-                    if (dtView.ColumnNames.Contains(nameof(InputData)))
+                    var dtView = sqlite.GetTableManager(CollectionName);
+                    int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                    if (rowIndex != -1)
                     {
-                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        if (dtView.ColumnNames.Contains(nameof(Name)))
                         {
-                            if (collection.GetType() == typeof(InputDataCollection))
+                            _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                            foreach (var item in _messages) item.SourceName = _name;
+                            _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "B17");
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(Description)))
+                        {
+                            _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                            if (string.IsNullOrEmpty(_description))
+                                _messenger.Add(_descriptionMsg);
+                            else
+                                _messenger.Remove(_descriptionMsg);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                        if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+
+                        // Get input data
+                        if (dtView.ColumnNames.Contains(nameof(InputData)))
+                        {
+                            var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                            foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                             {
-                                foreach (IElement element in collection)
+                                if (collection.GetType() == typeof(InputDataCollection))
                                 {
-                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                    foreach (IElement element in collection)
                                     {
-                                        if (_inputData != null)
+                                        if (element.Name == inputDataName && element.GetType() == typeof(InputData))
                                         {
-                                            _inputData.PropertyChanged -= InputDataChanged;
-                                            _inputData.Deleted -= OnInputDataDeleted;
+                                            if (_inputData != null)
+                                            {
+                                                _inputData.PropertyChanged -= InputDataChanged;
+                                                _inputData.Deleted -= OnInputDataDeleted;
+                                            }
+                                            _inputData = (InputData)element;
+                                            _inputData.PropertyChanged += InputDataChanged;
+                                            _inputData.Deleted += OnInputDataDeleted;
+                                            _inputDataValid = _inputData.IsValid;
+                                            if (!_inputDataValid)
+                                            {
+                                                _messenger.Remove(_inputDataNullMsg);
+                                                _messenger.Add(_inputDataInValidMsg);
+                                            }
+                                            else
+                                            {
+                                                _messenger.Remove(_inputDataNullMsg);
+                                                _messenger.Remove(_inputDataInValidMsg);
+                                            }
+                                            break;
                                         }
-                                        _inputData = (InputData)element;
-                                        _inputData.PropertyChanged += InputDataChanged;
-                                        _inputData.Deleted += OnInputDataDeleted;
-                                        _inputDataValid = _inputData.IsValid;
-                                        if (!_inputDataValid)
-                                        {
-                                            _messenger.Remove(_inputDataNullMsg);
-                                            _messenger.Add(_inputDataInValidMsg);
-                                        }
-                                        else
-                                        {
-                                            _messenger.Remove(_inputDataNullMsg);
-                                            _messenger.Remove(_inputDataInValidMsg);
-                                        }
-                                        break;
                                     }
                                 }
                             }
                         }
-                    }
-                    // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
-                    if (_inputData == null)
-                        _messenger.Add(_inputDataNullMsg);
+                        // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
+                        if (_inputData == null)
+                            _messenger.Add(_inputDataNullMsg);
 
-                    // Deserialize the element-owned frequency plot.
-                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                        // Deserialize the element-owned frequency plot.
+                        DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
 
-                    // Delegate Bayesian-diagnostic plot deserialization to the controller (canonical path).
-                    // BayesianController.DeserializePlot guards each column with ColumnNames.Contains,
-                    // so the 3 columns B17C does not persist (MarkovChainTraces, Autocorrelation,
-                    // MeanLikelihood) are safely skipped.
-                    _bayesianController.Deserialize(dtView, rowIndex);
+                        // Delegate Bayesian-diagnostic plot deserialization to the controller (canonical path).
+                        // BayesianController.DeserializePlot guards each column with ColumnNames.Contains,
+                        // so the 3 columns B17C does not persist (MarkovChainTraces, Autocorrelation,
+                        // MeanLikelihood) are safely skipped.
+                        _bayesianController.Deserialize(dtView, rowIndex);
 
-                    // GMM report
-                    if (dtView.ColumnNames.Contains("GMMReport"))
-                        SetGMMReport(dtView.GetCell("GMMReport", rowIndex)?.ToString() ?? string.Empty, setDirty: false);
+                        // GMM report
+                        if (dtView.ColumnNames.Contains("GMMReport"))
+                            SetGMMReport(dtView.GetCell("GMMReport", rowIndex)?.ToString() ?? string.Empty, setDirty: false);
 
-                    // Get probability ordinates
-                    if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
-                    {
-                        ProbabilityOrdinates.FromDelimitedString(
-                            dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString(), "|");
-                    }
-
-                    // Get model and reconstruct the inner analysis
-                    var modelXmlStr = dtView.ColumnNames.Contains("Bulletin17CDistribution") ? dtView.GetCell("Bulletin17CDistribution", rowIndex)?.ToString() : null;
-                    if (!string.IsNullOrEmpty(modelXmlStr) && InputData != null && InputData.DataFrame != null)
-                    {
-                        var modelXElement = XElement.Parse(modelXmlStr);
-                        var dist = new Bulletin17CDistribution(InputData.DataFrame, modelXElement);
-
-                        MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
-
-                        UncertaintyAnalysisResults analysisResults =
-                            AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
-
-                        // Build analysis XElement for deserialization constructor
-                        XElement analysisXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
-                        if (analysisXElement == null)
+                        // Get probability ordinates
+                        if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
                         {
-                            // Legacy fallback: construct minimal XElement from individual columns
-                            analysisXElement = new XElement("Bulletin17CAnalysis",
-                                new XAttribute("IsEstimated", mcmcResults != null));
-                            if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
-                                analysisXElement.Add(new XElement("ProbabilityOrdinates", ProbabilityOrdinates.ToDelimitedString("|")));
-                            if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
-                            {
-                                var bayesStr = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                                if (!string.IsNullOrEmpty(bayesStr))
-                                    analysisXElement.Add(XElement.Parse(bayesStr));
-                            }
+                            ProbabilityOrdinates.FromDelimitedString(
+                                dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString(), "|");
                         }
 
-                        // Reconstruct inner analysis (UncertaintyMethod restored from analysisXElement)
-                        UnsubscribeInnerAnalysis();
-                        _innerAnalysis = new ModelAnalyses.Bulletin17CAnalysis(dist, analysisXElement, mcmcResults, analysisResults);
-                        SubscribeInnerAnalysis();
+                        // Get model and reconstruct the inner analysis
+                        var modelXmlStr = dtView.ColumnNames.Contains("Bulletin17CDistribution") ? dtView.GetCell("Bulletin17CDistribution", rowIndex)?.ToString() : null;
+                        if (!string.IsNullOrEmpty(modelXmlStr) && InputData != null && InputData.DataFrame != null)
+                        {
+                            var modelXElement = XElement.Parse(modelXmlStr);
+                            var dist = new Bulletin17CDistribution(InputData.DataFrame, modelXElement);
+
+                            MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
+
+                            UncertaintyAnalysisResults analysisResults =
+                                AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
+
+                            // Build analysis XElement for deserialization constructor
+                            XElement analysisXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+                            if (analysisXElement == null)
+                            {
+                                // Legacy fallback: construct minimal XElement from individual columns
+                                analysisXElement = new XElement("Bulletin17CAnalysis",
+                                    new XAttribute("IsEstimated", mcmcResults != null));
+                                if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                                    analysisXElement.Add(new XElement("ProbabilityOrdinates", ProbabilityOrdinates.ToDelimitedString("|")));
+                                if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                                {
+                                    var bayesStr = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                                    if (!string.IsNullOrEmpty(bayesStr))
+                                        analysisXElement.Add(XElement.Parse(bayesStr));
+                                }
+                            }
+
+                            // Reconstruct inner analysis (UncertaintyMethod restored from analysisXElement)
+                            UnsubscribeInnerAnalysis();
+                            _innerAnalysis = new ModelAnalyses.Bulletin17CAnalysis(dist, analysisXElement, mcmcResults, analysisResults);
+                            SubscribeInnerAnalysis();
+                        }
                     }
                 }
-
-                if (wasOpen == false) sqlite.Close();
+                finally
+                {
+                    if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+                }
                 SetupBridges();
 
                 // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
@@ -1038,7 +1044,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1198,7 +1204,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new B17CAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1219,7 +1225,7 @@ namespace RMC.BestFit.UI
             UnsubscribeInnerAnalysis();
             SetIsDirty(false);
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

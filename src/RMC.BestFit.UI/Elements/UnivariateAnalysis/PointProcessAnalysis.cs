@@ -800,7 +800,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -816,136 +817,141 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
-
-            // open element
-            var dtView = sqlite.GetTableManager(CollectionName);
-            int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-            if (rowIndex != -1)
+            try
             {
-                if (dtView.ColumnNames.Contains(nameof(Name)))
+                if (wasOpen == false) sqlite.Open();
+
+                // open element
+                var dtView = sqlite.GetTableManager(CollectionName);
+                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                if (rowIndex != -1)
                 {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "PPA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
-                    else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                // Get input data
-                if (dtView.ColumnNames.Contains(nameof(InputData)))
-                {
-                    var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                    foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
                     {
-                        if (collection.GetType() == typeof(InputDataCollection))
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "PPA");
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
+                    {
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                    // Get input data
+                    if (dtView.ColumnNames.Contains(nameof(InputData)))
+                    {
+                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                         {
-                            foreach (IElement element in collection)
+                            if (collection.GetType() == typeof(InputDataCollection))
                             {
-                                if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                foreach (IElement element in collection)
                                 {
-                                    if (_inputData != null)
+                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
                                     {
-                                        _inputData.PropertyChanged -= InputDataChanged;
-                                        _inputData.Deleted -= OnInputDataDeleted;
+                                        if (_inputData != null)
+                                        {
+                                            _inputData.PropertyChanged -= InputDataChanged;
+                                            _inputData.Deleted -= OnInputDataDeleted;
+                                        }
+                                        _inputData = (InputData)element;
+                                        _inputData.PropertyChanged += InputDataChanged;
+                                        _inputData.Deleted += OnInputDataDeleted;
+                                        _inputDataValid = _inputData.IsValid;
+                                        if (!_inputDataValid)
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Add(_inputDataInValidMsg);
+                                        }
+                                        else
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Remove(_inputDataInValidMsg);
+                                        }
+                                        break;
                                     }
-                                    _inputData = (InputData)element;
-                                    _inputData.PropertyChanged += InputDataChanged;
-                                    _inputData.Deleted += OnInputDataDeleted;
-                                    _inputDataValid = _inputData.IsValid;
-                                    if (!_inputDataValid)
-                                    {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Add(_inputDataInValidMsg);
-                                    }
-                                    else
-                                    {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Remove(_inputDataInValidMsg);
-                                    }
-                                    break;
                                 }
                             }
                         }
                     }
-                }
-                // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
-                if (_inputData == null)
-                    _messenger.Add(_inputDataNullMsg);
+                    // If InputData was not found, re-add the null message (cleared by _messenger.Clear above)
+                    if (_inputData == null)
+                        _messenger.Add(_inputDataNullMsg);
 
-                // Plot Properties
-                DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-                _bayesianController.Deserialize(dtView, rowIndex);
+                    // Plot Properties
+                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                    _bayesianController.Deserialize(dtView, rowIndex);
 
-                // Get probability ordinates (save to local — inner analysis gets reconstructed below)
-                string probOrdinatesStr = null;
-                if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
-                    probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
+                    // Get probability ordinates (save to local — inner analysis gets reconstructed below)
+                    string probOrdinatesStr = null;
+                    if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                        probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
 
-                // Get model and reconstruct the inner analysis
-                if (dtView.ColumnNames.Contains(nameof(PointProcess)) && InputData != null && InputData.DataFrame != null)
-                {
-                    var modelXElement = HydrateMissingPointProcessDefaults(
-                        XElement.Parse(dtView.GetCell(nameof(PointProcess), rowIndex).ToString()));
-                    var pointProcess = new PointProcessModel(InputData.DataFrame, modelXElement);
-
-                    MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
-                    XElement innerXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
-
-                    // Get Bayesian analysis XElement
-                    XElement bayesianXElement = null;
-                    if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                    // Get model and reconstruct the inner analysis
+                    if (dtView.ColumnNames.Contains(nameof(PointProcess)) && InputData != null && InputData.DataFrame != null)
                     {
-                        var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                        bayesianXElement = XElement.Parse(xElementString);
+                        var modelXElement = HydrateMissingPointProcessDefaults(
+                            XElement.Parse(dtView.GetCell(nameof(PointProcess), rowIndex).ToString()));
+                        var pointProcess = new PointProcessModel(InputData.DataFrame, modelXElement);
+
+                        MCMCResults mcmcResults = AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
+                        XElement innerXElement = AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+
+                        // Get Bayesian analysis XElement
+                        XElement bayesianXElement = null;
+                        if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                        {
+                            var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                            bayesianXElement = XElement.Parse(xElementString);
+                        }
+
+                        UncertaintyAnalysisResults analysisResults =
+                            AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
+
+                        // Reconstruct inner analysis from persisted data
+                        UnsubscribeInnerAnalysis();
+
+                        if (innerXElement == null && bayesianXElement != null)
+                        {
+                            // Build a combined XElement for the inner analysis constructor
+                            innerXElement = new XElement("PointProcessAnalysis",
+                                new XAttribute("IsEstimated", mcmcResults != null));
+
+                            // Add probability ordinates
+                            if (!string.IsNullOrEmpty(probOrdinatesStr))
+                                innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
+
+                            // Add Bayesian analysis element
+                            innerXElement.Add(bayesianXElement);
+
+                        }
+
+                        if (innerXElement != null)
+                        {
+                            _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess, innerXElement, mcmcResults, analysisResults);
+                        }
+                        else
+                        {
+                            _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess);
+
+                            // Load probability ordinates into the new inner analysis
+                            if (!string.IsNullOrEmpty(probOrdinatesStr))
+                                _innerAnalysis.ProbabilityOrdinates.FromDelimitedString(probOrdinatesStr, "|");
+                        }
+
+                        SubscribeInnerAnalysis();
                     }
-
-                    UncertaintyAnalysisResults analysisResults =
-                        AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
-
-                    // Reconstruct inner analysis from persisted data
-                    UnsubscribeInnerAnalysis();
-
-                    if (innerXElement == null && bayesianXElement != null)
-                    {
-                        // Build a combined XElement for the inner analysis constructor
-                        innerXElement = new XElement("PointProcessAnalysis",
-                            new XAttribute("IsEstimated", mcmcResults != null));
-
-                        // Add probability ordinates
-                        if (!string.IsNullOrEmpty(probOrdinatesStr))
-                            innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
-
-                        // Add Bayesian analysis element
-                        innerXElement.Add(bayesianXElement);
-
-                    }
-
-                    if (innerXElement != null)
-                    {
-                        _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess, innerXElement, mcmcResults, analysisResults);
-                    }
-                    else
-                    {
-                        _innerAnalysis = new ModelAnalyses.PointProcessAnalysis(pointProcess);
-
-                        // Load probability ordinates into the new inner analysis
-                        if (!string.IsNullOrEmpty(probOrdinatesStr))
-                            _innerAnalysis.ProbabilityOrdinates.FromDelimitedString(probOrdinatesStr, "|");
-                    }
-
-                    SubscribeInnerAnalysis();
                 }
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
             SetupBridges();
 
             // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
@@ -1003,7 +1009,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1156,7 +1162,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             // Bug fix: was incorrectly creating MixtureAnalysis instead of PointProcessAnalysis
             var element = new PointProcessAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
@@ -1177,7 +1183,7 @@ namespace RMC.BestFit.UI
             UnsubscribeInnerAnalysis();
             SetIsDirty(false);
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

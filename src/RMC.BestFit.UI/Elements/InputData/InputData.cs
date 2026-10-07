@@ -1308,7 +1308,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -1336,159 +1337,164 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
+            try
+            {
+                if (wasOpen == false) sqlite.Open();
 
-            // First check if we need to open from version 1.0.
-            var dtView = sqlite.GetTableManager("Project");
-            string version = "";
-            if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
-            if (version == "1.0")
-            {
-                openedFromV1 = true;
-                OpenFromVersion1(sqlite);
-            }
-            else
-            {
-                dtView = sqlite.GetTableManager(ParentCollection.Name);
-                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                if (rowIndex != -1)
+                // First check if we need to open from version 1.0.
+                var dtView = sqlite.GetTableManager("Project");
+                string version = "";
+                if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
+                if (version == "1.0")
                 {
-                    // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearTimeSeriesResults() calls.
-                    if (dtView.ColumnNames.Contains(nameof(Name)))
+                    openedFromV1 = true;
+                    OpenFromVersion1(sqlite);
+                }
+                else
+                {
+                    dtView = sqlite.GetTableManager(ParentCollection.Name);
+                    int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                    if (rowIndex != -1)
                     {
-                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                        foreach (var item in _messages) item.SourceName = _name;
-                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "ID");
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(Description)))
-                    {
-                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                        if (string.IsNullOrEmpty(_description))
-                            _messenger.Add(_descriptionMsg);
-                        else
-                            _messenger.Remove(_descriptionMsg);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                    // General
-                    // Use backing fields during deserialization to avoid repeated SetIsValid() calls.
-                    // Each public setter calls SetIsValid() which runs 4 series Validate() methods.
-                    // A single SetIsValid() call at the end of Open() is sufficient.
-                    if (dtView.ColumnNames.Contains(nameof(ExactDataMethod))) Enum.TryParse(dtView.GetCell(nameof(ExactDataMethod), rowIndex).ToString(), out _exactDataMethod);
-                    if (dtView.ColumnNames.Contains(nameof(UnitLabel)))
-                    {
-                        _unitLabel = dtView.GetCell(nameof(UnitLabel), rowIndex).ToString();
-                        _unitLabelValid = !string.IsNullOrEmpty(_unitLabel);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(IndexLabel)))
-                    {
-                        _indexLabel = dtView.GetCell(nameof(IndexLabel), rowIndex).ToString();
-                        _indexLabelValid = !string.IsNullOrEmpty(_indexLabel);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(USGSSiteNumber)))
-                    {
-                        _usgsSiteNumber = dtView.GetCell(nameof(USGSSiteNumber), rowIndex).ToString();
-                        _siteNumberValid = _usgsSiteNumber.Length == 8 ||
-                            (_exactDataMethod != ExactDataEntryType.USGSPeakDischarge && _exactDataMethod != ExactDataEntryType.USGSPeakStage);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(UseMultipleGrubbsBeckTest))) bool.TryParse(dtView.GetCell(nameof(UseMultipleGrubbsBeckTest), rowIndex).ToString(), out _useMultipleGrubbsBeckTest);
-
-                    // Get time series element
-                    if (dtView.ColumnNames.Contains(nameof(TimeSeriesElement)))
-                    {
-                        var timeSeriesName = dtView.GetCell(nameof(TimeSeriesElement), rowIndex).ToString();
-                        // Unsubscribe from old element before assigning new (prevents handler leak on repeated Open)
-                        if (_timeSeriesElement != null)
+                        // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearTimeSeriesResults() calls.
+                        if (dtView.ColumnNames.Contains(nameof(Name)))
                         {
-                            _timeSeriesElement.PropertyChanged -= TimeSeriesElementChanged;
-                            _timeSeriesElement.Deleted -= OnTimeSeriesElementDeleted;
+                            _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                            foreach (var item in _messages) item.SourceName = _name;
+                            _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "ID");
                         }
-                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        if (dtView.ColumnNames.Contains(nameof(Description)))
                         {
-                            if (collection.GetType() == typeof(TimeSeriesCollection))
+                            _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                            if (string.IsNullOrEmpty(_description))
+                                _messenger.Add(_descriptionMsg);
+                            else
+                                _messenger.Remove(_descriptionMsg);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                        if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                        // General
+                        // Use backing fields during deserialization to avoid repeated SetIsValid() calls.
+                        // Each public setter calls SetIsValid() which runs 4 series Validate() methods.
+                        // A single SetIsValid() call at the end of Open() is sufficient.
+                        if (dtView.ColumnNames.Contains(nameof(ExactDataMethod))) Enum.TryParse(dtView.GetCell(nameof(ExactDataMethod), rowIndex).ToString(), out _exactDataMethod);
+                        if (dtView.ColumnNames.Contains(nameof(UnitLabel)))
+                        {
+                            _unitLabel = dtView.GetCell(nameof(UnitLabel), rowIndex).ToString();
+                            _unitLabelValid = !string.IsNullOrEmpty(_unitLabel);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(IndexLabel)))
+                        {
+                            _indexLabel = dtView.GetCell(nameof(IndexLabel), rowIndex).ToString();
+                            _indexLabelValid = !string.IsNullOrEmpty(_indexLabel);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(USGSSiteNumber)))
+                        {
+                            _usgsSiteNumber = dtView.GetCell(nameof(USGSSiteNumber), rowIndex).ToString();
+                            _siteNumberValid = _usgsSiteNumber.Length == 8 ||
+                                (_exactDataMethod != ExactDataEntryType.USGSPeakDischarge && _exactDataMethod != ExactDataEntryType.USGSPeakStage);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(UseMultipleGrubbsBeckTest))) bool.TryParse(dtView.GetCell(nameof(UseMultipleGrubbsBeckTest), rowIndex).ToString(), out _useMultipleGrubbsBeckTest);
+
+                        // Get time series element
+                        if (dtView.ColumnNames.Contains(nameof(TimeSeriesElement)))
+                        {
+                            var timeSeriesName = dtView.GetCell(nameof(TimeSeriesElement), rowIndex).ToString();
+                            // Unsubscribe from old element before assigning new (prevents handler leak on repeated Open)
+                            if (_timeSeriesElement != null)
                             {
-                                foreach (IElement element in collection)
+                                _timeSeriesElement.PropertyChanged -= TimeSeriesElementChanged;
+                                _timeSeriesElement.Deleted -= OnTimeSeriesElementDeleted;
+                            }
+                            foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                            {
+                                if (collection.GetType() == typeof(TimeSeriesCollection))
                                 {
-                                    if (element.Name == timeSeriesName && element.GetType() == typeof(TimeSeriesElement))
+                                    foreach (IElement element in collection)
                                     {
-                                        _timeSeriesElement = (TimeSeriesElement)element;
-                                        _timeSeriesElement.PropertyChanged += TimeSeriesElementChanged;
-                                        _timeSeriesElement.Deleted += OnTimeSeriesElementDeleted;
-                                        break;
+                                        if (element.Name == timeSeriesName && element.GetType() == typeof(TimeSeriesElement))
+                                        {
+                                            _timeSeriesElement = (TimeSeriesElement)element;
+                                            _timeSeriesElement.PropertyChanged += TimeSeriesElementChanged;
+                                            _timeSeriesElement.Deleted += OnTimeSeriesElementDeleted;
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    // Time-Series Properties
-                    if (dtView.ColumnNames.Contains(nameof(BlockFunction))) Enum.TryParse(dtView.GetCell(nameof(BlockFunction), rowIndex).ToString(), out _blockFunction);
-                    if (dtView.ColumnNames.Contains(nameof(TimeBlock))) Enum.TryParse(dtView.GetCell(nameof(TimeBlock), rowIndex).ToString(), out _timeBlock);
-                    if (dtView.ColumnNames.Contains(nameof(StartMonth)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(StartMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _startMonth);
-                        _startMonthValid = _startMonth >= 1 && _startMonth <= 12;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(EndMonth)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(EndMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _endMonth);
-                        _endMonthValid = _endMonth >= 1 && _endMonth <= 12;
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(SmoothingFunction))) Enum.TryParse(dtView.GetCell(nameof(SmoothingFunction), rowIndex).ToString(), out _smoothingFunction);
-                    if (dtView.ColumnNames.Contains(nameof(Period)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(Period), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _period);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(Threshold)))
-                    {
-                        double.TryParse(dtView.GetCell(nameof(Threshold), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _threshold);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(MinStepsBetweenPeaks)))
-                    {
-                        int.TryParse(dtView.GetCell(nameof(MinStepsBetweenPeaks), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _minStepsBetweenPeaks);
-                    }
-                    if (dtView.ColumnNames.Contains(nameof(IsProcessed))) bool.TryParse(dtView.GetCell(nameof(IsProcessed), rowIndex).ToString(), out _isProcessed);
-                    // Deserialize plot settings into Plot objects, then refresh only axes
-                    // that still carry their factory-default labels.
-                    bool chronologyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "ChronologyPlotSettings", _chronologyPlot);
-                    bool frequencyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "SeasonalityPlotSettings", _seasonalityPlot);
-                    bool densityPlotRestored = DeserializePlotSettings(dtView, rowIndex, "DensityPlotSettings", _densityPlot);
-                    bool histogramPlotRestored = DeserializePlotSettings(dtView, rowIndex, "HistogramPlotSettings", _histogramPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "QQPlotSettings", _qqPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ACFPlotSettings", _acfPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "PACFPlotSettings", _pacfPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "MRLPlotSettings", _mrlPlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ModifiedScalePlotSettings", _modifiedScalePlot);
-                    DeserializePlotSettings(dtView, rowIndex, "ShapePlotSettings", _shapePlot);
-                    RefreshPlotAxisTitlesAfterOpen(chronologyPlotRestored, frequencyPlotRestored, densityPlotRestored, histogramPlotRestored);
-                    // Get data frame
-                    if (dtView.ColumnNames.Contains(nameof(DataFrame)))
-                    {
-                        try
+                        // Time-Series Properties
+                        if (dtView.ColumnNames.Contains(nameof(BlockFunction))) Enum.TryParse(dtView.GetCell(nameof(BlockFunction), rowIndex).ToString(), out _blockFunction);
+                        if (dtView.ColumnNames.Contains(nameof(TimeBlock))) Enum.TryParse(dtView.GetCell(nameof(TimeBlock), rowIndex).ToString(), out _timeBlock);
+                        if (dtView.ColumnNames.Contains(nameof(StartMonth)))
                         {
-                            if (_dataFrame != null)
-                                _dataFrame.PropertyChanged -= DataFramePropertyChanged;
-                            _dataFrame = new DataFrame(XElement.Parse(dtView.GetCell(nameof(DataFrame), rowIndex).ToString()));
-                            _dataFrame.ProcessThresholdSeries();
-                            repairedPlottingPositions = RepairSavedPlottingPositions(_dataFrame);
-                            _dataFrame.PropertyChanged += DataFramePropertyChanged;
+                            int.TryParse(dtView.GetCell(nameof(StartMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _startMonth);
+                            _startMonthValid = _startMonth >= 1 && _startMonth <= 12;
                         }
-                        catch (Exception ex)
+                        if (dtView.ColumnNames.Contains(nameof(EndMonth)))
                         {
-                            // Surface the deserialization failure to Debug for diagnosis. A corrupt
-                            // or malformed DataFrame XML payload leaves _dataFrame in its previous
-                            // state; the user sees an InputData with no series and the validation
-                            // adapter surfaces the empty-series message via SetIsValid.
-                            System.Diagnostics.Debug.WriteLine($"InputData.Open: could not deserialize DataFrame for '{Name}': {ex.Message}");
+                            int.TryParse(dtView.GetCell(nameof(EndMonth), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _endMonth);
+                            _endMonthValid = _endMonth >= 1 && _endMonth <= 12;
                         }
+                        if (dtView.ColumnNames.Contains(nameof(SmoothingFunction))) Enum.TryParse(dtView.GetCell(nameof(SmoothingFunction), rowIndex).ToString(), out _smoothingFunction);
+                        if (dtView.ColumnNames.Contains(nameof(Period)))
+                        {
+                            int.TryParse(dtView.GetCell(nameof(Period), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _period);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(Threshold)))
+                        {
+                            double.TryParse(dtView.GetCell(nameof(Threshold), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _threshold);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(MinStepsBetweenPeaks)))
+                        {
+                            int.TryParse(dtView.GetCell(nameof(MinStepsBetweenPeaks), rowIndex).ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out _minStepsBetweenPeaks);
+                        }
+                        if (dtView.ColumnNames.Contains(nameof(IsProcessed))) bool.TryParse(dtView.GetCell(nameof(IsProcessed), rowIndex).ToString(), out _isProcessed);
+                        // Deserialize plot settings into Plot objects, then refresh only axes
+                        // that still carry their factory-default labels.
+                        bool chronologyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "ChronologyPlotSettings", _chronologyPlot);
+                        bool frequencyPlotRestored = DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "SeasonalityPlotSettings", _seasonalityPlot);
+                        bool densityPlotRestored = DeserializePlotSettings(dtView, rowIndex, "DensityPlotSettings", _densityPlot);
+                        bool histogramPlotRestored = DeserializePlotSettings(dtView, rowIndex, "HistogramPlotSettings", _histogramPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "QQPlotSettings", _qqPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ACFPlotSettings", _acfPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "PACFPlotSettings", _pacfPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "MRLPlotSettings", _mrlPlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ModifiedScalePlotSettings", _modifiedScalePlot);
+                        DeserializePlotSettings(dtView, rowIndex, "ShapePlotSettings", _shapePlot);
+                        RefreshPlotAxisTitlesAfterOpen(chronologyPlotRestored, frequencyPlotRestored, densityPlotRestored, histogramPlotRestored);
+                        // Get data frame
+                        if (dtView.ColumnNames.Contains(nameof(DataFrame)))
+                        {
+                            try
+                            {
+                                if (_dataFrame != null)
+                                    _dataFrame.PropertyChanged -= DataFramePropertyChanged;
+                                _dataFrame = new DataFrame(XElement.Parse(dtView.GetCell(nameof(DataFrame), rowIndex).ToString()));
+                                _dataFrame.ProcessThresholdSeries();
+                                repairedPlottingPositions = RepairSavedPlottingPositions(_dataFrame);
+                                _dataFrame.PropertyChanged += DataFramePropertyChanged;
+                            }
+                            catch (Exception ex)
+                            {
+                                // Surface the deserialization failure to Debug for diagnosis. A corrupt
+                                // or malformed DataFrame XML payload leaves _dataFrame in its previous
+                                // state; the user sees an InputData with no series and the validation
+                                // adapter surfaces the empty-series message via SetIsValid.
+                                System.Diagnostics.Debug.WriteLine($"InputData.Open: could not deserialize DataFrame for '{Name}': {ex.Message}");
+                            }
+                        }
+
                     }
+
 
                 }
-
-
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
 
             SetupBridges();
             SetIsValid();
@@ -1686,7 +1692,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1831,7 +1837,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new InputData(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1849,7 +1855,7 @@ namespace RMC.BestFit.UI
             if (_timeSeriesElement != null) _timeSeriesElement.Deleted -= OnTimeSeriesElementDeleted;
             DisposeBridges();
             SetIsDirty(false);
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

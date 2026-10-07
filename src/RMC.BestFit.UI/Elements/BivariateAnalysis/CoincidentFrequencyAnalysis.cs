@@ -648,7 +648,8 @@ namespace RMC.BestFit.UI
         /// <inheritdoc/>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -663,264 +664,267 @@ namespace RMC.BestFit.UI
                 _messenger.Clear(this);
                 _validationAdapter.ClearAll();
                 var wasOpen = sqlite.DataBaseOpen;
-                if (!wasOpen) sqlite.Open();
+                try
+                {
+                    if (!wasOpen) sqlite.Open();
 
-                if (!sqlite.TableNames.Contains(CollectionName))
-                {
-                    if (!wasOpen) sqlite.Close();
-                    return;
-                }
-
-                var dtView = sqlite.GetTableManager(CollectionName);
-                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                if (rowIndex == -1)
-                {
-                    if (!wasOpen) sqlite.Close();
-                    return;
-                }
-
-                // Use backing fields to avoid repeated SetIsValid() / ClearResults() cascades
-                // during deserialization. A single SetIsValid() runs at the end of Open().
-                if (dtView.ColumnNames.Contains(nameof(Name)))
-                {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "CFA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
-                    else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate)))
-                    _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(
-                        dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified)))
-                    _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(
-                        dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-
-                // Resolve upstream BivariateAnalysis by name from the parent collection.
-                // Defensive: unsubscribe any previously-bound bivariate so a second Open()
-                // (CopyFromExternal, undo replay) does not double-subscribe handlers on the
-                // old reference. Mirrors the InputData-resolution branch below.
-                if (dtView.ColumnNames.Contains(nameof(BivariateAnalysis)))
-                {
-                    var biName = dtView.GetCell(nameof(BivariateAnalysis), rowIndex).ToString();
-                    if (!string.IsNullOrEmpty(biName))
+                    if (!sqlite.TableNames.Contains(CollectionName))
                     {
-                        foreach (var sibling in ParentCollection)
-                        {
-                            if (sibling is BivariateAnalysis bi && bi.Name == biName)
-                            {
-                                if (_bivariateAnalysis != null)
-                                {
-                                    _bivariateAnalysis.PropertyChanged -= BivariateAnalysis_PropertyChanged;
-                                    _bivariateAnalysis.Deleted -= OnBivariateAnalysisDeleted;
-                                }
-                                _bivariateAnalysis = bi;
-                                _bivariateAnalysis.PropertyChanged += BivariateAnalysis_PropertyChanged;
-                                _bivariateAnalysis.Deleted += OnBivariateAnalysisDeleted;
-                                if (_innerAnalysis != null)
-                                {
-                                    _innerAnalysis.BivariateAnalysis = bi.InnerAnalysis as ModelAnalyses.BivariateAnalysis;
-
-                                    // Sync the marginal posterior chains now, before AnalysisResults is
-                                    // restored below. Without this, MarginalXChain/MarginalYChain stay
-                                    // null until the first upstream PropertyChanged notification arrives
-                                    // after Open() returns — and because those model-layer setters clear
-                                    // results whenever the chain reference changes, that first
-                                    // notification (e.g., IsValid) would wipe the results this method is
-                                    // about to restore. Syncing here means the chains are already current
-                                    // by the time the notification fires, so the setters see no reference
-                                    // change and leave the restored results alone.
-                                    SyncMarginalChainsToInnerAnalysis();
-                                }
-                                break;
-                            }
-                        }
+                        return;
                     }
-                }
 
-                // Resolve InputData by name from the project's InputDataCollection (optional).
-                // Backing-field assignment mirrors CompositeAnalysis.Open and avoids the
-                // SetIsValid / message cascade on each setter call during deserialization.
-                // Blank, missing, or unresolved names leave the optional overlay unset.
-                if (_inputData != null)
-                {
-                    _inputData.PropertyChanged -= InputDataChanged;
-                    _inputData.Deleted -= OnInputDataDeleted;
-                    _inputData = null;
-                }
-                _inputDataValid = true;
-                _messenger.Remove(_inputDataInValidMsg);
-                if (dtView.ColumnNames.Contains(nameof(InputData)))
-                {
-                    var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                    if (!string.IsNullOrEmpty(inputDataName))
+                    var dtView = sqlite.GetTableManager(CollectionName);
+                    int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                    if (rowIndex == -1)
                     {
-                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        return;
+                    }
+
+                    // Use backing fields to avoid repeated SetIsValid() / ClearResults() cascades
+                    // during deserialization. A single SetIsValid() runs at the end of Open().
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
+                    {
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "CFA");
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
+                    {
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate)))
+                        _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(
+                            dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified)))
+                        _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(
+                            dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+
+                    // Resolve upstream BivariateAnalysis by name from the parent collection.
+                    // Defensive: unsubscribe any previously-bound bivariate so a second Open()
+                    // (CopyFromExternal, undo replay) does not double-subscribe handlers on the
+                    // old reference. Mirrors the InputData-resolution branch below.
+                    if (dtView.ColumnNames.Contains(nameof(BivariateAnalysis)))
+                    {
+                        var biName = dtView.GetCell(nameof(BivariateAnalysis), rowIndex).ToString();
+                        if (!string.IsNullOrEmpty(biName))
                         {
-                            if (collection.GetType() == typeof(InputDataCollection))
+                            foreach (var sibling in ParentCollection)
                             {
-                                foreach (IElement element in collection)
+                                if (sibling is BivariateAnalysis bi && bi.Name == biName)
                                 {
-                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                    if (_bivariateAnalysis != null)
                                     {
-                                        if (_inputData != null)
-                                        {
-                                            _inputData.PropertyChanged -= InputDataChanged;
-                                            _inputData.Deleted -= OnInputDataDeleted;
-                                        }
-                                        _inputData = (InputData)element;
-                                        _inputData.PropertyChanged += InputDataChanged;
-                                        _inputData.Deleted += OnInputDataDeleted;
-                                        _inputDataValid = _inputData.IsValid;
-                                        if (!_inputDataValid)
-                                            _messenger.Add(_inputDataInValidMsg);
-                                        else
-                                            _messenger.Remove(_inputDataInValidMsg);
-                                        break;
+                                        _bivariateAnalysis.PropertyChanged -= BivariateAnalysis_PropertyChanged;
+                                        _bivariateAnalysis.Deleted -= OnBivariateAnalysisDeleted;
                                     }
+                                    _bivariateAnalysis = bi;
+                                    _bivariateAnalysis.PropertyChanged += BivariateAnalysis_PropertyChanged;
+                                    _bivariateAnalysis.Deleted += OnBivariateAnalysisDeleted;
+                                    if (_innerAnalysis != null)
+                                    {
+                                        _innerAnalysis.BivariateAnalysis = bi.InnerAnalysis as ModelAnalyses.BivariateAnalysis;
+
+                                        // Sync the marginal posterior chains now, before AnalysisResults is
+                                        // restored below. Without this, MarginalXChain/MarginalYChain stay
+                                        // null until the first upstream PropertyChanged notification arrives
+                                        // after Open() returns — and because those model-layer setters clear
+                                        // results whenever the chain reference changes, that first
+                                        // notification (e.g., IsValid) would wipe the results this method is
+                                        // about to restore. Syncing here means the chains are already current
+                                        // by the time the notification fires, so the setters see no reference
+                                        // change and leave the restored results alone.
+                                        SyncMarginalChainsToInnerAnalysis();
+                                    }
+                                    break;
                                 }
-                                break;
+                            }
+                        }
+                    }
+
+                    // Resolve InputData by name from the project's InputDataCollection (optional).
+                    // Backing-field assignment mirrors CompositeAnalysis.Open and avoids the
+                    // SetIsValid / message cascade on each setter call during deserialization.
+                    // Blank, missing, or unresolved names leave the optional overlay unset.
+                    if (_inputData != null)
+                    {
+                        _inputData.PropertyChanged -= InputDataChanged;
+                        _inputData.Deleted -= OnInputDataDeleted;
+                        _inputData = null;
+                    }
+                    _inputDataValid = true;
+                    _messenger.Remove(_inputDataInValidMsg);
+                    if (dtView.ColumnNames.Contains(nameof(InputData)))
+                    {
+                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                        if (!string.IsNullOrEmpty(inputDataName))
+                        {
+                            foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                            {
+                                if (collection.GetType() == typeof(InputDataCollection))
+                                {
+                                    foreach (IElement element in collection)
+                                    {
+                                        if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                        {
+                                            if (_inputData != null)
+                                            {
+                                                _inputData.PropertyChanged -= InputDataChanged;
+                                                _inputData.Deleted -= OnInputDataDeleted;
+                                            }
+                                            _inputData = (InputData)element;
+                                            _inputData.PropertyChanged += InputDataChanged;
+                                            _inputData.Deleted += OnInputDataDeleted;
+                                            _inputDataValid = _inputData.IsValid;
+                                            if (!_inputDataValid)
+                                                _messenger.Add(_inputDataInValidMsg);
+                                            else
+                                                _messenger.Remove(_inputDataInValidMsg);
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // X values
+                    _xValues.CollectionChanged -= XValues_CollectionChanged;
+                    _xValues.Clear();
+                    if (dtView.ColumnNames.Contains(nameof(XValues)))
+                    {
+                        foreach (var v in ParseDoubleArray(dtView.GetCell(nameof(XValues), rowIndex).ToString()))
+                            _xValues.Add(v);
+                    }
+                    _xValues.CollectionChanged += XValues_CollectionChanged;
+
+                    // Y values
+                    _yValues.CollectionChanged -= YValues_CollectionChanged;
+                    _yValues.Clear();
+                    if (dtView.ColumnNames.Contains(nameof(YValues)))
+                    {
+                        foreach (var v in ParseDoubleArray(dtView.GetCell(nameof(YValues), rowIndex).ToString()))
+                            _yValues.Add(v);
+                    }
+                    _yValues.CollectionChanged += YValues_CollectionChanged;
+
+                    // Push the freshly-loaded ordinates to the inner analysis. Inner setters do
+                    // their own ClearResults; the no-op SetIsValid at the end of Open absorbs any
+                    // duplicate work.
+                    _innerAnalysis.XValues = _xValues.ToArray();
+                    _innerAnalysis.YValues = _yValues.ToArray();
+
+                    // BivariateResponse 2D array
+                    if (dtView.ColumnNames.Contains(nameof(BivariateResponse)) && _xValues.Count > 0 && _yValues.Count > 0)
+                    {
+                        var flat = ParseDoubleArray(dtView.GetCell(nameof(BivariateResponse), rowIndex).ToString());
+                        int rows = _xValues.Count;
+                        int cols = _yValues.Count;
+                        if (flat.Length == rows * cols)
+                        {
+                            var z = new double[rows, cols];
+                            int idx = 0;
+                            for (int i = 0; i < rows; i++)
+                                for (int j = 0; j < cols; j++)
+                                    z[i, j] = flat[idx++];
+                            _innerAnalysis.BivariateResponse = z;
+                        }
+                    }
+
+                    // Settings
+                    if (dtView.ColumnNames.Contains(nameof(NumberOfBins)) &&
+                        int.TryParse(dtView.GetCell(nameof(NumberOfBins), rowIndex).ToString(),
+                            NumberStyles.Any, CultureInfo.InvariantCulture, out int bins))
+                    {
+                        _innerAnalysis.NumberOfBins = bins;
+                    }
+
+                    // BayesianAnalysis presentation settings and posterior-resampling seed. Parse the
+                    // XElement attributes directly rather than rebuilding a
+                    // throwaway BayesianAnalysis(XElement) instance — the heavy constructor pulls in
+                    // priors / sampler config / etc. and throws on partial or legacy XML, even though
+                    // CFA only consumes these result-construction fields.
+                    if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                    {
+                        var bayesXml = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                        if (!string.IsNullOrEmpty(bayesXml))
+                        {
+                            try
+                            {
+                                var bayesElement = XElement.Parse(bayesXml);
+                                var ciAttr = bayesElement.Attribute(nameof(BayesianAnalysis.CredibleIntervalWidth));
+                                var olAttr = bayesElement.Attribute(nameof(BayesianAnalysis.OutputLength));
+                                var peAttr = bayesElement.Attribute(nameof(BayesianAnalysis.PointEstimator));
+                                var seedAttr = bayesElement.Attribute(nameof(BayesianAnalysis.PRNGSeed));
+
+                                if (ciAttr != null && double.TryParse(ciAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double ci))
+                                    _innerAnalysis.BayesianAnalysis.CredibleIntervalWidth = ci;
+                                if (olAttr != null && int.TryParse(olAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int ol))
+                                    _innerAnalysis.BayesianAnalysis.OutputLength = ol;
+                                if (peAttr != null && Enum.TryParse(peAttr.Value, out BayesianAnalysis.PointEstimateType pe))
+                                    _innerAnalysis.BayesianAnalysis.PointEstimator = pe;
+                                if (seedAttr != null && int.TryParse(seedAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int seed))
+                                    _innerAnalysis.BayesianAnalysis.PRNGSeed = seed;
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine(
+                                    $"CoincidentFrequencyAnalysis.Open: could not deserialize BayesianAnalysis for '{Name}': {ex.Message}");
+                            }
+                        }
+                    }
+
+                    // Plot settings
+                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+
+                    // ZOutputValues — restore the Z bin grid alongside AnalysisResults so consumers
+                    // can render the saved frequency curve without re-running.
+                    if (dtView.ColumnNames.Contains(nameof(ZOutputValues)))
+                    {
+                        var zCsv = dtView.GetCell(nameof(ZOutputValues), rowIndex).ToString();
+                        if (!string.IsNullOrEmpty(zCsv))
+                        {
+                            try { _innerAnalysis.SetZOutputValues(ParseDoubleArray(zCsv)); }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine(
+                                    $"CoincidentFrequencyAnalysis.Open: could not deserialize ZOutputValues for '{Name}': {ex.Message}");
+                            }
+                        }
+                    }
+
+                    // AnalysisResults — XElement round-trip via UncertaintyAnalysisResults.FromXElement.
+                    // Only the summary curves (ModeCurve, MeanCurve, ConfidenceIntervals) + scalar fit
+                    // metrics are persisted; per-realisation matrices are never stored.
+                    // Use RestoreAnalysisResults (not SetAnalysisResults) so IsEstimated also flips back
+                    // to true alongside the curves. The earlier BA-settings copy may have triggered
+                    // BayesianAnalysis_PropertyChanged â†’ ClearResults() â†’ IsEstimated = false; this restores it.
+                    if (dtView.ColumnNames.Contains(nameof(AnalysisResults)))
+                    {
+                        var arXml = dtView.GetCell(nameof(AnalysisResults), rowIndex).ToString();
+                        if (!string.IsNullOrEmpty(arXml))
+                        {
+                            try
+                            {
+                                var results = UncertaintyAnalysisResults.FromXElement(XElement.Parse(arXml));
+                                _innerAnalysis.RestoreAnalysisResults(results);
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine(
+                                    $"CoincidentFrequencyAnalysis.Open: could not deserialize AnalysisResults for '{Name}': {ex.Message}");
                             }
                         }
                     }
                 }
-
-                // X values
-                _xValues.CollectionChanged -= XValues_CollectionChanged;
-                _xValues.Clear();
-                if (dtView.ColumnNames.Contains(nameof(XValues)))
+                finally
                 {
-                    foreach (var v in ParseDoubleArray(dtView.GetCell(nameof(XValues), rowIndex).ToString()))
-                        _xValues.Add(v);
+                    if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
                 }
-                _xValues.CollectionChanged += XValues_CollectionChanged;
-
-                // Y values
-                _yValues.CollectionChanged -= YValues_CollectionChanged;
-                _yValues.Clear();
-                if (dtView.ColumnNames.Contains(nameof(YValues)))
-                {
-                    foreach (var v in ParseDoubleArray(dtView.GetCell(nameof(YValues), rowIndex).ToString()))
-                        _yValues.Add(v);
-                }
-                _yValues.CollectionChanged += YValues_CollectionChanged;
-
-                // Push the freshly-loaded ordinates to the inner analysis. Inner setters do
-                // their own ClearResults; the no-op SetIsValid at the end of Open absorbs any
-                // duplicate work.
-                _innerAnalysis.XValues = _xValues.ToArray();
-                _innerAnalysis.YValues = _yValues.ToArray();
-
-                // BivariateResponse 2D array
-                if (dtView.ColumnNames.Contains(nameof(BivariateResponse)) && _xValues.Count > 0 && _yValues.Count > 0)
-                {
-                    var flat = ParseDoubleArray(dtView.GetCell(nameof(BivariateResponse), rowIndex).ToString());
-                    int rows = _xValues.Count;
-                    int cols = _yValues.Count;
-                    if (flat.Length == rows * cols)
-                    {
-                        var z = new double[rows, cols];
-                        int idx = 0;
-                        for (int i = 0; i < rows; i++)
-                            for (int j = 0; j < cols; j++)
-                                z[i, j] = flat[idx++];
-                        _innerAnalysis.BivariateResponse = z;
-                    }
-                }
-
-                // Settings
-                if (dtView.ColumnNames.Contains(nameof(NumberOfBins)) &&
-                    int.TryParse(dtView.GetCell(nameof(NumberOfBins), rowIndex).ToString(),
-                        NumberStyles.Any, CultureInfo.InvariantCulture, out int bins))
-                {
-                    _innerAnalysis.NumberOfBins = bins;
-                }
-
-                // BayesianAnalysis presentation settings and posterior-resampling seed. Parse the
-                // XElement attributes directly rather than rebuilding a
-                // throwaway BayesianAnalysis(XElement) instance — the heavy constructor pulls in
-                // priors / sampler config / etc. and throws on partial or legacy XML, even though
-                // CFA only consumes these result-construction fields.
-                if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
-                {
-                    var bayesXml = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                    if (!string.IsNullOrEmpty(bayesXml))
-                    {
-                        try
-                        {
-                            var bayesElement = XElement.Parse(bayesXml);
-                            var ciAttr = bayesElement.Attribute(nameof(BayesianAnalysis.CredibleIntervalWidth));
-                            var olAttr = bayesElement.Attribute(nameof(BayesianAnalysis.OutputLength));
-                            var peAttr = bayesElement.Attribute(nameof(BayesianAnalysis.PointEstimator));
-                            var seedAttr = bayesElement.Attribute(nameof(BayesianAnalysis.PRNGSeed));
-
-                            if (ciAttr != null && double.TryParse(ciAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double ci))
-                                _innerAnalysis.BayesianAnalysis.CredibleIntervalWidth = ci;
-                            if (olAttr != null && int.TryParse(olAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int ol))
-                                _innerAnalysis.BayesianAnalysis.OutputLength = ol;
-                            if (peAttr != null && Enum.TryParse(peAttr.Value, out BayesianAnalysis.PointEstimateType pe))
-                                _innerAnalysis.BayesianAnalysis.PointEstimator = pe;
-                            if (seedAttr != null && int.TryParse(seedAttr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out int seed))
-                                _innerAnalysis.BayesianAnalysis.PRNGSeed = seed;
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine(
-                                $"CoincidentFrequencyAnalysis.Open: could not deserialize BayesianAnalysis for '{Name}': {ex.Message}");
-                        }
-                    }
-                }
-
-                // Plot settings
-                DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-
-                // ZOutputValues — restore the Z bin grid alongside AnalysisResults so consumers
-                // can render the saved frequency curve without re-running.
-                if (dtView.ColumnNames.Contains(nameof(ZOutputValues)))
-                {
-                    var zCsv = dtView.GetCell(nameof(ZOutputValues), rowIndex).ToString();
-                    if (!string.IsNullOrEmpty(zCsv))
-                    {
-                        try { _innerAnalysis.SetZOutputValues(ParseDoubleArray(zCsv)); }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine(
-                                $"CoincidentFrequencyAnalysis.Open: could not deserialize ZOutputValues for '{Name}': {ex.Message}");
-                        }
-                    }
-                }
-
-                // AnalysisResults — XElement round-trip via UncertaintyAnalysisResults.FromXElement.
-                // Only the summary curves (ModeCurve, MeanCurve, ConfidenceIntervals) + scalar fit
-                // metrics are persisted; per-realisation matrices are never stored.
-                // Use RestoreAnalysisResults (not SetAnalysisResults) so IsEstimated also flips back
-                // to true alongside the curves. The earlier BA-settings copy may have triggered
-                // BayesianAnalysis_PropertyChanged â†’ ClearResults() â†’ IsEstimated = false; this restores it.
-                if (dtView.ColumnNames.Contains(nameof(AnalysisResults)))
-                {
-                    var arXml = dtView.GetCell(nameof(AnalysisResults), rowIndex).ToString();
-                    if (!string.IsNullOrEmpty(arXml))
-                    {
-                        try
-                        {
-                            var results = UncertaintyAnalysisResults.FromXElement(XElement.Parse(arXml));
-                            _innerAnalysis.RestoreAnalysisResults(results);
-                        }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine(
-                                $"CoincidentFrequencyAnalysis.Open: could not deserialize AnalysisResults for '{Name}': {ex.Message}");
-                        }
-                    }
-                }
-
-                if (!wasOpen) sqlite.Close();
 
                 // Rebuild plot/collection undo bridges against the freshly deserialized
                 // inner analysis and plot instances. Matches the pattern used by every
@@ -970,7 +974,7 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
 
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1119,7 +1123,7 @@ namespace RMC.BestFit.UI
         /// <inheritdoc/>
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new CoincidentFrequencyAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1152,7 +1156,7 @@ namespace RMC.BestFit.UI
 
             SetIsDirty(false);
 
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

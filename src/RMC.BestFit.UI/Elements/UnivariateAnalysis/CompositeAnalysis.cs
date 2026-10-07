@@ -946,7 +946,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -962,176 +963,181 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
-
-            // open element
-            var dtView = sqlite.GetTableManager(CollectionName);
-            int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-            if (rowIndex != -1)
+            try
             {
-                // General
-                if (dtView.ColumnNames.Contains(nameof(Name)))
+                if (wasOpen == false) sqlite.Open();
+
+                // open element
+                var dtView = sqlite.GetTableManager(CollectionName);
+                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                if (rowIndex != -1)
                 {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "CA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
-                    else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
-                // Get input data. The overlay is optional, so blank, missing, or unresolved
-                // persisted names must leave the backing field null.
-                if (_inputData != null)
-                {
-                    _inputData.PropertyChanged -= InputDataChanged;
-                    _inputData.Deleted -= OnInputDataDeleted;
-                    _inputData = null;
-                }
-                _inputDataValid = true;
-                _messenger.Remove(_inputDataInValidMsg);
-                if (dtView.ColumnNames.Contains(nameof(InputData)))
-                {
-                    var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                    if (!string.IsNullOrEmpty(inputDataName))
+                    // General
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
                     {
-                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "CA");
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
+                    {
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                    // Get input data. The overlay is optional, so blank, missing, or unresolved
+                    // persisted names must leave the backing field null.
+                    if (_inputData != null)
+                    {
+                        _inputData.PropertyChanged -= InputDataChanged;
+                        _inputData.Deleted -= OnInputDataDeleted;
+                        _inputData = null;
+                    }
+                    _inputDataValid = true;
+                    _messenger.Remove(_inputDataInValidMsg);
+                    if (dtView.ColumnNames.Contains(nameof(InputData)))
+                    {
+                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                        if (!string.IsNullOrEmpty(inputDataName))
                         {
-                            if (collection.GetType() == typeof(InputDataCollection))
+                            foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                             {
-                                foreach (IElement element in collection)
+                                if (collection.GetType() == typeof(InputDataCollection))
                                 {
-                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                    foreach (IElement element in collection)
                                     {
-                                        _inputData = (InputData)element;
-                                        _inputData.PropertyChanged += InputDataChanged;
-                                        _inputData.Deleted += OnInputDataDeleted;
-                                        _inputDataValid = _inputData.IsValid;
-                                        if (!_inputDataValid)
-                                            _messenger.Add(_inputDataInValidMsg);
-                                        else
-                                            _messenger.Remove(_inputDataInValidMsg);
-                                        break;
+                                        if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                        {
+                                            _inputData = (InputData)element;
+                                            _inputData.PropertyChanged += InputDataChanged;
+                                            _inputData.Deleted += OnInputDataDeleted;
+                                            _inputDataValid = _inputData.IsValid;
+                                            if (!_inputDataValid)
+                                                _messenger.Add(_inputDataInValidMsg);
+                                            else
+                                                _messenger.Remove(_inputDataInValidMsg);
+                                            break;
+                                        }
                                     }
+                                    break;
                                 }
-                                break;
                             }
                         }
                     }
-                }
-                // Composite properties
-                if (dtView.ColumnNames.Contains(nameof(CompositeDistributionType))) Enum.TryParse(dtView.GetCell(nameof(CompositeDistributionType), rowIndex).ToString(), out _compositeDistributionType);
-                if (dtView.ColumnNames.Contains(nameof(ModelAverageMethod))) Enum.TryParse(dtView.GetCell(nameof(ModelAverageMethod), rowIndex).ToString(), out _modelAverageMethod);
-                if (dtView.ColumnNames.Contains(nameof(Dependency))) Enum.TryParse(dtView.GetCell(nameof(Dependency), rowIndex).ToString(), out _dependency);
-                if (dtView.ColumnNames.Contains(nameof(IsMaximum))) bool.TryParse(dtView.GetCell(nameof(IsMaximum), rowIndex).ToString(), out _isMaximum);
-                string correlationMatrixXml = null;
-                if (dtView.ColumnNames.Contains(nameof(CorrelationMatrix)))
-                    correlationMatrixXml = dtView.GetCell(nameof(CorrelationMatrix), rowIndex)?.ToString();
-                // Plot Properties
-                DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);             
-                // Get probability ordinates (save to local — inner analysis gets reconstructed below)
-                string probOrdinatesStr = null;
-                if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
-                    probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
-                // univariate analyses
-                if (dtView.ColumnNames.Contains(nameof(Analyses)))
-                {
-                    try
+                    // Composite properties
+                    if (dtView.ColumnNames.Contains(nameof(CompositeDistributionType))) Enum.TryParse(dtView.GetCell(nameof(CompositeDistributionType), rowIndex).ToString(), out _compositeDistributionType);
+                    if (dtView.ColumnNames.Contains(nameof(ModelAverageMethod))) Enum.TryParse(dtView.GetCell(nameof(ModelAverageMethod), rowIndex).ToString(), out _modelAverageMethod);
+                    if (dtView.ColumnNames.Contains(nameof(Dependency))) Enum.TryParse(dtView.GetCell(nameof(Dependency), rowIndex).ToString(), out _dependency);
+                    if (dtView.ColumnNames.Contains(nameof(IsMaximum))) bool.TryParse(dtView.GetCell(nameof(IsMaximum), rowIndex).ToString(), out _isMaximum);
+                    string correlationMatrixXml = null;
+                    if (dtView.ColumnNames.Contains(nameof(CorrelationMatrix)))
+                        correlationMatrixXml = dtView.GetCell(nameof(CorrelationMatrix), rowIndex)?.ToString();
+                    // Plot Properties
+                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                    // Get probability ordinates (save to local — inner analysis gets reconstructed below)
+                    string probOrdinatesStr = null;
+                    if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                        probOrdinatesStr = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
+                    // univariate analyses
+                    if (dtView.ColumnNames.Contains(nameof(Analyses)))
                     {
-                        AnalysesFromXElement(XElement.Parse(dtView.GetCell(nameof(Analyses), rowIndex).ToString()));
-                    }
-                    catch (Exception ex)
-                    {
-                        // Couldn't parse the XML. It doesn't necessarily mean an error
-                        // since the cell may have never been set on a freshly-saved composite.
-                        System.Diagnostics.Debug.WriteLine($"CompositeAnalysis.Open: failed to parse Analyses XElement for '{Name}': {ex.Message}");
-                    }
-                }
-
-                // Reconstruct inner analysis with saved state
-                {
-                    // Build XElement for inner analysis constructor
-                    var innerXElement = new XElement("CompositeAnalysis",
-                        new XAttribute("IsEstimated", false),
-                        new XAttribute("CompositeDistributionType", _compositeDistributionType),
-                        new XAttribute("ModelAverageMethod", _modelAverageMethod),
-                        new XAttribute("Dependency", _dependency),
-                        new XAttribute("IsMaximum", _isMaximum));
-
-                    // Add probability ordinates
-                    if (!string.IsNullOrEmpty(probOrdinatesStr))
-                        innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
-
-                    if (!string.IsNullOrWhiteSpace(correlationMatrixXml))
-                        innerXElement.Add(XElement.Parse(correlationMatrixXml));
-
-                    // Add Bayesian analysis
-                    if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
-                    {
-                        var bayesStr = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                        if (!string.IsNullOrEmpty(bayesStr))
-                            innerXElement.Add(XElement.Parse(bayesStr));
-                    }
-
-                    // Create analysis resolver that maps names to model-layer
-                    // IUnivariateAnalysis instances (UnivariateAnalysis or B17CAnalysis,
-                    // explicitly NOT another CompositeAnalysis — that would be
-                    // composite-of-composite, which is rejected upstream).
-                    Func<string, ModelAnalyses.IUnivariateAnalysis> analysisResolver = (name) =>
-                    {
-                        foreach (var uiWua in _analyses)
+                        try
                         {
-                            if (uiWua.UnivariateAnalysis?.NameOnDisk == name &&
-                                uiWua.UnivariateAnalysis?.InnerAnalysis is ModelAnalyses.IUnivariateAnalysis modelAnalysis &&
-                                modelAnalysis is not ModelAnalyses.CompositeAnalysis)
+                            AnalysesFromXElement(XElement.Parse(dtView.GetCell(nameof(Analyses), rowIndex).ToString()));
+                        }
+                        catch (Exception ex)
+                        {
+                            // Couldn't parse the XML. It doesn't necessarily mean an error
+                            // since the cell may have never been set on a freshly-saved composite.
+                            System.Diagnostics.Debug.WriteLine($"CompositeAnalysis.Open: failed to parse Analyses XElement for '{Name}': {ex.Message}");
+                        }
+                    }
+
+                    // Reconstruct inner analysis with saved state
+                    {
+                        // Build XElement for inner analysis constructor
+                        var innerXElement = new XElement("CompositeAnalysis",
+                            new XAttribute("IsEstimated", false),
+                            new XAttribute("CompositeDistributionType", _compositeDistributionType),
+                            new XAttribute("ModelAverageMethod", _modelAverageMethod),
+                            new XAttribute("Dependency", _dependency),
+                            new XAttribute("IsMaximum", _isMaximum));
+
+                        // Add probability ordinates
+                        if (!string.IsNullOrEmpty(probOrdinatesStr))
+                            innerXElement.Add(new XElement("ProbabilityOrdinates", probOrdinatesStr));
+
+                        if (!string.IsNullOrWhiteSpace(correlationMatrixXml))
+                            innerXElement.Add(XElement.Parse(correlationMatrixXml));
+
+                        // Add Bayesian analysis
+                        if (dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                        {
+                            var bayesStr = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                            if (!string.IsNullOrEmpty(bayesStr))
+                                innerXElement.Add(XElement.Parse(bayesStr));
+                        }
+
+                        // Create analysis resolver that maps names to model-layer
+                        // IUnivariateAnalysis instances (UnivariateAnalysis or B17CAnalysis,
+                        // explicitly NOT another CompositeAnalysis — that would be
+                        // composite-of-composite, which is rejected upstream).
+                        Func<string, ModelAnalyses.IUnivariateAnalysis> analysisResolver = (name) =>
+                        {
+                            foreach (var uiWua in _analyses)
                             {
-                                return modelAnalysis;
+                                if (uiWua.UnivariateAnalysis?.NameOnDisk == name &&
+                                    uiWua.UnivariateAnalysis?.InnerAnalysis is ModelAnalyses.IUnivariateAnalysis modelAnalysis &&
+                                    modelAnalysis is not ModelAnalyses.CompositeAnalysis)
+                                {
+                                    return modelAnalysis;
+                                }
+                            }
+                            return null;
+                        };
+
+                        // Reconstruct inner analysis
+                        UnsubscribeInnerAnalysis();
+                        _innerAnalysis = new ModelAnalyses.CompositeAnalysis(innerXElement, analysisResolver);
+                        SubscribeInnerAnalysis();
+
+                        // Sync UI analyses to inner model (innerXElement doesn't include Analyses)
+                        SyncAnalysesToInnerAnalysis();
+                    }
+
+                    // Restore analysis results via UncertaintyAnalysisResults.FromXElement.
+                    // Only the summary curves (ModeCurve, MeanCurve, ConfidenceIntervals) + scalar
+                    // fit metrics are persisted; per-realisation matrices are never stored, so a
+                    // small XElement string is sufficient.
+                    if (dtView.ColumnNames.Contains(nameof(AnalysisResults)))
+                    {
+                        try
+                        {
+                            var arXml = dtView.GetCell(nameof(AnalysisResults), rowIndex)?.ToString();
+                            if (!string.IsNullOrEmpty(arXml))
+                            {
+                                var results = UncertaintyAnalysisResults.FromXElement(XElement.Parse(arXml));
+                                if (results != null)
+                                    _innerAnalysis.RestoreAnalysisResults(results);
                             }
                         }
-                        return null;
-                    };
-
-                    // Reconstruct inner analysis
-                    UnsubscribeInnerAnalysis();
-                    _innerAnalysis = new ModelAnalyses.CompositeAnalysis(innerXElement, analysisResolver);
-                    SubscribeInnerAnalysis();
-
-                    // Sync UI analyses to inner model (innerXElement doesn't include Analyses)
-                    SyncAnalysesToInnerAnalysis();
-                }
-
-                // Restore analysis results via UncertaintyAnalysisResults.FromXElement.
-                // Only the summary curves (ModeCurve, MeanCurve, ConfidenceIntervals) + scalar
-                // fit metrics are persisted; per-realisation matrices are never stored, so a
-                // small XElement string is sufficient.
-                if (dtView.ColumnNames.Contains(nameof(AnalysisResults)))
-                {
-                    try
-                    {
-                        var arXml = dtView.GetCell(nameof(AnalysisResults), rowIndex)?.ToString();
-                        if (!string.IsNullOrEmpty(arXml))
+                        catch (Exception ex)
                         {
-                            var results = UncertaintyAnalysisResults.FromXElement(XElement.Parse(arXml));
-                            if (results != null)
-                                _innerAnalysis.RestoreAnalysisResults(results);
+                            // Could not deserialize results — will need re-estimation
+                            System.Diagnostics.Debug.WriteLine($"CompositeAnalysis.Open: could not deserialize AnalysisResults for '{Name}': {ex.Message}");
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        // Could not deserialize results — will need re-estimation
-                        System.Diagnostics.Debug.WriteLine($"CompositeAnalysis.Open: could not deserialize AnalysisResults for '{Name}': {ex.Message}");
-                    }
+
                 }
-
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
             SetupBridges();
 
             // Validate probability ordinates — ProbabilityOrdinates_CollectionChanged didn't fire
@@ -1189,7 +1195,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1337,7 +1343,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new CompositeAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1362,7 +1368,7 @@ namespace RMC.BestFit.UI
             UnsubscribeInnerAnalysis();
             SetIsDirty(false);
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

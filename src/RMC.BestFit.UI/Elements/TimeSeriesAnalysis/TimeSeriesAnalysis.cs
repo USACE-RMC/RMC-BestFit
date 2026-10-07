@@ -1117,7 +1117,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -1140,269 +1141,274 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
-
-            // open element
-            var dtView = sqlite.GetTableManager(ParentCollection.Name);
-            int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-            if (rowIndex != -1)
+            try
             {
-                // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
-                // The TimeSeriesData setter triggers SetIsValid(), ClearResults(), and syncs the inner ARIMAX model;
-                // calling it here would prematurely clear results before the MCMC bytes and model XElement have
-                // been loaded. A single SetIsValid() call at the end of Open() is sufficient.
-                if (dtView.ColumnNames.Contains(nameof(Name)))
-                {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "TSA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
-                    else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                if (wasOpen == false) sqlite.Open();
 
-                // Get time series - use backing field to avoid SetIsValid(), ClearResults(),
-                // and premature inner-analysis sync (the inner analysis is reconstructed below).
-                if (dtView.ColumnNames.Contains(nameof(TimeSeriesData)))
+                // open element
+                var dtView = sqlite.GetTableManager(ParentCollection.Name);
+                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                if (rowIndex != -1)
                 {
-                    var elementName = dtView.GetCell(nameof(TimeSeriesData), rowIndex).ToString();
-                    foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                    // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
+                    // The TimeSeriesData setter triggers SetIsValid(), ClearResults(), and syncs the inner ARIMAX model;
+                    // calling it here would prematurely clear results before the MCMC bytes and model XElement have
+                    // been loaded. A single SetIsValid() call at the end of Open() is sufficient.
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
                     {
-                        if (collection.GetType() == typeof(TimeSeriesCollection))
-                        {
-                            foreach (IElement element in collection)
-                            {
-                                if (element.Name == elementName && element.GetType() == typeof(TimeSeriesElement))
-                                {
-                                    _timeSeriesData = (TimeSeriesElement)element;
-                                    _timeSeriesData.PropertyChanged += TimeSeriesElementChanged;
-                                    _timeSeriesData.Deleted += OnTimeSeriesDataDeleted;
-                                    _tsDataValid = _timeSeriesData.IsValid;
-                                    _messenger.Remove(_tsDataNullMsg);
-                                    if (!_tsDataValid)
-                                        _messenger.Add(_tsDataInValidMsg);
-                                    else
-                                        _messenger.Remove(_tsDataInValidMsg);
-                                    break;
-                                }
-                            }
-                        }
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "TSA");
                     }
-                }
-
-                // Plot Properties
-                DeserializePlotSettings(dtView, rowIndex, "TimeSeriesPlotSettings", _timeSeriesPlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualPlotSettings", _residualPlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualHistogramPlotSettings", _residualHistogramPlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualQQPlotSettings", _residualQQPlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualACFPlotSettings", _residualACFPlot);
-                DeserializePlotSettings(dtView, rowIndex, "ResidualPACFPlotSettings", _residualPACFPlot);
-                _bayesianController.Deserialize(dtView, rowIndex);
-
-                // Get ARIMAX model XElement. Pre-v2.0 projects stored the model in a
-                // column named "ARMAX" with an additive parameter layout that cannot be
-                // mapped onto the new ARIMAX model. We detect that case here so we can
-                // discard the stale model state and start the user with a fresh default
-                // model bound to the loaded input series.
-                XElement modelXElement = null;
-                bool isLegacyFormat = false;
-                if (TimeSeriesData != null)
-                {
-                    if (dtView.ColumnNames.Contains(nameof(ARIMAX)))
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
                     {
-                        var armaxStr = dtView.GetCell(nameof(ARIMAX), rowIndex)?.ToString();
-                        if (!string.IsNullOrEmpty(armaxStr))
-                        {
-                            try { modelXElement = XElement.Parse(armaxStr); }
-                            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load ARIMAX for '{Name}': {ex.Message}"); }
-                        }
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
                     }
-                    if (modelXElement == null && dtView.ColumnNames.Contains("ARMAX"))
-                    {
-                        var legacyStr = dtView.GetCell("ARMAX", rowIndex)?.ToString();
-                        if (!string.IsNullOrEmpty(legacyStr))
-                            isLegacyFormat = true;
-                    }
-                }
-                openedFromV1 = isLegacyFormat;
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
 
-                // Get covariates
-                if (dtView.ColumnNames.Contains(nameof(Covariates)))
-                {
-                    Covariates = new ObservableCollection<CovariateData>();
-                    var covariateName = dtView.GetCell(nameof(Covariates), rowIndex).ToString().Split('|');
-                    for (int i = 0; i < covariateName.Length; i++)
+                    // Get time series - use backing field to avoid SetIsValid(), ClearResults(),
+                    // and premature inner-analysis sync (the inner analysis is reconstructed below).
+                    if (dtView.ColumnNames.Contains(nameof(TimeSeriesData)))
                     {
+                        var elementName = dtView.GetCell(nameof(TimeSeriesData), rowIndex).ToString();
                         foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                         {
                             if (collection.GetType() == typeof(TimeSeriesCollection))
                             {
                                 foreach (IElement element in collection)
                                 {
-                                    if (element.Name == covariateName[i] && element.GetType() == typeof(TimeSeriesElement))
+                                    if (element.Name == elementName && element.GetType() == typeof(TimeSeriesElement))
                                     {
-                                        Covariates.Add(new CovariateData() { TimeSeriesElement = (TimeSeriesElement)element });
+                                        _timeSeriesData = (TimeSeriesElement)element;
+                                        _timeSeriesData.PropertyChanged += TimeSeriesElementChanged;
+                                        _timeSeriesData.Deleted += OnTimeSeriesDataDeleted;
+                                        _tsDataValid = _timeSeriesData.IsValid;
+                                        _messenger.Remove(_tsDataNullMsg);
+                                        if (!_tsDataValid)
+                                            _messenger.Add(_tsDataInValidMsg);
+                                        else
+                                            _messenger.Remove(_tsDataInValidMsg);
                                         break;
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                MCMCResults mcmcResults = isLegacyFormat
-                    ? null
-                    : AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
-                XElement innerXElement = isLegacyFormat
-                    ? null
-                    : AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+                    // Plot Properties
+                    DeserializePlotSettings(dtView, rowIndex, "TimeSeriesPlotSettings", _timeSeriesPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualPlotSettings", _residualPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualHistogramPlotSettings", _residualHistogramPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualQQPlotSettings", _residualQQPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualACFPlotSettings", _residualACFPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "ResidualPACFPlotSettings", _residualPACFPlot);
+                    _bayesianController.Deserialize(dtView, rowIndex);
 
-                // Get Bayesian analysis XElement - ignored for legacy files (we
-                // construct a fresh BayesianAnalysis with new defaults below).
-                XElement analysisXElement = null;
-                if (!isLegacyFormat && dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
-                {
-                    var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
-                    try { analysisXElement = XElement.Parse(xElementString); }
-                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load BayesianAnalysis for '{Name}': {ex.Message}"); }
-                }
-
-                // Reconstruct inner analysis from persisted data. The covariates loaded above were
-                // synced into the constructor's default model, so unbind it before replacing it.
-                _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
-                UnbindModel(_innerAnalysis.ARIMAX);
-
-                UncertaintyAnalysisResults analysisResults = isLegacyFormat
-                    ? null
-                    : AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
-
-                // Set when the layout guard replaces the parameter vector restored from the saved
-                // model; the saved results are then skipped and a warning is raised below.
-                bool savedLayoutRebuilt = false;
-
-                if (TimeSeriesData != null)
-                {
-                    ARIMAX arimax;
-                    if (modelXElement != null)
+                    // Get ARIMAX model XElement. Pre-v2.0 projects stored the model in a
+                    // column named "ARMAX" with an additive parameter layout that cannot be
+                    // mapped onto the new ARIMAX model. We detect that case here so we can
+                    // discard the stale model state and start the user with a fresh default
+                    // model bound to the loaded input series.
+                    XElement modelXElement = null;
+                    bool isLegacyFormat = false;
+                    if (TimeSeriesData != null)
                     {
-                        // Reconstruct ARIMAX model from persisted XElement
-                        arimax = new ARIMAX(TimeSeriesData.TimeSeries, modelXElement);
-                    }
-                    else
-                    {
-                        // Either legacy XML (discarded) or no model has been saved yet:
-                        // build a fresh ARIMAX bound to the loaded input series. Using
-                        // the data-only ctor (instead of the empty one) ensures
-                        // `arimax.TimeSeries` is non-null so the App control can render
-                        // without dereferencing null.
-                        arimax = new ARIMAX(TimeSeriesData.TimeSeries);
-                    }
-
-                    // Reattach the covariates without rebuilding defaults, so the saved parameter
-                    // values, bounds, and custom priors restored from the XML survive. The layout
-                    // guard still rebuilds a vector that no longer fits (e.g., an unresolved covariate).
-                    int restoredParameterCount = arimax.NumberOfParameters;
-                    arimax.SetCovariates(GetCovariateTimeSeries(), resetParameters: false);
-
-                    // The guard rebuilds only on a count mismatch, and a rebuild always lands on the
-                    // expected count, so a changed count means the saved vector was replaced by the
-                    // defaults. The saved results belong to the replaced vector (a point-estimator
-                    // reprocess would fail on the length mismatch), so they are not restored. A legacy
-                    // or unreadable model starts from the defaults, so it has no saved vector to lose.
-                    if (modelXElement != null && arimax.NumberOfParameters != restoredParameterCount)
-                    {
-                        savedLayoutRebuilt = true;
-                        mcmcResults = null;
-                        analysisResults = null;
-                    }
-
-                    if (innerXElement == null && !isLegacyFormat && analysisXElement != null)
-                    {
-                        // Build a combined XElement for the inner analysis constructor
-                        innerXElement = new XElement("ARIMAXAnalysis",
-                            new XAttribute("IsEstimated", mcmcResults != null));
-
-                        // ForecastingTimeSteps is an analysis-layer property (not on the ARIMAX
-                        // model or BayesianAnalysis) and is persisted to its own column. Pre-fix
-                        // saves don't have the column — Contains() returns false and the value
-                        // defaults to 0 inside the constructor, matching legacy behavior.
-                        if (dtView.ColumnNames.Contains("ForecastingTimeSteps"))
+                        if (dtView.ColumnNames.Contains(nameof(ARIMAX)))
                         {
-                            var raw = dtView.GetCell("ForecastingTimeSteps", rowIndex);
-                            if (raw != null && int.TryParse(raw.ToString(), out var fts))
-                                innerXElement.SetAttributeValue("ForecastingTimeSteps", fts);
+                            var armaxStr = dtView.GetCell(nameof(ARIMAX), rowIndex)?.ToString();
+                            if (!string.IsNullOrEmpty(armaxStr))
+                            {
+                                try { modelXElement = XElement.Parse(armaxStr); }
+                                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load ARIMAX for '{Name}': {ex.Message}"); }
+                            }
+                        }
+                        if (modelXElement == null && dtView.ColumnNames.Contains("ARMAX"))
+                        {
+                            var legacyStr = dtView.GetCell("ARMAX", rowIndex)?.ToString();
+                            if (!string.IsNullOrEmpty(legacyStr))
+                                isLegacyFormat = true;
+                        }
+                    }
+                    openedFromV1 = isLegacyFormat;
+
+                    // Get covariates
+                    if (dtView.ColumnNames.Contains(nameof(Covariates)))
+                    {
+                        Covariates = new ObservableCollection<CovariateData>();
+                        var covariateName = dtView.GetCell(nameof(Covariates), rowIndex).ToString().Split('|');
+                        for (int i = 0; i < covariateName.Length; i++)
+                        {
+                            foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                            {
+                                if (collection.GetType() == typeof(TimeSeriesCollection))
+                                {
+                                    foreach (IElement element in collection)
+                                    {
+                                        if (element.Name == covariateName[i] && element.GetType() == typeof(TimeSeriesElement))
+                                        {
+                                            Covariates.Add(new CovariateData() { TimeSeriesElement = (TimeSeriesElement)element });
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    MCMCResults mcmcResults = isLegacyFormat
+                        ? null
+                        : AnalysisPersistenceHelper.TryLoadMCMCResults(dtView, rowIndex, Name);
+                    XElement innerXElement = isLegacyFormat
+                        ? null
+                        : AnalysisPersistenceHelper.TryLoadXElement(dtView, "AnalysisXml", rowIndex, Name);
+
+                    // Get Bayesian analysis XElement - ignored for legacy files (we
+                    // construct a fresh BayesianAnalysis with new defaults below).
+                    XElement analysisXElement = null;
+                    if (!isLegacyFormat && dtView.ColumnNames.Contains(nameof(BayesianAnalysis)))
+                    {
+                        var xElementString = dtView.GetCell(nameof(BayesianAnalysis), rowIndex).ToString();
+                        try { analysisXElement = XElement.Parse(xElementString); }
+                        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Failed to load BayesianAnalysis for '{Name}': {ex.Message}"); }
+                    }
+
+                    // Reconstruct inner analysis from persisted data. The covariates loaded above were
+                    // synced into the constructor's default model, so unbind it before replacing it.
+                    _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
+                    UnbindModel(_innerAnalysis.ARIMAX);
+
+                    UncertaintyAnalysisResults analysisResults = isLegacyFormat
+                        ? null
+                        : AnalysisPersistenceHelper.TryLoadAnalysisResults(dtView, nameof(AnalysisResults), rowIndex, Name);
+
+                    // Set when the layout guard replaces the parameter vector restored from the saved
+                    // model; the saved results are then skipped and a warning is raised below.
+                    bool savedLayoutRebuilt = false;
+
+                    if (TimeSeriesData != null)
+                    {
+                        ARIMAX arimax;
+                        if (modelXElement != null)
+                        {
+                            // Reconstruct ARIMAX model from persisted XElement
+                            arimax = new ARIMAX(TimeSeriesData.TimeSeries, modelXElement);
+                        }
+                        else
+                        {
+                            // Either legacy XML (discarded) or no model has been saved yet:
+                            // build a fresh ARIMAX bound to the loaded input series. Using
+                            // the data-only ctor (instead of the empty one) ensures
+                            // `arimax.TimeSeries` is non-null so the App control can render
+                            // without dereferencing null.
+                            arimax = new ARIMAX(TimeSeriesData.TimeSeries);
                         }
 
-                        // Add Bayesian analysis element
-                        innerXElement.Add(analysisXElement);
+                        // Reattach the covariates without rebuilding defaults, so the saved parameter
+                        // values, bounds, and custom priors restored from the XML survive. The layout
+                        // guard still rebuilds a vector that no longer fits (e.g., an unresolved covariate).
+                        int restoredParameterCount = arimax.NumberOfParameters;
+                        arimax.SetCovariates(GetCovariateTimeSeries(), resetParameters: false);
 
-                    }
+                        // The guard rebuilds only on a count mismatch, and a rebuild always lands on the
+                        // expected count, so a changed count means the saved vector was replaced by the
+                        // defaults. The saved results belong to the replaced vector (a point-estimator
+                        // reprocess would fail on the length mismatch), so they are not restored. A legacy
+                        // or unreadable model starts from the defaults, so it has no saved vector to lose.
+                        if (modelXElement != null && arimax.NumberOfParameters != restoredParameterCount)
+                        {
+                            savedLayoutRebuilt = true;
+                            mcmcResults = null;
+                            analysisResults = null;
+                        }
 
-                    if (innerXElement != null)
-                    {
-                        _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(arimax, innerXElement, mcmcResults, analysisResults);
+                        if (innerXElement == null && !isLegacyFormat && analysisXElement != null)
+                        {
+                            // Build a combined XElement for the inner analysis constructor
+                            innerXElement = new XElement("ARIMAXAnalysis",
+                                new XAttribute("IsEstimated", mcmcResults != null));
+
+                            // ForecastingTimeSteps is an analysis-layer property (not on the ARIMAX
+                            // model or BayesianAnalysis) and is persisted to its own column. Pre-fix
+                            // saves don't have the column — Contains() returns false and the value
+                            // defaults to 0 inside the constructor, matching legacy behavior.
+                            if (dtView.ColumnNames.Contains("ForecastingTimeSteps"))
+                            {
+                                var raw = dtView.GetCell("ForecastingTimeSteps", rowIndex);
+                                if (raw != null && int.TryParse(raw.ToString(), out var fts))
+                                    innerXElement.SetAttributeValue("ForecastingTimeSteps", fts);
+                            }
+
+                            // Add Bayesian analysis element
+                            innerXElement.Add(analysisXElement);
+
+                        }
+
+                        if (innerXElement != null)
+                        {
+                            _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(arimax, innerXElement, mcmcResults, analysisResults);
+                        }
+                        else
+                        {
+                            _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(arimax);
+                        }
+
+                        // The persisted analysis XML still marks the replaced fit as estimated and
+                        // carries its information criteria; clear that state too, before this element
+                        // subscribes, so the settings are all that is restored.
+                        if (savedLayoutRebuilt)
+                            _innerAnalysis.ClearResults();
                     }
                     else
                     {
-                        _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(arimax);
+                        _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(new ARIMAX());
                     }
 
-                    // The persisted analysis XML still marks the replaced fit as estimated and
-                    // carries its information criteria; clear that state too, before this element
-                    // subscribes, so the settings are all that is restored.
+                    _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
+
+                    // A save that did not re-run the analysis rewrote the model XML with
+                    // TransformLambda, so the marker it wrote is the only remaining sign that the
+                    // restored results still predate v2.0.1. Older rows have no marker column.
+                    bool savedPreV201Results = false;
+                    if (dtView.ColumnNames.Contains(PreV201ResultsColumn))
+                        bool.TryParse(dtView.GetCell(PreV201ResultsColumn, rowIndex)?.ToString(), out savedPreV201Results);
+
+                    if (isLegacyFormat)
+                    {
+                        _legacyMigrationMsg = new BasicMessageItem(
+                            MessageType.Warning,
+                            $"The time series analysis '{Name}' was created with an older version of RMC-BestFit and stored under the legacy 'ARMAX' schema. Previous parameter estimates, MCMC samples, and uncertainty results were discarded. Re-run the Bayesian analysis to refresh the results.",
+                            this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY");
+                        _messenger.Add(_legacyMigrationMsg);
+                    }
+                    else if (IsPreV201TransformResult(_innerAnalysis.IsEstimated, modelXElement, _innerAnalysis.ARIMAX) ||
+                        (savedPreV201Results && _innerAnalysis.IsEstimated))
+                    {
+                        _legacyTransformResultsMsg = new BasicMessageItem(
+                            MessageType.Warning,
+                            $"The results of time series analysis '{Name}' were computed by an earlier version of RMC-BestFit. This version fits the transform exponent on the training window, aligns covariates by date, trains and reintegrates differenced models on corrected windows, and uses a revised conditioning window, so reprocessed forecasts would combine the saved results with different model settings. Re-run the Bayesian analysis to refresh the results.",
+                            this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY-TRANSFORM");
+                        _messenger.Add(_legacyTransformResultsMsg);
+                    }
+
                     if (savedLayoutRebuilt)
-                        _innerAnalysis.ClearResults();
-                }
-                else
-                {
-                    _innerAnalysis = new ModelAnalyses.ARIMAXAnalysis(new ARIMAX());
-                }
-
-                _innerAnalysis.PropertyChanged += InnerAnalysis_PropertyChanged;
-
-                // A save that did not re-run the analysis rewrote the model XML with
-                // TransformLambda, so the marker it wrote is the only remaining sign that the
-                // restored results still predate v2.0.1. Older rows have no marker column.
-                bool savedPreV201Results = false;
-                if (dtView.ColumnNames.Contains(PreV201ResultsColumn))
-                    bool.TryParse(dtView.GetCell(PreV201ResultsColumn, rowIndex)?.ToString(), out savedPreV201Results);
-
-                if (isLegacyFormat)
-                {
-                    _legacyMigrationMsg = new BasicMessageItem(
-                        MessageType.Warning,
-                        $"The time series analysis '{Name}' was created with an older version of RMC-BestFit and stored under the legacy 'ARMAX' schema. Previous parameter estimates, MCMC samples, and uncertainty results were discarded. Re-run the Bayesian analysis to refresh the results.",
-                        this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY");
-                    _messenger.Add(_legacyMigrationMsg);
-                }
-                else if (IsPreV201TransformResult(_innerAnalysis.IsEstimated, modelXElement, _innerAnalysis.ARIMAX) ||
-                    (savedPreV201Results && _innerAnalysis.IsEstimated))
-                {
-                    _legacyTransformResultsMsg = new BasicMessageItem(
-                        MessageType.Warning,
-                        $"The results of time series analysis '{Name}' were computed by an earlier version of RMC-BestFit. This version fits the transform exponent on the training window, aligns covariates by date, trains and reintegrates differenced models on corrected windows, and uses a revised conditioning window, so reprocessed forecasts would combine the saved results with different model settings. Re-run the Bayesian analysis to refresh the results.",
-                        this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LEGACY-TRANSFORM");
-                    _messenger.Add(_legacyTransformResultsMsg);
-                }
-
-                if (savedLayoutRebuilt)
-                {
-                    _layoutMismatchMsg = new BasicMessageItem(
-                        MessageType.Warning,
-                        $"The saved parameters of time series analysis '{Name}' no longer match its covariates (for example, a covariate time series could not be found), so default parameters were restored and the saved results were not loaded. Check the covariates and re-run the Bayesian analysis.",
-                        this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LAYOUT");
-                    _messenger.Add(_layoutMismatchMsg);
+                    {
+                        _layoutMismatchMsg = new BasicMessageItem(
+                            MessageType.Warning,
+                            $"The saved parameters of time series analysis '{Name}' no longer match its covariates (for example, a covariate time series could not be found), so default parameters were restored and the saved results were not loaded. Check the covariates and re-run the Bayesian analysis.",
+                            this, ParentCollection.Name, Name, nameof(TimeSeriesAnalysis), "TSA-WRN-LAYOUT");
+                        _messenger.Add(_layoutMismatchMsg);
+                    }
                 }
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
             SetupBridges();
             SetIsValid();
             // Leave the project dirty when we discarded legacy content so the user
@@ -1433,7 +1439,7 @@ namespace RMC.BestFit.UI
         {
             if (Name == null) return;
 
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1600,7 +1606,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new TimeSeriesAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1631,7 +1637,7 @@ namespace RMC.BestFit.UI
             _bayesianController?.Dispose();
             if (_innerAnalysis != null) _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
             SetIsDirty(false);
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

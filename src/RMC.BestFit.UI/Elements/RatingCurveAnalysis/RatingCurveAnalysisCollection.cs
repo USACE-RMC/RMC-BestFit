@@ -62,7 +62,7 @@ namespace RMC.BestFit.UI
                         if (cancel == true) return;
                     }
 
-                    var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                    using var sqlite = new SQLiteManager(ParentProject.FullFileName);
                     sqlite.Open();
                     try
                     {
@@ -116,28 +116,34 @@ namespace RMC.BestFit.UI
         public override void Open()
         {
             _opening = true;
-            var sqlite = new SQLiteManager(ParentProject.FullFileName);
-            sqlite.Open();
             try
             {
-                if (sqlite.TableNames.Contains(Name) == true)
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                sqlite.Open();
+                try
                 {
-                    var dtView = sqlite.GetTableManager(Name);
-                    bool needsRewrite;
-                    foreach (string elementName in CollectionPersistenceHelper.BuildSingleTableLoadEntries(dtView, out needsRewrite))
+                    if (sqlite.TableNames.Contains(Name) == true)
                     {
-                        var element = new RatingCurveAnalysis(elementName, this, true);
-                        Add(element);
-                    }
+                        var dtView = sqlite.GetTableManager(Name);
+                        bool needsRewrite;
+                        foreach (string elementName in CollectionPersistenceHelper.BuildSingleTableLoadEntries(dtView, out needsRewrite))
+                        {
+                            var element = new RatingCurveAnalysis(elementName, this, true);
+                            Add(element);
+                        }
 
-                    _needsTableCompaction = needsRewrite;
+                        _needsTableCompaction = needsRewrite;
+                    }
+                    sqlite.Close();
+                    SetIsDirty(_needsTableCompaction);
                 }
-                sqlite.Close();
-                SetIsDirty(_needsTableCompaction);
+                finally
+                {
+                    if (sqlite.DataBaseOpen) sqlite.Close();
+                }
             }
             finally
             {
-                if (sqlite.DataBaseOpen) sqlite.Close();
                 _opening = false;
             }
         }
@@ -157,7 +163,7 @@ namespace RMC.BestFit.UI
             ElementList.Add((RatingCurveAnalysis)item);
             if (_opening == false)
             {
-                var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
                 sqlite.Open();
                 if (CollectionPersistenceHelper.NamedRowExists(sqlite, Name, item.Name) == false)
                 {
@@ -181,7 +187,7 @@ namespace RMC.BestFit.UI
         /// </remarks>
         public override void InsertFromExternalProject(int index, string elementName, string elementType, string fullFileName)
         {
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             if (CollectionPersistenceHelper.GetClassName(elementType) == nameof(RatingCurveAnalysis))
             {
                 var element = new RatingCurveAnalysis(elementName, this);
@@ -206,7 +212,7 @@ namespace RMC.BestFit.UI
             ElementList.Insert(index, (RatingCurveAnalysis)item);
             if (_opening == false)
             {
-                var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
                 sqlite.Open();
                 if (CollectionPersistenceHelper.NamedRowExists(sqlite, Name, item.Name) == false)
                 {
@@ -227,7 +233,7 @@ namespace RMC.BestFit.UI
         /// </remarks>
         public override void Delete()
         {
-            var sqlite = new SQLiteManager(ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentProject.FullFileName);
             sqlite.Open();
             sqlite.DeleteTable(Name);
             sqlite.Close();

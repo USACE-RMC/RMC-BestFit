@@ -982,7 +982,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -1003,43 +1004,48 @@ namespace RMC.BestFit.UI
                 _messenger.Clear(this);
                 _validationAdapter.ClearAll();
                 var wasOpen = sqlite.DataBaseOpen;
-                if (wasOpen == false) sqlite.Open();
-
-                // Modern path: per-subtype CollectionName table holds the data. Legacy fallback:
-                // pre-migration projects wrote element data directly into the parent collection
-                // table — read from there and mark the element dirty so the next save migrates
-                // the project to the two-table layout.
-                DataTableView dtView = null;
-                int rowIndex = -1;
-
-                if (sqlite.TableNames.Contains(CollectionName))
+                try
                 {
-                    dtView = sqlite.GetTableManager(CollectionName);
-                    rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                }
-                if (rowIndex == -1 && sqlite.TableNames.Contains(ParentCollection.Name))
-                {
-                    // Legacy single-table layout — only fall back if the parent table actually
-                    // contains element-data columns (presence of MarginalX is a good sentinel).
-                    var legacyDt = sqlite.GetTableManager(ParentCollection.Name);
-                    if (legacyDt.ColumnNames.Contains(nameof(MarginalX)))
+                    if (wasOpen == false) sqlite.Open();
+
+                    // Modern path: per-subtype CollectionName table holds the data. Legacy fallback:
+                    // pre-migration projects wrote element data directly into the parent collection
+                    // table — read from there and mark the element dirty so the next save migrates
+                    // the project to the two-table layout.
+                    DataTableView dtView = null;
+                    int rowIndex = -1;
+
+                    if (sqlite.TableNames.Contains(CollectionName))
                     {
-                        int legacyRow = legacyDt.SearchColumn(0, legacyDt.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-                        if (legacyRow != -1)
+                        dtView = sqlite.GetTableManager(CollectionName);
+                        rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                    }
+                    if (rowIndex == -1 && sqlite.TableNames.Contains(ParentCollection.Name))
+                    {
+                        // Legacy single-table layout — only fall back if the parent table actually
+                        // contains element-data columns (presence of MarginalX is a good sentinel).
+                        var legacyDt = sqlite.GetTableManager(ParentCollection.Name);
+                        if (legacyDt.ColumnNames.Contains(nameof(MarginalX)))
                         {
-                            openedFromV1 = true;
-                            dtView = legacyDt;
-                            rowIndex = legacyRow;
+                            int legacyRow = legacyDt.SearchColumn(0, legacyDt.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                            if (legacyRow != -1)
+                            {
+                                openedFromV1 = true;
+                                dtView = legacyDt;
+                                rowIndex = legacyRow;
+                            }
                         }
                     }
-                }
 
-                if (rowIndex != -1)
+                    if (rowIndex != -1)
+                    {
+                        ReadFromTable(dtView, rowIndex);
+                    }
+                }
+                finally
                 {
-                    ReadFromTable(dtView, rowIndex);
+                    if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
                 }
-
-                if (wasOpen == false) sqlite.Close();
                 SetupBridges();
                 SetIsValid();
                 SetIsDirty(openedFromV1);
@@ -1260,7 +1266,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -1412,7 +1418,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new BivariateAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -1436,7 +1442,7 @@ namespace RMC.BestFit.UI
             _bayesianController?.Dispose();
             if (_innerAnalysis != null) _innerAnalysis.PropertyChanged -= InnerAnalysis_PropertyChanged;
             SetIsDirty(false);
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

@@ -569,7 +569,8 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Open()
         {
-            Open(new SQLiteManager(ParentCollection.ParentProject.FullFileName));
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            Open(sqlite);
         }
 
         /// <summary>
@@ -589,174 +590,178 @@ namespace RMC.BestFit.UI
             _messenger.Clear(this);
             _validationAdapter.ClearAll();
             var wasOpen = sqlite.DataBaseOpen;
-            if (wasOpen == false) sqlite.Open();
-
-            // First check if we need to open from version 1.0.
-            var dtView = sqlite.GetTableManager("Project");
-            string version = "";
-            if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
-
-            // open element
-            dtView = sqlite.GetTableManager(ParentCollection.Name);
-            int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
-            if (rowIndex != -1)
+            try
             {
-                // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
-                // The InputData setter triggers SetIsValid(), ClearResults(), and RecreateInnerAnalysis().
-                // ProbabilityOrdinates.FromDelimitedString() triggers CollectionChanged â†’ SetIsValid() + ClearResults().
-                // A single SetIsValid() call at the end of Open() is sufficient.
-                if (dtView.ColumnNames.Contains(nameof(Name)))
-                {
-                    _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
-                    foreach (var item in _messages) item.SourceName = _name;
-                    _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "DFA");
-                }
-                if (dtView.ColumnNames.Contains(nameof(Description)))
-                {
-                    _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
-                    if (string.IsNullOrEmpty(_description))
-                        _messenger.Add(_descriptionMsg);
-                    else
-                        _messenger.Remove(_descriptionMsg);
-                }
-                if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
-                if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+                if (wasOpen == false) sqlite.Open();
 
-                // Get input data - use backing field to avoid SetIsValid(), ClearResults(), and RecreateInnerAnalysis()
-                if (dtView.ColumnNames.Contains(nameof(InputData)))
+                // First check if we need to open from version 1.0.
+                var dtView = sqlite.GetTableManager("Project");
+                string version = "";
+                if (dtView.ColumnNames.Contains(nameof(BestFitProject.SoftwareVersion))) version = dtView.GetCell(nameof(BestFitProject.SoftwareVersion), 0).ToString();
+
+                // open element
+                dtView = sqlite.GetTableManager(ParentCollection.Name);
+                int rowIndex = dtView.SearchColumn(0, dtView.NumberOfRows - 1, "Name", NameOnDisk, true, true);
+                if (rowIndex != -1)
                 {
-                    var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
-                    foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
+                    // Use backing fields during deserialization to avoid repeated SetIsValid() and ClearResults() calls.
+                    // The InputData setter triggers SetIsValid(), ClearResults(), and RecreateInnerAnalysis().
+                    // ProbabilityOrdinates.FromDelimitedString() triggers CollectionChanged â†’ SetIsValid() + ClearResults().
+                    // A single SetIsValid() call at the end of Open() is sufficient.
+                    if (dtView.ColumnNames.Contains(nameof(Name)))
                     {
-                        if (collection.GetType() == typeof(InputDataCollection))
+                        _name = dtView.GetCell(nameof(Name), rowIndex).ToString();
+                        foreach (var item in _messages) item.SourceName = _name;
+                        _nameValid = ValidateName(BestFitProject.InvalidNameCharacters, 50, "DFA");
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(Description)))
+                    {
+                        _description = dtView.GetCell(nameof(Description), rowIndex).ToString();
+                        if (string.IsNullOrEmpty(_description))
+                            _messenger.Add(_descriptionMsg);
+                        else
+                            _messenger.Remove(_descriptionMsg);
+                    }
+                    if (dtView.ColumnNames.Contains(nameof(CreationDate))) _creationDate = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(CreationDate), rowIndex).ToString()) ?? DateTime.MinValue;
+                    if (dtView.ColumnNames.Contains(nameof(LastModified))) _lastModified = FrameworkInterfaces.Utilities.Tools.DateFromString(dtView.GetCell(nameof(LastModified), rowIndex).ToString()) ?? DateTime.MinValue;
+
+                    // Get input data - use backing field to avoid SetIsValid(), ClearResults(), and RecreateInnerAnalysis()
+                    if (dtView.ColumnNames.Contains(nameof(InputData)))
+                    {
+                        var inputDataName = dtView.GetCell(nameof(InputData), rowIndex).ToString();
+                        foreach (IElementCollection collection in ParentCollection.ParentProject.ElementCollections)
                         {
-                            foreach (IElement element in collection)
+                            if (collection.GetType() == typeof(InputDataCollection))
                             {
-                                if (element.Name == inputDataName && element.GetType() == typeof(InputData))
+                                foreach (IElement element in collection)
                                 {
-                                    _inputData = (InputData)element;
-                                    _inputData.PropertyChanged += InputDataChanged;
-                                    _inputData.Deleted += OnInputDataDeleted;
-                                    _inputDataValid = _inputData.IsValid;
-                                    if (!_inputDataValid)
+                                    if (element.Name == inputDataName && element.GetType() == typeof(InputData))
                                     {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Add(_inputDataInValidMsg);
+                                        _inputData = (InputData)element;
+                                        _inputData.PropertyChanged += InputDataChanged;
+                                        _inputData.Deleted += OnInputDataDeleted;
+                                        _inputDataValid = _inputData.IsValid;
+                                        if (!_inputDataValid)
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Add(_inputDataInValidMsg);
+                                        }
+                                        else
+                                        {
+                                            _messenger.Remove(_inputDataNullMsg);
+                                            _messenger.Remove(_inputDataInValidMsg);
+                                        }
+                                        break;
                                     }
-                                    else
-                                    {
-                                        _messenger.Remove(_inputDataNullMsg);
-                                        _messenger.Remove(_inputDataInValidMsg);
-                                    }
-                                    break;
                                 }
                             }
                         }
                     }
-                }
 
-                // Deserialize plot settings from SQLite into element-owned Plot objects
-                DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
-                DeserializePlotSettings(dtView, rowIndex, "PDFPlotSettings", _pdfPlot);
-                DeserializePlotSettings(dtView, rowIndex, "CDFPlotSettings", _cdfPlot);
-                DeserializePlotSettings(dtView, rowIndex, "PPPlotSettings", _ppPlot);
-                DeserializePlotSettings(dtView, rowIndex, "QQPlotSettings", _qqPlot);
+                    // Deserialize plot settings from SQLite into element-owned Plot objects
+                    DeserializePlotSettings(dtView, rowIndex, "FrequencyPlotSettings", _frequencyPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "PDFPlotSettings", _pdfPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "CDFPlotSettings", _cdfPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "PPPlotSettings", _ppPlot);
+                    DeserializePlotSettings(dtView, rowIndex, "QQPlotSettings", _qqPlot);
 
-                // Build an XElement for the inner analysis constructor.
-                // This atomically restores ProbabilityOrdinates + FittedDistributions without side effects.
-                XElement analysisXElement = null;
+                    // Build an XElement for the inner analysis constructor.
+                    // This atomically restores ProbabilityOrdinates + FittedDistributions without side effects.
+                    XElement analysisXElement = null;
 
-                if (version == "1.0")
-                {
-                    openedFromV1 = true;
-
-                    // v1.0: Build XElement from OutputFrequencyOrdinates XML
-                    if (dtView.ColumnNames.Contains("OutputFrequencyOrdinates"))
+                    if (version == "1.0")
                     {
-                        string xmlText = dtView.GetCell("OutputFrequencyOrdinates", rowIndex).ToString();
-                        XmlDocument xmlDocument = new XmlDocument();
-                        xmlDocument.LoadXml(xmlText);
-                        var nodes = xmlDocument.GetElementsByTagName("OutputFrequencyOrdinates").Item(0)?.ChildNodes;
-                        if (nodes == null || nodes.Count == 0)
-                        {
-                            if (wasOpen == false) sqlite.Close();
-                            return;
-                        }
+                        openedFromV1 = true;
 
-                        // Extract probability ordinates from v1.0 XML nodes
-                        var ordinateValues = new List<string>();
-                        foreach (XmlNode node in nodes)
+                        // v1.0: Build XElement from OutputFrequencyOrdinates XML
+                        if (dtView.ColumnNames.Contains("OutputFrequencyOrdinates"))
                         {
-                            if (double.TryParse(node.Attributes.GetNamedItem("AEP").Value.ToString(), out var outP))
-                                ordinateValues.Add(outP.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                        }
+                            string xmlText = dtView.GetCell("OutputFrequencyOrdinates", rowIndex).ToString();
+                            XmlDocument xmlDocument = new XmlDocument();
+                            xmlDocument.LoadXml(xmlText);
+                            var nodes = xmlDocument.GetElementsByTagName("OutputFrequencyOrdinates").Item(0)?.ChildNodes;
+                            if (nodes == null || nodes.Count == 0)
+                            {
+                                return;
+                            }
 
-                        analysisXElement = new XElement("FittingAnalysis",
-                            new XAttribute("IsEstimated", false),
-                            new XElement("ProbabilityOrdinates",
-                                string.Join(ProbabilityOrdinates.DefaultDelimiter, ordinateValues)));
-                    }
-                }
-                else
-                {
-                    // v2.0+: Try new single-column format first
-                    if (dtView.ColumnNames.Contains("AnalysisXml"))
-                    {
-                        var xml = dtView.GetCell("AnalysisXml", rowIndex).ToString();
-                        if (!string.IsNullOrEmpty(xml))
-                        {
-                            try { analysisXElement = XElement.Parse(xml); }
-                            catch { Debug.WriteLine("Failed to parse AnalysisXml column."); }
+                            // Extract probability ordinates from v1.0 XML nodes
+                            var ordinateValues = new List<string>();
+                            foreach (XmlNode node in nodes)
+                            {
+                                if (double.TryParse(node.Attributes.GetNamedItem("AEP").Value.ToString(), out var outP))
+                                    ordinateValues.Add(outP.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                            }
+
+                            analysisXElement = new XElement("FittingAnalysis",
+                                new XAttribute("IsEstimated", false),
+                                new XElement("ProbabilityOrdinates",
+                                    string.Join(ProbabilityOrdinates.DefaultDelimiter, ordinateValues)));
                         }
                     }
-
-                    // Fall back to legacy multi-column format
-                    if (analysisXElement == null)
+                    else
                     {
-                        string probOrdinates = "";
-                        if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
-                            probOrdinates = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
-
-                        string fittedXml = "";
-                        if (dtView.ColumnNames.Contains(nameof(FittedDistributions)))
-                            fittedXml = dtView.GetCell(nameof(FittedDistributions), rowIndex).ToString();
-
-                        bool wasEstimated = false;
-                        if (dtView.ColumnNames.Contains(nameof(IsEstimated)))
-                            bool.TryParse(dtView.GetCell(nameof(IsEstimated), rowIndex).ToString(), out wasEstimated);
-
-                        var builder = new XElement("FittingAnalysis",
-                            new XAttribute("IsEstimated", wasEstimated),
-                            new XElement("ProbabilityOrdinates", probOrdinates));
-
-                        if (!string.IsNullOrEmpty(fittedXml))
+                        // v2.0+: Try new single-column format first
+                        if (dtView.ColumnNames.Contains("AnalysisXml"))
                         {
-                            try { builder.Add(XElement.Parse(fittedXml)); }
-                            catch { Debug.WriteLine("Failed to parse legacy FittedDistributions XML."); }
+                            var xml = dtView.GetCell("AnalysisXml", rowIndex).ToString();
+                            if (!string.IsNullOrEmpty(xml))
+                            {
+                                try { analysisXElement = XElement.Parse(xml); }
+                                catch { Debug.WriteLine("Failed to parse AnalysisXml column."); }
+                            }
                         }
 
-                        analysisXElement = builder;
-                    }
-                }
+                        // Fall back to legacy multi-column format
+                        if (analysisXElement == null)
+                        {
+                            string probOrdinates = "";
+                            if (dtView.ColumnNames.Contains(nameof(ProbabilityOrdinates)))
+                                probOrdinates = dtView.GetCell(nameof(ProbabilityOrdinates), rowIndex).ToString();
 
-                // Create inner analysis from XElement — atomically loads ProbOrdinates + FittedDists
-                if (_inputData?.DataFrame != null && analysisXElement != null)
-                {
-                    UnsubscribeInnerAnalysis();
-                    try
-                    {
-                        _innerAnalysis = new ModelAnalyses.FittingAnalysis(_inputData.DataFrame, analysisXElement);
+                            string fittedXml = "";
+                            if (dtView.ColumnNames.Contains(nameof(FittedDistributions)))
+                                fittedXml = dtView.GetCell(nameof(FittedDistributions), rowIndex).ToString();
+
+                            bool wasEstimated = false;
+                            if (dtView.ColumnNames.Contains(nameof(IsEstimated)))
+                                bool.TryParse(dtView.GetCell(nameof(IsEstimated), rowIndex).ToString(), out wasEstimated);
+
+                            var builder = new XElement("FittingAnalysis",
+                                new XAttribute("IsEstimated", wasEstimated),
+                                new XElement("ProbabilityOrdinates", probOrdinates));
+
+                            if (!string.IsNullOrEmpty(fittedXml))
+                            {
+                                try { builder.Add(XElement.Parse(fittedXml)); }
+                                catch { Debug.WriteLine("Failed to parse legacy FittedDistributions XML."); }
+                            }
+
+                            analysisXElement = builder;
+                        }
                     }
-                    catch
+
+                    // Create inner analysis from XElement — atomically loads ProbOrdinates + FittedDists
+                    if (_inputData?.DataFrame != null && analysisXElement != null)
                     {
-                        _innerAnalysis = new ModelAnalyses.FittingAnalysis(_inputData.DataFrame);
-                        Debug.WriteLine("Failed to reconstruct inner analysis from XElement; using defaults.");
+                        UnsubscribeInnerAnalysis();
+                        try
+                        {
+                            _innerAnalysis = new ModelAnalyses.FittingAnalysis(_inputData.DataFrame, analysisXElement);
+                        }
+                        catch
+                        {
+                            _innerAnalysis = new ModelAnalyses.FittingAnalysis(_inputData.DataFrame);
+                            Debug.WriteLine("Failed to reconstruct inner analysis from XElement; using defaults.");
+                        }
+                        SubscribeInnerAnalysis();
                     }
-                    SubscribeInnerAnalysis();
                 }
             }
-
-            if (wasOpen == false) sqlite.Close();
+            finally
+            {
+                if (!wasOpen && sqlite.DataBaseOpen) sqlite.Close();
+            }
 
             // Reconnect undo bridges to the (possibly new) inner analysis collections.
             // This is critical when Open() is called outside the constructor (e.g., CopyFromExternal),
@@ -802,7 +807,7 @@ namespace RMC.BestFit.UI
             if (Name == null) return;
 
             // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             DateTime previousLastModified = _lastModified;
             bool committed = false;
@@ -914,7 +919,7 @@ namespace RMC.BestFit.UI
         public override IElement CopyFromExternal(string itemName, string fullFileName)
         {
             // Create SQLite connection
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             var element = new FittingAnalysis(itemName, ParentCollection);
             element.Open(sqlite);
             return element;
@@ -934,7 +939,7 @@ namespace RMC.BestFit.UI
                 _inputData.Deleted -= OnInputDataDeleted;
             }
             SetIsDirty(false);
-            var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentCollection.ParentProject.FullFileName);
             sqlite.Open();
             try
             {

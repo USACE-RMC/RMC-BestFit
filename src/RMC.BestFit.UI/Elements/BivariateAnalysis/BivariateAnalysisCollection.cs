@@ -80,7 +80,7 @@ namespace RMC.BestFit.UI
                 // See if the collection is dirty and needs the parent table re-written.
                 if (IsDirty == true)
                 {
-                    var sqLite = new SQLiteManager(ParentProject.FullFileName);
+                    using var sqLite = new SQLiteManager(ParentProject.FullFileName);
                     sqLite.Open();
                     try
                     {
@@ -146,65 +146,71 @@ namespace RMC.BestFit.UI
         public override void Open()
         {
             _opening = true;
-            var sqlite = new SQLiteManager(ParentProject.FullFileName);
-            sqlite.Open();
             try
             {
-                string[] names = Array.Empty<string>();
-                string[] types = Array.Empty<string>();
-                bool validateStoredRows = false;
-                if (sqlite.TableNames.Contains(Name))
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                sqlite.Open();
+                try
                 {
-                    var dtView = sqlite.GetTableManager(Name);
-                    if (dtView.ColumnNames.Contains("Name"))
+                    string[] names = Array.Empty<string>();
+                    string[] types = Array.Empty<string>();
+                    bool validateStoredRows = false;
+                    if (sqlite.TableNames.Contains(Name))
                     {
-                        names = Array.ConvertAll(dtView.GetColumn("Name"), o => o?.ToString() ?? string.Empty);
+                        var dtView = sqlite.GetTableManager(Name);
+                        if (dtView.ColumnNames.Contains("Name"))
+                        {
+                            names = Array.ConvertAll(dtView.GetColumn("Name"), o => o?.ToString() ?? string.Empty);
+                        }
+                        if (dtView.ColumnNames.Contains("Type"))
+                        {
+                            types = Array.ConvertAll(dtView.GetColumn("Type"), o => o?.ToString() ?? string.Empty);
+                            validateStoredRows = true;
+                        }
+                        else
+                        {
+                            // Legacy single-table layout — every row is a BivariateAnalysis.
+                            types = new string[names.Length];
+                            for (int i = 0; i < names.Length; i++) types[i] = nameof(BivariateAnalysis);
+                        }
                     }
-                    if (dtView.ColumnNames.Contains("Type"))
+
+                    List<(string ElementName, string ElementType)> loadEntries =
+                        CollectionPersistenceHelper.BuildTypedLoadEntries(
+                            sqlite,
+                            names,
+                            types,
+                            s_subtypeTablesByClassName,
+                            validateStoredRows,
+                            defaultElementType: nameof(BivariateAnalysis),
+                            out bool needsIndexRewrite);
+
+                    foreach ((string elementName, string elementType) in loadEntries)
                     {
-                        types = Array.ConvertAll(dtView.GetColumn("Type"), o => o?.ToString() ?? string.Empty);
-                        validateStoredRows = true;
+                        IElement element;
+                        string className = CollectionPersistenceHelper.GetClassName(elementType);
+                        if (className == nameof(CoincidentFrequencyAnalysis))
+                        {
+                            element = new CoincidentFrequencyAnalysis(elementName, this, true);
+                        }
+                        else
+                        {
+                            // Default — empty / missing / BivariateAnalysis Type all map here.
+                            element = new BivariateAnalysis(elementName, this, true);
+                        }
+                        Add(element);
                     }
-                    else
-                    {
-                        // Legacy single-table layout — every row is a BivariateAnalysis.
-                        types = new string[names.Length];
-                        for (int i = 0; i < names.Length; i++) types[i] = nameof(BivariateAnalysis);
-                    }
+
+                    sqlite.Close();
+                    SetIsDirty(needsIndexRewrite);
                 }
-
-                List<(string ElementName, string ElementType)> loadEntries =
-                    CollectionPersistenceHelper.BuildTypedLoadEntries(
-                        sqlite,
-                        names,
-                        types,
-                        s_subtypeTablesByClassName,
-                        validateStoredRows,
-                        defaultElementType: nameof(BivariateAnalysis),
-                        out bool needsIndexRewrite);
-
-                foreach ((string elementName, string elementType) in loadEntries)
+                finally
                 {
-                    IElement element;
-                    string className = CollectionPersistenceHelper.GetClassName(elementType);
-                    if (className == nameof(CoincidentFrequencyAnalysis))
-                    {
-                        element = new CoincidentFrequencyAnalysis(elementName, this, true);
-                    }
-                    else
-                    {
-                        // Default — empty / missing / BivariateAnalysis Type all map here.
-                        element = new BivariateAnalysis(elementName, this, true);
-                    }
-                    Add(element);
+                    if (sqlite.DataBaseOpen) sqlite.Close();
                 }
-
-                sqlite.Close();
-                SetIsDirty(needsIndexRewrite);
             }
             finally
             {
-                if (sqlite.DataBaseOpen) sqlite.Close();
                 _opening = false;
             }
         }
@@ -224,7 +230,7 @@ namespace RMC.BestFit.UI
             ElementList.Add(item);
             if (_opening == false)
             {
-                var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
                 sqlite.Open();
                 if (CollectionPersistenceHelper.StoredElementExists(
                         sqlite,
@@ -249,7 +255,7 @@ namespace RMC.BestFit.UI
         /// <param name="fullFileName">The full file path of the external project database.</param>
         public override void InsertFromExternalProject(int index, string elementName, string elementType, string fullFileName)
         {
-            var sqlite = new SQLiteManager(fullFileName);
+            using var sqlite = new SQLiteManager(fullFileName);
             string className = CollectionPersistenceHelper.GetClassName(elementType);
 
             IElement element;
@@ -282,7 +288,7 @@ namespace RMC.BestFit.UI
             ElementList.Insert(index, item);
             if (_opening == false)
             {
-                var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
                 sqlite.Open();
                 if (CollectionPersistenceHelper.StoredElementExists(
                         sqlite,
@@ -307,7 +313,7 @@ namespace RMC.BestFit.UI
         /// </remarks>
         public override void Delete()
         {
-            var sqlite = new SQLiteManager(ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentProject.FullFileName);
             sqlite.Open();
             sqlite.DeleteTable(Name);
             sqlite.DeleteTable(BivariateAnalysis.CollectionName);

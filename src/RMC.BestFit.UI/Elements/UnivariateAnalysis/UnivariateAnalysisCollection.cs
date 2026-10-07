@@ -64,7 +64,7 @@ namespace RMC.BestFit.UI
                 if (IsDirty == true)
                 {
                     // Create SQLite connection
-                    var sqLite = new SQLiteManager(ParentProject.FullFileName);
+                    using var sqLite = new SQLiteManager(ParentProject.FullFileName);
                     sqLite.Open();
                     try
                     {
@@ -198,100 +198,105 @@ namespace RMC.BestFit.UI
         public override void Open()
         {
             _opening = true;
-            // Create SQLite connection
-            var sqlite = new SQLiteManager(ParentProject.FullFileName);
-            sqlite.Open();
             try
             {
-                // First get the list of elements in the collection in order
-                string[] names = new string[0];
-                string[] types = new string[0];
-                bool validateStoredRows = false;
-                bool needsIndexRewrite = false;
-                if (sqlite.TableNames.Contains(Name) == true)
+                // Create SQLite connection
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                sqlite.Open();
+                try
                 {
-                    validateStoredRows = true;
-                    DataTableView dtView = sqlite.GetTableManager(Name);
-                    if (dtView.ColumnNames.Contains("Name"))
+                    // First get the list of elements in the collection in order
+                    string[] names = new string[0];
+                    string[] types = new string[0];
+                    bool validateStoredRows = false;
+                    bool needsIndexRewrite = false;
+                    if (sqlite.TableNames.Contains(Name) == true)
                     {
-                        names = Array.ConvertAll(dtView.GetColumn("Name"), o => o.ToString());
-                    }
-                    if (dtView.ColumnNames.Contains("Type"))
-                    {
-                        types = Array.ConvertAll(dtView.GetColumn("Type"), o => o.ToString());
-                    }
-                }
-                else
-                {
-                    // Opening from version 1.0
-                    if (sqlite.TableNames.Contains("Bayesian Estimation Analysis"))
-                    {
-                        DataTableView dtView = sqlite.GetTableManager("Bayesian Estimation Analysis");
+                        validateStoredRows = true;
+                        DataTableView dtView = sqlite.GetTableManager(Name);
                         if (dtView.ColumnNames.Contains("Name"))
                         {
                             names = Array.ConvertAll(dtView.GetColumn("Name"), o => o.ToString());
                         }
-                        types = new string[names.Length];
-                        for (int i = 0; i < names.Length; i++)
+                        if (dtView.ColumnNames.Contains("Type"))
                         {
-                            types[i] = nameof(UnivariateAnalysis);
+                            types = Array.ConvertAll(dtView.GetColumn("Type"), o => o.ToString());
+                        }
+                    }
+                    else
+                    {
+                        // Opening from version 1.0
+                        if (sqlite.TableNames.Contains("Bayesian Estimation Analysis"))
+                        {
+                            DataTableView dtView = sqlite.GetTableManager("Bayesian Estimation Analysis");
+                            if (dtView.ColumnNames.Contains("Name"))
+                            {
+                                names = Array.ConvertAll(dtView.GetColumn("Name"), o => o.ToString());
+                            }
+                            types = new string[names.Length];
+                            for (int i = 0; i < names.Length; i++)
+                            {
+                                types[i] = nameof(UnivariateAnalysis);
+                            }
+                        }
+
+                    }
+
+                    // Next get all of the elements
+                    var loadEntries = BuildLoadEntries(sqlite, names, types, validateStoredRows, out needsIndexRewrite);
+                    if (loadEntries.Count != 0)
+                    {
+                        IUnivariate data;
+                        // Open all non-Composite functions first
+                        for (int i = 0; i < loadEntries.Count; i++)
+                        {
+                            string className = CollectionPersistenceHelper.GetClassName(loadEntries[i].ElementType);
+                            if (className == nameof(UnivariateAnalysis))
+                            {
+                                data = new UnivariateAnalysis(loadEntries[i].ElementName, this, true);
+                            }
+                            else if (className == nameof(PointProcessAnalysis))
+                            {
+                                data = new PointProcessAnalysis(loadEntries[i].ElementName, this, true);
+                            }
+                            else if (className == nameof(MixtureAnalysis))
+                            {
+                                data = new MixtureAnalysis(loadEntries[i].ElementName, this, true);
+                            }
+                            else if (className == nameof(B17CAnalysis))
+                            {
+                                data = new B17CAnalysis(loadEntries[i].ElementName, this, true);
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                            Add(data);
+                        }
+                        // Then open all composite functions
+                        for (int i = 0; i < loadEntries.Count; i++)
+                        {
+                            if (CollectionPersistenceHelper.GetClassName(loadEntries[i].ElementType) == nameof(CompositeAnalysis))
+                            {
+                                data = new CompositeAnalysis(loadEntries[i].ElementName, this, true);
+                                Insert(Math.Min(i, ElementList.Count), data);
+                            }
                         }
                     }
 
+                    sqlite.Close();
+                    SetIsDirty(needsIndexRewrite);
                 }
-
-                // Next get all of the elements
-                var loadEntries = BuildLoadEntries(sqlite, names, types, validateStoredRows, out needsIndexRewrite);
-                if (loadEntries.Count != 0)
+                finally
                 {
-                    IUnivariate data;
-                    // Open all non-Composite functions first
-                    for (int i = 0; i < loadEntries.Count; i++)
-                    {
-                        string className = CollectionPersistenceHelper.GetClassName(loadEntries[i].ElementType);
-                        if (className == nameof(UnivariateAnalysis))
-                        {
-                            data = new UnivariateAnalysis(loadEntries[i].ElementName, this, true);
-                        }
-                        else if (className == nameof(PointProcessAnalysis))
-                        {
-                            data = new PointProcessAnalysis(loadEntries[i].ElementName, this, true);
-                        }
-                        else if (className == nameof(MixtureAnalysis))
-                        {
-                            data = new MixtureAnalysis(loadEntries[i].ElementName, this, true);
-                        }
-                        else if (className == nameof(B17CAnalysis))
-                        {
-                            data = new B17CAnalysis(loadEntries[i].ElementName, this, true);
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                        Add(data);
-                    }
-                    // Then open all composite functions
-                    for (int i = 0; i < loadEntries.Count; i++)
-                    {
-                        if (CollectionPersistenceHelper.GetClassName(loadEntries[i].ElementType) == nameof(CompositeAnalysis))
-                        {
-                            data = new CompositeAnalysis(loadEntries[i].ElementName, this, true);
-                            Insert(Math.Min(i, ElementList.Count), data);
-                        }
-                    }
+                    if (sqlite.DataBaseOpen) sqlite.Close();
                 }
-
-                sqlite.Close();
-                SetIsDirty(needsIndexRewrite);
             }
             finally
             {
-                if (sqlite.DataBaseOpen) sqlite.Close();
                 _opening = false;
             }
         }
-
 
         /// <summary>
         /// Adds an element to the collection.
@@ -304,7 +309,7 @@ namespace RMC.BestFit.UI
             ElementList.Add((IUnivariate)item);
             if (_opening == false)
             {
-                var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
                 sqlite.Open();
                 if (CollectionPersistenceHelper.StoredElementExists(
                     sqlite,
@@ -345,7 +350,7 @@ namespace RMC.BestFit.UI
             ElementList.Insert(index, (IUnivariate)item);
             if (_opening == false)
             {
-                var sqlite = new SQLiteManager(ParentProject.FullFileName);
+                using var sqlite = new SQLiteManager(ParentProject.FullFileName);
                 sqlite.Open();
                 if (CollectionPersistenceHelper.StoredElementExists(
                     sqlite,
@@ -366,7 +371,7 @@ namespace RMC.BestFit.UI
         /// </summary>
         public override void Delete()
         {
-            var sqlite = new SQLiteManager(ParentProject.FullFileName);
+            using var sqlite = new SQLiteManager(ParentProject.FullFileName);
             sqlite.Open();
             sqlite.DeleteTable(Name);
             sqlite.DeleteTable(UnivariateAnalysis.CollectionName);
